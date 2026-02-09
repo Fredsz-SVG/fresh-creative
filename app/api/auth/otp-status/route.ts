@@ -7,7 +7,7 @@ const OTP_COOKIE_NAME = 'otp_verified'
 const isDevSkipOtp = process.env.NODE_ENV === 'development'
 
 export async function GET(request: NextRequest) {
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   const cookieVerified = request.cookies.get(OTP_COOKIE_NAME)?.value === '1'
   const verified = isDevSkipOtp ? !!user : !!(user && cookieVerified)

@@ -20,7 +20,7 @@ function generateOtp(): string {
  * - Jika tidak: pakai Supabase signInWithOtp (limit 2 email/jam project).
  */
 export async function POST() {
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data: { user }, error: authError } = await supabase.auth.getUser()
 
   if (authError || !user?.email) {

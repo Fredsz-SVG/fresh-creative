@@ -3,8 +3,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { ChevronLeft, ChevronRight, Plus, Trash2, Check, X, Edit3, ImagePlus, Video, Play, Minus, Instagram, Users, ClipboardList, Menu, Cake, Shield, Copy, Link, Clock, BookOpen, MessageSquare } from 'lucide-react'
 import { toast } from 'sonner'
-import SambutanPanel from '@/components/SambutanPanel'
-import SambutanView from '@/components/SambutanView'
+import TeacherCard from '@/components/TeacherCard'
 
 type AlbumClass = { id: string; name: string; sort_order?: number; student_count?: number }
 type ClassAccess = { id: string; student_name: string; email?: string | null; status: string; date_of_birth?: string | null; instagram?: string | null; message?: string | null; video_url?: string | null }
@@ -12,7 +11,7 @@ type ClassRequest = { id: string; student_name: string; email?: string | null; s
 type ClassMember = { user_id: string; student_name: string; email: string | null; date_of_birth: string | null; instagram: string | null; message: string | null; video_url: string | null; photos?: string[]; is_me?: boolean }
 type StudentInClass = { student_name: string; photo_count: number }
 type Photo = { id: string; file_url: string; student_name: string; created_at?: string }
-type Teacher = { id: string; name: string; title?: string; message?: string; photo_url?: string; sort_order?: number }
+type Teacher = { id: string; name: string; title?: string; message?: string; photo_url?: string; video_url?: string; sort_order?: number; photos?: { id: string; file_url: string; sort_order: number }[] }
 
 function InlineClassEditor(p: any) {
   const classObj = p.classObj as AlbumClass
@@ -245,6 +244,10 @@ export default function YearbookClassesViewUI(props: any) {
   const videoInputRef = useRef<HTMLInputElement>(null)
   const uploadPhotoTargetRef = useRef<any>(null)
   const uploadVideoTargetRef = useRef<any>(null)
+  const teacherPhotoInputRef = useRef<HTMLInputElement>(null)
+  const teacherVideoInputRef = useRef<HTMLInputElement>(null)
+  const uploadTeacherPhotoTargetRef = useRef<string | null>(null)
+  const uploadTeacherVideoTargetRef = useRef<string | null>(null)
   const coverPreviewContainerRef = useRef<HTMLDivElement>(null)
   const coverDragRef = useRef<{ startX: number; startY: number; startPosX: number; startPosY: number } | null>(null)
   const coverUploadInputRef = useRef<HTMLInputElement>(null)
@@ -255,9 +258,17 @@ export default function YearbookClassesViewUI(props: any) {
   const [memberInviteLink, setMemberInviteLink] = useState<string | null>(null)
   const [creatingMemberInvite, setCreatingMemberInvite] = useState(false)
   const [members, setMembers] = useState<{ user_id: string; email: string; name?: string; role: string }[]>([])
-  const [adminInviteLink, setAdminInviteLink] = useState<string | null>(null)
-  const [creatingInvite, setCreatingInvite] = useState(false)
   const [teachers, setTeachers] = useState<Teacher[]>([])
+  const [editingTeacherId, setEditingTeacherId] = useState<string | null>(null)
+  const [teacherPhotoViewer, setTeacherPhotoViewer] = useState<{ teacher: Teacher; photoIndex: number } | null>(null)
+  const [teacherVideoViewer, setTeacherVideoViewer] = useState<{ teacher: Teacher; videoUrl: string } | null>(null)
+  
+  // Join requests state
+  const [joinRequests, setJoinRequests] = useState<any[]>([])
+  const [joinStats, setJoinStats] = useState<any>(null)
+  const [approvalTab, setApprovalTab] = useState<'pending' | 'approved'>('pending')
+  const [assigningRequest, setAssigningRequest] = useState<string | null>(null)
+  const [selectedClassForAssign, setSelectedClassForAssign] = useState<string>('')
 
   const canManage = isOwner || isAlbumAdmin || isGlobalAdmin
 
@@ -296,6 +307,90 @@ export default function YearbookClassesViewUI(props: any) {
     }
   }, [sidebarMode, canManage, album?.id])
 
+  // Fetch join requests and stats
+  const fetchJoinRequests = async (status?: 'pending' | 'approved' | 'all') => {
+    if (!album?.id || !canManage) return
+    try {
+      const params = status ? `?status=${status}` : '?status=all'
+      const res = await fetch(`/api/albums/${album.id}/join-requests${params}`, { credentials: 'include' })
+      const data = await res.json().catch(() => [])
+      if (res.ok && Array.isArray(data)) {
+        setJoinRequests(data)
+      }
+    } catch (error) {
+      console.error('Error fetching join requests:', error)
+    }
+  }
+
+  const fetchJoinStats = async () => {
+    if (!album?.id) return
+    try {
+      const res = await fetch(`/api/albums/${album.id}/join-stats`, { credentials: 'include' })
+      const data = await res.json()
+      if (res.ok) {
+        setJoinStats(data)
+      }
+    } catch (error) {
+      console.error('Error fetching join stats:', error)
+    }
+  }
+
+  useEffect(() => {
+    if (sidebarMode === 'approval' && canManage) {
+      fetchJoinRequests(approvalTab)
+      fetchJoinStats()
+    }
+  }, [sidebarMode, approvalTab, canManage, album?.id])
+
+  // Handle approve join request
+  const handleApproveJoinRequest = async (requestId: string, assigned_class_id: string) => {
+    if (!album?.id || !assigned_class_id) return
+    try {
+      const res = await fetch(`/api/albums/${album.id}/join-requests/${requestId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'approve', assigned_class_id }),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        toast.success('Request disetujui')
+        fetchJoinRequests(approvalTab)
+        fetchJoinStats()
+        setAssigningRequest(null)
+        setSelectedClassForAssign('')
+      } else {
+        toast.error(data.error || 'Gagal menyetujui request')
+      }
+    } catch (error) {
+      console.error('Error approving request:', error)
+      toast.error('Terjadi kesalahan')
+    }
+  }
+
+  // Handle reject join request
+  const handleRejectJoinRequest = async (requestId: string, reason?: string) => {
+    if (!album?.id) return
+    if (!confirm('Yakin ingin menolak request ini?')) return
+    try {
+      const res = await fetch(`/api/albums/${album.id}/join-requests/${requestId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'reject', rejected_reason: reason }),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        toast.success('Request ditolak')
+        fetchJoinRequests(approvalTab)
+        fetchJoinStats()
+      } else {
+        toast.error(data.error || 'Gagal menolak request')
+      }
+    } catch (error) {
+      console.error('Error rejecting request:', error)
+      toast.error('Terjadi kesalahan')
+    }
+  }
+
   // Teacher handlers
   const handleAddTeacher = async (name: string, title: string) => {
     if (!album?.id) return
@@ -318,7 +413,7 @@ export default function YearbookClassesViewUI(props: any) {
     }
   }
 
-  const handleUpdateTeacher = async (teacherId: string, updates: { name?: string; title?: string; message?: string }) => {
+  const handleUpdateTeacher = async (teacherId: string, updates: { name?: string; title?: string; message?: string; video_url?: string }) => {
     if (!album?.id) return
     try {
       const res = await fetch(`/api/albums/${album.id}/teachers/${teacherId}`, {
@@ -364,15 +459,20 @@ export default function YearbookClassesViewUI(props: any) {
     try {
       const formData = new FormData()
       formData.append('file', file)
-      const res = await fetch(`/api/albums/${album.id}/teachers/${teacherId}/photo`, {
+      const res = await fetch(`/api/albums/${album.id}/teachers/${teacherId}/photos`, {
         method: 'POST',
         body: formData,
       })
       const data = await res.json()
-      if (res.ok && data.photo_url) {
-        setTeachers(prev => prev.map(t => 
-          t.id === teacherId ? { ...t, photo_url: data.photo_url } : t
-        ))
+      if (res.ok && data.id) {
+        // Add new photo to teacher's photos array
+        setTeachers(prev => prev.map(t => {
+          if (t.id === teacherId) {
+            const photos = t.photos || []
+            return { ...t, photos: [...photos, data] }
+          }
+          return t
+        }))
         toast.success('Foto berhasil diupload')
       } else {
         toast.error(data.error || 'Gagal upload foto')
@@ -383,7 +483,33 @@ export default function YearbookClassesViewUI(props: any) {
     }
   }
 
-  const handleDeleteTeacherPhoto = async (teacherId: string) => {
+  const handleDeleteTeacherPhoto = async (teacherId: string, photoId: string) => {
+    if (!album?.id) return
+    try {
+      const res = await fetch(`/api/albums/${album.id}/teachers/${teacherId}/photos/${photoId}`, {
+        method: 'DELETE',
+      })
+      if (res.ok) {
+        // Remove photo from teacher's photos array
+        setTeachers(prev => prev.map(t => {
+          if (t.id === teacherId) {
+            const photos = (t.photos || []).filter(p => p.id !== photoId)
+            return { ...t, photos }
+          }
+          return t
+        }))
+        toast.success('Foto berhasil dihapus')
+      } else {
+        const data = await res.json()
+        toast.error(data.error || 'Gagal menghapus foto')
+      }
+    } catch (error) {
+      console.error('Error deleting photo:', error)
+      toast.error('Terjadi kesalahan')
+    }
+  }
+
+  const handleDeleteTeacherPhotoOld = async (teacherId: string) => {
     if (!album?.id) return
     if (!confirm('Hapus foto guru?')) return
     try {
@@ -401,6 +527,30 @@ export default function YearbookClassesViewUI(props: any) {
       }
     } catch (error) {
       console.error('Error deleting photo:', error)
+      toast.error('Terjadi kesalahan')
+    }
+  }
+
+  const handleUploadTeacherVideo = async (teacherId: string, file: File) => {
+    if (!album?.id) return
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      const res = await fetch(`/api/albums/${album.id}/teachers/${teacherId}/video`, {
+        method: 'POST',
+        body: formData,
+      })
+      const data = await res.json()
+      if (res.ok && data.video_url) {
+        setTeachers(prev => prev.map(t => 
+          t.id === teacherId ? { ...t, video_url: data.video_url } : t
+        ))
+        toast.success('Video berhasil diupload')
+      } else {
+        toast.error(data.error || 'Gagal upload video')
+      }
+    } catch (error) {
+      console.error('Error uploading video:', error)
       toast.error('Terjadi kesalahan')
     }
   }
@@ -441,28 +591,6 @@ export default function YearbookClassesViewUI(props: any) {
         </div>
       </div>
     );
-  }
-
-  const generateAdminInvite = async () => {
-    if (!album?.id) return
-    setCreatingInvite(true)
-    try {
-      const res = await fetch(`/api/albums/${album.id}/invite`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ role: 'admin' })
-      })
-      const data = await res.json()
-      if (res.ok && data.token) {
-        setAdminInviteLink(`${window.location.origin}/invite/${data.token}`)
-      } else {
-        alert(data.error || 'Gagal')
-      }
-    } catch (e) {
-      console.error(e)
-    } finally {
-      setCreatingInvite(false)
-    }
   }
 
   const generateMemberInvite = async () => {
@@ -551,10 +679,101 @@ export default function YearbookClassesViewUI(props: any) {
     } catch (e) { console.error(e) }
   }
 
+  // Teacher Photo Viewer Modal
+  if (teacherPhotoViewer) {
+    const { teacher, photoIndex } = teacherPhotoViewer
+    const photos = teacher.photos || []
+    const currentPhoto = photos[photoIndex]
+    
+    return (
+      <div className="fixed inset-0 z-[100] bg-black flex flex-col">
+        <div className="flex items-center justify-between gap-2 p-3 border-b border-white/10 bg-black/80">
+          <button
+            type="button"
+            onClick={() => setTeacherPhotoViewer(null)}
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-white hover:bg-white/10"
+          >
+            <X className="w-5 h-5" /> Tutup
+          </button>
+          <span className="text-white font-medium">{teacher.name}</span>
+          <span className="text-gray-400 text-sm">{photoIndex + 1}/{photos.length}</span>
+        </div>
+        <div className="flex-1 flex items-center justify-center overflow-hidden bg-black relative">
+          {photos.length > 1 && (
+            <button
+              type="button"
+              onClick={() => setTeacherPhotoViewer({ teacher, photoIndex: Math.max(0, photoIndex - 1) })}
+              disabled={photoIndex === 0}
+              className="absolute left-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/50 text-white disabled:opacity-40 z-10"
+            >
+              <ChevronLeft className="w-8 h-8" />
+            </button>
+          )}
+          <img 
+            src={currentPhoto?.file_url} 
+            alt={`${teacher.name}`}
+            className="max-w-full max-h-full object-contain cursor-pointer"
+            onClick={() => setTeacherPhotoViewer(null)}
+          />
+          {photos.length > 1 && (
+            <button
+              type="button"
+              onClick={() => setTeacherPhotoViewer({ teacher, photoIndex: Math.min(photos.length - 1, photoIndex + 1) })}
+              disabled={photoIndex >= photos.length - 1}
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/50 text-white disabled:opacity-40 z-10"
+            >
+              <ChevronRight className="w-8 h-8" />
+            </button>
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  // Teacher Video Viewer Modal
+  if (teacherVideoViewer) {
+    const { teacher, videoUrl } = teacherVideoViewer
+    
+    return (
+      <div className="fixed inset-0 z-[100] bg-black flex flex-col">
+        <div className="flex items-center justify-between gap-2 p-3 border-b border-white/10 bg-black/80">
+          <button
+            type="button"
+            onClick={() => setTeacherVideoViewer(null)}
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-white hover:bg-white/10"
+          >
+            <X className="w-5 h-5" /> Tutup
+          </button>
+          <span className="text-white font-medium">{teacher.name}</span>
+        </div>
+        <div className="flex-1 flex items-center justify-center overflow-hidden bg-black p-4">
+          <video 
+            src={videoUrl} 
+            className="max-w-full max-h-full cursor-pointer"
+            autoPlay
+            loop
+            muted
+            playsInline
+            onClick={() => setTeacherVideoViewer(null)}
+          />
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen flex flex-col w-full lg:max-w-full">
       {/* Mobile Bottom Navigation - App Style */}
       <div className="fixed bottom-0 left-0 right-0 z-[60] bg-[#0a0a0b] border-t border-white/10 flex lg:hidden items-center justify-around h-16 pb-safe safe-area-bottom shadow-2xl">
+        {canManage && (
+          <button
+            onClick={() => setSidebarMode('sambutan')}
+            className={`flex flex-col items-center justify-center flex-1 h-full gap-1 active:scale-95 transition-transform ${sidebarMode === 'sambutan' ? 'text-lime-400' : 'text-gray-500 hover:text-white'}`}
+          >
+            <MessageSquare className="w-5 h-5" />
+            <span className="text-[10px] font-medium">Sambutan</span>
+          </button>
+        )}
         <button
           onClick={() => {
             if (sidebarMode === 'classes') {
@@ -575,7 +794,7 @@ export default function YearbookClassesViewUI(props: any) {
           >
             <div className="relative">
               <ClipboardList className="w-5 h-5" />
-              {(Object.values(requestsByClass).flat().length > 0) && (
+              {(joinStats && joinStats.pending_count > 0) && (
                 <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
@@ -594,15 +813,6 @@ export default function YearbookClassesViewUI(props: any) {
             <span className="text-[10px] font-medium">Team</span>
           </button>
         )}
-        {canManage && (
-          <button
-            onClick={() => setSidebarMode('sambutan')}
-            className={`flex flex-col items-center justify-center flex-1 h-full gap-1 active:scale-95 transition-transform ${sidebarMode === 'sambutan' ? 'text-lime-400' : 'text-gray-500 hover:text-white'}`}
-          >
-            <MessageSquare className="w-5 h-5" />
-            <span className="text-[10px] font-medium">Sambutan</span>
-          </button>
-        )}
       </div>
       {/* Main Content - Header already sticky in parent (page.tsx) */}
       <div className="flex-1 flex flex-col p-4 pb-8">
@@ -618,6 +828,24 @@ export default function YearbookClassesViewUI(props: any) {
           const target = uploadVideoTargetRef.current
           if (target && file && typeof onUploadVideo === 'function') onUploadVideo(target.classId, target.studentName, target.className, file)
           uploadVideoTargetRef.current = null
+          e.target.value = ''
+        }} />
+        <input ref={teacherPhotoInputRef} type="file" accept="image/*" className="hidden" onChange={async (e) => {
+          const file = e.target.files?.[0]
+          const teacherId = uploadTeacherPhotoTargetRef.current
+          if (teacherId && file) {
+            await handleUploadTeacherPhoto(teacherId, file)
+          }
+          uploadTeacherPhotoTargetRef.current = null
+          e.target.value = ''
+        }} />
+        <input ref={teacherVideoInputRef} type="file" accept="video/*" className="hidden" onChange={async (e) => {
+          const file = e.target.files?.[0]
+          const teacherId = uploadTeacherVideoTargetRef.current
+          if (teacherId && file) {
+            await handleUploadTeacherVideo(teacherId, file)
+          }
+          uploadTeacherVideoTargetRef.current = null
           e.target.value = ''
         }} />
 
@@ -641,6 +869,24 @@ export default function YearbookClassesViewUI(props: any) {
               <BookOpen className="w-6 h-6" />
               <span className="text-[10px]">Sampul</span>
             </button>
+
+            {canManage && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSidebarMode('sambutan')
+                  if (isCoverView) setView('classes')
+                }}
+                className={`flex-shrink-0 flex flex-col items-center justify-center gap-1 py-4 border-b border-white/10 text-xs font-medium transition-colors ${sidebarMode === 'sambutan'
+                  ? 'bg-lime-600/20 text-lime-400'
+                  : 'text-gray-400 hover:text-white hover:bg-white/5'
+                  }`}
+                title="Sambutan Guru"
+              >
+                <MessageSquare className="w-6 h-6" />
+                <span className="text-[10px]">Sambutan</span>
+              </button>
+            )}
 
             <button
               type="button"
@@ -674,7 +920,7 @@ export default function YearbookClassesViewUI(props: any) {
                 >
                   <ClipboardList className="w-6 h-6" />
                   <span className="text-[10px]">Approval</span>
-                  {Object.values(requestsByClass).flat().length > 0 && (
+                  {joinStats && joinStats.pending_count > 0 && (
                     <span className="absolute top-2 right-2 flex h-2 w-2 rounded-full bg-red-500"></span>
                   )}
                 </button>
@@ -692,21 +938,6 @@ export default function YearbookClassesViewUI(props: any) {
                 >
                   <Shield className="w-6 h-6" />
                   <span className="text-[10px]">Team</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSidebarMode('sambutan')
-                    if (isCoverView) setView('classes')
-                  }}
-                  className={`flex-shrink-0 flex flex-col items-center justify-center gap-1 py-4 border-b border-white/10 text-xs font-medium transition-colors ${sidebarMode === 'sambutan'
-                    ? 'bg-lime-600/20 text-lime-400'
-                    : 'text-gray-400 hover:text-white hover:bg-white/5'
-                    }`}
-                  title="Sambutan Guru"
-                >
-                  <MessageSquare className="w-6 h-6" />
-                  <span className="text-[10px]">Sambutan</span>
                 </button>
               </>
             )}
@@ -970,20 +1201,7 @@ export default function YearbookClassesViewUI(props: any) {
             </>
           )}
 
-          {/* Sambutan Panel - Fixed di tengah */}
-          {sidebarMode === 'sambutan' && !isCoverView && (
-            <div className="hidden lg:fixed lg:left-16 lg:top-12 lg:w-64 lg:h-[calc(100vh-48px)] lg:flex flex-col lg:z-35 lg:bg-black/30 lg:backdrop-blur-sm lg:border-r lg:border-white/10">
-              <SambutanPanel
-                teachers={teachers}
-                onAddTeacher={handleAddTeacher}
-                onUpdateTeacher={handleUpdateTeacher}
-                onDeleteTeacher={handleDeleteTeacher}
-                onUploadPhoto={handleUploadTeacherPhoto}
-                onDeletePhoto={handleDeleteTeacherPhoto}
-                isOwner={canManage}
-              />
-            </div>
-          )}
+          {/* Sambutan Panel - Removed, now using grid layout like students */}
 
           {/* Main content area - Shows Classes/Approval/Team based on sidebarMode */}
           <div className={`flex-1 flex flex-col gap-0 min-h-0 pt-14 lg:pt-0`}>
@@ -1320,20 +1538,7 @@ export default function YearbookClassesViewUI(props: any) {
               </div>
             )}
 
-            {/* Mobile Sambutan View */}
-            {sidebarMode === 'sambutan' && (
-              <div className="lg:hidden flex-1 overflow-y-auto pb-20 pt-4">
-                <SambutanPanel
-                  teachers={teachers}
-                  onAddTeacher={handleAddTeacher}
-                  onUpdateTeacher={handleUpdateTeacher}
-                  onDeleteTeacher={handleDeleteTeacher}
-                  onUploadPhoto={handleUploadTeacherPhoto}
-                  onDeletePhoto={handleDeleteTeacherPhoto}
-                  isOwner={canManage}
-                />
-              </div>
-            )}
+            {/* Mobile Sambutan View - Removed, using grid layout */}
 
             {/* Main content - scrollable container */}
             <div className={`flex-1 overflow-y-auto rounded-t-none pb-40 lg:pb-0 ${sidebarMode === 'classes' && !isCoverView ? 'lg:ml-80' : 'lg:ml-0'}`}>
@@ -1375,13 +1580,58 @@ export default function YearbookClassesViewUI(props: any) {
                     </div>
 
                     {isOwner && (
-                      <div className="mt-6 p-3 w-full rounded-xl bg-white/5 border border-white/10">
-                        <div className="mb-3 text-center">
-                          <p className="text-xs font-semibold text-app">Pengaturan Sampul</p>
+                      <>
+                        {/* Invitation Link Section */}
+                        <div className="mt-6 p-3 w-full rounded-xl bg-white/5 border border-white/10">
+                          <div className="mb-3 text-center">
+                            <p className="text-xs font-semibold text-app">Link Undangan</p>
+                          </div>
+                          
+                          {/* Member Invite */}
+                          <div>
+                            <p className="text-[10px] font-medium text-muted/60 uppercase tracking-wide mb-1.5">Undang Member</p>
+                            {memberInviteLink ? (
+                              <div className="flex gap-2">
+                                <input
+                                  type="text"
+                                  readOnly
+                                  value={memberInviteLink}
+                                  className="flex-1 px-2 py-1.5 text-[10px] rounded-lg bg-white/5 border border-white/10 text-app"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    navigator.clipboard.writeText(memberInviteLink)
+                                    toast.success('Link disalin!')
+                                  }}
+                                  className="px-3 py-1.5 rounded-lg bg-lime-600/20 text-lime-400 hover:bg-lime-600/30 text-[10px] font-medium border border-lime-500/20 transition-all flex items-center gap-1"
+                                >
+                                  <Copy className="w-3 h-3" />
+                                  Salin
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={generateMemberInvite}
+                                disabled={creatingMemberInvite}
+                                className="w-full px-3 py-2 rounded-lg bg-sky-600/20 text-sky-400 hover:bg-sky-600/30 text-[11px] font-medium border border-sky-500/20 transition-all disabled:opacity-50 flex items-center justify-center gap-1.5"
+                              >
+                                <Link className="w-3.5 h-3.5" />
+                                {creatingMemberInvite ? 'Membuat...' : 'Buat Link Member'}
+                              </button>
+                            )}
+                          </div>
                         </div>
-                        
-                        {/* Gambar Section */}
-                        <div className="mb-3">
+
+                        {/* Cover Settings Section */}
+                        <div className="mt-3 p-3 w-full rounded-xl bg-white/5 border border-white/10">
+                          <div className="mb-3 text-center">
+                            <p className="text-xs font-semibold text-app">Pengaturan Sampul</p>
+                          </div>
+                          
+                          {/* Gambar Section */}
+                          <div className="mb-3">
                           <p className="text-[10px] font-medium text-muted/60 uppercase tracking-wide mb-1.5">Gambar</p>
                           <div className="grid grid-cols-2 gap-2">
                             <button
@@ -1462,7 +1712,8 @@ export default function YearbookClassesViewUI(props: any) {
                             }
                           }}
                         />
-                      </div>
+                        </div>
+                      </>
                     )}
 
                     {/* Cover Preview Modal */}
@@ -1537,54 +1788,203 @@ export default function YearbookClassesViewUI(props: any) {
                   </div>
                 </div>
               ) : sidebarMode === 'approval' ? (
-                /* Approval Content */
+                /* Approval Content - New Join Request System */
                 <div className="max-w-4xl mx-auto p-4">
-                  <div className="mb-6 text-center">
-                    <h2 className="text-2xl font-bold text-app mb-2">Approval Requests</h2>
-                    <p className="text-sm text-muted">Kelola permintaan akses siswa ke group</p>
-                  </div>
-                  {Object.entries(requestsByClass).map(([classId, requests]) => {
-                    const classObj = classes.find(c => c.id === classId)
-                    if (!classObj || (requests as ClassRequest[]).length === 0) return null
-                    return (
-                      <div key={classId} className="mb-6">
-                        <h3 className="text-lg font-semibold text-app mb-3 px-2">{classObj.name}</h3>
-                        <div className="flex flex-col gap-3">
-                          {(requests as ClassRequest[]).map(request => (
-                            <div key={request.id} className="p-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition-colors">
-                              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                                <div className="flex-1">
-                                  <p className="text-app font-medium">{request.student_name}</p>
-                                  {request.email && <p className="text-xs text-muted mt-1">{request.email}</p>}
-                                </div>
-                                <div className="flex gap-2 flex-shrink-0">
-                                  <button
-                                    type="button"
-                                    onClick={() => handleApproveReject(classId, request.id, 'approved')}
-                                    className="px-4 py-2 rounded-lg bg-green-600/80 text-white hover:bg-green-600 text-sm font-medium transition-colors"
-                                  >
-                                    ✓ Setujui
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleApproveReject(classId, request.id, 'rejected')}
-                                    className="px-4 py-2 rounded-lg bg-red-600/80 text-white hover:bg-red-600 text-sm font-medium transition-colors"
-                                  >
-                                    ✕ Tolak
-                                  </button>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
+                  {/* Header dengan Stats */}
+                  <div className="mb-6">
+                    <h2 className="text-2xl font-bold text-app mb-2 text-center">Approval Pendaftaran</h2>
+                    {joinStats && (
+                      <div className="flex items-center justify-center gap-4 mt-4">
+                        <div className="px-4 py-2 rounded-full bg-lime-600/20 border border-lime-500/30">
+                          <span className="text-lime-400 font-medium">
+                            {joinStats.approved_count}/{joinStats.limit_count || '∞'} Terdaftar
+                          </span>
                         </div>
+                        <div className="px-4 py-2 rounded-full bg-amber-600/20 border border-amber-500/30">
+                          <span className="text-amber-400 font-medium">
+                            {joinStats.pending_count} Pending
+                          </span>
+                        </div>
+                        {joinStats.available_slots !== 999999 && (
+                          <div className="px-4 py-2 rounded-full bg-blue-600/20 border border-blue-500/30">
+                            <span className="text-blue-400 font-medium">
+                              {joinStats.available_slots} Slot Tersisa
+                            </span>
+                          </div>
+                        )}
                       </div>
-                    )
-                  })}
-                  {Object.values(requestsByClass).flat().length === 0 && (
+                    )}
+                    
+                    {/* Link Undangan */}
+                    <div className="mt-6 p-4 rounded-xl bg-white/5 border border-white/10">
+                      <p className="text-sm text-gray-400 mb-2 text-center">Link Undangan Album:</p>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={`${typeof window !== 'undefined' ? window.location.origin : ''}/join/${album?.id || ''}`}
+                          readOnly
+                          className="flex-1 px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-app text-sm"
+                        />
+                        <button
+                          onClick={() => {
+                            if (album?.id) {
+                              const url = `${window.location.origin}/join/${album.id}`
+                              navigator.clipboard.writeText(url)
+                              toast.success('Link berhasil disalin!')
+                            }
+                          }}
+                          className="px-4 py-2 rounded-lg bg-lime-600 text-white hover:bg-lime-500 transition-colors text-sm font-medium flex items-center gap-2"
+                        >
+                          <Copy className="w-4 h-4" />
+                          Salin
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Tabs */}
+                  <div className="flex gap-2 mb-6 border-b border-white/10">
+                    <button
+                      onClick={() => setApprovalTab('pending')}
+                      className={`px-4 py-2 font-medium transition-colors relative ${
+                        approvalTab === 'pending'
+                          ? 'text-lime-400'
+                          : 'text-gray-400 hover:text-white'
+                      }`}
+                    >
+                      Belum Di-acc
+                      {joinStats && joinStats.pending_count > 0 && (
+                        <span className="ml-2 px-2 py-0.5 rounded-full bg-amber-600/20 text-amber-400 text-xs font-semibold">
+                          {joinStats.pending_count}
+                        </span>
+                      )}
+                      {approvalTab === 'pending' && (
+                        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-lime-400" />
+                      )}
+                    </button>
+                    <button
+                      onClick={() => setApprovalTab('approved')}
+                      className={`px-4 py-2 font-medium transition-colors relative ${
+                        approvalTab === 'approved'
+                          ? 'text-lime-400'
+                          : 'text-gray-400 hover:text-white'
+                      }`}
+                    >
+                      Sudah Di-acc
+                      {joinStats && joinStats.approved_count > 0 && (
+                        <span className="ml-2 px-2 py-0.5 rounded-full bg-lime-600/20 text-lime-400 text-xs font-semibold">
+                          {joinStats.approved_count}
+                        </span>
+                      )}
+                      {approvalTab === 'approved' && (
+                        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-lime-400" />
+                      )}
+                    </button>
+                  </div>
+
+                  {/* Requests List */}
+                  {joinRequests.length === 0 ? (
                     <div className="text-center py-12 border-2 border-dashed border-white/10 rounded-xl">
                       <ClipboardList className="w-16 h-16 mx-auto mb-4 text-gray-600" />
-                      <p className="text-app font-medium mb-1">Tidak ada request</p>
-                      <p className="text-sm text-muted">Semua permintaan sudah diproses</p>
+                      <p className="text-app font-medium mb-1">
+                        {approvalTab === 'pending' ? 'Tidak ada request pending' : 'Belum ada yang di-approve'}
+                      </p>
+                      <p className="text-sm text-muted">
+                        {approvalTab === 'pending' ? 'Semua permintaan sudah diproses' : 'Approve request untuk menampilkan di sini'}
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col gap-3">
+                      {joinRequests.map(request => {
+                        const assignedClass = request.assigned_class_id 
+                          ? classes.find(c => c.id === request.assigned_class_id)
+                          : null
+                        const isAssigning = assigningRequest === request.id
+
+                        return (
+                          <div key={request.id} className="p-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition-colors">
+                            <div className="flex flex-col gap-3">
+                              <div className="flex items-start justify-between gap-3">
+                                <div className="flex-1">
+                                  <p className="text-app font-medium text-lg">{request.student_name}</p>
+                                  {request.class_name && (
+                                    <p className="text-sm text-blue-400 mt-1">Kelas: {request.class_name}</p>
+                                  )}
+                                  <p className="text-xs text-muted mt-1">{request.email}</p>
+                                  {request.phone && (
+                                    <p className="text-xs text-muted">WA: {request.phone}</p>
+                                  )}
+                                  <p className="text-xs text-gray-500 mt-2">
+                                    {new Date(request.requested_at).toLocaleString('id-ID')}
+                                  </p>
+                                </div>
+                                
+                                {request.status === 'approved' && assignedClass && (
+                                  <div className="flex-shrink-0">
+                                    <span className="px-3 py-1.5 rounded-lg bg-lime-600/20 text-lime-400 border border-lime-500/30 text-sm font-medium">
+                                      ✓ {assignedClass.name}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Action Buttons for Pending */}
+                              {request.status === 'pending' && (
+                                <>
+                                  {isAssigning ? (
+                                    <div className="flex flex-col gap-2 p-3 bg-black/20 rounded-lg border border-white/10">
+                                      <label className="text-sm text-gray-300 font-medium">Pilih Group/Kelas:</label>
+                                      <select
+                                        value={selectedClassForAssign}
+                                        onChange={(e) => setSelectedClassForAssign(e.target.value)}
+                                        className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-app focus:outline-none focus:border-lime-500"
+                                      >
+                                        <option value="">-- Pilih Kelas --</option>
+                                        {classes.map(cls => (
+                                          <option key={cls.id} value={cls.id}>{cls.name}</option>
+                                        ))}
+                                      </select>
+                                      <div className="flex gap-2">
+                                        <button
+                                          onClick={() => handleApproveJoinRequest(request.id, selectedClassForAssign)}
+                                          disabled={!selectedClassForAssign}
+                                          className="flex-1 px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-500 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium transition-colors"
+                                        >
+                                          ✓ Konfirmasi Setujui
+                                        </button>
+                                        <button
+                                          onClick={() => {
+                                            setAssigningRequest(null)
+                                            setSelectedClassForAssign('')
+                                          }}
+                                          className="px-4 py-2 rounded-lg bg-gray-700 text-white hover:bg-gray-600 text-sm font-medium transition-colors"
+                                        >
+                                          Batal
+                                        </button>
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <div className="flex gap-2">
+                                      <button
+                                        onClick={() => setAssigningRequest(request.id)}
+                                        className="flex-1 px-4 py-2 rounded-lg bg-green-600/80 text-white hover:bg-green-600 text-sm font-medium transition-colors"
+                                      >
+                                        ✓ Setujui & Assign Kelas
+                                      </button>
+                                      <button
+                                        onClick={() => handleRejectJoinRequest(request.id)}
+                                        className="px-4 py-2 rounded-lg bg-red-600/80 text-white hover:bg-red-600 text-sm font-medium transition-colors"
+                                      >
+                                        ✕ Tolak
+                                      </button>
+                                    </div>
+                                  )}
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        )
+                      })}
                     </div>
                   )}
                 </div>
@@ -1612,7 +2012,7 @@ export default function YearbookClassesViewUI(props: any) {
                           </div>
                           {(isOwner || canManage) && member.user_id && member.role !== 'owner' && (
                             <div className="flex gap-2 flex-shrink-0">
-                              {isOwner && (
+                              {(isOwner || isGlobalAdmin) && (
                                 <>
                                   {member.role !== 'admin' ? (
                                     <button
@@ -1660,8 +2060,70 @@ export default function YearbookClassesViewUI(props: any) {
                   </div>
                 </div>
               ) : sidebarMode === 'sambutan' ? (
-                /* Sambutan Content */
-                <SambutanView teachers={teachers} />
+                /* Sambutan Content - Grid Cards like Students */
+                <div className="p-2 lg:p-4">
+                  {/* Add Teacher Button */}
+                  {canManage && (
+                    <div className="mb-4">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const name = prompt('Nama Guru:')
+                          if (name) handleAddTeacher(name, '', '')
+                        }}
+                        className="px-4 py-2 rounded-lg bg-lime-600 text-white hover:bg-lime-500 transition-colors flex items-center gap-2 text-sm font-medium"
+                      >
+                        <Plus className="w-4 h-4" />
+                        Tambah Guru
+                      </button>
+                    </div>
+                  )}
+
+                  {teachers.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-20 opacity-60 min-h-[70vh] w-full">
+                      <Users className="w-12 h-12 mb-3 opacity-50" />
+                      <p className="text-center text-sm lg:text-base">Belum ada guru ditambahkan.</p>
+                    </div>
+                  ) : (
+                    <div className="grid gap-2 sm:grid-cols-2 lg:gap-3 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+                      {teachers.map((teacher) => (
+                        <TeacherCard
+                          key={teacher.id}
+                          teacher={teacher}
+                          isOwner={canManage}
+                          isFlipped={editingTeacherId === teacher.id}
+                          onStartEdit={(t) => setEditingTeacherId(t.id)}
+                          onCancelEdit={() => setEditingTeacherId(null)}
+                          onSave={(updatedData) => {
+                            handleUpdateTeacher(teacher.id, updatedData)
+                            setEditingTeacherId(null)
+                          }}
+                          onDelete={handleDeleteTeacher}
+                          onUploadPhoto={(teacherId) => {
+                            if (teacherPhotoInputRef.current) {
+                              uploadTeacherPhotoTargetRef.current = teacherId
+                              teacherPhotoInputRef.current.click()
+                            }
+                          }}
+                          onDeletePhoto={handleDeleteTeacherPhoto}
+                          onUploadVideo={(teacherId) => {
+                            if (teacherVideoInputRef.current) {
+                              uploadTeacherVideoTargetRef.current = teacherId
+                              teacherVideoInputRef.current.click()
+                            }
+                          }}
+                          onPlayVideo={(videoUrl) => {
+                            setTeacherVideoViewer({ teacher, videoUrl })
+                          }}
+                          onClickPhoto={(teacher, photoIndex) => {
+                            setTeacherPhotoViewer({ teacher, photoIndex })
+                          }}
+                          savingTeacher={false}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
               ) : classes.length === 0 ? (
                 <div className="flex-1 flex flex-col items-center justify-center border-2 border-dashed border-white/10 rounded-xl py-12">
                   <p className="text-app font-medium mb-2">Belum ada group</p>

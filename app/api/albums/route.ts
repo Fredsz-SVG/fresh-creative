@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic'
 // GET: Fetch albums (Admin sees all, User sees own)
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createClient()
+    const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
@@ -108,7 +108,7 @@ export async function GET(request: NextRequest) {
 
 // POST: Create new album (Public OR Yearbook from Showroom)
 export async function POST(request: NextRequest) {
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
@@ -176,7 +176,7 @@ export async function POST(request: NextRequest) {
 
 // PUT: Update status (Approve/Decline)
 export async function PUT(request: NextRequest) {
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
@@ -209,7 +209,7 @@ export async function PUT(request: NextRequest) {
 
 // DELETE: Delete album
 export async function DELETE(request: NextRequest) {
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 

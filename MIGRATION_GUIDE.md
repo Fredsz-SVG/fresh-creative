@@ -100,11 +100,11 @@ album_teachers
 
 ## Storage Bucket
 
-Photos are stored in: `yearbook-photos/teachers/{teacherId}/{timestamp}.{ext}`
+Photos are stored in: `album-photos/teachers/{teacherId}/{timestamp}.{ext}`
 
 Make sure the bucket exists and has public read access:
 1. Go to: **Storage** in Supabase Dashboard
-2. Find: `yearbook-photos` bucket
+2. Find: `album-photos` bucket (created in migration 02)
 3. Check: Public access is enabled
 
 ## Troubleshooting
@@ -116,7 +116,7 @@ Make sure the bucket exists and has public read access:
 - Verify RLS is not blocking the migration
 
 ### Photos Not Uploading
-- Verify `yearbook-photos` bucket exists
+- Verify `album-photos` bucket exists
 - Check bucket permissions (public read)
 - Verify file size < 5MB
 - Check file type is image/*

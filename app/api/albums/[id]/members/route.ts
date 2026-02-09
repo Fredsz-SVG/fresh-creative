@@ -10,7 +10,7 @@ export async function GET(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
-    const supabase = createClient()
+    const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
@@ -133,7 +133,7 @@ export async function POST(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
-    const supabase = createClient()
+    const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
@@ -145,8 +145,10 @@ export async function POST(
 
     const { data: album } = await client.from('albums').select('user_id').eq('id', albumId).single()
     const isOwner = album?.user_id === user.id
+    const globalRole = await getRole(supabase, user)
+    const isGlobalAdmin = globalRole === 'admin'
 
-    if (!isOwner) return NextResponse.json({ error: 'Hanya owner yang bisa menambah/promote member' }, { status: 403 })
+    if (!isOwner && !isGlobalAdmin) return NextResponse.json({ error: 'Hanya owner atau admin web yang bisa menambah/promote member' }, { status: 403 })
 
     let targetUserId = user_id
     if (!targetUserId && email) {
@@ -188,7 +190,7 @@ export async function DELETE(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
-    const supabase = createClient()
+    const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
@@ -205,9 +207,11 @@ export async function DELETE(
 
     const { data: album } = await client.from('albums').select('user_id').eq('id', albumId).single()
     const isOwner = album?.user_id === user.id
+    const globalRole = await getRole(supabase, user)
+    const isGlobalAdmin = globalRole === 'admin'
     const { data: memberRow } = await client.from('album_members').select('role').eq('album_id', albumId).eq('user_id', user.id).maybeSingle()
     const isAlbumAdmin = (memberRow as { role?: string } | null)?.role === 'admin'
-    const canManage = isOwner || isAlbumAdmin
+    const canManage = isOwner || isAlbumAdmin || isGlobalAdmin
 
     if (!canManage) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     if (targetUserId === album?.user_id) return NextResponse.json({ error: 'Cannot remove owner' }, { status: 400 })
