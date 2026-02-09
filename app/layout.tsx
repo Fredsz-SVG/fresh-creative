@@ -42,7 +42,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body>
+      <body suppressHydrationWarning>
         <ThemeProvider>
           <AuthErrorRedirect />
           <Toaster richColors position="top-center" />

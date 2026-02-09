@@ -1821,14 +1821,14 @@ export default function YearbookClassesViewUI(props: any) {
                       <div className="flex gap-2">
                         <input
                           type="text"
-                          value={`${typeof window !== 'undefined' ? window.location.origin : ''}/join/${album?.id || ''}`}
+                          value={`${typeof window !== 'undefined' ? window.location.origin : ''}/register/${album?.id || ''}`}
                           readOnly
                           className="flex-1 px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-app text-sm"
                         />
                         <button
                           onClick={() => {
                             if (album?.id) {
-                              const url = `${window.location.origin}/join/${album.id}`
+                              const url = `${window.location.origin}/register/${album.id}`
                               navigator.clipboard.writeText(url)
                               toast.success('Link berhasil disalin!')
                             }

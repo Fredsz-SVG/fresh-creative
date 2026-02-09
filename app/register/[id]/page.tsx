@@ -178,7 +178,7 @@ export default function AlbumJoinPage() {
               {submitting ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
-                  Mendaftar...
+                  Mengirim...
                 </>
               ) : (
                 'Daftar Sekarang'
