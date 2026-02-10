@@ -43,7 +43,7 @@ function InlineClassEditor(p: any) {
 
   // Early return if classObj is null - AFTER all hooks
   if (!classObj) {
-    return <div className="text-sm text-gray-500">Loading...</div>
+    return <div className="text-sm text-gray-500">Memuat...</div>
   }
 
   const saveChanges = (nameVal: string, orderVal: number) => {
@@ -93,17 +93,17 @@ function InlineClassEditor(p: any) {
           <h2 className={`text-sm lg:text-base font-semibold text-app flex-1 break-words truncate ${p.center ? 'text-center' : 'text-left'}`}>{classObj.name}</h2>
           {isOwner && (
             <>
-              <button onClick={() => setEditing(true)} className="w-7 h-7 lg:w-8 lg:h-8 flex items-center justify-center rounded-md hover:bg-white/5 flex-shrink-0" title="Edit group">
+              <button onClick={() => setEditing(true)} className="w-7 h-7 lg:w-8 lg:h-8 flex items-center justify-center rounded-md hover:bg-white/5 flex-shrink-0" title="Edit kelas">
                 <Edit3 className="w-3.5 h-3.5 lg:w-4 lg:h-4" />
               </button>
               <button
                 onClick={() => {
-                  if (confirm('Yakin ingin menghapus group ini? Semua data member di dalamnya akan hilang.')) {
+                  if (confirm('Yakin ingin menghapus kelas ini? Semua data member di dalamnya akan hilang.')) {
                     onDelete && onDelete(classObj.id)
                   }
                 }}
                 className="w-7 h-7 lg:w-8 lg:h-8 flex items-center justify-center rounded-md hover:bg-red-500/10 text-red-400 flex-shrink-0"
-                title="Hapus group"
+                title="Hapus kelas"
               >
                 <Trash2 className="w-3.5 h-3.5 lg:w-4 lg:h-4" />
               </button>
@@ -745,7 +745,7 @@ export default function YearbookClassesViewUI(props: any) {
           className={`flex flex-col items-center justify-center flex-1 h-full gap-1 active:scale-95 transition-transform ${sidebarMode === 'classes' ? 'text-lime-400' : 'text-gray-500 hover:text-white'}`}
         >
           <Users className="w-5 h-5" />
-          <span className="text-[10px] font-medium">Group</span>
+          <span className="text-[10px] font-medium">Kelas</span>
         </button>
         {canManage && (
           <button
@@ -764,7 +764,7 @@ export default function YearbookClassesViewUI(props: any) {
                 </span>
               )}
             </div>
-            <span className="text-[10px] font-medium">Approval</span>
+            <span className="text-[10px] font-medium">Akses</span>
           </button>
         )}
         {canManage && (
@@ -776,7 +776,7 @@ export default function YearbookClassesViewUI(props: any) {
             className={`flex flex-col items-center justify-center flex-1 h-full gap-1 active:scale-95 transition-transform ${sidebarMode === 'team' ? 'text-lime-400' : 'text-gray-500 hover:text-white'}`}
           >
             <Shield className="w-5 h-5" />
-            <span className="text-[10px] font-medium">Team</span>
+            <span className="text-[10px] font-medium">Tim</span>
           </button>
         )}
       </div>
@@ -864,10 +864,10 @@ export default function YearbookClassesViewUI(props: any) {
                 ? 'bg-lime-600/20 text-lime-400'
                 : 'text-gray-400 hover:text-white hover:bg-white/5'
                 }`}
-              title="Daftar Group"
+              title="Daftar Kelas"
             >
               <Users className="w-6 h-6" />
-              <span className="text-[10px]">Groups</span>
+              <span className="text-[10px]">Kelas</span>
             </button>
 
             {canManage && (
@@ -882,10 +882,10 @@ export default function YearbookClassesViewUI(props: any) {
                     ? 'bg-lime-600/20 text-lime-400'
                     : 'text-gray-400 hover:text-white hover:bg-white/5'
                     }`}
-                  title="Approval"
+                  title="Kelola Akses"
                 >
                   <ClipboardList className="w-6 h-6" />
-                  <span className="text-[10px]">Approval</span>
+                  <span className="text-[10px]">Akses</span>
                   {joinStats && joinStats.pending_count > 0 && (
                     <span className="absolute top-2 right-2 flex h-2 w-2 rounded-full bg-red-500"></span>
                   )}
@@ -900,10 +900,10 @@ export default function YearbookClassesViewUI(props: any) {
                     ? 'bg-lime-600/20 text-lime-400'
                     : 'text-gray-400 hover:text-white hover:bg-white/5'
                     }`}
-                  title="Team Management"
+                  title="Kelola Tim"
                 >
                   <Shield className="w-6 h-6" />
-                  <span className="text-[10px]">Team</span>
+                  <span className="text-[10px]">Tim</span>
                 </button>
               </>
             )}
@@ -1072,11 +1072,11 @@ export default function YearbookClassesViewUI(props: any) {
                   <div className="flex gap-2">
                     {!addingClass ? (
                       <button type="button" onClick={() => setAddingClass(true)} className="w-full px-3 py-2 rounded-lg border border-white/10 text-sm text-gray-400 hover:text-white hover:bg-white/5 active:bg-white/10 transition-colors touch-manipulation">
-                        <Plus className="w-4 h-4 inline mr-1" /> Group
+                        <Plus className="w-4 h-4 inline mr-1" /> Kelas
                       </button>
                     ) : (
                       <div className="flex flex-col gap-2 w-full">
-                        <input type="text" value={newClassName} onChange={(e) => setNewClassName(e.target.value)} placeholder="Nama group" className="px-2 py-1.5 rounded-lg bg-white/5 border border-white/10 text-sm text-app placeholder:text-gray-600" autoFocus />
+                        <input type="text" value={newClassName} onChange={(e) => setNewClassName(e.target.value)} placeholder="Nama kelas" className="px-2 py-1.5 rounded-lg bg-white/5 border border-white/10 text-sm text-app placeholder:text-gray-600" autoFocus />
                         <div className="flex gap-2">
                           <button type="button" onClick={handleAddClass} className="flex-1 px-2 py-1.5 rounded-lg bg-lime-600 text-white text-sm font-medium hover:bg-lime-500 transition-colors touch-manipulation">Tambah</button>
                           <button type="button" onClick={() => { setAddingClass(false); setNewClassName('') }} className="flex-1 px-2 py-1.5 rounded-lg border border-white/10 text-sm text-gray-400 hover:text-white hover:bg-white/5 transition-colors touch-manipulation">Batal</button>
@@ -1164,7 +1164,7 @@ export default function YearbookClassesViewUI(props: any) {
                     type="text"
                     value={newClassName}
                     onChange={(e) => setNewClassName(e.target.value)}
-                    placeholder="Nama group baru"
+                    placeholder="Nama kelas baru"
                     className="flex-1 px-3 py-2 rounded-xl bg-white/10 border border-white/20 text-app text-sm focus:outline-none focus:border-lime-500 transition-colors"
                     autoFocus
                   />
@@ -1205,7 +1205,7 @@ export default function YearbookClassesViewUI(props: any) {
                 <div className="fixed inset-0 z-[65] bg-black/80 backdrop-blur-sm lg:hidden animate-in fade-in duration-200" onClick={() => setMobileMenuOpen(false)} />
                 <div className="fixed inset-y-0 left-0 z-[70] w-3/4 max-w-xs bg-[#0a0a0b] border-r border-white/10 flex flex-col shadow-2xl lg:hidden animate-in slide-in-from-left duration-300">
                   <div className="p-4 border-b border-white/10 flex items-center justify-between">
-                    <h2 className="text-lg font-bold text-app">Daftar Group</h2>
+                    <h2 className="text-lg font-bold text-app">Daftar Kelas</h2>
                     <button onClick={() => setMobileMenuOpen(false)} className="p-2 -mr-2 text-gray-400 hover:text-white">
                       <X className="w-5 h-5" />
                     </button>
@@ -1251,7 +1251,7 @@ export default function YearbookClassesViewUI(props: any) {
                         className="w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-lime-600 text-white text-sm font-medium active:scale-95 transition-transform shadow-lg shadow-lime-900/20"
                       >
                         <Plus className="w-4 h-4" />
-                        Group Baru
+                        Kelas Baru
                       </button>
                     )}
                     <button
@@ -1300,7 +1300,7 @@ export default function YearbookClassesViewUI(props: any) {
                           type="button"
                           onClick={() => onPlayVideo && onPlayVideo(album.cover_video_url!)}
                           className="absolute bottom-3 right-3 w-10 h-10 rounded-full bg-black/70 hover:bg-black/90 flex items-center justify-center group/play transition-all hover:scale-110 backdrop-blur-sm border border-white/10"
-                          title="Play Video Sampul"
+                          title="Putar Video Sampul"
                         >
                           <Play className="w-4 h-4 text-white ml-0.5" fill="currentColor" />
                         </button>
@@ -1482,7 +1482,7 @@ export default function YearbookClassesViewUI(props: any) {
                 <div className="max-w-4xl mx-auto px-2 py-3 sm:p-4">
                   {/* Header dengan Stats */}
                   <div className="mb-4 sm:mb-6">
-                    <h2 className="text-lg sm:text-2xl font-bold text-app mb-2 text-center">Approval Pendaftaran</h2>
+                    <h2 className="text-lg sm:text-2xl font-bold text-app mb-2 text-center">Persetujuan</h2>
                     {joinStats && (
                       <div className="grid grid-cols-3 gap-2 mt-3 sm:flex sm:flex-wrap sm:items-center sm:justify-center sm:gap-3 sm:mt-4">
                         <div className="px-2 py-1.5 sm:px-4 sm:py-2 rounded-full bg-lime-600/20 border border-lime-500/30 flex items-center justify-center gap-1 sm:gap-2">
@@ -1504,7 +1504,7 @@ export default function YearbookClassesViewUI(props: any) {
                         </div>
                         <div className="px-2 py-1.5 sm:px-4 sm:py-2 rounded-full bg-amber-600/20 border border-amber-500/30 text-center">
                           <span className="text-amber-400 font-medium text-xs sm:text-base">
-                            {joinStats.pending_count} Pending
+                            {joinStats.pending_count} Menunggu
                           </span>
                         </div>
                         {joinStats.available_slots !== 999999 ? (
@@ -1659,10 +1659,10 @@ export default function YearbookClassesViewUI(props: any) {
                     <div className="text-center py-8 sm:py-12 border-2 border-dashed border-white/10 rounded-xl">
                       <ClipboardList className="w-10 h-10 sm:w-16 sm:h-16 mx-auto mb-3 sm:mb-4 text-gray-600" />
                       <p className="text-sm sm:text-base text-app font-medium mb-1">
-                        {approvalTab === 'pending' ? 'Tidak ada request pending' : 'Belum ada yang di-approve'}
+                        {approvalTab === 'pending' ? 'Tidak ada permintaan menunggu' : 'Belum ada yang disetujui'}
                       </p>
                       <p className="text-sm text-muted">
-                        {approvalTab === 'pending' ? 'Semua permintaan sudah diproses' : 'Approve request untuk menampilkan di sini'}
+                        {approvalTab === 'pending' ? 'Semua permintaan sudah diproses' : 'Setujui permintaan untuk menampilkan di sini'}
                       </p>
                     </div>
                   ) : (
@@ -1764,7 +1764,7 @@ export default function YearbookClassesViewUI(props: any) {
                                           <>
                                             {isAssigning ? (
                                               <div className="flex flex-col gap-2 p-2 bg-black/20 rounded-lg border border-white/10">
-                                                <label className="text-xs text-gray-300 font-medium">Pilih Group/Kelas:</label>
+                                                <label className="text-xs text-gray-300 font-medium">Pilih Kelas:</label>
                                                 <select
                                                   value={selectedClassForAssign}
                                                   onChange={(e) => setSelectedClassForAssign(e.target.value)}
@@ -1844,10 +1844,10 @@ export default function YearbookClassesViewUI(props: any) {
                             </p>
                             {member.name && <p className="text-xs text-muted mt-1">{member.email}</p>}
                             <div className="flex gap-2 mt-2 flex-wrap">
-                              {member.role === 'owner' && <span className="text-xs px-2 py-1 rounded bg-purple-500/20 text-purple-400 border border-purple-500/30">Owner</span>}
+                              {member.role === 'owner' && <span className="text-xs px-2 py-1 rounded bg-purple-500/20 text-purple-400 border border-purple-500/30">Pemilik</span>}
                               {member.role === 'admin' && <span className="text-xs px-2 py-1 rounded bg-lime-500/20 text-lime-400 border border-lime-500/30">Admin</span>}
-                              {member.role === 'member' && <span className="text-xs px-2 py-1 rounded bg-blue-500/20 text-blue-400 border border-blue-500/30">Member</span>}
-                              {member.role === 'student' && <span className="text-xs px-2 py-1 rounded bg-gray-500/20 text-gray-400 border border-gray-500/30">Member</span>}
+                              {member.role === 'member' && <span className="text-xs px-2 py-1 rounded bg-blue-500/20 text-blue-400 border border-blue-500/30">Anggota</span>}
+                              {member.role === 'student' && <span className="text-xs px-2 py-1 rounded bg-gray-500/20 text-gray-400 border border-gray-500/30">Anggota</span>}
                               {member.role === 'no-account' && <span className="text-xs px-2 py-1 rounded bg-orange-500/20 text-orange-400 border border-orange-500/30">Belum Login</span>}
                             </div>
                           </div>
@@ -1975,7 +1975,7 @@ export default function YearbookClassesViewUI(props: any) {
                   )}
                   {canManage && addingClass && (
                     <div className="mt-4 flex flex-col gap-2 max-w-xs w-full">
-                      <input type="text" value={newClassName} onChange={(e) => setNewClassName(e.target.value)} placeholder="Nama group" className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-app" autoFocus />
+                      <input type="text" value={newClassName} onChange={(e) => setNewClassName(e.target.value)} placeholder="Nama kelas" className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-app" autoFocus />
                       <div className="flex gap-2">
                         <button type="button" onClick={handleAddClass} className="px-4 py-2 rounded-lg bg-lime-600 text-white">Tambah</button>
                         <button type="button" onClick={() => { setAddingClass(false); setNewClassName('') }} className="px-4 py-2 rounded-lg border border-white/10 text-app">Batal</button>
@@ -2042,7 +2042,7 @@ export default function YearbookClassesViewUI(props: any) {
                                         }
                                       }}
                                       className="p-1.5 text-xs rounded-lg text-red-400 hover:bg-red-600/20 transition-colors"
-                                      title="Hapus member"
+                                      title="Hapus anggota"
                                     >
                                       <Trash2 className="w-4 h-4" />
                                     </button>
@@ -2098,7 +2098,7 @@ export default function YearbookClassesViewUI(props: any) {
                                               }
                                             }}
                                             className="absolute bottom-2 right-2 w-10 h-10 rounded-full bg-black/70 hover:bg-black/90 flex items-center justify-center group transition-all hover:scale-110"
-                                            title="Play Video"
+                                            title="Putar Video"
                                           >
                                             <Play className="w-5 h-5 text-white ml-0.5" fill="currentColor" />
                                           </button>
@@ -2176,7 +2176,7 @@ export default function YearbookClassesViewUI(props: any) {
                                             }}
                                             className="flex-1 text-xs font-medium rounded-lg bg-lime-900/40 text-lime-400 hover:bg-lime-900/60 border border-lime-500/20 transition-colors flex items-center justify-center gap-1.5"
                                           >
-                                            <Edit3 className="w-3.5 h-3.5" /> Edit
+                                            <Edit3 className="w-3.5 h-3.5" /> Ubah
                                           </button>
                                         )}
                                         {canManage && (
@@ -2188,7 +2188,7 @@ export default function YearbookClassesViewUI(props: any) {
                                               }
                                             }}
                                             className="w-8 text-xs rounded-lg bg-red-900/40 text-red-400 hover:bg-red-900/60 border border-red-500/20 transition-colors flex items-center justify-center"
-                                            title="Hapus member"
+                                            title="Hapus anggota"
                                           >
                                             <Trash2 className="w-3.5 h-3.5" />
                                           </button>
