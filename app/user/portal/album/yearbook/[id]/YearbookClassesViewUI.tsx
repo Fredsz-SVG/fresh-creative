@@ -819,7 +819,7 @@ export default function YearbookClassesViewUI(props: any) {
 
         <div className="flex flex-col lg:flex-row gap-0 flex-1 lg:pl-16 lg:px-0 lg:py-0">
           {/* Icon Sidebar untuk desktop - Fixed di kiri */}
-          <div className="hidden lg:fixed lg:left-0 lg:top-12 lg:w-16 lg:h-[calc(100vh-48px)] lg:flex flex-col lg:z-40 lg:bg-black/40 lg:backdrop-blur-sm lg:border-r lg:border-white/10">
+          <div className="hidden lg:fixed lg:left-0 lg:top-[4.75rem] lg:w-16 lg:h-[calc(100vh-4.75rem)] lg:flex flex-col lg:z-40 lg:bg-black/40 lg:backdrop-blur-sm lg:border-r lg:border-white/10">
             <button
               type="button"
               onClick={() => {
@@ -911,7 +911,7 @@ export default function YearbookClassesViewUI(props: any) {
 
           {/* Panel Group List - Fixed di tengah (hanya tampil saat mode classes) */}
           {sidebarMode === 'classes' && !isCoverView && (
-            <div className="hidden lg:fixed lg:left-16 lg:top-12 lg:w-64 lg:h-[calc(100vh-48px)] lg:flex flex-col lg:z-35 lg:bg-black/30 lg:backdrop-blur-sm lg:border-r lg:border-white/10">
+            <div className="hidden lg:fixed lg:left-16 lg:top-[4.75rem] lg:w-64 lg:h-[calc(100vh-4.75rem)] lg:flex flex-col lg:z-35 lg:bg-black/30 lg:backdrop-blur-sm lg:border-r lg:border-white/10">
               {/* Header Fixed - Group Name + Edit */}
               {currentClass && (
                 <div className="flex-shrink-0 px-3 py-3 border-b border-white/10">
@@ -1097,7 +1097,7 @@ export default function YearbookClassesViewUI(props: any) {
                 className="hidden lg:fixed lg:inset-0 lg:z-30"
                 onClick={() => setSelectedRequestId(null)}
               />
-              <div className="hidden lg:flex lg:fixed lg:left-16 lg:top-12 lg:w-64 lg:h-[calc(100vh-48px)] lg:bg-black/40 lg:backdrop-blur-sm lg:border-l lg:border-white/10 lg:p-4 lg:z-35 lg:flex-col lg:items-stretch lg:justify-start lg:overflow-y-auto">
+              <div className="hidden lg:flex lg:fixed lg:left-16 lg:top-[4.75rem] lg:w-64 lg:h-[calc(100vh-4.75rem)] lg:bg-black/40 lg:backdrop-blur-sm lg:border-l lg:border-white/10 lg:p-4 lg:z-35 lg:flex-col lg:items-stretch lg:justify-start lg:overflow-y-auto">
                 <button
                   type="button"
                   onClick={() => setSelectedRequestId(null)}
