@@ -38,6 +38,7 @@ export type YearbookClassesViewProps = {
   requestForm: { student_name: string; email: string }
   setRequestForm: React.Dispatch<React.SetStateAction<{ student_name: string; email: string }>>
   handleRequestAccess: (classId: string) => void
+  handleJoinAsOwner: (classId: string) => void
   handleApproveReject: (classId: string, requestId: string, status: 'approved' | 'rejected') => void
   editingProfileClassId: string | null
   setEditingProfileClassId: (v: string | null) => void
@@ -93,6 +94,9 @@ export type YearbookClassesViewProps = {
   handleUploadCoverVideo?: (file: File) => Promise<void>
   handleDeleteCoverVideo?: () => Promise<void>
   uploadingCoverVideo?: boolean
+  currentUserId?: string | null
+  handleUpdateRole?: (userId: string, role: 'admin' | 'member') => Promise<void>
+  handleRemoveMember?: (userId: string) => Promise<void>
 }
 
 export default function YearbookClassesView(props: YearbookClassesViewProps) {

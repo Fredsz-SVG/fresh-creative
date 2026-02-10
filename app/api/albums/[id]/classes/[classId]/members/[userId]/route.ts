@@ -64,6 +64,13 @@ export async function DELETE(
 
     if (deleteErr) return NextResponse.json({ error: deleteErr.message }, { status: 500 })
 
+    // Also delete from album_join_requests so user can re-register
+    await client
+      .from('album_join_requests')
+      .delete()
+      .eq('album_id', albumId)
+      .eq('user_id', userId)
+
     return NextResponse.json({ success: true })
   } catch (err) {
     console.error('Error deleting member:', err)

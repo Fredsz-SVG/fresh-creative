@@ -218,15 +218,29 @@ export async function DELETE(
     if (targetUserId === user.id) return NextResponse.json({ error: 'Cannot remove yourself' }, { status: 400 })
 
     // Remove from album_members
-    const { error } = await client
+    const { error: memberError } = await client
         .from('album_members')
         .delete()
         .eq('album_id', albumId)
         .eq('user_id', targetUserId)
 
-    if (error) {
-        return NextResponse.json({ error: error.message }, { status: 500 })
+    if (memberError) {
+        return NextResponse.json({ error: memberError.message }, { status: 500 })
     }
+
+    // Also remove from album_class_access (if they're a student)
+    await client
+        .from('album_class_access')
+        .delete()
+        .eq('album_id', albumId)
+        .eq('user_id', targetUserId)
+
+    // Delete from album_join_requests so the user can re-register
+    await client
+        .from('album_join_requests')
+        .delete()
+        .eq('album_id', albumId)
+        .eq('user_id', targetUserId)
 
     return NextResponse.json({ success: true })
 }

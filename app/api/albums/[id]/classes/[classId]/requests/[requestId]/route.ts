@@ -42,24 +42,24 @@ export async function PATCH(
   const status = body?.status === 'approved' ? 'approved' : body?.status === 'rejected' ? 'rejected' : null
   if (!status) return NextResponse.json({ error: 'status must be approved or rejected' }, { status: 400 })
 
-  // Fetch dari album_class_requests
+  // Fetch dari album_join_requests
   const { data: row, error: fetchErr } = await client
-    .from('album_class_requests')
-    .select('id, class_id, user_id, student_name, email')
+    .from('album_join_requests')
+    .select('id, assigned_class_id, user_id, student_name, email, album_id')
     .eq('id', requestId)
-    .eq('class_id', classId)
+    .eq('assigned_class_id', classId)
     .single()
 
   if (fetchErr || !row) return NextResponse.json({ error: 'Request not found' }, { status: 404 })
 
   if (status === 'approved') {
     // Pindahkan ke album_class_access sebagai approved
-    const rowData = row as { id: string; class_id: string; user_id: string; student_name: string; email?: string | null }
+    const rowData = row as { id: string; assigned_class_id: string; user_id: string; student_name: string; email?: string | null; album_id: string }
     const { data: created, error: insertErr } = await client
       .from('album_class_access')
       .insert({
-        album_id: albumId,
-        class_id: rowData.class_id,
+        album_id: rowData.album_id,
+        class_id: rowData.assigned_class_id,
         user_id: rowData.user_id,
         student_name: rowData.student_name,
         email: rowData.email || null,
@@ -70,14 +70,14 @@ export async function PATCH(
 
     if (insertErr) return NextResponse.json({ error: insertErr.message }, { status: 500 })
 
-    // Hapus dari album_class_requests
-    await client.from('album_class_requests').delete().eq('id', requestId)
+    // Hapus dari album_join_requests
+    await client.from('album_join_requests').delete().eq('id', requestId)
 
     return NextResponse.json(created)
   } else {
-    // Reject: update status di album_class_requests
+    // Reject: update status di album_join_requests
     const { data: updated, error } = await client
-      .from('album_class_requests')
+      .from('album_join_requests')
       .update({ status: 'rejected' })
       .eq('id', requestId)
       .select()

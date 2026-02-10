@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase-server'
+import { createAdminClient } from '@/lib/supabase-admin'
 
 // PATCH /api/albums/[id]/join-requests/[requestId] - Approve or reject
 export async function PATCH(
@@ -71,29 +72,28 @@ export async function PATCH(
         )
       }
 
-      // Update request to approved
-      const { data: updated, error: updateError } = await supabase
-        .from('album_join_requests')
-        .update({
-          status: 'approved',
-          assigned_class_id,
-          approved_at: new Date().toISOString(),
-          approved_by: user.id
-        })
-        .eq('id', requestId)
-        .select()
-
-      if (updateError) {
-        console.error('Update error:', updateError)
-        return NextResponse.json(
-          { error: updateError.message || 'Gagal menyetujui request' },
-          { status: 500 }
-        )
-      }
-
       // Create album_class_access entry if user_id exists
       if (joinRequest.user_id) {
-        const { error: accessError } = await supabase
+        const adminClient = createAdminClient()
+        const client = adminClient || supabase
+
+        // Check if user already has access to this class
+        const { data: existingAccess } = await client
+          .from('album_class_access')
+          .select('id')
+          .eq('album_id', albumId)
+          .eq('class_id', assigned_class_id)
+          .eq('user_id', joinRequest.user_id)
+          .maybeSingle()
+
+        if (existingAccess) {
+          return NextResponse.json(
+            { error: 'User sudah memiliki akses ke kelas ini' },
+            { status: 400 }
+          )
+        }
+
+        const { error: accessError } = await client
           .from('album_class_access')
           .insert({
             album_id: albumId,
@@ -106,15 +106,38 @@ export async function PATCH(
 
         if (accessError) {
           console.error('Error creating access:', accessError)
-          // Don't fail the whole operation
+          return NextResponse.json(
+            { error: 'Gagal menambahkan akses ke kelas' },
+            { status: 500 }
+          )
         }
-      }
 
-      return NextResponse.json({ 
-        success: true, 
-        message: 'Request disetujui',
-        data: updated?.[0]
-      })
+        // Update join_requests status to approved (keep for history)
+        const { error: updateError } = await client
+          .from('album_join_requests')
+          .update({
+            status: 'approved',
+            assigned_class_id: assigned_class_id,
+            approved_at: new Date().toISOString(),
+            approved_by: user.id
+          })
+          .eq('id', requestId)
+
+        if (updateError) {
+          console.error('Error updating join request:', updateError)
+          // Don't fail the whole operation, access already granted
+        }
+
+        return NextResponse.json({ 
+          success: true, 
+          message: 'Request disetujui dan user ditambahkan ke kelas'
+        })
+      } else {
+        return NextResponse.json(
+          { error: 'User ID tidak ditemukan pada request' },
+          { status: 400 }
+        )
+      }
     } else {
       // Reject
       const { data: updated, error: updateError } = await supabase

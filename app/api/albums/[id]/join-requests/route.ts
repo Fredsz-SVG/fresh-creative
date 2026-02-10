@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase-server'
+import { createAdminClient } from '@/lib/supabase-admin'
 
 // GET /api/albums/[id]/join-requests - List all join requests for album
 export async function GET(
@@ -45,15 +46,18 @@ export async function GET(
   }
 }
 
-// POST /api/albums/[id]/join-requests - Submit a join request (no auth required)
+// POST /api/albums/[id]/join-requests - Submit a join request (requires auth)
 export async function POST(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id: albumId } = await context.params
+    console.log('[JOIN-REQUEST] Received POST for album:', albumId)
+    
     const body = await request.json()
     const { student_name, class_name, email, phone } = body
+    console.log('[JOIN-REQUEST] Form data:', { student_name, email, phone, class_name })
 
     if (!student_name || !email) {
       return NextResponse.json(
@@ -63,28 +67,56 @@ export async function POST(
     }
 
     const supabase = await createClient()
+    
+    // Check if user is authenticated
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Unauthorized - silakan login terlebih dahulu' },
+        { status: 401 }
+      )
+    }
+    
+    console.log('[JOIN-REQUEST] User authenticated:', user.id)
+
+    // Use admin client to check album (bypass RLS)
+    const adminClient = createAdminClient()
+    if (!adminClient) {
+      return NextResponse.json(
+        { error: 'Database connection failed' },
+        { status: 500 }
+      )
+    }
 
     // Check if album exists and get capacity
-    const { data: album, error: albumError } = await supabase
+    const { data: album, error: albumError } = await adminClient
       .from('albums')
       .select('id, students_count')
       .eq('id', albumId)
       .maybeSingle()
 
     if (albumError || !album) {
+      console.error('[JOIN-REQUEST] Album not found:', albumError)
       return NextResponse.json(
         { error: 'Album tidak ditemukan' },
         { status: 404 }
       )
     }
 
-    // Check capacity
-    const { data: stats } = await supabase.rpc('get_album_join_stats', {
+    console.log('[JOIN-REQUEST] Album found:', album.id, '- checking capacity...')
+
+    // Check capacity using admin client
+    const { data: stats, error: statsError } = await adminClient.rpc('get_album_join_stats', {
       _album_id: albumId
     })
 
+    if (statsError) {
+      console.error('[JOIN-REQUEST] Stats error:', statsError)
+    }
+
     if (stats && stats.length > 0) {
       const { available_slots } = stats[0]
+      console.log('[JOIN-REQUEST] Available slots:', available_slots)
       if (available_slots <= 0) {
         return NextResponse.json(
           { error: 'Maaf, album sudah penuh. Tidak bisa menerima pendaftaran lagi.' },
@@ -93,38 +125,65 @@ export async function POST(
       }
     }
 
-    // Check if email already registered
-    const { data: existing } = await supabase
+    // Check if user already has a request for this album (use admin client for read)
+    const { data: existing } = await adminClient
       .from('album_join_requests')
-      .select('id, status')
+      .select('id, status, email')
       .eq('album_id', albumId)
-      .eq('email', email)
+      .eq('user_id', user.id)
       .maybeSingle()
 
     if (existing) {
+      console.log('[JOIN-REQUEST] User already has request with status:', existing.status)
       if (existing.status === 'pending') {
         return NextResponse.json(
-          { error: 'Email ini sudah terdaftar dan menunggu persetujuan' },
+          { error: 'Anda sudah mendaftar dan menunggu persetujuan' },
           { status: 400 }
         )
       } else if (existing.status === 'approved') {
         return NextResponse.json(
-          { error: 'Email ini sudah terdaftar dan disetujui' },
+          { error: 'Anda sudah terdaftar dan disetujui' },
           { status: 400 }
         )
+      } else if (existing.status === 'rejected') {
+        // If rejected, update the existing record to pending (re-register)
+        console.log('[JOIN-REQUEST] Re-registering rejected user, updating existing record...')
+        const { data: updated_data, error: updateError } = await adminClient
+          .from('album_join_requests')
+          .update({
+            student_name,
+            class_name: class_name || null,
+            email,
+            phone: phone || null,
+            status: 'pending',
+            requested_at: new Date().toISOString()
+          })
+          .eq('id', existing.id)
+          .select()
+
+        if (updateError) {
+          console.error('[JOIN-REQUEST] Update error:', updateError)
+          return NextResponse.json(
+            { error: updateError.message || 'Gagal mendaftar ulang' },
+            { status: 500 }
+          )
+        }
+
+        console.log('[JOIN-REQUEST] Successfully updated rejected request to pending')
+        return NextResponse.json({ 
+          success: true, 
+          message: 'Pendaftaran berhasil! Tunggu persetujuan dari admin.',
+          data: updated_data?.[0]
+        })
       }
-      // If rejected, allow re-register
     }
 
-    // Get current user if authenticated
-    const { data: { user } } = await supabase.auth.getUser()
-
-    // Insert request
+    // Insert new request with authenticated user ID
     const { data: request_data, error: insertError } = await supabase
       .from('album_join_requests')
       .insert({
         album_id: albumId,
-        user_id: user?.id || null,
+        user_id: user.id,
         student_name,
         class_name: class_name || null,
         email,
@@ -134,20 +193,21 @@ export async function POST(
       .select()
 
     if (insertError) {
-      console.error('Insert error:', insertError)
+      console.error('[JOIN-REQUEST] Insert error:', insertError)
       return NextResponse.json(
         { error: insertError.message || 'Gagal mendaftar' },
         { status: 500 }
       )
     }
 
+    console.log('[JOIN-REQUEST] Successfully inserted request')
     return NextResponse.json({ 
       success: true, 
       message: 'Pendaftaran berhasil! Tunggu persetujuan dari admin.',
       data: request_data?.[0]
     })
   } catch (error: any) {
-    console.error('Error submitting join request:', error)
+    console.error('[JOIN-REQUEST] Error submitting join request:', error)
     return NextResponse.json(
       { error: error.message || 'Terjadi kesalahan' },
       { status: 500 }

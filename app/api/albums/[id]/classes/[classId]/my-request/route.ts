@@ -20,9 +20,9 @@ export async function GET(
   const client = admin ?? supabase
 
   const { data: request_data, error } = await client
-    .from('album_class_requests')
+    .from('album_join_requests')
     .select('id, student_name, email, status, requested_at')
-    .eq('class_id', classId)
+    .eq('assigned_class_id', classId)
     .eq('user_id', user.id)
     .maybeSingle()
 

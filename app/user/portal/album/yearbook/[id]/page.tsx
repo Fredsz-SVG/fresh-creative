@@ -115,6 +115,16 @@ export default function YearbookAlbumPage({ backHref = '/user/portal/albums', ba
   const [videoPopupUrl, setVideoPopupUrl] = useState<string | null>(null)
   const [videoPopupError, setVideoPopupError] = useState<string | null>(null)
   const [uploadingCoverVideo, setUploadingCoverVideo] = useState(false)
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+
+  // Fetch current user
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) setCurrentUserId(user.id)
+    }
+    fetchCurrentUser()
+  }, [])
 
   const fetchAlbum = useCallback(async () => {
     if (!id) return
@@ -435,6 +445,20 @@ export default function YearbookAlbumPage({ backHref = '/user/portal/albums', ba
     if (member?.student_name) fetchStudentPhotosForCard(currentClassId, member.student_name)
     else setStudentNameForPhotosInCard(null)
   }, [personalCardExpanded, currentClassId, personalIndex, id, fetchStudentPhotosForCard])
+
+  // Auto-fetch members untuk current class ketika pertama load atau switch class
+  useEffect(() => {
+    if (!currentClassId || !id) return
+    const access = myAccessByClass[currentClassId]
+    const canSeeMembers = isOwner || isAlbumAdmin || access?.status === 'approved'
+    // Hanya fetch jika belum ada data members atau jika ada access tapi members belum di-fetch
+    const members = membersByClass[currentClassId]
+    if (canSeeMembers && !members) {
+      fetchMembersForClass(currentClassId)
+    }
+  }, [currentClassId, id, isOwner, isAlbumAdmin, fetchMembersForClass, myAccessByClass, membersByClass])
+
+  // Legacy: Fetch members untuk personal view mode (backup)
   useEffect(() => {
     if (classViewMode !== 'personal' || !currentClassId || !id) return
     const members = membersByClass[currentClassId] ?? []
@@ -676,22 +700,84 @@ export default function YearbookAlbumPage({ backHref = '/user/portal/albums', ba
       alert(data?.error ?? 'Gagal')
       return
     }
+    // Remove request dari pending list
     setRequestsByClass((prev) => ({
       ...prev,
       [classId]: (prev[classId] ?? []).filter((r) => r.id !== requestId),
     }))
+    // Jika approved, refresh members list untuk kelas ini
     if (status === 'approved') {
       fetchStudentsForClasses(album?.classes ?? [], isOwner || isAlbumAdmin)
-      setMembersByClass((prev) => ({ ...prev, [classId]: [] }))
+      // Fetch ulang members yang sudah approved
+      await fetchMembersForClass(classId)
+      toast.success('Permintaan disetujui! Member berhasil ditambahkan.')
+    } else {
+      toast.success('Permintaan ditolak.')
     }
   }
 
-  const handleSaveProfile = async (classId: string, deleteProfile: boolean = false, targetUserId?: string) => {
+  const handleJoinAsOwner = async (classId: string) => {
     if (!id) return
+    
+    const res = await fetch(`/api/albums/${id}/classes/${classId}/join-as-owner`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        student_name: '', // Bisa kosong, nanti diisi via edit
+        email: '' 
+      }),
+    })
+    
+    const data = await res.json().catch(() => ({}))
+    
+    if (!res.ok) {
+      alert(data?.error ?? 'Gagal bergabung ke kelas')
+      return
+    }
+    
+    // Update state: tambahkan owner ke myAccessByClass dengan status approved
+    setMyAccessByClass((prev) => ({
+      ...prev,
+      [classId]: { 
+        id: data.access.id, 
+        student_name: '', 
+        email: null, 
+        status: 'approved' 
+      },
+    }))
+    
+    // Auto-open edit form supaya owner bisa isi nama
+    setEditingProfileClassId(classId)
+    setEditProfileName('')
+    setEditProfileEmail('')
+    setEditProfileTtl('')
+    setEditProfileInstagram('')
+    setEditProfilePesan('')
+    setEditProfileVideoUrl('')
+    
+    // Refetch members untuk update card list
+    fetchMembersForClass(classId)
+    
+    alert('Berhasil! Silakan isi profil Anda')
+  }
+
+  const handleSaveProfile = async (classId: string, deleteProfile: boolean = false, targetUserId?: string) => {
+    if (!id) {
+      toast.error('Album ID tidak ditemukan')
+      return
+    }
+    if (!classId) {
+      toast.error('Class ID tidak ditemukan')
+      return
+    }
+    
     const isEditingOther = !!targetUserId
     const url = isEditingOther
       ? `/api/albums/${id}/classes/${classId}/members/${targetUserId}`
       : `/api/albums/${id}/classes/${classId}/my-access`
+
+    console.log('[handleSaveProfile] URL:', url, 'deleteProfile:', deleteProfile)
 
     if (deleteProfile) {
       setSavingProfile(true)
@@ -709,13 +795,20 @@ export default function YearbookAlbumPage({ backHref = '/user/portal/albums', ba
         setEditingProfileClassId(null)
         setEditingMemberUserId(null)
         await fetchMembersForClass(classId)
+      } catch (error) {
+        console.error('[handleSaveProfile] DELETE error:', error)
+        toast.error('Gagal menghapus profil: ' + (error instanceof Error ? error.message : 'Network error'))
       } finally {
         setSavingProfile(false)
       }
       return
     }
 
-    if (!editProfileName.trim()) return
+    if (!editProfileName.trim()) {
+      toast.error('Nama siswa wajib diisi')
+      return
+    }
+    
     setSavingProfile(true)
     try {
       const res = await fetch(url, {
@@ -740,13 +833,24 @@ export default function YearbookAlbumPage({ backHref = '/user/portal/albums', ba
       if (!isEditingOther) {
         setMyAccessByClass((prev) => ({
           ...prev,
-          [classId]: prev[classId] ? { ...prev[classId]!, student_name: d.student_name, email: d.email ?? null, date_of_birth: d.date_of_birth ?? null, instagram: d.instagram ?? null, message: d.message ?? null } : null,
+          [classId]: prev[classId] ? { 
+            ...prev[classId]!, 
+            student_name: d.student_name, 
+            email: d.email ?? null, 
+            date_of_birth: d.date_of_birth ?? null, 
+            instagram: d.instagram ?? null, 
+            message: d.message ?? null,
+            video_url: d.video_url ?? null
+          } : null,
         }))
       }
       toast.success('Profil berhasil disimpan')
       if (album?.classes) await fetchMembersForAllClasses(album.classes)
       setEditingProfileClassId(null)
       setEditingMemberUserId(null)
+    } catch (error) {
+      console.error('[handleSaveProfile] PATCH error:', error)
+      toast.error('Gagal menyimpan profil: ' + (error instanceof Error ? error.message : 'Network error'))
     } finally {
       setSavingProfile(false)
     }
@@ -761,7 +865,12 @@ export default function YearbookAlbumPage({ backHref = '/user/portal/albums', ba
     setEditProfileInstagram(member.instagram || '')
     setEditProfilePesan(member.message || '')
     setEditProfileVideoUrl(member.video_url || '')
-  }, [])
+    
+    // Load photos for the member being edited
+    if (member.student_name) {
+      fetchStudentPhotosForCard(classId, member.student_name)
+    }
+  }, [fetchStudentPhotosForCard])
 
   const onStartEditMyProfile = useCallback((classId: string) => {
     setEditingMemberUserId(null)
@@ -775,6 +884,52 @@ export default function YearbookAlbumPage({ backHref = '/user/portal/albums', ba
       setEditProfileVideoUrl(access.video_url || '')
     }
   }, [myAccessByClass])
+
+  const handleUpdateRole = useCallback(async (userId: string, role: 'admin' | 'member') => {
+    if (!id) return
+    try {
+      const res = await fetch(`/api/albums/${id}/members?user_id=${userId}`, {
+        method: 'PATCH',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        toast.error(data?.error ?? 'Gagal mengubah role')
+        return
+      }
+      toast.success(`Role berhasil diubah menjadi ${role === 'admin' ? 'Admin' : 'Member'}`)
+      // Refresh album to get updated member list
+      await fetchAlbum()
+    } catch (error) {
+      console.error('Error updating role:', error)
+      toast.error('Gagal mengubah role')
+    }
+  }, [id, fetchAlbum])
+
+  const handleRemoveMember = useCallback(async (userId: string) => {
+    if (!id) return
+    if (!confirm('Yakin ingin menghapus member ini dari album?')) return
+    
+    try {
+      const res = await fetch(`/api/albums/${id}/members?user_id=${userId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        toast.error(data?.error ?? 'Gagal menghapus member')
+        return
+      }
+      toast.success('Member berhasil dihapus dari album')
+      // Refresh album to get updated member list
+      await fetchAlbum()
+    } catch (error) {
+      console.error('Error removing member:', error)
+      toast.error('Gagal menghapus member')
+    }
+  }, [id, fetchAlbum])
 
   const handleUploadPhoto = async (classId: string, studentName: string, className: string, file: File) => {
     if (!id) return
@@ -974,12 +1129,17 @@ export default function YearbookAlbumPage({ backHref = '/user/portal/albums', ba
   }
 
   if (view === 'cover' || view === 'classes') {
+    const isCoverView = view === 'cover'
+    const showBackLink = isCoverView || sidebarMode === 'classes'
+    
     return (
       <div className={mobileFirstWrapper}>
-        {/* Sticky Header - Always visible */}
-        <div className="hidden lg:block sticky top-0 z-50 bg-[#0a0a0b] border-b border-white/10 px-4 py-2">
-          <BackLink href={backHref} label={backLabel} />
-        </div>
+        {/* Sticky Header - Only show for cover or classes mode */}
+        {showBackLink && (
+          <div className="hidden lg:block sticky top-0 z-50 bg-[#0a0a0b] border-b border-white/10 px-4 py-2">
+            <BackLink href={backHref} label={backLabel} />
+          </div>
+        )}
 
         {/* Main Content */}
         <div className={`${contentWrapper} h-full flex flex-col`}>
@@ -1011,6 +1171,7 @@ export default function YearbookAlbumPage({ backHref = '/user/portal/albums', ba
             requestForm={requestForm}
             setRequestForm={setRequestForm}
             handleRequestAccess={handleRequestAccess}
+            handleJoinAsOwner={handleJoinAsOwner}
             handleApproveReject={handleApproveReject}
             editingProfileClassId={editingProfileClassId}
             setEditingProfileClassId={setEditingProfileClassId}
@@ -1070,6 +1231,9 @@ export default function YearbookAlbumPage({ backHref = '/user/portal/albums', ba
             handleUploadCoverVideo={handleUploadCoverVideo}
             handleDeleteCoverVideo={handleDeleteCoverVideo}
             uploadingCoverVideo={uploadingCoverVideo}
+            currentUserId={currentUserId}
+            handleUpdateRole={handleUpdateRole}
+            handleRemoveMember={handleRemoveMember}
           />
         </div>
         {videoPopupUrl && id && (

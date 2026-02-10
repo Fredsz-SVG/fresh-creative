@@ -98,8 +98,22 @@ export async function POST(
   const role = await getRole(supabase, user)
   const isOwner = (album as { user_id: string }).user_id === user.id || role === 'admin'
   if (!isOwner) {
+    // Check if user is album member (admin/helper)
     const { data: member } = await client.from('album_members').select('album_id').eq('album_id', albumId).eq('user_id', user.id).maybeSingle()
-    if (!member) return NextResponse.json({ error: 'No access to album' }, { status: 403 })
+    if (!member) {
+      // Check if user has approved class access (student who was approved)
+      const { data: classAccess } = await client
+        .from('album_class_access')
+        .select('id')
+        .eq('album_id', albumId)
+        .eq('user_id', user.id)
+        .eq('status', 'approved')
+        .maybeSingle()
+      
+      if (!classAccess) {
+        return NextResponse.json({ error: 'No access to album' }, { status: 403 })
+      }
+    }
   }
 
   const { data: cls } = await client.from('album_classes').select('id, album_id').eq('id', classId).eq('album_id', albumId).single()
@@ -213,19 +227,59 @@ export async function DELETE(
   const role = await getRole(supabase, user)
   const isOwner = (album as { user_id: string }).user_id === user.id || role === 'admin'
 
+  console.log('[DELETE PHOTO] Ownership check:', {
+    currentUserId: user.id,
+    albumUserId: (album as { user_id: string }).user_id,
+    role,
+    isOwner,
+    albumId,
+    classId,
+    studentName,
+    photoIndex: index
+  })
+
   if (!isOwner) {
-    // Member can only delete their own photos
-    const { data: access } = await client
-      .from('album_class_access')
-      .select('id, user_id')
-      .eq('class_id', classId)
-      .eq('student_name', studentName) // Must match the student being modified
-      .eq('user_id', user.id)         // Must match current user
-      .eq('status', 'approved')
+    // Check if user is album member (admin/helper) - they can delete any photos
+    const { data: member } = await client
+      .from('album_members')
+      .select('album_id')
+      .eq('album_id', albumId)
+      .eq('user_id', user.id)
       .maybeSingle()
 
-    if (!access) {
-      return NextResponse.json({ error: 'Anda hanya dapat menghapus foto Anda sendiri' }, { status: 403 })
+    console.log('[DELETE PHOTO] Member check:', { hasMember: !!member })
+
+    if (!member) {
+      // Not album member, so user can only delete their own photos
+      // Use admin client to bypass RLS for checking access
+      const accessClient = admin ?? supabase
+      const { data: access, error: accessErr } = await accessClient
+        .from('album_class_access')
+        .select('id, user_id, student_name')
+        .eq('album_id', albumId)
+        .eq('class_id', classId)
+        .eq('user_id', user.id)
+        .eq('status', 'approved')
+        .maybeSingle()
+
+      console.log('[DELETE PHOTO] Access check:', { 
+        found: !!access, 
+        error: accessErr,
+        userId: user.id, 
+        classId, 
+        albumId,
+        studentName,
+        accessStudentName: access?.student_name
+      })
+
+      if (!access) {
+        return NextResponse.json({ error: 'Anda hanya dapat menghapus foto Anda sendiri' }, { status: 403 })
+      }
+
+      // Verify student name matches (user can only delete their own profile's photos)
+      if (access.student_name !== studentName) {
+        return NextResponse.json({ error: 'Anda hanya dapat menghapus foto dari profil Anda sendiri' }, { status: 403 })
+      }
     }
   }
 

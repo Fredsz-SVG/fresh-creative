@@ -63,6 +63,7 @@ export async function GET(
   let isAlbumAdmin = false
 
   if (!isOwner && !isAdmin) {
+    // Check if user is an album member
     const { data: member } = await (admin ?? supabase)
       .from('album_members')
       .select('role')
@@ -70,11 +71,24 @@ export async function GET(
       .eq('user_id', user.id)
       .maybeSingle()
 
-    if (!member) {
-      return NextResponse.json({ error: 'Album not found' }, { status: 404 })
-    }
-    if ((member as { role?: string }).role === 'admin') {
-      isAlbumAdmin = true
+    if (member) {
+      if ((member as { role?: string }).role === 'admin') {
+        isAlbumAdmin = true
+      }
+    } else {
+      // Check if user has approved class access (approved join requests are moved to album_class_access)
+      const { data: approvedClassAccess } = await (admin ?? supabase)
+        .from('album_class_access')
+        .select('id, status')
+        .eq('album_id', albumId)
+        .eq('user_id', user.id)
+        .eq('status', 'approved')
+        .maybeSingle()
+
+      if (!approvedClassAccess) {
+        return NextResponse.json({ error: 'Album not found' }, { status: 404 })
+      }
+      // User has approved join request - allow access
     }
   }
 
@@ -172,11 +186,12 @@ export async function PATCH(
   }
 
   const body = await request.json().catch(() => ({}))
-  const { cover_image_url, description } = body as { cover_image_url?: string; description?: string }
+  const { cover_image_url, description, students_count } = body as { cover_image_url?: string; description?: string; students_count?: number }
 
-  const updates: { cover_image_url?: string; description?: string } = {}
+  const updates: { cover_image_url?: string; description?: string; students_count?: number } = {}
   if (cover_image_url !== undefined) updates.cover_image_url = cover_image_url
   if (description !== undefined) updates.description = description
+  if (students_count !== undefined) updates.students_count = students_count
   if (Object.keys(updates).length === 0) return NextResponse.json(album)
 
   const { data: updated, error } = await supabase

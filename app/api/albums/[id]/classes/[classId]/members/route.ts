@@ -27,8 +27,22 @@ export async function GET(
     const role = await getRole(supabase, user)
     const isOwner = (album as { user_id: string }).user_id === user.id || role === 'admin'
     if (!isOwner) {
+      // Check if user is album member (admin/helper)
       const { data: member } = await client.from('album_members').select('album_id').eq('album_id', albumId).eq('user_id', user.id).maybeSingle()
-      if (!member) return NextResponse.json({ error: 'Tidak punya akses ke album ini' }, { status: 403 })
+      if (!member) {
+        // Check if user has approved class access (student who was approved)
+        const { data: classAccess } = await client
+          .from('album_class_access')
+          .select('id')
+          .eq('album_id', albumId)
+          .eq('user_id', user.id)
+          .eq('status', 'approved')
+          .maybeSingle()
+        
+        if (!classAccess) {
+          return NextResponse.json({ error: 'Tidak punya akses ke album ini' }, { status: 403 })
+        }
+      }
     }
 
     const { data: cls } = await client

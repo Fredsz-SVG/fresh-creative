@@ -44,13 +44,13 @@ export async function GET(
   const { searchParams } = new URL(request.url)
   const statusFilter = searchParams.get('status') ?? 'pending'
 
-  // Pending requests berasal dari album_class_requests
+  // Pending requests berasal dari album_join_requests
   if (statusFilter === 'pending') {
     try {
       const { data: list, error } = await client
-        .from('album_class_requests')
+        .from('album_join_requests')
         .select('id, user_id, student_name, email, status, requested_at')
-        .eq('class_id', classId)
+        .eq('assigned_class_id', classId)
         .eq('status', 'pending')
         .order('requested_at', { ascending: false })
 

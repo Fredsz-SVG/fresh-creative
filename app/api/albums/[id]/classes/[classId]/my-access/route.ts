@@ -63,9 +63,10 @@ export async function PATCH(
   const date_of_birth = body?.date_of_birth !== undefined ? (typeof body.date_of_birth === 'string' ? body.date_of_birth.trim() || null : null) : undefined
   const instagram = body?.instagram !== undefined ? (typeof body.instagram === 'string' ? body.instagram.trim() || null : null) : undefined
   const message = body?.message !== undefined ? (typeof body.message === 'string' ? body.message.trim() || null : null) : undefined
+  const video_url = body?.video_url !== undefined ? (typeof body.video_url === 'string' ? body.video_url.trim() || null : null) : undefined
 
-  if (student_name === undefined && email === undefined && date_of_birth === undefined && instagram === undefined && message === undefined) {
-    return NextResponse.json({ error: 'Minimal satu field required (student_name, email, date_of_birth, instagram, message)' }, { status: 400 })
+  if (student_name === undefined && email === undefined && date_of_birth === undefined && instagram === undefined && message === undefined && video_url === undefined) {
+    return NextResponse.json({ error: 'Minimal satu field required (student_name, email, date_of_birth, instagram, message, video_url)' }, { status: 400 })
   }
   const updates: {
     student_name?: string
@@ -73,6 +74,7 @@ export async function PATCH(
     date_of_birth?: string | null
     instagram?: string | null
     message?: string | null
+    video_url?: string | null
     updated_at: string
   } = { updated_at: new Date().toISOString() }
   if (student_name !== undefined) updates.student_name = student_name
@@ -80,6 +82,7 @@ export async function PATCH(
   if (date_of_birth !== undefined) updates.date_of_birth = date_of_birth
   if (instagram !== undefined) updates.instagram = instagram
   if (message !== undefined) updates.message = message
+  if (video_url !== undefined) updates.video_url = video_url
 
   const { data: updated, error } = await client
     .from('album_class_access')
@@ -123,5 +126,13 @@ export async function DELETE(
     .eq('id', (access as { id: string }).id)
 
   if (deleteErr) return NextResponse.json({ error: deleteErr.message }, { status: 500 })
+
+  // Also delete from album_join_requests so user can re-register
+  await client
+    .from('album_join_requests')
+    .delete()
+    .eq('album_id', albumId)
+    .eq('user_id', user.id)
+
   return NextResponse.json({ success: true })
 }

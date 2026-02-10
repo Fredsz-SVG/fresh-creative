@@ -136,6 +136,7 @@ interface GroupPanelProps {
   requestForm: { student_name: string; email: string }
   setRequestForm: (form: { student_name: string; email: string }) => void
   handleRequestAccess: (classId: string) => void
+  handleJoinAsOwner: (classId: string) => void
   isOwner: boolean
   accessDataLoaded: boolean
   isCoverView: boolean
@@ -161,6 +162,7 @@ export default function GroupPanel({
   requestForm,
   setRequestForm,
   handleRequestAccess,
+  handleJoinAsOwner,
   isOwner,
   accessDataLoaded,
   isCoverView,
@@ -192,6 +194,21 @@ export default function GroupPanel({
             const isRejectedRequest = request?.status === 'rejected'
             const isLoadingThisClass = !accessDataLoaded && !access && !request
 
+            // DEBUG LOG
+            if (isOwner) {
+              console.log('[GroupPanel Sidebar DEBUG]', {
+                currentClassId: currentClass.id,
+                isOwner,
+                canManage,
+                access,
+                request,
+                isPendingRequest,
+                isLoadingThisClass,
+                accessDataLoaded,
+                allAccess: myAccessByClass
+              })
+            }
+
             // Show compact loading hanya untuk class ini
             if (isLoadingThisClass) {
               return (
@@ -204,18 +221,40 @@ export default function GroupPanel({
 
             if (isOwner) {
               if (isPendingRequest || (access && access.status === 'approved')) return null
+              
+              // Check if already registered in another class
+              const hasAccessInOtherClass = Object.entries(myAccessByClass).some(
+                ([classId, classAccess]) => 
+                  classId !== currentClass.id && 
+                  classAccess && 
+                  typeof classAccess === 'object' &&
+                  'status' in classAccess &&
+                  (classAccess as any).status === 'approved'
+              )
+
+              if (hasAccessInOtherClass) {
+                return (
+                  <>
+                    <p className="text-amber-400 text-xs mb-1">⚠️ Batas Pendaftaran</p>
+                    <p className="text-muted text-xs">
+                      Anda sudah terdaftar di kelas lain. Hanya bisa daftar di 1 kelas.
+                    </p>
+                  </>
+                )
+              }
+
               return (
                 <>
                   <p className="text-muted text-xs mb-2">
-                    Daftarkan nama Anda di group ini agar bisa upload foto.
+                    Daftarkan diri Anda di kelas ini untuk bisa upload foto.
                   </p>
-                  <div className="flex flex-col gap-1.5">
-                    <input type="text" value={requestForm.student_name} onChange={(e) => setRequestForm({ ...requestForm, student_name: e.target.value })} placeholder="Nama Anda" className="px-2 py-1.5 rounded-lg bg-white/5 border border-white/10 text-app text-xs" />
-                    <input type="email" value={requestForm.email} onChange={(e) => setRequestForm({ ...requestForm, email: e.target.value })} placeholder="Email" className="px-2 py-1.5 rounded-lg bg-white/5 border border-white/10 text-app text-xs" />
-                    <button type="button" onClick={() => handleRequestAccess(currentClass.id)} disabled={!requestForm.student_name.trim()} className="px-2 py-1.5 rounded-lg bg-lime-600 text-white text-xs font-medium hover:bg-lime-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors touch-manipulation">
-                      {requestForm.student_name.trim() ? 'Daftarkan nama' : 'Isi nama terlebih dahulu'}
-                    </button>
-                  </div>
+                  <button 
+                    type="button" 
+                    onClick={() => handleJoinAsOwner(currentClass.id)} 
+                    className="px-3 py-2 rounded-lg bg-blue-600 text-white text-xs font-medium hover:bg-blue-500 transition-colors w-full touch-manipulation"
+                  >
+                    Daftar di Kelas Ini
+                  </button>
                 </>
               )
             }

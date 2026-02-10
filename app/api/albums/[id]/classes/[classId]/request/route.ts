@@ -45,11 +45,11 @@ export async function POST(
     .eq('user_id', user.id)
     .maybeSingle()
 
-  // Check album_class_requests untuk pending request
+  // Check album_join_requests untuk pending request
   const { data: existingRequest } = await client
-    .from('album_class_requests')
+    .from('album_join_requests')
     .select('id, status')
-    .eq('class_id', classId)
+    .eq('assigned_class_id', classId)
     .eq('user_id', user.id)
     .maybeSingle()
 
@@ -67,17 +67,17 @@ export async function POST(
     }
   }
 
-  // Jika sudah pending di album_class_requests, return pending data
+  // Jika sudah pending di album_join_requests, return pending data
   const existingReq = existingRequest as { id: string; status: string } | null
   if (existingReq?.status === 'pending') {
-    const { data: fullRequest } = await client.from('album_class_requests').select().eq('id', existingReq.id).single()
+    const { data: fullRequest } = await client.from('album_join_requests').select().eq('id', existingReq.id).single()
     return NextResponse.json(fullRequest ?? existingRequest)
   }
 
   // Jika rejected, update jadi pending dengan nama/email baru (ajukan ulang)
   if (existingReq?.status === 'rejected') {
     const { data: updated, error: updateErr } = await client
-      .from('album_class_requests')
+      .from('album_join_requests')
       .update({ student_name, email: email || null, status: 'pending' })
       .eq('id', existingReq.id)
       .select()
@@ -86,11 +86,12 @@ export async function POST(
     return NextResponse.json(updated)
   }
 
-  // Create new pending request di album_class_requests
+  // Create new pending request di album_join_requests
   const { data: created, error } = await client
-    .from('album_class_requests')
+    .from('album_join_requests')
     .insert({
-      class_id: classId,
+      album_id: albumId,
+      assigned_class_id: classId,
       user_id: user.id,
       student_name,
       email: email || null,

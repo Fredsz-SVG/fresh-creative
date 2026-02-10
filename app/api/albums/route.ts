@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(result)
     }
 
-    // User: Fetch OWN albums + Member albums
+    // User: Fetch OWN albums + Member albums + Approved class access albums
     const { data: ownedAlbums, error: ownedErr } = await supabase
       .from('albums')
       .select('*, pricing_packages(name)')
@@ -69,7 +69,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: ownedErr.message }, { status: 500 })
     }
 
-    // Member albums
+    // Member albums (from album_members table - admins/helpers)
     const { data: memberRows } = await supabase.from('album_members').select('album_id').eq('user_id', user.id)
     const memberAlbumIds = (memberRows ?? []).map((r: { album_id: string }) => r.album_id).filter(Boolean)
 
@@ -82,10 +82,34 @@ export async function GET(request: NextRequest) {
       memberAlbums = data ?? []
     }
 
+    // Approved class access albums (use admin client to bypass RLS)
+    // Approved join requests are moved to album_class_access, not kept in join_requests
+    const adminClient = createAdminClient()
+    let approvedClassAccessAlbums: any[] = []
+    if (adminClient) {
+      const { data: approvedClassRows } = await adminClient
+        .from('album_class_access')
+        .select('album_id')
+        .eq('user_id', user.id)
+        .eq('status', 'approved')
+      
+      const approvedAlbumIds = (approvedClassRows ?? []).map((r: { album_id: string }) => r.album_id).filter(Boolean)
+      
+      if (approvedAlbumIds.length > 0) {
+        const { data } = await adminClient
+          .from('albums')
+          .select('*, pricing_packages(name)')
+          .in('id', approvedAlbumIds)
+        approvedClassAccessAlbums = data ?? []
+      }
+    }
+
     const ownedSet = new Set((ownedAlbums ?? []).map(a => a.id))
+    const memberSet = new Set(memberAlbums.map(a => a.id))
     const finalAlbums = [
       ...(ownedAlbums ?? []).map(a => ({ ...a, isOwner: true })),
-      ...memberAlbums.filter(a => !ownedSet.has(a.id)).map(a => ({ ...a, isOwner: false }))
+      ...memberAlbums.filter(a => !ownedSet.has(a.id)).map(a => ({ ...a, isOwner: false })),
+      ...approvedClassAccessAlbums.filter(a => !ownedSet.has(a.id) && !memberSet.has(a.id)).map(a => ({ ...a, isOwner: false, status: 'approved' }))
     ]
 
     // Sort combined
