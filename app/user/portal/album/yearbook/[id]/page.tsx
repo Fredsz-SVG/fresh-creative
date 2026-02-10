@@ -1130,7 +1130,7 @@ export default function YearbookAlbumPage({ backHref = '/user/portal/albums', ba
 
   if (view === 'cover' || view === 'classes') {
     const isCoverView = view === 'cover'
-    const showBackLink = isCoverView || sidebarMode === 'classes'
+    const showBackLink = true
     
     return (
       <div className={mobileFirstWrapper}>
