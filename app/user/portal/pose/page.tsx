@@ -1,11 +1,6 @@
-import BackLink from '@/components/dashboard/BackLink'
-import Pose from '@/components/fitur/Pose'
+import { redirect } from 'next/navigation'
 
+/** Fitur Pose hanya tersedia di dalam album (sidebar AI Labs). Akses langsung dialihkan ke dashboard. */
 export default function UserPosePage() {
-  return (
-    <div className="p-0">
-      <BackLink href="/user/portal/ai-labs" />
-      <Pose />
-    </div>
-  )
+  redirect('/user/portal')
 }

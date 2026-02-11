@@ -1,11 +1,6 @@
-import BackLink from '@/components/dashboard/BackLink'
-import PhotoGroup from '@/components/fitur/PhotoGroup'
+import { redirect } from 'next/navigation'
 
+/** Fitur Photo Group hanya tersedia di dalam album (sidebar AI Labs). Akses langsung dialihkan ke dashboard. */
 export default function UserPhotoGroupPage() {
-  return (
-    <div className="p-0">
-      <BackLink href="/user/portal/ai-labs" />
-      <PhotoGroup />
-    </div>
-  )
+  redirect('/user/portal')
 }

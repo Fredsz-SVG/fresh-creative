@@ -185,6 +185,56 @@ export async function POST(
     return NextResponse.json({ success: true })
 }
 
+// PATCH: Update member role (promote/demote)
+export async function PATCH(
+    request: NextRequest,
+    { params }: { params: Promise<{ id: string }> }
+) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+    const { id: albumId } = await params
+    const { searchParams } = new URL(request.url)
+    const targetUserId = searchParams.get('user_id')
+    
+    if (!targetUserId) {
+        return NextResponse.json({ error: 'User ID required' }, { status: 400 })
+    }
+
+    const body = await request.json()
+    const { role } = body
+    
+    if (role !== 'admin' && role !== 'member') {
+        return NextResponse.json({ error: 'Invalid role' }, { status: 400 })
+    }
+
+    const supabaseAdmin = createAdminClient()
+    const client = supabaseAdmin || supabase
+
+    const { data: album } = await client.from('albums').select('user_id').eq('id', albumId).single()
+    const isOwner = album?.user_id === user.id
+    const globalRole = await getRole(supabase, user)
+    const isGlobalAdmin = globalRole === 'admin'
+
+    if (!isOwner && !isGlobalAdmin) {
+        return NextResponse.json({ error: 'Only owner or global admin can update roles' }, { status: 403 })
+    }
+
+    // Update role in album_members
+    const { error } = await client
+        .from('album_members')
+        .update({ role })
+        .eq('album_id', albumId)
+        .eq('user_id', targetUserId)
+
+    if (error) {
+        return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    return NextResponse.json({ success: true, role })
+}
+
 // DELETE: Remove member
 export async function DELETE(
     request: NextRequest,

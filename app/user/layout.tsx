@@ -10,7 +10,7 @@ import {
   History,
 } from 'lucide-react'
 import type { NavSection } from '@/components/dashboard/DashboardShell'
-import { AI_LABS_SECTION_USER, ALBUMS_SECTION_USER, FILES_SECTION_USER } from '@/lib/dashboard-nav'
+import { ALBUMS_SECTION_USER, FILES_SECTION_USER } from '@/lib/dashboard-nav'
 
 const userNavSections: NavSection[] = [
   {
@@ -22,8 +22,7 @@ const userNavSections: NavSection[] = [
   },
   ALBUMS_SECTION_USER,
   FILES_SECTION_USER,
-  AI_LABS_SECTION_USER,
-  // Project Assets section removed per request
+  // AI Labs dipindah ke sidebar album (yearbook)
 ]
 
 export default function UserLayout({

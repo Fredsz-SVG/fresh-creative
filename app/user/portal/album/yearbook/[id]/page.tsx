@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback, useRef } from 'react'
-import { useParams } from 'next/navigation'
+import { useParams, useSearchParams } from 'next/navigation'
 import BackLink from '@/components/dashboard/BackLink'
 import { ChevronLeft, ChevronRight, BookOpen, ImagePlus, Video, Play } from 'lucide-react'
 import { toast } from 'sonner'
@@ -34,9 +34,14 @@ type YearbookAlbumPageProps = {
   backLabel?: string
 }
 
+const AI_LABS_TOOLS = ['tryon', 'pose', 'image-editor', 'photogroup', 'phototovideo'] as const
+
 export default function YearbookAlbumPage({ backHref = '/user/portal/albums', backLabel = 'Ke Album Saya' }: YearbookAlbumPageProps = {}) {
   const params = useParams()
+  const searchParams = useSearchParams()
   const id = params?.id as string | undefined
+  const toolParam = searchParams.get('tool')
+  const aiLabsTool = (toolParam && AI_LABS_TOOLS.includes(toolParam as any)) ? toolParam : null
   const [album, setAlbum] = useState<Album | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -65,10 +70,10 @@ export default function YearbookAlbumPage({ backHref = '/user/portal/albums', ba
   const [accessDataLoaded, setAccessDataLoaded] = useState(false)
   const [requestsByClass, setRequestsByClass] = useState<Record<string, ClassRequest[]>>({})
   const [selectedRequestId, setSelectedRequestId] = useState<string | null>(null)
-  const [sidebarMode, setSidebarMode] = useState<'classes' | 'approval' | 'team' | 'sambutan'>(() => {
+  const [sidebarMode, setSidebarMode] = useState<'classes' | 'approval' | 'team' | 'sambutan' | 'ai-labs'>(() => {
     if (typeof window !== 'undefined' && id) {
       const saved = localStorage.getItem(`yearbook-sidebarMode-${id}`)
-      return (saved as 'classes' | 'approval' | 'team' | 'sambutan') || 'classes'
+      return (saved as 'classes' | 'approval' | 'team' | 'sambutan' | 'ai-labs') || 'classes'
     }
     return 'classes'
   })
@@ -116,6 +121,7 @@ export default function YearbookAlbumPage({ backHref = '/user/portal/albums', ba
   const [videoPopupError, setVideoPopupError] = useState<string | null>(null)
   const [uploadingCoverVideo, setUploadingCoverVideo] = useState(false)
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+  const lastLocalUpdateRef = useRef<number>(0)
 
   // Fetch current user
   useEffect(() => {
@@ -173,6 +179,11 @@ export default function YearbookAlbumPage({ backHref = '/user/portal/albums', ba
       localStorage.setItem(`yearbook-sidebarMode-${id}`, sidebarMode)
     }
   }, [sidebarMode, id])
+
+  // Saat URL punya ?tool=..., tetap di section AI Labs (sidebar album)
+  useEffect(() => {
+    if (aiLabsTool) setSidebarMode('ai-labs')
+  }, [aiLabsTool])
 
   // Simpan classViewMode ke localStorage ketika berubah
   useEffect(() => {
@@ -286,17 +297,30 @@ export default function YearbookAlbumPage({ backHref = '/user/portal/albums', ba
   useEffect(() => {
     if (!id || !album?.id) return
     const albumId = album.id
+    
     const channel = supabase
       .channel(`yearbook-classes-${albumId}`)
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'album_classes', filter: `album_id=eq.${albumId}` },
-        () => { fetchAlbum() }
+        () => { 
+          // Skip if we just made a local update in the last 3 seconds (optimistic update)
+          const timeSinceLastUpdate = Date.now() - lastLocalUpdateRef.current
+          if (timeSinceLastUpdate > 3000) {
+            fetchAlbum()
+          }
+        }
       )
       .on(
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'album_classes', filter: `album_id=eq.${albumId}` },
-        () => { fetchAlbum() }
+        () => { 
+          // Skip if we just made a local update in the last 3 seconds
+          const timeSinceLastUpdate = Date.now() - lastLocalUpdateRef.current
+          if (timeSinceLastUpdate > 3000) {
+            fetchAlbum()
+          }
+        }
       )
       .on(
         'postgres_changes',
@@ -553,9 +577,8 @@ export default function YearbookAlbumPage({ backHref = '/user/portal/albums', ba
   const goPrevClass = () => setClassIndex((i) => Math.max(0, i - 1))
   const goNextClass = () => setClassIndex((i) => Math.min((album?.classes?.length ?? 1) - 1, i + 1))
 
-  const handleDeleteClass = async (classId: string, className: string) => {
+  const handleDeleteClass = async (classId: string, className?: string) => {
     if (!id) return
-    if (!confirm(`Hapus kelas "${className}"? Semua foto di kelas ini akan ikut terhapus.`)) return
     const res = await fetch(`/api/albums/${id}/classes/${classId}`, {
       method: 'DELETE',
       credentials: 'include',
@@ -583,84 +606,188 @@ export default function YearbookAlbumPage({ backHref = '/user/portal/albums', ba
 
   const handleUpdateClass = async (classId: string, updates: { name?: string; sort_order?: number }) => {
     if (!id) return
-    const res = await fetch(`/api/albums/${id}/classes/${classId}`, {
+
+    // Mark that we just did a local update
+    lastLocalUpdateRef.current = Date.now()
+
+    // Optimistic update - update UI immediately without waiting for server
+    const optimisticUpdate = { id: classId, name: '', sort_order: 0 }
+    setAlbum((prev) => {
+      if (!prev?.classes) return prev
+      const currentClass = prev.classes.find(c => c.id === classId)
+      if (!currentClass) return prev
+      
+      optimisticUpdate.name = updates.name !== undefined ? updates.name : currentClass.name
+      optimisticUpdate.sort_order = updates.sort_order !== undefined ? updates.sort_order : (currentClass.sort_order ?? 0)
+      
+      const newClasses = prev.classes
+        .map((c) => (c.id === classId ? { ...c, name: optimisticUpdate.name, sort_order: optimisticUpdate.sort_order } : c))
+        .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+      
+      // Jika ada perubahan sort_order, update classIndex ke posisi baru
+      if (updates.sort_order !== undefined) {
+        const newIndex = newClasses.findIndex((c) => c.id === classId)
+        if (newIndex !== -1 && newIndex !== classIndex) {
+          setClassIndex(newIndex)
+        }
+      }
+      
+      return { ...prev, classes: newClasses }
+    })
+
+    // Background API call - fire and forget
+    fetch(`/api/albums/${id}/classes/${classId}`, {
       method: 'PATCH',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(updates),
-    })
-    const data = await res.json().catch(() => ({}))
-    if (!res.ok) {
-      alert(data?.error ?? 'Gagal memperbarui kelas')
-      return null
-    }
-    const updated = data as { id: string; name: string; sort_order?: number }
-
-    // Update album state dengan kelas yang disort ulang
-    setAlbum((prev) => {
-      if (!prev?.classes) return prev
-      const newClasses = prev.classes
-        .map((c) => (c.id === classId ? { ...c, name: updated.name, sort_order: updated.sort_order ?? c.sort_order } : c))
-        .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
-      return { ...prev, classes: newClasses }
+    }).then(res => {
+      if (!res.ok) {
+        // Revert on error
+        fetchAlbum()
+      }
+    }).catch(() => {
+      // Revert on error
+      fetchAlbum()
     })
 
-    // Jika ada perubahan sort_order, update classIndex ke posisi baru
-    if (updates.sort_order !== undefined) {
-      setAlbum((prev) => {
-        if (!prev?.classes) return prev
-        const newIndex = prev.classes.findIndex((c) => c.id === classId)
-        if (newIndex !== -1 && newIndex !== classIndex) {
-          setClassIndex(newIndex)
-        }
-        return prev
-      })
-    }
-
-    return updated
+    return optimisticUpdate
   }
 
   const handleAddClass = async () => {
     if (!id || !newClassName.trim()) return
-    const res = await fetch(`/api/albums/${id}/classes`, {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: newClassName.trim() }),
-    })
-    const data = await res.json().catch(() => ({}))
-    if (!res.ok) {
-      alert(data?.error ?? 'Gagal menambah kelas')
-      return
+    
+    const trimmedName = newClassName.trim()
+    const tempId = `temp-${Date.now()}`
+    const tempClass = {
+      id: tempId,
+      name: trimmedName,
+      sort_order: album?.classes?.length ?? 0,
+      student_count: 0
     }
-    const created = data as { id: string; name: string; sort_order?: number }
-    setNewClassName('')
-    setAddingClass(false)
+
+    // Optimistic update - add class immediately
     setAlbum((prev) =>
       prev
         ? {
           ...prev,
-          classes: [...(prev.classes ?? []), { id: created.id, name: created.name, sort_order: created.sort_order ?? prev.classes?.length ?? 0, student_count: 0 }],
+          classes: [...(prev.classes ?? []), tempClass],
         }
         : prev
     )
-    setStudentsByClass((prev) => ({ ...prev, [created.id]: [] }))
-    setRequestsByClass((prev) => ({ ...prev, [created.id]: [] }))
+    setStudentsByClass((prev) => ({ ...prev, [tempId]: [] }))
+    setRequestsByClass((prev) => ({ ...prev, [tempId]: [] }))
+    
+    // Close form
+    setNewClassName('')
+    setAddingClass(false)
+    
+    // Update last local update timestamp for realtime throttle
+    lastLocalUpdateRef.current = Date.now()
+    
+    // Show success toast immediately
+    toast.success(`Kelas "${trimmedName}" ditambahkan`)
 
-    // For owner: auto-register to the newly created class and open edit form
-    if (isOwner) {
-      // Auto-add owner to myAccessByClass with empty name - ready for editing
-      setMyAccessByClass((prev) => ({
-        ...prev,
-        [created.id]: { id: created.id, student_name: '', email: null, status: 'approved' },
-      }))
-      // Open edit form for owner to input their name
-      setEditingProfileClassId(created.id)
-      setEditProfileName('')
-      setEditProfileEmail('')
-      setEditProfileTtl('')
-      setEditProfileInstagram('')
-      setEditProfilePesan('')
+    // Background API call
+    try {
+      const res = await fetch(`/api/albums/${id}/classes`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: trimmedName }),
+      })
+      const data = await res.json().catch(() => ({}))
+      
+      if (!res.ok) {
+        // Revert optimistic update on error
+        toast.error(data?.error ?? 'Gagal menambah kelas')
+        setAlbum((prev) =>
+          prev
+            ? {
+              ...prev,
+              classes: (prev.classes ?? []).filter(c => c.id !== tempId),
+            }
+            : prev
+        )
+        setStudentsByClass((prev) => {
+          const newState = { ...prev }
+          delete newState[tempId]
+          return newState
+        })
+        setRequestsByClass((prev) => {
+          const newState = { ...prev }
+          delete newState[tempId]
+          return newState
+        })
+        return
+      }
+
+      const created = data as { id: string; name: string; sort_order?: number }
+      
+      // Replace temp class with real one
+      setAlbum((prev) =>
+        prev
+          ? {
+            ...prev,
+            classes: (prev.classes ?? []).map(c => 
+              c.id === tempId 
+                ? { id: created.id, name: created.name, sort_order: created.sort_order ?? c.sort_order, student_count: 0 }
+                : c
+            ),
+          }
+          : prev
+      )
+      
+      // Update state with real ID
+      setStudentsByClass((prev) => {
+        const newState = { ...prev }
+        newState[created.id] = newState[tempId] || []
+        delete newState[tempId]
+        return newState
+      })
+      setRequestsByClass((prev) => {
+        const newState = { ...prev }
+        newState[created.id] = newState[tempId] || []
+        delete newState[tempId]
+        return newState
+      })
+
+      // For owner: auto-register to the newly created class and open edit form
+      if (isOwner) {
+        // Auto-add owner to myAccessByClass with empty name - ready for editing
+        setMyAccessByClass((prev) => ({
+          ...prev,
+          [created.id]: { id: created.id, student_name: '', email: null, status: 'approved' },
+        }))
+        // Open edit form for owner to input their name
+        setEditingProfileClassId(created.id)
+        setEditProfileName('')
+        setEditProfileEmail('')
+        setEditProfileTtl('')
+        setEditProfileInstagram('')
+        setEditProfilePesan('')
+      }
+    } catch (error) {
+      // Revert optimistic update on error
+      toast.error('Gagal menambah kelas')
+      setAlbum((prev) =>
+        prev
+          ? {
+            ...prev,
+            classes: (prev.classes ?? []).filter(c => c.id !== tempId),
+          }
+          : prev
+      )
+      setStudentsByClass((prev) => {
+        const newState = { ...prev }
+        delete newState[tempId]
+        return newState
+      })
+      setRequestsByClass((prev) => {
+        const newState = { ...prev }
+        delete newState[tempId]
+        return newState
+      })
     }
   }
 
@@ -1131,13 +1258,36 @@ export default function YearbookAlbumPage({ backHref = '/user/portal/albums', ba
   if (view === 'cover' || view === 'classes') {
     const isCoverView = view === 'cover'
     const showBackLink = true
-    
+    const currentClass = album?.classes?.[classIndex]
+    const sectionTitle =
+      isCoverView ? 'Sampul Album'
+      : sidebarMode === 'ai-labs' ? 'AI Labs'
+      : sidebarMode === 'sambutan' ? 'Sambutan'
+      : sidebarMode === 'classes' ? (currentClass?.name ?? 'Kelas')
+      : sidebarMode === 'approval' ? 'Persetujuan'
+      : sidebarMode === 'team' ? 'Tim'
+      : ''
+    const sectionSubtitle =
+      isCoverView ? 'Tampilan sampul dan pengaturan cover album.'
+      : sidebarMode === 'ai-labs' ? 'Pilih fitur yang ingin digunakan. Semua fitur AI tersedia di sini.'
+      : sidebarMode === 'sambutan' ? 'Kartu sambutan dan profil guru.'
+      : sidebarMode === 'classes' ? (currentClass ? 'Profil dan foto anggota kelas.' : 'Daftar kelas dan anggota.')
+      : sidebarMode === 'approval' ? 'Kelola permintaan akses dan persetujuan.'
+      : sidebarMode === 'team' ? 'Kelola anggota tim album.'
+      : ''
+
     return (
       <div className={mobileFirstWrapper}>
-        {/* Sticky Header - Only show for cover or classes mode */}
+        {/* Sticky Header - BackLink + judul section sejajar */}
         {showBackLink && (
-          <div className="hidden lg:block sticky top-0 z-50 bg-[#0a0a0b] border-b border-white/10 px-4 py-2">
+          <div className="hidden lg:flex sticky top-0 z-50 bg-[#0a0a0b] border-b border-white/10 px-4 py-3 items-center gap-4">
             <BackLink href={backHref} label={backLabel} />
+            {sectionTitle && (
+              <div className="absolute left-1/2 -translate-x-1/2 text-center min-w-0 max-w-[50%]">
+                <h1 className="text-lg font-bold text-app truncate">{sectionTitle}</h1>
+                {sectionSubtitle && <p className="text-xs text-muted mt-0.5 truncate">{sectionSubtitle}</p>}
+              </div>
+            )}
           </div>
         )}
 
@@ -1168,6 +1318,7 @@ export default function YearbookAlbumPage({ backHref = '/user/portal/albums', ba
             setSelectedRequestId={setSelectedRequestId}
             sidebarMode={sidebarMode}
             setSidebarMode={setSidebarMode}
+            aiLabsTool={aiLabsTool}
             requestForm={requestForm}
             setRequestForm={setRequestForm}
             handleRequestAccess={handleRequestAccess}

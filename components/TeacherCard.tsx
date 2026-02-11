@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { Edit3, Trash2, ImagePlus, Video, Play, Briefcase, MessageSquare } from 'lucide-react'
 
 type Teacher = {
@@ -55,6 +56,7 @@ export default function TeacherCard({
   const [editTitle, setEditTitle] = useState(teacher.title || '')
   const [editMessage, setEditMessage] = useState(teacher.message || '')
   const [editVideoUrl, setEditVideoUrl] = useState(teacher.video_url || '')
+  const [localConfirm, setLocalConfirm] = useState<{ title: string; message: string; onConfirm: () => void } | null>(null)
 
   // Reset form when teacher data changes
   useEffect(() => {
@@ -74,7 +76,33 @@ export default function TeacherCard({
   }
 
   return (
-    <div className="relative h-full min-h-[620px]" style={{ perspective: '1000px' }}>
+    <div className="relative h-full min-h-[380px]" style={{ perspective: '1000px' }}>
+      {typeof document !== 'undefined' && localConfirm && createPortal(
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4" onClick={() => setLocalConfirm(null)}>
+          <div className="bg-gray-900 border border-red-500/20 rounded-xl p-4 sm:p-6 max-w-md w-full shadow-2xl" onClick={e => e.stopPropagation()}>
+            <h3 className="text-lg font-bold text-red-400 mb-2">{localConfirm.title}</h3>
+            <p className="text-sm text-gray-400 mb-4">{localConfirm.message}</p>
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={() => setLocalConfirm(null)}
+                className="px-4 py-2 rounded-lg bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white transition-colors text-sm font-medium"
+              >
+                Batal
+              </button>
+              <button
+                onClick={() => {
+                  localConfirm.onConfirm()
+                  setLocalConfirm(null)
+                }}
+                className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-500 transition-colors text-sm font-medium"
+              >
+                Ya, Hapus
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
       <div
         style={{
           transformStyle: 'preserve-3d',
@@ -85,12 +113,12 @@ export default function TeacherCard({
       >
         {/* Front Side - Profile View */}
         <div
-          className="relative w-full h-full min-h-[520px] backface-hidden rounded-xl border border-white/10 bg-[#0a0a0b] flex flex-col items-stretch text-left shadow-2xl overflow-hidden"
+          className="relative w-full h-full min-h-[340px] backface-hidden rounded-xl border border-white/10 bg-[#0a0a0b] flex flex-col items-stretch text-left shadow-xl overflow-hidden"
           style={{ backfaceVisibility: 'hidden' }}
         >
           {/* Photo section */}
           {(teacher.photos && teacher.photos.length > 0 || teacher.photo_url) && (
-            <div className="relative aspect-square overflow-hidden bg-white/5 flex-shrink-0">
+            <div className="relative aspect-[4/5] overflow-hidden bg-white/5 flex-shrink-0">
               <img
                 src={teacher.photos && teacher.photos.length > 0 ? teacher.photos[0].file_url : teacher.photo_url}
                 alt={teacher.name}
@@ -108,35 +136,35 @@ export default function TeacherCard({
                   className="absolute bottom-2 right-2 w-10 h-10 rounded-full bg-black/70 hover:bg-black/90 flex items-center justify-center group transition-all hover:scale-110"
                   title="Putar Video"
                 >
-                  <Play className="w-5 h-5 text-white ml-0.5" fill="currentColor" />
+                  <Play className="w-4 h-4 text-white ml-0.5" fill="currentColor" />
                 </button>
               )}
             </div>
           )}
 
           {/* Profile info section */}
-          <div className="flex flex-col flex-1 p-3 lg:p-4">
+          <div className="flex flex-col flex-1 p-2.5">
             {/* Name & Title Group */}
-            <div className="mb-1">
-              <h3 className="font-bold text-white text-base leading-snug line-clamp-1">
+            <div className="mb-0.5">
+              <h3 className="font-bold text-white text-sm leading-snug line-clamp-1">
                 {teacher.name}
               </h3>
               {teacher.title && (
-                <p className="text-gray-400 text-sm line-clamp-1 flex items-center gap-1.5">
-                  <Briefcase className="w-3.5 h-3.5" />
+                <p className="text-gray-400 text-xs line-clamp-1 flex items-center gap-1">
+                  <Briefcase className="w-3 h-3" />
                   {teacher.title}
                 </p>
               )}
             </div>
 
             {/* Details Group */}
-            <div className="space-y-0 lg:space-y-1 text-sm text-gray-300 leading-tight">
+            <div className="space-y-0 text-xs text-gray-300 leading-tight">
               {teacher.message && (
-                <div className="flex gap-1.5 pt-2">
-                  <MessageSquare className="w-3.5 h-3.5 text-gray-500 flex-shrink-0 mt-0.5" />
+                <div className="flex gap-1 pt-1">
+                  <MessageSquare className="w-3 h-3 text-gray-500 flex-shrink-0 mt-0.5" />
                   <p
                     className="italic text-gray-400 overflow-hidden leading-tight flex-1"
-                    style={{ display: '-webkit-box', WebkitLineClamp: 8, WebkitBoxOrient: 'vertical' }}
+                    style={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical' }}
                   >
                     "{teacher.message}"
                   </p>
@@ -147,8 +175,8 @@ export default function TeacherCard({
 
           {/* Action buttons - Bottom of front card */}
           {isOwner && (
-            <div className="px-3 pt-0 pb-6 mt-auto">
-              <div className="flex gap-2 h-8">
+            <div className="px-2.5 pt-0 pb-3 mt-auto">
+              <div className="flex gap-1.5 h-7">
                 <button
                   type="button"
                   onClick={(e) => {
@@ -162,14 +190,16 @@ export default function TeacherCard({
                 <button
                   type="button"
                   onClick={() => {
-                    if (confirm(`Hapus ${teacher.name}?`)) {
-                      onDelete(teacher.id)
-                    }
+                    setLocalConfirm({
+                      title: 'Hapus Guru',
+                      message: `Hapus "${teacher.name}" dari daftar?`,
+                      onConfirm: () => onDelete(teacher.id)
+                    })
                   }}
-                  className="w-8 text-xs rounded-lg bg-red-900/40 text-red-400 hover:bg-red-900/60 border border-red-500/20 transition-colors flex items-center justify-center"
+                  className="flex-1 text-xs font-medium rounded-lg bg-red-900/40 text-red-400 hover:bg-red-900/60 border border-red-500/20 transition-colors flex items-center justify-center gap-1.5"
                   title="Hapus guru"
                 >
-                  <Trash2 className="w-3.5 h-3.5" />
+                  <Trash2 className="w-3.5 h-3.5" /> Hapus
                 </button>
               </div>
             </div>
@@ -225,9 +255,11 @@ export default function TeacherCard({
                         <button
                           type="button"
                           onClick={() => {
-                            if (confirm(`Hapus foto ${idx + 1}?`)) {
-                              onDeletePhoto(teacher.id, photo.id)
-                            }
+                            setLocalConfirm({
+                              title: 'Hapus Foto',
+                              message: `Hapus foto ${idx + 1}?`,
+                              onConfirm: () => onDeletePhoto(teacher.id, photo.id)
+                            })
                           }}
                           className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
                           title={`Hapus foto ${idx + 1}`}
@@ -271,9 +303,11 @@ export default function TeacherCard({
                   <button
                     type="button"
                     onClick={() => {
-                      if (confirm('Hapus video?')) {
-                        setEditVideoUrl('')
-                      }
+                      setLocalConfirm({
+                        title: 'Hapus Video',
+                        message: 'Hapus video ini?',
+                        onConfirm: () => setEditVideoUrl('')
+                      })
                     }}
                     className="px-2 py-1.5 rounded text-[10px] bg-red-600/20 text-red-400 hover:bg-red-600/30 transition-colors"
                     title="Hapus Video"

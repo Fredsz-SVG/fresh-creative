@@ -1,11 +1,6 @@
-import BackLink from '@/components/dashboard/BackLink'
-import TryOn from '@/components/fitur/TryOn'
+import { redirect } from 'next/navigation'
 
+/** Fitur Try On hanya tersedia di dalam album (sidebar AI Labs). Akses langsung dialihkan ke dashboard. */
 export default function UserTryOnPage() {
-  return (
-    <div className="p-0">
-      <BackLink href="/user/portal/ai-labs" />
-      <TryOn />
-    </div>
-  )
+  redirect('/user/portal')
 }

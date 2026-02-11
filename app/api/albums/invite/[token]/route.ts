@@ -3,7 +3,10 @@ import { createAdminClient } from '@/lib/supabase-admin'
 
 export const dynamic = 'force-dynamic'
 
-/** GET: Validate invite token and return album info (no auth required). */
+/** GET: Validate invite token and return album info (no auth required). 
+ * Currently only supports student invites (albums.student_invite_token)
+ * Admin/member invites are deprecated - use direct email invitation instead
+ */
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ token: string }> }
@@ -18,36 +21,31 @@ export async function GET(
     return NextResponse.json({ error: 'Server error' }, { status: 500 })
   }
 
-  const { data: invite, error: inviteErr } = await admin
-    .from('album_invites')
-    .select('id, album_id, expires_at, role')
-    .eq('token', token)
-    .single()
+  // Check if it's a student invite token
+  const { data: album, error: albumErr } = await admin
+    .from('albums')
+    .select('id, name, type, student_invite_expires_at')
+    .eq('student_invite_token', token)
+    .maybeSingle()
 
-  if (inviteErr || !invite) {
+  if (!album) {
     return NextResponse.json({ error: 'Invite not found or invalid' }, { status: 404 })
   }
 
-  const expiresAt = new Date((invite as { expires_at: string }).expires_at)
-  if (expiresAt < new Date()) {
+  // Check expiration
+  const expiresAt = album.student_invite_expires_at 
+    ? new Date(album.student_invite_expires_at) 
+    : null
+  
+  if (expiresAt && expiresAt < new Date()) {
     return NextResponse.json({ error: 'Invite expired' }, { status: 410 })
   }
 
-  const { data: album, error: albumErr } = await admin
-    .from('albums')
-    .select('id, name, type')
-    .eq('id', (invite as { album_id: string }).album_id)
-    .single()
-
-  if (albumErr || !album) {
-    return NextResponse.json({ error: 'Album not found' }, { status: 404 })
-  }
-
   return NextResponse.json({
-    albumId: (album as { id: string }).id,
-    name: (album as { name: string }).name,
-    type: (album as { type: string }).type,
-    role: (invite as { role: string }).role,
-    expiresAt: expiresAt.toISOString(),
+    inviteType: 'student',
+    albumId: album.id,
+    name: album.name,
+    type: album.type,
+    expiresAt: expiresAt ? expiresAt.toISOString() : null,
   })
 }

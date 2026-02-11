@@ -70,6 +70,24 @@ export async function PATCH(
 
     if (insertErr) return NextResponse.json({ error: insertErr.message }, { status: 500 })
 
+    // IMPORTANT: Also add to album_members as 'member' role (for team management)
+    // This allows owner to promote them to admin later via "Jadikan Admin" button
+    const { error: memberErr } = await client
+      .from('album_members')
+      .upsert(
+        {
+          album_id: rowData.album_id,
+          user_id: rowData.user_id,
+          role: 'member',
+        },
+        { onConflict: 'album_id,user_id' }
+      )
+
+    if (memberErr) {
+      console.error('Failed to add to album_members:', memberErr)
+      // Don't fail the whole approval, just log it
+    }
+
     // Hapus dari album_join_requests
     await client.from('album_join_requests').delete().eq('id', requestId)
 

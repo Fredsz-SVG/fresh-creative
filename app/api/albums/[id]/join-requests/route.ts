@@ -20,7 +20,41 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Build query
+    // Special handling for approved status
+    // Approved requests are moved to album_class_access and deleted from album_join_requests
+    if (status === 'approved') {
+      const adminClient = createAdminClient()
+      const client = adminClient || supabase
+
+      const { data: approvedData, error: approvedError } = await client
+        .from('album_class_access')
+        .select('*, album_classes!inner(name)')
+        .eq('album_id', albumId)
+        .eq('status', 'approved')
+        .order('created_at', { ascending: false })
+
+      if (approvedError) throw approvedError
+
+      // Transform data to match join_requests format
+      const transformed = approvedData?.map((access: any) => ({
+        id: access.id,
+        album_id: access.album_id,
+        user_id: access.user_id,
+        student_name: access.student_name,
+        email: access.email,
+        phone: null, // Not stored in album_class_access
+        class_name: access.album_classes?.name || 'Unknown',
+        assigned_class_id: access.class_id,
+        status: 'approved',
+        requested_at: access.created_at,
+        approved_at: access.created_at,
+        approved_by: null
+      })) || []
+
+      return NextResponse.json(transformed)
+    }
+
+    // For pending/rejected/all, query album_join_requests
     let query = supabase
       .from('album_join_requests')
       .select('*')

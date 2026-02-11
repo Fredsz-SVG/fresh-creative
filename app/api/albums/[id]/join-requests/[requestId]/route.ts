@@ -112,19 +112,32 @@ export async function PATCH(
           )
         }
 
-        // Update join_requests status to approved (keep for history)
-        const { error: updateError } = await client
+        // IMPORTANT: Also add to album_members as 'member' role (for team management)
+        // This allows owner to promote them to admin later via "Jadikan Admin" button
+        const { error: memberErr } = await client
+          .from('album_members')
+          .upsert(
+            {
+              album_id: albumId,
+              user_id: joinRequest.user_id,
+              role: 'member',
+            },
+            { onConflict: 'album_id,user_id' }
+          )
+
+        if (memberErr) {
+          console.error('Failed to add to album_members:', memberErr)
+          // Don't fail the whole approval, just log it
+        }
+
+        // Delete from join_requests after successful approval
+        const { error: deleteError } = await client
           .from('album_join_requests')
-          .update({
-            status: 'approved',
-            assigned_class_id: assigned_class_id,
-            approved_at: new Date().toISOString(),
-            approved_by: user.id
-          })
+          .delete()
           .eq('id', requestId)
 
-        if (updateError) {
-          console.error('Error updating join request:', updateError)
+        if (deleteError) {
+          console.error('Error deleting join request:', deleteError)
           // Don't fail the whole operation, access already granted
         }
 

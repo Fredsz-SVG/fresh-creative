@@ -146,9 +146,7 @@ function AlbumCard({
 
   if (isClickable && !isLoading) {
     return (
-      <Link href={destinationUrl}>
-        <CardContent />
-      </Link>
+      <Link href={destinationUrl}><CardContent /></Link>
     )
   }
   return <CardContent />
@@ -310,8 +308,12 @@ export default function AlbumsView({ variant }: AlbumsViewProps) {
           <p className="text-muted text-xs mt-0.5 sm:text-sm">{subtitle}</p>
         </div>
         <div className="flex flex-col gap-2 sm:flex-row sm:gap-2">
-          <Link href={publicCreateHref} className="w-full sm:w-auto text-center px-4 py-3 sm:py-2 bg-sky-600 text-white text-sm font-semibold rounded-xl hover:bg-sky-700 active:bg-sky-800 touch-manipulation">+ Buat Public Album</Link>
-          <Link href={showroomHref} className="w-full sm:w-auto text-center px-4 py-3 sm:py-2 bg-purple-600 text-white text-sm font-semibold rounded-xl hover:bg-purple-700 active:bg-purple-800 touch-manipulation">+ Order Yearbook</Link>
+          <Link href={publicCreateHref} className="w-full sm:w-auto text-center px-4 py-3 sm:py-2 bg-sky-600 text-white text-sm font-semibold rounded-xl hover:bg-sky-700 active:bg-sky-800 touch-manipulation">
+            + Buat Public Album
+          </Link>
+          <Link href={showroomHref} className="w-full sm:w-auto text-center px-4 py-3 sm:py-2 bg-purple-600 text-white text-sm font-semibold rounded-xl hover:bg-purple-700 active:bg-purple-800 touch-manipulation">
+            + Order Yearbook
+          </Link>
         </div>
       </div>
 

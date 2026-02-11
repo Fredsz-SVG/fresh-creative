@@ -65,7 +65,7 @@ export default function IconSidebar({
               ? 'bg-lime-600/20 text-lime-400'
               : 'text-gray-400 hover:text-white hover:bg-white/5'
               }`}
-            title="Sambutan Guru"
+            title="Sambutan"
           >
             <MessageSquare className="w-6 h-6" />
             <span className="text-[10px]">Sambutan</span>
