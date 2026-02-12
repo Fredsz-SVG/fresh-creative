@@ -16,7 +16,7 @@ type AlbumClass = { id: string; name: string; sort_order?: number; student_count
 type ClassAccess = { id: string; student_name: string; email?: string | null; status: string; date_of_birth?: string | null; instagram?: string | null; message?: string | null; video_url?: string | null }
 type ClassRequest = { id: string; student_name: string; email?: string | null; status: string }
 type ClassMember = { user_id: string; student_name: string; email: string | null; date_of_birth: string | null; instagram: string | null; message: string | null; video_url: string | null; photos?: string[]; is_me?: boolean }
-type StudentInClass = { student_name: string; photo_count: number }
+
 type Photo = { id: string; file_url: string; student_name: string; created_at?: string }
 type Teacher = { id: string; name: string; title?: string; message?: string; photo_url?: string; video_url?: string; sort_order?: number; photos?: { id: string; file_url: string; sort_order: number }[] }
 
@@ -239,7 +239,7 @@ export default function YearbookClassesViewUI(props: any) {
     album = null,
     classes = [],
     currentClass = null,
-    students = [],
+
     classIndex = 0,
     setClassIndex,
     setView,
@@ -324,6 +324,8 @@ export default function YearbookClassesViewUI(props: any) {
     handleUpdateRole,
     handleRemoveMember,
     aiLabsTool = null,
+    onTeacherCountChange,
+    onTeamMemberCountChange,
   } = props
 
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -374,6 +376,7 @@ export default function YearbookClassesViewUI(props: any) {
     const data = await res.json().catch(() => [])
     if (res.ok && Array.isArray(data)) {
       setMembers(data)
+      onTeamMemberCountChange?.(data.length)
     }
   }
 
@@ -418,6 +421,7 @@ export default function YearbookClassesViewUI(props: any) {
       const data = await res.json().catch(() => [])
       if (res.ok && Array.isArray(data)) {
         setTeachers(data)
+        onTeacherCountChange?.(data.length)
       }
     } catch (error) {
       console.error('Error fetching teachers:', error)
@@ -1345,17 +1349,10 @@ export default function YearbookClassesViewUI(props: any) {
           {/* Sambutan Panel - Removed, now using grid layout like students */}
 
           {/* Main content area - Shows Classes/Approval/Team based on sidebarMode */}
-          <div className={`flex-1 flex flex-col gap-0 min-h-0 ${sidebarMode === 'classes' ? 'pt-14' : 'pt-0'} lg:pt-0`}>
-            {/* Mobile class header - Fixed - Hide when in Approval/Team mode */}
-            <div className={`fixed top-0 left-0 right-0 lg:hidden z-30 flex items-center gap-2 p-2 bg-black/50 backdrop-blur border-b border-white/10 touch-manipulation transition-colors ${sidebarMode !== 'classes' ? 'hidden' : 'flex'}`}>
-              {isCoverView ? (
-                <div className="flex-1 flex items-center justify-center h-10">
-                  <span className="font-bold text-app flex items-center gap-2">
-                    <BookOpen className="w-4 h-4 text-lime-400" />
-                    Sampul Album
-                  </span>
-                </div>
-              ) : addingClass ? (
+          <div className="flex-1 flex flex-col gap-0 min-h-0">
+            {/* Mobile class navigation bar - inline, only for classes mode */}
+            <div className={`lg:hidden items-center gap-2 p-2 bg-black/30 border-b border-white/10 touch-manipulation ${(sidebarMode !== 'classes' || isCoverView) ? 'hidden' : 'flex'}`}>
+              {addingClass ? (
                 <div className="flex-1 flex gap-2 items-center animate-in fade-in slide-in-from-top-2 duration-200">
                   <input
                     type="text"
@@ -1465,10 +1462,6 @@ export default function YearbookClassesViewUI(props: any) {
               {/* Show different content based on sidebarMode */}
               {isCoverView ? (
                 <div className="max-w-5xl mx-auto px-3 py-3 sm:p-4">
-                  <div className="mb-4 sm:mb-5 lg:hidden">
-                    <h2 className="text-lg sm:text-xl font-bold text-app text-center sm:text-left">Sampul Album</h2>
-                    <p className="text-xs text-muted mt-1">Tampilan sampul dan pengaturan cover album.</p>
-                  </div>
                   <div className="flex flex-col items-center">
                     <div className="w-full max-w-xs mx-auto flex flex-col items-center">
                       <div className="relative w-full aspect-[3/4] bg-white/5 rounded-xl overflow-hidden shadow-xl border border-white/10 group">
@@ -1677,11 +1670,11 @@ export default function YearbookClassesViewUI(props: any) {
                   const albumBase = album?.id ? `/user/portal/album/yearbook/${album.id}` : ''
                   if (aiLabsTool && albumBase) {
                     const backUrl = albumBase
-                    if (aiLabsTool === 'tryon') return (<div className="max-w-5xl mx-auto px-3 py-3 sm:p-4"><NextLink href={backUrl} className="inline-flex items-center gap-2 text-sm text-lime-400 hover:text-lime-300 mb-4">← Kembali ke daftar fitur</NextLink><TryOn /></div>)
-                    if (aiLabsTool === 'pose') return (<div className="max-w-5xl mx-auto px-3 py-3 sm:p-4"><NextLink href={backUrl} className="inline-flex items-center gap-2 text-sm text-lime-400 hover:text-lime-300 mb-4">← Kembali ke daftar fitur</NextLink><Pose /></div>)
-                    if (aiLabsTool === 'image-editor') return (<div className="max-w-5xl mx-auto px-3 py-3 sm:p-4"><NextLink href={backUrl} className="inline-flex items-center gap-2 text-sm text-lime-400 hover:text-lime-300 mb-4">← Kembali ke daftar fitur</NextLink><ImageEditor /></div>)
-                    if (aiLabsTool === 'photogroup') return (<div className="max-w-5xl mx-auto px-3 py-3 sm:p-4"><NextLink href={backUrl} className="inline-flex items-center gap-2 text-sm text-lime-400 hover:text-lime-300 mb-4">← Kembali ke daftar fitur</NextLink><PhotoGroup /></div>)
-                    if (aiLabsTool === 'phototovideo') return (<div className="max-w-5xl mx-auto px-3 py-3 sm:p-4"><NextLink href={backUrl} className="inline-flex items-center gap-2 text-sm text-lime-400 hover:text-lime-300 mb-4">← Kembali ke daftar fitur</NextLink><PhotoToVideo /></div>)
+                    if (aiLabsTool === 'tryon') return (<div className="max-w-5xl mx-auto px-3 py-3 sm:p-4"><NextLink href={backUrl} className="hidden lg:inline-flex items-center gap-2 text-sm text-lime-400 hover:text-lime-300 mb-4">← Kembali ke daftar fitur</NextLink><TryOn /></div>)
+                    if (aiLabsTool === 'pose') return (<div className="max-w-5xl mx-auto px-3 py-3 sm:p-4"><NextLink href={backUrl} className="hidden lg:inline-flex items-center gap-2 text-sm text-lime-400 hover:text-lime-300 mb-4">← Kembali ke daftar fitur</NextLink><Pose /></div>)
+                    if (aiLabsTool === 'image-editor') return (<div className="max-w-5xl mx-auto px-3 py-3 sm:p-4"><NextLink href={backUrl} className="hidden lg:inline-flex items-center gap-2 text-sm text-lime-400 hover:text-lime-300 mb-4">← Kembali ke daftar fitur</NextLink><ImageEditor /></div>)
+                    if (aiLabsTool === 'photogroup') return (<div className="max-w-5xl mx-auto px-3 py-3 sm:p-4"><NextLink href={backUrl} className="hidden lg:inline-flex items-center gap-2 text-sm text-lime-400 hover:text-lime-300 mb-4">← Kembali ke daftar fitur</NextLink><PhotoGroup /></div>)
+                    if (aiLabsTool === 'phototovideo') return (<div className="max-w-5xl mx-auto px-3 py-3 sm:p-4"><NextLink href={backUrl} className="hidden lg:inline-flex items-center gap-2 text-sm text-lime-400 hover:text-lime-300 mb-4">← Kembali ke daftar fitur</NextLink><PhotoToVideo /></div>)
                   }
                   return (
                     <div className="max-w-5xl mx-auto px-3 py-3 sm:p-4">
@@ -2219,12 +2212,8 @@ export default function YearbookClassesViewUI(props: any) {
                     </div>
                   )}
 
-                  <div className="max-w-5xl mx-auto p-3 sm:p-4">
+                  <div className="max-w-5xl mx-auto px-3 pb-3 pt-1.5 sm:px-4 sm:pb-4 sm:pt-1.5">
                     <div className="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                      <div className="text-center sm:text-left lg:hidden">
-                        <h2 className="text-lg sm:text-xl font-bold text-app">Kelola anggota</h2>
-                        <p className="text-xs text-muted mt-1">{members.length} orang • Kelola akses dan peran</p>
-                      </div>
                       {/* Search Input - Compact */}
                       <div className="relative sm:w-64">
                         <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
@@ -2321,12 +2310,8 @@ export default function YearbookClassesViewUI(props: any) {
                 </>
               ) : sidebarMode === 'sambutan' ? (
                 /* Sambutan Content - Grid Cards like Students */
-                <div className="max-w-5xl mx-auto px-3 py-3 sm:p-4">
+                <div className="max-w-5xl mx-auto px-3 pb-3 pt-1.5 sm:px-4 sm:pb-4 sm:pt-1.5">
                   <div className="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                    <div className="text-center sm:text-left lg:hidden">
-                      <h2 className="text-lg sm:text-xl font-bold text-app">Sambutan</h2>
-                      <p className="text-xs text-muted mt-1">{teachers.length} orang • Kartu sambutan dan profil guru</p>
-                    </div>
                     {canManage && (
                       <button
                         type="button"
@@ -2337,7 +2322,7 @@ export default function YearbookClassesViewUI(props: any) {
                         className="px-4 py-2 rounded-xl bg-lime-600 text-white hover:bg-lime-500 transition-colors flex items-center justify-center gap-2 text-sm font-medium flex-shrink-0"
                       >
                         <Plus className="w-4 h-4" />
-                        Tambah Guru
+                        Tambah
                       </button>
                     )}
                   </div>
@@ -2388,7 +2373,7 @@ export default function YearbookClassesViewUI(props: any) {
                   )}
                 </div>
               ) : sidebarMode === 'classes' && classes.length === 0 ? (
-                <div className="max-w-5xl mx-auto px-3 py-3 sm:p-4">
+                <div className="max-w-5xl mx-auto px-3 pb-3 pt-1.5 sm:px-4 sm:pb-4 sm:pt-1.5">
                   <div className="flex flex-col items-center justify-center border-2 border-dashed border-white/10 rounded-xl py-12">
                     <p className="text-app font-medium mb-2">Belum ada kelas</p>
                     {canManage && !addingClass && (
@@ -2416,371 +2401,371 @@ export default function YearbookClassesViewUI(props: any) {
 
                   const classBody =
                     classMembers.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center py-20 opacity-60 min-h-[70vh] w-full">
-                          <Users className="w-12 h-12 mb-3 opacity-50" />
-                          <p className="text-center text-sm lg:text-base">Belum ada anggota terdaftar di group ini.</p>
-                        </div>
-                      ) : classViewMode === 'list' ? (
-                        <div className="space-y-1">
-                          {classMembers.map((m, idx) => (
-                            <div key={idx} className="flex flex-col p-1.5 lg:p-2 rounded-lg border border-white/10 hover:bg-white/5 transition-colors">
-                              <div className="flex items-center justify-between w-full">
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-app font-medium text-xs lg:text-sm truncate">{m.student_name}{m.is_me ? ' (Anda)' : ''}</p>
-                                  {m.email && <p className="text-muted text-xs truncate">{m.email}</p>}
-                                </div>
-                                <div className="flex gap-1 flex-shrink-0 ml-2">
-                                  <button type="button" onClick={() => openGallery(currentClass.id, m.student_name, currentClass.name)} className="px-2 py-1 text-xs rounded-lg border border-white/10 text-app hover:bg-white/5 flex-shrink-0">
-                                    Lihat
-                                  </button>
-                                  {(canManage || (m.is_me && hasApprovedAccess)) && (
-                                    <button
-                                      type="button"
-                                      onClick={(e) => {
-                                        e.stopPropagation()
-                                        if (canManage && !m.is_me && onStartEditMember) {
-                                          setEditingProfileClassId(currentClass.id)
-                                          setEditingMemberUserId?.(m.user_id)
-                                          onStartEditMember(m, currentClass.id)
-                                        } else if (m.is_me && onStartEditMyProfile) {
-                                          setEditingProfileClassId(currentClass.id)
-                                          setEditingMemberUserId?.(null)
-                                          onStartEditMyProfile(currentClass.id)
-                                          if (fetchStudentPhotosForCard) {
-                                            fetchStudentPhotosForCard(currentClass.id, m.student_name)
-                                          }
+                      <div className="flex flex-col items-center justify-center py-20 opacity-60 min-h-[70vh] w-full">
+                        <Users className="w-12 h-12 mb-3 opacity-50" />
+                        <p className="text-center text-sm lg:text-base">Belum ada anggota terdaftar di group ini.</p>
+                      </div>
+                    ) : classViewMode === 'list' ? (
+                      <div className="space-y-1">
+                        {classMembers.map((m, idx) => (
+                          <div key={idx} className="flex flex-col p-1.5 lg:p-2 rounded-lg border border-white/10 hover:bg-white/5 transition-colors">
+                            <div className="flex items-center justify-between w-full">
+                              <div className="flex-1 min-w-0">
+                                <p className="text-app font-medium text-xs lg:text-sm truncate">{m.student_name}{m.is_me ? ' (Anda)' : ''}</p>
+                                {m.email && <p className="text-muted text-xs truncate">{m.email}</p>}
+                              </div>
+                              <div className="flex gap-1 flex-shrink-0 ml-2">
+                                <button type="button" onClick={() => openGallery(currentClass.id, m.student_name, currentClass.name)} className="px-2 py-1 text-xs rounded-lg border border-white/10 text-app hover:bg-white/5 flex-shrink-0">
+                                  Lihat
+                                </button>
+                                {(canManage || (m.is_me && hasApprovedAccess)) && (
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      if (canManage && !m.is_me && onStartEditMember) {
+                                        setEditingProfileClassId(currentClass.id)
+                                        setEditingMemberUserId?.(m.user_id)
+                                        onStartEditMember(m, currentClass.id)
+                                      } else if (m.is_me && onStartEditMyProfile) {
+                                        setEditingProfileClassId(currentClass.id)
+                                        setEditingMemberUserId?.(null)
+                                        onStartEditMyProfile(currentClass.id)
+                                        if (fetchStudentPhotosForCard) {
+                                          fetchStudentPhotosForCard(currentClass.id, m.student_name)
                                         }
-                                      }}
-                                      className="px-2 py-1 text-xs font-medium rounded-lg bg-lime-600/20 text-lime-400 hover:bg-lime-600/30 flex-shrink-0 flex items-center gap-1"
-                                    >
-                                      <Edit3 className="w-3.5 h-3.5" /> Edit
-                                    </button>
-                                  )}
-                                  {canManage && (
-                                    <button
-                                      type="button"
-                                      onClick={() => setDeleteMemberConfirm({ classId: currentClass.id, userId: m.is_me ? undefined : m.user_id, memberName: m.student_name })}
-                                      className="p-1.5 text-xs font-medium rounded-lg text-red-400 hover:bg-red-600/20 transition-colors flex items-center gap-1"
-                                      title="Hapus anggota"
-                                    >
-                                      <Trash2 className="w-3.5 h-3.5" /> Hapus
-                                    </button>
-                                  )}
-                                </div>
+                                      }
+                                    }}
+                                    className="px-2 py-1 text-xs font-medium rounded-lg bg-lime-600/20 text-lime-400 hover:bg-lime-600/30 flex-shrink-0 flex items-center gap-1"
+                                  >
+                                    <Edit3 className="w-3.5 h-3.5" /> Edit
+                                  </button>
+                                )}
+                                {canManage && (
+                                  <button
+                                    type="button"
+                                    onClick={() => setDeleteMemberConfirm({ classId: currentClass.id, userId: m.is_me ? undefined : m.user_id, memberName: m.student_name })}
+                                    className="p-1.5 text-xs font-medium rounded-lg text-red-400 hover:bg-red-600/20 transition-colors flex items-center gap-1"
+                                    title="Hapus anggota"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" /> Hapus
+                                  </button>
+                                )}
                               </div>
                             </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="grid gap-2 sm:grid-cols-2 lg:gap-3 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-                          {classMembers.map((m, idx) => {
-                            const firstPhoto = m.photos?.[0] || firstPhotoByStudent?.[m.student_name]
-                            const isFlipped = editingProfileClassId === currentClass.id && ((m.is_me && !editingMemberUserId) || editingMemberUserId === m.user_id)
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="grid gap-2 sm:grid-cols-2 lg:gap-3 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+                        {classMembers.map((m, idx) => {
+                          const firstPhoto = m.photos?.[0] || firstPhotoByStudent?.[m.student_name]
+                          const isFlipped = editingProfileClassId === currentClass.id && ((m.is_me && !editingMemberUserId) || editingMemberUserId === m.user_id)
 
-                            return (
-                              <div key={m.user_id} className="relative h-full min-h-[380px]" style={{ perspective: '1000px' }}>
+                          return (
+                            <div key={m.user_id} className="relative h-full min-h-[380px]" style={{ perspective: '1000px' }}>
+                              <div
+                                style={{
+                                  transformStyle: 'preserve-3d',
+                                  transition: 'transform 0.6s',
+                                  transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)'
+                                }}
+                                className="relative w-full h-full"
+                              >
+                                {/* Front Side - Profile View (ukuran sama seperti TeacherCard) */}
+                                <div
+                                  className="relative w-full h-full min-h-[340px] backface-hidden rounded-xl border border-white/10 bg-[#0a0a0b] flex flex-col items-stretch text-left shadow-xl overflow-hidden"
+                                  style={{ backfaceVisibility: 'hidden' }}
+                                >
+                                  {/* Foto section - aspect 4/5 seperti guru */}
+                                  {firstPhoto && (
+                                    <div className="relative aspect-[4/5] overflow-hidden bg-white/5 flex-shrink-0">
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setPersonalIndex(idx)
+                                          setPersonalCardExpanded(true)
+                                          setEditingProfileClassId(null)
+                                        }}
+                                        className="w-full h-full hover:opacity-90 transition-opacity"
+                                      >
+                                        <img src={firstPhoto} alt={m.student_name} className="w-full h-full object-cover" />
+                                      </button>
+                                      {/* Video Play Button Overlay */}
+                                      {m.video_url && (
+                                        <button
+                                          type="button"
+                                          onClick={(e) => {
+                                            e.stopPropagation()
+                                            if (onPlayVideo) {
+                                              onPlayVideo(m.video_url!)
+                                            }
+                                          }}
+                                          className="absolute bottom-2 right-2 w-10 h-10 rounded-full bg-black/70 hover:bg-black/90 flex items-center justify-center group transition-all hover:scale-110"
+                                          title="Putar Video"
+                                        >
+                                          <Play className="w-5 h-5 text-white ml-0.5" fill="currentColor" />
+                                        </button>
+                                      )}
+                                    </div>
+                                  )}
+
+                                  {/* Profile info section - compact seperti guru */}
+                                  <div className="flex flex-col flex-1 p-2.5 min-h-0">
+                                    {/* Name & Email Group */}
+                                    <div className="mb-0.5">
+                                      <h3 className="font-bold text-white text-sm leading-snug line-clamp-1">
+                                        {m.student_name}
+                                        {m.is_me ? <span className="font-normal text-lime-400 ml-1 text-xs">(Anda)</span> : ''}
+                                      </h3>
+                                      {m.email && <p className="text-gray-400 text-xs line-clamp-1">{m.email}</p>}
+                                    </div>
+
+                                    {/* Details Group */}
+                                    <div className="space-y-0 text-xs text-gray-300 leading-tight">
+                                      {m.date_of_birth && (
+                                        <p className="line-clamp-1 flex items-center gap-1.5">
+                                          <Cake className="w-3 h-3 text-gray-400 flex-shrink-0" />
+                                          <span className="truncate">{m.date_of_birth}</span>
+                                        </p>
+                                      )}
+                                      {m.instagram && (
+                                        <a
+                                          href={m.instagram.startsWith('http') ? m.instagram : `https://instagram.com/${m.instagram.replace('@', '')}`}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="flex items-center gap-1.5 hover:text-white transition-colors line-clamp-1 group/ig"
+                                          onClick={(e) => e.stopPropagation()}
+                                        >
+                                          <Instagram className="w-3 h-3 text-gray-400 group-hover/ig:text-pink-500 transition-colors flex-shrink-0" />
+                                          <span className="truncate">
+                                            {m.instagram.includes('instagram.com')
+                                              ? '@' + m.instagram.split('/').filter(Boolean).pop()
+                                              : m.instagram.startsWith('@') ? m.instagram : '@' + m.instagram
+                                            }
+                                          </span>
+                                        </a>
+                                      )}
+                                      {m.message && (
+                                        <div className="flex gap-1 pt-1">
+                                          <p
+                                            className="italic text-gray-400 overflow-hidden leading-tight flex-1"
+                                            style={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical' }}
+                                          >
+                                            "{m.message}"
+                                          </p>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  {/* Action buttons - sama seperti TeacherCard */}
+                                  <div className="px-2.5 pt-0 pb-3 mt-auto">
+                                    <div className="flex gap-1.5 h-7">
+                                      {(canManage || (m.is_me && hasApprovedAccess)) && (
+                                        <button
+                                          type="button"
+                                          onClick={(e) => {
+                                            e.stopPropagation()
+                                            if (canManage && !m.is_me && onStartEditMember) {
+                                              setEditingProfileClassId(currentClass.id)
+                                              setEditingMemberUserId?.(m.user_id)
+                                              onStartEditMember(m, currentClass.id)
+                                            } else if (m.is_me && onStartEditMyProfile) {
+                                              setEditingProfileClassId(currentClass.id)
+                                              setEditingMemberUserId?.(null)
+                                              onStartEditMyProfile(currentClass.id)
+                                              if (fetchStudentPhotosForCard) {
+                                                fetchStudentPhotosForCard(currentClass.id, m.student_name)
+                                              }
+                                            }
+                                          }}
+                                          className="flex-1 text-xs font-medium rounded-lg bg-lime-900/40 text-lime-400 hover:bg-lime-900/60 border border-lime-500/20 transition-colors flex items-center justify-center gap-1.5"
+                                        >
+                                          <Edit3 className="w-3.5 h-3.5" /> Edit
+                                        </button>
+                                      )}
+                                      {canManage && (
+                                        <button
+                                          type="button"
+                                          onClick={() => setDeleteMemberConfirm({ classId: currentClass.id, userId: m.is_me ? undefined : m.user_id, memberName: m.student_name })}
+                                          className="flex-1 text-xs font-medium rounded-lg bg-red-900/40 text-red-400 hover:bg-red-900/60 border border-red-500/20 transition-colors flex items-center justify-center gap-1.5"
+                                          title="Hapus anggota"
+                                        >
+                                          <Trash2 className="w-3.5 h-3.5" /> Hapus
+                                        </button>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Back Side - Edit Form */}
                                 <div
                                   style={{
-                                    transformStyle: 'preserve-3d',
-                                    transition: 'transform 0.6s',
-                                    transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)'
+                                    backfaceVisibility: 'hidden',
+                                    WebkitBackfaceVisibility: 'hidden',
+                                    transform: 'rotateY(180deg)',
+                                    position: 'absolute',
+                                    top: 0,
+                                    left: 0,
+                                    width: '100%',
+                                    height: '100%',
                                   }}
-                                  className="relative w-full h-full"
+                                  className="flex flex-col rounded-lg border border-white/10 bg-white/[0.02] overflow-hidden p-4"
                                 >
-                                  {/* Front Side - Profile View (ukuran sama seperti TeacherCard) */}
-                                  <div
-                                    className="relative w-full h-full min-h-[340px] backface-hidden rounded-xl border border-white/10 bg-[#0a0a0b] flex flex-col items-stretch text-left shadow-xl overflow-hidden"
-                                    style={{ backfaceVisibility: 'hidden' }}
-                                  >
-                                    {/* Foto section - aspect 4/5 seperti guru */}
-                                    {firstPhoto && (
-                                      <div className="relative aspect-[4/5] overflow-hidden bg-white/5 flex-shrink-0">
+                                  <div className="flex-1 overflow-y-auto">
+                                    <h3 className="text-app font-medium text-xs mb-2 flex items-center gap-1">
+                                      <Edit3 className="w-3 h-3" />
+                                      Edit Profil
+                                    </h3>
+                                    <div className="space-y-1.5">
+                                      <input
+                                        type="text"
+                                        value={editProfileName}
+                                        onChange={(e) => setEditProfileName(e.target.value)}
+                                        placeholder="Nama"
+                                        className="w-full px-2 py-1 rounded text-[10px] bg-white/5 border border-white/10 text-app"
+                                      />
+                                      <input
+                                        type="email"
+                                        value={editProfileEmail}
+                                        onChange={(e) => setEditProfileEmail(e.target.value)}
+                                        placeholder="Email"
+                                        className="w-full px-2 py-1 rounded text-[10px] bg-white/5 border border-white/10 text-app"
+                                      />
+                                      <input
+                                        type="text"
+                                        value={editProfileTtl}
+                                        onChange={(e) => setEditProfileTtl(e.target.value)}
+                                        placeholder="TTL (YYYY-MM-DD)"
+                                        className="w-full px-2 py-1 rounded text-[10px] bg-white/5 border border-white/10 text-app"
+                                      />
+                                      <input
+                                        type="text"
+                                        value={editProfileInstagram}
+                                        onChange={(e) => setEditProfileInstagram(e.target.value)}
+                                        placeholder="IG (@username)"
+                                        className="w-full px-2 py-1 rounded text-[10px] bg-white/5 border border-white/10 text-app"
+                                      />
+                                      {/* Upload Foto dari Local */}
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          if (fileInputRef.current) {
+                                            uploadPhotoTargetRef.current = { classId: currentClass.id, studentName: m.student_name }
+                                            fileInputRef.current.click()
+                                          }
+                                        }}
+                                        className="w-full px-2 py-1.5 rounded text-[10px] bg-green-600/20 text-green-400 hover:bg-green-600/30 transition-colors flex items-center justify-center gap-1"
+                                      >
+                                        <ImagePlus className="w-3 h-3" />
+                                        Upload Foto
+                                      </button>
+
+                                      {/* Preview Foto dengan tombol hapus */}
+                                      {studentPhotosInCard.length > 0 && (
+                                        <div className="space-y-1">
+                                          <p className="text-white/60 text-[9px] uppercase">Foto Anda ({studentPhotosInCard.length})</p>
+                                          <div className="grid grid-cols-3 gap-1">
+                                            {studentPhotosInCard.map((photo, idx) => (
+                                              <div key={photo.id} className="relative aspect-square rounded overflow-hidden bg-white/5 group">
+                                                <img
+                                                  src={photo.file_url}
+                                                  alt={`Foto ${idx + 1}`}
+                                                  className="w-full h-full object-cover"
+                                                />
+                                                <button
+                                                  type="button"
+                                                  onClick={() => {
+                                                    if (confirm(`Hapus foto ${idx + 1}?`)) {
+                                                      if (onDeletePhoto) {
+                                                        onDeletePhoto(photo.id, currentClass.id, m.student_name)
+                                                      }
+                                                    }
+                                                  }}
+                                                  className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                                                  title={`Hapus foto ${idx + 1}`}
+                                                >
+                                                  <Trash2 className="w-4 h-4 text-red-400" />
+                                                </button>
+                                              </div>
+                                            ))}
+                                          </div>
+                                        </div>
+                                      )}
+                                      <input
+                                        type="url"
+                                        value={stripOriginForDisplay(editProfileVideoUrl)}
+                                        onChange={(e) => setEditProfileVideoUrl(e.target.value)}
+                                        placeholder="URL Video (YouTube, dll)"
+                                        className="w-full px-2 py-1 rounded text-[10px] bg-white/5 border border-white/10 text-app"
+                                      />
+                                      {/* Upload Video dari Local */}
+                                      <div className="flex gap-1">
                                         <button
                                           type="button"
                                           onClick={() => {
-                                            setPersonalIndex(idx)
-                                            setPersonalCardExpanded(true)
-                                            setEditingProfileClassId(null)
+                                            if (videoInputRef.current) {
+                                              uploadVideoTargetRef.current = { classId: currentClass.id, studentName: m.student_name }
+                                              videoInputRef.current.click()
+                                            }
                                           }}
-                                          className="w-full h-full hover:opacity-90 transition-opacity"
+                                          className="flex-1 px-2 py-1.5 rounded text-[10px] bg-blue-600/20 text-blue-400 hover:bg-blue-600/30 transition-colors flex items-center justify-center gap-1"
                                         >
-                                          <img src={firstPhoto} alt={m.student_name} className="w-full h-full object-cover" />
+                                          <Video className="w-3 h-3" />
+                                          Upload Video
                                         </button>
-                                        {/* Video Play Button Overlay */}
                                         {m.video_url && (
                                           <button
                                             type="button"
-                                            onClick={(e) => {
-                                              e.stopPropagation()
-                                              if (onPlayVideo) {
-                                                onPlayVideo(m.video_url!)
+                                            onClick={() => {
+                                              if (confirm('Hapus video?')) {
+                                                setEditProfileVideoUrl('')
                                               }
                                             }}
-                                            className="absolute bottom-2 right-2 w-10 h-10 rounded-full bg-black/70 hover:bg-black/90 flex items-center justify-center group transition-all hover:scale-110"
-                                            title="Putar Video"
+                                            className="px-2 py-1.5 rounded text-[10px] bg-red-600/20 text-red-400 hover:bg-red-600/30 transition-colors"
+                                            title="Hapus Video"
                                           >
-                                            <Play className="w-5 h-5 text-white ml-0.5" fill="currentColor" />
+                                            <Trash2 className="w-3 h-3" />
                                           </button>
                                         )}
                                       </div>
-                                    )}
-
-                                    {/* Profile info section - compact seperti guru */}
-                                    <div className="flex flex-col flex-1 p-2.5 min-h-0">
-                                      {/* Name & Email Group */}
-                                      <div className="mb-0.5">
-                                        <h3 className="font-bold text-white text-sm leading-snug line-clamp-1">
-                                          {m.student_name}
-                                          {m.is_me ? <span className="font-normal text-lime-400 ml-1 text-xs">(Anda)</span> : ''}
-                                        </h3>
-                                        {m.email && <p className="text-gray-400 text-xs line-clamp-1">{m.email}</p>}
-                                      </div>
-
-                                      {/* Details Group */}
-                                      <div className="space-y-0 text-xs text-gray-300 leading-tight">
-                                        {m.date_of_birth && (
-                                          <p className="line-clamp-1 flex items-center gap-1.5">
-                                            <Cake className="w-3 h-3 text-gray-400 flex-shrink-0" />
-                                            <span className="truncate">{m.date_of_birth}</span>
-                                          </p>
-                                        )}
-                                        {m.instagram && (
-                                          <a
-                                            href={m.instagram.startsWith('http') ? m.instagram : `https://instagram.com/${m.instagram.replace('@', '')}`}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="flex items-center gap-1.5 hover:text-white transition-colors line-clamp-1 group/ig"
-                                            onClick={(e) => e.stopPropagation()}
-                                          >
-                                            <Instagram className="w-3 h-3 text-gray-400 group-hover/ig:text-pink-500 transition-colors flex-shrink-0" />
-                                            <span className="truncate">
-                                              {m.instagram.includes('instagram.com')
-                                                ? '@' + m.instagram.split('/').filter(Boolean).pop()
-                                                : m.instagram.startsWith('@') ? m.instagram : '@' + m.instagram
-                                              }
-                                            </span>
-                                          </a>
-                                        )}
-                                        {m.message && (
-                                          <div className="flex gap-1 pt-1">
-                                            <p
-                                              className="italic text-gray-400 overflow-hidden leading-tight flex-1"
-                                              style={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical' }}
-                                            >
-                                              "{m.message}"
-                                            </p>
-                                          </div>
-                                        )}
-                                      </div>
-                                    </div>
-
-                                    {/* Action buttons - sama seperti TeacherCard */}
-                                    <div className="px-2.5 pt-0 pb-3 mt-auto">
-                                      <div className="flex gap-1.5 h-7">
-                                        {(canManage || (m.is_me && hasApprovedAccess)) && (
-                                          <button
-                                            type="button"
-                                            onClick={(e) => {
-                                              e.stopPropagation()
-                                              if (canManage && !m.is_me && onStartEditMember) {
-                                                setEditingProfileClassId(currentClass.id)
-                                                setEditingMemberUserId?.(m.user_id)
-                                                onStartEditMember(m, currentClass.id)
-                                              } else if (m.is_me && onStartEditMyProfile) {
-                                                setEditingProfileClassId(currentClass.id)
-                                                setEditingMemberUserId?.(null)
-                                                onStartEditMyProfile(currentClass.id)
-                                                if (fetchStudentPhotosForCard) {
-                                                  fetchStudentPhotosForCard(currentClass.id, m.student_name)
-                                                }
-                                              }
-                                            }}
-                                            className="flex-1 text-xs font-medium rounded-lg bg-lime-900/40 text-lime-400 hover:bg-lime-900/60 border border-lime-500/20 transition-colors flex items-center justify-center gap-1.5"
-                                          >
-                                            <Edit3 className="w-3.5 h-3.5" /> Edit
-                                          </button>
-                                        )}
-                                        {canManage && (
-                                          <button
-                                            type="button"
-                                            onClick={() => setDeleteMemberConfirm({ classId: currentClass.id, userId: m.is_me ? undefined : m.user_id, memberName: m.student_name })}
-                                            className="flex-1 text-xs font-medium rounded-lg bg-red-900/40 text-red-400 hover:bg-red-900/60 border border-red-500/20 transition-colors flex items-center justify-center gap-1.5"
-                                            title="Hapus anggota"
-                                          >
-                                            <Trash2 className="w-3.5 h-3.5" /> Hapus
-                                          </button>
-                                        )}
-                                      </div>
+                                      <textarea
+                                        value={editProfilePesan}
+                                        onChange={(e) => setEditProfilePesan(e.target.value)}
+                                        placeholder="Pesan"
+                                        rows={2}
+                                        className="w-full px-2 py-1 rounded text-[10px] bg-white/5 border border-white/10 text-app resize-none"
+                                      />
                                     </div>
                                   </div>
-
-                                  {/* Back Side - Edit Form */}
-                                  <div
-                                    style={{
-                                      backfaceVisibility: 'hidden',
-                                      WebkitBackfaceVisibility: 'hidden',
-                                      transform: 'rotateY(180deg)',
-                                      position: 'absolute',
-                                      top: 0,
-                                      left: 0,
-                                      width: '100%',
-                                      height: '100%',
-                                    }}
-                                    className="flex flex-col rounded-lg border border-white/10 bg-white/[0.02] overflow-hidden p-4"
-                                  >
-                                    <div className="flex-1 overflow-y-auto">
-                                      <h3 className="text-app font-medium text-xs mb-2 flex items-center gap-1">
-                                        <Edit3 className="w-3 h-3" />
-                                        Edit Profil
-                                      </h3>
-                                      <div className="space-y-1.5">
-                                        <input
-                                          type="text"
-                                          value={editProfileName}
-                                          onChange={(e) => setEditProfileName(e.target.value)}
-                                          placeholder="Nama"
-                                          className="w-full px-2 py-1 rounded text-[10px] bg-white/5 border border-white/10 text-app"
-                                        />
-                                        <input
-                                          type="email"
-                                          value={editProfileEmail}
-                                          onChange={(e) => setEditProfileEmail(e.target.value)}
-                                          placeholder="Email"
-                                          className="w-full px-2 py-1 rounded text-[10px] bg-white/5 border border-white/10 text-app"
-                                        />
-                                        <input
-                                          type="text"
-                                          value={editProfileTtl}
-                                          onChange={(e) => setEditProfileTtl(e.target.value)}
-                                          placeholder="TTL (YYYY-MM-DD)"
-                                          className="w-full px-2 py-1 rounded text-[10px] bg-white/5 border border-white/10 text-app"
-                                        />
-                                        <input
-                                          type="text"
-                                          value={editProfileInstagram}
-                                          onChange={(e) => setEditProfileInstagram(e.target.value)}
-                                          placeholder="IG (@username)"
-                                          className="w-full px-2 py-1 rounded text-[10px] bg-white/5 border border-white/10 text-app"
-                                        />
-                                        {/* Upload Foto dari Local */}
-                                        <button
-                                          type="button"
-                                          onClick={() => {
-                                            if (fileInputRef.current) {
-                                              uploadPhotoTargetRef.current = { classId: currentClass.id, studentName: m.student_name }
-                                              fileInputRef.current.click()
-                                            }
-                                          }}
-                                          className="w-full px-2 py-1.5 rounded text-[10px] bg-green-600/20 text-green-400 hover:bg-green-600/30 transition-colors flex items-center justify-center gap-1"
-                                        >
-                                          <ImagePlus className="w-3 h-3" />
-                                          Upload Foto
-                                        </button>
-
-                                        {/* Preview Foto dengan tombol hapus */}
-                                        {studentPhotosInCard.length > 0 && (
-                                          <div className="space-y-1">
-                                            <p className="text-white/60 text-[9px] uppercase">Foto Anda ({studentPhotosInCard.length})</p>
-                                            <div className="grid grid-cols-3 gap-1">
-                                              {studentPhotosInCard.map((photo, idx) => (
-                                                <div key={photo.id} className="relative aspect-square rounded overflow-hidden bg-white/5 group">
-                                                  <img
-                                                    src={photo.file_url}
-                                                    alt={`Foto ${idx + 1}`}
-                                                    className="w-full h-full object-cover"
-                                                  />
-                                                  <button
-                                                    type="button"
-                                                    onClick={() => {
-                                                      if (confirm(`Hapus foto ${idx + 1}?`)) {
-                                                        if (onDeletePhoto) {
-                                                          onDeletePhoto(photo.id, currentClass.id, m.student_name)
-                                                        }
-                                                      }
-                                                    }}
-                                                    className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
-                                                    title={`Hapus foto ${idx + 1}`}
-                                                  >
-                                                    <Trash2 className="w-4 h-4 text-red-400" />
-                                                  </button>
-                                                </div>
-                                              ))}
-                                            </div>
-                                          </div>
-                                        )}
-                                        <input
-                                          type="url"
-                                          value={stripOriginForDisplay(editProfileVideoUrl)}
-                                          onChange={(e) => setEditProfileVideoUrl(e.target.value)}
-                                          placeholder="URL Video (YouTube, dll)"
-                                          className="w-full px-2 py-1 rounded text-[10px] bg-white/5 border border-white/10 text-app"
-                                        />
-                                        {/* Upload Video dari Local */}
-                                        <div className="flex gap-1">
-                                          <button
-                                            type="button"
-                                            onClick={() => {
-                                              if (videoInputRef.current) {
-                                                uploadVideoTargetRef.current = { classId: currentClass.id, studentName: m.student_name }
-                                                videoInputRef.current.click()
-                                              }
-                                            }}
-                                            className="flex-1 px-2 py-1.5 rounded text-[10px] bg-blue-600/20 text-blue-400 hover:bg-blue-600/30 transition-colors flex items-center justify-center gap-1"
-                                          >
-                                            <Video className="w-3 h-3" />
-                                            Upload Video
-                                          </button>
-                                          {m.video_url && (
-                                            <button
-                                              type="button"
-                                              onClick={() => {
-                                                if (confirm('Hapus video?')) {
-                                                  setEditProfileVideoUrl('')
-                                                }
-                                              }}
-                                              className="px-2 py-1.5 rounded text-[10px] bg-red-600/20 text-red-400 hover:bg-red-600/30 transition-colors"
-                                              title="Hapus Video"
-                                            >
-                                              <Trash2 className="w-3 h-3" />
-                                            </button>
-                                          )}
-                                        </div>
-                                        <textarea
-                                          value={editProfilePesan}
-                                          onChange={(e) => setEditProfilePesan(e.target.value)}
-                                          placeholder="Pesan"
-                                          rows={2}
-                                          className="w-full px-2 py-1 rounded text-[10px] bg-white/5 border border-white/10 text-app resize-none"
-                                        />
-                                      </div>
-                                    </div>
-                                    <div className="flex gap-1 mt-2">
-                                      <button
-                                        type="button"
-                                        onClick={() => handleSaveProfile(currentClass.id, false, editingMemberUserId ?? undefined)}
-                                        disabled={savingProfile}
-                                        className="flex-1 px-2 py-1 rounded text-[10px] bg-lime-600 text-white font-medium hover:bg-lime-500 disabled:opacity-50"
-                                      >
-                                        {savingProfile ? 'Simpan...' : 'Simpan'}
-                                      </button>
-                                      <button
-                                        type="button"
-                                        onClick={() => { setEditingProfileClassId(null); setEditingMemberUserId?.(null) }}
-                                        className="flex-1 px-2 py-1 rounded text-[10px] border border-white/10 text-app font-medium hover:bg-white/5"
-                                      >
-                                        Batal
-                                      </button>
-                                    </div>
+                                  <div className="flex gap-1 mt-2">
+                                    <button
+                                      type="button"
+                                      onClick={() => handleSaveProfile(currentClass.id, false, editingMemberUserId ?? undefined)}
+                                      disabled={savingProfile}
+                                      className="flex-1 px-2 py-1 rounded text-[10px] bg-lime-600 text-white font-medium hover:bg-lime-500 disabled:opacity-50"
+                                    >
+                                      {savingProfile ? 'Simpan...' : 'Simpan'}
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => { setEditingProfileClassId(null); setEditingMemberUserId?.(null) }}
+                                      className="flex-1 px-2 py-1 rounded text-[10px] border border-white/10 text-app font-medium hover:bg-white/5"
+                                    >
+                                      Batal
+                                    </button>
                                   </div>
                                 </div>
                               </div>
-                            )
-                          })}
-                        </div>
-                      );
+                            </div>
+                          )
+                        })}
+                      </div>
+                    );
 
                   return (
-                    <div className="max-w-5xl mx-auto px-3 py-3 sm:p-4">
+                    <div className="max-w-5xl mx-auto px-3 pb-3 pt-1.5 sm:px-4 sm:pb-4 sm:pt-1.5">
                       {classBody}
                     </div>
                   );

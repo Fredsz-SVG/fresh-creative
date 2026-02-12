@@ -20,7 +20,7 @@ export async function PATCH(
     }
 
     const supabase = await createClient()
-    
+
     // Check permissions
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
@@ -141,8 +141,24 @@ export async function PATCH(
           // Don't fail the whole operation, access already granted
         }
 
-        return NextResponse.json({ 
-          success: true, 
+        // Fetch album name for notification
+        const { data: albumData } = await client
+          .from('albums')
+          .select('name')
+          .eq('id', albumId)
+          .single()
+
+        // Create notification
+        await client.from('notifications').insert({
+          user_id: joinRequest.user_id,
+          title: 'Status Pendaftaran Album',
+          message: `${albumData?.name || 'Album'}\n${joinRequest.student_name}${joinRequest.class_name ? ` - ${joinRequest.class_name}` : ''}\n${joinRequest.email}`,
+          type: 'success',
+          metadata: { status: 'Disetujui' }
+        })
+
+        return NextResponse.json({
+          success: true,
           message: 'Request disetujui dan user ditambahkan ke kelas'
         })
       } else {
@@ -171,8 +187,24 @@ export async function PATCH(
         )
       }
 
-      return NextResponse.json({ 
-        success: true, 
+      // Fetch album name for notification
+      const admin = createAdminClient()
+      const { data: albumData } = await admin
+        .from('albums')
+        .select('name')
+        .eq('id', albumId)
+        .single()
+
+      await admin.from('notifications').insert({
+        user_id: joinRequest.user_id,
+        title: 'Status Pendaftaran Album',
+        message: `${albumData?.name || 'Album'}\n${joinRequest.student_name}${joinRequest.class_name ? ` - ${joinRequest.class_name}` : ''}\n${joinRequest.email}`,
+        type: 'error',
+        metadata: { status: 'Ditolak', reason: rejected_reason }
+      })
+
+      return NextResponse.json({
+        success: true,
         message: 'Request ditolak',
         data: updated?.[0]
       })
@@ -194,7 +226,7 @@ export async function DELETE(
   try {
     const { id: albumId, requestId } = await context.params
     const supabase = await createClient()
-    
+
     const { error } = await supabase
       .from('album_join_requests')
       .delete()

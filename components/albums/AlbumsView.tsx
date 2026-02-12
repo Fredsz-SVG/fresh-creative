@@ -31,6 +31,7 @@ export type AlbumRow = {
 
 export type AlbumsViewProps = {
   variant: 'user' | 'admin'
+  initialData?: AlbumRow[]
 }
 
 function AlbumCard({
@@ -152,16 +153,16 @@ function AlbumCard({
   return <CardContent />
 }
 
-export default function AlbumsView({ variant }: AlbumsViewProps) {
-  const [albums, setAlbums] = useState<AlbumRow[]>([])
-  const [loading, setLoading] = useState(true)
+export default function AlbumsView({ variant, initialData }: AlbumsViewProps) {
+  const [albums, setAlbums] = useState<AlbumRow[]>(initialData || [])
+  const [loading, setLoading] = useState(!initialData)
   const [loadingId, setLoadingId] = useState<string | null>(null)
   const [inviteLoading, setInviteLoading] = useState<string | null>(null)
   const [inviteModal, setInviteModal] = useState<{ link: string; albumName: string } | null>(null)
   const router = useRouter() // Add router for navigation
 
-  const fetchAlbums = useCallback(async () => {
-    setLoading(true)
+  const fetchAlbums = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true)
     try {
       const res = await fetch('/api/albums', { credentials: 'include' })
       if (!res.ok) throw new Error('Failed to fetch albums')
@@ -174,15 +175,19 @@ export default function AlbumsView({ variant }: AlbumsViewProps) {
     }
   }, [])
 
+
+
   useEffect(() => {
-    fetchAlbums()
-  }, [fetchAlbums])
+    if (!initialData) {
+      fetchAlbums()
+    }
+  }, [fetchAlbums, initialData])
 
   useEffect(() => {
     const channel = supabase
       .channel('albums-realtime')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'albums' }, () => {
-        fetchAlbums()
+        fetchAlbums(true) // Silent data update
       })
       .subscribe()
 
@@ -206,7 +211,7 @@ export default function AlbumsView({ variant }: AlbumsViewProps) {
         alert(err?.error ?? 'Gagal approve')
         return
       }
-      await fetchAlbums()
+      await fetchAlbums(true)
     } finally {
       setLoadingId(null)
     }
@@ -227,7 +232,7 @@ export default function AlbumsView({ variant }: AlbumsViewProps) {
         alert(err?.error ?? 'Gagal decline')
         return
       }
-      await fetchAlbums()
+      await fetchAlbums(true)
     } finally {
       setLoadingId(null)
     }
@@ -279,7 +284,7 @@ export default function AlbumsView({ variant }: AlbumsViewProps) {
         alert(err?.error ?? 'Gagal hapus')
         return
       }
-      await fetchAlbums()
+      await fetchAlbums(true)
     } finally {
       setLoadingId(null)
     }
@@ -318,9 +323,48 @@ export default function AlbumsView({ variant }: AlbumsViewProps) {
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center py-16 sm:p-20">
-          <Loader2 className="w-8 h-8 text-lime-500 animate-spin" />
-        </div>
+        isAdmin ? (
+          <div className="bg-white/[0.02] border border-white/10 rounded-xl overflow-hidden animate-pulse">
+            {/* Table Header Skeleton */}
+            <div className="h-10 bg-white/5 border-b border-white/5 w-full"></div>
+            {/* Table Rows Skeleton */}
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div key={i} className="flex items-center px-4 py-4 border-b border-white/5 gap-4">
+                <div className="h-4 bg-white/10 rounded w-1/3"></div>
+                <div className="h-4 bg-white/5 rounded w-1/6"></div>
+                <div className="h-4 bg-white/5 rounded w-1/6 hidden sm:block"></div>
+                <div className="h-4 bg-white/5 rounded w-1/6 hidden md:block"></div>
+                <div className="h-8 w-8 bg-white/5 rounded-full ml-auto"></div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-3 sm:gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+              <div key={i} className="border border-white/10 rounded-xl p-3 sm:p-4 flex flex-col h-full bg-white/[0.02] animate-pulse min-h-[160px]">
+                <div className="flex-grow">
+                  {/* Title & Subtitle */}
+                  <div className="space-y-2 mb-3">
+                    <div className="h-6 bg-white/10 rounded-md w-3/4"></div>
+                    <div className="h-4 bg-white/5 rounded-md w-1/2"></div>
+                  </div>
+
+                  {/* Badges (Status & Date) */}
+                  <div className="flex flex-wrap gap-2 mt-auto">
+                    <div className="h-6 w-20 bg-white/5 rounded-full"></div>
+                    <div className="h-6 w-24 bg-white/5 rounded-full"></div>
+                  </div>
+                </div>
+
+                {/* Footer (Divider & Action Text) */}
+                <div className="mt-4 pt-4 border-t border-white/10 flex flex-col items-center gap-2">
+                  {/* Mimic center text "Klik untuk buka" */}
+                  <div className="h-3 bg-white/5 rounded-full w-1/3"></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )
       ) : albums.length === 0 ? (
         <div className="text-center py-12 sm:py-16 border-2 border-dashed border-white/10 rounded-xl">
           <h3 className="text-base font-semibold text-app sm:text-lg">{isAdmin ? 'Belum ada data' : 'Belum ada album'}</h3>

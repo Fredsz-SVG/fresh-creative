@@ -66,14 +66,9 @@ export default function PhotoToVideo() {
   return (
     <section id="phototovideo" className="py-4 md:py-6">
       <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-4 md:mb-6">
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-2 md:mb-4 text-gray-900 dark:text-white">
-            Photo to Video
-          </h2>
-          <p className="text-sm sm:text-base md:text-lg text-gray-600 dark:text-gray-300">
-            Ubah foto menjadi video dengan AI
-          </p>
-        </div>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mb-3 sm:mb-4 text-center">
+          Upload foto dan tambahkan prompt untuk menghasilkan video.
+        </p>
 
         <form onSubmit={handleGenerateVideo} className="max-w-4xl mx-auto">
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-3 sm:p-4 md:p-6 border border-gray-200 dark:border-gray-700 space-y-4 sm:space-y-5 md:space-y-6">

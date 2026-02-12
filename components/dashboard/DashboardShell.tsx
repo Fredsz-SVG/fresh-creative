@@ -47,6 +47,7 @@ export default function DashboardShell({
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [isOnline, setIsOnline] = useState(true)
   const [showTopUp, setShowTopUp] = useState(false)
+  const [showNotifications, setShowNotifications] = useState(false)
   const [credits, setCredits] = useState(0)
 
   useEffect(() => {
@@ -87,6 +88,55 @@ export default function DashboardShell({
       if (channel) supabase.removeChannel(channel)
     }
   }, [])
+
+
+  // Notifications state
+  const [notifications, setNotifications] = useState<any[]>([])
+  const [unreadCount, setUnreadCount] = useState(0)
+
+  useEffect(() => {
+    fetchNotifications()
+    // Poll every 30s
+    const interval = setInterval(fetchNotifications, 30000)
+    return () => clearInterval(interval)
+  }, [])
+
+  const fetchNotifications = async () => {
+    try {
+      const res = await fetch('/api/user/notifications')
+      const data = await res.json()
+      if (Array.isArray(data)) {
+        setNotifications(data)
+        setUnreadCount(data.filter((n: any) => !n.is_read).length)
+      }
+    } catch (e) {
+      console.error('Failed to fetch notifications', e)
+    }
+  }
+
+  const handleMarkRead = async (id: string) => {
+    try {
+      // Optimistic updatet
+      setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n))
+      setUnreadCount(prev => Math.max(0, prev - 1))
+
+      await fetch(`/api/user/notifications/${id}`, { method: 'PATCH' })
+    } catch (e) {
+      // refetch on error
+      fetchNotifications()
+    }
+  }
+
+  const handleClearNotifications = async () => {
+    if (!confirm('Hapus semua notifikasi?')) return
+    try {
+      setNotifications([])
+      setUnreadCount(0)
+      await fetch('/api/user/notifications', { method: 'DELETE' })
+    } catch (e) {
+      fetchNotifications()
+    }
+  }
 
 
   useEffect(() => {
@@ -249,7 +299,80 @@ export default function DashboardShell({
               {isOnline ? 'Connected' : 'Disconnected'}
             </p>
           </div>
-          {/* Notification icon removed per request */}
+          {/* Notification - Updated per user request */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setShowNotifications(!showNotifications)}
+              className="relative flex items-center justify-center w-10 h-10 rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-colors touch-manipulation"
+            >
+              <Bell className="w-5 h-5" />
+              {unreadCount > 0 && (
+                <span className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-red-500 border border-[#0a0a0b] animate-pulse" />
+              )}
+            </button>
+
+            {showNotifications && (
+              <>
+                <div
+                  className="fixed inset-0 z-40 bg-transparent"
+                  onClick={() => setShowNotifications(false)}
+                />
+                <div className="absolute top-full right-0 mt-2 w-80 bg-[#18181b] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-200">
+                  <div className="p-3 border-b border-white/5 flex items-center justify-between">
+                    <h3 className="text-xs font-semibold text-white uppercase tracking-wider">Notifikasi</h3>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] text-gray-500">{unreadCount} baru</span>
+                      {notifications.length > 0 && (
+                        <button
+                          onClick={handleClearNotifications}
+                          className="text-[10px] text-red-400 hover:text-red-300 transition-colors"
+                        >
+                          Clear
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  <div className="max-h-[300px] overflow-y-auto">
+                    {notifications.length === 0 ? (
+                      <div className="p-4 text-center">
+                        <p className="text-xs text-gray-500 mb-2">Tidak ada notifikasi</p>
+                      </div>
+                    ) : (
+                      notifications.map((n) => (
+                        <div
+                          key={n.id}
+                          onClick={() => !n.is_read && handleMarkRead(n.id)}
+                          className={`p-3 hover:bg-white/5 transition-colors cursor-pointer border-l-2 ${n.is_read ? 'border-transparent opacity-60' : 'border-lime-500 bg-white/[0.02]'}`}
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${n.type === 'error' ? 'bg-red-500/20 text-red-400' : 'bg-lime-500/20 text-lime-400'}`}>
+                              <Bell className="w-4 h-4" />
+                            </div>
+                            <div className="space-y-1 min-w-0 flex-1">
+                              <div className="flex justify-between items-start gap-2">
+                                <p className="text-xs font-semibold text-white leading-tight truncate">{n.title}</p>
+                                {!n.is_read && <span className="w-1.5 h-1.5 rounded-full bg-lime-500 shrink-0 mt-1" />}
+                              </div>
+                              <div className="text-[11px] text-gray-400 space-y-0.5 whitespace-pre-line">
+                                {n.message}
+                              </div>
+                              {n.metadata?.status && (
+                                <p className="text-[10px] text-lime-400 font-medium pt-1">{n.metadata.status}</p>
+                              )}
+                              <p className="text-[9px] text-gray-600 pt-1">
+                                {new Date(n.created_at).toLocaleDateString()} {new Date(n.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
           {onLogout && (
             // show person icon only on mobile; desktop hides it
             <button

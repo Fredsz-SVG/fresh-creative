@@ -112,14 +112,9 @@ export default function PhotoGroup() {
   return (
     <section id="photogroup" className="py-4 md:py-6">
       <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-4 md:mb-6">
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-2 md:mb-4 text-gray-900 dark:text-white">
-            Photo Group
-          </h2>
-          <p className="text-sm sm:text-base md:text-lg text-gray-600 dark:text-gray-300">
-            Gabungkan maksimal 10 gambar menjadi 1 foto dengan AI
-          </p>
-        </div>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mb-3 sm:mb-4 text-center">
+          Upload 2–10 gambar untuk digabung menjadi satu foto grup.
+        </p>
 
         <form onSubmit={handleGenerateGroup} className="max-w-4xl mx-auto">
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-3 sm:p-4 md:p-6 border border-gray-200 dark:border-gray-700 space-y-4 sm:space-y-5 md:space-y-6">

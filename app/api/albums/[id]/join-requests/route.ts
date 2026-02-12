@@ -10,10 +10,10 @@ export async function GET(
   try {
     const { id: albumId } = await context.params
     const supabase = await createClient()
-    
+
     const url = new URL(request.url)
     const status = url.searchParams.get('status') // 'pending', 'approved', 'rejected', or 'all'
-    
+
     // Check permissions
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
@@ -87,11 +87,9 @@ export async function POST(
 ) {
   try {
     const { id: albumId } = await context.params
-    console.log('[JOIN-REQUEST] Received POST for album:', albumId)
-    
+
     const body = await request.json()
     const { student_name, class_name, email, phone } = body
-    console.log('[JOIN-REQUEST] Form data:', { student_name, email, phone, class_name })
 
     if (!student_name || !email) {
       return NextResponse.json(
@@ -101,7 +99,7 @@ export async function POST(
     }
 
     const supabase = await createClient()
-    
+
     // Check if user is authenticated
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (!user) {
@@ -110,8 +108,7 @@ export async function POST(
         { status: 401 }
       )
     }
-    
-    console.log('[JOIN-REQUEST] User authenticated:', user.id)
+
 
     // Use admin client to check album (bypass RLS)
     const adminClient = createAdminClient()
@@ -125,7 +122,7 @@ export async function POST(
     // Check if album exists and get capacity
     const { data: album, error: albumError } = await adminClient
       .from('albums')
-      .select('id, students_count')
+      .select('id, students_count, name')
       .eq('id', albumId)
       .maybeSingle()
 
@@ -137,7 +134,6 @@ export async function POST(
       )
     }
 
-    console.log('[JOIN-REQUEST] Album found:', album.id, '- checking capacity...')
 
     // Check capacity using admin client
     const { data: stats, error: statsError } = await adminClient.rpc('get_album_join_stats', {
@@ -150,7 +146,6 @@ export async function POST(
 
     if (stats && stats.length > 0) {
       const { available_slots } = stats[0]
-      console.log('[JOIN-REQUEST] Available slots:', available_slots)
       if (available_slots <= 0) {
         return NextResponse.json(
           { error: 'Maaf, album sudah penuh. Tidak bisa menerima pendaftaran lagi.' },
@@ -168,7 +163,6 @@ export async function POST(
       .maybeSingle()
 
     if (existing) {
-      console.log('[JOIN-REQUEST] User already has request with status:', existing.status)
       if (existing.status === 'pending') {
         return NextResponse.json(
           { error: 'Anda sudah mendaftar dan menunggu persetujuan' },
@@ -181,7 +175,6 @@ export async function POST(
         )
       } else if (existing.status === 'rejected') {
         // If rejected, update the existing record to pending (re-register)
-        console.log('[JOIN-REQUEST] Re-registering rejected user, updating existing record...')
         const { data: updated_data, error: updateError } = await adminClient
           .from('album_join_requests')
           .update({
@@ -203,9 +196,17 @@ export async function POST(
           )
         }
 
-        console.log('[JOIN-REQUEST] Successfully updated rejected request to pending')
-        return NextResponse.json({ 
-          success: true, 
+        // Notification
+        await adminClient.from('notifications').insert({
+          user_id: user.id,
+          title: 'Status Pendaftaran Album',
+          message: `${album.name}\n${student_name}${class_name ? ` - ${class_name}` : ''}\n${email}`,
+          type: 'info',
+          metadata: { status: 'Menunggu Persetujuan' }
+        })
+
+        return NextResponse.json({
+          success: true,
           message: 'Pendaftaran berhasil! Tunggu persetujuan dari admin.',
           data: updated_data?.[0]
         })
@@ -234,9 +235,17 @@ export async function POST(
       )
     }
 
-    console.log('[JOIN-REQUEST] Successfully inserted request')
-    return NextResponse.json({ 
-      success: true, 
+    // Notification
+    await adminClient.from('notifications').insert({
+      user_id: user.id,
+      title: 'Status Pendaftaran Album',
+      message: `${album.name}\n${student_name}${class_name ? ` - ${class_name}` : ''}\n${email}`,
+      type: 'info',
+      metadata: { status: 'Menunggu Persetujuan' }
+    })
+
+    return NextResponse.json({
+      success: true,
       message: 'Pendaftaran berhasil! Tunggu persetujuan dari admin.',
       data: request_data?.[0]
     })

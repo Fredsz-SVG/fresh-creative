@@ -24,7 +24,7 @@ export async function GET(
   // Check if it's a student invite token
   const { data: album, error: albumErr } = await admin
     .from('albums')
-    .select('id, name, type, student_invite_expires_at')
+    .select('id, name, type, student_invite_expires_at, description, cover_image_url')
     .eq('student_invite_token', token)
     .maybeSingle()
 
@@ -33,10 +33,10 @@ export async function GET(
   }
 
   // Check expiration
-  const expiresAt = album.student_invite_expires_at 
-    ? new Date(album.student_invite_expires_at) 
+  const expiresAt = album.student_invite_expires_at
+    ? new Date(album.student_invite_expires_at)
     : null
-  
+
   if (expiresAt && expiresAt < new Date()) {
     return NextResponse.json({ error: 'Invite expired' }, { status: 410 })
   }
@@ -46,6 +46,8 @@ export async function GET(
     albumId: album.id,
     name: album.name,
     type: album.type,
+    description: album.description,
+    coverImageUrl: album.cover_image_url,
     expiresAt: expiresAt ? expiresAt.toISOString() : null,
   })
 }

@@ -215,14 +215,9 @@ export default function TryOn() {
   return (
     <section id="tryon-gradio" className="py-4 md:py-6">
       <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-4 md:mb-6">
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-2 md:mb-4 text-gray-900 dark:text-white">
-            Virtual Try-On (API)
-          </h2>
-          <p className="text-sm sm:text-base md:text-lg text-gray-600 dark:text-gray-300">
-            Foto orang + 1–3 foto baju → satu foto hasil (semua baju digabung di satu gambar)
-          </p>
-        </div>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mb-3 sm:mb-4 text-center">
+          Upload foto orang dan 1–3 item, lalu generate.
+        </p>
 
         <form onSubmit={handleGenerate} className="max-w-4xl mx-auto">
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-3 sm:p-4 md:p-6 border border-gray-200 dark:border-gray-700 space-y-4 sm:space-y-5 md:space-y-6">
@@ -277,16 +272,11 @@ export default function TryOn() {
             <div>
               <label className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-semibold mb-2 sm:mb-3 text-gray-700 dark:text-gray-300">
                 <Shirt className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                Foto Produk / Baju (maks. {MAX_PRODUCTS}) <span className="text-red-500">*</span>
+                Foto Produk / Item (maks. {MAX_PRODUCTS}) <span className="text-red-500">*</span>
               </label>
               <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
-                Upload 1–{MAX_PRODUCTS} foto baju. Hasil akhir = satu foto (orang memakai semua baju yang diupload).
+                Urutan berpengaruh — pastikan dari outfit atas ke bawah.
               </p>
-              <div className="p-2.5 sm:p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg mb-3">
-                <p className="text-xs text-amber-800 dark:text-amber-200">
-                  <strong>Urutan berpengaruh:</strong> Model memproses item 1 → 2 → 3. Jika topi/aksesori mengubah tampilan baju, coba urutan: <strong>Baju dulu (posisi 1)</strong>, lalu topi/aksesori (posisi 2 atau 3). Batasan model: mengubah satu item bisa mempengaruhi area lain.
-                </p>
-              </div>
               <div
                 onClick={() => products.length < MAX_PRODUCTS && document.getElementById('product-upload')?.click()}
                 className={`border-2 border-dashed rounded-lg p-4 sm:p-5 md:p-6 text-center transition-colors ${products.length < MAX_PRODUCTS

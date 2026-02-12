@@ -1518,11 +1518,9 @@ export default function AiGenerate() {
   return (
     <section id="image-editor" className="py-4 md:py-6">
       <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-4 md:mb-6">
-
-
-
-        </div>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mb-3 sm:mb-4 text-center">
+          Edit foto, hapus background, dan tambahkan efek.
+        </p>
 
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
           {originalImage ? (

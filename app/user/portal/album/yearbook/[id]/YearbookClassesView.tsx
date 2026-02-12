@@ -7,13 +7,13 @@ type AlbumClass = { id: string; name: string; sort_order: number; student_count:
 type ClassAccess = { id: string; student_name: string; email?: string | null; status: string }
 type ClassRequest = { id: string; student_name: string; email?: string | null; status: string }
 type ClassMember = { user_id: string; student_name: string; email: string | null; date_of_birth: string | null; instagram: string | null; message: string | null; video_url: string | null; is_me?: boolean }
-type StudentInClass = { student_name: string; photo_count: number }
+
 
 export type YearbookClassesViewProps = {
   album: { classes: AlbumClass[] }
   classIndex: number
   setClassIndex: (fn: (i: number) => number) => void
-  studentsByClass: Record<string, StudentInClass[]>
+
   setView: (v: 'cover' | 'classes' | 'gallery') => void
   isOwner: boolean
   isAlbumAdmin?: boolean
@@ -94,18 +94,24 @@ export type YearbookClassesViewProps = {
   handleUploadCoverVideo?: (file: File) => Promise<void>
   handleDeleteCoverVideo?: () => Promise<void>
   uploadingCoverVideo?: boolean
+  handleJoinAsOwner?: (classId: string) => void
+  currentUserId?: string | null
+  handleUpdateRole?: (userId: string, role: 'admin' | 'member') => Promise<void>
+  handleRemoveMember?: (userId: string) => Promise<void>
+  onTeacherCountChange?: (count: number) => void
+  onTeamMemberCountChange?: (count: number) => void
 }
 
 export default function YearbookClassesView(props: YearbookClassesViewProps) {
   const classes = props.album.classes ?? []
   const currentClass = classes[props.classIndex]
-  const students = currentClass ? (props.studentsByClass[currentClass.id] ?? []) : []
+
 
   const uiProps = {
     ...props,
     classes,
     currentClass,
-    students,
+
   }
 
   return React.createElement(YearbookClassesViewUI, uiProps)

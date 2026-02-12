@@ -14,9 +14,13 @@ type UserAsset = {
     created_at: string
 }
 
-export default function FileExplorer() {
-    const [files, setFiles] = useState<UserAsset[]>([])
-    const [loading, setLoading] = useState(true)
+type FileExplorerProps = {
+    initialData?: UserAsset[]
+}
+
+export default function FileExplorer({ initialData }: FileExplorerProps) {
+    const [files, setFiles] = useState<UserAsset[]>(initialData || [])
+    const [loading, setLoading] = useState(!initialData)
     const [uploading, setUploading] = useState(false)
     const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -37,8 +41,10 @@ export default function FileExplorer() {
     }
 
     useEffect(() => {
-        fetchFiles()
-    }, [])
+        if (!initialData) {
+            fetchFiles()
+        }
+    }, [initialData])
 
     const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
@@ -134,8 +140,15 @@ export default function FileExplorer() {
             </div>
 
             {loading ? (
-                <div className="flex items-center justify-center py-16 sm:p-20">
-                    <Loader2 className="w-8 h-8 text-lime-500 animate-spin" />
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((i) => (
+                        <div key={i} className="aspect-square bg-white/[0.02] rounded-xl border border-white/10 animate-pulse relative overflow-hidden">
+                            <div className="absolute inset-0 flex items-center justify-center opacity-50">
+                                <div className="w-12 h-12 rounded-lg bg-white/5"></div>
+                            </div>
+                            <div className="absolute bottom-3 left-3 right-3 h-3 bg-white/5 rounded-full opacity-60"></div>
+                        </div>
+                    ))}
                 </div>
             ) : files.length === 0 ? (
                 <div className="flex flex-col items-center justify-center text-center py-12 sm:py-16 border-2 border-dashed border-white/10 rounded-xl">
