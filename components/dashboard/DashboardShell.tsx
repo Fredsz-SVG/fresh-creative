@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
@@ -137,6 +137,21 @@ export default function DashboardShell({
       fetchNotifications()
     }
   }
+
+  // Handle click outside notifications
+  const notificationRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!showNotifications) return
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
+        setShowNotifications(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [showNotifications])
 
 
   useEffect(() => {
@@ -300,7 +315,7 @@ export default function DashboardShell({
             </p>
           </div>
           {/* Notification - Updated per user request */}
-          <div className="relative">
+          <div className="relative" ref={notificationRef}>
             <button
               type="button"
               onClick={() => setShowNotifications(!showNotifications)}
@@ -314,10 +329,6 @@ export default function DashboardShell({
 
             {showNotifications && (
               <>
-                <div
-                  className="fixed inset-0 z-40 bg-transparent"
-                  onClick={() => setShowNotifications(false)}
-                />
                 <div className="absolute top-full right-0 mt-2 w-80 bg-[#18181b] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-200">
                   <div className="p-3 border-b border-white/5 flex items-center justify-between">
                     <h3 className="text-xs font-semibold text-white uppercase tracking-wider">Notifikasi</h3>
@@ -333,7 +344,7 @@ export default function DashboardShell({
                       )}
                     </div>
                   </div>
-                  <div className="max-h-[300px] overflow-y-auto">
+                  <div className="max-h-[300px] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                     {notifications.length === 0 ? (
                       <div className="p-4 text-center">
                         <p className="text-xs text-gray-500 mb-2">Tidak ada notifikasi</p>

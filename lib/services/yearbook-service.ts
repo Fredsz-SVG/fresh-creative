@@ -9,87 +9,76 @@ import { getCache, setCache, delCache, key } from '@/lib/redis'
  * Used by GET /api/albums/[id] and SSR page.
  */
 export async function getAlbumOverview(albumId: string, userId?: string) {
-    // 1. Try Cache
-    const cacheKey = key.albumOverview(albumId)
-    const cachedData = await getCache<any>(cacheKey)
+    // 2. Fetch DB
+    const admin = createAdminClient()
+    const client = admin || await createClient()
 
-    let albumData = cachedData
+    // Fetch Album Meta
+    const selectWithPosition = 'id, name, type, status, cover_image_url, cover_image_position, cover_video_url, description, user_id, created_at'
+    const selectWithoutPosition = 'id, name, type, status, cover_image_url, description, user_id, created_at'
 
-    // 2. If Miss, Fetch DB
-    if (!albumData) {
-        const admin = createAdminClient()
-        const client = admin || await createClient()
+    const { data: albumWithPosition, error: errWithPosition } = await client
+        .from('albums')
+        .select(selectWithPosition)
+        .eq('id', albumId)
+        .single()
 
-        // Fetch Album Meta
-        const selectWithPosition = 'id, name, type, status, cover_image_url, cover_image_position, cover_video_url, description, user_id, created_at'
-        const selectWithoutPosition = 'id, name, type, status, cover_image_url, description, user_id, created_at'
+    let album: Record<string, unknown> | null = null
 
-        const { data: albumWithPosition, error: errWithPosition } = await client
+    if (errWithPosition && !albumWithPosition) {
+        // Fallback for older schema if column missing (safe bet)
+        const { data: albumFallback } = await client
             .from('albums')
-            .select(selectWithPosition)
+            .select(selectWithoutPosition)
             .eq('id', albumId)
             .single()
-
-        let album: Record<string, unknown> | null = null
-
-        if (errWithPosition && !albumWithPosition) {
-            // Fallback for older schema if column missing (safe bet)
-            const { data: albumFallback } = await client
-                .from('albums')
-                .select(selectWithoutPosition)
-                .eq('id', albumId)
-                .single()
-            album = albumFallback as Record<string, unknown> | null
-            if (album) (album as any).cover_image_position = null
-        } else {
-            album = albumWithPosition as Record<string, unknown> | null
-        }
-
-        if (!album) return null // Not found
-
-        // Fetch Classes & Counts
-        let classesWithCount: any[] = []
-        if (album.type === 'yearbook') {
-            const { data: classes } = await client
-                .from('album_classes')
-                .select('id, name, sort_order')
-                .eq('album_id', albumId)
-                .order('sort_order', { ascending: true })
-
-            const classList = (classes ?? []) as { id: string; name: string; sort_order: number }[]
-            const studentCounts: Record<string, number> = {}
-
-            const { data: allAccess } = await client
-                .from('album_class_access')
-                .select('class_id, student_name, status, photos')
-                .eq('album_id', albumId)
-
-            if (allAccess) {
-                for (const c of classList) {
-                    const classMembers = allAccess.filter(a => a.class_id === c.id)
-                    // Logic: Approved OR has photos
-                    const validMembers = classMembers.filter(a =>
-                        a.status === 'approved' || (Array.isArray(a.photos) && a.photos.length > 0)
-                    )
-                    // Unique Names
-                    const uniqueNames = new Set(validMembers.map(m => m.student_name).filter(Boolean))
-                    studentCounts[c.id] = uniqueNames.size
-                }
-            }
-
-            classesWithCount = classList.map((c) => ({
-                id: c.id,
-                name: c.name,
-                sort_order: c.sort_order,
-                student_count: studentCounts[c.id] ?? 0,
-            }))
-        }
-
-        albumData = { ...album, classes: classesWithCount }
-
-        // Set Cache (TTL 60s)
-        await setCache(cacheKey, albumData, 60)
+        album = albumFallback as Record<string, unknown> | null
+        if (album) (album as any).cover_image_position = null
+    } else {
+        album = albumWithPosition as Record<string, unknown> | null
     }
+
+    if (!album) return null // Not found
+
+    // Fetch Classes & Counts
+    let classesWithCount: any[] = []
+    if (album.type === 'yearbook') {
+        const { data: classes } = await client
+            .from('album_classes')
+            .select('id, name, sort_order')
+            .eq('album_id', albumId)
+            .order('sort_order', { ascending: true })
+
+        const classList = (classes ?? []) as { id: string; name: string; sort_order: number }[]
+        const studentCounts: Record<string, number> = {}
+
+        const { data: allAccess } = await client
+            .from('album_class_access')
+            .select('class_id, student_name, status, photos')
+            .eq('album_id', albumId)
+
+        if (allAccess) {
+            for (const c of classList) {
+                const classMembers = allAccess.filter(a => a.class_id === c.id)
+                // Logic: Approved OR has photos
+                const validMembers = classMembers.filter(a =>
+                    a.status === 'approved' || (Array.isArray(a.photos) && a.photos.length > 0)
+                )
+                // Unique Names
+                const uniqueNames = new Set(validMembers.map(m => m.student_name).filter(Boolean))
+                studentCounts[c.id] = uniqueNames.size
+            }
+        }
+
+        classesWithCount = classList.map((c) => ({
+            id: c.id,
+            name: c.name,
+            sort_order: c.sort_order,
+            student_count: studentCounts[c.id] ?? 0,
+        }))
+    }
+
+    const albumData = { ...album, classes: classesWithCount }
 
     // 3. Permission Checks (if userId provided)
     if (userId) {
@@ -159,10 +148,6 @@ export async function getAlbumOverview(albumId: string, userId?: string) {
  * Fetch All Class Members (for directory) with Redis Cache.
  */
 export async function getAlbumAllMembers(albumId: string) {
-    const cacheKey = key.albumAllClassMembers(albumId)
-    const cached = await getCache<any[]>(cacheKey)
-    if (cached) return cached
-
     const admin = createAdminClient()
     const client = admin || await createClient()
 
@@ -179,7 +164,6 @@ export async function getAlbumAllMembers(albumId: string) {
     }
 
     const result = data || []
-    await setCache(cacheKey, result, 60)
     return result
 }
 

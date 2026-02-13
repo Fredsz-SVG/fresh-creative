@@ -83,6 +83,7 @@ export type YearbookClassesViewProps = {
   onPlayVideo?: (url: string) => void
   fetchStudentPhotosForCard?: (classId: string, studentName: string) => Promise<void>
   isCoverView?: boolean
+  realtimeCounter?: number
   // Cover management props
   uploadingCover?: boolean
   coverPreview?: { file: File; dataUrl: string } | null

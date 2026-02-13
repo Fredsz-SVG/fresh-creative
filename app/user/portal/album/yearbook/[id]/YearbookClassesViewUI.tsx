@@ -93,7 +93,7 @@ function InlineClassEditor(p: any) {
     }
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
     if (!name.trim()) {
-      alert('Nama kelas tidak boleh kosong')
+      toast.error('Nama kelas tidak boleh kosong')
       return
     }
     saveChanges(name, order)
@@ -367,12 +367,22 @@ export default function YearbookClassesViewUI(props: any) {
   const [removeConfirm, setRemoveConfirm] = useState<{ userId: string; memberName: string } | null>(null)
   const [deleteClassConfirm, setDeleteClassConfirm] = useState<{ classId: string; className: string } | null>(null)
   const [deleteMemberConfirm, setDeleteMemberConfirm] = useState<{ classId: string; userId?: string; memberName: string } | null>(null)
+  const [rejectRequestConfirm, setRejectRequestConfirm] = useState<{ requestId: string; studentName: string } | null>(null)
+  const [genericConfirm, setGenericConfirm] = useState<{
+    title: string
+    message: React.ReactNode
+    variant: 'danger' | 'warning' | 'neutral'
+    confirmLabel: string
+    onConfirm: () => void | Promise<void>
+  } | null>(null)
+  const [addTeacherModalOpen, setAddTeacherModalOpen] = useState(false)
+  const [addTeacherName, setAddTeacherName] = useState('')
 
   const canManage = isOwner || isAlbumAdmin || isGlobalAdmin
 
   const fetchMembers = async () => {
     if (!album?.id) return
-    const res = await fetch(`/api/albums/${album.id}/members`, { credentials: 'include' })
+    const res = await fetch(`/api/albums/${album.id}/members`, { credentials: 'include', cache: 'no-store' })
     const data = await res.json().catch(() => [])
     if (res.ok && Array.isArray(data)) {
       setMembers(data)
@@ -417,7 +427,7 @@ export default function YearbookClassesViewUI(props: any) {
   const fetchTeachers = async () => {
     if (!album?.id) return
     try {
-      const res = await fetch(`/api/albums/${album.id}/teachers`, { credentials: 'include' })
+      const res = await fetch(`/api/albums/${album.id}/teachers`, { credentials: 'include', cache: 'no-store' })
       const data = await res.json().catch(() => [])
       if (res.ok && Array.isArray(data)) {
         setTeachers(data)
@@ -438,7 +448,7 @@ export default function YearbookClassesViewUI(props: any) {
   const fetchInviteToken = async () => {
     if (!album?.id) return
     try {
-      const res = await fetch(`/api/albums/${album.id}/invite-token`, { credentials: 'include' })
+      const res = await fetch(`/api/albums/${album.id}/invite-token`, { credentials: 'include', cache: 'no-store' })
       if (res.ok) {
         const data = await res.json()
         setInviteToken(data.token || null)
@@ -487,7 +497,7 @@ export default function YearbookClassesViewUI(props: any) {
     if (!album?.id || !canManage) return
     try {
       const params = status ? `?status=${status}` : '?status=all'
-      const res = await fetch(`/api/albums/${album.id}/join-requests${params}`, { credentials: 'include' })
+      const res = await fetch(`/api/albums/${album.id}/join-requests${params}`, { credentials: 'include', cache: 'no-store' })
       const data = await res.json().catch(() => [])
       if (res.ok && Array.isArray(data)) {
         setJoinRequests(data)
@@ -500,7 +510,7 @@ export default function YearbookClassesViewUI(props: any) {
   const fetchJoinStats = async () => {
     if (!album?.id) return
     try {
-      const res = await fetch(`/api/albums/${album.id}/join-stats`, { credentials: 'include' })
+      const res = await fetch(`/api/albums/${album.id}/join-stats`, { credentials: 'include', cache: 'no-store' })
       const data = await res.json()
       if (res.ok) {
         setJoinStats(data)
@@ -515,7 +525,7 @@ export default function YearbookClassesViewUI(props: any) {
       fetchJoinRequests(approvalTab)
       fetchJoinStats()
     }
-  }, [sidebarMode, approvalTab, canManage, album?.id])
+  }, [sidebarMode, approvalTab, canManage, album?.id, props.realtimeCounter])
 
   // Handle approve join request
   const handleApproveJoinRequest = async (requestId: string, assigned_class_id: string) => {
@@ -549,7 +559,6 @@ export default function YearbookClassesViewUI(props: any) {
   // Handle reject join request
   const handleRejectJoinRequest = async (requestId: string, reason?: string) => {
     if (!album?.id) return
-    if (!confirm('Yakin ingin menolak request ini?')) return
     try {
       const res = await fetch(`/api/albums/${album.id}/join-requests/${requestId}`, {
         method: 'PATCH',
@@ -558,11 +567,11 @@ export default function YearbookClassesViewUI(props: any) {
       })
       const data = await res.json()
       if (res.ok) {
-        toast.success('Request ditolak')
+        toast.success('Pendaftaran ditolak')
         fetchJoinRequests(approvalTab)
         fetchJoinStats()
       } else {
-        toast.error(data.error || 'Gagal menolak request')
+        toast.error(data.error || 'Gagal menolak pendaftaran')
       }
     } catch (error) {
       console.error('Error rejecting request:', error)
@@ -615,7 +624,6 @@ export default function YearbookClassesViewUI(props: any) {
 
   const handleDeleteTeacher = async (teacherId: string, teacherName: string) => {
     if (!album?.id) return
-    if (!confirm(`Hapus ${teacherName} dari daftar?`)) return
     try {
       const res = await fetch(`/api/albums/${album.id}/teachers/${teacherId}`, {
         method: 'DELETE',
@@ -690,7 +698,6 @@ export default function YearbookClassesViewUI(props: any) {
 
   const handleDeleteTeacherPhotoOld = async (teacherId: string) => {
     if (!album?.id) return
-    if (!confirm('Hapus foto guru?')) return
     try {
       const res = await fetch(`/api/albums/${album.id}/teachers/${teacherId}/photo`, {
         method: 'DELETE',
@@ -969,7 +976,7 @@ export default function YearbookClassesViewUI(props: any) {
             <div className="bg-gray-900 border border-red-500/20 rounded-xl p-4 sm:p-6 max-w-md w-full shadow-2xl">
               <h3 className="text-lg font-bold text-red-400 mb-2">Hapus Kelas</h3>
               <p className="text-sm text-muted mb-4">
-                Hapus kelas &quot;<span className="text-white font-medium">{deleteClassConfirm.className}</span>&quot;? Semua data member dan foto di kelas ini akan ikut terhapus.
+                Apakah kamu yakin? Kelas &quot;<span className="text-white font-medium">{deleteClassConfirm.className}</span>&quot; dan semua data member serta foto di dalamnya akan dihapus.
               </p>
               <div className="flex gap-2 justify-end">
                 <button
@@ -999,7 +1006,7 @@ export default function YearbookClassesViewUI(props: any) {
             <div className="bg-gray-900 border border-red-500/20 rounded-xl p-4 sm:p-6 max-w-md w-full shadow-2xl">
               <h3 className="text-lg font-bold text-red-400 mb-2">Hapus Anggota</h3>
               <p className="text-sm text-muted mb-4">
-                Hapus &quot;<span className="text-white font-medium">{deleteMemberConfirm.memberName}</span>&quot; dari kelas? Profil dan data terkait akan dihapus.
+                Apakah kamu yakin ingin menghapus &quot;<span className="text-white font-medium">{deleteMemberConfirm.memberName}</span>&quot; dari kelas? Profil dan data terkait akan dihapus.
               </p>
               <div className="flex gap-2 justify-end">
                 <button
@@ -1017,6 +1024,135 @@ export default function YearbookClassesViewUI(props: any) {
                   className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-500 transition-colors text-sm font-medium"
                 >
                   Ya, Hapus
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Konfirmasi Tolak Pendaftaran */}
+        {rejectRequestConfirm && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+            <div className="bg-gray-900 border border-amber-500/20 rounded-xl p-4 sm:p-6 max-w-md w-full shadow-2xl">
+              <h3 className="text-lg font-bold text-amber-400 mb-2">Tolak Pendaftaran</h3>
+              <p className="text-sm text-muted mb-4">
+                Apakah kamu yakin ingin menolak pendaftaran dari &quot;<span className="text-white font-medium">{rejectRequestConfirm.studentName}</span>&quot;?
+              </p>
+              <div className="flex gap-2 justify-end">
+                <button
+                  onClick={() => setRejectRequestConfirm(null)}
+                  className="px-4 py-2 rounded-lg bg-white/5 text-gray-400 hover:text-white hover:bg-white/10 transition-colors text-sm font-medium"
+                >
+                  Batal
+                </button>
+                <button
+                  onClick={async () => {
+                    if (!rejectRequestConfirm) return
+                    await handleRejectJoinRequest(rejectRequestConfirm.requestId)
+                    setRejectRequestConfirm(null)
+                  }}
+                  className="px-4 py-2 rounded-lg bg-amber-600 text-white hover:bg-amber-500 transition-colors text-sm font-medium"
+                >
+                  Ya, Tolak
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal konfirmasi generik - seragam untuk semua aksi */}
+        {genericConfirm && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+            <div className={`rounded-xl p-4 sm:p-6 max-w-md w-full shadow-2xl ${
+              genericConfirm.variant === 'danger' ? 'bg-gray-900 border border-red-500/20' :
+              genericConfirm.variant === 'warning' ? 'bg-gray-900 border border-amber-500/20' :
+              'bg-gray-900 border border-white/10'
+            }`}>
+              <h3 className={`text-lg font-bold mb-2 ${
+                genericConfirm.variant === 'danger' ? 'text-red-400' :
+                genericConfirm.variant === 'warning' ? 'text-amber-400' : 'text-app'
+              }`}>
+                {genericConfirm.title}
+              </h3>
+              <p className="text-sm text-muted mb-4">{genericConfirm.message}</p>
+              <div className="flex gap-2 justify-end">
+                <button
+                  onClick={() => setGenericConfirm(null)}
+                  className="px-4 py-2 rounded-lg bg-white/5 text-gray-400 hover:text-white hover:bg-white/10 transition-colors text-sm font-medium"
+                >
+                  Batal
+                </button>
+                <button
+                  onClick={async () => {
+                    if (!genericConfirm) return
+                    await Promise.resolve(genericConfirm.onConfirm())
+                    setGenericConfirm(null)
+                  }}
+                  className={`px-4 py-2 rounded-lg text-white transition-colors text-sm font-medium ${
+                    genericConfirm.variant === 'danger' ? 'bg-red-600 hover:bg-red-500' :
+                    genericConfirm.variant === 'warning' ? 'bg-amber-600 hover:bg-amber-500' :
+                    'bg-lime-600 hover:bg-lime-500'
+                  }`}
+                >
+                  {genericConfirm.confirmLabel}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal Tambah (Sambutan) - ganti prompt() */}
+        {addTeacherModalOpen && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+            <div className="bg-gray-900 border border-white/10 rounded-xl p-4 sm:p-6 max-w-md w-full shadow-2xl">
+              <h3 className="text-lg font-bold text-app mb-2">Tambah</h3>
+              <p className="text-sm text-muted mb-3">Masukkan nama untuk kartu sambutan.</p>
+              <input
+                type="text"
+                value={addTeacherName}
+                onChange={(e) => setAddTeacherName(e.target.value)}
+                placeholder="Nama"
+                className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-app text-sm mb-4 focus:outline-none focus:ring-2 focus:ring-lime-500/50"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault()
+                    const name = addTeacherName.trim()
+                    if (name) {
+                      handleAddTeacher(name, '')
+                      setAddTeacherName('')
+                      setAddTeacherModalOpen(false)
+                    } else {
+                      toast.error('Nama tidak boleh kosong')
+                    }
+                  }
+                  if (e.key === 'Escape') setAddTeacherModalOpen(false)
+                }}
+                autoFocus
+              />
+              <div className="flex gap-2 justify-end">
+                <button
+                  onClick={() => {
+                    setAddTeacherModalOpen(false)
+                    setAddTeacherName('')
+                  }}
+                  className="px-4 py-2 rounded-lg bg-white/5 text-gray-400 hover:text-white hover:bg-white/10 transition-colors text-sm font-medium"
+                >
+                  Batal
+                </button>
+                <button
+                  onClick={() => {
+                    const name = addTeacherName.trim()
+                    if (!name) {
+                      toast.error('Nama tidak boleh kosong')
+                      return
+                    }
+                    handleAddTeacher(name, '')
+                    setAddTeacherName('')
+                    setAddTeacherModalOpen(false)
+                  }}
+                  className="px-4 py-2 rounded-lg bg-lime-600 text-white hover:bg-lime-500 transition-colors text-sm font-medium"
+                >
+                  Tambah
                 </button>
               </div>
             </div>
@@ -1132,219 +1268,223 @@ export default function YearbookClassesViewUI(props: any) {
           </div>
 
           {/* Panel Daftar Kelas - Fixed (style sama seperti sidebar Approval/Tim) */}
-          {sidebarMode === 'classes' && !isCoverView && (
-            <div className="hidden lg:fixed lg:left-16 lg:top-[3.75rem] lg:w-64 lg:h-[calc(100vh-3.75rem)] lg:flex flex-col lg:z-35 lg:bg-black/40 lg:backdrop-blur-sm lg:border-r lg:border-white/10 lg:p-4">
-              {/* Header - Nama Kelas + Edit/Hapus */}
-              {currentClass && (
-                <div className="flex-shrink-0 mb-4 p-3 rounded-xl bg-white/[0.03] border border-white/10">
-                  <InlineClassEditor classObj={currentClass} isOwner={canManage} onDelete={(classId, className) => setDeleteClassConfirm({ classId, className: className ?? currentClass?.name ?? '' })} onUpdate={handleUpdateClass} classIndex={classIndex} classesCount={classes.length} />
-                </div>
-              )}
+          {
+            sidebarMode === 'classes' && !isCoverView && (
+              <div className="hidden lg:fixed lg:left-16 lg:top-[3.75rem] lg:w-64 lg:h-[calc(100vh-3.75rem)] lg:flex flex-col lg:z-35 lg:bg-black/40 lg:backdrop-blur-sm lg:border-r lg:border-white/10 lg:p-4">
+                {/* Header - Nama Kelas + Edit/Hapus */}
+                {currentClass && (
+                  <div className="flex-shrink-0 mb-4 p-3 rounded-xl bg-white/[0.03] border border-white/10">
+                    <InlineClassEditor classObj={currentClass} isOwner={canManage} onDelete={(classId, className) => setDeleteClassConfirm({ classId, className: className ?? currentClass?.name ?? '' })} onUpdate={handleUpdateClass} classIndex={classIndex} classesCount={classes.length} />
+                  </div>
+                )}
 
-              {/* Status / Daftarkan Nama */}
-              {currentClass && (
-                <div className="flex-shrink-0 mb-4 p-3 rounded-xl bg-white/[0.03] border border-white/10">
-                  {(() => {
-                    const access = myAccessByClass[currentClass.id]
-                    const request = myRequestByClass[currentClass.id] as ClassRequest | null | undefined
-                    const isPendingRequest = request?.status === 'pending'
-                    const isRejectedRequest = request?.status === 'rejected'
-                    const isLoadingThisClass = !accessDataLoaded && !access && !request
+                {/* Status / Daftarkan Nama */}
+                {currentClass && (
+                  <div className="flex-shrink-0 mb-4 p-3 rounded-xl bg-white/[0.03] border border-white/10">
+                    {(() => {
+                      const access = myAccessByClass[currentClass.id]
+                      const request = myRequestByClass[currentClass.id] as ClassRequest | null | undefined
+                      const isPendingRequest = request?.status === 'pending'
+                      const isRejectedRequest = request?.status === 'rejected'
+                      const isLoadingThisClass = !accessDataLoaded && !access && !request
 
-                    // Show compact loading hanya untuk class ini
-                    if (isLoadingThisClass) {
-                      return (
-                        <div className="flex items-center gap-2 text-xs text-muted">
-                          <div className="animate-spin rounded-full h-3 w-3 border border-lime-500 border-t-transparent" />
-                          <span>Memuat...</span>
-                        </div>
-                      )
-                    }
+                      // Show compact loading hanya untuk class ini
+                      if (isLoadingThisClass) {
+                        return (
+                          <div className="flex items-center gap-2 text-xs text-muted">
+                            <div className="animate-spin rounded-full h-3 w-3 border border-lime-500 border-t-transparent" />
+                            <span>Memuat...</span>
+                          </div>
+                        )
+                      }
 
-                    // User dengan access approved (termasuk owner/admin yang sudah terdaftar)
-                    if (access?.status === 'approved') {
-                      return (
-                        <>
-                          <p className="text-xs text-muted mb-1">Status:</p>
-                          <p className="text-xs font-medium text-lime-400">✓ {access.student_name}</p>
-                        </>
-                      )
-                    }
-
-                    // Owner tanpa akses - cek apakah sudah terdaftar di kelas lain
-                    if (isOwner && !isPendingRequest && !access) {
-                      // Check if already registered in another class
-                      const hasAccessInOtherClass = Object.entries(myAccessByClass).some(
-                        ([classId, classAccess]) =>
-                          classId !== currentClass.id &&
-                          classAccess &&
-                          typeof classAccess === 'object' &&
-                          'status' in classAccess &&
-                          classAccess.status === 'approved'
-                      )
-
-                      if (hasAccessInOtherClass) {
+                      // User dengan access approved (termasuk owner/admin yang sudah terdaftar)
+                      if (access?.status === 'approved') {
                         return (
                           <>
-                            <p className="text-amber-400 text-xs mb-1">⚠️ Batas Pendaftaran</p>
-                            <p className="text-muted text-xs">
-                              Anda sudah terdaftar di kelas lain. Hanya bisa daftar di 1 kelas.
+                            <p className="text-xs text-muted mb-1">Status:</p>
+                            <p className="text-xs font-medium text-lime-400">✓ {access.student_name}</p>
+                          </>
+                        )
+                      }
+
+                      // Owner tanpa akses - cek apakah sudah terdaftar di kelas lain
+                      if (isOwner && !isPendingRequest && !access) {
+                        // Check if already registered in another class
+                        const hasAccessInOtherClass = Object.entries(myAccessByClass).some(
+                          ([classId, classAccess]) =>
+                            classId !== currentClass.id &&
+                            classAccess &&
+                            typeof classAccess === 'object' &&
+                            'status' in classAccess &&
+                            classAccess.status === 'approved'
+                        )
+
+                        if (hasAccessInOtherClass) {
+                          return (
+                            <>
+                              <p className="text-amber-400 text-xs mb-1">⚠️ Batas Pendaftaran</p>
+                              <p className="text-muted text-xs">
+                                Anda sudah terdaftar di kelas lain. Hanya bisa daftar di 1 kelas.
+                              </p>
+                            </>
+                          )
+                        }
+
+                        // Show join button
+                        return (
+                          <>
+                            <p className="text-muted text-xs mb-2">
+                              Daftarkan diri Anda di kelas ini untuk bisa upload foto.
+                            </p>
+                            <button
+                              type="button"
+                              onClick={() => handleJoinAsOwner(currentClass.id)}
+                              className="px-3 py-2.5 rounded-xl bg-lime-600 text-white text-xs font-medium hover:bg-lime-500 transition-colors w-full"
+                            >
+                              Daftar di Kelas Ini
+                            </button>
+                          </>
+                        )
+                      }
+
+                      // Admin/helper yang bukan owner - tidak perlu form
+                      if (canManage) {
+                        return null
+                      }
+
+                      // User biasa dengan pending request
+                      if (isPendingRequest) {
+                        return (
+                          <>
+                            <p className="text-xs text-muted mb-1">Status Pendaftaran:</p>
+                            <p className="text-amber-400 text-xs flex items-center gap-1">
+                              <Clock className="w-3.5 h-3.5 flex-shrink-0" /> Menunggu persetujuan
                             </p>
                           </>
                         )
                       }
 
-                      // Show join button
-                      return (
-                        <>
-                          <p className="text-muted text-xs mb-2">
-                            Daftarkan diri Anda di kelas ini untuk bisa upload foto.
-                          </p>
-                          <button
-                            type="button"
-                            onClick={() => handleJoinAsOwner(currentClass.id)}
-                            className="px-3 py-2.5 rounded-xl bg-lime-600 text-white text-xs font-medium hover:bg-lime-500 transition-colors w-full"
-                          >
-                            Daftar di Kelas Ini
-                          </button>
-                        </>
-                      )
-                    }
-
-                    // Admin/helper yang bukan owner - tidak perlu form
-                    if (canManage) {
+                      // User tanpa akses - tidak tampilkan form, sistem menggunakan link registrasi universal
                       return null
-                    }
 
-                    // User biasa dengan pending request
-                    if (isPendingRequest) {
-                      return (
-                        <>
-                          <p className="text-xs text-muted mb-1">Status Pendaftaran:</p>
-                          <p className="text-amber-400 text-xs flex items-center gap-1">
-                            <Clock className="w-3.5 h-3.5 flex-shrink-0" /> Menunggu persetujuan
-                          </p>
-                        </>
-                      )
-                    }
-
-                    // User tanpa akses - tidak tampilkan form, sistem menggunakan link registrasi universal
-                    return null
-
-                  })()}
-                </div>
-              )}
-
-              {/* Daftar Kelas - Scrollable */}
-              <div className="flex-1 flex flex-col min-h-0 overflow-y-auto rounded-xl bg-white/[0.03] border border-white/10 p-2" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-                <style>{`div::-webkit-scrollbar { display: none; }`}</style>
-                <div className="flex flex-col gap-1.5">
-                  {classes.map((c, idx) => {
-                    const req = myRequestByClass[c.id] as ClassRequest | undefined
-                    const hasPendingRequest = req?.status === 'pending'
-                    return (
-                      <button
-                        key={c.id}
-                        type="button"
-                        onClick={() => {
-                          setClassIndex(idx)
-                          if (isCoverView) setView('classes')
-                        }}
-                        className={`p-2.5 rounded-lg text-left text-sm transition-colors touch-manipulation ${idx === classIndex && !isCoverView
-                          ? 'bg-lime-600/20 border border-lime-500/50 text-lime-400'
-                          : 'border border-white/10 text-gray-400 hover:text-white hover:bg-white/5 active:bg-white/10'
-                          }`}
-                      >
-                        <p className="font-medium truncate">{c.name}</p>
-                        {hasPendingRequest ? (
-                          <p className="text-xs text-amber-400 flex items-center gap-1 mt-0.5"><Clock className="w-3.5 h-3.5 flex-shrink-0" /> Menunggu persetujuan</p>
-                        ) : (
-                          <p className="text-xs text-muted mt-0.5">{(membersByClass[c.id]?.length ?? 0)} orang</p>
-                        )}
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-
-              {/* Tambah Kelas - Fixed di bawah */}
-              <div className="flex-shrink-0 mt-4 pt-4 border-t border-white/10">
-                {canManage && (
-                  <div className="flex flex-col gap-2">
-                    {!addingClass ? (
-                      <button type="button" onClick={() => setAddingClass(true)} className="w-full px-3 py-2.5 rounded-xl border border-white/10 text-sm text-gray-400 hover:text-white hover:bg-white/5 active:bg-white/10 transition-colors touch-manipulation flex items-center justify-center gap-2">
-                        <Plus className="w-4 h-4" /> Tambah Kelas
-                      </button>
-                    ) : (
-                      <div className="p-3 rounded-xl bg-white/[0.03] border border-white/10 flex flex-col gap-2">
-                        <input type="text" value={newClassName} onChange={(e) => setNewClassName(e.target.value)} placeholder="Nama kelas" className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm text-app placeholder:text-gray-600 focus:outline-none focus:border-lime-500" autoFocus />
-                        <div className="flex gap-2">
-                          <button type="button" onClick={handleAddClass} className="flex-1 px-3 py-2 rounded-lg bg-lime-600 text-white text-sm font-medium hover:bg-lime-500 transition-colors touch-manipulation">Tambah</button>
-                          <button type="button" onClick={() => { setAddingClass(false); setNewClassName('') }} className="flex-1 px-3 py-2 rounded-lg border border-white/10 text-sm text-gray-400 hover:text-white hover:bg-white/5 transition-colors touch-manipulation">Batal</button>
-                        </div>
-                      </div>
-                    )}
+                    })()}
                   </div>
                 )}
+
+                {/* Daftar Kelas - Scrollable */}
+                <div className="flex-1 flex flex-col min-h-0 overflow-y-auto rounded-xl bg-white/[0.03] border border-white/10 p-2" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                  <style>{`div::-webkit-scrollbar { display: none; }`}</style>
+                  <div className="flex flex-col gap-1.5">
+                    {classes.map((c, idx) => {
+                      const req = myRequestByClass[c.id] as ClassRequest | undefined
+                      const hasPendingRequest = req?.status === 'pending'
+                      return (
+                        <button
+                          key={c.id}
+                          type="button"
+                          onClick={() => {
+                            setClassIndex(idx)
+                            if (isCoverView) setView('classes')
+                          }}
+                          className={`p-2.5 rounded-lg text-left text-sm transition-colors touch-manipulation ${idx === classIndex && !isCoverView
+                            ? 'bg-lime-600/20 border border-lime-500/50 text-lime-400'
+                            : 'border border-white/10 text-gray-400 hover:text-white hover:bg-white/5 active:bg-white/10'
+                            }`}
+                        >
+                          <p className="font-medium truncate">{c.name}</p>
+                          {hasPendingRequest ? (
+                            <p className="text-xs text-amber-400 flex items-center gap-1 mt-0.5"><Clock className="w-3.5 h-3.5 flex-shrink-0" /> Menunggu persetujuan</p>
+                          ) : (
+                            <p className="text-xs text-muted mt-0.5">{(membersByClass[c.id]?.length ?? 0)} orang</p>
+                          )}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                {/* Tambah Kelas - Fixed di bawah */}
+                <div className="flex-shrink-0 mt-4 pt-4 border-t border-white/10">
+                  {canManage && (
+                    <div className="flex flex-col gap-2">
+                      {!addingClass ? (
+                        <button type="button" onClick={() => setAddingClass(true)} className="w-full px-3 py-2.5 rounded-xl border border-white/10 text-sm text-gray-400 hover:text-white hover:bg-white/5 active:bg-white/10 transition-colors touch-manipulation flex items-center justify-center gap-2">
+                          <Plus className="w-4 h-4" /> Tambah Kelas
+                        </button>
+                      ) : (
+                        <div className="p-3 rounded-xl bg-white/[0.03] border border-white/10 flex flex-col gap-2">
+                          <input type="text" value={newClassName} onChange={(e) => setNewClassName(e.target.value)} placeholder="Nama kelas" className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm text-app placeholder:text-gray-600 focus:outline-none focus:border-lime-500" autoFocus />
+                          <div className="flex gap-2">
+                            <button type="button" onClick={handleAddClass} className="flex-1 px-3 py-2 rounded-lg bg-lime-600 text-white text-sm font-medium hover:bg-lime-500 transition-colors touch-manipulation">Tambah</button>
+                            <button type="button" onClick={() => { setAddingClass(false); setNewClassName('') }} className="flex-1 px-3 py-2 rounded-lg border border-white/10 text-sm text-gray-400 hover:text-white hover:bg-white/5 transition-colors touch-manipulation">Batal</button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          )}
+            )
+          }
 
           {/* Approval Detail Panel - Fixed di sebelah kanan sidebar icon */}
-          {sidebarMode === 'approval' && selectedRequestId && (
-            <>
-              {/* Backdrop untuk close */}
-              <div
-                className="hidden lg:fixed lg:inset-0 lg:z-30"
-                onClick={() => setSelectedRequestId(null)}
-              />
-              <div className="hidden lg:flex lg:fixed lg:left-16 lg:top-[3.75rem] lg:w-64 lg:h-[calc(100vh-3.75rem)] lg:bg-black/40 lg:backdrop-blur-sm lg:border-l lg:border-white/10 lg:p-4 lg:z-35 lg:flex-col lg:items-stretch lg:justify-start lg:overflow-y-auto">
-                <button
-                  type="button"
+          {
+            sidebarMode === 'approval' && selectedRequestId && (
+              <>
+                {/* Backdrop untuk close */}
+                <div
+                  className="hidden lg:fixed lg:inset-0 lg:z-30"
                   onClick={() => setSelectedRequestId(null)}
-                  className="self-end text-gray-400 hover:text-white mb-4 text-lg"
-                  title="Tutup"
-                >
-                  ✕
-                </button>
-                {(() => {
-                  const allRequests = Object.values(requestsByClass).flat() as ClassRequest[]
-                  const request = allRequests.find(r => r.id === selectedRequestId)
-                  const classId = Object.entries(requestsByClass).find(([_, reqs]) => {
-                    const reqList = reqs as ClassRequest[]
-                    return reqList.find(r => r.id === selectedRequestId)
-                  })?.[0]
-                  if (!request || !classId) return null
-                  return (
-                    <div className="w-full flex flex-col gap-4">
-                      <div className="text-center">
-                        <p className="text-app font-medium text-sm">{request.student_name}</p>
-                        {request.email && <p className="text-muted text-xs break-all">{request.email}</p>}
+                />
+                <div className="hidden lg:flex lg:fixed lg:left-16 lg:top-[3.75rem] lg:w-64 lg:h-[calc(100vh-3.75rem)] lg:bg-black/40 lg:backdrop-blur-sm lg:border-l lg:border-white/10 lg:p-4 lg:z-35 lg:flex-col lg:items-stretch lg:justify-start lg:overflow-y-auto">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedRequestId(null)}
+                    className="self-end text-gray-400 hover:text-white mb-4 text-lg"
+                    title="Tutup"
+                  >
+                    ✕
+                  </button>
+                  {(() => {
+                    const allRequests = Object.values(requestsByClass).flat() as ClassRequest[]
+                    const request = allRequests.find(r => r.id === selectedRequestId)
+                    const classId = Object.entries(requestsByClass).find(([_, reqs]) => {
+                      const reqList = reqs as ClassRequest[]
+                      return reqList.find(r => r.id === selectedRequestId)
+                    })?.[0]
+                    if (!request || !classId) return null
+                    return (
+                      <div className="w-full flex flex-col gap-4">
+                        <div className="text-center">
+                          <p className="text-app font-medium text-sm">{request.student_name}</p>
+                          {request.email && <p className="text-muted text-xs break-all">{request.email}</p>}
+                        </div>
+                        <div className="flex flex-col gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleApproveReject(classId, selectedRequestId, 'approved')}
+                            className="px-4 py-2.5 rounded-lg bg-green-600/80 text-white hover:bg-green-600 text-xs font-medium transition-colors w-full"
+                            title="Setujui"
+                          >
+                            ✓ Setujui
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleApproveReject(classId, selectedRequestId, 'rejected')}
+                            className="px-4 py-2.5 rounded-lg bg-red-600/80 text-white hover:bg-red-600 text-xs font-medium transition-colors w-full"
+                            title="Tolak"
+                          >
+                            ✕ Tolak
+                          </button>
+                        </div>
                       </div>
-                      <div className="flex flex-col gap-2">
-                        <button
-                          type="button"
-                          onClick={() => handleApproveReject(classId, selectedRequestId, 'approved')}
-                          className="px-4 py-2.5 rounded-lg bg-green-600/80 text-white hover:bg-green-600 text-xs font-medium transition-colors w-full"
-                          title="Setujui"
-                        >
-                          ✓ Setujui
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleApproveReject(classId, selectedRequestId, 'rejected')}
-                          className="px-4 py-2.5 rounded-lg bg-red-600/80 text-white hover:bg-red-600 text-xs font-medium transition-colors w-full"
-                          title="Tolak"
-                        >
-                          ✕ Tolak
-                        </button>
-                      </div>
-                    </div>
-                  )
-                })()}
-              </div>
-            </>
-          )}
+                    )
+                  })()}
+                </div>
+              </>
+            )
+          }
 
           {/* Sambutan Panel - Removed, now using grid layout like students */}
 
@@ -1520,7 +1660,16 @@ export default function YearbookClassesViewUI(props: any) {
                                 </button>
                                 <button
                                   type="button"
-                                  onClick={handleDeleteCover}
+                                  onClick={() => {
+                                    if (!handleDeleteCover) return
+                                    setGenericConfirm({
+                                      title: 'Hapus Sampul',
+                                      message: 'Apakah kamu yakin ingin menghapus gambar sampul album?',
+                                      variant: 'danger',
+                                      confirmLabel: 'Ya, Hapus',
+                                      onConfirm: () => handleDeleteCover?.()
+                                    })
+                                  }}
                                   disabled={!album?.cover_image_url || !handleDeleteCover}
                                   className="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 text-[11px] font-medium border border-red-500/20 transition-all disabled:opacity-30 disabled:cursor-not-allowed min-h-[36px]"
                                 >
@@ -1548,7 +1697,16 @@ export default function YearbookClassesViewUI(props: any) {
                                 </button>
                                 <button
                                   type="button"
-                                  onClick={handleDeleteCoverVideo}
+                                  onClick={() => {
+                                    if (!handleDeleteCoverVideo) return
+                                    setGenericConfirm({
+                                      title: 'Hapus Video Sampul',
+                                      message: 'Apakah kamu yakin ingin menghapus video sampul album?',
+                                      variant: 'danger',
+                                      confirmLabel: 'Ya, Hapus',
+                                      onConfirm: () => handleDeleteCoverVideo?.()
+                                    })
+                                  }}
                                   disabled={!album?.cover_video_url || !handleDeleteCoverVideo}
                                   className="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 text-[11px] font-medium border border-red-500/20 transition-all disabled:opacity-30 disabled:cursor-not-allowed min-h-[36px]"
                                 >
@@ -2106,7 +2264,7 @@ export default function YearbookClassesViewUI(props: any) {
                                           <Check className="w-4 h-4" />
                                         </button>
                                         <button
-                                          onClick={() => handleRejectJoinRequest(request.id)}
+                                          onClick={() => setRejectRequestConfirm({ requestId: request.id, studentName: request.student_name })}
                                           className="w-8 h-8 rounded-lg bg-white/5 text-gray-500 hover:bg-red-500/20 hover:text-red-400 flex items-center justify-center transition-colors"
                                           title="Tolak"
                                         >
@@ -2165,8 +2323,8 @@ export default function YearbookClassesViewUI(props: any) {
                         <h3 className="text-lg font-bold text-app mb-2">Konfirmasi Perubahan</h3>
                         <p className="text-sm text-muted mb-4">
                           {roleChangeConfirm.newRole === 'admin'
-                            ? `Jadikan "${roleChangeConfirm.memberName}" sebagai Admin?`
-                            : `Hapus "${roleChangeConfirm.memberName}" dari Admin?`}
+                            ? `Apakah kamu yakin ingin menjadikan "${roleChangeConfirm.memberName}" sebagai Admin?`
+                            : `Apakah kamu yakin ingin menghapus "${roleChangeConfirm.memberName}" dari Admin?`}
                         </p>
                         <div className="flex gap-2 justify-end">
                           <button
@@ -2192,7 +2350,7 @@ export default function YearbookClassesViewUI(props: any) {
                       <div className="bg-gray-900 border border-red-500/20 rounded-xl p-4 sm:p-6 max-w-md w-full shadow-2xl">
                         <h3 className="text-lg font-bold text-red-400 mb-2">Hapus Anggota</h3>
                         <p className="text-sm text-muted mb-4">
-                          Hapus akses "<span className="text-white font-medium">{removeConfirm.memberName}</span>" dari album ini?
+                          Apakah kamu yakin ingin menghapus akses &quot;<span className="text-white font-medium">{removeConfirm.memberName}</span>&quot; dari album ini?
                         </p>
                         <div className="flex gap-2 justify-end">
                           <button
@@ -2316,8 +2474,8 @@ export default function YearbookClassesViewUI(props: any) {
                       <button
                         type="button"
                         onClick={() => {
-                          const name = prompt('Nama Guru:')
-                          if (name) handleAddTeacher(name, '')
+                          setAddTeacherName('')
+                          setAddTeacherModalOpen(true)
                         }}
                         className="px-4 py-2 rounded-xl bg-lime-600 text-white hover:bg-lime-500 transition-colors flex items-center justify-center gap-2 text-sm font-medium flex-shrink-0"
                       >
@@ -2395,6 +2553,7 @@ export default function YearbookClassesViewUI(props: any) {
               ) : sidebarMode === 'classes' ? (
                 /* Classes Content - Original grid view */
                 (() => {
+                  if (!currentClass) return null
                   const access = myAccessByClass[currentClass.id]
                   const hasApprovedAccess = access?.status === 'approved'
                   const classMembers = membersByClass[currentClass.id] ?? []
@@ -2677,11 +2836,15 @@ export default function YearbookClassesViewUI(props: any) {
                                                 <button
                                                   type="button"
                                                   onClick={() => {
-                                                    if (confirm(`Hapus foto ${idx + 1}?`)) {
-                                                      if (onDeletePhoto) {
-                                                        onDeletePhoto(photo.id, currentClass.id, m.student_name)
+                                                    setGenericConfirm({
+                                                      title: 'Hapus Foto',
+                                                      message: 'Apakah kamu yakin ingin menghapus foto ini?',
+                                                      variant: 'danger',
+                                                      confirmLabel: 'Ya, Hapus',
+                                                      onConfirm: () => {
+                                                        if (onDeletePhoto) onDeletePhoto(photo.id, currentClass.id, m.student_name)
                                                       }
-                                                    }
+                                                    })
                                                   }}
                                                   className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
                                                   title={`Hapus foto ${idx + 1}`}
@@ -2719,9 +2882,13 @@ export default function YearbookClassesViewUI(props: any) {
                                           <button
                                             type="button"
                                             onClick={() => {
-                                              if (confirm('Hapus video?')) {
-                                                setEditProfileVideoUrl('')
-                                              }
+                                              setGenericConfirm({
+                                                title: 'Hapus Video',
+                                                message: 'Apakah kamu yakin ingin menghapus video?',
+                                                variant: 'danger',
+                                                confirmLabel: 'Ya, Hapus',
+                                                onConfirm: () => setEditProfileVideoUrl('')
+                                              })
                                             }}
                                             className="px-2 py-1.5 rounded text-[10px] bg-red-600/20 text-red-400 hover:bg-red-600/30 transition-colors"
                                             title="Hapus Video"
@@ -2773,8 +2940,8 @@ export default function YearbookClassesViewUI(props: any) {
               ) : null}
             </div>
           </div>
-        </div>
-      </div>
-    </div>
+        </div >
+      </div >
+    </div >
   );
 }

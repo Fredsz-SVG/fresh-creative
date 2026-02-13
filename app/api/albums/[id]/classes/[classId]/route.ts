@@ -41,10 +41,52 @@ export async function DELETE(
 
   if (!cls) return NextResponse.json({ error: 'Class not found' }, { status: 404 })
 
-  const { error: delErr } = await client.from('album_classes').delete().eq('id', classId)
+  // 1. Get all user_ids associated with this class in album_class_access
+  const { data: classMembers } = await client
+    .from('album_class_access')
+    .select('user_id')
+    .eq('class_id', classId)
 
+  // 2. Delete the class (cascades to album_class_access, album_photos, etc)
+  const { error: delErr } = await client.from('album_classes').delete().eq('id', classId)
   if (delErr) return NextResponse.json({ error: delErr.message }, { status: 500 })
-  return NextResponse.json({ message: 'Class deleted' })
+
+  // 3. Cleanup album_members for users who no longer have any classes in this album
+  if (classMembers && classMembers.length > 0) {
+    const userIds = Array.from(new Set(classMembers.map(m => m.user_id)))
+
+    for (const uid of userIds) {
+      // Check if user still has ANY other access record in this album
+      const { data: otherAccess } = await client
+        .from('album_class_access')
+        .select('id')
+        .eq('album_id', albumId)
+        .eq('user_id', uid)
+        .limit(1)
+        .maybeSingle()
+
+      if (!otherAccess) {
+        // No other classes found, check if they are an admin
+        const { data: memberRecord } = await client
+          .from('album_members')
+          .select('role')
+          .eq('album_id', albumId)
+          .eq('user_id', uid)
+          .maybeSingle()
+
+        // If they are just a 'member' (student), remove them from the album entirely
+        if (memberRecord?.role === 'member') {
+          await client
+            .from('album_members')
+            .delete()
+            .eq('album_id', albumId)
+            .eq('user_id', uid)
+        }
+      }
+    }
+  }
+
+  return NextResponse.json({ message: 'Class deleted and members cleaned up' })
 }
 
 /** PATCH: Update class metadata (name, sort_order). Owner only (owner or admin). */

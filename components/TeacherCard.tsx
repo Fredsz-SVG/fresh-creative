@@ -192,7 +192,7 @@ export default function TeacherCard({
                   onClick={() => {
                     setLocalConfirm({
                       title: 'Hapus Guru',
-                      message: `Hapus "${teacher.name}" dari daftar?`,
+                      message: `Apakah kamu yakin ingin menghapus "${teacher.name}" dari daftar?`,
                       onConfirm: () => onDelete(teacher.id)
                     })
                   }}
@@ -257,7 +257,7 @@ export default function TeacherCard({
                           onClick={() => {
                             setLocalConfirm({
                               title: 'Hapus Foto',
-                              message: `Hapus foto ${idx + 1}?`,
+                              message: `Apakah kamu yakin ingin menghapus foto ${idx + 1}?`,
                               onConfirm: () => onDeletePhoto(teacher.id, photo.id)
                             })
                           }}

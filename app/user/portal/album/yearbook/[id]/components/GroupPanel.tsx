@@ -83,11 +83,7 @@ function InlineClassEditor(p: any) {
                 <Edit3 className="w-3.5 h-3.5 lg:w-4 lg:h-4" />
               </button>
               <button
-                onClick={() => {
-                  if (confirm('Yakin ingin menghapus group ini? Semua data member di dalamnya akan hilang.')) {
-                    onDelete && onDelete(classObj.id)
-                  }
-                }}
+                onClick={() => onDelete && onDelete(classObj.id, classObj.name)}
                 className="w-7 h-7 lg:w-8 lg:h-8 flex items-center justify-center rounded-md hover:bg-red-500/10 text-red-400 flex-shrink-0"
                 title="Hapus group"
               >

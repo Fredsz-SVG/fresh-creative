@@ -136,6 +136,14 @@ export default function YearbookAlbumClient({
   const lastLocalUpdateRef = useRef<number>(0)
   const accessUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
+  // Use refs for stable access in callbacks without triggering recreations
+  const [realtimeCounter, setRealtimeCounter] = useState(0)
+  const albumRef = useRef(album)
+  useEffect(() => { albumRef.current = album }, [album])
+
+  const isFetchingMembersRef = useRef(false)
+  const isFetchingAccessRef = useRef(false)
+
   // Fetch current user
   useEffect(() => {
     const fetchCurrentUser = async () => {
@@ -150,7 +158,7 @@ export default function YearbookAlbumClient({
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch(`/api/albums/${id}`, { credentials: 'include' })
+      const res = await fetch(`/api/albums/${id}`, { credentials: 'include', cache: 'no-store' })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) {
         setError(data?.error ?? 'Album tidak ditemukan')
@@ -219,12 +227,14 @@ export default function YearbookAlbumClient({
   // Optimized: Fetch all access data in one go (using my-access-all endpoint)
   // No longer need per-class fetch because the new endpoint is efficient
   const fetchAllAccess = useCallback(async () => {
-    if (!id) return
-    const canManageAlbum = album?.isOwner === true || album?.isAlbumAdmin === true
+    if (!id || isFetchingAccessRef.current) return
+    const currentAlbum = albumRef.current
+    const canManageAlbum = currentAlbum?.isOwner === true || currentAlbum?.isAlbumAdmin === true
 
     try {
+      isFetchingAccessRef.current = true
       // 1. Fetch My Access & My Requests for ALL classes
-      const myAccessRes = await fetch(`/api/albums/${id}/my-access-all`, { credentials: 'include' })
+      const myAccessRes = await fetch(`/api/albums/${id}/my-access-all`, { credentials: 'include', cache: 'no-store' })
       const myAccessData = await myAccessRes.json().catch(() => ({}))
 
       if (myAccessRes.ok) {
@@ -234,7 +244,7 @@ export default function YearbookAlbumClient({
 
       // 2. If Admin, fetch ALL pending requests for approval
       if (canManageAlbum) {
-        const requestsRes = await fetch(`/api/albums/${id}/join-requests?status=pending`, { credentials: 'include' })
+        const requestsRes = await fetch(`/api/albums/${id}/join-requests?status=pending`, { credentials: 'include', cache: 'no-store' })
         const requestsData = await requestsRes.json().catch(() => [])
 
         if (requestsRes.ok && Array.isArray(requestsData)) {
@@ -253,8 +263,10 @@ export default function YearbookAlbumClient({
       setAccessDataLoaded(true)
     } catch (e) {
       console.error('Error fetching access data:', e)
+    } finally {
+      isFetchingAccessRef.current = false
     }
-  }, [id, album?.isOwner, album?.isAlbumAdmin])
+  }, [id])
 
 
 
@@ -312,32 +324,56 @@ export default function YearbookAlbumClient({
 
   // Optimized: Fetch ALL class members in one request
   const fetchAllClassMembers = useCallback(async () => {
-    if (!id) return
+    if (!id || isFetchingMembersRef.current) return
     try {
-      const res = await fetch(`/api/albums/${id}/all-class-members`, { credentials: 'include' })
+      isFetchingMembersRef.current = true
+      const res = await fetch(`/api/albums/${id}/all-class-members`, { credentials: 'include', cache: 'no-store' })
       const data = await res.json().catch(() => [])
 
+      const groupedMembers: Record<string, ClassMember[]> = {}
+
+      // Initialize with empty arrays for all classes based on current album state
+      const currentClasses = albumRef.current?.classes
+      if (currentClasses) {
+        currentClasses.forEach(c => {
+          groupedMembers[c.id] = []
+        })
+      }
+
       if (res.ok && Array.isArray(data)) {
-        const groupedMembers: Record<string, ClassMember[]> = {}
-
-
         data.forEach((m: any) => {
           const cid = m.class_id
           if (cid) {
-            // Populate members
             if (!groupedMembers[cid]) groupedMembers[cid] = []
             const { class_id, ...member } = m
             groupedMembers[cid].push(member)
-
-
           }
         })
-        setMembersByClass(groupedMembers)
-
-        setAccessDataLoaded(true)
       }
+
+      // Merge: jangan timpa member is_me (baru daftar) kalau API belum mengembalikan row baru
+      setMembersByClass((prev) => {
+        const merged: Record<string, ClassMember[]> = {}
+        for (const cid of Object.keys(groupedMembers)) {
+          merged[cid] = [...(groupedMembers[cid] ?? [])]
+        }
+        for (const classId of Object.keys(prev)) {
+          const list = prev[classId] ?? []
+          const meMember = list.find((m) => m.is_me)
+          if (!meMember) continue
+          const fromApi = merged[classId] ?? []
+          const hasMe = fromApi.some((m) => m.is_me || (meMember.user_id && m.user_id === meMember.user_id))
+          if (!hasMe) {
+            merged[classId] = [...fromApi, meMember]
+          }
+        }
+        return merged
+      })
+      setAccessDataLoaded(true)
     } catch (e) {
       console.error('Error fetching members:', e)
+    } finally {
+      isFetchingMembersRef.current = false
     }
   }, [id])
 
@@ -381,7 +417,10 @@ export default function YearbookAlbumClient({
         { event: 'INSERT', schema: 'public', table: 'album_class_access', filter: `album_id=eq.${albumId}` },
         () => {
           if (accessUpdateTimeoutRef.current) clearTimeout(accessUpdateTimeoutRef.current)
-          accessUpdateTimeoutRef.current = setTimeout(() => refetchAccessAndMembersRef.current(), 1000)
+          accessUpdateTimeoutRef.current = setTimeout(() => {
+            refetchAccessAndMembersRef.current()
+            setRealtimeCounter(c => c + 1)
+          }, 1000)
         }
       )
       .on(
@@ -389,7 +428,10 @@ export default function YearbookAlbumClient({
         { event: 'UPDATE', schema: 'public', table: 'album_class_access', filter: `album_id=eq.${albumId}` },
         () => {
           if (accessUpdateTimeoutRef.current) clearTimeout(accessUpdateTimeoutRef.current)
-          accessUpdateTimeoutRef.current = setTimeout(() => refetchAccessAndMembersRef.current(), 1000)
+          accessUpdateTimeoutRef.current = setTimeout(() => {
+            refetchAccessAndMembersRef.current()
+            setRealtimeCounter(c => c + 1)
+          }, 1000)
         }
       )
       .on(
@@ -397,26 +439,56 @@ export default function YearbookAlbumClient({
         { event: 'DELETE', schema: 'public', table: 'album_class_access' },
         () => {
           if (accessUpdateTimeoutRef.current) clearTimeout(accessUpdateTimeoutRef.current)
-          accessUpdateTimeoutRef.current = setTimeout(() => refetchAccessAndMembersRef.current(), 1000)
+          accessUpdateTimeoutRef.current = setTimeout(() => {
+            refetchAccessAndMembersRef.current()
+            setRealtimeCounter(c => c + 1)
+          }, 1000)
         }
       )
       .on(
         'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'album_class_requests' },
+        { event: 'INSERT', schema: 'public', table: 'album_join_requests', filter: `album_id=eq.${albumId}` },
         () => {
           if (accessUpdateTimeoutRef.current) clearTimeout(accessUpdateTimeoutRef.current)
-          accessUpdateTimeoutRef.current = setTimeout(() => fetchAllAccessRef.current(), 1000)
+          accessUpdateTimeoutRef.current = setTimeout(() => {
+            fetchAllAccessRef.current()
+            setRealtimeCounter(c => c + 1)
+          }, 1000)
         }
       )
       .on(
         'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'album_class_requests' },
-        () => { fetchAllAccessRef.current() }
+        { event: 'UPDATE', schema: 'public', table: 'album_join_requests', filter: `album_id=eq.${albumId}` },
+        () => {
+          if (accessUpdateTimeoutRef.current) clearTimeout(accessUpdateTimeoutRef.current)
+          accessUpdateTimeoutRef.current = setTimeout(() => {
+            fetchAllAccessRef.current()
+            setRealtimeCounter(c => c + 1)
+          }, 1000)
+        }
       )
       .on(
         'postgres_changes',
-        { event: 'DELETE', schema: 'public', table: 'album_class_requests' },
-        () => { fetchAllAccessRef.current() }
+        { event: 'DELETE', schema: 'public', table: 'album_join_requests', filter: `album_id=eq.${albumId}` },
+        () => {
+          if (accessUpdateTimeoutRef.current) clearTimeout(accessUpdateTimeoutRef.current)
+          accessUpdateTimeoutRef.current = setTimeout(() => {
+            fetchAllAccessRef.current()
+            setRealtimeCounter(c => c + 1)
+          }, 1000)
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'album_members', filter: `album_id=eq.${albumId}` },
+        () => {
+          if (accessUpdateTimeoutRef.current) clearTimeout(accessUpdateTimeoutRef.current)
+          accessUpdateTimeoutRef.current = setTimeout(() => {
+            fetchAllAccessRef.current()
+            fetchAllClassMembersRef.current()
+            setRealtimeCounter(c => c + 1)
+          }, 1000)
+        }
       )
       .subscribe()
     return () => {
@@ -507,7 +579,7 @@ export default function YearbookAlbumClient({
 
   const fetchFirstPhotosForClass = useCallback(async (classId: string) => {
     if (!id) return
-    const res = await fetch(`/api/albums/${id}/photos?class_id=${encodeURIComponent(classId)}`, { credentials: 'include' })
+    const res = await fetch(`/api/albums/${id}/photos?class_id=${encodeURIComponent(classId)}`, { credentials: 'include', cache: 'no-store' })
     const list = await res.json().catch(() => []) as { student_name: string; file_url: string }[]
     if (!Array.isArray(list)) return
     const map: Record<string, string> = {}
@@ -552,7 +624,7 @@ export default function YearbookAlbumClient({
     try {
       const res = await fetch(
         `/api/albums/${id}/photos?class_id=${encodeURIComponent(classId)}&student_name=${encodeURIComponent(studentName)}`,
-        { credentials: 'include' }
+        { credentials: 'include', cache: 'no-store' }
       )
       const data = await res.json().catch(() => [])
       setPhotos(Array.isArray(data) ? data : [])
@@ -578,6 +650,23 @@ export default function YearbookAlbumClient({
     setAlbum((prev) => {
       if (!prev?.classes) return prev
       return { ...prev, classes: prev.classes.filter((c) => c.id !== classId) }
+    })
+
+    // Clean up members and access state for this class
+    setMembersByClass((prev) => {
+      const newState = { ...prev }
+      delete newState[classId]
+      return newState
+    })
+    setMyAccessByClass((prev) => {
+      const newState = { ...prev }
+      delete newState[classId]
+      return newState
+    })
+    setMyRequestByClass((prev) => {
+      const newState = { ...prev }
+      delete newState[classId]
+      return newState
     })
 
     setClassIndex((i) => {
@@ -726,21 +815,6 @@ export default function YearbookAlbumClient({
         return newState
       })
 
-      // For owner: auto-register to the newly created class and open edit form
-      if (isOwner) {
-        // Auto-add owner to myAccessByClass with empty name - ready for editing
-        setMyAccessByClass((prev) => ({
-          ...prev,
-          [created.id]: { id: created.id, student_name: '', email: null, status: 'approved' },
-        }))
-        // Open edit form for owner to input their name
-        setEditingProfileClassId(created.id)
-        setEditProfileName('')
-        setEditProfileEmail('')
-        setEditProfileTtl('')
-        setEditProfileInstagram('')
-        setEditProfilePesan('')
-      }
     } catch (error) {
       // Revert optimistic update on error
       toast.error('Gagal menambah kelas')
@@ -771,15 +845,40 @@ export default function YearbookAlbumClient({
     })
     const data = await res.json().catch(() => ({}))
     if (!res.ok) {
-      alert(data?.error ?? 'Gagal mengajukan akses')
+      toast.error(data?.error ?? 'Gagal mengajukan akses')
       return
     }
     // Response bisa dari album_class_access (approved) atau album_class_requests (pending request)
     if (data.status === 'approved') {
       setMyAccessByClass((prev) => ({ ...prev, [classId]: { id: data.id, student_name: data.student_name, email: data.email ?? null, status: 'approved', date_of_birth: data.date_of_birth ?? null, instagram: data.instagram ?? null, message: data.message ?? null, video_url: data.video_url ?? null } }))
       setMyRequestByClass((prev) => ({ ...prev, [classId]: null }))
+      // Optimistic: tambah diri ke daftar member agar profil card langsung muncul
+      setMembersByClass((prev) => {
+        const list = prev[classId] ?? []
+        const alreadyIn = list.some((m) => m.is_me)
+        if (alreadyIn) return prev
+        return {
+          ...prev,
+          [classId]: [
+            ...list,
+            {
+              user_id: data.user_id ?? '',
+              student_name: data.student_name ?? '',
+              email: data.email ?? null,
+              date_of_birth: data.date_of_birth ?? null,
+              instagram: data.instagram ?? null,
+              message: data.message ?? null,
+              video_url: data.video_url ?? null,
+              is_me: true
+            } as ClassMember
+          ]
+        }
+      })
+      // Jangan refetch di sini: bisa menimpa optimistic update dan card hilang. Realtime akan sync.
+      toast.success('Anda terdaftar di kelas ini.')
     } else {
       setMyRequestByClass((prev) => ({ ...prev, [classId]: { id: data.id, student_name: data.student_name, email: data.email ?? null, status: data.status ?? 'pending' } }))
+      toast.success('Permintaan pendaftaran dikirim. Menunggu persetujuan.')
     }
     setRequestForm({ student_name: '', email: '' })
   }
@@ -794,7 +893,7 @@ export default function YearbookAlbumClient({
     })
     const data = await res.json().catch(() => ({}))
     if (!res.ok) {
-      alert(data?.error ?? 'Gagal')
+      toast.error(data?.error ?? 'Gagal')
       return
     }
     // Remove request dari pending list
@@ -829,7 +928,7 @@ export default function YearbookAlbumClient({
     const data = await res.json().catch(() => ({}))
 
     if (!res.ok) {
-      alert(data?.error ?? 'Gagal bergabung ke kelas')
+      toast.error(data?.error ?? 'Gagal bergabung ke kelas')
       return
     }
 
@@ -838,11 +937,35 @@ export default function YearbookAlbumClient({
       ...prev,
       [classId]: {
         id: data.access.id,
-        student_name: '',
-        email: null,
+        student_name: data.access.student_name ?? '',
+        email: data.access.email ?? null,
         status: 'approved'
       },
     }))
+
+    // Optimistic: tambah owner ke daftar member agar profil card langsung muncul
+    const access = data.access as { user_id?: string; student_name?: string; email?: string | null }
+    setMembersByClass((prev) => {
+      const list = prev[classId] ?? []
+      const alreadyIn = list.some((m) => m.is_me || m.user_id === access.user_id)
+      if (alreadyIn) return prev
+      return {
+        ...prev,
+        [classId]: [
+          ...list,
+          {
+            user_id: access.user_id ?? '',
+            student_name: access.student_name ?? '',
+            email: access.email ?? null,
+            date_of_birth: null,
+            instagram: null,
+            message: null,
+            video_url: null,
+            is_me: true
+          } as ClassMember
+        ]
+      }
+    })
 
     // Auto-open edit form supaya owner bisa isi nama
     setEditingProfileClassId(classId)
@@ -853,10 +976,8 @@ export default function YearbookAlbumClient({
     setEditProfilePesan('')
     setEditProfileVideoUrl('')
 
-    // Refetch members untuk update card list
-    fetchMembersForClass(classId)
-
-    alert('Berhasil! Silakan isi profil Anda')
+    // Jangan refetch di sini: API bisa belum mengembalikan row baru, sehingga list menimpa optimistic update dan card hilang. Realtime / navigasi akan sync nanti.
+    toast.success('Berhasil! Silakan isi profil Anda.')
   }
 
   const handleSaveProfile = async (classId: string, deleteProfile: boolean = false, targetUserId?: string) => {
@@ -888,6 +1009,15 @@ export default function YearbookAlbumClient({
         if (!isEditingOther) {
           setMyAccessByClass((prev) => ({ ...prev, [classId]: null }))
         }
+        // Optimistic: hapus dari daftar agar card langsung hilang (hindari error akses tidak ditemukan)
+        setMembersByClass((prev) => {
+          const list = prev[classId] ?? []
+          const next = isEditingOther && targetUserId
+            ? list.filter((m) => m.user_id !== targetUserId)
+            : list.filter((m) => !m.is_me)
+          if (next.length === list.length) return prev
+          return { ...prev, [classId]: next }
+        })
         toast.success('Profil berhasil dihapus')
         setEditingProfileClassId(null)
         setEditingMemberUserId(null)
@@ -1007,8 +1137,6 @@ export default function YearbookAlbumClient({
 
   const handleRemoveMember = useCallback(async (userId: string) => {
     if (!id) return
-    if (!confirm('Yakin ingin menghapus member ini dari album?')) return
-
     try {
       const res = await fetch(`/api/albums/${id}/members?user_id=${userId}`, {
         method: 'DELETE',
@@ -1077,7 +1205,6 @@ export default function YearbookAlbumClient({
 
   const handleDeleteCover = async () => {
     if (!id || !album?.cover_image_url) return
-    if (!confirm('Hapus sampul album?')) return
     const res = await fetch(`/api/albums/${id}/cover`, { method: 'DELETE', credentials: 'include' })
     const data = await res.json().catch(() => ({}))
     if (!res.ok) {
@@ -1111,7 +1238,6 @@ export default function YearbookAlbumClient({
 
   const handleDeleteCoverVideo = async () => {
     if (!id || !album?.cover_video_url) return
-    if (!confirm('Hapus video sampul?')) return
     const res = await fetch(`/api/albums/${id}/cover-video`, { method: 'DELETE', credentials: 'include' })
     const data = await res.json().catch(() => ({}))
     if (!res.ok) {
@@ -1455,6 +1581,7 @@ export default function YearbookAlbumClient({
             handleDeleteClass={handleDeleteClass}
             goPrevClass={goPrevClass}
             goNextClass={goNextClass}
+            realtimeCounter={realtimeCounter}
             requestsByClass={requestsByClass}
             myAccessByClass={myAccessByClass}
             myRequestByClass={myRequestByClass}
