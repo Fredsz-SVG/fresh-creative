@@ -80,10 +80,10 @@ export default function YearbookAlbumClient({
   const [accessDataLoaded, setAccessDataLoaded] = useState(!!initialAccess?.access && Object.keys(initialAccess.access).length > 0)
   const [requestsByClass, setRequestsByClass] = useState<Record<string, ClassRequest[]>>({})
   const [selectedRequestId, setSelectedRequestId] = useState<string | null>(null)
-  const [sidebarMode, setSidebarMode] = useState<'classes' | 'approval' | 'team' | 'sambutan' | 'ai-labs'>(() => {
+  const [sidebarMode, setSidebarMode] = useState<'classes' | 'approval' | 'team' | 'sambutan' | 'ai-labs' | 'flipbook'>(() => {
     if (typeof window !== 'undefined' && id) {
       const saved = localStorage.getItem(`yearbook-sidebarMode-${id}`)
-      return (saved as 'classes' | 'approval' | 'team' | 'sambutan' | 'ai-labs') || 'classes'
+      return (saved as 'classes' | 'approval' | 'team' | 'sambutan' | 'ai-labs' | 'flipbook') || 'classes'
     }
     return 'classes'
   })
@@ -980,7 +980,7 @@ export default function YearbookAlbumClient({
     toast.success('Berhasil! Silakan isi profil Anda.')
   }
 
-  const handleSaveProfile = async (classId: string, deleteProfile: boolean = false, targetUserId?: string) => {
+  const handleSaveProfile = async (classId: string, deleteProfile: boolean = false, targetUserId?: string, overrideData?: any) => {
     if (!id) {
       toast.error('Album ID tidak ditemukan')
       return
@@ -994,8 +994,6 @@ export default function YearbookAlbumClient({
     const url = isEditingOther
       ? `/api/albums/${id}/classes/${classId}/members/${targetUserId}`
       : `/api/albums/${id}/classes/${classId}/my-access`
-
-
 
     if (deleteProfile) {
       setSavingProfile(true)
@@ -1031,7 +1029,23 @@ export default function YearbookAlbumClient({
       return
     }
 
-    if (!editProfileName.trim()) {
+    const dataToSave = overrideData ? {
+      student_name: overrideData.student_name,
+      email: overrideData.email,
+      date_of_birth: overrideData.date_of_birth,
+      instagram: overrideData.instagram,
+      message: overrideData.message,
+      video_url: overrideData.video_url
+    } : {
+      student_name: editProfileName,
+      email: editProfileEmail,
+      date_of_birth: editProfileTtl,
+      instagram: editProfileInstagram,
+      message: editProfilePesan,
+      video_url: editProfileVideoUrl
+    }
+
+    if (!dataToSave.student_name?.trim()) {
       toast.error('Nama siswa wajib diisi')
       return
     }
@@ -1043,12 +1057,12 @@ export default function YearbookAlbumClient({
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          student_name: editProfileName.trim(),
-          email: editProfileEmail.trim() || null,
-          date_of_birth: editProfileTtl.trim() || null,
-          instagram: editProfileInstagram.trim() || null,
-          message: editProfilePesan.trim() || null,
-          video_url: editProfileVideoUrl.trim() || null,
+          student_name: dataToSave.student_name.trim(),
+          email: dataToSave.email?.trim() || null,
+          date_of_birth: dataToSave.date_of_birth?.trim() || null,
+          instagram: dataToSave.instagram?.trim() || null,
+          message: dataToSave.message?.trim() || null,
+          video_url: dataToSave.video_url?.trim() || null,
         }),
       })
       const data = await res.json().catch(() => ({}))

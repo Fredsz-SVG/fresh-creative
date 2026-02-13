@@ -50,7 +50,7 @@ CREATE TABLE IF NOT EXISTS public.album_class_access (
   email text,
   instagram text,
   message text,
-  date_of_birth date,
+  date_of_birth text,
   video_url text, -- YouTube/Drive link
   
   -- Photos (JSONB Array of strings) - Max 4

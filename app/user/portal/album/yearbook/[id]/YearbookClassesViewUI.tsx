@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useEffect, useRef, useState } from 'react'
-import { ChevronLeft, ChevronRight, Plus, Trash2, Check, X, Edit3, ImagePlus, Video, Play, Minus, Instagram, Users, ClipboardList, Menu, Cake, Shield, Copy, Link, Clock, BookOpen, MessageSquare, Search, Shirt, UserCircle, ImageIcon, Images, Link as LinkIcon, Sparkles } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Plus, Trash2, Check, X, Edit3, ImagePlus, Video, Play, Minus, Instagram, Users, ClipboardList, Menu, Cake, Shield, Copy, Link, Clock, BookOpen, MessageSquare, Search, Shirt, UserCircle, ImageIcon, Images, Link as LinkIcon, Sparkles, Book } from 'lucide-react'
 import { toast } from 'sonner'
 import NextLink from 'next/link'
 import { useSearchParams } from 'next/navigation'
@@ -13,6 +13,9 @@ import ImageEditor from '@/components/fitur/ImageEditor'
 import PhotoGroup from '@/components/fitur/PhotoGroup'
 import PhotoToVideo from '@/components/fitur/PhotoToVideo'
 import { AI_LABS_FEATURES_USER } from '@/lib/dashboard-nav'
+import IconSidebar from './components/IconSidebar'
+import LayoutEditor from './components/FlipbookLayoutEditor'
+import AILabsView from './components/AILabsView'
 
 type AlbumClass = { id: string; name: string; sort_order?: number; student_count?: number }
 type ClassAccess = { id: string; student_name: string; email?: string | null; status: string; date_of_birth?: string | null; instagram?: string | null; message?: string | null; video_url?: string | null }
@@ -254,7 +257,7 @@ export default function YearbookClassesViewUI(props: any) {
     accessDataLoaded = false,
     selectedRequestId = null,
     setSelectedRequestId,
-    sidebarMode = 'classes' as 'classes' | 'approval' | 'team' | 'sambutan' | 'ai-labs',
+    sidebarMode = 'classes' as 'classes' | 'approval' | 'team' | 'sambutan' | 'ai-labs' | 'flipbook',
     setSidebarMode,
     requestForm = { student_name: '', email: '' },
     setRequestForm,
@@ -604,7 +607,7 @@ export default function YearbookClassesViewUI(props: any) {
       })
       const data = await res.json()
       if (res.ok && data.id) {
-        setTeachers(prev => prev.map(t => t.id === teacherId ? data : t))
+        setTeachers(prev => prev.map(t => t.id === teacherId ? { ...data, photos: t.photos } : t))
         toast.success('Data guru berhasil diperbarui')
       } else {
         toast.error(data.error || 'Gagal memperbarui guru')
@@ -938,112 +941,15 @@ export default function YearbookClassesViewUI(props: any) {
 
         <div className="flex flex-col lg:flex-row gap-0 flex-1 lg:pl-16 lg:px-0 lg:py-0">
           {/* Icon Sidebar untuk desktop - Fixed di kiri */}
-          <div className="hidden lg:fixed lg:left-0 lg:top-14 lg:w-16 lg:h-[calc(100vh-3.5rem)] lg:flex flex-col lg:z-40 lg:bg-black/40 lg:backdrop-blur-sm lg:border-r lg:border-white/10">
-            <button
-              type="button"
-              onClick={() => {
-                setSidebarMode('ai-labs')
-                setView('classes')
-              }}
-              className={`flex-shrink-0 flex flex-col items-center justify-center gap-1 py-4 border-b border-white/10 text-xs font-medium transition-colors ${sidebarMode === 'ai-labs'
-                ? 'bg-lime-600/20 text-lime-400'
-                : 'text-gray-400 hover:text-white hover:bg-white/5'
-                }`}
-              title="AI Labs"
-            >
-              <Sparkles className="w-6 h-6" />
-              <span className="text-[10px]">AI Labs</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setView('cover')
-                setSidebarMode('classes')
-              }}
-              className={`flex-shrink-0 flex flex-col items-center justify-center gap-1 py-4 border-b border-white/10 text-xs font-medium transition-colors ${isCoverView
-                ? 'bg-lime-600/20 text-lime-400'
-                : 'text-gray-400 hover:text-white hover:bg-white/5'
-                }`}
-              title="Sampul Album"
-            >
-              <BookOpen className="w-6 h-6" />
-              <span className="text-[10px]">Sampul</span>
-            </button>
-
-            {canManage && (
-              <button
-                type="button"
-                onClick={() => {
-                  setSidebarMode('sambutan')
-                  setView('classes')
-                }}
-                className={`flex-shrink-0 flex flex-col items-center justify-center gap-1 py-4 border-b border-white/10 text-xs font-medium transition-colors ${sidebarMode === 'sambutan'
-                  ? 'bg-lime-600/20 text-lime-400'
-                  : 'text-gray-400 hover:text-white hover:bg-white/5'
-                  }`}
-                title="Sambutan Guru"
-              >
-                <MessageSquare className="w-6 h-6" />
-                <span className="text-[10px]">Sambutan</span>
-              </button>
-            )}
-
-            <button
-              type="button"
-              onClick={() => {
-                setSidebarMode('classes')
-                setView('classes')
-              }}
-              className={`flex-shrink-0 flex flex-col items-center justify-center gap-1 py-4 border-b border-white/10 text-xs font-medium transition-colors ${sidebarMode === 'classes' && !isCoverView
-                ? 'bg-lime-600/20 text-lime-400'
-                : 'text-gray-400 hover:text-white hover:bg-white/5'
-                }`}
-              title="Daftar Kelas"
-            >
-              <Users className="w-6 h-6" />
-              <span className="text-[10px]">Kelas</span>
-            </button>
-
-            {canManage && (
-              <>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSidebarMode('approval')
-                    setView('classes')
-                  }}
-                  className={`flex-shrink-0 flex flex-col items-center justify-center gap-1 py-4 border-b border-white/10 text-xs font-medium transition-colors relative ${sidebarMode === 'approval'
-                    ? 'bg-lime-600/20 text-lime-400'
-                    : 'text-gray-400 hover:text-white hover:bg-white/5'
-                    }`}
-                  title="Kelola Akses"
-                >
-                  <ClipboardList className="w-6 h-6" />
-                  <span className="text-[10px]">Akses</span>
-                  {joinStats && joinStats.pending_count > 0 && (
-                    <span className="absolute top-2 right-2 flex h-2 w-2 rounded-full bg-red-500"></span>
-                  )}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSidebarMode('team')
-                    setView('classes')
-                  }}
-                  className={`flex-shrink-0 flex flex-col items-center justify-center gap-1 py-4 border-b border-white/10 text-xs font-medium transition-colors ${sidebarMode === 'team'
-                    ? 'bg-lime-600/20 text-lime-400'
-                    : 'text-gray-400 hover:text-white hover:bg-white/5'
-                    }`}
-                  title="Kelola Tim"
-                >
-                  <Shield className="w-6 h-6" />
-                  <span className="text-[10px]">Tim</span>
-                </button>
-              </>
-            )}
-
-
-          </div>
+          {/* Icon Sidebar untuk desktop - Fixed di kiri */}
+          <IconSidebar
+            isCoverView={isCoverView}
+            sidebarMode={sidebarMode}
+            setSidebarMode={setSidebarMode}
+            setView={setView}
+            canManage={canManage}
+            requestsByClass={requestsByClass}
+          />
 
           {/* Panel Group List - Fixed di tengah (hanya tampil saat mode classes) */}
           {sidebarMode === 'classes' && !isCoverView && (
@@ -1420,6 +1326,26 @@ export default function YearbookClassesViewUI(props: any) {
 
                     <button
                       onClick={() => {
+                        setSidebarMode('flipbook')
+                        setView('classes')
+                        setMoreMenuOpen(false)
+                      }}
+                      className={`w-full flex items-center gap-3 p-4 rounded-xl border transition-all ${sidebarMode === 'flipbook'
+                        ? 'bg-lime-500/10 border-lime-500/40 text-lime-400'
+                        : 'text-gray-300 hover:bg-white/10'
+                        }`}
+                    >
+                      <div className={`p-2 rounded-lg ${sidebarMode === 'flipbook' ? 'bg-lime-500/20' : 'bg-white/5'}`}>
+                        <Book className="w-5 h-5" />
+                      </div>
+                      <div className="text-left">
+                        <p className="text-sm font-bold">Flipbook</p>
+                        <p className="text-[10px] text-gray-500">Baca buku tahunan digital</p>
+                      </div>
+                    </button>
+
+                    <button
+                      onClick={() => {
                         setSidebarMode('approval')
                         setView('classes')
                         setMoreMenuOpen(false)
@@ -1684,53 +1610,8 @@ export default function YearbookClassesViewUI(props: any) {
                 </div>
               ) : sidebarMode === 'ai-labs' ? (
                 /* AI Labs - Fitur (Try On, Pose, dll.) tetap di album, URL ?tool=... */
-                (() => {
-                  const FEATURE_ICONS = [Shirt, UserCircle, ImageIcon, Images, Video] as const
-                  const albumBase = album?.id ? `/user/portal/album/yearbook/${album.id}` : ''
-                  if (aiLabsTool && albumBase) {
-                    const backUrl = albumBase
-                    if (aiLabsTool === 'tryon') return (<div className="max-w-5xl mx-auto px-3 py-3 sm:p-4"><NextLink href={backUrl} className="inline-flex items-center gap-2 text-sm text-lime-400 hover:text-lime-300 mb-4">← Kembali ke daftar fitur</NextLink><TryOn /></div>)
-                    if (aiLabsTool === 'pose') return (<div className="max-w-5xl mx-auto px-3 py-3 sm:p-4"><NextLink href={backUrl} className="inline-flex items-center gap-2 text-sm text-lime-400 hover:text-lime-300 mb-4">← Kembali ke daftar fitur</NextLink><Pose /></div>)
-                    if (aiLabsTool === 'image-editor') return (<div className="max-w-5xl mx-auto px-3 py-3 sm:p-4"><NextLink href={backUrl} className="inline-flex items-center gap-2 text-sm text-lime-400 hover:text-lime-300 mb-4">← Kembali ke daftar fitur</NextLink><ImageEditor /></div>)
-                    if (aiLabsTool === 'photogroup') return (<div className="max-w-5xl mx-auto px-3 py-3 sm:p-4"><NextLink href={backUrl} className="inline-flex items-center gap-2 text-sm text-lime-400 hover:text-lime-300 mb-4">← Kembali ke daftar fitur</NextLink><PhotoGroup /></div>)
-                    if (aiLabsTool === 'phototovideo') return (<div className="max-w-5xl mx-auto px-3 py-3 sm:p-4"><NextLink href={backUrl} className="inline-flex items-center gap-2 text-sm text-lime-400 hover:text-lime-300 mb-4">← Kembali ke daftar fitur</NextLink><PhotoToVideo /></div>)
-                  }
-                  return (
-                    <div className="max-w-5xl mx-auto px-3 py-3 sm:p-4">
-                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-5">
-                        {AI_LABS_FEATURES_USER.map((feature, index) => {
-                          const Icon = FEATURE_ICONS[index] ?? Video
-                          const toolSlug = feature.href.replace(/\/$/, '').split('/').pop() ?? ''
-                          const href = albumBase ? `${albumBase}?tool=${encodeURIComponent(toolSlug)}` : feature.href
-                          return (
-                            <NextLink
-                              key={feature.href}
-                              href={href}
-                              className="
-                                flex flex-col items-center justify-center
-                                rounded-2xl border-2 border-white/10 bg-white/[0.04]
-                                p-5 sm:p-6 min-h-[140px] sm:min-h-[160px]
-                                hover:bg-white/[0.08] hover:border-lime-500/40 active:scale-[0.98]
-                                transition-all duration-200 touch-manipulation
-                                hover:shadow-[0_0_24px_rgba(132,204,22,0.12)]
-                              "
-                            >
-                              <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-lime-500/20 flex items-center justify-center mb-3 text-lime-400">
-                                <Icon className="w-7 h-7 sm:w-8 sm:h-8" />
-                              </div>
-                              <span className="text-sm sm:text-base font-bold text-white uppercase tracking-tight text-center">
-                                {feature.label}
-                              </span>
-                              <span className="text-[10px] sm:text-xs text-gray-500 text-center mt-1 line-clamp-2">
-                                {feature.description}
-                              </span>
-                            </NextLink>
-                          )
-                        })}
-                      </div>
-                    </div>
-                  )
-                })()
+                /* AI Labs - Fitur (Try On, Pose, dll.) tetap di album, URL ?tool=... */
+                <AILabsView album={album} aiLabsTool={aiLabsTool ?? null} />
               ) : sidebarMode === 'approval' ? (
                 /* Approval Content - New Join Request System */
                 <div className="max-w-5xl mx-auto px-3 py-3 sm:p-4">
@@ -2395,6 +2276,7 @@ export default function YearbookClassesViewUI(props: any) {
                     </div>
                   )}
                 </div>
+
               ) : sidebarMode === 'classes' && classes.length === 0 ? (
                 <div className="max-w-5xl mx-auto px-3 py-3 sm:p-4">
                   <div className="flex flex-col items-center justify-center border-2 border-dashed border-white/10 rounded-xl py-12">
@@ -2415,6 +2297,17 @@ export default function YearbookClassesViewUI(props: any) {
                     )}
                   </div>
                 </div>
+              ) : sidebarMode === 'flipbook' ? (
+                <>
+                  {/* Flipbook Layout Editor */}
+                  <LayoutEditor
+                    album={album}
+                    teachers={teachers}
+                    classes={classes}
+                    membersByClass={membersByClass}
+                    onPlayVideo={onPlayVideo}
+                  />
+                </>
               ) : sidebarMode === 'classes' ? (
                 /* Classes Content - Original grid view */
                 (() => {
@@ -2518,7 +2411,7 @@ export default function YearbookClassesViewUI(props: any) {
                               setEditProfilePesan(data.message)
                               setEditProfileVideoUrl(data.video_url)
 
-                              await handleSaveProfile?.(currentClass.id, false, m.user_id)
+                              await handleSaveProfile?.(currentClass.id, false, m.user_id, data)
                               setEditingMemberUserId?.(null)
                               setEditingProfileClassId(null)
                             }}

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase-server'
 import { createAdminClient } from '@/lib/supabase-admin'
+import { delCache, key } from '@/lib/redis'
 
 export const dynamic = 'force-dynamic'
 
@@ -92,6 +93,10 @@ export async function PATCH(
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  // Invalidate cache
+  await delCache(key.albumAllClassMembers(albumId))
+
   return NextResponse.json(updated)
 }
 
@@ -133,6 +138,9 @@ export async function DELETE(
     .delete()
     .eq('album_id', albumId)
     .eq('user_id', user.id)
+
+  // Invalidate cache
+  await delCache(key.albumAllClassMembers(albumId))
 
   return NextResponse.json({ success: true })
 }
