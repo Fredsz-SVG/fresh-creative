@@ -1,34 +1,26 @@
 'use client'
 
 import React, { useEffect, useRef, useState } from 'react'
-import NextLink from 'next/link'
-import { ChevronLeft, ChevronRight, Plus, Trash2, Check, X, Edit3, ImagePlus, Video, Play, Minus, Instagram, Users, ClipboardList, Menu, Cake, Shield, Copy, Link as LinkIcon, Clock, BookOpen, MessageSquare, Search, Sparkles, Shirt, UserCircle, ImageIcon, Images, MoreVertical } from 'lucide-react'
-import { AI_LABS_FEATURES_USER } from '@/lib/dashboard-nav'
+import { ChevronLeft, ChevronRight, Plus, Trash2, Check, X, Edit3, ImagePlus, Video, Play, Minus, Instagram, Users, ClipboardList, Menu, Cake, Shield, Copy, Link, Clock, BookOpen, MessageSquare, Search, Shirt, UserCircle, ImageIcon, Images, Link as LinkIcon, Sparkles } from 'lucide-react'
 import { toast } from 'sonner'
+import NextLink from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import TeacherCard from '@/components/TeacherCard'
+import MemberCard from '@/components/MemberCard'
 import TryOn from '@/components/fitur/TryOn'
 import Pose from '@/components/fitur/Pose'
 import ImageEditor from '@/components/fitur/ImageEditor'
 import PhotoGroup from '@/components/fitur/PhotoGroup'
 import PhotoToVideo from '@/components/fitur/PhotoToVideo'
+import { AI_LABS_FEATURES_USER } from '@/lib/dashboard-nav'
 
 type AlbumClass = { id: string; name: string; sort_order?: number; student_count?: number }
 type ClassAccess = { id: string; student_name: string; email?: string | null; status: string; date_of_birth?: string | null; instagram?: string | null; message?: string | null; video_url?: string | null }
 type ClassRequest = { id: string; student_name: string; email?: string | null; status: string }
 type ClassMember = { user_id: string; student_name: string; email: string | null; date_of_birth: string | null; instagram: string | null; message: string | null; video_url: string | null; photos?: string[]; is_me?: boolean }
-
+type StudentInClass = { student_name: string; photo_count: number }
 type Photo = { id: string; file_url: string; student_name: string; created_at?: string }
 type Teacher = { id: string; name: string; title?: string; message?: string; photo_url?: string; video_url?: string; sort_order?: number; photos?: { id: string; file_url: string; sort_order: number }[] }
-
-/** Tampilkan URL tanpa origin (localhost/domain) agar tidak terlihat di form profil */
-function stripOriginForDisplay(url: string | null | undefined): string {
-  if (!url || typeof url !== 'string') return ''
-  try {
-    const base = typeof window !== 'undefined' ? (process.env.NEXT_PUBLIC_APP_URL || window.location.origin) : (process.env.NEXT_PUBLIC_APP_URL || '')
-    if (base && url.startsWith(base)) return url.slice(base.length) || url
-  } catch { /* ignore */ }
-  return url
-}
 
 function InlineClassEditor(p: any) {
   const classObj = p.classObj as AlbumClass
@@ -93,7 +85,7 @@ function InlineClassEditor(p: any) {
     }
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
     if (!name.trim()) {
-      toast.error('Nama kelas tidak boleh kosong')
+      alert('Nama kelas tidak boleh kosong')
       return
     }
     saveChanges(name, order)
@@ -229,6 +221,7 @@ function InlineClassEditor(p: any) {
           </div>
         </div>
       )}
+
     </div>
   )
 }
@@ -239,7 +232,7 @@ export default function YearbookClassesViewUI(props: any) {
     album = null,
     classes = [],
     currentClass = null,
-
+    students = [],
     classIndex = 0,
     setClassIndex,
     setView,
@@ -323,9 +316,6 @@ export default function YearbookClassesViewUI(props: any) {
     currentUserId = null,
     handleUpdateRole,
     handleRemoveMember,
-    aiLabsTool = null,
-    onTeacherCountChange,
-    onTeamMemberCountChange,
   } = props
 
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -341,7 +331,7 @@ export default function YearbookClassesViewUI(props: any) {
   const coverUploadInputRef = useRef<HTMLInputElement>(null)
   const coverVideoInputRef = useRef<HTMLInputElement>(null)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const [mobileLainnyaOpen, setMobileLainnyaOpen] = useState(false)
+  const [moreMenuOpen, setMoreMenuOpen] = useState(false)
   const [members, setMembers] = useState<{ user_id: string; email: string; name?: string; role: string }[]>([])
   const [teachers, setTeachers] = useState<Teacher[]>([])
   const [editingTeacherId, setEditingTeacherId] = useState<string | null>(null)
@@ -367,26 +357,29 @@ export default function YearbookClassesViewUI(props: any) {
   const [removeConfirm, setRemoveConfirm] = useState<{ userId: string; memberName: string } | null>(null)
   const [deleteClassConfirm, setDeleteClassConfirm] = useState<{ classId: string; className: string } | null>(null)
   const [deleteMemberConfirm, setDeleteMemberConfirm] = useState<{ classId: string; userId?: string; memberName: string } | null>(null)
-  const [rejectRequestConfirm, setRejectRequestConfirm] = useState<{ requestId: string; studentName: string } | null>(null)
-  const [genericConfirm, setGenericConfirm] = useState<{
-    title: string
-    message: React.ReactNode
-    variant: 'danger' | 'warning' | 'neutral'
-    confirmLabel: string
-    onConfirm: () => void | Promise<void>
-  } | null>(null)
-  const [addTeacherModalOpen, setAddTeacherModalOpen] = useState(false)
-  const [addTeacherName, setAddTeacherName] = useState('')
+
+  const searchParams = useSearchParams()
+  const aiLabsTool = searchParams.get('tool')
+
+  const stripOriginForDisplay = (url: string) => {
+    if (!url) return ''
+    try {
+      if (!url.startsWith('http')) return url
+      const u = new URL(url)
+      return u.pathname + u.search
+    } catch {
+      return url
+    }
+  }
 
   const canManage = isOwner || isAlbumAdmin || isGlobalAdmin
 
   const fetchMembers = async () => {
     if (!album?.id) return
-    const res = await fetch(`/api/albums/${album.id}/members`, { credentials: 'include', cache: 'no-store' })
+    const res = await fetch(`/api/albums/${album.id}/members`, { credentials: 'include' })
     const data = await res.json().catch(() => [])
     if (res.ok && Array.isArray(data)) {
       setMembers(data)
-      onTeamMemberCountChange?.(data.length)
     }
   }
 
@@ -427,11 +420,10 @@ export default function YearbookClassesViewUI(props: any) {
   const fetchTeachers = async () => {
     if (!album?.id) return
     try {
-      const res = await fetch(`/api/albums/${album.id}/teachers`, { credentials: 'include', cache: 'no-store' })
+      const res = await fetch(`/api/albums/${album.id}/teachers`, { credentials: 'include' })
       const data = await res.json().catch(() => [])
       if (res.ok && Array.isArray(data)) {
         setTeachers(data)
-        onTeacherCountChange?.(data.length)
       }
     } catch (error) {
       console.error('Error fetching teachers:', error)
@@ -448,7 +440,7 @@ export default function YearbookClassesViewUI(props: any) {
   const fetchInviteToken = async () => {
     if (!album?.id) return
     try {
-      const res = await fetch(`/api/albums/${album.id}/invite-token`, { credentials: 'include', cache: 'no-store' })
+      const res = await fetch(`/api/albums/${album.id}/invite-token`, { credentials: 'include' })
       if (res.ok) {
         const data = await res.json()
         setInviteToken(data.token || null)
@@ -497,7 +489,7 @@ export default function YearbookClassesViewUI(props: any) {
     if (!album?.id || !canManage) return
     try {
       const params = status ? `?status=${status}` : '?status=all'
-      const res = await fetch(`/api/albums/${album.id}/join-requests${params}`, { credentials: 'include', cache: 'no-store' })
+      const res = await fetch(`/api/albums/${album.id}/join-requests${params}`, { credentials: 'include' })
       const data = await res.json().catch(() => [])
       if (res.ok && Array.isArray(data)) {
         setJoinRequests(data)
@@ -510,7 +502,7 @@ export default function YearbookClassesViewUI(props: any) {
   const fetchJoinStats = async () => {
     if (!album?.id) return
     try {
-      const res = await fetch(`/api/albums/${album.id}/join-stats`, { credentials: 'include', cache: 'no-store' })
+      const res = await fetch(`/api/albums/${album.id}/join-stats`, { credentials: 'include' })
       const data = await res.json()
       if (res.ok) {
         setJoinStats(data)
@@ -525,7 +517,7 @@ export default function YearbookClassesViewUI(props: any) {
       fetchJoinRequests(approvalTab)
       fetchJoinStats()
     }
-  }, [sidebarMode, approvalTab, canManage, album?.id, props.realtimeCounter])
+  }, [sidebarMode, approvalTab, canManage, album?.id])
 
   // Handle approve join request
   const handleApproveJoinRequest = async (requestId: string, assigned_class_id: string) => {
@@ -559,6 +551,7 @@ export default function YearbookClassesViewUI(props: any) {
   // Handle reject join request
   const handleRejectJoinRequest = async (requestId: string, reason?: string) => {
     if (!album?.id) return
+    if (!confirm('Yakin ingin menolak request ini?')) return
     try {
       const res = await fetch(`/api/albums/${album.id}/join-requests/${requestId}`, {
         method: 'PATCH',
@@ -567,11 +560,11 @@ export default function YearbookClassesViewUI(props: any) {
       })
       const data = await res.json()
       if (res.ok) {
-        toast.success('Pendaftaran ditolak')
+        toast.success('Request ditolak')
         fetchJoinRequests(approvalTab)
         fetchJoinStats()
       } else {
-        toast.error(data.error || 'Gagal menolak pendaftaran')
+        toast.error(data.error || 'Gagal menolak request')
       }
     } catch (error) {
       console.error('Error rejecting request:', error)
@@ -591,7 +584,7 @@ export default function YearbookClassesViewUI(props: any) {
       const data = await res.json()
       if (res.ok && data.id) {
         setTeachers(prev => [...prev, data])
-        toast.success('Berhasil ditambahkan')
+        toast.success('Guru berhasil ditambahkan')
       } else {
         toast.error(data.error || 'Gagal menambahkan guru')
       }
@@ -611,8 +604,8 @@ export default function YearbookClassesViewUI(props: any) {
       })
       const data = await res.json()
       if (res.ok && data.id) {
-        setTeachers(prev => prev.map(t => t.id === teacherId ? { ...t, ...data } : t))
-        toast.success('Data berhasil diperbarui')
+        setTeachers(prev => prev.map(t => t.id === teacherId ? data : t))
+        toast.success('Data guru berhasil diperbarui')
       } else {
         toast.error(data.error || 'Gagal memperbarui guru')
       }
@@ -624,13 +617,14 @@ export default function YearbookClassesViewUI(props: any) {
 
   const handleDeleteTeacher = async (teacherId: string, teacherName: string) => {
     if (!album?.id) return
+    if (!confirm(`Hapus ${teacherName} dari daftar?`)) return
     try {
       const res = await fetch(`/api/albums/${album.id}/teachers/${teacherId}`, {
         method: 'DELETE',
       })
       if (res.ok) {
         setTeachers(prev => prev.filter(t => t.id !== teacherId))
-        toast.success('Berhasil dihapus')
+        toast.success('Guru berhasil dihapus')
       } else {
         const data = await res.json()
         toast.error(data.error || 'Gagal menghapus guru')
@@ -698,6 +692,7 @@ export default function YearbookClassesViewUI(props: any) {
 
   const handleDeleteTeacherPhotoOld = async (teacherId: string) => {
     if (!album?.id) return
+    if (!confirm('Hapus foto guru?')) return
     try {
       const res = await fetch(`/api/albums/${album.id}/teachers/${teacherId}/photo`, {
         method: 'DELETE',
@@ -825,7 +820,7 @@ export default function YearbookClassesViewUI(props: any) {
 
   return (
     <div className="min-h-screen flex flex-col w-full lg:max-w-full">
-      {/* Mobile Bottom Navigation - AI Labs elevated, Lainnya (Tim/Akses) di kanan */}
+      {/* Mobile Bottom Navigation - App Style with Center Elevated Button */}
       <div className="fixed bottom-0 left-0 right-0 z-[60] bg-[#0a0a0b] border-t border-white/10 flex lg:hidden items-center justify-around h-16 pb-safe safe-area-bottom shadow-2xl">
         <button
           onClick={() => {
@@ -850,10 +845,9 @@ export default function YearbookClassesViewUI(props: any) {
           </button>
         )}
 
-        {/* Center Elevated - AI Labs */}
+        {/* Center Elevated Button - AI Labs */}
         <div className="flex-1 flex items-center justify-center relative">
           <button
-            type="button"
             onClick={() => {
               setSidebarMode('ai-labs')
               setView('classes')
@@ -870,9 +864,8 @@ export default function YearbookClassesViewUI(props: any) {
           </span>
         </div>
 
-        {/* Kelas - tombol biasa (bukan di Lainnya) */}
+        {/* Kelas */}
         <button
-          type="button"
           onClick={() => {
             if (sidebarMode === 'classes' && !isCoverView) {
               setMobileMenuOpen(true)
@@ -887,79 +880,38 @@ export default function YearbookClassesViewUI(props: any) {
           <span className="text-[10px] font-medium">Kelas</span>
         </button>
 
-        {/* Lainnya (Tim, Akses saja) - navbar paling kanan, hanya untuk canManage */}
         {canManage && (
-          <div className="flex-1 flex items-center justify-center relative">
-            <button
-              type="button"
-              onClick={() => setMobileLainnyaOpen((v) => !v)}
-              className={`flex flex-col items-center justify-center w-full h-full gap-1 active:scale-95 transition-transform ${mobileLainnyaOpen || sidebarMode === 'approval' || sidebarMode === 'team' ? 'text-lime-400' : 'text-gray-500 hover:text-white'}`}
-            >
-              <MoreVertical className="w-5 h-5" />
-              <span className="text-[10px] font-medium">Lainnya</span>
-            </button>
-            {mobileLainnyaOpen && (
-              <>
-                <div className="fixed inset-0 z-[61] lg:hidden" aria-hidden onClick={() => setMobileLainnyaOpen(false)} />
-                <div className="absolute bottom-full right-0 mb-2 z-[62] min-w-[160px] rounded-xl bg-gray-900 border border-white/10 shadow-2xl py-1 overflow-hidden">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSidebarMode('approval')
-                      setView('classes')
-                      setMobileLainnyaOpen(false)
-                    }}
-                    className={`w-full flex items-center gap-3 px-4 py-3 text-left text-sm transition-colors relative ${sidebarMode === 'approval' ? 'bg-lime-600/20 text-lime-400' : 'text-white hover:bg-white/10'}`}
-                  >
-                    <ClipboardList className={`w-5 h-5 ${sidebarMode === 'approval' ? 'text-lime-400' : 'text-gray-400'}`} />
-                    Akses
-                    {joinStats && joinStats.pending_count > 0 && (
-                      <span className="absolute right-3 flex h-2 w-2 rounded-full bg-red-500" />
-                    )}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSidebarMode('team')
-                      setView('classes')
-                      setMobileLainnyaOpen(false)
-                    }}
-                    className={`w-full flex items-center gap-3 px-4 py-3 text-left text-sm transition-colors ${sidebarMode === 'team' ? 'bg-lime-600/20 text-lime-400' : 'text-white hover:bg-white/10'}`}
-                  >
-                    <Shield className={`w-5 h-5 ${sidebarMode === 'team' ? 'text-lime-400' : 'text-gray-400'}`} />
-                    Tim
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
+          <button
+            onClick={() => setMoreMenuOpen(true)}
+            className={`flex flex-col items-center justify-center flex-1 h-full gap-1 active:scale-95 transition-transform relative ${['approval', 'team'].includes(sidebarMode) ? 'text-lime-400' : 'text-gray-500 hover:text-white'}`}
+          >
+            <div className="relative">
+              <Menu className="w-5 h-5" />
+              {(joinStats && joinStats.pending_count > 0) && (
+                <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
+                </span>
+              )}
+            </div>
+            <span className="text-[10px] font-medium">Lainnya</span>
+          </button>
         )}
+
       </div>
       {/* Main Content - Header already sticky in parent (page.tsx) */}
       <div className="flex-1 flex flex-col p-4 pb-8">
         <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => {
           const file = e.target.files?.[0]
           const target = uploadPhotoTargetRef.current
-          if (!file || typeof onUploadPhoto !== 'function') {
-            e.target.value = ''
-            return
-          }
-          if (target?.classId && target?.studentName) {
-            onUploadPhoto(target.classId, target.studentName, target.className ?? '', file)
-          }
+          if (target && file && typeof onUploadPhoto === 'function') onUploadPhoto(target.classId, target.studentName, target.className, file)
           uploadPhotoTargetRef.current = null
           e.target.value = ''
         }} />
         <input ref={videoInputRef} type="file" accept="video/*" className="hidden" onChange={(e) => {
           const file = e.target.files?.[0]
           const target = uploadVideoTargetRef.current
-          if (!file || typeof onUploadVideo !== 'function') {
-            e.target.value = ''
-            return
-          }
-          if (target?.classId && target?.studentName) {
-            onUploadVideo(target.classId, target.studentName, target.className ?? '', file)
-          }
+          if (target && file && typeof onUploadVideo === 'function') onUploadVideo(target.classId, target.studentName, target.className, file)
           uploadVideoTargetRef.current = null
           e.target.value = ''
         }} />
@@ -982,197 +934,10 @@ export default function YearbookClassesViewUI(props: any) {
           e.target.value = ''
         }} />
 
-        {/* Konfirmasi Hapus Kelas - Modal seperti Tim */}
-        {deleteClassConfirm && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
-            <div className="bg-gray-900 border border-red-500/20 rounded-xl p-4 sm:p-6 max-w-md w-full shadow-2xl">
-              <h3 className="text-lg font-bold text-red-400 mb-2">Hapus Kelas</h3>
-              <p className="text-sm text-muted mb-4">
-                Apakah kamu yakin? Kelas &quot;<span className="text-white font-medium">{deleteClassConfirm.className}</span>&quot; dan semua data member serta foto di dalamnya akan dihapus.
-              </p>
-              <div className="flex gap-2 justify-end">
-                <button
-                  onClick={() => setDeleteClassConfirm(null)}
-                  className="px-4 py-2 rounded-lg bg-white/5 text-gray-400 hover:text-white hover:bg-white/10 transition-colors text-sm font-medium"
-                >
-                  Batal
-                </button>
-                <button
-                  onClick={async () => {
-                    if (!deleteClassConfirm) return
-                    await handleDeleteClass(deleteClassConfirm.classId, deleteClassConfirm.className)
-                    setDeleteClassConfirm(null)
-                  }}
-                  className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-500 transition-colors text-sm font-medium"
-                >
-                  Ya, Hapus
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
 
-        {/* Konfirmasi Hapus Anggota dari Profil Card Kelas */}
-        {deleteMemberConfirm && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
-            <div className="bg-gray-900 border border-red-500/20 rounded-xl p-4 sm:p-6 max-w-md w-full shadow-2xl">
-              <h3 className="text-lg font-bold text-red-400 mb-2">Hapus Anggota</h3>
-              <p className="text-sm text-muted mb-4">
-                Apakah kamu yakin ingin menghapus &quot;<span className="text-white font-medium">{deleteMemberConfirm.memberName}</span>&quot; dari kelas? Profil dan data terkait akan dihapus.
-              </p>
-              <div className="flex gap-2 justify-end">
-                <button
-                  onClick={() => setDeleteMemberConfirm(null)}
-                  className="px-4 py-2 rounded-lg bg-white/5 text-gray-400 hover:text-white hover:bg-white/10 transition-colors text-sm font-medium"
-                >
-                  Batal
-                </button>
-                <button
-                  onClick={async () => {
-                    if (!deleteMemberConfirm) return
-                    await handleSaveProfile(deleteMemberConfirm.classId, true, deleteMemberConfirm.userId)
-                    setDeleteMemberConfirm(null)
-                  }}
-                  className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-500 transition-colors text-sm font-medium"
-                >
-                  Ya, Hapus
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Konfirmasi Tolak Pendaftaran */}
-        {rejectRequestConfirm && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
-            <div className="bg-gray-900 border border-amber-500/20 rounded-xl p-4 sm:p-6 max-w-md w-full shadow-2xl">
-              <h3 className="text-lg font-bold text-amber-400 mb-2">Tolak Pendaftaran</h3>
-              <p className="text-sm text-muted mb-4">
-                Apakah kamu yakin ingin menolak pendaftaran dari &quot;<span className="text-white font-medium">{rejectRequestConfirm.studentName}</span>&quot;?
-              </p>
-              <div className="flex gap-2 justify-end">
-                <button
-                  onClick={() => setRejectRequestConfirm(null)}
-                  className="px-4 py-2 rounded-lg bg-white/5 text-gray-400 hover:text-white hover:bg-white/10 transition-colors text-sm font-medium"
-                >
-                  Batal
-                </button>
-                <button
-                  onClick={async () => {
-                    if (!rejectRequestConfirm) return
-                    await handleRejectJoinRequest(rejectRequestConfirm.requestId)
-                    setRejectRequestConfirm(null)
-                  }}
-                  className="px-4 py-2 rounded-lg bg-amber-600 text-white hover:bg-amber-500 transition-colors text-sm font-medium"
-                >
-                  Ya, Tolak
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Modal konfirmasi generik - seragam untuk semua aksi */}
-        {genericConfirm && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
-            <div className={`rounded-xl p-4 sm:p-6 max-w-md w-full shadow-2xl ${
-              genericConfirm.variant === 'danger' ? 'bg-gray-900 border border-red-500/20' :
-              genericConfirm.variant === 'warning' ? 'bg-gray-900 border border-amber-500/20' :
-              'bg-gray-900 border border-white/10'
-            }`}>
-              <h3 className={`text-lg font-bold mb-2 ${
-                genericConfirm.variant === 'danger' ? 'text-red-400' :
-                genericConfirm.variant === 'warning' ? 'text-amber-400' : 'text-app'
-              }`}>
-                {genericConfirm.title}
-              </h3>
-              <p className="text-sm text-muted mb-4">{genericConfirm.message}</p>
-              <div className="flex gap-2 justify-end">
-                <button
-                  onClick={() => setGenericConfirm(null)}
-                  className="px-4 py-2 rounded-lg bg-white/5 text-gray-400 hover:text-white hover:bg-white/10 transition-colors text-sm font-medium"
-                >
-                  Batal
-                </button>
-                <button
-                  onClick={async () => {
-                    if (!genericConfirm) return
-                    await Promise.resolve(genericConfirm.onConfirm())
-                    setGenericConfirm(null)
-                  }}
-                  className={`px-4 py-2 rounded-lg text-white transition-colors text-sm font-medium ${
-                    genericConfirm.variant === 'danger' ? 'bg-red-600 hover:bg-red-500' :
-                    genericConfirm.variant === 'warning' ? 'bg-amber-600 hover:bg-amber-500' :
-                    'bg-lime-600 hover:bg-lime-500'
-                  }`}
-                >
-                  {genericConfirm.confirmLabel}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Modal Tambah (Sambutan) - ganti prompt() */}
-        {addTeacherModalOpen && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
-            <div className="bg-gray-900 border border-white/10 rounded-xl p-4 sm:p-6 max-w-md w-full shadow-2xl">
-              <h3 className="text-lg font-bold text-app mb-2">Tambah</h3>
-              <p className="text-sm text-muted mb-3">Masukkan nama untuk kartu sambutan.</p>
-              <input
-                type="text"
-                value={addTeacherName}
-                onChange={(e) => setAddTeacherName(e.target.value)}
-                placeholder="Nama"
-                className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-app text-sm mb-4 focus:outline-none focus:ring-2 focus:ring-lime-500/50"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault()
-                    const name = addTeacherName.trim()
-                    if (name) {
-                      handleAddTeacher(name, '')
-                      setAddTeacherName('')
-                      setAddTeacherModalOpen(false)
-                    } else {
-                      toast.error('Nama tidak boleh kosong')
-                    }
-                  }
-                  if (e.key === 'Escape') setAddTeacherModalOpen(false)
-                }}
-                autoFocus
-              />
-              <div className="flex gap-2 justify-end">
-                <button
-                  onClick={() => {
-                    setAddTeacherModalOpen(false)
-                    setAddTeacherName('')
-                  }}
-                  className="px-4 py-2 rounded-lg bg-white/5 text-gray-400 hover:text-white hover:bg-white/10 transition-colors text-sm font-medium"
-                >
-                  Batal
-                </button>
-                <button
-                  onClick={() => {
-                    const name = addTeacherName.trim()
-                    if (!name) {
-                      toast.error('Nama tidak boleh kosong')
-                      return
-                    }
-                    handleAddTeacher(name, '')
-                    setAddTeacherName('')
-                    setAddTeacherModalOpen(false)
-                  }}
-                  className="px-4 py-2 rounded-lg bg-lime-600 text-white hover:bg-lime-500 transition-colors text-sm font-medium"
-                >
-                  Tambah
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
 
         <div className="flex flex-col lg:flex-row gap-0 flex-1 lg:pl-16 lg:px-0 lg:py-0">
-          {/* Icon Sidebar untuk desktop - Fixed di kiri, AI Labs paling atas */}
+          {/* Icon Sidebar untuk desktop - Fixed di kiri */}
           <div className="hidden lg:fixed lg:left-0 lg:top-14 lg:w-16 lg:h-[calc(100vh-3.5rem)] lg:flex flex-col lg:z-40 lg:bg-black/40 lg:backdrop-blur-sm lg:border-r lg:border-white/10">
             <button
               type="button"
@@ -1189,7 +954,6 @@ export default function YearbookClassesViewUI(props: any) {
               <Sparkles className="w-6 h-6" />
               <span className="text-[10px]">AI Labs</span>
             </button>
-
             <button
               type="button"
               onClick={() => {
@@ -1277,273 +1041,309 @@ export default function YearbookClassesViewUI(props: any) {
                 </button>
               </>
             )}
+
+
           </div>
 
-          {/* Panel Daftar Kelas - Fixed (style sama seperti sidebar Approval/Tim) */}
-          {
-            sidebarMode === 'classes' && !isCoverView && (
-              <div className="hidden lg:fixed lg:left-16 lg:top-[3.75rem] lg:w-64 lg:h-[calc(100vh-3.75rem)] lg:flex flex-col lg:z-35 lg:bg-black/40 lg:backdrop-blur-sm lg:border-r lg:border-white/10 lg:p-4">
-                {/* Header - Nama Kelas + Edit/Hapus */}
-                {currentClass && (
-                  <div className="flex-shrink-0 mb-4 p-3 rounded-xl bg-white/[0.03] border border-white/10">
-                    <InlineClassEditor classObj={currentClass} isOwner={canManage} onDelete={(classId, className) => setDeleteClassConfirm({ classId, className: className ?? currentClass?.name ?? '' })} onUpdate={handleUpdateClass} classIndex={classIndex} classesCount={classes.length} />
-                  </div>
-                )}
-
-                {/* Status / Daftarkan Nama */}
-                {currentClass && (
-                  <div className="flex-shrink-0 mb-4 p-3 rounded-xl bg-white/[0.03] border border-white/10">
-                    {(() => {
-                      const access = myAccessByClass[currentClass.id]
-                      const request = myRequestByClass[currentClass.id] as ClassRequest | null | undefined
-                      const isPendingRequest = request?.status === 'pending'
-                      const isRejectedRequest = request?.status === 'rejected'
-                      const isLoadingThisClass = !accessDataLoaded && !access && !request
-
-                      // Show compact loading hanya untuk class ini
-                      if (isLoadingThisClass) {
-                        return (
-                          <div className="flex items-center gap-2 text-xs text-muted">
-                            <div className="animate-spin rounded-full h-3 w-3 border border-lime-500 border-t-transparent" />
-                            <span>Memuat...</span>
-                          </div>
-                        )
-                      }
-
-                      // User dengan access approved (termasuk owner/admin yang sudah terdaftar)
-                      if (access?.status === 'approved') {
-                        return (
-                          <>
-                            <p className="text-xs text-muted mb-1">Status:</p>
-                            <p className="text-xs font-medium text-lime-400">✓ {access.student_name}</p>
-                          </>
-                        )
-                      }
-
-                      // Owner tanpa akses - cek apakah sudah terdaftar di kelas lain
-                      if (isOwner && !isPendingRequest && !access) {
-                        // Check if already registered in another class
-                        const hasAccessInOtherClass = Object.entries(myAccessByClass).some(
-                          ([classId, classAccess]) =>
-                            classId !== currentClass.id &&
-                            classAccess &&
-                            typeof classAccess === 'object' &&
-                            'status' in classAccess &&
-                            classAccess.status === 'approved'
-                        )
-
-                        if (hasAccessInOtherClass) {
-                          return (
-                            <>
-                              <p className="text-amber-400 text-xs mb-1">⚠️ Batas Pendaftaran</p>
-                              <p className="text-muted text-xs">
-                                Anda sudah terdaftar di kelas lain. Hanya bisa daftar di 1 kelas.
-                              </p>
-                            </>
-                          )
-                        }
-
-                        // Show join button
-                        return (
-                          <>
-                            <p className="text-muted text-xs mb-2">
-                              Daftarkan diri Anda di kelas ini untuk bisa upload foto.
-                            </p>
-                            <button
-                              type="button"
-                              onClick={() => handleJoinAsOwner(currentClass.id)}
-                              className="px-3 py-2.5 rounded-xl bg-lime-600 text-white text-xs font-medium hover:bg-lime-500 transition-colors w-full"
-                            >
-                              Daftar di Kelas Ini
-                            </button>
-                          </>
-                        )
-                      }
-
-                      // Admin/helper yang bukan owner - tidak perlu form
-                      if (canManage) {
-                        return null
-                      }
-
-                      // User biasa dengan pending request
-                      if (isPendingRequest) {
-                        return (
-                          <>
-                            <p className="text-xs text-muted mb-1">Status Pendaftaran:</p>
-                            <p className="text-amber-400 text-xs flex items-center gap-1">
-                              <Clock className="w-3.5 h-3.5 flex-shrink-0" /> Menunggu persetujuan
-                            </p>
-                          </>
-                        )
-                      }
-
-                      // User tanpa akses - tidak tampilkan form, sistem menggunakan link registrasi universal
-                      return null
-
-                    })()}
-                  </div>
-                )}
-
-                {/* Daftar Kelas - Scrollable */}
-                <div className="flex-1 flex flex-col min-h-0 overflow-y-auto rounded-xl bg-white/[0.03] border border-white/10 p-2" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-                  <style>{`div::-webkit-scrollbar { display: none; }`}</style>
-                  <div className="flex flex-col gap-1.5">
-                    {classes.map((c, idx) => {
-                      const req = myRequestByClass[c.id] as ClassRequest | undefined
-                      const hasPendingRequest = req?.status === 'pending'
-                      return (
-                        <button
-                          key={c.id}
-                          type="button"
-                          onClick={() => {
-                            setClassIndex(idx)
-                            if (isCoverView) setView('classes')
-                          }}
-                          className={`p-2.5 rounded-lg text-left text-sm transition-colors touch-manipulation ${idx === classIndex && !isCoverView
-                            ? 'bg-lime-600/20 border border-lime-500/50 text-lime-400'
-                            : 'border border-white/10 text-gray-400 hover:text-white hover:bg-white/5 active:bg-white/10'
-                            }`}
-                        >
-                          <p className="font-medium truncate">{c.name}</p>
-                          {hasPendingRequest ? (
-                            <p className="text-xs text-amber-400 flex items-center gap-1 mt-0.5"><Clock className="w-3.5 h-3.5 flex-shrink-0" /> Menunggu persetujuan</p>
-                          ) : (
-                            <p className="text-xs text-muted mt-0.5">{(membersByClass[c.id]?.length ?? 0)} orang</p>
-                          )}
-                        </button>
-                      )
-                    })}
-                  </div>
+          {/* Panel Group List - Fixed di tengah (hanya tampil saat mode classes) */}
+          {sidebarMode === 'classes' && !isCoverView && (
+            <div className="hidden lg:fixed lg:left-16 lg:top-[3.75rem] lg:w-64 lg:h-[calc(100vh-3.75rem)] lg:flex flex-col lg:z-35 lg:bg-black/30 lg:backdrop-blur-sm lg:border-r lg:border-white/10">
+              {/* Header Fixed - Group Name + Edit */}
+              {currentClass && (
+                <div className="flex-shrink-0 px-4 py-4 border-b border-white/10">
+                  <InlineClassEditor
+                    classObj={currentClass}
+                    isOwner={canManage}
+                    onDelete={(classId, className) => setDeleteClassConfirm({ classId, className: className ?? currentClass?.name ?? '' })}
+                    onUpdate={handleUpdateClass}
+                    classIndex={classIndex}
+                    classesCount={classes.length}
+                  />
                 </div>
+              )}
 
-                {/* Tambah Kelas - Fixed di bawah */}
-                <div className="flex-shrink-0 mt-4 pt-4 border-t border-white/10">
-                  {canManage && (
-                    <div className="flex flex-col gap-2">
-                      {!addingClass ? (
-                        <button type="button" onClick={() => setAddingClass(true)} className="w-full px-3 py-2.5 rounded-xl border border-white/10 text-sm text-gray-400 hover:text-white hover:bg-white/5 active:bg-white/10 transition-colors touch-manipulation flex items-center justify-center gap-2">
-                          <Plus className="w-4 h-4" /> Tambah Kelas
-                        </button>
-                      ) : (
-                        <div className="p-3 rounded-xl bg-white/[0.03] border border-white/10 flex flex-col gap-2">
-                          <input type="text" value={newClassName} onChange={(e) => setNewClassName(e.target.value)} placeholder="Nama kelas" className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm text-app placeholder:text-gray-600 focus:outline-none focus:border-lime-500" autoFocus />
-                          <div className="flex gap-2">
-                            <button type="button" onClick={handleAddClass} className="flex-1 px-3 py-2 rounded-lg bg-lime-600 text-white text-sm font-medium hover:bg-lime-500 transition-colors touch-manipulation">Tambah</button>
-                            <button type="button" onClick={() => { setAddingClass(false); setNewClassName('') }} className="flex-1 px-3 py-2 rounded-lg border border-white/10 text-sm text-gray-400 hover:text-white hover:bg-white/5 transition-colors touch-manipulation">Batal</button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
-            )
-          }
-
-          {/* Approval Detail Panel - Fixed di sebelah kanan sidebar icon */}
-          {
-            sidebarMode === 'approval' && selectedRequestId && (
-              <>
-                {/* Backdrop untuk close */}
-                <div
-                  className="hidden lg:fixed lg:inset-0 lg:z-30"
-                  onClick={() => setSelectedRequestId(null)}
-                />
-                <div className="hidden lg:flex lg:fixed lg:left-16 lg:top-[3.75rem] lg:w-64 lg:h-[calc(100vh-3.75rem)] lg:bg-black/40 lg:backdrop-blur-sm lg:border-l lg:border-white/10 lg:p-4 lg:z-35 lg:flex-col lg:items-stretch lg:justify-start lg:overflow-y-auto">
-                  <button
-                    type="button"
-                    onClick={() => setSelectedRequestId(null)}
-                    className="self-end text-gray-400 hover:text-white mb-4 text-lg"
-                    title="Tutup"
-                  >
-                    ✕
-                  </button>
+              {/* Form Fixed - Daftarkan Nama */}
+              {currentClass && (
+                <div className="flex-shrink-0 px-3 py-5 border-b border-white/10">
                   {(() => {
-                    const allRequests = Object.values(requestsByClass).flat() as ClassRequest[]
-                    const request = allRequests.find(r => r.id === selectedRequestId)
-                    const classId = Object.entries(requestsByClass).find(([_, reqs]) => {
-                      const reqList = reqs as ClassRequest[]
-                      return reqList.find(r => r.id === selectedRequestId)
-                    })?.[0]
-                    if (!request || !classId) return null
-                    return (
-                      <div className="w-full flex flex-col gap-4">
-                        <div className="text-center">
-                          <p className="text-app font-medium text-sm">{request.student_name}</p>
-                          {request.email && <p className="text-muted text-xs break-all">{request.email}</p>}
+                    const access = myAccessByClass[currentClass.id]
+                    const request = myRequestByClass[currentClass.id] as ClassRequest | null | undefined
+                    const isPendingRequest = request?.status === 'pending'
+                    const isRejectedRequest = request?.status === 'rejected'
+                    const isLoadingThisClass = !accessDataLoaded && !access && !request
+
+                    // DEBUG LOG
+                    if (isOwner) {
+                      console.log('[GroupPanel DEBUG]', {
+                        currentClassId: currentClass.id,
+                        isOwner,
+                        canManage,
+                        access,
+                        request,
+                        isPendingRequest,
+                        isLoadingThisClass,
+                        accessDataLoaded,
+                        allAccess: myAccessByClass
+                      })
+                    }
+
+                    // Show compact loading hanya untuk class ini
+                    if (isLoadingThisClass) {
+                      return (
+                        <div className="flex items-center gap-2 text-xs text-muted">
+                          <div className="animate-spin rounded-full h-3 w-3 border border-lime-500 border-t-transparent" />
+                          <span>Memuat...</span>
                         </div>
-                        <div className="flex flex-col gap-2">
+                      )
+                    }
+
+                    // User dengan access approved (termasuk owner/admin yang sudah terdaftar)
+                    if (access?.status === 'approved') {
+                      return (
+                        <>
+                          <p className="text-xs text-muted mb-1">Status:</p>
+                          <p className="text-xs font-medium text-lime-400">✓ {access.student_name}</p>
+                        </>
+                      )
+                    }
+
+                    // Owner tanpa akses - cek apakah sudah terdaftar di kelas lain
+                    if (isOwner && !isPendingRequest && !access) {
+                      // Check if already registered in another class
+                      const hasAccessInOtherClass = Object.entries(myAccessByClass).some(
+                        ([classId, classAccess]) =>
+                          classId !== currentClass.id &&
+                          classAccess &&
+                          typeof classAccess === 'object' &&
+                          'status' in classAccess &&
+                          classAccess.status === 'approved'
+                      )
+
+                      if (hasAccessInOtherClass) {
+                        return (
+                          <>
+                            <p className="text-amber-400 text-xs mb-1">⚠️ Batas Pendaftaran</p>
+                            <p className="text-muted text-xs">
+                              Anda sudah terdaftar di kelas lain. Hanya bisa daftar di 1 kelas.
+                            </p>
+                          </>
+                        )
+                      }
+
+                      // Show join button
+                      return (
+                        <>
+                          <p className="text-muted text-xs mb-2">
+                            Daftarkan diri Anda di kelas ini untuk bisa upload foto.
+                          </p>
                           <button
                             type="button"
-                            onClick={() => handleApproveReject(classId, selectedRequestId, 'approved')}
-                            className="px-4 py-2.5 rounded-lg bg-green-600/80 text-white hover:bg-green-600 text-xs font-medium transition-colors w-full"
-                            title="Setujui"
+                            onClick={() => handleJoinAsOwner(currentClass.id)}
+                            className="px-3 py-2 rounded-lg bg-blue-600 text-white text-xs font-medium hover:bg-blue-500 transition-colors w-full"
                           >
-                            ✓ Setujui
+                            Daftar di Kelas Ini
                           </button>
-                          <button
-                            type="button"
-                            onClick={() => handleApproveReject(classId, selectedRequestId, 'rejected')}
-                            className="px-4 py-2.5 rounded-lg bg-red-600/80 text-white hover:bg-red-600 text-xs font-medium transition-colors w-full"
-                            title="Tolak"
-                          >
-                            ✕ Tolak
-                          </button>
-                        </div>
-                      </div>
-                    )
+                        </>
+                      )
+                    }
+
+                    // Admin/helper yang bukan owner - tidak perlu form
+                    if (canManage) {
+                      return null
+                    }
+
+                    // User biasa dengan pending request
+                    if (isPendingRequest) {
+                      return (
+                        <>
+                          <p className="text-xs text-muted mb-1">Status Pendaftaran:</p>
+                          <p className="text-amber-400 text-xs flex items-center gap-1">
+                            <Clock className="w-3.5 h-3.5 flex-shrink-0" /> Menunggu persetujuan
+                          </p>
+                        </>
+                      )
+                    }
+
+                    // User tanpa akses - tidak tampilkan form, sistem menggunakan link registrasi universal
+                    return null
+
                   })()}
                 </div>
-              </>
-            )
-          }
+              )}
+
+              {/* Scrollable Content Area with Hidden Scrollbar */}
+              <div className="flex-1 flex flex-col overflow-y-auto" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                <style>{`
+                    div::-webkit-scrollbar {
+                      display: none;
+                    }
+                  `}</style>
+
+                {/* Scrollable Group List */}
+                <div className="flex-1 flex flex-col gap-2 px-3 py-2">
+                  {classes.map((c, idx) => {
+                    const req = myRequestByClass[c.id] as ClassRequest | undefined
+                    const hasPendingRequest = req?.status === 'pending'
+                    return (
+                      <button
+                        key={c.id}
+                        type="button"
+                        onClick={() => {
+                          setClassIndex(idx)
+                          if (isCoverView) setView('classes')
+                        }}
+                        className={`p-2 rounded-lg text-left text-sm transition-colors touch-manipulation ${idx === classIndex && !isCoverView
+                          ? 'bg-lime-600/20 border border-lime-500/50 text-lime-400'
+                          : 'border border-white/10 text-gray-400 hover:text-white hover:bg-white/5 active:bg-white/10'
+                          }`}
+                      >
+                        <p className="font-medium truncate">{c.name}</p>
+                        {hasPendingRequest ? (
+                          <p className="text-xs text-amber-400 flex items-center gap-1"><Clock className="w-3.5 h-3.5 flex-shrink-0" /> menunggu persetujuan</p>
+                        ) : (
+                          <p className="text-xs text-muted">{(membersByClass[c.id]?.length ?? 0)} orang</p>
+                        )}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Add Group Button - Fixed at Bottom */}
+              <div className="flex-shrink-0 px-3 py-2 border-t border-white/10">
+                {canManage && (
+                  <div className="flex gap-2">
+                    {!addingClass ? (
+                      <button type="button" onClick={() => setAddingClass(true)} className="w-full px-3 py-2 rounded-lg border border-white/10 text-sm text-gray-400 hover:text-white hover:bg-white/5 active:bg-white/10 transition-colors touch-manipulation">
+                        <Plus className="w-4 h-4 inline mr-1" /> Kelas
+                      </button>
+                    ) : (
+                      <div className="flex flex-col gap-2 w-full">
+                        <input type="text" value={newClassName} onChange={(e) => setNewClassName(e.target.value)} placeholder="Nama kelas" className="px-2 py-1.5 rounded-lg bg-white/5 border border-white/10 text-sm text-app placeholder:text-gray-600" autoFocus />
+                        <div className="flex gap-2">
+                          <button type="button" onClick={handleAddClass} className="flex-1 px-2 py-1.5 rounded-lg bg-lime-600 text-white text-sm font-medium hover:bg-lime-500 transition-colors touch-manipulation">Tambah</button>
+                          <button type="button" onClick={() => { setAddingClass(false); setNewClassName('') }} className="flex-1 px-2 py-1.5 rounded-lg border border-white/10 text-sm text-gray-400 hover:text-white hover:bg-white/5 transition-colors touch-manipulation">Batal</button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Approval Detail Panel - Fixed di sebelah kanan sidebar icon */}
+          {sidebarMode === 'approval' && selectedRequestId && (
+            <>
+              {/* Backdrop untuk close */}
+              <div
+                className="hidden lg:fixed lg:inset-0 lg:z-30"
+                onClick={() => setSelectedRequestId(null)}
+              />
+              <div className="hidden lg:flex lg:fixed lg:left-16 lg:top-[3.75rem] lg:w-64 lg:h-[calc(100vh-3.75rem)] lg:bg-black/40 lg:backdrop-blur-sm lg:border-l lg:border-white/10 lg:p-4 lg:z-35 lg:flex-col lg:items-stretch lg:justify-start lg:overflow-y-auto">
+                <button
+                  type="button"
+                  onClick={() => setSelectedRequestId(null)}
+                  className="self-end text-gray-400 hover:text-white mb-4 text-lg"
+                  title="Tutup"
+                >
+                  ✕
+                </button>
+                {(() => {
+                  const allRequests = Object.values(requestsByClass).flat() as ClassRequest[]
+                  const request = allRequests.find(r => r.id === selectedRequestId)
+                  const classId = Object.entries(requestsByClass).find(([_, reqs]) => {
+                    const reqList = reqs as ClassRequest[]
+                    return reqList.find(r => r.id === selectedRequestId)
+                  })?.[0]
+                  if (!request || !classId) return null
+                  return (
+                    <div className="w-full flex flex-col gap-4">
+                      <div className="text-center">
+                        <p className="text-app font-medium text-sm">{request.student_name}</p>
+                        {request.email && <p className="text-muted text-xs break-all">{request.email}</p>}
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleApproveReject(classId, selectedRequestId, 'approved')}
+                          className="px-4 py-2.5 rounded-lg bg-green-600/80 text-white hover:bg-green-600 text-xs font-medium transition-colors w-full"
+                          title="Setujui"
+                        >
+                          ✓ Setujui
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleApproveReject(classId, selectedRequestId, 'rejected')}
+                          className="px-4 py-2.5 rounded-lg bg-red-600/80 text-white hover:bg-red-600 text-xs font-medium transition-colors w-full"
+                          title="Tolak"
+                        >
+                          ✕ Tolak
+                        </button>
+                      </div>
+                    </div>
+                  )
+                })()}
+              </div>
+            </>
+          )}
 
           {/* Sambutan Panel - Removed, now using grid layout like students */}
 
           {/* Main content area - Shows Classes/Approval/Team based on sidebarMode */}
-          <div className="flex-1 flex flex-col gap-0 min-h-0">
-            {/* Mobile class navigation bar - inline, only for classes mode */}
-            <div className={`lg:hidden items-center gap-2 p-2 bg-black/30 border-b border-white/10 touch-manipulation ${(sidebarMode !== 'classes' || isCoverView) ? 'hidden' : 'flex'}`}>
-              {addingClass ? (
-                <div className="flex-1 flex gap-2 items-center animate-in fade-in slide-in-from-top-2 duration-200">
-                  <input
-                    type="text"
-                    value={newClassName}
-                    onChange={(e) => setNewClassName(e.target.value)}
-                    placeholder="Nama kelas baru"
-                    className="flex-1 px-3 py-2 rounded-xl bg-white/10 border border-white/20 text-app text-sm focus:outline-none focus:border-lime-500 transition-colors"
-                    autoFocus
-                  />
-                  <button
-                    type="button"
-                    onClick={handleAddClass}
-                    disabled={!newClassName.trim()}
-                    className="p-2 rounded-xl bg-lime-600 text-white disabled:opacity-50"
-                  >
-                    <Check className="w-5 h-5" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => { setAddingClass(false); setNewClassName('') }}
-                    className="p-2 rounded-xl border border-white/10 text-gray-400"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
-              ) : (
-                <>
-                  <button type="button" onClick={goPrevClass} disabled={classIndex === 0} className="inline-flex items-center justify-center p-2 rounded-xl border border-white/10 text-gray-400 hover:text-white hover:bg-white/5 active:bg-white/10 disabled:opacity-40 transition-colors touch-manipulation flex-shrink-0">
-                    <ChevronLeft className="w-5 h-5" />
-                  </button>
-                  <div className="flex-1 min-w-0 flex justify-center">
-                    <InlineClassEditor classObj={currentClass} isOwner={canManage} onDelete={(classId, className) => setDeleteClassConfirm({ classId, className: className ?? currentClass?.name ?? '' })} onUpdate={handleUpdateClass} classIndex={classIndex} classesCount={classes.length} center={true} />
+          <div className={`flex-1 flex flex-col gap-0 min-h-0 ${sidebarMode === 'classes' && !isCoverView ? 'pt-14 lg:pt-0' : 'pt-0'}`}>
+            {/* Mobile class header - Fixed - Only for classes mode */}
+            {!isCoverView && sidebarMode === 'classes' && (
+              <div className="fixed top-0 left-0 right-0 lg:hidden z-30 flex items-center gap-2 p-2 bg-black/50 backdrop-blur border-b border-white/10 touch-manipulation">
+                {addingClass ? (
+                  <div className="flex-1 flex gap-2 items-center animate-in fade-in slide-in-from-top-2 duration-200">
+                    <input
+                      type="text"
+                      value={newClassName}
+                      onChange={(e) => setNewClassName(e.target.value)}
+                      placeholder="Nama kelas baru"
+                      className="flex-1 px-3 py-2 rounded-xl bg-white/10 border border-white/20 text-app text-sm focus:outline-none focus:border-lime-500 transition-colors"
+                      autoFocus
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddClass}
+                      disabled={!newClassName.trim()}
+                      className="p-2 rounded-xl bg-lime-600 text-white disabled:opacity-50"
+                    >
+                      <Check className="w-5 h-5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setAddingClass(false); setNewClassName('') }}
+                      className="p-2 rounded-xl border border-white/10 text-gray-400"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
                   </div>
-                  <button type="button" onClick={goNextClass} disabled={classIndex >= classes.length - 1} className="inline-flex items-center justify-center p-2 rounded-xl border border-white/10 text-gray-400 hover:text-white hover:bg-white/5 active:bg-white/10 disabled:opacity-40 transition-colors touch-manipulation flex-shrink-0">
-                    <ChevronRight className="w-5 h-5" />
-                  </button>
-                </>
-              )}
-            </div>
+                ) : (
+                  <>
+                    <button type="button" onClick={goPrevClass} disabled={classIndex === 0} className="inline-flex items-center justify-center p-2 rounded-xl border border-white/10 text-gray-400 hover:text-white hover:bg-white/5 active:bg-white/10 disabled:opacity-40 transition-colors touch-manipulation flex-shrink-0">
+                      <ChevronLeft className="w-5 h-5" />
+                    </button>
+                    <div className="flex-1 min-w-0 flex justify-center">
+                      <InlineClassEditor
+                        classObj={currentClass}
+                        isOwner={canManage}
+                        onDelete={(classId, className) => setDeleteClassConfirm({ classId, className: className ?? currentClass?.name ?? '' })}
+                        onUpdate={handleUpdateClass}
+                        classIndex={classIndex}
+                        classesCount={classes.length}
+                        center={true}
+                      />
+                    </div>
+                    <button type="button" onClick={goNextClass} disabled={classIndex >= classes.length - 1} className="inline-flex items-center justify-center p-2 rounded-xl border border-white/10 text-gray-400 hover:text-white hover:bg-white/5 active:bg-white/10 disabled:opacity-40 transition-colors touch-manipulation flex-shrink-0">
+                      <ChevronRight className="w-5 h-5" />
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
 
             {/* Mobile Class Drawer / Menu for switching groups */}
             {mobileMenuOpen && (
@@ -1580,12 +1380,11 @@ export default function YearbookClassesViewUI(props: any) {
                           {hasPendingRequest ? (
                             <p className="text-xs text-amber-400 mt-0.5 flex items-center gap-1"><Clock className="w-3.5 h-3.5 flex-shrink-0" /> menunggu persetujuan</p>
                           ) : (
-                            <p className="text-xs text-muted mt-0.5">{membersByClass[c.id]?.length ?? c.student_count ?? 0} anggota</p>
+                            <p className="text-xs text-muted mt-0.5">{(membersByClass[c.id]?.length ?? 0)} anggota</p>
                           )}
                         </button>
                       )
                     })}
-
                   </div>
                   <div className="p-3 pb-8 border-t border-white/10 flex flex-col gap-2 bg-[#0a0a0b]">
                     {canManage && (
@@ -1600,6 +1399,74 @@ export default function YearbookClassesViewUI(props: any) {
                         Kelas Baru
                       </button>
                     )}
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Mobile "Lainnya" Drawer / Menu */}
+            {moreMenuOpen && (
+              <>
+                <div className="fixed inset-0 z-[65] bg-black/80 backdrop-blur-sm lg:hidden animate-in fade-in duration-200" onClick={() => setMoreMenuOpen(false)} />
+                <div className="fixed inset-y-0 right-0 z-[70] w-3/4 max-w-xs bg-[#0a0a0b] border-l border-white/10 flex flex-col shadow-2xl lg:hidden animate-in slide-in-from-right duration-300">
+                  <div className="p-4 border-b border-white/10 flex items-center justify-between">
+                    <h2 className="text-lg font-bold text-app">Menu Lainnya</h2>
+                    <button onClick={() => setMoreMenuOpen(false)} className="p-2 -mr-2 text-gray-400 hover:text-white">
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+                  <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                    <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-2">Administrasi Album</p>
+
+                    <button
+                      onClick={() => {
+                        setSidebarMode('approval')
+                        setView('classes')
+                        setMoreMenuOpen(false)
+                      }}
+                      className={`w-full flex items-center justify-between p-4 rounded-xl border transition-all ${sidebarMode === 'approval'
+                        ? 'bg-lime-500/10 border-lime-500/40 text-lime-400'
+                        : 'bg-white/5 border-white/5 text-gray-300 hover:bg-white/10'
+                        }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`p-2 rounded-lg ${sidebarMode === 'approval' ? 'bg-lime-500/20' : 'bg-white/5'}`}>
+                          <ClipboardList className="w-5 h-5" />
+                        </div>
+                        <div className="text-left">
+                          <p className="text-sm font-bold">Kelola Akses</p>
+                          <p className="text-[10px] text-gray-500">Persetujuan pendaftaran siswa</p>
+                        </div>
+                      </div>
+                      {joinStats && joinStats.pending_count > 0 && (
+                        <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                          {joinStats.pending_count}
+                        </span>
+                      )}
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        setSidebarMode('team')
+                        setView('classes')
+                        setMoreMenuOpen(false)
+                      }}
+                      className={`w-full flex items-center gap-3 p-4 rounded-xl border transition-all ${sidebarMode === 'team'
+                        ? 'bg-lime-500/10 border-lime-500/40 text-lime-400'
+                        : 'text-gray-300 hover:bg-white/10'
+                        }`}
+                    >
+                      <div className={`p-2 rounded-lg ${sidebarMode === 'team' ? 'bg-lime-500/20' : 'bg-white/5'}`}>
+                        <Shield className="w-5 h-5" />
+                      </div>
+                      <div className="text-left">
+                        <p className="text-sm font-bold">Kelola Tim</p>
+                        <p className="text-[10px] text-gray-500">Atur admin dan anggota tim</p>
+                      </div>
+                    </button>
+                  </div>
+                  <div className="p-4 border-t border-white/10 bg-black/40">
+                    <p className="text-[10px] text-gray-600 text-center italic">Manajemen Album Creative Yearbook</p>
                   </div>
                 </div>
               </>
@@ -1672,16 +1539,7 @@ export default function YearbookClassesViewUI(props: any) {
                                 </button>
                                 <button
                                   type="button"
-                                  onClick={() => {
-                                    if (!handleDeleteCover) return
-                                    setGenericConfirm({
-                                      title: 'Hapus Sampul',
-                                      message: 'Apakah kamu yakin ingin menghapus gambar sampul album?',
-                                      variant: 'danger',
-                                      confirmLabel: 'Ya, Hapus',
-                                      onConfirm: () => handleDeleteCover?.()
-                                    })
-                                  }}
+                                  onClick={handleDeleteCover}
                                   disabled={!album?.cover_image_url || !handleDeleteCover}
                                   className="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 text-[11px] font-medium border border-red-500/20 transition-all disabled:opacity-30 disabled:cursor-not-allowed min-h-[36px]"
                                 >
@@ -1709,16 +1567,7 @@ export default function YearbookClassesViewUI(props: any) {
                                 </button>
                                 <button
                                   type="button"
-                                  onClick={() => {
-                                    if (!handleDeleteCoverVideo) return
-                                    setGenericConfirm({
-                                      title: 'Hapus Video Sampul',
-                                      message: 'Apakah kamu yakin ingin menghapus video sampul album?',
-                                      variant: 'danger',
-                                      confirmLabel: 'Ya, Hapus',
-                                      onConfirm: () => handleDeleteCoverVideo?.()
-                                    })
-                                  }}
+                                  onClick={handleDeleteCoverVideo}
                                   disabled={!album?.cover_video_url || !handleDeleteCoverVideo}
                                   className="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 text-[11px] font-medium border border-red-500/20 transition-all disabled:opacity-30 disabled:cursor-not-allowed min-h-[36px]"
                                 >
@@ -1840,11 +1689,11 @@ export default function YearbookClassesViewUI(props: any) {
                   const albumBase = album?.id ? `/user/portal/album/yearbook/${album.id}` : ''
                   if (aiLabsTool && albumBase) {
                     const backUrl = albumBase
-                    if (aiLabsTool === 'tryon') return (<div className="max-w-5xl mx-auto px-3 py-3 sm:p-4"><NextLink href={backUrl} className="hidden lg:inline-flex items-center gap-2 text-sm text-lime-400 hover:text-lime-300 mb-4">← Kembali ke daftar fitur</NextLink><TryOn /></div>)
-                    if (aiLabsTool === 'pose') return (<div className="max-w-5xl mx-auto px-3 py-3 sm:p-4"><NextLink href={backUrl} className="hidden lg:inline-flex items-center gap-2 text-sm text-lime-400 hover:text-lime-300 mb-4">← Kembali ke daftar fitur</NextLink><Pose /></div>)
-                    if (aiLabsTool === 'image-editor') return (<div className="max-w-5xl mx-auto px-3 py-3 sm:p-4"><NextLink href={backUrl} className="hidden lg:inline-flex items-center gap-2 text-sm text-lime-400 hover:text-lime-300 mb-4">← Kembali ke daftar fitur</NextLink><ImageEditor /></div>)
-                    if (aiLabsTool === 'photogroup') return (<div className="max-w-5xl mx-auto px-3 py-3 sm:p-4"><NextLink href={backUrl} className="hidden lg:inline-flex items-center gap-2 text-sm text-lime-400 hover:text-lime-300 mb-4">← Kembali ke daftar fitur</NextLink><PhotoGroup /></div>)
-                    if (aiLabsTool === 'phototovideo') return (<div className="max-w-5xl mx-auto px-3 py-3 sm:p-4"><NextLink href={backUrl} className="hidden lg:inline-flex items-center gap-2 text-sm text-lime-400 hover:text-lime-300 mb-4">← Kembali ke daftar fitur</NextLink><PhotoToVideo /></div>)
+                    if (aiLabsTool === 'tryon') return (<div className="max-w-5xl mx-auto px-3 py-3 sm:p-4"><NextLink href={backUrl} className="inline-flex items-center gap-2 text-sm text-lime-400 hover:text-lime-300 mb-4">← Kembali ke daftar fitur</NextLink><TryOn /></div>)
+                    if (aiLabsTool === 'pose') return (<div className="max-w-5xl mx-auto px-3 py-3 sm:p-4"><NextLink href={backUrl} className="inline-flex items-center gap-2 text-sm text-lime-400 hover:text-lime-300 mb-4">← Kembali ke daftar fitur</NextLink><Pose /></div>)
+                    if (aiLabsTool === 'image-editor') return (<div className="max-w-5xl mx-auto px-3 py-3 sm:p-4"><NextLink href={backUrl} className="inline-flex items-center gap-2 text-sm text-lime-400 hover:text-lime-300 mb-4">← Kembali ke daftar fitur</NextLink><ImageEditor /></div>)
+                    if (aiLabsTool === 'photogroup') return (<div className="max-w-5xl mx-auto px-3 py-3 sm:p-4"><NextLink href={backUrl} className="inline-flex items-center gap-2 text-sm text-lime-400 hover:text-lime-300 mb-4">← Kembali ke daftar fitur</NextLink><PhotoGroup /></div>)
+                    if (aiLabsTool === 'phototovideo') return (<div className="max-w-5xl mx-auto px-3 py-3 sm:p-4"><NextLink href={backUrl} className="inline-flex items-center gap-2 text-sm text-lime-400 hover:text-lime-300 mb-4">← Kembali ke daftar fitur</NextLink><PhotoToVideo /></div>)
                   }
                   return (
                     <div className="max-w-5xl mx-auto px-3 py-3 sm:p-4">
@@ -2276,7 +2125,7 @@ export default function YearbookClassesViewUI(props: any) {
                                           <Check className="w-4 h-4" />
                                         </button>
                                         <button
-                                          onClick={() => setRejectRequestConfirm({ requestId: request.id, studentName: request.student_name })}
+                                          onClick={() => handleRejectJoinRequest(request.id)}
                                           className="w-8 h-8 rounded-lg bg-white/5 text-gray-500 hover:bg-red-500/20 hover:text-red-400 flex items-center justify-center transition-colors"
                                           title="Tolak"
                                         >
@@ -2335,8 +2184,8 @@ export default function YearbookClassesViewUI(props: any) {
                         <h3 className="text-lg font-bold text-app mb-2">Konfirmasi Perubahan</h3>
                         <p className="text-sm text-muted mb-4">
                           {roleChangeConfirm.newRole === 'admin'
-                            ? `Apakah kamu yakin ingin menjadikan "${roleChangeConfirm.memberName}" sebagai Admin?`
-                            : `Apakah kamu yakin ingin menghapus "${roleChangeConfirm.memberName}" dari Admin?`}
+                            ? `Jadikan "${roleChangeConfirm.memberName}" sebagai Admin?`
+                            : `Hapus "${roleChangeConfirm.memberName}" dari Admin?`}
                         </p>
                         <div className="flex gap-2 justify-end">
                           <button
@@ -2362,7 +2211,7 @@ export default function YearbookClassesViewUI(props: any) {
                       <div className="bg-gray-900 border border-red-500/20 rounded-xl p-4 sm:p-6 max-w-md w-full shadow-2xl">
                         <h3 className="text-lg font-bold text-red-400 mb-2">Hapus Anggota</h3>
                         <p className="text-sm text-muted mb-4">
-                          Apakah kamu yakin ingin menghapus akses &quot;<span className="text-white font-medium">{removeConfirm.memberName}</span>&quot; dari album ini?
+                          Hapus akses "<span className="text-white font-medium">{removeConfirm.memberName}</span>" dari album ini?
                         </p>
                         <div className="flex gap-2 justify-end">
                           <button
@@ -2382,8 +2231,12 @@ export default function YearbookClassesViewUI(props: any) {
                     </div>
                   )}
 
-                  <div className="max-w-5xl mx-auto px-3 pb-3 pt-1.5 sm:px-4 sm:pb-4 sm:pt-1.5">
+                  <div className="max-w-5xl mx-auto p-3 sm:p-4">
                     <div className="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                      <div className="text-center sm:text-left lg:hidden">
+                        <h2 className="text-lg sm:text-xl font-bold text-app">Kelola anggota</h2>
+                        <p className="text-xs text-muted mt-1">{members.length} orang • Kelola akses dan peran</p>
+                      </div>
                       {/* Search Input - Compact */}
                       <div className="relative sm:w-64">
                         <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
@@ -2480,14 +2333,14 @@ export default function YearbookClassesViewUI(props: any) {
                 </>
               ) : sidebarMode === 'sambutan' ? (
                 /* Sambutan Content - Grid Cards like Students */
-                <div className="max-w-5xl mx-auto px-3 pb-3 pt-1.5 sm:px-4 sm:pb-4 sm:pt-1.5">
+                <div className="max-w-5xl mx-auto px-3 py-3 sm:p-4">
                   <div className="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     {canManage && (
                       <button
                         type="button"
                         onClick={() => {
-                          setAddTeacherName('')
-                          setAddTeacherModalOpen(true)
+                          const name = prompt('Nama Guru:')
+                          if (name) handleAddTeacher(name, '')
                         }}
                         className="px-4 py-2 rounded-xl bg-lime-600 text-white hover:bg-lime-500 transition-colors flex items-center justify-center gap-2 text-sm font-medium flex-shrink-0"
                       >
@@ -2543,7 +2396,7 @@ export default function YearbookClassesViewUI(props: any) {
                   )}
                 </div>
               ) : sidebarMode === 'classes' && classes.length === 0 ? (
-                <div className="max-w-5xl mx-auto px-3 pb-3 pt-1.5 sm:px-4 sm:pb-4 sm:pt-1.5">
+                <div className="max-w-5xl mx-auto px-3 py-3 sm:p-4">
                   <div className="flex flex-col items-center justify-center border-2 border-dashed border-white/10 rounded-xl py-12">
                     <p className="text-app font-medium mb-2">Belum ada kelas</p>
                     {canManage && !addingClass && (
@@ -2565,7 +2418,6 @@ export default function YearbookClassesViewUI(props: any) {
               ) : sidebarMode === 'classes' ? (
                 /* Classes Content - Original grid view */
                 (() => {
-                  if (!currentClass) return null
                   const access = myAccessByClass[currentClass.id]
                   const hasApprovedAccess = access?.status === 'approved'
                   const classMembers = membersByClass[currentClass.id] ?? []
@@ -2628,333 +2480,133 @@ export default function YearbookClassesViewUI(props: any) {
                         ))}
                       </div>
                     ) : (
-                      <div className="grid gap-2 sm:grid-cols-2 lg:gap-3 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-                        {classMembers.map((m, idx) => {
-                          const firstPhoto = m.photos?.[0] || firstPhotoByStudent?.[m.student_name]
-                          const isFlipped = editingProfileClassId === currentClass.id && ((m.is_me && !editingMemberUserId) || editingMemberUserId === m.user_id)
+                      <div className="grid gap-2 grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
+                        {classMembers.map((m) => (
+                          <MemberCard
+                            key={m.user_id || m.student_name}
+                            member={m as any}
+                            firstPhoto={m.photos?.[0] || firstPhotoByStudent?.[m.student_name]}
+                            classId={currentClass.id}
+                            canManage={canManage}
+                            hasApprovedAccess={hasApprovedAccess}
+                            isFlipped={editingMemberUserId === m.user_id}
+                            editPhotos={editingMemberUserId === m.user_id ? studentPhotosInCard : undefined}
+                            onStartEdit={(member) => {
+                              setEditingProfileClassId(currentClass.id)
+                              setEditingMemberUserId?.(member.user_id)
+                              // Prepare states in case needed by other logic
+                              setEditProfileName(member.student_name || '')
+                              setEditProfileEmail(member.email || '')
+                              setEditProfileTtl(member.date_of_birth || '')
+                              setEditProfileInstagram(member.instagram || '')
+                              setEditProfilePesan(member.message || '')
+                              setEditProfileVideoUrl(member.video_url || '')
 
-                          return (
-                            <div key={m.user_id} className="relative h-full min-h-[380px]" style={{ perspective: '1000px' }}>
-                              <div
-                                style={{
-                                  transformStyle: 'preserve-3d',
-                                  transition: 'transform 0.6s',
-                                  transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)'
-                                }}
-                                className="relative w-full h-full"
-                              >
-                                {/* Front Side - Profile View (ukuran sama seperti TeacherCard) */}
-                                <div
-                                  className="relative w-full h-full min-h-[340px] backface-hidden rounded-xl border border-white/10 bg-[#0a0a0b] flex flex-col items-stretch text-left shadow-xl overflow-hidden"
-                                  style={{ backfaceVisibility: 'hidden' }}
-                                >
-                                  {/* Foto section - aspect 4/5 seperti guru */}
-                                  {firstPhoto && (
-                                    <div className="relative aspect-[4/5] overflow-hidden bg-white/5 flex-shrink-0">
-                                      <button
-                                        type="button"
-                                        onClick={() => {
-                                          setPersonalIndex(idx)
-                                          setPersonalCardExpanded(true)
-                                          setEditingProfileClassId(null)
-                                        }}
-                                        className="w-full h-full hover:opacity-90 transition-opacity"
-                                      >
-                                        <img src={firstPhoto} alt={m.student_name} className="w-full h-full object-cover" />
-                                      </button>
-                                      {/* Video Play Button Overlay */}
-                                      {m.video_url && (
-                                        <button
-                                          type="button"
-                                          onClick={(e) => {
-                                            e.stopPropagation()
-                                            if (onPlayVideo) {
-                                              onPlayVideo(m.video_url!)
-                                            }
-                                          }}
-                                          className="absolute bottom-2 right-2 w-10 h-10 rounded-full bg-black/70 hover:bg-black/90 flex items-center justify-center group transition-all hover:scale-110"
-                                          title="Putar Video"
-                                        >
-                                          <Play className="w-5 h-5 text-white ml-0.5" fill="currentColor" />
-                                        </button>
-                                      )}
-                                    </div>
-                                  )}
+                              if (fetchStudentPhotosForCard) {
+                                fetchStudentPhotosForCard(currentClass.id, member.student_name)
+                              }
+                            }}
+                            onCancelEdit={() => {
+                              setEditingProfileClassId(null)
+                              setEditingMemberUserId?.(null)
+                            }}
+                            onSave={async (data) => {
+                              setEditProfileName(data.student_name)
+                              setEditProfileEmail(data.email)
+                              setEditProfileTtl(data.date_of_birth)
+                              setEditProfileInstagram(data.instagram)
+                              setEditProfilePesan(data.message)
+                              setEditProfileVideoUrl(data.video_url)
 
-                                  {/* Profile info section - compact seperti guru */}
-                                  <div className="flex flex-col flex-1 p-2.5 min-h-0">
-                                    {/* Name & Email Group */}
-                                    <div className="mb-0.5">
-                                      <h3 className="font-bold text-white text-sm leading-snug line-clamp-1">
-                                        {m.student_name}
-                                        {m.is_me ? <span className="font-normal text-lime-400 ml-1 text-xs">(Anda)</span> : ''}
-                                      </h3>
-                                      {m.email && <p className="text-gray-400 text-xs line-clamp-1">{m.email}</p>}
-                                    </div>
-
-                                    {/* Details Group */}
-                                    <div className="space-y-0 text-xs text-gray-300 leading-tight">
-                                      {m.date_of_birth && (
-                                        <p className="line-clamp-1 flex items-center gap-1.5">
-                                          <Cake className="w-3 h-3 text-gray-400 flex-shrink-0" />
-                                          <span className="truncate">{m.date_of_birth}</span>
-                                        </p>
-                                      )}
-                                      {m.instagram && (
-                                        <a
-                                          href={m.instagram.startsWith('http') ? m.instagram : `https://instagram.com/${m.instagram.replace('@', '')}`}
-                                          target="_blank"
-                                          rel="noopener noreferrer"
-                                          className="flex items-center gap-1.5 hover:text-white transition-colors line-clamp-1 group/ig"
-                                          onClick={(e) => e.stopPropagation()}
-                                        >
-                                          <Instagram className="w-3 h-3 text-gray-400 group-hover/ig:text-pink-500 transition-colors flex-shrink-0" />
-                                          <span className="truncate">
-                                            {m.instagram.includes('instagram.com')
-                                              ? '@' + m.instagram.split('/').filter(Boolean).pop()
-                                              : m.instagram.startsWith('@') ? m.instagram : '@' + m.instagram
-                                            }
-                                          </span>
-                                        </a>
-                                      )}
-                                      {m.message && (
-                                        <div className="flex gap-1 pt-1">
-                                          <p
-                                            className="italic text-gray-400 overflow-hidden leading-tight flex-1"
-                                            style={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical' }}
-                                          >
-                                            "{m.message}"
-                                          </p>
-                                        </div>
-                                      )}
-                                    </div>
-                                  </div>
-
-                                  {/* Action buttons - sama seperti TeacherCard */}
-                                  <div className="px-2.5 pt-0 pb-3 mt-auto">
-                                    <div className="flex gap-1.5 h-7">
-                                      {(canManage || (m.is_me && hasApprovedAccess)) && (
-                                        <button
-                                          type="button"
-                                          onClick={(e) => {
-                                            e.stopPropagation()
-                                            if (canManage && !m.is_me && onStartEditMember) {
-                                              setEditingProfileClassId(currentClass.id)
-                                              setEditingMemberUserId?.(m.user_id)
-                                              onStartEditMember(m, currentClass.id)
-                                            } else if (m.is_me && onStartEditMyProfile) {
-                                              setEditingProfileClassId(currentClass.id)
-                                              setEditingMemberUserId?.(null)
-                                              onStartEditMyProfile(currentClass.id)
-                                              if (fetchStudentPhotosForCard) {
-                                                fetchStudentPhotosForCard(currentClass.id, m.student_name)
-                                              }
-                                            }
-                                          }}
-                                          className="flex-1 text-xs font-medium rounded-lg bg-lime-900/40 text-lime-400 hover:bg-lime-900/60 border border-lime-500/20 transition-colors flex items-center justify-center gap-1.5"
-                                        >
-                                          <Edit3 className="w-3.5 h-3.5" /> Edit
-                                        </button>
-                                      )}
-                                      {canManage && (
-                                        <button
-                                          type="button"
-                                          onClick={() => setDeleteMemberConfirm({ classId: currentClass.id, userId: m.is_me ? undefined : m.user_id, memberName: m.student_name })}
-                                          className="flex-1 text-xs font-medium rounded-lg bg-red-900/40 text-red-400 hover:bg-red-900/60 border border-red-500/20 transition-colors flex items-center justify-center gap-1.5"
-                                          title="Hapus anggota"
-                                        >
-                                          <Trash2 className="w-3.5 h-3.5" /> Hapus
-                                        </button>
-                                      )}
-                                    </div>
-                                  </div>
-                                </div>
-
-                                {/* Back Side - Edit Form */}
-                                <div
-                                  style={{
-                                    backfaceVisibility: 'hidden',
-                                    WebkitBackfaceVisibility: 'hidden',
-                                    transform: 'rotateY(180deg)',
-                                    position: 'absolute',
-                                    top: 0,
-                                    left: 0,
-                                    width: '100%',
-                                    height: '100%',
-                                  }}
-                                  className="flex flex-col rounded-lg border border-white/10 bg-white/[0.02] overflow-hidden p-4"
-                                >
-                                  <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:[display:none]" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-                                    <h3 className="text-app font-medium text-xs mb-2 flex items-center gap-1">
-                                      <Edit3 className="w-3 h-3" />
-                                      Edit Profil
-                                    </h3>
-                                    <div className="space-y-1.5">
-                                      <input
-                                        type="text"
-                                        value={editProfileName}
-                                        onChange={(e) => setEditProfileName(e.target.value)}
-                                        placeholder="Nama"
-                                        className="w-full px-2 py-1 rounded text-[10px] bg-white/5 border border-white/10 text-app"
-                                      />
-                                      <input
-                                        type="email"
-                                        value={editProfileEmail}
-                                        onChange={(e) => setEditProfileEmail(e.target.value)}
-                                        placeholder="Email"
-                                        className="w-full px-2 py-1 rounded text-[10px] bg-white/5 border border-white/10 text-app"
-                                      />
-                                      <input
-                                        type="text"
-                                        value={editProfileTtl}
-                                        onChange={(e) => setEditProfileTtl(e.target.value)}
-                                        placeholder="TTL (YYYY-MM-DD)"
-                                        className="w-full px-2 py-1 rounded text-[10px] bg-white/5 border border-white/10 text-app"
-                                      />
-                                      <input
-                                        type="text"
-                                        value={editProfileInstagram}
-                                        onChange={(e) => setEditProfileInstagram(e.target.value)}
-                                        placeholder="IG (@username)"
-                                        className="w-full px-2 py-1 rounded text-[10px] bg-white/5 border border-white/10 text-app"
-                                      />
-                                      {/* Foto Preview & Upload - sama seperti card guru */}
-                                      <div className="space-y-1">
-                                        {studentPhotosInCard.length > 0 && (
-                                          <div className="flex gap-1 flex-wrap">
-                                            {studentPhotosInCard.map((photo, idx) => (
-                                              <div key={photo.id} className="relative w-16 h-16 rounded overflow-hidden bg-white/5 border border-white/10 flex-shrink-0 group">
-                                                <img
-                                                  src={photo.file_url}
-                                                  alt={`Foto ${idx + 1}`}
-                                                  className="w-full h-full object-cover"
-                                                />
-                                                <button
-                                                  type="button"
-                                                  onClick={() => {
-                                                    setGenericConfirm({
-                                                      title: 'Hapus Foto',
-                                                      message: 'Apakah kamu yakin ingin menghapus foto ini?',
-                                                      variant: 'danger',
-                                                      confirmLabel: 'Ya, Hapus',
-                                                      onConfirm: () => {
-                                                        if (onDeletePhoto) onDeletePhoto(photo.id, currentClass.id, m.student_name)
-                                                      }
-                                                    })
-                                                  }}
-                                                  className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
-                                                  title={`Hapus foto ${idx + 1}`}
-                                                >
-                                                  <Trash2 className="w-4 h-4 text-red-400" />
-                                                </button>
-                                              </div>
-                                            ))}
-                                          </div>
-                                        )}
-                                        <button
-                                          type="button"
-                                          onClick={() => {
-                                            if (fileInputRef.current) {
-                                              uploadPhotoTargetRef.current = { classId: currentClass.id, studentName: m.student_name, className: currentClass.name ?? '' }
-                                              fileInputRef.current.click()
-                                            }
-                                          }}
-                                          disabled={studentPhotosInCard.length >= 4}
-                                          className="w-full px-2 py-1.5 rounded text-[10px] bg-green-600/20 text-green-400 hover:bg-green-600/30 transition-colors flex items-center justify-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
-                                        >
-                                          <ImagePlus className="w-3 h-3" />
-                                          Upload Foto (maks. 4)
-                                        </button>
-                                      </div>
-
-                                      {/* Video URL - sama seperti card guru */}
-                                      <input
-                                        type="url"
-                                        value={stripOriginForDisplay(editProfileVideoUrl)}
-                                        onChange={(e) => setEditProfileVideoUrl(e.target.value)}
-                                        placeholder="URL Video (YouTube, dll)"
-                                        className="w-full px-2 py-1 rounded text-[10px] bg-white/5 border border-white/10 text-app"
-                                      />
-                                      <div className="flex gap-1">
-                                        <button
-                                          type="button"
-                                          onClick={() => {
-                                            if (videoInputRef.current) {
-                                              uploadVideoTargetRef.current = { classId: currentClass.id, studentName: m.student_name, className: currentClass.name ?? '' }
-                                              videoInputRef.current.click()
-                                            }
-                                          }}
-                                          className="flex-1 px-2 py-1.5 rounded text-[10px] bg-blue-600/20 text-blue-400 hover:bg-blue-600/30 transition-colors flex items-center justify-center gap-1"
-                                        >
-                                          <Video className="w-3 h-3" />
-                                          Upload Video
-                                        </button>
-                                        {m.video_url && (
-                                          <button
-                                            type="button"
-                                            onClick={() => {
-                                              setGenericConfirm({
-                                                title: 'Hapus Video',
-                                                message: 'Apakah kamu yakin ingin menghapus video?',
-                                                variant: 'danger',
-                                                confirmLabel: 'Ya, Hapus',
-                                                onConfirm: () => setEditProfileVideoUrl('')
-                                              })
-                                            }}
-                                            className="px-2 py-1.5 rounded text-[10px] bg-red-600/20 text-red-400 hover:bg-red-600/30 transition-colors"
-                                            title="Hapus Video"
-                                          >
-                                            <Trash2 className="w-3 h-3" />
-                                          </button>
-                                        )}
-                                      </div>
-
-                                      <textarea
-                                        value={editProfilePesan}
-                                        onChange={(e) => setEditProfilePesan(e.target.value)}
-                                        placeholder="Pesan (maks 500 karakter)"
-                                        maxLength={500}
-                                        rows={3}
-                                        className="w-full px-2 py-1 rounded text-[10px] bg-white/5 border border-white/10 text-app resize-none"
-                                      />
-                                    </div>
-                                  </div>
-                                  <div className="flex gap-1 mt-2">
-                                    <button
-                                      type="button"
-                                      onClick={() => handleSaveProfile(currentClass.id, false, editingMemberUserId ?? undefined)}
-                                      disabled={savingProfile}
-                                      className="flex-1 px-2 py-1 rounded text-[10px] bg-lime-600 text-white font-medium hover:bg-lime-500 disabled:opacity-50"
-                                    >
-                                      {savingProfile ? 'Simpan...' : 'Simpan'}
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={() => { setEditingProfileClassId(null); setEditingMemberUserId?.(null) }}
-                                      className="flex-1 px-2 py-1 rounded text-[10px] border border-white/10 text-app font-medium hover:bg-white/5"
-                                    >
-                                      Batal
-                                    </button>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          )
-                        })}
+                              await handleSaveProfile?.(currentClass.id, false, m.user_id)
+                              setEditingMemberUserId?.(null)
+                              setEditingProfileClassId(null)
+                            }}
+                            onDeleteClick={() => setDeleteMemberConfirm({ classId: currentClass.id, userId: m.is_me ? undefined : m.user_id, memberName: m.student_name })}
+                            onUploadPhoto={(cid, sname) => {
+                              if (fileInputRef.current) {
+                                uploadPhotoTargetRef.current = { classId: cid || currentClass.id, studentName: sname || m.student_name }
+                                fileInputRef.current.click()
+                              }
+                            }}
+                            onDeletePhoto={(pid, cid, sname) => {
+                              if (onDeletePhoto) onDeletePhoto(pid, cid || currentClass.id, sname || m.student_name)
+                            }}
+                            onUploadVideo={(cid, sname) => {
+                              if (videoInputRef.current) {
+                                uploadVideoTargetRef.current = { classId: cid || currentClass.id, studentName: sname || m.student_name }
+                                videoInputRef.current.click()
+                              }
+                            }}
+                            onPlayVideo={onPlayVideo}
+                            onOpenGallery={(cid, sname) => openGallery(cid || currentClass.id, sname || m.student_name, currentClass.name)}
+                            saving={savingProfile}
+                          />
+                        ))}
                       </div>
                     );
-
-                  return (
-                    <div className="max-w-5xl mx-auto px-3 pb-3 pt-1.5 sm:px-4 sm:pb-4 sm:pt-1.5">
-                      {classBody}
-                    </div>
-                  );
+                  return classBody;
                 })()
               ) : null}
             </div>
           </div>
-        </div >
-      </div >
-    </div >
-  );
+        </div>
+
+        {/* Custom Confirmation Modals */}
+        {deleteClassConfirm && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+            <div className="bg-gray-900 border border-red-500/20 rounded-xl p-4 sm:p-6 max-w-md w-full shadow-2xl">
+              <h3 className="text-lg font-bold text-red-400 mb-2">Hapus Kelas</h3>
+              <p className="text-sm text-gray-400 mb-4">
+                Yakin ingin menghapus kelas "{deleteClassConfirm.className}"? Semua data member di dalamnya akan hilang.
+              </p>
+              <div className="flex gap-2 justify-end">
+                <button onClick={() => setDeleteClassConfirm(null)} className="px-4 py-2 rounded-lg bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white transition-colors text-sm font-medium">Batal</button>
+                <button
+                  onClick={() => {
+                    handleDeleteClass(deleteClassConfirm.classId)
+                    setDeleteClassConfirm(null)
+                  }}
+                  className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-500 transition-colors text-sm font-medium"
+                >
+                  Ya, Hapus
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {deleteMemberConfirm && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+            <div className="bg-gray-900 border border-red-500/20 rounded-xl p-4 sm:p-6 max-w-md w-full shadow-2xl">
+              <h3 className="text-lg font-bold text-red-400 mb-2">Hapus Anggota</h3>
+              <p className="text-sm text-gray-400 mb-4">
+                Hapus "{deleteMemberConfirm.memberName}" dari kelas?
+              </p>
+              <div className="flex gap-2 justify-end">
+                <button onClick={() => setDeleteMemberConfirm(null)} className="px-4 py-2 rounded-lg bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white transition-colors text-sm font-medium">Batal</button>
+                <button
+                  onClick={async () => {
+                    if (deleteMemberConfirm.userId) {
+                      await handleRemoveMemberWrapper(deleteMemberConfirm.userId)
+                    } else {
+                      // If it's me
+                      await handleRemoveMemberWrapper(currentUserId!)
+                    }
+                    setDeleteMemberConfirm(null)
+                  }}
+                  className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-500 transition-colors text-sm font-medium"
+                >
+                  Ya, Hapus
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+
+      </div>
+    </div>
+  )
 }
+

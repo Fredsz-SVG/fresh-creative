@@ -8,6 +8,7 @@ import { Sparkles, ImageIcon, Zap, Palette } from 'lucide-react'
 
 export default function UserPortalPage() {
   const [user, setUser] = useState<{ email?: string; id?: string } | null>(null)
+
   useEffect(() => {
     const fetchUser = async () => {
       const { data: { session } } = await supabase.auth.getSession()

@@ -70,16 +70,6 @@ export async function POST(
       return NextResponse.json({ error: 'Teacher not found' }, { status: 404 })
     }
 
-    // Maksimal 4 foto per profil
-    const { count } = await supabase
-      .from('album_teacher_photos')
-      .select('*', { count: 'exact', head: true })
-      .eq('teacher_id', teacherId)
-
-    if ((count ?? 0) >= 4) {
-      return NextResponse.json({ error: 'Maksimal 4 foto per profil' }, { status: 400 })
-    }
-
     // Upload file to storage
     const fileExt = file.name.split('.').pop()
     const fileName = `${Date.now()}.${fileExt}`

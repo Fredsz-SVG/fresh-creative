@@ -79,16 +79,10 @@ export async function POST(
     }, { status: 400 })
   }
 
-  // 4. Get profile data from request body (optional). Default nama dari user (metadata / email / user_id).
+  // 4. Get profile data from request body (optional, bisa kosong dulu)
   const body = await request.json().catch(() => ({}))
-  const fromBody = typeof body?.student_name === 'string' ? body.student_name.trim() : ''
+  const studentName = typeof body?.student_name === 'string' ? body.student_name.trim() : ''
   const email = typeof body?.email === 'string' ? body.email.trim() || null : null
-  const defaultName =
-    (user.user_metadata?.full_name as string)?.trim() ||
-    (user.user_metadata?.name as string)?.trim() ||
-    (user.email?.split('@')[0] ?? '').trim() ||
-    `User-${user.id.slice(0, 8)}`
-  const studentName = fromBody || defaultName
 
   // 5. Insert owner into album_class_access with approved status (bypass RLS)
   const { data: newAccess, error: insertErr } = await admin
@@ -97,8 +91,8 @@ export async function POST(
       album_id: albumId,
       class_id: classId,
       user_id: user.id,
-      student_name: studentName,
-      email: email ?? user.email ?? null,
+      student_name: studentName || '', // Bisa diisi nanti via edit
+      email: email,
       status: 'approved', // Owner langsung approved
     })
     .select()

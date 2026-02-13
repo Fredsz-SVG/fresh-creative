@@ -1,6 +1,6 @@
 'use client'
 
-import { BookOpen, Users, ClipboardList, Shield, MessageSquare } from 'lucide-react'
+import { BookOpen, Users, ClipboardList, Shield, MessageSquare, Sparkles } from 'lucide-react'
 
 interface IconSidebarProps {
   isCoverView: boolean
@@ -21,6 +21,22 @@ export default function IconSidebar({
 }: IconSidebarProps) {
   return (
     <div className="hidden lg:fixed lg:left-0 lg:top-12 lg:w-16 lg:h-[calc(100vh-48px)] lg:flex flex-col lg:z-40 lg:bg-black/40 lg:backdrop-blur-sm lg:border-r lg:border-white/10">
+      <button
+        type="button"
+        onClick={() => {
+          setSidebarMode('ai-labs')
+          if (isCoverView) setView('classes')
+        }}
+        className={`flex-shrink-0 flex flex-col items-center justify-center gap-1 py-4 border-b border-white/10 text-xs font-medium transition-colors ${sidebarMode === 'ai-labs'
+          ? 'bg-lime-600/20 text-lime-400'
+          : 'text-gray-400 hover:text-white hover:bg-white/5'
+          }`}
+        title="AI Labs"
+      >
+        <Sparkles className="w-6 h-6" />
+        <span className="text-[10px]">AI Labs</span>
+      </button>
+
       <button
         type="button"
         onClick={() => {
