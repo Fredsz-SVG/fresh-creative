@@ -271,8 +271,7 @@ export default function PhotoGroup() {
                     try {
                       await downloadImageWithWatermark(
                         result,
-                        `fresh-creative-photogroup-${Date.now()}.png`,
-                        { format: "image/png" }
+                        `fresh-creative-photogroup-${Date.now()}.png`
                       );
                     } catch (e) {
                       setError(e instanceof Error ? e.message : "Download gagal");

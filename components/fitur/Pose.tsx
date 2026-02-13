@@ -229,8 +229,7 @@ export default function Pose() {
                         try {
                           await downloadImageWithWatermark(
                             result,
-                            `fresh-creative-pose-${index + 1}-${Date.now()}.png`,
-                            { format: "image/png" }
+                            `fresh-creative-pose-${index + 1}-${Date.now()}.png`
                           );
                         } catch (e) {
                           setError(e instanceof Error ? e.message : "Download gagal");
