@@ -220,17 +220,17 @@ export default function TeacherCard({
           }}
           className="flex flex-col rounded-lg border border-white/10 bg-white/[0.02] overflow-hidden p-4"
         >
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:[display:none]" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
             <h3 className="text-app font-medium text-xs mb-2 flex items-center gap-1">
               <Edit3 className="w-3 h-3" />
-              Edit Profil Guru
+              Edit Profil
             </h3>
             <div className="space-y-1.5">
               <input
                 type="text"
                 value={editName}
                 onChange={(e) => setEditName(e.target.value)}
-                placeholder="Nama Guru"
+                placeholder="Nama"
                 className="w-full px-2 py-1 rounded text-[10px] bg-white/5 border border-white/10 text-app"
               />
               <input
@@ -273,10 +273,11 @@ export default function TeacherCard({
                 <button
                   type="button"
                   onClick={() => onUploadPhoto(teacher.id)}
-                  className="w-full px-2 py-1.5 rounded text-[10px] bg-green-600/20 text-green-400 hover:bg-green-600/30 transition-colors flex items-center justify-center gap-1"
+                  disabled={(teacher.photos?.length ?? 0) >= 4}
+                  className="w-full px-2 py-1.5 rounded text-[10px] bg-green-600/20 text-green-400 hover:bg-green-600/30 transition-colors flex items-center justify-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <ImagePlus className="w-3 h-3" />
-                  {teacher.photos && teacher.photos.length > 0 ? 'Tambah Foto' : 'Upload Foto'}
+                  Upload Foto (maks. 4)
                 </button>
               </div>
 
@@ -321,7 +322,7 @@ export default function TeacherCard({
               <textarea
                 value={editMessage}
                 onChange={(e) => setEditMessage(e.target.value)}
-                placeholder="Pesan atau sambutan (maks 500 karakter)"
+                placeholder="Pesan (maks 500 karakter)"
                 maxLength={500}
                 rows={3}
                 className="w-full px-2 py-1 rounded text-[10px] bg-white/5 border border-white/10 text-app resize-none"

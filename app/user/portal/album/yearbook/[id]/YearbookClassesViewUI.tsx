@@ -591,7 +591,7 @@ export default function YearbookClassesViewUI(props: any) {
       const data = await res.json()
       if (res.ok && data.id) {
         setTeachers(prev => [...prev, data])
-        toast.success('Guru berhasil ditambahkan')
+        toast.success('Berhasil ditambahkan')
       } else {
         toast.error(data.error || 'Gagal menambahkan guru')
       }
@@ -612,7 +612,7 @@ export default function YearbookClassesViewUI(props: any) {
       const data = await res.json()
       if (res.ok && data.id) {
         setTeachers(prev => prev.map(t => t.id === teacherId ? { ...t, ...data } : t))
-        toast.success('Data guru berhasil diperbarui')
+        toast.success('Data berhasil diperbarui')
       } else {
         toast.error(data.error || 'Gagal memperbarui guru')
       }
@@ -630,7 +630,7 @@ export default function YearbookClassesViewUI(props: any) {
       })
       if (res.ok) {
         setTeachers(prev => prev.filter(t => t.id !== teacherId))
-        toast.success('Guru berhasil dihapus')
+        toast.success('Berhasil dihapus')
       } else {
         const data = await res.json()
         toast.error(data.error || 'Gagal menghapus guru')
@@ -940,14 +940,26 @@ export default function YearbookClassesViewUI(props: any) {
         <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => {
           const file = e.target.files?.[0]
           const target = uploadPhotoTargetRef.current
-          if (target && file && typeof onUploadPhoto === 'function') onUploadPhoto(target.classId, target.studentName, target.className, file)
+          if (!file || typeof onUploadPhoto !== 'function') {
+            e.target.value = ''
+            return
+          }
+          if (target?.classId && target?.studentName) {
+            onUploadPhoto(target.classId, target.studentName, target.className ?? '', file)
+          }
           uploadPhotoTargetRef.current = null
           e.target.value = ''
         }} />
         <input ref={videoInputRef} type="file" accept="video/*" className="hidden" onChange={(e) => {
           const file = e.target.files?.[0]
           const target = uploadVideoTargetRef.current
-          if (target && file && typeof onUploadVideo === 'function') onUploadVideo(target.classId, target.studentName, target.className, file)
+          if (!file || typeof onUploadVideo !== 'function') {
+            e.target.value = ''
+            return
+          }
+          if (target?.classId && target?.studentName) {
+            onUploadVideo(target.classId, target.studentName, target.className ?? '', file)
+          }
           uploadVideoTargetRef.current = null
           e.target.value = ''
         }} />
@@ -2772,7 +2784,7 @@ export default function YearbookClassesViewUI(props: any) {
                                   }}
                                   className="flex flex-col rounded-lg border border-white/10 bg-white/[0.02] overflow-hidden p-4"
                                 >
-                                  <div className="flex-1 overflow-y-auto">
+                                  <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:[display:none]" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
                                     <h3 className="text-app font-medium text-xs mb-2 flex items-center gap-1">
                                       <Edit3 className="w-3 h-3" />
                                       Edit Profil
@@ -2806,28 +2818,12 @@ export default function YearbookClassesViewUI(props: any) {
                                         placeholder="IG (@username)"
                                         className="w-full px-2 py-1 rounded text-[10px] bg-white/5 border border-white/10 text-app"
                                       />
-                                      {/* Upload Foto dari Local */}
-                                      <button
-                                        type="button"
-                                        onClick={() => {
-                                          if (fileInputRef.current) {
-                                            uploadPhotoTargetRef.current = { classId: currentClass.id, studentName: m.student_name }
-                                            fileInputRef.current.click()
-                                          }
-                                        }}
-                                        className="w-full px-2 py-1.5 rounded text-[10px] bg-green-600/20 text-green-400 hover:bg-green-600/30 transition-colors flex items-center justify-center gap-1"
-                                      >
-                                        <ImagePlus className="w-3 h-3" />
-                                        Upload Foto
-                                      </button>
-
-                                      {/* Preview Foto dengan tombol hapus */}
-                                      {studentPhotosInCard.length > 0 && (
-                                        <div className="space-y-1">
-                                          <p className="text-white/60 text-[9px] uppercase">Foto Anda ({studentPhotosInCard.length})</p>
-                                          <div className="grid grid-cols-3 gap-1">
+                                      {/* Foto Preview & Upload - sama seperti card guru */}
+                                      <div className="space-y-1">
+                                        {studentPhotosInCard.length > 0 && (
+                                          <div className="flex gap-1 flex-wrap">
                                             {studentPhotosInCard.map((photo, idx) => (
-                                              <div key={photo.id} className="relative aspect-square rounded overflow-hidden bg-white/5 group">
+                                              <div key={photo.id} className="relative w-16 h-16 rounded overflow-hidden bg-white/5 border border-white/10 flex-shrink-0 group">
                                                 <img
                                                   src={photo.file_url}
                                                   alt={`Foto ${idx + 1}`}
@@ -2854,8 +2850,24 @@ export default function YearbookClassesViewUI(props: any) {
                                               </div>
                                             ))}
                                           </div>
-                                        </div>
-                                      )}
+                                        )}
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            if (fileInputRef.current) {
+                                              uploadPhotoTargetRef.current = { classId: currentClass.id, studentName: m.student_name, className: currentClass.name ?? '' }
+                                              fileInputRef.current.click()
+                                            }
+                                          }}
+                                          disabled={studentPhotosInCard.length >= 4}
+                                          className="w-full px-2 py-1.5 rounded text-[10px] bg-green-600/20 text-green-400 hover:bg-green-600/30 transition-colors flex items-center justify-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                          <ImagePlus className="w-3 h-3" />
+                                          Upload Foto (maks. 4)
+                                        </button>
+                                      </div>
+
+                                      {/* Video URL - sama seperti card guru */}
                                       <input
                                         type="url"
                                         value={stripOriginForDisplay(editProfileVideoUrl)}
@@ -2863,13 +2875,12 @@ export default function YearbookClassesViewUI(props: any) {
                                         placeholder="URL Video (YouTube, dll)"
                                         className="w-full px-2 py-1 rounded text-[10px] bg-white/5 border border-white/10 text-app"
                                       />
-                                      {/* Upload Video dari Local */}
                                       <div className="flex gap-1">
                                         <button
                                           type="button"
                                           onClick={() => {
                                             if (videoInputRef.current) {
-                                              uploadVideoTargetRef.current = { classId: currentClass.id, studentName: m.student_name }
+                                              uploadVideoTargetRef.current = { classId: currentClass.id, studentName: m.student_name, className: currentClass.name ?? '' }
                                               videoInputRef.current.click()
                                             }
                                           }}
@@ -2897,11 +2908,13 @@ export default function YearbookClassesViewUI(props: any) {
                                           </button>
                                         )}
                                       </div>
+
                                       <textarea
                                         value={editProfilePesan}
                                         onChange={(e) => setEditProfilePesan(e.target.value)}
-                                        placeholder="Pesan"
-                                        rows={2}
+                                        placeholder="Pesan (maks 500 karakter)"
+                                        maxLength={500}
+                                        rows={3}
                                         className="w-full px-2 py-1 rounded text-[10px] bg-white/5 border border-white/10 text-app resize-none"
                                       />
                                     </div>

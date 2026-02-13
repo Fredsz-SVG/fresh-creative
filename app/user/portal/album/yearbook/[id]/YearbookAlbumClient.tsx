@@ -967,10 +967,10 @@ export default function YearbookAlbumClient({
       }
     })
 
-    // Auto-open edit form supaya owner bisa isi nama
+    // Auto-open edit form dengan nama default dari API (user_metadata / email / user_id)
     setEditingProfileClassId(classId)
-    setEditProfileName('')
-    setEditProfileEmail('')
+    setEditProfileName(data.access.student_name ?? '')
+    setEditProfileEmail(data.access.email ?? '')
     setEditProfileTtl('')
     setEditProfileInstagram('')
     setEditProfilePesan('')
@@ -1176,9 +1176,18 @@ export default function YearbookAlbumClient({
 
     await fetchFirstPhotosForClass(classId)
     await fetchMembersForClass(classId)
-    const members = membersByClass[currentClassId ?? ''] ?? []
-    const viewingThisStudent = members[personalIndex]?.student_name === studentName
-    if (viewingThisStudent) fetchStudentPhotosForCard(classId, studentName)
+    // Refresh preview: ambil daftar foto dari API agar langsung muncul (tanpa tunggu membersByClass)
+    const resPhotos = await fetch(`/api/albums/${id}/photos?class_id=${encodeURIComponent(classId)}&student_name=${encodeURIComponent(studentName)}`, { credentials: 'include', cache: 'no-store' })
+    const photoList = await resPhotos.json().catch(() => [])
+    if (currentClassId === classId && studentNameForPhotosInCard === studentName && Array.isArray(photoList)) {
+      const photoObjects = photoList.map((p: { id?: string; file_url: string; student_name?: string }, index: number) => ({
+        id: p.id ?? `${studentName}-${index}`,
+        file_url: p.file_url,
+        student_name: p.student_name ?? studentName
+      }))
+      setStudentPhotosInCard(photoObjects)
+      setStudentPhotoIndexInCard(0)
+    }
   }
 
   const handleUploadVideo = async (classId: string, studentName: string, _className: string, file: File) => {
