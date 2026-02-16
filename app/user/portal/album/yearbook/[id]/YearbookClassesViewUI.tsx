@@ -17,7 +17,7 @@ import IconSidebar from './components/IconSidebar'
 import LayoutEditor from './components/FlipbookLayoutEditor'
 import AILabsView from './components/AILabsView'
 
-type AlbumClass = { id: string; name: string; sort_order?: number; student_count?: number }
+type AlbumClass = { id: string; name: string; sort_order?: number; student_count?: number; batch_photo_url?: string | null; flipbook_bg_url?: string | null }
 type ClassAccess = { id: string; student_name: string; email?: string | null; status: string; date_of_birth?: string | null; instagram?: string | null; message?: string | null; video_url?: string | null }
 type ClassRequest = { id: string; student_name: string; email?: string | null; status: string }
 type ClassMember = { user_id: string; student_name: string; email: string | null; date_of_birth: string | null; instagram: string | null; message: string | null; video_url: string | null; photos?: string[]; is_me?: boolean }
@@ -341,6 +341,12 @@ export default function YearbookClassesViewUI(props: any) {
   const [teacherPhotoViewer, setTeacherPhotoViewer] = useState<{ teacher: Teacher; photoIndex: number } | null>(null)
   const [teacherVideoViewer, setTeacherVideoViewer] = useState<{ teacher: Teacher; videoUrl: string } | null>(null)
 
+  // Batch Photo additions
+  const batchPhotoInputRef = useRef<HTMLInputElement>(null)
+  const [uploadingBatchPhotoClassId, setUploadingBatchPhotoClassId] = useState<string | null>(null)
+  const [viewingBatchPhotoClass, setViewingBatchPhotoClass] = useState<AlbumClass | null>(null)
+
+
   // Join requests state
   const [joinRequests, setJoinRequests] = useState<any[]>([])
   const [joinStats, setJoinStats] = useState<any>(null)
@@ -434,10 +440,10 @@ export default function YearbookClassesViewUI(props: any) {
   }
 
   useEffect(() => {
-    if (sidebarMode === 'sambutan' && canManage) {
+    if ((sidebarMode === 'sambutan' || sidebarMode === 'flipbook') && album?.id) {
       fetchTeachers()
     }
-  }, [sidebarMode, canManage, album?.id])
+  }, [sidebarMode, album?.id])
 
   // Fetch invite token
   const fetchInviteToken = async () => {
@@ -735,6 +741,67 @@ export default function YearbookClassesViewUI(props: any) {
       }
     } catch (error) {
       console.error('Error uploading video:', error)
+      toast.error('Terjadi kesalahan')
+    }
+  }
+
+  // Batch photo handlers
+  const handleUploadBatchPhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file || !uploadingBatchPhotoClassId || !album?.id) return
+
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+
+      const res = await fetch(`/api/albums/${album.id}/classes/${uploadingBatchPhotoClassId}/photo`, {
+        method: 'POST',
+        body: formData,
+      })
+
+      const data = await res.json()
+
+      if (res.ok) {
+        toast.success('Foto angkatan berhasil diupload')
+        // Optimistic update or reload page/data
+        if (handleUpdateClass) {
+          // We can trigger a refresh effectively by calling update with no changes or refetching classes?
+          // Actually handleUpdateClass typically updates state in parent. 
+          // But here we need to update the `classes` prop which comes from parent.
+          // Since we modify the database, we should ideally trigger a refresh.
+          // For now, let's reload the window or ask valid method.
+          window.location.reload()
+        }
+      } else {
+        toast.error(data.error || 'Gagal upload foto')
+      }
+    } catch (error) {
+      console.error('Error uploading batch photo:', error)
+      toast.error('Terjadi kesalahan')
+    } finally {
+      // Reset input
+      if (batchPhotoInputRef.current) batchPhotoInputRef.current.value = ''
+      setUploadingBatchPhotoClassId(null)
+    }
+  }
+
+  const handleDeleteBatchPhoto = async (classId: string) => {
+    if (!album?.id || !confirm('Hapus foto angkatan ini?')) return
+
+    try {
+      const res = await fetch(`/api/albums/${album.id}/classes/${classId}/photo`, {
+        method: 'DELETE',
+      })
+
+      if (res.ok) {
+        toast.success('Foto angkatan dihapus')
+        window.location.reload()
+      } else {
+        const data = await res.json()
+        toast.error(data.error || 'Gagal menghapus foto')
+      }
+    } catch (error) {
+      console.error('Error deleting batch photo:', error)
       toast.error('Terjadi kesalahan')
     }
   }
@@ -1091,14 +1158,21 @@ export default function YearbookClassesViewUI(props: any) {
                     const req = myRequestByClass[c.id] as ClassRequest | undefined
                     const hasPendingRequest = req?.status === 'pending'
                     return (
-                      <button
+                      <div
                         key={c.id}
-                        type="button"
+                        role="button"
+                        tabIndex={0}
                         onClick={() => {
                           setClassIndex(idx)
                           if (isCoverView) setView('classes')
                         }}
-                        className={`p-2 rounded-lg text-left text-sm transition-colors touch-manipulation ${idx === classIndex && !isCoverView
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            setClassIndex(idx)
+                            if (isCoverView) setView('classes')
+                          }
+                        }}
+                        className={`p-2 rounded-lg text-left text-sm transition-colors touch-manipulation cursor-pointer ${idx === classIndex && !isCoverView
                           ? 'bg-lime-600/20 border border-lime-500/50 text-lime-400'
                           : 'border border-white/10 text-gray-400 hover:text-white hover:bg-white/5 active:bg-white/10'
                           }`}
@@ -1107,15 +1181,49 @@ export default function YearbookClassesViewUI(props: any) {
                         {hasPendingRequest ? (
                           <p className="text-xs text-amber-400 flex items-center gap-1"><Clock className="w-3.5 h-3.5 flex-shrink-0" /> menunggu persetujuan</p>
                         ) : (
-                          <p className="text-xs text-muted">{(membersByClass[c.id]?.length ?? 0)} orang</p>
+                          <div className="flex items-center justify-between">
+                            <p className="text-xs text-muted">{(membersByClass[c.id]?.length ?? 0)} orang</p>
+                            {/* Batch Photo Indicator/Button */}
+                            {(c.batch_photo_url || canManage) && (
+                              <div className="flex items-center gap-1">
+                                {c.batch_photo_url && (
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      setViewingBatchPhotoClass(c)
+                                    }}
+                                    className="p-1 hover:bg-white/10 rounded text-lime-400"
+                                    title="Lihat Foto Angkatan"
+                                  >
+                                    <ImageIcon className="w-3 h-3" />
+                                  </button>
+                                )}
+                                {canManage && (
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      setUploadingBatchPhotoClassId(c.id)
+                                      batchPhotoInputRef.current?.click()
+                                    }}
+                                    className="p-1 hover:bg-white/10 rounded text-gray-400 hover:text-white"
+                                    title={c.batch_photo_url ? "Ganti Foto Angkatan" : "Tambah Foto Angkatan"}
+                                  >
+                                    <ImagePlus className="w-3 h-3" />
+                                  </button>
+                                )}
+                              </div>
+                            )}
+                          </div>
                         )}
-                      </button>
+                      </div>
                     )
                   })}
                 </div>
               </div>
 
-              {/* Add Group Button - Fixed at Bottom */}
+              {/* Add Group Button - Restored */}
               <div className="flex-shrink-0 px-3 py-2 border-t border-white/10">
                 {canManage && (
                   <div className="flex gap-2">
@@ -1137,6 +1245,7 @@ export default function YearbookClassesViewUI(props: any) {
               </div>
             </div>
           )}
+
 
           {/* Approval Detail Panel - Fixed di sebelah kanan sidebar icon */}
           {sidebarMode === 'approval' && selectedRequestId && (
@@ -1292,6 +1401,8 @@ export default function YearbookClassesViewUI(props: any) {
                       )
                     })}
                   </div>
+
+                  {/* Add Class Mobile - Restored */}
                   <div className="p-3 pb-8 border-t border-white/10 flex flex-col gap-2 bg-[#0a0a0b]">
                     {canManage && (
                       <button
@@ -2280,17 +2391,21 @@ export default function YearbookClassesViewUI(props: any) {
               ) : sidebarMode === 'classes' && classes.length === 0 ? (
                 <div className="max-w-5xl mx-auto px-3 py-3 sm:p-4">
                   <div className="flex flex-col items-center justify-center border-2 border-dashed border-white/10 rounded-xl py-12">
-                    <p className="text-app font-medium mb-2">Belum ada kelas</p>
+                    <p className="text-app font-medium mb-2">Belum ada foto angkatan</p>
                     {canManage && !addingClass && (
-                      <button type="button" onClick={() => setAddingClass(true)} className="mt-4 px-4 py-2 rounded-xl bg-lime-600 text-white">
-                        <Plus className="w-4 h-4 inline mr-2" /> Tambah Kelas
+                      <button type="button" onClick={() => {
+                        setNewClassName('Angkatan')
+                        setAddingClass(true)
+                      }} className="mt-4 px-4 py-2 rounded-xl bg-lime-600 text-white">
+                        <Plus className="w-4 h-4 inline mr-2" /> Buat Album Angkatan
                       </button>
                     )}
                     {canManage && addingClass && (
                       <div className="mt-4 flex flex-col gap-2 max-w-xs w-full">
-                        <input type="text" value={newClassName} onChange={(e) => setNewClassName(e.target.value)} placeholder="Nama kelas" className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-app" autoFocus />
+                        <p className="text-xs text-gray-400 mb-1">Nama Album / Angkatan</p>
+                        <input type="text" value={newClassName} onChange={(e) => setNewClassName(e.target.value)} placeholder="Contoh: Angkatan 2024" className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-app" autoFocus />
                         <div className="flex gap-2">
-                          <button type="button" onClick={handleAddClass} className="px-4 py-2 rounded-lg bg-lime-600 text-white">Tambah</button>
+                          <button type="button" onClick={handleAddClass} className="px-4 py-2 rounded-lg bg-lime-600 text-white">Buat</button>
                           <button type="button" onClick={() => { setAddingClass(false); setNewClassName('') }} className="px-4 py-2 rounded-lg border border-white/10 text-app">Batal</button>
                         </div>
                       </div>
@@ -2306,6 +2421,8 @@ export default function YearbookClassesViewUI(props: any) {
                     classes={classes}
                     membersByClass={membersByClass}
                     onPlayVideo={onPlayVideo}
+                    onUpdateAlbum={props.handleUpdateAlbum}
+                    onUpdateClass={handleUpdateClass}
                   />
                 </>
               ) : sidebarMode === 'classes' ? (
@@ -2315,191 +2432,299 @@ export default function YearbookClassesViewUI(props: any) {
                   const hasApprovedAccess = access?.status === 'approved'
                   const classMembers = membersByClass[currentClass.id] ?? []
 
-                  const classBody =
-                    classMembers.length === 0 ? (
-                      <div className="flex flex-col items-center justify-center py-20 opacity-60 min-h-[70vh] w-full">
-                        <Users className="w-12 h-12 mb-3 opacity-50" />
-                        <p className="text-center text-sm lg:text-base">Belum ada anggota terdaftar di group ini.</p>
-                      </div>
-                    ) : classViewMode === 'list' ? (
-                      <div className="space-y-1">
-                        {classMembers.map((m, idx) => (
-                          <div key={idx} className="flex flex-col p-1.5 lg:p-2 rounded-lg border border-white/10 hover:bg-white/5 transition-colors">
-                            <div className="flex items-center justify-between w-full">
-                              <div className="flex-1 min-w-0">
-                                <p className="text-app font-medium text-xs lg:text-sm truncate">{m.student_name}{m.is_me ? ' (Anda)' : ''}</p>
-                                {m.email && <p className="text-muted text-xs truncate">{m.email}</p>}
-                              </div>
-                              <div className="flex gap-1 flex-shrink-0 ml-2">
-                                <button type="button" onClick={() => openGallery(currentClass.id, m.student_name, currentClass.name)} className="px-2 py-1 text-xs rounded-lg border border-white/10 text-app hover:bg-white/5 flex-shrink-0">
-                                  Lihat
-                                </button>
-                                {(canManage || (m.is_me && hasApprovedAccess)) && (
+                  return (
+                    <div className="flex flex-col gap-4 max-w-7xl mx-auto px-3 py-3 sm:p-4">
+                      {/* Batch Photo Section - Prominent Header */}
+                      <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden p-3 sm:p-4 flex flex-col sm:flex-row items-center sm:items-center gap-4">
+                        <div className="flex-1 order-2 sm:order-1 text-center sm:text-left w-full sm:w-auto">
+                          <h2 className="text-xl sm:text-2xl font-bold text-white mb-1">{currentClass.name}</h2>
+                          <div className="flex items-center justify-center sm:justify-start gap-2 text-gray-400">
+                            <Users className="w-4 h-4" />
+                            <span className="text-sm">{classMembers.length} Anggota</span>
+                          </div>
+                        </div>
+
+                        {/* Photo Section */}
+                        <div className="relative group w-full sm:w-auto sm:max-w-md order-1 sm:order-2">
+                          {currentClass.batch_photo_url ? (
+                            <div className="relative w-full aspect-video bg-black/50 rounded-lg overflow-hidden border border-white/10 shadow-lg">
+                              <img
+                                src={currentClass.batch_photo_url}
+                                alt={`Foto Angkatan ${currentClass.name}`}
+                                className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                                onClick={() => setViewingBatchPhotoClass(currentClass)}
+                              />
+                              {canManage && (
+                                <div className="absolute top-2 right-2 flex gap-1 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
                                   <button
-                                    type="button"
                                     onClick={(e) => {
                                       e.stopPropagation()
-                                      if (canManage && !m.is_me && onStartEditMember) {
-                                        setEditingProfileClassId(currentClass.id)
-                                        setEditingMemberUserId?.(m.user_id)
-                                        onStartEditMember(m, currentClass.id)
-                                      } else if (m.is_me && onStartEditMyProfile) {
-                                        setEditingProfileClassId(currentClass.id)
-                                        setEditingMemberUserId?.(null)
-                                        onStartEditMyProfile(currentClass.id)
-                                        if (fetchStudentPhotosForCard) {
-                                          fetchStudentPhotosForCard(currentClass.id, m.student_name)
-                                        }
-                                      }
+                                      handleDeleteBatchPhoto(currentClass.id)
                                     }}
-                                    className="px-2 py-1 text-xs font-medium rounded-lg bg-lime-600/20 text-lime-400 hover:bg-lime-600/30 flex-shrink-0 flex items-center gap-1"
+                                    className="p-2 bg-black/60 backdrop-blur-md rounded-full text-white hover:bg-red-600 transition-all border border-white/10"
+                                    title="Hapus Foto"
                                   >
-                                    <Edit3 className="w-3.5 h-3.5" /> Edit
+                                    <Trash2 className="w-4 h-4" />
                                   </button>
-                                )}
-                                {canManage && (
-                                  <button
-                                    type="button"
-                                    onClick={() => setDeleteMemberConfirm({ classId: currentClass.id, userId: m.is_me ? undefined : m.user_id, memberName: m.student_name })}
-                                    className="p-1.5 text-xs font-medium rounded-lg text-red-400 hover:bg-red-600/20 transition-colors flex items-center gap-1"
-                                    title="Hapus anggota"
-                                  >
-                                    <Trash2 className="w-3.5 h-3.5" /> Hapus
-                                  </button>
-                                )}
-                              </div>
+                                </div>
+                              )}
                             </div>
+                          ) : (
+                            canManage ? (
+                              <button
+                                onClick={() => {
+                                  setUploadingBatchPhotoClassId(currentClass.id)
+                                  batchPhotoInputRef.current?.click()
+                                }}
+                                className="w-full flex flex-col items-center justify-center aspect-video p-6 rounded-lg border-2 border-dashed border-white/10 hover:border-lime-500/50 hover:bg-white/5 transition-all group"
+                              >
+                                <ImageIcon className="w-10 h-10 text-gray-500 group-hover:text-lime-400 mb-3 transition-colors" />
+                                <span className="text-sm font-medium text-gray-400 group-hover:text-white transition-colors">Upload Foto Angkatan</span>
+                              </button>
+                            ) : (
+                              <div className="w-full aspect-video flex items-center justify-center rounded-lg border border-white/5 bg-white/[0.02]">
+                                <span className="text-sm text-gray-500 italic">Belum ada foto angkatan</span>
+                              </div>
+                            )
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Members Grid/List */}
+                      {
+                        classMembers.length === 0 ? (
+                          <div className="flex flex-col items-center justify-center py-20 opacity-60 min-h-[70vh] w-full">
+                            <Users className="w-12 h-12 mb-3 opacity-50" />
+                            <p className="text-center text-sm lg:text-base">Belum ada anggota terdaftar di group ini.</p>
                           </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="grid gap-2 grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
-                        {classMembers.map((m) => (
-                          <MemberCard
-                            key={m.user_id || m.student_name}
-                            member={m as any}
-                            firstPhoto={m.photos?.[0] || firstPhotoByStudent?.[m.student_name]}
-                            classId={currentClass.id}
-                            canManage={canManage}
-                            hasApprovedAccess={hasApprovedAccess}
-                            isFlipped={editingMemberUserId === m.user_id}
-                            editPhotos={editingMemberUserId === m.user_id ? studentPhotosInCard : undefined}
-                            onStartEdit={(member) => {
-                              setEditingProfileClassId(currentClass.id)
-                              setEditingMemberUserId?.(member.user_id)
-                              // Prepare states in case needed by other logic
-                              setEditProfileName(member.student_name || '')
-                              setEditProfileEmail(member.email || '')
-                              setEditProfileTtl(member.date_of_birth || '')
-                              setEditProfileInstagram(member.instagram || '')
-                              setEditProfilePesan(member.message || '')
-                              setEditProfileVideoUrl(member.video_url || '')
+                        ) : classViewMode === 'list' ? (
+                          <div className="space-y-1">
+                            {classMembers.map((m, idx) => (
+                              <div key={idx} className="flex flex-col p-1.5 lg:p-2 rounded-lg border border-white/10 hover:bg-white/5 transition-colors">
+                                <div className="flex items-center justify-between w-full">
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-app font-medium text-xs lg:text-sm truncate">{m.student_name}{m.is_me ? ' (Anda)' : ''}</p>
+                                    {m.email && <p className="text-muted text-xs truncate">{m.email}</p>}
+                                  </div>
+                                  <div className="flex gap-1 flex-shrink-0 ml-2">
+                                    <button type="button" onClick={() => openGallery(currentClass.id, m.student_name, currentClass.name)} className="px-2 py-1 text-xs rounded-lg border border-white/10 text-app hover:bg-white/5 flex-shrink-0">
+                                      Lihat
+                                    </button>
+                                    {(canManage || (m.is_me && hasApprovedAccess)) && (
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation()
+                                          if (canManage && !m.is_me && onStartEditMember) {
+                                            setEditingProfileClassId(currentClass.id)
+                                            setEditingMemberUserId?.(m.user_id)
+                                            onStartEditMember(m, currentClass.id)
+                                          } else if (m.is_me && onStartEditMyProfile) {
+                                            setEditingProfileClassId(currentClass.id)
+                                            setEditingMemberUserId?.(null)
+                                            onStartEditMyProfile(currentClass.id)
+                                            if (fetchStudentPhotosForCard) {
+                                              fetchStudentPhotosForCard(currentClass.id, m.student_name)
+                                            }
+                                          }
+                                        }}
+                                        className="px-2 py-1 text-xs font-medium rounded-lg bg-lime-600/20 text-lime-400 hover:bg-lime-600/30 flex-shrink-0 flex items-center gap-1"
+                                      >
+                                        <Edit3 className="w-3.5 h-3.5" /> Edit
+                                      </button>
+                                    )}
+                                    {canManage && (
+                                      <button
+                                        type="button"
+                                        onClick={() => setDeleteMemberConfirm({ classId: currentClass.id, userId: m.is_me ? undefined : m.user_id, memberName: m.student_name })}
+                                        className="p-1.5 text-xs font-medium rounded-lg text-red-400 hover:bg-red-600/20 transition-colors flex items-center gap-1"
+                                        title="Hapus anggota"
+                                      >
+                                        <Trash2 className="w-3.5 h-3.5" /> Hapus
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="grid gap-2 grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
+                            {classMembers.map((m) => (
+                              <MemberCard
+                                key={m.user_id || m.student_name}
+                                member={m as any}
+                                firstPhoto={m.photos?.[0] || firstPhotoByStudent?.[m.student_name]}
+                                classId={currentClass.id}
+                                canManage={canManage}
+                                hasApprovedAccess={hasApprovedAccess}
+                                isFlipped={editingMemberUserId === m.user_id}
+                                editPhotos={editingMemberUserId === m.user_id ? studentPhotosInCard : undefined}
+                                onStartEdit={(member) => {
+                                  setEditingProfileClassId(currentClass.id)
+                                  setEditingMemberUserId?.(member.user_id)
+                                  // Prepare states in case needed by other logic
+                                  setEditProfileName(member.student_name || '')
+                                  setEditProfileEmail(member.email || '')
+                                  setEditProfileTtl(member.date_of_birth || '')
+                                  setEditProfileInstagram(member.instagram || '')
+                                  setEditProfilePesan(member.message || '')
+                                  setEditProfileVideoUrl(member.video_url || '')
 
-                              if (fetchStudentPhotosForCard) {
-                                fetchStudentPhotosForCard(currentClass.id, member.student_name)
-                              }
-                            }}
-                            onCancelEdit={() => {
-                              setEditingProfileClassId(null)
-                              setEditingMemberUserId?.(null)
-                            }}
-                            onSave={async (data) => {
-                              setEditProfileName(data.student_name)
-                              setEditProfileEmail(data.email)
-                              setEditProfileTtl(data.date_of_birth)
-                              setEditProfileInstagram(data.instagram)
-                              setEditProfilePesan(data.message)
-                              setEditProfileVideoUrl(data.video_url)
+                                  if (fetchStudentPhotosForCard) {
+                                    fetchStudentPhotosForCard(currentClass.id, member.student_name)
+                                  }
+                                }}
+                                onCancelEdit={() => {
+                                  setEditingProfileClassId(null)
+                                  setEditingMemberUserId?.(null)
+                                }}
+                                onSave={async (data) => {
+                                  setEditProfileName(data.student_name)
+                                  setEditProfileEmail(data.email)
+                                  setEditProfileTtl(data.date_of_birth)
+                                  setEditProfileInstagram(data.instagram)
+                                  setEditProfilePesan(data.message)
+                                  setEditProfileVideoUrl(data.video_url)
 
-                              await handleSaveProfile?.(currentClass.id, false, m.user_id, data)
-                              setEditingMemberUserId?.(null)
-                              setEditingProfileClassId(null)
-                            }}
-                            onDeleteClick={() => setDeleteMemberConfirm({ classId: currentClass.id, userId: m.is_me ? undefined : m.user_id, memberName: m.student_name })}
-                            onUploadPhoto={(cid, sname) => {
-                              if (fileInputRef.current) {
-                                uploadPhotoTargetRef.current = { classId: cid || currentClass.id, studentName: sname || m.student_name }
-                                fileInputRef.current.click()
-                              }
-                            }}
-                            onDeletePhoto={(pid, cid, sname) => {
-                              if (onDeletePhoto) onDeletePhoto(pid, cid || currentClass.id, sname || m.student_name)
-                            }}
-                            onUploadVideo={(cid, sname) => {
-                              if (videoInputRef.current) {
-                                uploadVideoTargetRef.current = { classId: cid || currentClass.id, studentName: sname || m.student_name }
-                                videoInputRef.current.click()
-                              }
-                            }}
-                            onPlayVideo={onPlayVideo}
-                            onOpenGallery={(cid, sname) => openGallery(cid || currentClass.id, sname || m.student_name, currentClass.name)}
-                            saving={savingProfile}
-                          />
-                        ))}
-                      </div>
-                    );
-                  return classBody;
+                                  await handleSaveProfile?.(currentClass.id, false, m.user_id, data)
+                                  setEditingMemberUserId?.(null)
+                                  setEditingProfileClassId(null)
+                                }}
+                                onDeleteClick={() => setDeleteMemberConfirm({ classId: currentClass.id, userId: m.is_me ? undefined : m.user_id, memberName: m.student_name })}
+                                onUploadPhoto={(cid, sname) => {
+                                  if (fileInputRef.current) {
+                                    uploadPhotoTargetRef.current = { classId: cid || currentClass.id, studentName: sname || m.student_name }
+                                    fileInputRef.current.click()
+                                  }
+                                }}
+                                onDeletePhoto={(pid, cid, sname) => {
+                                  if (onDeletePhoto) onDeletePhoto(pid, cid || currentClass.id, sname || m.student_name)
+                                }}
+                                onUploadVideo={(cid, sname) => {
+                                  if (videoInputRef.current) {
+                                    uploadVideoTargetRef.current = { classId: cid || currentClass.id, studentName: sname || m.student_name }
+                                    videoInputRef.current.click()
+                                  }
+                                }}
+                                onPlayVideo={onPlayVideo}
+                                onOpenGallery={(cid, sname) => openGallery(cid || currentClass.id, sname || m.student_name, currentClass.name)}
+                                saving={savingProfile}
+                              />
+                            ))}
+                          </div>
+                        )}
+                    </div>
+                  )
                 })()
               ) : null}
             </div>
+
+            {/* Custom Confirmation Modals */}
+            {
+              deleteClassConfirm && (
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+                  <div className="bg-gray-900 border border-red-500/20 rounded-xl p-4 sm:p-6 max-w-md w-full shadow-2xl">
+                    <h3 className="text-lg font-bold text-red-400 mb-2">Hapus Kelas</h3>
+                    <p className="text-sm text-gray-400 mb-4">
+                      Yakin ingin menghapus kelas "{deleteClassConfirm.className}"? Semua data member di dalamnya akan hilang.
+                    </p>
+                    <div className="flex gap-2 justify-end">
+                      <button onClick={() => setDeleteClassConfirm(null)} className="px-4 py-2 rounded-lg bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white transition-colors text-sm font-medium">Batal</button>
+                      <button
+                        onClick={() => {
+                          handleDeleteClass(deleteClassConfirm.classId)
+                          setDeleteClassConfirm(null)
+                        }}
+                        className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-500 transition-colors text-sm font-medium"
+                      >
+                        Ya, Hapus
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )
+            }
+
+            {
+              deleteMemberConfirm && (
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+                  <div className="bg-gray-900 border border-red-500/20 rounded-xl p-4 sm:p-6 max-w-md w-full shadow-2xl">
+                    <h3 className="text-lg font-bold text-red-400 mb-2">Hapus Anggota</h3>
+                    <p className="text-sm text-gray-400 mb-4">
+                      Hapus "{deleteMemberConfirm.memberName}" dari kelas?
+                    </p>
+                    <div className="flex gap-2 justify-end">
+                      <button onClick={() => setDeleteMemberConfirm(null)} className="px-4 py-2 rounded-lg bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white transition-colors text-sm font-medium">Batal</button>
+                      <button
+                        onClick={async () => {
+                          if (deleteMemberConfirm.userId) {
+                            await handleRemoveMemberWrapper(deleteMemberConfirm.userId)
+                          } else {
+                            // If it's me
+                            await handleRemoveMemberWrapper(currentUserId!)
+                          }
+                          setDeleteMemberConfirm(null)
+                        }}
+                        className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-500 transition-colors text-sm font-medium"
+                      >
+                        Ya, Hapus
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )
+            }
+
+
+
+            {/* Hidden Batch Photo Input */}
+            <input
+              type="file"
+              ref={batchPhotoInputRef}
+              className="hidden"
+              accept="image/*"
+              onChange={handleUploadBatchPhoto}
+            />
+
+            {/* Batch Photo Viewer */}
+            {
+              viewingBatchPhotoClass && viewingBatchPhotoClass.batch_photo_url && (
+                <div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-sm flex flex-col animate-in fade-in duration-200">
+                  <div className="flex items-center justify-between p-4 border-b border-white/10">
+                    <h3 className="text-white font-medium text-lg">Foto Angkatan - {viewingBatchPhotoClass.name}</h3>
+                    <div className="flex items-center gap-2">
+                      {canManage && (
+                        <button
+                          onClick={() => handleDeleteBatchPhoto(viewingBatchPhotoClass.id)}
+                          className="p-2 text-red-400 hover:text-red-300 hover:bg-white/10 rounded-full transition-colors"
+                          title="Hapus Foto"
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
+                      )}
+                      <button
+                        onClick={() => setViewingBatchPhotoClass(null)}
+                        className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-full transition-colors"
+                      >
+                        <X className="w-6 h-6" />
+                      </button>
+                    </div>
+                  </div>
+                  <div className="flex-1 p-4 flex items-center justify-center overflow-auto">
+                    <img
+                      src={viewingBatchPhotoClass.batch_photo_url}
+                      alt={`Foto Angkatan ${viewingBatchPhotoClass.name}`}
+                      className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
+                    />
+                  </div>
+                </div>
+              )
+            }
           </div>
-        </div>
-
-        {/* Custom Confirmation Modals */}
-        {deleteClassConfirm && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
-            <div className="bg-gray-900 border border-red-500/20 rounded-xl p-4 sm:p-6 max-w-md w-full shadow-2xl">
-              <h3 className="text-lg font-bold text-red-400 mb-2">Hapus Kelas</h3>
-              <p className="text-sm text-gray-400 mb-4">
-                Yakin ingin menghapus kelas "{deleteClassConfirm.className}"? Semua data member di dalamnya akan hilang.
-              </p>
-              <div className="flex gap-2 justify-end">
-                <button onClick={() => setDeleteClassConfirm(null)} className="px-4 py-2 rounded-lg bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white transition-colors text-sm font-medium">Batal</button>
-                <button
-                  onClick={() => {
-                    handleDeleteClass(deleteClassConfirm.classId)
-                    setDeleteClassConfirm(null)
-                  }}
-                  className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-500 transition-colors text-sm font-medium"
-                >
-                  Ya, Hapus
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {deleteMemberConfirm && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
-            <div className="bg-gray-900 border border-red-500/20 rounded-xl p-4 sm:p-6 max-w-md w-full shadow-2xl">
-              <h3 className="text-lg font-bold text-red-400 mb-2">Hapus Anggota</h3>
-              <p className="text-sm text-gray-400 mb-4">
-                Hapus "{deleteMemberConfirm.memberName}" dari kelas?
-              </p>
-              <div className="flex gap-2 justify-end">
-                <button onClick={() => setDeleteMemberConfirm(null)} className="px-4 py-2 rounded-lg bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white transition-colors text-sm font-medium">Batal</button>
-                <button
-                  onClick={async () => {
-                    if (deleteMemberConfirm.userId) {
-                      await handleRemoveMemberWrapper(deleteMemberConfirm.userId)
-                    } else {
-                      // If it's me
-                      await handleRemoveMemberWrapper(currentUserId!)
-                    }
-                    setDeleteMemberConfirm(null)
-                  }}
-                  className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-500 transition-colors text-sm font-medium"
-                >
-                  Ya, Hapus
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-
-      </div>
-    </div>
+        </div >
+      </div >
+    </div >
   )
 }
 

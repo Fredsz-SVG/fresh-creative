@@ -20,8 +20,8 @@ function groupMembers(members: any[], currentUserId: string) {
   return grouped
 }
 
-export default async function YearbookAlbumPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params
+export default async function YearbookAlbumPage(props: { params: Promise<{ id: string }>; backHref?: string; backLabel?: string }) {
+  const { id } = await props.params
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -44,13 +44,15 @@ export default async function YearbookAlbumPage({ params }: { params: Promise<{ 
   }
 
   // Group members for frontend consumption
-  const initialMembers = groupMembers(allMembersRaw, user.id)
+  const initialMembers = getAlbumOverview ? groupMembers(allMembersRaw ?? [], user.id) : {}
 
   return (
     <YearbookAlbumClient
       initialAlbum={album as any}
       initialMembers={initialMembers}
       initialAccess={accessData as any}
+      backHref={props.backHref}
+      backLabel={props.backLabel}
     />
   )
 }

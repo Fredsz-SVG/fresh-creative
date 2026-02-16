@@ -14,8 +14,8 @@ export async function getAlbumOverview(albumId: string, userId?: string) {
     const client = admin || await createClient()
 
     // Fetch Album Meta
-    const selectWithPosition = 'id, name, type, status, cover_image_url, cover_image_position, cover_video_url, description, user_id, created_at'
-    const selectWithoutPosition = 'id, name, type, status, cover_image_url, description, user_id, created_at'
+    const selectWithPosition = 'id, name, type, status, cover_image_url, cover_image_position, cover_video_url, description, user_id, created_at, flipbook_bg_cover, flipbook_bg_sambutan'
+    const selectWithoutPosition = 'id, name, type, status, cover_image_url, description, user_id, created_at, flipbook_bg_cover, flipbook_bg_sambutan'
 
     const { data: albumWithPosition, error: errWithPosition } = await client
         .from('albums')
@@ -45,11 +45,11 @@ export async function getAlbumOverview(albumId: string, userId?: string) {
     if (album.type === 'yearbook') {
         const { data: classes } = await client
             .from('album_classes')
-            .select('id, name, sort_order')
+            .select('id, name, sort_order, batch_photo_url, flipbook_bg_url')
             .eq('album_id', albumId)
             .order('sort_order', { ascending: true })
 
-        const classList = (classes ?? []) as { id: string; name: string; sort_order: number }[]
+        const classList = (classes ?? []) as { id: string; name: string; sort_order: number; batch_photo_url: string | null; flipbook_bg_url: string | null }[]
         const studentCounts: Record<string, number> = {}
 
         const { data: allAccess } = await client
@@ -75,6 +75,8 @@ export async function getAlbumOverview(albumId: string, userId?: string) {
             name: c.name,
             sort_order: c.sort_order,
             student_count: studentCounts[c.id] ?? 0,
+            batch_photo_url: c.batch_photo_url,
+            flipbook_bg_url: c.flipbook_bg_url,
         }))
     }
 
@@ -87,7 +89,7 @@ export async function getAlbumOverview(albumId: string, userId?: string) {
         const admin = createAdminClient()
         const client = admin || supabase
 
-        const row = albumData as { id: string; name: string; type: string; status?: string; cover_image_url?: string | null; cover_image_position?: string | null; cover_video_url?: string | null; description?: string | null; user_id: string; classes: any[] }
+        const row = albumData as { id: string; name: string; type: string; status?: string; cover_image_url?: string | null; cover_image_position?: string | null; cover_video_url?: string | null; description?: string | null; user_id: string; flipbook_bg_cover?: string | null; flipbook_bg_sambutan?: string | null; classes: any[] }
 
         const isActualOwner = row.user_id === userId
 
@@ -134,6 +136,8 @@ export async function getAlbumOverview(albumId: string, userId?: string) {
             cover_image_position: row.cover_image_position ?? null,
             cover_video_url: (row as any).cover_video_url ?? null,
             description: row.description ?? null,
+            flipbook_bg_cover: row.flipbook_bg_cover ?? null,
+            flipbook_bg_sambutan: row.flipbook_bg_sambutan ?? null,
             isOwner,
             isAlbumAdmin,
             isGlobalAdmin: isAdmin,

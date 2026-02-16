@@ -25,13 +25,13 @@ export async function GET(
 
   const { data: classes, error } = await client
     .from('album_classes')
-    .select('id, name, sort_order')
+    .select('id, name, sort_order, batch_photo_url')
     .eq('album_id', albumId)
     .order('sort_order', { ascending: true })
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  const classList = (classes ?? []) as { id: string; name: string; sort_order: number }[]
+  const classList = (classes ?? []) as { id: string; name: string; sort_order: number; batch_photo_url: string | null }[]
   const { data: allAccess } = await client
     .from('album_class_access')
     .select('class_id, photos')
@@ -50,6 +50,7 @@ export async function GET(
     id: c.id,
     name: c.name,
     sort_order: c.sort_order,
+    batch_photo_url: c.batch_photo_url,
     student_count: studentCounts[c.id] ?? 0,
   }))
 

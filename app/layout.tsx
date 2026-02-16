@@ -1,13 +1,16 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Toaster } from 'sonner'
 import './globals.css'
 import ThemeProvider from './providers/ThemeProvider'
 import AuthErrorRedirect from './components/AuthErrorRedirect'
 
+export const viewport: Viewport = {
+  colorScheme: 'light dark',
+}
+
 export const metadata: Metadata = {
   title: 'Fresh Creative SaaS',
   description: 'Fresh Creative SaaS App',
-  colorScheme: 'light dark',
 }
 
 export default function RootLayout({

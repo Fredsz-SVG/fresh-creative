@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { Suspense, useState, useEffect, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
@@ -58,7 +58,7 @@ function formatCooldown(seconds: number): string {
   return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`
 }
 
-export default function VerifyOtpPage() {
+function VerifyOtpContent() {
   const [code, setCode] = useState('')
   const [loading, setLoading] = useState(false)
   const [sendLoading, setSendLoading] = useState(false)
@@ -341,5 +341,19 @@ export default function VerifyOtpPage() {
         </p>
       </div>
     </div>
+  )
+}
+
+export default function VerifyOtpPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="auth-page flex items-center justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500" />
+        </div>
+      }
+    >
+      <VerifyOtpContent />
+    </Suspense>
   )
 }

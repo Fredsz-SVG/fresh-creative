@@ -24,8 +24,8 @@ export async function GET(
   const admin = createAdminClient()
   const client = admin ?? supabase
 
-  const selectWithPosition = 'id, name, type, status, cover_image_url, cover_image_position, cover_video_url, description, user_id, created_at'
-  const selectWithoutPosition = 'id, name, type, status, cover_image_url, description, user_id, created_at'
+  const selectWithPosition = 'id, name, type, status, cover_image_url, cover_image_position, cover_video_url, description, user_id, created_at, flipbook_bg_cover, flipbook_bg_sambutan, sambutan_font_family, sambutan_title_color, sambutan_text_color'
+  const selectWithoutPosition = 'id, name, type, status, cover_image_url, description, user_id, created_at, flipbook_bg_cover, flipbook_bg_sambutan, sambutan_font_family, sambutan_title_color, sambutan_text_color'
 
   const { data: albumWithPosition, error: errWithPosition } = await client
     .from('albums')
@@ -54,7 +54,7 @@ export async function GET(
     return NextResponse.json({ error: 'Album not found' }, { status: 404 })
   }
 
-  const row = album as { id: string; name: string; type: string; status?: string; cover_image_url?: string | null; cover_image_position?: string | null; cover_video_url?: string | null; description?: string | null; user_id: string }
+  const row = album as { id: string; name: string; type: string; status?: string; cover_image_url?: string | null; cover_image_position?: string | null; cover_video_url?: string | null; description?: string | null; user_id: string; flipbook_bg_cover?: string | null; flipbook_bg_sambutan?: string | null; sambutan_font_family?: string | null; sambutan_title_color?: string | null; sambutan_text_color?: string | null }
   const isActualOwner = row.user_id === user.id
   const role = await getRole(supabase, user)
   const isAdmin = role === 'admin'
@@ -109,7 +109,7 @@ export async function GET(
 
   const { data: classes, error: classesErr } = await client
     .from('album_classes')
-    .select('id, name, sort_order')
+    .select('id, name, sort_order, batch_photo_url, flipbook_bg_url, flipbook_font_family, flipbook_title_color, flipbook_text_color')
     .eq('album_id', albumId)
     .order('sort_order', { ascending: true })
 
@@ -117,7 +117,7 @@ export async function GET(
     return NextResponse.json({ error: classesErr.message }, { status: 500 })
   }
 
-  const classList = (classes ?? []) as { id: string; name: string; sort_order: number }[]
+  const classList = (classes ?? []) as { id: string; name: string; sort_order: number; batch_photo_url?: string; flipbook_bg_url?: string; flipbook_font_family?: string; flipbook_title_color?: string; flipbook_text_color?: string }[]
   const studentCounts: Record<string, number> = {}
 
   // Optimized count: Fetch all access for album and group by class
@@ -143,6 +143,11 @@ export async function GET(
     name: c.name,
     sort_order: c.sort_order,
     student_count: studentCounts[c.id] ?? 0,
+    batch_photo_url: c.batch_photo_url,
+    flipbook_bg_url: c.flipbook_bg_url,
+    flipbook_font_family: c.flipbook_font_family,
+    flipbook_title_color: c.flipbook_title_color,
+    flipbook_text_color: c.flipbook_text_color
   }))
 
   return NextResponse.json({
@@ -154,6 +159,11 @@ export async function GET(
     cover_image_position: row.cover_image_position ?? null,
     cover_video_url: row.cover_video_url ?? null,
     description: row.description ?? null,
+    flipbook_bg_cover: row.flipbook_bg_cover ?? null,
+    flipbook_bg_sambutan: row.flipbook_bg_sambutan ?? null,
+    sambutan_font_family: row.sambutan_font_family ?? null,
+    sambutan_title_color: row.sambutan_title_color ?? null,
+    sambutan_text_color: row.sambutan_text_color ?? null,
     isOwner,
     isAlbumAdmin,
     isGlobalAdmin: isAdmin,
@@ -173,7 +183,10 @@ export async function PATCH(
   const { id: albumId } = await params
   if (!albumId) return NextResponse.json({ error: 'Album ID required' }, { status: 400 })
 
-  const { data: album, error: albumErr } = await supabase
+  const admin = createAdminClient()
+  const client = admin ?? supabase
+
+  const { data: album, error: albumErr } = await client
     .from('albums')
     .select('id, user_id')
     .eq('id', albumId)
@@ -186,15 +199,20 @@ export async function PATCH(
   }
 
   const body = await request.json().catch(() => ({}))
-  const { cover_image_url, description, students_count } = body as { cover_image_url?: string; description?: string; students_count?: number }
+  const { cover_image_url, description, students_count, flipbook_bg_cover, flipbook_bg_sambutan, sambutan_font_family, sambutan_title_color, sambutan_text_color } = body as { cover_image_url?: string; description?: string; students_count?: number; flipbook_bg_cover?: string; flipbook_bg_sambutan?: string; sambutan_font_family?: string; sambutan_title_color?: string; sambutan_text_color?: string }
 
-  const updates: { cover_image_url?: string; description?: string; students_count?: number } = {}
+  const updates: { cover_image_url?: string; description?: string; students_count?: number; flipbook_bg_cover?: string; flipbook_bg_sambutan?: string; sambutan_font_family?: string; sambutan_title_color?: string; sambutan_text_color?: string } = {}
   if (cover_image_url !== undefined) updates.cover_image_url = cover_image_url
   if (description !== undefined) updates.description = description
   if (students_count !== undefined) updates.students_count = students_count
+  if (flipbook_bg_cover !== undefined) updates.flipbook_bg_cover = flipbook_bg_cover
+  if (flipbook_bg_sambutan !== undefined) updates.flipbook_bg_sambutan = flipbook_bg_sambutan
+  if (sambutan_font_family !== undefined) updates.sambutan_font_family = sambutan_font_family
+  if (sambutan_title_color !== undefined) updates.sambutan_title_color = sambutan_title_color
+  if (sambutan_text_color !== undefined) updates.sambutan_text_color = sambutan_text_color
   if (Object.keys(updates).length === 0) return NextResponse.json(album)
 
-  const { data: updated, error } = await supabase
+  const { data: updated, error } = await client
     .from('albums')
     .update(updates)
     .eq('id', albumId)

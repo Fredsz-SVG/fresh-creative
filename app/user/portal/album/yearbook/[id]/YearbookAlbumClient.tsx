@@ -18,10 +18,15 @@ type Album = {
   cover_image_position?: string | null
   cover_video_url?: string | null
   description?: string | null
+  flipbook_bg_cover?: string | null
+  flipbook_bg_sambutan?: string | null
+  sambutan_font_family?: string | null
+  sambutan_title_color?: string | null
+  sambutan_text_color?: string | null
   isOwner?: boolean
   isAlbumAdmin?: boolean
   isGlobalAdmin?: boolean
-  classes: { id: string; name: string; sort_order: number; student_count: number }[]
+  classes: { id: string; name: string; sort_order: number; student_count: number; batch_photo_url?: string | null; flipbook_bg_url?: string | null; flipbook_font_family?: string | null; flipbook_title_color?: string | null; flipbook_text_color?: string | null }[]
 }
 
 type ClassAccess = { id: string; student_name: string; email?: string | null; status: string; date_of_birth?: string | null; instagram?: string | null; message?: string | null; video_url?: string | null }
@@ -676,14 +681,43 @@ export default function YearbookAlbumClient({
     })
   }
 
-  const handleUpdateClass = async (classId: string, updates: { name?: string; sort_order?: number }) => {
+  const handleUpdateAlbum = async (updates: { description?: string; cover_image_url?: string; students_count?: number; flipbook_bg_cover?: string; flipbook_bg_sambutan?: string; sambutan_font_family?: string; sambutan_title_color?: string; sambutan_text_color?: string }) => {
     if (!id) return
+
+    // Optimistic update
+    setAlbum((prev) => {
+      if (!prev) return prev
+      return { ...prev, ...updates }
+    })
+
+    // Background API call
+    return fetch(`/api/albums/${id}`, {
+      method: 'PATCH',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updates),
+    }).then(res => {
+      if (!res.ok) {
+        // Revert on error
+        fetchAlbum()
+        return null
+      }
+      return res.json()
+    }).catch(() => {
+      // Revert on error
+      fetchAlbum()
+      return null
+    })
+  }
+
+  const handleUpdateClass = async (classId: string, updates: { name?: string; sort_order?: number; batch_photo_url?: string; flipbook_bg_url?: string; flipbook_font_family?: string; flipbook_title_color?: string; flipbook_text_color?: string }) => {
+    if (!id) return null
 
     // Mark that we just did a local update
     lastLocalUpdateRef.current = Date.now()
 
     // Optimistic update - update UI immediately without waiting for server
-    const optimisticUpdate = { id: classId, name: '', sort_order: 0 }
+    const optimisticUpdate = { id: classId, name: '', sort_order: 0, batch_photo_url: null as string | null, flipbook_bg_url: null as string | null }
     setAlbum((prev) => {
       if (!prev?.classes) return prev
       const currentClass = prev.classes.find(c => c.id === classId)
@@ -691,9 +725,14 @@ export default function YearbookAlbumClient({
 
       optimisticUpdate.name = updates.name !== undefined ? updates.name : currentClass.name
       optimisticUpdate.sort_order = updates.sort_order !== undefined ? updates.sort_order : (currentClass.sort_order ?? 0)
+      // @ts-ignore
+      optimisticUpdate.batch_photo_url = updates.batch_photo_url !== undefined ? updates.batch_photo_url : (currentClass.batch_photo_url ?? null)
+      // @ts-ignore
+      optimisticUpdate.flipbook_bg_url = updates.flipbook_bg_url !== undefined ? updates.flipbook_bg_url : (currentClass.flipbook_bg_url ?? null)
 
       const newClasses = prev.classes
-        .map((c) => (c.id === classId ? { ...c, name: optimisticUpdate.name, sort_order: optimisticUpdate.sort_order } : c))
+        // @ts-ignore
+        .map((c) => (c.id === classId ? { ...c, ...updates } : c))
         .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
 
       // Jika ada perubahan sort_order, update classIndex ke posisi baru
@@ -708,7 +747,7 @@ export default function YearbookAlbumClient({
     })
 
     // Background API call - fire and forget
-    fetch(`/api/albums/${id}/classes/${classId}`, {
+    return fetch(`/api/albums/${id}/classes/${classId}`, {
       method: 'PATCH',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
@@ -717,13 +756,14 @@ export default function YearbookAlbumClient({
       if (!res.ok) {
         // Revert on error
         fetchAlbum()
+        return null
       }
+      return optimisticUpdate
     }).catch(() => {
       // Revert on error
       fetchAlbum()
+      return null
     })
-
-    return optimisticUpdate
   }
 
   const handleAddClass = async () => {
@@ -1665,6 +1705,7 @@ export default function YearbookAlbumClient({
             }}
             fetchStudentPhotosForCard={fetchStudentPhotosForCard}
             handleUpdateClass={handleUpdateClass}
+            handleUpdateAlbum={handleUpdateAlbum}
             // Cover View Props
             isCoverView={view === 'cover'}
             uploadingCover={uploadingCover}
