@@ -1,10 +1,11 @@
 'use client'
 
 import React, { useEffect, useRef, useState } from 'react'
-import { ChevronLeft, ChevronRight, Plus, Trash2, Check, X, Edit3, ImagePlus, Video, Play, Minus, Instagram, Users, ClipboardList, Menu, Cake, Shield, Copy, Link, Clock, BookOpen, MessageSquare, Search, Shirt, UserCircle, ImageIcon, Images, Link as LinkIcon, Sparkles, Book } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Plus, Trash2, Check, X, Edit3, ImagePlus, Video, Play, Minus, Instagram, Users, ClipboardList, Menu, Cake, Shield, Copy, Link, Clock, BookOpen, MessageSquare, Search, Shirt, UserCircle, ImageIcon, Images, Link as LinkIcon, Sparkles, Book, Layout, Eye } from 'lucide-react'
 import { toast } from 'sonner'
 import NextLink from 'next/link'
 import { useSearchParams } from 'next/navigation'
+import { supabase } from '@/lib/supabase'
 import TeacherCard from '@/components/TeacherCard'
 import MemberCard from '@/components/MemberCard'
 import TryOn from '@/components/fitur/TryOn'
@@ -16,6 +17,7 @@ import { AI_LABS_FEATURES_USER } from '@/lib/dashboard-nav'
 import IconSidebar from './components/IconSidebar'
 import LayoutEditor from './components/FlipbookLayoutEditor'
 import AILabsView from './components/AILabsView'
+import ManualFlipbookViewer from './components/ManualFlipbookViewer'
 
 type AlbumClass = { id: string; name: string; sort_order?: number; student_count?: number; batch_photo_url?: string | null; flipbook_bg_url?: string | null }
 type ClassAccess = { id: string; student_name: string; email?: string | null; status: string; date_of_birth?: string | null; instagram?: string | null; message?: string | null; video_url?: string | null }
@@ -367,6 +369,10 @@ export default function YearbookClassesViewUI(props: any) {
   const [deleteClassConfirm, setDeleteClassConfirm] = useState<{ classId: string; className: string } | null>(null)
   const [deleteMemberConfirm, setDeleteMemberConfirm] = useState<{ classId: string; userId?: string; memberName: string } | null>(null)
 
+  // Manual Flipbook Pages state
+  const [manualPages, setManualPages] = useState<any[]>([])
+  const [flipbookPreviewMode, setFlipbookPreviewMode] = useState(false)
+
   const searchParams = useSearchParams()
   const aiLabsTool = searchParams.get('tool')
 
@@ -444,6 +450,30 @@ export default function YearbookClassesViewUI(props: any) {
       fetchTeachers()
     }
   }, [sidebarMode, album?.id])
+
+  // Fetch Manual Pages
+  const fetchManualPages = async () => {
+    if (!album?.id) return
+    const { data: pages, error } = await supabase
+      .from('manual_flipbook_pages')
+      .select('*, flipbook_video_hotspots(*)')
+      .eq('album_id', album.id)
+      .order('page_number', { ascending: true })
+
+    if (error) {
+      console.error('Error fetching manual pages:', error)
+      return
+    }
+    if (pages) {
+      setManualPages(pages)
+    }
+  }
+
+  useEffect(() => {
+    if (sidebarMode === 'flipbook' && album?.id && album?.flipbook_mode === 'manual') {
+      fetchManualPages()
+    }
+  }, [sidebarMode, album?.id, album?.flipbook_mode])
 
   // Fetch invite token
   const fetchInviteToken = async () => {
@@ -2413,18 +2443,62 @@ export default function YearbookClassesViewUI(props: any) {
                   </div>
                 </div>
               ) : sidebarMode === 'flipbook' ? (
-                <>
-                  {/* Flipbook Layout Editor */}
-                  <LayoutEditor
-                    album={album}
-                    teachers={teachers}
-                    classes={classes}
-                    membersByClass={membersByClass}
-                    onPlayVideo={onPlayVideo}
-                    onUpdateAlbum={props.handleUpdateAlbum}
-                    onUpdateClass={handleUpdateClass}
-                  />
-                </>
+                <div className="flex flex-col h-full">
+                  {/* Admin Controls for Flipbook */}
+                  {canManage && album?.flipbook_mode === 'manual' && (
+                    <div className="max-w-7xl mx-auto w-full px-3 pt-3 sm:px-4 flex justify-end">
+                      <div className="flex bg-white/5 p-1 rounded-xl border border-white/10 gap-1">
+                        <button
+                          onClick={() => setFlipbookPreviewMode(false)}
+                          className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${!flipbookPreviewMode ? 'bg-lime-500 text-black shadow-lg' : 'text-gray-400 hover:text-white'}`}
+                        >
+                          <Layout className="w-3.5 h-3.5" /> Editor
+                        </button>
+                        <button
+                          onClick={() => setFlipbookPreviewMode(true)}
+                          className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${flipbookPreviewMode ? 'bg-lime-500 text-black shadow-lg' : 'text-gray-400 hover:text-white'}`}
+                        >
+                          <Eye className="w-3.5 h-3.5" /> Preview
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Manual Flipbook Content */}
+                  {album?.flipbook_mode === 'manual' ? (
+                    (flipbookPreviewMode || !canManage) ? (
+                      <div className="flex-1 flex items-center justify-center p-4">
+                        <ManualFlipbookViewer
+                          pages={manualPages}
+                          onPlayVideo={onPlayVideo}
+                        />
+                      </div>
+                    ) : (
+                      <LayoutEditor
+                        album={album}
+                        teachers={teachers}
+                        classes={classes}
+                        membersByClass={membersByClass}
+                        onPlayVideo={onPlayVideo}
+                        onUpdateAlbum={props.handleUpdateAlbum}
+                        onUpdateClass={handleUpdateClass}
+                        canManage={canManage}
+                      />
+                    )
+                  ) : (
+                    /* Auto Layout Editor (Standard) */
+                    <LayoutEditor
+                      album={album}
+                      teachers={teachers}
+                      classes={classes}
+                      membersByClass={membersByClass}
+                      onPlayVideo={onPlayVideo}
+                      onUpdateAlbum={props.handleUpdateAlbum}
+                      onUpdateClass={handleUpdateClass}
+                      canManage={canManage}
+                    />
+                  )}
+                </div>
               ) : sidebarMode === 'classes' ? (
                 /* Classes Content - Original grid view */
                 (() => {

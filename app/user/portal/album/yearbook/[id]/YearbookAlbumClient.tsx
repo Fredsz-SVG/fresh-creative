@@ -26,6 +26,7 @@ type Album = {
   isOwner?: boolean
   isAlbumAdmin?: boolean
   isGlobalAdmin?: boolean
+  flipbook_mode?: string | null
   classes: { id: string; name: string; sort_order: number; student_count: number; batch_photo_url?: string | null; flipbook_bg_url?: string | null; flipbook_font_family?: string | null; flipbook_title_color?: string | null; flipbook_text_color?: string | null }[]
 }
 
@@ -681,7 +682,7 @@ export default function YearbookAlbumClient({
     })
   }
 
-  const handleUpdateAlbum = async (updates: { description?: string; cover_image_url?: string; students_count?: number; flipbook_bg_cover?: string; flipbook_bg_sambutan?: string; sambutan_font_family?: string; sambutan_title_color?: string; sambutan_text_color?: string }) => {
+  const handleUpdateAlbum = async (updates: { description?: string; cover_image_url?: string; students_count?: number; flipbook_bg_cover?: string; flipbook_bg_sambutan?: string; sambutan_font_family?: string; sambutan_title_color?: string; sambutan_text_color?: string; flipbook_mode?: string }) => {
     if (!id) return
 
     // Optimistic update

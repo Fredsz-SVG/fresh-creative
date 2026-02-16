@@ -593,6 +593,13 @@ body {
   .transition-theme {
     @apply transition-colors duration-300 ease-in-out;
   }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
 }
 
 /* ===== Dashboard (User/Admin) neon theme ===== */

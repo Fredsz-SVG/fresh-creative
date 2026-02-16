@@ -24,8 +24,8 @@ export async function GET(
   const admin = createAdminClient()
   const client = admin ?? supabase
 
-  const selectWithPosition = 'id, name, type, status, cover_image_url, cover_image_position, cover_video_url, description, user_id, created_at, flipbook_bg_cover, flipbook_bg_sambutan, sambutan_font_family, sambutan_title_color, sambutan_text_color'
-  const selectWithoutPosition = 'id, name, type, status, cover_image_url, description, user_id, created_at, flipbook_bg_cover, flipbook_bg_sambutan, sambutan_font_family, sambutan_title_color, sambutan_text_color'
+  const selectWithPosition = 'id, name, type, status, cover_image_url, cover_image_position, cover_video_url, description, user_id, created_at, flipbook_bg_cover, flipbook_bg_sambutan, sambutan_font_family, sambutan_title_color, sambutan_text_color, flipbook_mode'
+  const selectWithoutPosition = 'id, name, type, status, cover_image_url, description, user_id, created_at, flipbook_bg_cover, flipbook_bg_sambutan, sambutan_font_family, sambutan_title_color, sambutan_text_color, flipbook_mode'
 
   const { data: albumWithPosition, error: errWithPosition } = await client
     .from('albums')
@@ -54,7 +54,7 @@ export async function GET(
     return NextResponse.json({ error: 'Album not found' }, { status: 404 })
   }
 
-  const row = album as { id: string; name: string; type: string; status?: string; cover_image_url?: string | null; cover_image_position?: string | null; cover_video_url?: string | null; description?: string | null; user_id: string; flipbook_bg_cover?: string | null; flipbook_bg_sambutan?: string | null; sambutan_font_family?: string | null; sambutan_title_color?: string | null; sambutan_text_color?: string | null }
+  const row = album as { id: string; name: string; type: string; status?: string; cover_image_url?: string | null; cover_image_position?: string | null; cover_video_url?: string | null; description?: string | null; user_id: string; flipbook_bg_cover?: string | null; flipbook_bg_sambutan?: string | null; sambutan_font_family?: string | null; sambutan_title_color?: string | null; sambutan_text_color?: string | null; flipbook_mode?: string | null }
   const isActualOwner = row.user_id === user.id
   const role = await getRole(supabase, user)
   const isAdmin = role === 'admin'
@@ -164,6 +164,7 @@ export async function GET(
     sambutan_font_family: row.sambutan_font_family ?? null,
     sambutan_title_color: row.sambutan_title_color ?? null,
     sambutan_text_color: row.sambutan_text_color ?? null,
+    flipbook_mode: row.flipbook_mode ?? 'auto',
     isOwner,
     isAlbumAdmin,
     isGlobalAdmin: isAdmin,
@@ -199,9 +200,9 @@ export async function PATCH(
   }
 
   const body = await request.json().catch(() => ({}))
-  const { cover_image_url, description, students_count, flipbook_bg_cover, flipbook_bg_sambutan, sambutan_font_family, sambutan_title_color, sambutan_text_color } = body as { cover_image_url?: string; description?: string; students_count?: number; flipbook_bg_cover?: string; flipbook_bg_sambutan?: string; sambutan_font_family?: string; sambutan_title_color?: string; sambutan_text_color?: string }
+  const { cover_image_url, description, students_count, flipbook_bg_cover, flipbook_bg_sambutan, sambutan_font_family, sambutan_title_color, sambutan_text_color, flipbook_mode } = body as { cover_image_url?: string; description?: string; students_count?: number; flipbook_bg_cover?: string; flipbook_bg_sambutan?: string; sambutan_font_family?: string; sambutan_title_color?: string; sambutan_text_color?: string; flipbook_mode?: string }
 
-  const updates: { cover_image_url?: string; description?: string; students_count?: number; flipbook_bg_cover?: string; flipbook_bg_sambutan?: string; sambutan_font_family?: string; sambutan_title_color?: string; sambutan_text_color?: string } = {}
+  const updates: { cover_image_url?: string; description?: string; students_count?: number; flipbook_bg_cover?: string; flipbook_bg_sambutan?: string; sambutan_font_family?: string; sambutan_title_color?: string; sambutan_text_color?: string; flipbook_mode?: string } = {}
   if (cover_image_url !== undefined) updates.cover_image_url = cover_image_url
   if (description !== undefined) updates.description = description
   if (students_count !== undefined) updates.students_count = students_count
@@ -210,6 +211,7 @@ export async function PATCH(
   if (sambutan_font_family !== undefined) updates.sambutan_font_family = sambutan_font_family
   if (sambutan_title_color !== undefined) updates.sambutan_title_color = sambutan_title_color
   if (sambutan_text_color !== undefined) updates.sambutan_text_color = sambutan_text_color
+  if (flipbook_mode !== undefined) updates.flipbook_mode = flipbook_mode
   if (Object.keys(updates).length === 0) return NextResponse.json(album)
 
   const { data: updated, error } = await client

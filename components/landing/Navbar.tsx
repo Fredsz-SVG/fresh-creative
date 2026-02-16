@@ -8,24 +8,28 @@ import { getRole } from '@/lib/auth'
 
 export default function Navbar() {
   const router = useRouter()
+  /* 
+    Fixing hydration mismatch:
+    Initialize state with a deterministic value (true to match server fallback).
+    Use useEffect to detect actual preference on client side.
+  */
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-  const initialIsDark = (() => {
+  const [isDark, setIsDark] = useState<boolean>(true)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
     try {
-      const saved = typeof window !== 'undefined' ? localStorage.getItem('theme') : null
-      if (saved) return saved === 'dark'
-      if (typeof document !== 'undefined') {
-        const ds = document.documentElement.dataset.theme
-        if (ds) return ds === 'dark'
-      }
-      if (typeof window !== 'undefined') return window.matchMedia('(prefers-color-scheme: dark)').matches
-    } catch {}
-    return true
-  })()
+      const saved = localStorage.getItem('theme')
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+      const shouldBeDark = saved ? saved === 'dark' : prefersDark
 
-  const [isDark, setIsDark] = useState<boolean>(initialIsDark)
-
-  // Ensure DOM reflects initial theme synchronously
-  try { applyTheme(initialIsDark) } catch {}
+      setIsDark(shouldBeDark)
+      applyTheme(shouldBeDark)
+    } catch (e) {
+      console.error(e)
+    }
+  }, [])
 
   function applyTheme(isDark: boolean) {
     const root = document.documentElement
@@ -101,11 +105,12 @@ export default function Navbar() {
             type="button"
             className="p-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex items-center justify-center w-10 h-10"
           >
-            {isDark ? (
+            {mounted && (isDark ? (
               <Sun className="w-5 h-5" />
             ) : (
               <Moon className="w-5 h-5" />
-            )}
+            ))}
+            {!mounted && <Sun className="w-5 h-5 opacity-0" />}
           </button>
 
           {/* Mobile Menu Button - Hamburger (3 strips) */}

@@ -11,8 +11,29 @@ type FlipbookViewProps = {
     classes: any[]
     membersByClass: Record<string, any[]>
     onPlayVideo?: (url: string) => void
-    onUpdateAlbum?: (updates: { flipbook_bg_cover?: string; flipbook_bg_sambutan?: string; sambutan_font_family?: string; sambutan_title_color?: string; sambutan_text_color?: string }) => Promise<void>
+    onUpdateAlbum?: (updates: { flipbook_bg_cover?: string; flipbook_bg_sambutan?: string; sambutan_font_family?: string; sambutan_title_color?: string; sambutan_text_color?: string; flipbook_mode?: 'auto' | 'manual' }) => Promise<void>
     onUpdateClass?: (classId: string, updates: { flipbook_bg_url?: string; flipbook_font_family?: string; flipbook_title_color?: string; flipbook_text_color?: string }) => Promise<any>
+    canManage?: boolean
+}
+
+type ManualFlipbookPage = {
+    id: string
+    page_number: number
+    image_url: string
+    width?: number
+    height?: number
+    flipbook_video_hotspots?: VideoHotspot[]
+}
+
+type VideoHotspot = {
+    id: string
+    page_id: string
+    video_url: string
+    label?: string
+    x: number
+    y: number
+    width: number
+    height: number
 }
 
 const AVAILABLE_FONTS = [
@@ -41,10 +62,52 @@ const GoogleFontsLoader = ({ fonts }: { fonts: string[] }) => {
     return null
 }
 
-export default function FlipbookLayoutEditor({ album, teachers, classes, membersByClass, onPlayVideo, onUpdateAlbum, onUpdateClass }: FlipbookViewProps) {
+export default function FlipbookLayoutEditor({ album, teachers, classes, membersByClass, onPlayVideo, onUpdateAlbum, onUpdateClass, canManage = false }: FlipbookViewProps) {
     const [activeLayout, setActiveLayout] = useState<'cover' | 'sambutan' | 'classes'>('cover')
     const [selectedClassId, setSelectedClassId] = useState<string>('')
     const [tempBackgrounds, setTempBackgrounds] = useState<Record<string, string>>({})
+
+    // Manual Mode State
+    const [isManualMode, setIsManualMode] = useState(album?.flipbook_mode === 'manual')
+    const [manualPages, setManualPages] = useState<ManualFlipbookPage[]>([])
+    const [uploadingPdf, setUploadingPdf] = useState(false)
+    const [selectedManualPageId, setSelectedManualPageId] = useState<string | null>(null)
+    const [drawingHotspot, setDrawingHotspot] = useState<{ startX: number; startY: number; currentX: number; currentY: number } | null>(null)
+    const [uploadingHotspotId, setUploadingHotspotId] = useState<string | null>(null)
+
+    // Load Manual Pages
+    useEffect(() => {
+        if (album?.id && isManualMode) {
+            fetchManualPages()
+        }
+    }, [album?.id, isManualMode])
+
+    const fetchManualPages = async () => {
+        if (!album?.id) return
+        const { data: pages, error } = await supabase
+            .from('manual_flipbook_pages')
+            .select('*, flipbook_video_hotspots(*)')
+            .eq('album_id', album.id)
+            .order('page_number', { ascending: true })
+
+        if (error) {
+            console.error('Error fetching manual pages:', error)
+            return
+        }
+        if (pages) {
+            setManualPages(pages)
+            if (pages.length > 0 && !selectedManualPageId) {
+                setSelectedManualPageId(pages[0].id)
+            }
+        }
+    }
+
+    const toggleMode = async (mode: 'auto' | 'manual') => {
+        setIsManualMode(mode === 'manual')
+        if (onUpdateAlbum) {
+            await onUpdateAlbum({ flipbook_mode: mode })
+        }
+    }
 
     // Initialize selected class when classes are loaded
     useEffect(() => {
@@ -137,65 +200,512 @@ export default function FlipbookLayoutEditor({ album, teachers, classes, members
         }
     }
 
+    const handleSaveHotspot = async (hotspotId: string, updates: Partial<VideoHotspot>) => {
+        const { error } = await supabase
+            .from('flipbook_video_hotspots')
+            .update(updates)
+            .eq('id', hotspotId)
+
+        if (!error) {
+            setManualPages(prev => prev.map(p => ({
+                ...p,
+                flipbook_video_hotspots: p.flipbook_video_hotspots?.map(h => h.id === hotspotId ? { ...h, ...updates } : h)
+            })))
+            toast.success('Hotspot berhasil disimpan')
+        } else {
+            toast.error('Gagal menyimpan hotspot')
+        }
+    }
+
+    const handleDeleteHotspot = async (hotspotId: string) => {
+        const { error } = await supabase
+            .from('flipbook_video_hotspots')
+            .delete()
+            .eq('id', hotspotId)
+
+        if (!error) {
+            setManualPages(prev => prev.map(p => ({
+                ...p,
+                flipbook_video_hotspots: p.flipbook_video_hotspots?.filter(h => h.id !== hotspotId)
+            })))
+            toast.success('Hotspot dihapus')
+        }
+    }
+
+    const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+        if (!isManualMode || !selectedManualPageId || !canManage) return
+
+        const rect = e.currentTarget.getBoundingClientRect()
+        const x = ((e.clientX - rect.left) / rect.width) * 100
+        const y = ((e.clientY - rect.top) / rect.height) * 100
+
+        setDrawingHotspot({
+            startX: x,
+            startY: y,
+            currentX: x,
+            currentY: y
+        })
+    }
+
+    const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+        if (!drawingHotspot) return
+
+        const rect = e.currentTarget.getBoundingClientRect()
+        const x = ((e.clientX - rect.left) / rect.width) * 100
+        const y = ((e.clientY - rect.top) / rect.height) * 100
+
+        setDrawingHotspot(prev => prev ? {
+            ...prev,
+            currentX: x,
+            currentY: y
+        } : null)
+    }
+
+    const handleMouseUp = async () => {
+        if (!drawingHotspot || !selectedManualPageId) return
+
+        const { startX, startY, currentX, currentY } = drawingHotspot
+
+        // Calculate dimensions
+        const x = Math.min(startX, currentX)
+        const y = Math.min(startY, currentY)
+        const width = Math.abs(currentX - startX)
+        const height = Math.abs(currentY - startY)
+
+        // Finalize drawing state
+        setDrawingHotspot(null)
+
+        // Minimum size check (e.g. 1% width/height) to avoid accidental tiny hotspots
+        if (width < 1 || height < 1) return
+
+        const { data, error } = await supabase
+            .from('flipbook_video_hotspots')
+            .insert({
+                page_id: selectedManualPageId,
+                video_url: '',
+                label: `Hotspot #${(manualPages.find(p => p.id === selectedManualPageId)?.flipbook_video_hotspots?.length || 0) + 1}`,
+                x: x,
+                y: y,
+                width: width,
+                height: height
+            })
+            .select()
+            .single()
+
+        if (data && !error) {
+            setManualPages(prev => prev.map(p =>
+                p.id === selectedManualPageId
+                    ? { ...p, flipbook_video_hotspots: [...(p.flipbook_video_hotspots || []), data] }
+                    : p
+            ))
+            toast.success('Hotspot area ditambahkan! Masukkan URL video di sidebar.')
+        } else if (error) {
+            console.error('Error saving hotspot:', error)
+            toast.error('Gagal menyimpan hotspot')
+        }
+    }
+
+    const handleHotspotVideoUpload = async (hotspotId: string, e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        if (!file || !album?.id) return
+
+        setUploadingHotspotId(hotspotId)
+        const toastId = toast.loading('Mengunggah video...')
+
+        try {
+            const fileExt = file.name.split('.').pop()
+            const fileName = `hotspot_${hotspotId}_${Math.random()}.${fileExt}`
+            const filePath = `albums/${album.id}/hotspots/${fileName}`
+
+            const { data, error: uploadError } = await supabase.storage
+                .from('album-photos')
+                .upload(filePath, file)
+
+            if (uploadError) throw uploadError
+
+            const { data: { publicUrl } } = supabase.storage
+                .from('album-photos')
+                .getPublicUrl(filePath)
+
+            // Update database
+            const { error: updateError } = await supabase
+                .from('flipbook_video_hotspots')
+                .update({ video_url: publicUrl })
+                .eq('id', hotspotId)
+
+            if (updateError) throw updateError
+
+            // Update local state
+            setManualPages(prev => prev.map(p => ({
+                ...p,
+                flipbook_video_hotspots: p.flipbook_video_hotspots?.map(h =>
+                    h.id === hotspotId ? { ...h, video_url: publicUrl } : h
+                )
+            })))
+
+            toast.success('Video berhasil diunggah!', { id: toastId })
+        } catch (error: any) {
+            console.error('Error uploading hotspot video:', error)
+            toast.error('Gagal mengunggah video: ' + error.message, { id: toastId })
+        } finally {
+            setUploadingHotspotId(null)
+            if (e.target) e.target.value = ''
+        }
+    }
+
+    const handlePdfUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        if (!file || !album?.id) return
+
+        try {
+            setUploadingPdf(true)
+            const toastId = toast.loading('Memproses PDF... (Ini mungkin memakan waktu)')
+
+            // Load pdfjs from CDN to bypass bundler/canvas dependency issues
+            const pdfjsLib = await new Promise<any>((resolve, reject) => {
+                if ((window as any).pdfjsLib) {
+                    resolve((window as any).pdfjsLib);
+                    return;
+                }
+                const script = document.createElement('script');
+                script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+                script.onload = () => {
+                    const lib = (window as any)['pdfjs-dist/build/pdf'];
+                    lib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+                    resolve(lib);
+                };
+                script.onerror = (err) => reject(new Error('Gagal memuat PDF library dari CDN'));
+                document.head.appendChild(script);
+            });
+
+            const arrayBuffer = await file.arrayBuffer()
+            const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise
+            const numPages = pdf.numPages
+            const newPages = []
+
+            for (let i = 1; i <= numPages; i++) {
+                toast.loading(`Memproses halaman ${i} dari ${numPages}...`, { id: toastId })
+                const page = await pdf.getPage(i)
+                const viewport = page.getViewport({ scale: 1.5 })
+                const canvas = document.createElement('canvas')
+                const context = canvas.getContext('2d')
+                canvas.height = viewport.height
+                canvas.width = viewport.width
+
+                if (context) {
+                    await page.render({ canvasContext: context, viewport }).promise
+                    const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.8))
+
+                    if (blob) {
+                        const fileName = `manual-page-${album.id}-${Date.now()}-${i}.jpg`
+                        const { error: uploadError } = await supabase.storage
+                            .from('album-photos')
+                            .upload(fileName, blob)
+
+                        if (!uploadError) {
+                            const { data: { publicUrl } } = supabase.storage.from('album-photos').getPublicUrl(fileName)
+
+                            const { data: pageData, error: dbError } = await supabase
+                                .from('manual_flipbook_pages')
+                                .insert({
+                                    album_id: album.id,
+                                    page_number: i,
+                                    image_url: publicUrl,
+                                    width: Math.round(viewport.width),
+                                    height: Math.round(viewport.height)
+                                })
+                                .select()
+                                .single()
+
+                            if (dbError) {
+                                console.error('Database Error during PDF upload:', dbError)
+                                throw new Error(`Gagal menyimpan halaman ${i}: ${dbError.message}`)
+                            }
+
+                            if (pageData) {
+                                newPages.push({ ...pageData, flipbook_video_hotspots: [] })
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (newPages.length > 0) {
+                setManualPages(prev => [...prev, ...newPages])
+                fetchManualPages()
+                toast.success(`Berhasil mengunggah ${newPages.length} halaman!`, { id: toastId })
+            } else {
+                toast.error('Gagal memproses halaman PDF', { id: toastId })
+            }
+
+        } catch (error: any) {
+            console.error('PDF Upload Error:', error)
+            toast.error('Gagal memproses PDF: ' + error.message)
+        } finally {
+            setUploadingPdf(false)
+            if (e.target) e.target.value = ''
+        }
+    }
+
+    const selectedPage = manualPages.find(p => p.id === selectedManualPageId)
+
     return (
         <div className="flex flex-col lg:flex-row h-full min-h-[80vh] gap-4 max-w-7xl mx-auto px-3 py-3 sm:p-4">
             {/* Layout Sidebar / Selector */}
             <div className="w-full lg:w-64 flex flex-col gap-2 flex-shrink-0">
-                <h3 className="text-sm font-bold text-gray-400 mb-2 uppercase tracking-wide px-2">Layout Editor</h3>
+                {canManage && (
+                    <div className="flex items-center gap-2 p-1 bg-white/5 rounded-lg mb-4 border border-white/10">
+                        <button
+                            onClick={() => toggleMode('auto')}
+                            className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-all ${!isManualMode ? 'bg-lime-500 text-black shadow-lg' : 'text-gray-400 hover:text-white'}`}
+                        >
+                            Automatic
+                        </button>
+                        <button
+                            onClick={() => toggleMode('manual')}
+                            className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-all ${isManualMode ? 'bg-lime-500 text-black shadow-lg' : 'text-gray-400 hover:text-white'}`}
+                        >
+                            Manual PDF
+                        </button>
+                    </div>
+                )}
 
-                <button
-                    onClick={() => setActiveLayout('cover')}
-                    className={`flex items-center gap-3 p-3 rounded-xl border transition-all text-left ${activeLayout === 'cover'
-                        ? 'bg-lime-500/20 border-lime-500/40 text-lime-400'
-                        : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10 hover:text-white'}`}
-                >
-                    <div className="p-2 rounded-lg bg-white/5 border border-white/5">
-                        <Layout className="w-5 h-5" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold">Sampul / Cover</p>
-                        <p className="text-[10px] opacity-60 truncate">Halaman depan interaktif</p>
-                    </div>
-                    {activeLayout === 'cover' && <div className="w-1.5 h-1.5 rounded-full bg-lime-400 shadow-[0_0_8px_rgba(132,204,22,0.5)]" />}
-                </button>
+                {!isManualMode ? (
+                    <>
+                        <h3 className="text-sm font-bold text-gray-400 mb-2 uppercase tracking-wide px-2">Layout Editor</h3>
 
-                <button
-                    onClick={() => setActiveLayout('sambutan')}
-                    className={`flex items-center gap-3 p-3 rounded-xl border transition-all text-left ${activeLayout === 'sambutan'
-                        ? 'bg-lime-500/20 border-lime-500/40 text-lime-400'
-                        : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10 hover:text-white'}`}
-                >
-                    <div className="p-2 rounded-lg bg-white/5 border border-white/5">
-                        <MessageSquare className="w-5 h-5" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold">Sambutan</p>
-                        <p className="text-[10px] opacity-60 truncate">Daftar guru & staff</p>
-                    </div>
-                    {activeLayout === 'sambutan' && <div className="w-1.5 h-1.5 rounded-full bg-lime-400 shadow-[0_0_8px_rgba(132,204,22,0.5)]" />}
-                </button>
+                        <button
+                            onClick={() => setActiveLayout('cover')}
+                            className={`flex items-center gap-3 p-3 rounded-xl border transition-all text-left ${activeLayout === 'cover'
+                                ? 'bg-lime-500/20 border-lime-500/40 text-lime-400'
+                                : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10 hover:text-white'}`}
+                        >
+                            <div className="p-2 rounded-lg bg-white/5 border border-white/5">
+                                <Layout className="w-5 h-5" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <p className="text-sm font-bold">Sampul</p>
+                                <p className="text-[10px] opacity-60 truncate">Halaman depan interaktif</p>
+                            </div>
+                            {activeLayout === 'cover' && <div className="w-1.5 h-1.5 rounded-full bg-lime-400 shadow-[0_0_8px_rgba(132,204,22,0.5)]" />}
+                        </button>
 
-                <button
-                    onClick={() => setActiveLayout('classes')}
-                    className={`flex items-center gap-3 p-3 rounded-xl border transition-all text-left ${activeLayout === 'classes'
-                        ? 'bg-lime-500/20 border-lime-500/40 text-lime-400'
-                        : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10 hover:text-white'}`}
-                >
-                    <div className="p-2 rounded-lg bg-white/5 border border-white/5">
-                        <Users className="w-5 h-5" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold">Kelas</p>
-                        <p className="text-[10px] opacity-60 truncate">Grid foto siswa</p>
-                    </div>
-                    {activeLayout === 'classes' && <div className="w-1.5 h-1.5 rounded-full bg-lime-400 shadow-[0_0_8px_rgba(132,204,22,0.5)]" />}
-                </button>
+                        <button
+                            onClick={() => setActiveLayout('sambutan')}
+                            className={`flex items-center gap-3 p-3 rounded-xl border transition-all text-left ${activeLayout === 'sambutan'
+                                ? 'bg-lime-500/20 border-lime-500/40 text-lime-400'
+                                : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10 hover:text-white'}`}
+                        >
+                            <div className="p-2 rounded-lg bg-white/5 border border-white/5">
+                                <MessageSquare className="w-5 h-5" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <p className="text-sm font-bold">Sambutan</p>
+                                <p className="text-[10px] opacity-60 truncate">Daftar guru & staff</p>
+                            </div>
+                            {activeLayout === 'sambutan' && <div className="w-1.5 h-1.5 rounded-full bg-lime-400 shadow-[0_0_8px_rgba(132,204,22,0.5)]" />}
+                        </button>
+
+                        <button
+                            onClick={() => setActiveLayout('classes')}
+                            className={`flex items-center gap-3 p-3 rounded-xl border transition-all text-left ${activeLayout === 'classes'
+                                ? 'bg-lime-500/20 border-lime-500/40 text-lime-400'
+                                : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10 hover:text-white'}`}
+                        >
+                            <div className="p-2 rounded-lg bg-white/5 border border-white/5">
+                                <Users className="w-5 h-5" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <p className="text-sm font-bold">Kelas</p>
+                                <p className="text-[10px] opacity-60 truncate">Grid foto siswa</p>
+                            </div>
+                            {activeLayout === 'classes' && <div className="w-1.5 h-1.5 rounded-full bg-lime-400 shadow-[0_0_8px_rgba(132,204,22,0.5)]" />}
+                        </button>
+                    </>
+                ) : (
+                    <>
+                        {canManage && (
+                            <div className="mb-4">
+                                <input
+                                    type="file"
+                                    id="pdf-upload"
+                                    className="hidden"
+                                    accept="application/pdf"
+                                    onChange={handlePdfUpload}
+                                    disabled={uploadingPdf}
+                                />
+                                <label
+                                    htmlFor="pdf-upload"
+                                    className={`flex flex-col items-center justify-center gap-2 p-6 border-2 border-dashed border-white/20 rounded-xl cursor-pointer hover:bg-white/5 hover:border-lime-500/50 transition-all group ${uploadingPdf ? 'opacity-50 pointer-events-none' : ''}`}
+                                >
+                                    <div className="w-10 h-10 rounded-full bg-lime-500/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                                        <ImagePlus className="w-5 h-5 text-lime-400" />
+                                    </div>
+                                    <div className="text-center">
+                                        <p className="text-sm font-bold text-white group-hover:text-lime-400 transition-colors">
+                                            {uploadingPdf ? 'Memproses PDF...' : 'Upload PDF'}
+                                        </p>
+                                        <p className="text-[10px] text-gray-500 mt-1">Maks 50MB</p>
+                                    </div>
+                                </label>
+                            </div>
+                        )}
+
+                        <h3 className="text-sm font-bold text-gray-400 mb-2 uppercase tracking-wide px-2 flex items-center justify-between">
+                            Pages
+                            <span className="text-xs bg-white/10 px-1.5 py-0.5 rounded text-white">{manualPages.length}</span>
+                        </h3>
+
+                        <div className="max-h-[420px] overflow-y-auto min-h-0 space-y-2 pr-1 no-scrollbar">
+                            {manualPages.map((page) => (
+                                <button
+                                    key={page.id}
+                                    onClick={() => setSelectedManualPageId(page.id)}
+                                    className={`w-full flex gap-3 p-2 rounded-lg border transition-all text-left group ${selectedManualPageId === page.id
+                                        ? 'bg-lime-500/10 border-lime-500/30 ring-1 ring-lime-500/20'
+                                        : 'bg-white/5 border-white/5 hover:bg-white/10'}`}
+                                >
+                                    <div className="w-12 h-16 bg-gray-900 rounded-sm overflow-hidden flex-shrink-0 border border-white/10 relative">
+                                        <img src={page.image_url} className="w-full h-full object-cover" />
+                                        <div className="absolute top-0 right-0 bg-black/60 px-1 text-[8px] text-white backdrop-blur-sm rounded-bl">
+                                            {page.page_number}
+                                        </div>
+                                    </div>
+                                    <div className="flex-1 min-w-0 flex flex-col justify-center">
+                                        <p className={`text-xs font-bold ${selectedManualPageId === page.id ? 'text-lime-400' : 'text-gray-300'}`}>
+                                            Halaman {page.page_number}
+                                        </p>
+                                        <p className="text-[10px] text-gray-500 truncate">
+                                            {page.flipbook_video_hotspots?.length || 0} Hotspots
+                                        </p>
+                                    </div>
+                                </button>
+                            ))}
+                        </div>
+                    </>
+                )}
             </div>
 
-            {/* Styling Controls Sidebar (Contextual) */}
-            {(activeLayout === 'sambutan' || activeLayout === 'classes') && (
+            {/* Styling Controls Sidebar (Contextual) / Hotspot Sidebar */}
+            {isManualMode ? (
+                // Hotspot Configuration Sidebar
+                <div className="w-full lg:w-64 flex flex-col gap-4 flex-shrink-0 bg-white/5 rounded-xl border border-white/10 p-3">
+                    <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wide">
+                        {canManage ? 'Hotspot Editor' : 'Hotspots'}
+                    </h3>
+                    <p className="text-[10px] text-gray-500 bg-white/5 p-2 rounded">
+                        {canManage
+                            ? 'Klik pada halaman di area preview untuk menambahkan area interaktif (video popup).'
+                            : 'Klik icon play pada halaman untuk menonton video terkait.'}
+                    </p>
+
+                    {selectedPage?.flipbook_video_hotspots && selectedPage.flipbook_video_hotspots.length > 0 ? (
+                        <div className="max-h-[400px] overflow-y-auto no-scrollbar pr-1 space-y-3">
+                            {selectedPage.flipbook_video_hotspots.map((h, i) => (
+                                <div key={h.id} className={`p-3 bg-white/5 border border-white/10 rounded-lg space-y-3 ${!canManage ? 'opacity-80' : ''}`}>
+                                    <div className="flex items-center justify-between gap-2">
+                                        {canManage ? (
+                                            <input
+                                                type="text"
+                                                defaultValue={h.label || `Hotspot #${i + 1}`}
+                                                onBlur={(e) => handleSaveHotspot(h.id, { label: e.target.value })}
+                                                className="bg-transparent border-b border-transparent hover:border-white/20 focus:border-lime-500 focus:outline-none text-xs font-bold text-gray-200 w-full"
+                                                placeholder="Nama Hotspot"
+                                            />
+                                        ) : (
+                                            <span className="text-xs font-bold text-gray-300 truncate max-w-[100px]">{h.label || `Hotspot #${i + 1}`}</span>
+                                        )}
+                                        {canManage && (
+                                            <button
+                                                onClick={() => handleDeleteHotspot(h.id)}
+                                                className="text-[10px] text-red-400 hover:text-red-300"
+                                            >
+                                                Hapus
+                                            </button>
+                                        )}
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] text-gray-500 uppercase tracking-tight">
+                                            {canManage ? 'URL Video (Youtube/MP4)' : 'Link Video'}
+                                        </label>
+                                        <div className="flex flex-col gap-2">
+                                            {canManage ? (
+                                                <>
+                                                    <input
+                                                        type="text"
+                                                        defaultValue={h.video_url}
+                                                        placeholder="https://youtube.com/watch?v=..."
+                                                        onBlur={(e) => handleSaveHotspot(h.id, { video_url: e.target.value })}
+                                                        className="w-full bg-black/40 border border-white/10 rounded px-2 py-1 text-[10px] text-white focus:border-lime-500 focus:outline-none"
+                                                    />
+                                                    <div className="relative">
+                                                        <input
+                                                            type="file"
+                                                            id={`video-upload-${h.id}`}
+                                                            className="hidden"
+                                                            accept="video/*"
+                                                            onChange={(e) => handleHotspotVideoUpload(h.id, e)}
+                                                            disabled={!!uploadingHotspotId}
+                                                        />
+                                                        <label
+                                                            htmlFor={`video-upload-${h.id}`}
+                                                            className={`flex items-center justify-center gap-2 px-2 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded cursor-pointer transition-colors text-[10px] text-gray-300 hover:text-white w-full ${uploadingHotspotId === h.id ? 'opacity-50 pointer-events-none' : ''}`}
+                                                        >
+                                                            <Play className={`w-3 h-3 ${uploadingHotspotId === h.id ? 'animate-spin' : ''}`} />
+                                                            <span>{uploadingHotspotId === h.id ? 'Uploading...' : 'Upload Video File'}</span>
+                                                        </label>
+                                                    </div>
+                                                </>
+                                            ) : (
+                                                <p className="text-[10px] text-gray-400 italic truncate">
+                                                    {h.video_url || 'Belum ada URL'}
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
+                                    {!canManage && h.video_url && (
+                                        <button
+                                            onClick={() => onPlayVideo?.(h.video_url)}
+                                            className="w-full py-1 bg-lime-500/10 hover:bg-lime-500/20 text-lime-400 text-[10px] font-bold rounded transition-colors"
+                                        >
+                                            Play Video
+                                        </button>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="flex-1 flex flex-col items-center justify-center text-center p-8 opacity-40">
+                            <Play className="w-8 h-8 mb-2" />
+                            <p className="text-xs">Belum ada hotspot di halaman ini.</p>
+                        </div>
+                    )}
+                </div>
+            ) : canManage && (activeLayout === 'sambutan' || activeLayout === 'classes') && (
                 <div className="w-full lg:w-60 flex flex-col gap-4 flex-shrink-0 bg-white/5 rounded-xl border border-white/10 p-3">
-                    <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wide">Pengaturan Teks</h3>
+                    <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wide">Pengaturan Layout</h3>
+
+                    {/* Background Settings (Moved from Toolbar) */}
+                    <div className="space-y-2 pb-4 border-b border-white/10">
+                        <label className="text-xs text-gray-400">Background Image</label>
+                        <div className="relative">
+                            <input
+                                type="file"
+                                id="bg-upload-sidebar"
+                                className="hidden"
+                                accept="image/*"
+                                onChange={handleBackgroundChange}
+                                disabled={isUploading}
+                            />
+                            <label
+                                htmlFor="bg-upload-sidebar"
+                                className={`flex items-center justify-center gap-2 px-3 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg cursor-pointer transition-colors text-xs text-gray-300 hover:text-white w-full ${isUploading ? 'opacity-50 pointer-events-none' : ''}`}
+                            >
+                                <ImagePlus className={`w-3.5 h-3.5 ${isUploading ? 'animate-spin' : ''}`} />
+                                <span>{isUploading ? 'Uploading...' : 'Ganti Background'}</span>
+                            </label>
+                        </div>
+                    </div>
 
                     {activeLayout === 'sambutan' && (
                         <>
@@ -283,35 +793,18 @@ export default function FlipbookLayoutEditor({ album, teachers, classes, members
             {/* Main Preview Area */}
             <div className="flex-1 bg-[#1a1a1c] rounded-2xl border border-white/10 overflow-hidden flex flex-col relative shadow-2xl">
                 {/* Toolbar */}
-                <div className="p-3 border-b border-white/10 bg-[#0a0a0b] flex items-center justify-between sticky top-0 z-20">
+                <div className="h-14 px-4 border-b border-white/10 bg-[#0a0a0b] flex items-center justify-between sticky top-0 z-20">
                     <div className="flex items-center gap-2">
                         <div className="w-2 h-2 rounded-full bg-red-500"></div>
                         <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
                         <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                        <span className="ml-2 text-xs font-mono text-gray-500 uppercase tracking-widest hidden sm:inline">
+                        <span className="ml-2 text-sm font-mono text-gray-500 uppercase tracking-widest hidden sm:inline">
                             FLIPBOOK / {activeLayout === 'cover' ? 'SAMPUL' : activeLayout === 'sambutan' ? 'SAMBUTAN' : 'KELAS'}
                         </span>
                     </div>
 
                     <div className="flex items-center gap-3">
-                        {/* Background Upload Button */}
-                        <div className="relative">
-                            <input
-                                type="file"
-                                id="bg-upload"
-                                className="hidden"
-                                accept="image/*"
-                                onChange={handleBackgroundChange}
-                                disabled={isUploading}
-                            />
-                            <label
-                                htmlFor="bg-upload"
-                                className={`flex items-center gap-2 px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg cursor-pointer transition-colors text-xs text-gray-300 hover:text-white ${isUploading ? 'opacity-50 pointer-events-none' : ''}`}
-                            >
-                                <ImagePlus className={`w-3.5 h-3.5 ${isUploading ? 'animate-spin' : ''}`} />
-                                <span className="hidden sm:inline">{isUploading ? 'Uploading...' : 'Background'}</span>
-                            </label>
-                        </div>
+                        {/* Background Upload Button Removed from here */}
 
                         {/* Class Selector for Classes Layout */}
                         {activeLayout === 'classes' && classes && classes.length > 0 && (
@@ -340,7 +833,89 @@ export default function FlipbookLayoutEditor({ album, teachers, classes, members
 
                     <GoogleFontsLoader fonts={usedFonts} />
                     {/* Render Layout Content */}
-                    {activeLayout === 'cover' && (
+                    {isManualMode ? (
+                        <div
+                            className="max-w-[480px] mx-auto aspect-[210/297] bg-white text-black shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex flex-col relative group cursor-crosshair overflow-hidden rounded-sm transition-all duration-300 select-none"
+                            onMouseDown={handleMouseDown}
+                            onMouseMove={handleMouseMove}
+                            onMouseUp={handleMouseUp}
+                        >
+                            {selectedPage ? (
+                                <>
+                                    <img
+                                        src={selectedPage.image_url}
+                                        className="w-full h-full object-contain pointer-events-none select-none"
+                                        alt={`Page ${selectedPage.page_number}`}
+                                        draggable="false"
+                                    />
+
+                                    {/* Render Drawing Preview */}
+                                    {drawingHotspot && (
+                                        <div
+                                            className="absolute border-2 border-dashed border-lime-500 bg-lime-500/10 pointer-events-none"
+                                            style={{
+                                                left: `${Math.min(drawingHotspot.startX, drawingHotspot.currentX)}%`,
+                                                top: `${Math.min(drawingHotspot.startY, drawingHotspot.currentY)}%`,
+                                                width: `${Math.abs(drawingHotspot.currentX - drawingHotspot.startX)}%`,
+                                                height: `${Math.abs(drawingHotspot.currentY - drawingHotspot.startY)}%`,
+                                                zIndex: 40
+                                            }}
+                                        />
+                                    )}
+
+                                    {/* Render Hotspots */}
+                                    {selectedPage.flipbook_video_hotspots?.map((h, i) => (
+                                        <div
+                                            key={h.id}
+                                            className="absolute border-2 border-lime-500 bg-lime-500/20 group/hotspot flex items-center justify-center hover:bg-lime-500/40 transition-colors"
+                                            style={{
+                                                left: `${h.x}%`,
+                                                top: `${h.y}%`,
+                                                width: `${h.width}%`,
+                                                height: `${h.height}%`,
+                                            }}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                if (h.video_url) {
+                                                    onPlayVideo?.(h.video_url);
+                                                } else {
+                                                    toast.info('Masukkan URL video di sidebar untuk hotspot ini');
+                                                }
+                                            }}
+                                        >
+                                            <div className="bg-lime-500 p-1 rounded-full text-black opacity-0 group/icon group-hover/hotspot:opacity-100 transition-opacity flex items-center justify-center shadow-lg">
+                                                <Play className="w-4 h-4" />
+                                            </div>
+                                            {!h.video_url && (
+                                                <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 border border-white rounded-full flex items-center justify-center">
+                                                    <span className="text-[6px] text-white">!</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
+
+                                    <div className="absolute top-2 left-2 bg-black/60 text-white text-[10px] px-2 py-1 rounded backdrop-blur-md font-bold">
+                                        Halaman {selectedPage.page_number}
+                                    </div>
+                                    {canManage && (
+                                        <div className="absolute bottom-2 inset-x-0 text-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <span className="bg-black/80 text-white text-[8px] px-2 py-0.5 rounded backdrop-blur-md uppercase tracking-widest">
+                                                Click to Add Hotspot
+                                            </span>
+                                        </div>
+                                    )}
+                                </>
+                            ) : (
+                                <div className="flex-1 flex flex-col items-center justify-center text-gray-400 gap-4">
+                                    <ImagePlus className="w-16 h-16 opacity-10" />
+                                    <div className="text-center">
+                                        <p className="text-sm font-bold opacity-40 uppercase tracking-widest">Pilih Halaman</p>
+                                        <p className="text-[10px] opacity-30 mt-1">Gunakan sidebar untuk navigasi</p>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    ) : activeLayout === 'cover' && (
                         <div className={`max-w-[480px] mx-auto aspect-[210/297] bg-white bg-cover bg-center text-black shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex flex-col relative group cursor-pointer overflow-hidden rounded-sm transition-transform duration-500 hover:scale-[1.02] ${!album ? 'animate-pulse' : ''}`}
                             style={{ backgroundImage: (tempBackgrounds['cover'] || album?.flipbook_bg_cover) ? `url('${tempBackgrounds['cover'] || album?.flipbook_bg_cover}')` : undefined }}
                             onClick={() => album?.cover_video_url && onPlayVideo?.(album.cover_video_url)}
