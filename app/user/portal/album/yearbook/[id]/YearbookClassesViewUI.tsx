@@ -18,8 +18,9 @@ import IconSidebar from './components/IconSidebar'
 import LayoutEditor from './components/FlipbookLayoutEditor'
 import AILabsView from './components/AILabsView'
 import ManualFlipbookViewer from './components/ManualFlipbookViewer'
+import PreviewView from './components/PreviewView'
 
-type AlbumClass = { id: string; name: string; sort_order?: number; student_count?: number; batch_photo_url?: string | null; flipbook_bg_url?: string | null }
+type AlbumClass = { id: string; name: string; sort_order?: number; student_count?: number; batch_photo_url?: string | null }
 type ClassAccess = { id: string; student_name: string; email?: string | null; status: string; date_of_birth?: string | null; instagram?: string | null; message?: string | null; video_url?: string | null }
 type ClassRequest = { id: string; student_name: string; email?: string | null; status: string }
 type ClassMember = { user_id: string; student_name: string; email: string | null; date_of_birth: string | null; instagram: string | null; message: string | null; video_url: string | null; photos?: string[]; is_me?: boolean }
@@ -259,7 +260,7 @@ export default function YearbookClassesViewUI(props: any) {
     accessDataLoaded = false,
     selectedRequestId = null,
     setSelectedRequestId,
-    sidebarMode = 'classes' as 'classes' | 'approval' | 'team' | 'sambutan' | 'ai-labs' | 'flipbook',
+    sidebarMode = 'classes' as 'classes' | 'approval' | 'team' | 'sambutan' | 'ai-labs' | 'flipbook' | 'preview',
     setSidebarMode,
     requestForm = { student_name: '', email: '' },
     setRequestForm,
@@ -321,6 +322,12 @@ export default function YearbookClassesViewUI(props: any) {
     currentUserId = null,
     handleUpdateRole,
     handleRemoveMember,
+    handleDeleteClassMember: handleDeleteClassMemberProp,
+    fetchAlbum,
+    flipbookPreviewMode = false,
+    setFlipbookPreviewMode = () => { },
+    mobileMenuOpen = false,
+    setMobileMenuOpen = () => { },
   } = props
 
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -335,7 +342,6 @@ export default function YearbookClassesViewUI(props: any) {
   const coverDragRef = useRef<{ startX: number; startY: number; startPosX: number; startPosY: number } | null>(null)
   const coverUploadInputRef = useRef<HTMLInputElement>(null)
   const coverVideoInputRef = useRef<HTMLInputElement>(null)
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [moreMenuOpen, setMoreMenuOpen] = useState(false)
   const [members, setMembers] = useState<{ user_id: string; email: string; name?: string; role: string }[]>([])
   const [teachers, setTeachers] = useState<Teacher[]>([])
@@ -371,7 +377,9 @@ export default function YearbookClassesViewUI(props: any) {
 
   // Manual Flipbook Pages state
   const [manualPages, setManualPages] = useState<any[]>([])
-  const [flipbookPreviewMode, setFlipbookPreviewMode] = useState(false)
+  const [mobileEditingClassId, setMobileEditingClassId] = useState<string | null>(null)
+  const [mobileEditNameVal, setMobileEditNameVal] = useState('')
+
 
   const searchParams = useSearchParams()
   const aiLabsTool = searchParams.get('tool')
@@ -425,6 +433,13 @@ export default function YearbookClassesViewUI(props: any) {
     await fetchMembers()
   }
 
+  // Delete member from class - delegates to parent for optimistic update + realtime sync
+  const handleDeleteClassMember = async (classId: string, userId: string) => {
+    if (handleDeleteClassMemberProp) {
+      await handleDeleteClassMemberProp(classId, userId)
+    }
+  }
+
   useEffect(() => {
     if (sidebarMode === 'team' && canManage) {
       fetchMembers()
@@ -446,7 +461,7 @@ export default function YearbookClassesViewUI(props: any) {
   }
 
   useEffect(() => {
-    if ((sidebarMode === 'sambutan' || sidebarMode === 'flipbook') && album?.id) {
+    if ((sidebarMode === 'sambutan' || sidebarMode === 'flipbook' || sidebarMode === 'preview') && album?.id) {
       fetchTeachers()
     }
   }, [sidebarMode, album?.id])
@@ -470,10 +485,62 @@ export default function YearbookClassesViewUI(props: any) {
   }
 
   useEffect(() => {
-    if (sidebarMode === 'flipbook' && album?.id && album?.flipbook_mode === 'manual') {
+    if (sidebarMode === 'flipbook' && album?.id) {
       fetchManualPages()
     }
-  }, [sidebarMode, album?.id, album?.flipbook_mode])
+  }, [sidebarMode, album?.id, flipbookPreviewMode])
+
+  // Realtime Subscription for flipbook hotspots - ensures viewer is always up to date
+  useEffect(() => {
+    if (!album?.id) return
+
+    const channel = supabase
+      .channel(`flipbook-hotspots-view-${album.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'flipbook_video_hotspots',
+        },
+        (payload) => {
+          const { eventType, new: newRecord, old: oldRecord } = payload as any
+
+          if (eventType === 'INSERT') {
+            setManualPages((prev: any[]) => prev.map(page => {
+              if (page.id === newRecord.page_id) {
+                // Prevent duplicates
+                if (page.flipbook_video_hotspots?.some((h: any) => h.id === newRecord.id)) {
+                  return page
+                }
+                return {
+                  ...page,
+                  flipbook_video_hotspots: [...(page.flipbook_video_hotspots || []), newRecord]
+                }
+              }
+              return page
+            }))
+          } else if (eventType === 'UPDATE') {
+            setManualPages((prev: any[]) => prev.map(page => ({
+              ...page,
+              flipbook_video_hotspots: page.flipbook_video_hotspots?.map((h: any) =>
+                h.id === newRecord.id ? { ...h, ...newRecord } : h
+              )
+            })))
+          } else if (eventType === 'DELETE') {
+            setManualPages((prev: any[]) => prev.map(page => ({
+              ...page,
+              flipbook_video_hotspots: page.flipbook_video_hotspots?.filter((h: any) => h.id !== oldRecord.id)
+            })))
+          }
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [album?.id])
 
   // Fetch invite token
   const fetchInviteToken = async () => {
@@ -780,27 +847,23 @@ export default function YearbookClassesViewUI(props: any) {
     const file = e.target.files?.[0]
     if (!file || !uploadingBatchPhotoClassId || !album?.id) return
 
+    const classId = uploadingBatchPhotoClassId
     try {
       const formData = new FormData()
       formData.append('file', file)
 
-      const res = await fetch(`/api/albums/${album.id}/classes/${uploadingBatchPhotoClassId}/photo`, {
+      const res = await fetch(`/api/albums/${album.id}/classes/${classId}/photo`, {
         method: 'POST',
         body: formData,
       })
 
       const data = await res.json()
 
-      if (res.ok) {
+      if (res.ok && data.batch_photo_url) {
         toast.success('Foto angkatan berhasil diupload')
-        // Optimistic update or reload page/data
+        // Optimistic update via parent — also triggers realtime for other devices
         if (handleUpdateClass) {
-          // We can trigger a refresh effectively by calling update with no changes or refetching classes?
-          // Actually handleUpdateClass typically updates state in parent. 
-          // But here we need to update the `classes` prop which comes from parent.
-          // Since we modify the database, we should ideally trigger a refresh.
-          // For now, let's reload the window or ask valid method.
-          window.location.reload()
+          await handleUpdateClass(classId, { batch_photo_url: data.batch_photo_url })
         }
       } else {
         toast.error(data.error || 'Gagal upload foto')
@@ -809,7 +872,6 @@ export default function YearbookClassesViewUI(props: any) {
       console.error('Error uploading batch photo:', error)
       toast.error('Terjadi kesalahan')
     } finally {
-      // Reset input
       if (batchPhotoInputRef.current) batchPhotoInputRef.current.value = ''
       setUploadingBatchPhotoClassId(null)
     }
@@ -818,6 +880,11 @@ export default function YearbookClassesViewUI(props: any) {
   const handleDeleteBatchPhoto = async (classId: string) => {
     if (!album?.id || !confirm('Hapus foto angkatan ini?')) return
 
+    // Optimistic update: clear immediately in local state
+    if (handleUpdateClass) {
+      handleUpdateClass(classId, { batch_photo_url: '' })
+    }
+
     try {
       const res = await fetch(`/api/albums/${album.id}/classes/${classId}/photo`, {
         method: 'DELETE',
@@ -825,14 +892,20 @@ export default function YearbookClassesViewUI(props: any) {
 
       if (res.ok) {
         toast.success('Foto angkatan dihapus')
-        window.location.reload()
+        // Confirm the null state (optimistic already applied)
+        if (handleUpdateClass) {
+          handleUpdateClass(classId, { batch_photo_url: '' })
+        }
       } else {
         const data = await res.json()
         toast.error(data.error || 'Gagal menghapus foto')
+        // Rollback: refetch album to restore correct state
+        if (fetchAlbum) fetchAlbum()
       }
     } catch (error) {
       console.error('Error deleting batch photo:', error)
       toast.error('Terjadi kesalahan')
+      if (fetchAlbum) fetchAlbum()
     }
   }
 
@@ -954,7 +1027,7 @@ export default function YearbookClassesViewUI(props: any) {
             }}
             className={`absolute -top-8 w-14 h-14 rounded-full flex items-center justify-center shadow-2xl active:scale-95 transition-all border-4 ${sidebarMode === 'ai-labs'
               ? 'bg-lime-600 border-lime-500 text-white shadow-lime-500/50'
-              : 'bg-gray-800 border-[#0a0a0b] text-gray-400 hover:text-white hover:bg-gray-700'
+              : 'bg-gray-800 border-[#0a0a0b] text-gray-400 lg:hover:text-white lg:hover:bg-gray-700'
               }`}
           >
             <Sparkles className="w-6 h-6" />
@@ -967,12 +1040,8 @@ export default function YearbookClassesViewUI(props: any) {
         {/* Kelas */}
         <button
           onClick={() => {
-            if (sidebarMode === 'classes' && !isCoverView) {
-              setMobileMenuOpen(true)
-            } else {
-              setSidebarMode('classes')
-              setView('classes')
-            }
+            setSidebarMode('classes')
+            setView('classes')
           }}
           className={`flex flex-col items-center justify-center flex-1 h-full gap-1 active:scale-95 transition-transform ${sidebarMode === 'classes' && !isCoverView ? 'text-lime-400' : 'text-gray-500 hover:text-white'}`}
         >
@@ -1050,7 +1119,7 @@ export default function YearbookClassesViewUI(props: any) {
 
           {/* Panel Group List - Fixed di tengah (hanya tampil saat mode classes) */}
           {sidebarMode === 'classes' && !isCoverView && (
-            <div className="hidden lg:fixed lg:left-16 lg:top-[3.75rem] lg:w-64 lg:h-[calc(100vh-3.75rem)] lg:flex flex-col lg:z-35 lg:bg-black/30 lg:backdrop-blur-sm lg:border-r lg:border-white/10">
+            <div className="hidden lg:fixed lg:left-16 lg:top-[3.75rem] lg:w-56 lg:h-[calc(100vh-3.75rem)] lg:flex flex-col lg:z-35 lg:bg-black/30 lg:backdrop-blur-sm lg:border-r lg:border-white/10">
               {/* Header Fixed - Group Name + Edit */}
               {currentClass && (
                 <div className="flex-shrink-0 px-4 py-4 border-b border-white/10">
@@ -1183,7 +1252,7 @@ export default function YearbookClassesViewUI(props: any) {
                   `}</style>
 
                 {/* Scrollable Group List */}
-                <div className="flex-1 flex flex-col gap-2 px-3 py-2">
+                <div className="flex-1 flex flex-col gap-1.5 px-2 py-2">
                   {classes.map((c, idx) => {
                     const req = myRequestByClass[c.id] as ClassRequest | undefined
                     const hasPendingRequest = req?.status === 'pending'
@@ -1202,7 +1271,7 @@ export default function YearbookClassesViewUI(props: any) {
                             if (isCoverView) setView('classes')
                           }
                         }}
-                        className={`p-2 rounded-lg text-left text-sm transition-colors touch-manipulation cursor-pointer ${idx === classIndex && !isCoverView
+                        className={`px-2 py-1.5 rounded-lg text-left text-sm transition-colors touch-manipulation cursor-pointer ${idx === classIndex && !isCoverView
                           ? 'bg-lime-600/20 border border-lime-500/50 text-lime-400'
                           : 'border border-white/10 text-gray-400 hover:text-white hover:bg-white/5 active:bg-white/10'
                           }`}
@@ -1254,7 +1323,7 @@ export default function YearbookClassesViewUI(props: any) {
               </div>
 
               {/* Add Group Button - Restored */}
-              <div className="flex-shrink-0 px-3 py-2 border-t border-white/10">
+              <div className="flex-shrink-0 px-2 py-2 border-t border-white/10">
                 {canManage && (
                   <div className="flex gap-2">
                     {!addingClass ? (
@@ -1285,7 +1354,7 @@ export default function YearbookClassesViewUI(props: any) {
                 className="hidden lg:fixed lg:inset-0 lg:z-30"
                 onClick={() => setSelectedRequestId(null)}
               />
-              <div className="hidden lg:flex lg:fixed lg:left-16 lg:top-[3.75rem] lg:w-64 lg:h-[calc(100vh-3.75rem)] lg:bg-black/40 lg:backdrop-blur-sm lg:border-l lg:border-white/10 lg:p-4 lg:z-35 lg:flex-col lg:items-stretch lg:justify-start lg:overflow-y-auto">
+              <div className="hidden lg:flex lg:fixed lg:left-16 lg:top-[3.75rem] lg:w-56 lg:h-[calc(100vh-3.75rem)] lg:bg-black/40 lg:backdrop-blur-sm lg:border-l lg:border-white/10 lg:p-4 lg:z-35 lg:flex-col lg:items-stretch lg:justify-start lg:overflow-y-auto">
                 <button
                   type="button"
                   onClick={() => setSelectedRequestId(null)}
@@ -1336,59 +1405,11 @@ export default function YearbookClassesViewUI(props: any) {
           {/* Sambutan Panel - Removed, now using grid layout like students */}
 
           {/* Main content area - Shows Classes/Approval/Team based on sidebarMode */}
-          <div className={`flex-1 flex flex-col gap-0 min-h-0 ${sidebarMode === 'classes' && !isCoverView ? 'pt-14 lg:pt-0' : 'pt-0'}`}>
+          <div className={`flex-1 flex flex-col gap-0 min-h-0 ${(!isCoverView && sidebarMode === 'classes') ? 'pt-14 lg:pt-0' : 'pt-0'}`}>
             {/* Mobile class header - Fixed - Only for classes mode */}
-            {!isCoverView && sidebarMode === 'classes' && (
-              <div className="fixed top-0 left-0 right-0 lg:hidden z-30 flex items-center gap-2 p-2 bg-black/50 backdrop-blur border-b border-white/10 touch-manipulation">
-                {addingClass ? (
-                  <div className="flex-1 flex gap-2 items-center animate-in fade-in slide-in-from-top-2 duration-200">
-                    <input
-                      type="text"
-                      value={newClassName}
-                      onChange={(e) => setNewClassName(e.target.value)}
-                      placeholder="Nama kelas baru"
-                      className="flex-1 px-3 py-2 rounded-xl bg-white/10 border border-white/20 text-app text-sm focus:outline-none focus:border-lime-500 transition-colors"
-                      autoFocus
-                    />
-                    <button
-                      type="button"
-                      onClick={handleAddClass}
-                      disabled={!newClassName.trim()}
-                      className="p-2 rounded-xl bg-lime-600 text-white disabled:opacity-50"
-                    >
-                      <Check className="w-5 h-5" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => { setAddingClass(false); setNewClassName('') }}
-                      className="p-2 rounded-xl border border-white/10 text-gray-400"
-                    >
-                      <X className="w-5 h-5" />
-                    </button>
-                  </div>
-                ) : (
-                  <>
-                    <button type="button" onClick={goPrevClass} disabled={classIndex === 0} className="inline-flex items-center justify-center p-2 rounded-xl border border-white/10 text-gray-400 hover:text-white hover:bg-white/5 active:bg-white/10 disabled:opacity-40 transition-colors touch-manipulation flex-shrink-0">
-                      <ChevronLeft className="w-5 h-5" />
-                    </button>
-                    <div className="flex-1 min-w-0 flex justify-center">
-                      <InlineClassEditor
-                        classObj={currentClass}
-                        isOwner={canManage}
-                        onDelete={(classId, className) => setDeleteClassConfirm({ classId, className: className ?? currentClass?.name ?? '' })}
-                        onUpdate={handleUpdateClass}
-                        classIndex={classIndex}
-                        classesCount={classes.length}
-                        center={true}
-                      />
-                    </div>
-                    <button type="button" onClick={goNextClass} disabled={classIndex >= classes.length - 1} className="inline-flex items-center justify-center p-2 rounded-xl border border-white/10 text-gray-400 hover:text-white hover:bg-white/5 active:bg-white/10 disabled:opacity-40 transition-colors touch-manipulation flex-shrink-0">
-                      <ChevronRight className="w-5 h-5" />
-                    </button>
-                  </>
-                )}
-              </div>
-            )}
+            {/* Mobile class header removed - now in Global Header */}
+
+
 
             {/* Mobile Class Drawer / Menu for switching groups */}
             {mobileMenuOpen && (
@@ -1405,32 +1426,98 @@ export default function YearbookClassesViewUI(props: any) {
                     {classes.map((c, idx) => {
                       const req = myRequestByClass[c.id] as ClassRequest | undefined
                       const hasPendingRequest = req?.status === 'pending'
-                      return (
-                        <button
-                          key={c.id}
-                          onClick={() => {
-                            setClassIndex(idx)
-                            if (isCoverView) setView('classes')
-                            setMobileMenuOpen(false)
-                          }}
-                          className={`w-full p-3 rounded-xl text-left text-sm transition-all ${idx === classIndex
-                            ? 'bg-lime-600/20 border border-lime-500/50 text-lime-400 font-medium'
-                            : 'border border-transparent text-gray-400 hover:text-white hover:bg-white/5'
-                            }`}
-                        >
-                          <div className="flex items-center justify-between">
-                            <span className="truncate">{c.name}</span>
-                            {idx === classIndex && <Check className="w-4 h-4 text-lime-400" />}
+                      const isEditing = mobileEditingClassId === c.id
+
+                      if (isEditing) {
+                        return (
+                          <div key={c.id} className="p-2 rounded-xl bg-white/5 border border-lime-500/50 flex flex-col gap-2">
+                            <input
+                              value={mobileEditNameVal}
+                              onChange={(e) => setMobileEditNameVal(e.target.value)}
+                              className="w-full px-3 py-2 rounded-lg bg-black/50 border border-white/10 text-sm focus:outline-none focus:border-lime-500 transition-colors"
+                              placeholder="Nama kelas"
+                              autoFocus
+                            />
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => {
+                                  if (!mobileEditNameVal.trim() || !handleUpdateClass) return
+                                  handleUpdateClass(c.id, { name: mobileEditNameVal })
+                                  setMobileEditingClassId(null)
+                                }}
+                                className="flex-1 bg-lime-600 hover:bg-lime-500 text-white text-xs font-bold py-2 rounded-lg transition-colors"
+                              >
+                                Simpan
+                              </button>
+                              <button
+                                onClick={() => setMobileEditingClassId(null)}
+                                className="flex-1 bg-white/5 hover:bg-white/10 text-gray-300 text-xs font-bold py-2 rounded-lg transition-colors border border-white/10"
+                              >
+                                Batal
+                              </button>
+                            </div>
                           </div>
-                          {hasPendingRequest ? (
-                            <p className="text-xs text-amber-400 mt-0.5 flex items-center gap-1"><Clock className="w-3.5 h-3.5 flex-shrink-0" /> menunggu persetujuan</p>
-                          ) : (
-                            <p className="text-xs text-muted mt-0.5">{(membersByClass[c.id]?.length ?? 0)} anggota</p>
+                        )
+                      }
+
+                      return (
+                        <div key={c.id} className={`group flex items-center gap-1 p-1 rounded-xl transition-all ${idx === classIndex ? 'bg-lime-900/10 border border-lime-500/20' : 'hover:bg-white/5 border border-transparent'}`}>
+                          <button
+                            onClick={() => {
+                              setClassIndex(idx)
+                              if (isCoverView) setView('classes')
+                              setMobileMenuOpen(false)
+                            }}
+                            className="flex-1 p-2 text-left text-sm"
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className={`truncate font-medium ${idx === classIndex ? 'text-lime-400' : 'text-gray-300'}`}>{c.name}</span>
+                            </div>
+                            {hasPendingRequest ? (
+                              <p className="text-xs text-amber-400 mt-0.5 flex items-center gap-1"><Clock className="w-3.5 h-3.5 flex-shrink-0" /> menunggu persetujuan</p>
+                            ) : (
+                              <p className="text-xs text-muted mt-0.5">{(membersByClass[c.id]?.length ?? 0)} anggota</p>
+                            )}
+                          </button>
+
+                          {canManage && (
+                            <div className="flex items-center gap-1 pr-1">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setMobileEditingClassId(c.id)
+                                  setMobileEditNameVal(c.name)
+                                }}
+                                className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+                              >
+                                <Edit3 className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setDeleteClassConfirm({ classId: c.id, className: c.name })
+                                }}
+                                className="p-2 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
                           )}
-                        </button>
+                        </div>
                       )
                     })}
                   </div>
+
+                  {/* User Status Indicator (like desktop sidebar) */}
+                  {!addingClass && currentClass && myAccessByClass[currentClass.id]?.status === 'approved' && (
+                    <div className="p-3 border-t border-white/10 bg-white/5 mx-2 mb-2 rounded-xl">
+                      <p className="text-xs text-gray-500 mb-1">Status:</p>
+                      <p className="text-xs font-medium text-lime-400 flex items-center gap-1.5">
+                        <Check className="w-3.5 h-3.5 flex-shrink-0" />
+                        {(myAccessByClass[currentClass.id] as any)?.student_name}
+                      </p>
+                    </div>
+                  )}
 
                   {/* Add Class Mobile - Restored */}
                   <div className="p-3 pb-8 border-t border-white/10 flex flex-col gap-2 bg-[#0a0a0b]">
@@ -1467,13 +1554,33 @@ export default function YearbookClassesViewUI(props: any) {
 
                     <button
                       onClick={() => {
+                        setSidebarMode('preview')
+                        setView('classes')
+                        setMoreMenuOpen(false)
+                      }}
+                      className={`w-full flex items-center gap-3 p-4 rounded-xl border transition-all ${sidebarMode === 'preview'
+                        ? 'bg-lime-500/10 border-lime-500/40 text-lime-400'
+                        : 'bg-white/5 border-white/5 text-gray-300 hover:bg-white/10'
+                        }`}
+                    >
+                      <div className={`p-2 rounded-lg ${sidebarMode === 'preview' ? 'bg-lime-500/20' : 'bg-white/5'}`}>
+                        <Eye className="w-5 h-5" />
+                      </div>
+                      <div className="text-left">
+                        <p className="text-sm font-bold">Preview</p>
+                        <p className="text-[10px] text-gray-500">Lihat hasil album publik</p>
+                      </div>
+                    </button>
+
+                    <button
+                      onClick={() => {
                         setSidebarMode('flipbook')
                         setView('classes')
                         setMoreMenuOpen(false)
                       }}
                       className={`w-full flex items-center gap-3 p-4 rounded-xl border transition-all ${sidebarMode === 'flipbook'
                         ? 'bg-lime-500/10 border-lime-500/40 text-lime-400'
-                        : 'text-gray-300 hover:bg-white/10'
+                        : 'bg-white/5 border-white/5 text-gray-300 hover:bg-white/10'
                         }`}
                     >
                       <div className={`p-2 rounded-lg ${sidebarMode === 'flipbook' ? 'bg-lime-500/20' : 'bg-white/5'}`}>
@@ -1520,7 +1627,7 @@ export default function YearbookClassesViewUI(props: any) {
                       }}
                       className={`w-full flex items-center gap-3 p-4 rounded-xl border transition-all ${sidebarMode === 'team'
                         ? 'bg-lime-500/10 border-lime-500/40 text-lime-400'
-                        : 'text-gray-300 hover:bg-white/10'
+                        : 'bg-white/5 border-white/5 text-gray-300 hover:bg-white/10'
                         }`}
                     >
                       <div className={`p-2 rounded-lg ${sidebarMode === 'team' ? 'bg-lime-500/20' : 'bg-white/5'}`}>
@@ -1544,10 +1651,10 @@ export default function YearbookClassesViewUI(props: any) {
             {/* Mobile Sambutan View - Removed, using grid layout */}
 
             {/* Main content - scrollable container */}
-            <div className={`flex-1 overflow-y-auto rounded-t-none pb-40 lg:pb-0 ${sidebarMode === 'classes' && !isCoverView ? 'lg:ml-80' : 'lg:ml-0'}`}>
+            <div className={`flex-1 overflow-y-auto rounded-t-none pb-40 lg:pb-0 ${sidebarMode === 'classes' && !isCoverView ? 'lg:ml-[18rem]' : 'lg:ml-0'}`}>
               {/* Show different content based on sidebarMode */}
               {isCoverView ? (
-                <div className="max-w-5xl mx-auto px-3 py-3 sm:p-4">
+                <div className="max-w-5xl mx-auto px-3 py-3 sm:px-3 sm:py-4">
                   <div className="flex flex-col items-center">
                     <div className="w-full max-w-xs mx-auto flex flex-col items-center">
                       <div className="relative w-full aspect-[3/4] bg-white/5 rounded-xl overflow-hidden shadow-xl border border-white/10 group">
@@ -1641,6 +1748,37 @@ export default function YearbookClassesViewUI(props: any) {
                                   <Trash2 className="w-3.5 h-3.5 flex-shrink-0" />
                                   <span className="truncate">Hapus</span>
                                 </button>
+                              </div>
+                            </div>
+
+                            {/* Divider */}
+                            <div className="h-px bg-white/10 my-2.5"></div>
+
+                            {/* Public Preview Link Section */}
+                            <div>
+                              <p className="text-[10px] font-medium text-muted/60 uppercase tracking-wide mb-1.5">Link Preview Publik</p>
+                              <div className="flex gap-2">
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    const url = `${window.location.origin}/album/${album?.id}/preview`;
+                                    navigator.clipboard.writeText(url);
+                                    toast.success('Link berhasil disalin');
+                                  }}
+                                  className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg bg-white/5 text-gray-300 hover:bg-white/10 hover:text-white text-[11px] font-medium border border-white/10 transition-all min-h-[36px]"
+                                >
+                                  <Copy className="w-3.5 h-3.5 flex-shrink-0" />
+                                  <span className="truncate">Salin Link</span>
+                                </button>
+                                <NextLink
+                                  href={`/album/${album?.id}/preview`}
+                                  target="_blank"
+                                  className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg bg-lime-500/10 text-lime-400 hover:bg-lime-500/20 text-[11px] font-medium border border-lime-500/20 transition-all min-h-[36px]"
+                                >
+                                  <Eye className="w-3.5 h-3.5 flex-shrink-0" />
+                                  <span className="truncate">Buka Preview</span>
+                                </NextLink>
                               </div>
                             </div>
 
@@ -1755,7 +1893,7 @@ export default function YearbookClassesViewUI(props: any) {
                 <AILabsView album={album} aiLabsTool={aiLabsTool ?? null} />
               ) : sidebarMode === 'approval' ? (
                 /* Approval Content - New Join Request System */
-                <div className="max-w-5xl mx-auto px-3 py-3 sm:p-4">
+                <div className="max-w-5xl mx-auto px-3 py-3 sm:px-3 sm:py-4">
                   <div className="mb-4 sm:mb-5">
                     {joinStats && (
                       <div className="flex flex-wrap items-center justify-center sm:justify-start gap-x-3 gap-y-2 mt-1.5 sm:mt-2">
@@ -1919,13 +2057,13 @@ export default function YearbookClassesViewUI(props: any) {
                           <div className="flex gap-1.5">
                             <input
                               type="text"
-                              value={`${typeof window !== 'undefined' ? (process.env.NEXT_PUBLIC_APP_URL || window.location.origin) : (process.env.NEXT_PUBLIC_APP_URL || '')}/invite/${inviteToken}`}
+                              value={`${typeof window !== 'undefined' ? (window.location.origin || process.env.NEXT_PUBLIC_APP_URL) : (process.env.NEXT_PUBLIC_APP_URL || '')}/invite/${inviteToken}`}
                               readOnly
                               className="flex-1 min-w-0 px-2 py-1.5 rounded-lg bg-white/5 border border-white/10 text-app text-[11px] truncate"
                             />
                             <button
                               onClick={() => {
-                                const baseUrl = typeof window !== 'undefined' ? (process.env.NEXT_PUBLIC_APP_URL || window.location.origin) : (process.env.NEXT_PUBLIC_APP_URL || '')
+                                const baseUrl = typeof window !== 'undefined' ? (window.location.origin || process.env.NEXT_PUBLIC_APP_URL) : (process.env.NEXT_PUBLIC_APP_URL || '')
                                 const url = `${baseUrl}/invite/${inviteToken}`
                                 navigator.clipboard.writeText(url)
                                 toast.success('Link disalin!')
@@ -2253,7 +2391,7 @@ export default function YearbookClassesViewUI(props: any) {
                     </div>
                   )}
 
-                  <div className="max-w-5xl mx-auto p-3 sm:p-4">
+                  <div className="max-w-5xl mx-auto px-3 py-3 sm:px-3 sm:py-4">
                     <div className="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                       <div className="text-center sm:text-left lg:hidden">
                         <h2 className="text-lg sm:text-xl font-bold text-app">Kelola anggota</h2>
@@ -2355,7 +2493,7 @@ export default function YearbookClassesViewUI(props: any) {
                 </>
               ) : sidebarMode === 'sambutan' ? (
                 /* Sambutan Content - Grid Cards like Students */
-                <div className="max-w-5xl mx-auto px-3 py-3 sm:p-4">
+                <div className="max-w-5xl mx-auto px-3 py-3 sm:px-3 sm:py-4">
                   <div className="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     {canManage && (
                       <button
@@ -2419,7 +2557,7 @@ export default function YearbookClassesViewUI(props: any) {
                 </div>
 
               ) : sidebarMode === 'classes' && classes.length === 0 ? (
-                <div className="max-w-5xl mx-auto px-3 py-3 sm:p-4">
+                <div className="max-w-5xl mx-auto px-3 py-3 sm:px-3 sm:py-4">
                   <div className="flex flex-col items-center justify-center border-2 border-dashed border-white/10 rounded-xl py-12">
                     <p className="text-app font-medium mb-2">Belum ada foto angkatan</p>
                     {canManage && !addingClass && (
@@ -2442,59 +2580,34 @@ export default function YearbookClassesViewUI(props: any) {
                     )}
                   </div>
                 </div>
+              ) : sidebarMode === 'preview' ? (
+                <PreviewView
+                  album={album}
+                  classes={classes}
+                  teachers={teachers}
+                  membersByClass={membersByClass}
+                  firstPhotoByStudent={firstPhotoByStudent}
+                  onPlayVideo={onPlayVideo}
+                  onClose={() => setSidebarMode('classes')}
+                />
               ) : sidebarMode === 'flipbook' ? (
-                <div className="flex flex-col h-full">
+                <div className="flex flex-col h-full overflow-hidden relative">
                   {/* Admin Controls for Flipbook */}
-                  {canManage && album?.flipbook_mode === 'manual' && (
-                    <div className="max-w-7xl mx-auto w-full px-3 pt-3 sm:px-4 flex justify-end">
-                      <div className="flex bg-white/5 p-1 rounded-xl border border-white/10 gap-1">
-                        <button
-                          onClick={() => setFlipbookPreviewMode(false)}
-                          className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${!flipbookPreviewMode ? 'bg-lime-500 text-black shadow-lg' : 'text-gray-400 hover:text-white'}`}
-                        >
-                          <Layout className="w-3.5 h-3.5" /> Editor
-                        </button>
-                        <button
-                          onClick={() => setFlipbookPreviewMode(true)}
-                          className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${flipbookPreviewMode ? 'bg-lime-500 text-black shadow-lg' : 'text-gray-400 hover:text-white'}`}
-                        >
-                          <Eye className="w-3.5 h-3.5" /> Preview
-                        </button>
-                      </div>
-                    </div>
-                  )}
+
 
                   {/* Manual Flipbook Content */}
-                  {album?.flipbook_mode === 'manual' ? (
-                    (flipbookPreviewMode || !canManage) ? (
-                      <div className="flex-1 flex items-center justify-center p-4">
-                        <ManualFlipbookViewer
-                          pages={manualPages}
-                          onPlayVideo={onPlayVideo}
-                        />
-                      </div>
-                    ) : (
-                      <LayoutEditor
-                        album={album}
-                        teachers={teachers}
-                        classes={classes}
-                        membersByClass={membersByClass}
+                  {(flipbookPreviewMode || !canManage) ? (
+                    <div className="flex-1 flex items-center justify-center p-4">
+                      <ManualFlipbookViewer
+                        pages={manualPages}
                         onPlayVideo={onPlayVideo}
-                        onUpdateAlbum={props.handleUpdateAlbum}
-                        onUpdateClass={handleUpdateClass}
-                        canManage={canManage}
                       />
-                    )
+                    </div>
                   ) : (
-                    /* Auto Layout Editor (Standard) */
                     <LayoutEditor
                       album={album}
-                      teachers={teachers}
-                      classes={classes}
-                      membersByClass={membersByClass}
                       onPlayVideo={onPlayVideo}
                       onUpdateAlbum={props.handleUpdateAlbum}
-                      onUpdateClass={handleUpdateClass}
                       canManage={canManage}
                     />
                   )}
@@ -2507,9 +2620,9 @@ export default function YearbookClassesViewUI(props: any) {
                   const classMembers = membersByClass[currentClass.id] ?? []
 
                   return (
-                    <div className="flex flex-col gap-4 max-w-7xl mx-auto px-3 py-3 sm:p-4">
+                    <div className="flex flex-col gap-4 py-3">
                       {/* Batch Photo Section - Prominent Header */}
-                      <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden p-3 sm:p-4 flex flex-col sm:flex-row items-center sm:items-center gap-4">
+                      <div className="bg-white/5 border-y border-white/10 overflow-hidden px-3 py-3 flex flex-col sm:flex-row items-center sm:items-center gap-4">
                         <div className="flex-1 order-2 sm:order-1 text-center sm:text-left w-full sm:w-auto">
                           <h2 className="text-xl sm:text-2xl font-bold text-white mb-1">{currentClass.name}</h2>
                           <div className="flex items-center justify-center sm:justify-start gap-2 text-gray-400">
@@ -2567,12 +2680,12 @@ export default function YearbookClassesViewUI(props: any) {
                       {/* Members Grid/List */}
                       {
                         classMembers.length === 0 ? (
-                          <div className="flex flex-col items-center justify-center py-20 opacity-60 min-h-[70vh] w-full">
+                          <div className="flex flex-col items-center justify-center py-20 opacity-60 min-h-[70vh] w-full px-3">
                             <Users className="w-12 h-12 mb-3 opacity-50" />
                             <p className="text-center text-sm lg:text-base">Belum ada anggota terdaftar di group ini.</p>
                           </div>
                         ) : classViewMode === 'list' ? (
-                          <div className="space-y-1">
+                          <div className="space-y-1 px-3">
                             {classMembers.map((m, idx) => (
                               <div key={idx} className="flex flex-col p-1.5 lg:p-2 rounded-lg border border-white/10 hover:bg-white/5 transition-colors">
                                 <div className="flex items-center justify-between w-full">
@@ -2623,7 +2736,7 @@ export default function YearbookClassesViewUI(props: any) {
                             ))}
                           </div>
                         ) : (
-                          <div className="grid gap-2 grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
+                          <div className="grid gap-2 grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 px-3">
                             {classMembers.map((m) => (
                               <MemberCard
                                 key={m.user_id || m.student_name}
@@ -2732,12 +2845,8 @@ export default function YearbookClassesViewUI(props: any) {
                       <button onClick={() => setDeleteMemberConfirm(null)} className="px-4 py-2 rounded-lg bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white transition-colors text-sm font-medium">Batal</button>
                       <button
                         onClick={async () => {
-                          if (deleteMemberConfirm.userId) {
-                            await handleRemoveMemberWrapper(deleteMemberConfirm.userId)
-                          } else {
-                            // If it's me
-                            await handleRemoveMemberWrapper(currentUserId!)
-                          }
+                          const targetUserId = deleteMemberConfirm.userId ?? currentUserId!
+                          await handleDeleteClassMember(deleteMemberConfirm.classId, targetUserId)
                           setDeleteMemberConfirm(null)
                         }}
                         className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-500 transition-colors text-sm font-medium"

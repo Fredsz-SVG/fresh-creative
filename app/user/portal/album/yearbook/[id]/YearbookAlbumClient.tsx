@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback, useRef } from 'react'
 import { useParams, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import BackLink from '@/components/dashboard/BackLink'
-import { ChevronLeft, ChevronRight, BookOpen, ImagePlus, Video, Play, Users } from 'lucide-react'
+import { ChevronLeft, ChevronRight, BookOpen, ImagePlus, Video, Play, Users, Layout, Eye, Menu } from 'lucide-react'
 import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
 import YearbookClassesView from './YearbookClassesView'
@@ -18,16 +18,11 @@ type Album = {
   cover_image_position?: string | null
   cover_video_url?: string | null
   description?: string | null
-  flipbook_bg_cover?: string | null
-  flipbook_bg_sambutan?: string | null
-  sambutan_font_family?: string | null
-  sambutan_title_color?: string | null
-  sambutan_text_color?: string | null
   isOwner?: boolean
   isAlbumAdmin?: boolean
   isGlobalAdmin?: boolean
-  flipbook_mode?: string | null
-  classes: { id: string; name: string; sort_order: number; student_count: number; batch_photo_url?: string | null; flipbook_bg_url?: string | null; flipbook_font_family?: string | null; flipbook_title_color?: string | null; flipbook_text_color?: string | null }[]
+  flipbook_mode?: 'manual' | null
+  classes: { id: string; name: string; sort_order: number; student_count: number; batch_photo_url?: string | null }[]
 }
 
 type ClassAccess = { id: string; student_name: string; email?: string | null; status: string; date_of_birth?: string | null; instagram?: string | null; message?: string | null; video_url?: string | null }
@@ -86,10 +81,10 @@ export default function YearbookAlbumClient({
   const [accessDataLoaded, setAccessDataLoaded] = useState(!!initialAccess?.access && Object.keys(initialAccess.access).length > 0)
   const [requestsByClass, setRequestsByClass] = useState<Record<string, ClassRequest[]>>({})
   const [selectedRequestId, setSelectedRequestId] = useState<string | null>(null)
-  const [sidebarMode, setSidebarMode] = useState<'classes' | 'approval' | 'team' | 'sambutan' | 'ai-labs' | 'flipbook'>(() => {
+  const [sidebarMode, setSidebarMode] = useState<'classes' | 'approval' | 'team' | 'sambutan' | 'ai-labs' | 'flipbook' | 'preview'>(() => {
     if (typeof window !== 'undefined' && id) {
       const saved = localStorage.getItem(`yearbook-sidebarMode-${id}`)
-      return (saved as 'classes' | 'approval' | 'team' | 'sambutan' | 'ai-labs' | 'flipbook') || 'classes'
+      return (saved as 'classes' | 'approval' | 'team' | 'sambutan' | 'ai-labs' | 'flipbook' | 'preview') || 'classes'
     }
     return 'classes'
   })
@@ -145,6 +140,8 @@ export default function YearbookAlbumClient({
   // Use refs for stable access in callbacks without triggering recreations
   const [realtimeCounter, setRealtimeCounter] = useState(0)
   const albumRef = useRef(album)
+  const [flipbookPreviewMode, setFlipbookPreviewMode] = useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   useEffect(() => { albumRef.current = album }, [album])
 
   const isFetchingMembersRef = useRef(false)
@@ -244,8 +241,8 @@ export default function YearbookAlbumClient({
       const myAccessData = await myAccessRes.json().catch(() => ({}))
 
       if (myAccessRes.ok) {
-        setMyAccessByClass(prev => ({ ...prev, ...(myAccessData.access || {}) }))
-        setMyRequestByClass(prev => ({ ...prev, ...(myAccessData.requests || {}) }))
+        setMyAccessByClass(myAccessData.access || {})
+        setMyRequestByClass(myAccessData.requests || {})
       }
 
       // 2. If Admin, fetch ALL pending requests for approval
@@ -442,7 +439,7 @@ export default function YearbookAlbumClient({
       )
       .on(
         'postgres_changes',
-        { event: 'DELETE', schema: 'public', table: 'album_class_access' },
+        { event: 'DELETE', schema: 'public', table: 'album_class_access', filter: `album_id=eq.${albumId}` },
         () => {
           if (accessUpdateTimeoutRef.current) clearTimeout(accessUpdateTimeoutRef.current)
           accessUpdateTimeoutRef.current = setTimeout(() => {
@@ -682,7 +679,7 @@ export default function YearbookAlbumClient({
     })
   }
 
-  const handleUpdateAlbum = async (updates: { description?: string; cover_image_url?: string; students_count?: number; flipbook_bg_cover?: string; flipbook_bg_sambutan?: string; sambutan_font_family?: string; sambutan_title_color?: string; sambutan_text_color?: string; flipbook_mode?: string }) => {
+  const handleUpdateAlbum = async (updates: { description?: string; cover_image_url?: string; students_count?: number; flipbook_mode?: 'manual' }) => {
     if (!id) return
 
     // Optimistic update
@@ -711,14 +708,14 @@ export default function YearbookAlbumClient({
     })
   }
 
-  const handleUpdateClass = async (classId: string, updates: { name?: string; sort_order?: number; batch_photo_url?: string; flipbook_bg_url?: string; flipbook_font_family?: string; flipbook_title_color?: string; flipbook_text_color?: string }) => {
+  const handleUpdateClass = async (classId: string, updates: { name?: string; sort_order?: number; batch_photo_url?: string }) => {
     if (!id) return null
 
     // Mark that we just did a local update
     lastLocalUpdateRef.current = Date.now()
 
     // Optimistic update - update UI immediately without waiting for server
-    const optimisticUpdate = { id: classId, name: '', sort_order: 0, batch_photo_url: null as string | null, flipbook_bg_url: null as string | null }
+    const optimisticUpdate = { id: classId, name: '', sort_order: 0, batch_photo_url: null as string | null }
     setAlbum((prev) => {
       if (!prev?.classes) return prev
       const currentClass = prev.classes.find(c => c.id === classId)
@@ -728,8 +725,6 @@ export default function YearbookAlbumClient({
       optimisticUpdate.sort_order = updates.sort_order !== undefined ? updates.sort_order : (currentClass.sort_order ?? 0)
       // @ts-ignore
       optimisticUpdate.batch_photo_url = updates.batch_photo_url !== undefined ? updates.batch_photo_url : (currentClass.batch_photo_url ?? null)
-      // @ts-ignore
-      optimisticUpdate.flipbook_bg_url = updates.flipbook_bg_url !== undefined ? updates.flipbook_bg_url : (currentClass.flipbook_bg_url ?? null)
 
       const newClasses = prev.classes
         // @ts-ignore
@@ -1211,6 +1206,47 @@ export default function YearbookAlbumClient({
     }
   }, [id, fetchAlbum])
 
+  // Delete member from class with optimistic update (instant UI) + realtime for other devices
+  const handleDeleteClassMember = useCallback(async (classId: string, userId: string) => {
+    if (!id) return
+    // Optimistic update: remove immediately from membersByClass
+    setMembersByClass(prev => {
+      const updated = { ...prev }
+      if (updated[classId]) {
+        updated[classId] = updated[classId].filter(m => m.user_id !== userId)
+      }
+      return updated
+    })
+    // Also clear myAccessByClass for this class if it's the current user being removed
+    if (userId === currentUserId) {
+      setMyAccessByClass(prev => ({ ...prev, [classId]: null }))
+    }
+    try {
+      const res = await fetch(`/api/albums/${id}/classes/${classId}/members/${userId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        toast.error(data?.error ?? 'Gagal menghapus anggota')
+        // Rollback: refetch to restore correct state
+        await fetchAllClassMembers()
+        await fetchAllAccess()
+        return
+      }
+      toast.success('Anggota berhasil dihapus dari kelas')
+      // Refetch in background to sync with server (other devices get update via realtime)
+      fetchAllClassMembers()
+      fetchAllAccess()
+    } catch (err) {
+      console.error('Error deleting class member:', err)
+      toast.error('Gagal menghapus anggota')
+      // Rollback on error
+      await fetchAllClassMembers()
+      await fetchAllAccess()
+    }
+  }, [id, currentUserId, fetchAllClassMembers, fetchAllAccess])
+
   const handleUploadPhoto = async (classId: string, studentName: string, className: string, file: File) => {
     if (!id) return
     const formData = new FormData()
@@ -1263,6 +1299,10 @@ export default function YearbookAlbumClient({
     toast.success('Video berhasil diupload')
     setLastUploadedVideoName(file.name)
     setTimeout(() => setLastUploadedVideoName(null), 5000)
+    // Update the form field with the new video URL so it appears in the edit form
+    if (data?.video_url) {
+      setEditProfileVideoUrl(data.video_url)
+    }
     await fetchMembersForClass(classId)
 
   }
@@ -1564,7 +1604,9 @@ export default function YearbookAlbumClient({
             : sidebarMode === 'classes' ? (currentClass?.name ?? 'Kelas')
               : sidebarMode === 'approval' ? 'Persetujuan'
                 : sidebarMode === 'team' ? 'Kelola Anggota'
-                  : ''
+                  : sidebarMode === 'flipbook' ? 'Flipbook'
+                    : sidebarMode === 'preview' ? 'Preview'
+                      : ''
     const sectionSubtitle =
       isCoverView ? 'Tampilan sampul dan pengaturan cover album.'
         : sidebarMode === 'ai-labs' ? (aiLabsTool ? '' : 'Pilih fitur yang ingin digunakan. Semua fitur AI tersedia di sini.')
@@ -1572,7 +1614,9 @@ export default function YearbookAlbumClient({
             : sidebarMode === 'classes' ? (currentClass ? 'Profil dan foto anggota kelas.' : 'Daftar kelas dan anggota.')
               : sidebarMode === 'approval' ? 'Kelola permintaan akses dan persetujuan.'
                 : sidebarMode === 'team' ? 'Kelola anggota tim album.'
-                  : ''
+                  : sidebarMode === 'flipbook' ? 'Editor dan preview flipbook.'
+                    : sidebarMode === 'preview' ? 'Preview tampilan album yearbook.'
+                      : ''
 
     const headerCount =
       sidebarMode === 'classes' && !isCoverView && currentClass
@@ -1623,6 +1667,38 @@ export default function YearbookAlbumClient({
                 <span className="text-xs font-medium text-gray-300">{headerCount}</span>
               </div>
             )}
+
+            {/* Flipbook Controls (Mobile & Desktop) */}
+            {sidebarMode === 'flipbook' && (isOwner || isAlbumAdmin) && (
+              <div className="ml-auto flex bg-[#0a0a0b] p-1 rounded-xl border border-white/10 gap-1 items-center scale-90 lg:scale-100 origin-right">
+                <button
+                  onClick={() => setFlipbookPreviewMode(false)}
+                  className={`flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${!flipbookPreviewMode ? 'bg-lime-500 text-black shadow-lg' : 'text-gray-300 hover:text-white hover:bg-white/10'}`}
+                >
+                  <Layout className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Editor</span>
+                </button>
+                <button
+                  onClick={() => setFlipbookPreviewMode(true)}
+                  className={`flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${flipbookPreviewMode ? 'bg-lime-500 text-black shadow-lg' : 'text-gray-300 hover:text-white hover:bg-white/10'}`}
+                >
+                  <Eye className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Preview</span>
+                </button>
+              </div>
+            )}
+
+            {/* Class Menu Button (Mobile) */}
+            {sidebarMode === 'classes' && !isCoverView && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setMobileMenuOpen(true)
+                }}
+                className="lg:hidden ml-auto flex items-center justify-center w-10 h-10 bg-white/5 border border-white/10 rounded-xl text-gray-300 hover:bg-white/10 hover:text-white transition-all active:scale-95 flex-shrink-0 shadow-sm"
+              >
+                <Menu className="w-5 h-5" />
+              </button>
+            )}
           </div>
         )}
 
@@ -1654,6 +1730,10 @@ export default function YearbookAlbumClient({
             setSelectedRequestId={setSelectedRequestId}
             sidebarMode={sidebarMode}
             setSidebarMode={setSidebarMode}
+            flipbookPreviewMode={flipbookPreviewMode}
+            setFlipbookPreviewMode={setFlipbookPreviewMode}
+            mobileMenuOpen={mobileMenuOpen}
+            setMobileMenuOpen={setMobileMenuOpen}
             aiLabsTool={aiLabsTool}
             requestForm={requestForm}
             setRequestForm={setRequestForm}
@@ -1722,6 +1802,8 @@ export default function YearbookAlbumClient({
             currentUserId={currentUserId}
             handleUpdateRole={handleUpdateRole}
             handleRemoveMember={handleRemoveMember}
+            handleDeleteClassMember={handleDeleteClassMember}
+            fetchAlbum={fetchAlbum}
             onTeacherCountChange={setTeacherCount}
             onTeamMemberCountChange={setTeamMemberCount}
           />

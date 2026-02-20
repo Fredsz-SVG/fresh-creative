@@ -3,7 +3,7 @@
 import React from 'react'
 import YearbookClassesViewUI from './YearbookClassesViewUI'
 
-type AlbumClass = { id: string; name: string; sort_order: number; student_count: number; batch_photo_url?: string | null; flipbook_bg_url?: string | null; flipbook_font_family?: string | null; flipbook_title_color?: string | null; flipbook_text_color?: string | null }
+type AlbumClass = { id: string; name: string; sort_order: number; student_count: number; batch_photo_url?: string | null }
 type ClassAccess = { id: string; student_name: string; email?: string | null; status: string }
 type ClassRequest = { id: string; student_name: string; email?: string | null; status: string }
 type ClassMember = { user_id: string; student_name: string; email: string | null; date_of_birth: string | null; instagram: string | null; message: string | null; video_url: string | null; is_me?: boolean }
@@ -14,11 +14,6 @@ export type YearbookClassesViewProps = {
     id: string;
     name: string;
     type: string;
-    flipbook_bg_cover?: string | null;
-    flipbook_bg_sambutan?: string | null;
-    sambutan_font_family?: string | null;
-    sambutan_title_color?: string | null;
-    sambutan_text_color?: string | null;
     classes: AlbumClass[]
   }
   classIndex: number
@@ -34,8 +29,8 @@ export type YearbookClassesViewProps = {
   setNewClassName: (v: string) => void
   handleAddClass: () => void
   handleDeleteClass: (classId: string, className: string) => void
-  handleUpdateClass?: (classId: string, updates: { name?: string; sort_order?: number; batch_photo_url?: string; flipbook_bg_url?: string; flipbook_font_family?: string; flipbook_title_color?: string; flipbook_text_color?: string }) => Promise<{ id: string; name: string; sort_order?: number; batch_photo_url: string | null; flipbook_bg_url: string | null } | null>
-  handleUpdateAlbum?: (updates: { description?: string; cover_image_url?: string; students_count?: number; flipbook_bg_cover?: string; flipbook_bg_sambutan?: string; sambutan_font_family?: string; sambutan_title_color?: string; sambutan_text_color?: string }) => Promise<void>
+  handleUpdateClass?: (classId: string, updates: { name?: string; sort_order?: number; batch_photo_url?: string }) => Promise<{ id: string; name: string; sort_order?: number; batch_photo_url: string | null } | null>
+  handleUpdateAlbum?: (updates: { description?: string; cover_image_url?: string; students_count?: number; flipbook_mode?: 'manual' }) => Promise<void>
   goPrevClass: () => void
   goNextClass: () => void
   requestsByClass: Record<string, ClassRequest[]>
@@ -44,8 +39,8 @@ export type YearbookClassesViewProps = {
   accessDataLoaded?: boolean
   selectedRequestId: string | null
   setSelectedRequestId: (v: string | null) => void
-  sidebarMode: 'classes' | 'approval' | 'team' | 'sambutan' | 'ai-labs' | 'flipbook'
-  setSidebarMode: (v: 'classes' | 'approval' | 'team' | 'sambutan' | 'ai-labs' | 'flipbook') => void
+  sidebarMode: 'classes' | 'approval' | 'team' | 'sambutan' | 'ai-labs' | 'flipbook' | 'preview'
+  setSidebarMode: (v: 'classes' | 'approval' | 'team' | 'sambutan' | 'ai-labs' | 'flipbook' | 'preview') => void
   aiLabsTool?: string | null
   requestForm: { student_name: string; email: string }
   setRequestForm: React.Dispatch<React.SetStateAction<{ student_name: string; email: string }>>
@@ -110,8 +105,14 @@ export type YearbookClassesViewProps = {
   currentUserId?: string | null
   handleUpdateRole?: (userId: string, role: 'admin' | 'member') => Promise<void>
   handleRemoveMember?: (userId: string) => Promise<void>
+  handleDeleteClassMember?: (classId: string, userId: string) => Promise<void>
+  fetchAlbum?: () => void
   onTeacherCountChange?: (count: number) => void
   onTeamMemberCountChange?: (count: number) => void
+  flipbookPreviewMode: boolean
+  setFlipbookPreviewMode: (v: boolean) => void
+  mobileMenuOpen: boolean
+  setMobileMenuOpen: (v: boolean) => void
 }
 
 export default function YearbookClassesView(props: YearbookClassesViewProps) {

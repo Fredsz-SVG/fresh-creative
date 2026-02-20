@@ -48,10 +48,32 @@ export default function DashboardShell({
   const [isOnline, setIsOnline] = useState(true)
   const [showTopUp, setShowTopUp] = useState(false)
   const [showNotifications, setShowNotifications] = useState(false)
+  // Credits state
   const [credits, setCredits] = useState(0)
+
+  // Notifications state
+  const [notifications, setNotifications] = useState<any[]>([])
+  const [unreadCount, setUnreadCount] = useState(0)
+
+  const fetchNotifications = async () => {
+    if (typeof window !== 'undefined' && !navigator.onLine) return
+    try {
+      const res = await fetch('/api/user/notifications')
+      if (!res.ok) return
+      const data = await res.json().catch(() => null)
+      if (data && Array.isArray(data)) {
+        setNotifications(data)
+        setUnreadCount(data.filter((n: any) => !n.is_read).length)
+      }
+    } catch (e) {
+      // Ignored: Server might be restarting or network drop
+    }
+  }
 
   useEffect(() => {
     let channel: any
+
+    fetchNotifications() // initial fetch
 
     const init = async () => {
       try {
@@ -61,18 +83,31 @@ export default function DashboardShell({
 
         if (data.id) {
           channel = supabase
-            .channel('realtime-credits')
+            .channel(`user-realtime-${data.id}`)
             .on(
               'postgres_changes',
               {
                 event: 'UPDATE',
                 schema: 'public',
-                table: 'users'
+                table: 'users',
+                filter: `id=eq.${data.id}`
               },
               (payload: any) => {
                 if (payload.new && typeof payload.new.credits === 'number') {
                   setCredits(payload.new.credits)
                 }
+              }
+            )
+            .on(
+              'postgres_changes',
+              {
+                event: '*',
+                schema: 'public',
+                table: 'notifications',
+                filter: `user_id=eq.${data.id}`
+              },
+              () => {
+                fetchNotifications()
               }
             )
             .subscribe()
@@ -89,40 +124,14 @@ export default function DashboardShell({
     }
   }, [])
 
-
-  // Notifications state
-  const [notifications, setNotifications] = useState<any[]>([])
-  const [unreadCount, setUnreadCount] = useState(0)
-
-  useEffect(() => {
-    fetchNotifications()
-    // Poll every 30s
-    const interval = setInterval(fetchNotifications, 30000)
-    return () => clearInterval(interval)
-  }, [])
-
-  const fetchNotifications = async () => {
-    try {
-      const res = await fetch('/api/user/notifications')
-      const data = await res.json()
-      if (Array.isArray(data)) {
-        setNotifications(data)
-        setUnreadCount(data.filter((n: any) => !n.is_read).length)
-      }
-    } catch (e) {
-      console.error('Failed to fetch notifications', e)
-    }
-  }
-
   const handleMarkRead = async (id: string) => {
     try {
-      // Optimistic updatet
+      // Optimistic update
       setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n))
       setUnreadCount(prev => Math.max(0, prev - 1))
 
-      await fetch(`/api/user/notifications/${id}`, { method: 'PATCH' })
+      await fetch(`/api/user/notifications/${id}`, { method: 'PATCH' }).catch(() => { })
     } catch (e) {
-      // refetch on error
       fetchNotifications()
     }
   }
@@ -132,7 +141,7 @@ export default function DashboardShell({
     try {
       setNotifications([])
       setUnreadCount(0)
-      await fetch('/api/user/notifications', { method: 'DELETE' })
+      await fetch('/api/user/notifications', { method: 'DELETE' }).catch(() => { })
     } catch (e) {
       fetchNotifications()
     }

@@ -30,15 +30,9 @@ export const key = {
 // Helper: Get JSON
 export async function getCache<T>(key: string): Promise<T | null> {
     try {
-        // If Redis URL is missing or connection failed, return null to fallback
-        if (redis.status !== 'ready' && redis.status !== 'connect' && redis.status !== 'connecting') {
-            // Try connect if not connecting/connected? Or just rely on lazyConnect.
-            // Actually ioredis handles state.
-            // But if user hasn't set up redis locally, this might throw or hang.
-            // We can check process.env.REDIS_URL presence.
-            if (!process.env.REDIS_URL) return null
+        if (!process.env.REDIS_URL || redis.status === 'end' || redis.status === 'reconnecting' || redis.status === 'close') {
+            return null
         }
-
         const data = await redis.get(key)
         if (!data) return null
         return JSON.parse(data) as T
@@ -51,7 +45,9 @@ export async function getCache<T>(key: string): Promise<T | null> {
 // Helper: Set JSON
 export async function setCache(key: string, data: any, ttlSeconds: number = 60) {
     try {
-        if (!process.env.REDIS_URL) return
+        if (!process.env.REDIS_URL || redis.status === 'end' || redis.status === 'reconnecting' || redis.status === 'close') {
+            return
+        }
         await redis.set(key, JSON.stringify(data), 'EX', ttlSeconds)
     } catch (error) {
         console.error('Redis Set Error:', error)
@@ -61,7 +57,9 @@ export async function setCache(key: string, data: any, ttlSeconds: number = 60) 
 // Helper: Delete
 export async function delCache(key: string) {
     try {
-        if (!process.env.REDIS_URL) return
+        if (!process.env.REDIS_URL || redis.status === 'end' || redis.status === 'reconnecting' || redis.status === 'close') {
+            return
+        }
         await redis.del(key)
     } catch (error) {
         console.error('Redis Del Error:', error)
@@ -71,13 +69,15 @@ export async function delCache(key: string) {
 // Helper: Invalidate Pattern (expensive, use carefully)
 export async function invalidatePattern(pattern: string) {
     try {
-        if (!process.env.REDIS_URL) return
+        if (!process.env.REDIS_URL || redis.status === 'end' || redis.status === 'reconnecting' || redis.status === 'close') {
+            return
+        }
         const stream = redis.scanStream({ match: pattern })
         stream.on('data', (keys) => {
             if (keys.length) {
                 const pipeline = redis.pipeline()
                 keys.forEach((key: string) => pipeline.del(key))
-                pipeline.exec()
+                pipeline.exec().catch(err => console.error('Redis Pipeline Exec Error:', err))
             }
         })
     } catch (error) {

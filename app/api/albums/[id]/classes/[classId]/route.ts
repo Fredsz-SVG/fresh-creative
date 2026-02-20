@@ -87,9 +87,8 @@ export async function PATCH(
   const name = typeof body?.name === 'string' ? body.name.trim() : undefined
   const sort_order = body?.sort_order !== undefined ? Number(body.sort_order) : undefined
   const batch_photo_url = typeof body?.batch_photo_url === 'string' ? body.batch_photo_url : undefined
-  const flipbook_bg_url = typeof body?.flipbook_bg_url === 'string' ? body.flipbook_bg_url : undefined
 
-  const updates: { name?: string; sort_order?: number; batch_photo_url?: string; flipbook_bg_url?: string; flipbook_font_family?: string; flipbook_title_color?: string; flipbook_text_color?: string } = {}
+  const updates: { name?: string; sort_order?: number; batch_photo_url?: string } = {}
   if (name !== undefined) {
     if (!name) return NextResponse.json({ error: 'Class name is required' }, { status: 400 })
     // ensure unique name within album
@@ -104,13 +103,9 @@ export async function PATCH(
   }
   if (sort_order !== undefined && !Number.isNaN(sort_order)) updates.sort_order = sort_order
   if (batch_photo_url !== undefined) updates.batch_photo_url = batch_photo_url
-  if (flipbook_bg_url !== undefined) updates.flipbook_bg_url = flipbook_bg_url
-  if (body?.flipbook_font_family !== undefined) updates.flipbook_font_family = body.flipbook_font_family
-  if (body?.flipbook_title_color !== undefined) updates.flipbook_title_color = body.flipbook_title_color
-  if (body?.flipbook_text_color !== undefined) updates.flipbook_text_color = body.flipbook_text_color
 
   if (Object.keys(updates).length === 0) {
-    const { data: current } = await client.from('album_classes').select('id, name, sort_order, batch_photo_url, flipbook_bg_url').eq('id', classId).maybeSingle()
+    const { data: current } = await client.from('album_classes').select('id, name, sort_order, batch_photo_url').eq('id', classId).maybeSingle()
     return NextResponse.json(current ?? {})
   }
 
@@ -118,7 +113,7 @@ export async function PATCH(
     .from('album_classes')
     .update(updates)
     .eq('id', classId)
-    .select('id, name, sort_order, batch_photo_url, flipbook_bg_url')
+    .select('id, name, sort_order, batch_photo_url')
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })

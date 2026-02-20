@@ -1,11 +1,11 @@
 'use client'
 
-import { BookOpen, Users, ClipboardList, Shield, MessageSquare, Sparkles, Book } from 'lucide-react'
+import { BookOpen, Users, ClipboardList, Shield, MessageSquare, Sparkles, Book, Eye } from 'lucide-react'
 
 interface IconSidebarProps {
   isCoverView: boolean
   sidebarMode: string
-  setSidebarMode: (mode: 'classes' | 'approval' | 'team' | 'sambutan' | 'ai-labs' | 'flipbook') => void
+  setSidebarMode: (mode: 'classes' | 'approval' | 'team' | 'sambutan' | 'ai-labs' | 'flipbook' | 'preview') => void
   setView: (view: 'cover' | 'classes' | 'gallery') => void
   canManage: boolean
   requestsByClass: Record<string, any[]>
@@ -21,6 +21,21 @@ export default function IconSidebar({
 }: IconSidebarProps) {
   return (
     <div className="hidden lg:fixed lg:left-0 lg:top-14 lg:w-16 lg:h-[calc(100vh-3.5rem)] lg:flex flex-col lg:z-40 lg:bg-black/40 lg:backdrop-blur-sm lg:border-r lg:border-white/10">
+      <button
+        type="button"
+        onClick={() => {
+          setSidebarMode('preview')
+          setView('classes')
+        }}
+        className={`flex-shrink-0 flex flex-col items-center justify-center gap-1 py-4 border-b border-white/10 text-xs font-medium transition-colors ${sidebarMode === 'preview'
+          ? 'bg-lime-600/20 text-lime-400'
+          : 'text-gray-400 hover:text-white hover:bg-white/5'
+          }`}
+        title="Preview Album"
+      >
+        <Eye className="w-6 h-6" />
+        <span className="text-[10px]">Preview</span>
+      </button>
       <button
         type="button"
         onClick={() => {
