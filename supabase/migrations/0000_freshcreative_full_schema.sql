@@ -20,6 +20,8 @@ CREATE TABLE IF NOT EXISTS public.users (
   id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   email text NOT NULL,
   role text NOT NULL DEFAULT 'user' CHECK (role IN ('user', 'admin')),
+  full_name text,
+  credits integer DEFAULT 0,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),
   PRIMARY KEY (id)
@@ -771,7 +773,7 @@ CREATE TABLE IF NOT EXISTS album_teachers (
   sort_order INTEGER DEFAULT 0,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  created_by UUID REFERENCES auth.users(id)
+  created_by UUID REFERENCES auth.users(id) ON DELETE SET NULL
 );
 
 -- Create indexes for performance
