@@ -23,6 +23,9 @@ export async function POST(
   const file = formData.get('file') as File | null
   if (!file || !file.size) return NextResponse.json({ error: 'file required' }, { status: 400 })
 
+  const MAX_VIDEO_BYTES = 20 * 1024 * 1024 // 20MB
+  if (file.size > MAX_VIDEO_BYTES) return NextResponse.json({ error: 'Video maksimal 20MB' }, { status: 413 })
+
   const { data: album, error: albumErr } = await supabase
     .from('albums')
     .select('id, user_id')

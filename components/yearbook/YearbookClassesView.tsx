@@ -10,6 +10,7 @@ type ClassMember = { user_id: string; student_name: string; email: string | null
 
 
 export type YearbookClassesViewProps = {
+  albumId?: string
   album: {
     id: string;
     name: string;
@@ -106,7 +107,7 @@ export type YearbookClassesViewProps = {
   handleUpdateRole?: (userId: string, role: 'admin' | 'member') => Promise<void>
   handleRemoveMember?: (userId: string) => Promise<void>
   handleDeleteClassMember?: (classId: string, userId: string) => Promise<void>
-  fetchAlbum?: () => void
+  fetchAlbum?: (silent?: boolean) => void
   onTeacherCountChange?: (count: number) => void
   onTeamMemberCountChange?: (count: number) => void
   flipbookPreviewMode: boolean

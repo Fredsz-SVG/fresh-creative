@@ -23,6 +23,9 @@ export async function POST(
   const file = formData.get('file') as File | null
   if (!file || !file.size) return NextResponse.json({ error: 'file required' }, { status: 400 })
 
+  const MAX_PHOTO_BYTES = 10 * 1024 * 1024 // 10MB
+  if (file.size > MAX_PHOTO_BYTES) return NextResponse.json({ error: 'Foto maksimal 10MB' }, { status: 413 })
+
   const positionX = formData.get('position_x') as string | null
   const positionY = formData.get('position_y') as string | null
   const coverPosition =

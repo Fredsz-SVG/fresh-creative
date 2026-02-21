@@ -1,14 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase-server'
 import { createAdminClient } from '@/lib/supabase-admin'
+import { logApiTiming } from '@/lib/api-timing'
 
 // GET /api/albums/[id]/join-requests - List all join requests for album
 export async function GET(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
+  const start = performance.now()
+  const { id: albumId } = await context.params
   try {
-    const { id: albumId } = await context.params
     const supabase = await createClient()
 
     const url = new URL(request.url)
@@ -28,7 +30,7 @@ export async function GET(
 
       const { data: approvedData, error: approvedError } = await client
         .from('album_class_access')
-        .select('*, album_classes!inner(name)')
+        .select('id, album_id, user_id, student_name, email, class_id, status, created_at, album_classes!inner(name)')
         .eq('album_id', albumId)
         .eq('status', 'approved')
         .order('created_at', { ascending: false })
@@ -57,7 +59,7 @@ export async function GET(
     // For pending/rejected/all, query album_join_requests
     let query = supabase
       .from('album_join_requests')
-      .select('*')
+      .select('id, album_id, user_id, student_name, email, phone, class_name, status, assigned_class_id, requested_at')
       .eq('album_id', albumId)
       .order('requested_at', { ascending: false })
 
@@ -77,6 +79,8 @@ export async function GET(
       { error: 'Failed to fetch join requests' },
       { status: 500 }
     )
+  } finally {
+    logApiTiming('GET', `/api/albums/${albumId}/join-requests`, start)
   }
 }
 

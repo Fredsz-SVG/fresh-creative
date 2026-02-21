@@ -290,14 +290,14 @@ export default function MemberCard({
                     disabled={displayPreviewPhotos.length >= 4}
                     className="flex-1 px-1.5 py-1 rounded text-[9px] bg-green-600/20 text-green-400 hover:bg-green-600/30 transition-colors flex items-center justify-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <ImagePlus className="w-2.5 h-2.5" /> Photo (max 4)
+                    <ImagePlus className="w-2.5 h-2.5" /> Foto (maks. 10MB)
                   </button>
                   <button
                     type="button"
                     onClick={() => onUploadVideo?.(classId, member.student_name)}
                     className="flex-1 px-1.5 py-1 rounded text-[9px] bg-blue-600/20 text-blue-400 hover:bg-blue-600/30 transition-colors flex items-center justify-center gap-1"
                   >
-                    <Video className="w-2.5 h-2.5" /> Video
+                    <Video className="w-2.5 h-2.5" /> Video (maks. 20MB)
                   </button>
                 </div>
 

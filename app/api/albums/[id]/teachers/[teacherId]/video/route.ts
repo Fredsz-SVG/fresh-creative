@@ -16,6 +16,11 @@ export async function POST(
       return NextResponse.json({ error: 'No file provided' }, { status: 400 })
     }
 
+    const MAX_VIDEO_BYTES = 20 * 1024 * 1024 // 20MB
+    if (file.size > MAX_VIDEO_BYTES) {
+      return NextResponse.json({ error: 'Video maksimal 20MB' }, { status: 413 })
+    }
+
     // Get current user
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) {

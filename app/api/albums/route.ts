@@ -2,11 +2,13 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase-server'
 import { getRole } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase-admin'
+import { logApiTiming } from '@/lib/api-timing'
 
 export const dynamic = 'force-dynamic'
 
 // GET: Fetch albums (Admin sees all, User sees own)
 export async function GET(request: NextRequest) {
+  const start = performance.now()
   try {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -58,50 +60,30 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(result)
     }
 
-    // User: Fetch OWN albums + Member albums + Approved class access albums
-    const { data: ownedAlbums, error: ownedErr } = await supabase
-      .from('albums')
-      .select('*, pricing_packages(name)')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false })
+    const albumColumns = 'id, name, type, status, user_id, created_at, cover_image_url, pricing_package_id, pricing_packages(name)'
 
-    if (ownedErr) {
-      return NextResponse.json({ error: ownedErr.message }, { status: 500 })
-    }
+    const [ownedRes, memberRowsRes] = await Promise.all([
+      supabase.from('albums').select(albumColumns).eq('user_id', user.id).order('created_at', { ascending: false }),
+      supabase.from('album_members').select('album_id').eq('user_id', user.id)
+    ])
+    if (ownedRes.error) return NextResponse.json({ error: ownedRes.error.message }, { status: 500 })
+    const ownedAlbums = ownedRes.data ?? []
+    const memberAlbumIds = (memberRowsRes.data ?? []).map((r: { album_id: string }) => r.album_id).filter(Boolean)
 
-    // Member albums (from album_members table - admins/helpers)
-    const { data: memberRows } = await supabase.from('album_members').select('album_id').eq('user_id', user.id)
-    const memberAlbumIds = (memberRows ?? []).map((r: { album_id: string }) => r.album_id).filter(Boolean)
-
-    let memberAlbums: any[] = []
-    if (memberAlbumIds.length > 0) {
-      const { data } = await supabase
-        .from('albums')
-        .select('*, pricing_packages(name)')
-        .in('id', memberAlbumIds)
-      memberAlbums = data ?? []
-    }
-
-    // Approved class access albums (use admin client to bypass RLS)
-    // Approved join requests are moved to album_class_access, not kept in join_requests
     const adminClient = createAdminClient()
+    const [memberAlbumsRes, approvedRowsRes] = await Promise.all([
+      memberAlbumIds.length > 0 ? supabase.from('albums').select(albumColumns).in('id', memberAlbumIds) : Promise.resolve({ data: [] as any[] }),
+      adminClient
+        ? adminClient.from('album_class_access').select('album_id').eq('user_id', user.id).eq('status', 'approved')
+        : Promise.resolve({ data: [] as any[] })
+    ])
+    const memberAlbums = memberAlbumsRes.data ?? []
+    const approvedAlbumIds = (approvedRowsRes.data ?? []).map((r: { album_id: string }) => r.album_id).filter(Boolean)
+
     let approvedClassAccessAlbums: any[] = []
-    if (adminClient) {
-      const { data: approvedClassRows } = await adminClient
-        .from('album_class_access')
-        .select('album_id')
-        .eq('user_id', user.id)
-        .eq('status', 'approved')
-      
-      const approvedAlbumIds = (approvedClassRows ?? []).map((r: { album_id: string }) => r.album_id).filter(Boolean)
-      
-      if (approvedAlbumIds.length > 0) {
-        const { data } = await adminClient
-          .from('albums')
-          .select('*, pricing_packages(name)')
-          .in('id', approvedAlbumIds)
-        approvedClassAccessAlbums = data ?? []
-      }
+    if (adminClient && approvedAlbumIds.length > 0) {
+      const { data } = await adminClient.from('albums').select(albumColumns).in('id', approvedAlbumIds)
+      approvedClassAccessAlbums = data ?? []
     }
 
     const ownedSet = new Set((ownedAlbums ?? []).map(a => a.id))
@@ -127,6 +109,8 @@ export async function GET(request: NextRequest) {
     const message = err instanceof Error ? err.message : String(err)
     console.error('[GET /api/albums]', err)
     return NextResponse.json({ error: message }, { status: 500 })
+  } finally {
+    logApiTiming('GET', '/api/albums', start)
   }
 }
 

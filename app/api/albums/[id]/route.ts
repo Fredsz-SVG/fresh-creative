@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase-server'
 import { createAdminClient } from '@/lib/supabase-admin'
 import { getRole } from '@/lib/auth'
+import { logApiTiming } from '@/lib/api-timing'
 
 export const dynamic = 'force-dynamic'
 
@@ -10,6 +11,7 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const start = performance.now()
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
@@ -20,6 +22,7 @@ export async function GET(
   if (!albumId) {
     return NextResponse.json({ error: 'Album ID required' }, { status: 400 })
   }
+  try {
 
   const admin = createAdminClient()
   const client = admin ?? supabase
@@ -27,27 +30,19 @@ export async function GET(
   const selectWithPosition = 'id, name, type, status, cover_image_url, cover_image_position, cover_video_url, description, user_id, created_at, flipbook_mode'
   const selectWithoutPosition = 'id, name, type, status, cover_image_url, description, user_id, created_at, flipbook_mode'
 
-  const { data: albumWithPosition, error: errWithPosition } = await client
-    .from('albums')
-    .select(selectWithPosition)
-    .eq('id', albumId)
-    .single()
+  const [albumRes, role] = await Promise.all([
+    client.from('albums').select(selectWithPosition).eq('id', albumId).single(),
+    getRole(supabase, user)
+  ])
 
-  let album: Record<string, unknown> | null = null
-  let albumErr: { message: string } | null = null
+  let album: Record<string, unknown> | null = (albumRes.data as Record<string, unknown> | null) ?? null
+  let albumErr: { message: string } | null = albumRes.error
 
-  if (errWithPosition && albumWithPosition == null) {
-    const { data: albumFallback, error: errFallback } = await client
-      .from('albums')
-      .select(selectWithoutPosition)
-      .eq('id', albumId)
-      .single()
-    album = albumFallback as Record<string, unknown> | null
-    albumErr = errFallback
+  if (albumErr && album == null) {
+    const fallback = await client.from('albums').select(selectWithoutPosition).eq('id', albumId).single()
+    album = fallback.data as Record<string, unknown> | null
+    albumErr = fallback.error
     if (album) (album as Record<string, unknown>).cover_image_position = null
-  } else {
-    album = albumWithPosition as Record<string, unknown> | null
-    albumErr = errWithPosition
   }
 
   if (albumErr || !album) {
@@ -56,7 +51,6 @@ export async function GET(
 
   const row = album as { id: string; name: string; type: string; status?: string; cover_image_url?: string | null; cover_image_position?: string | null; cover_video_url?: string | null; description?: string | null; user_id: string; flipbook_mode?: string | null }
   const isActualOwner = row.user_id === user.id
-  const role = await getRole(supabase, user)
   const isAdmin = role === 'admin'
   const isOwner = isActualOwner || isAdmin
 
@@ -120,10 +114,10 @@ export async function GET(
   const classList = (classes ?? []) as { id: string; name: string; sort_order: number; batch_photo_url?: string }[]
   const studentCounts: Record<string, number> = {}
 
-  // Optimized count: Fetch all access for album and group by class
+  // Count by class: minimal columns for grouping and distinct name count
   const { data: allAccess } = await client
     .from('album_class_access')
-    .select('class_id, student_name, status, photos')
+    .select('class_id, status, photos, student_name')
     .eq('album_id', albumId)
 
   if (allAccess) {
@@ -161,6 +155,9 @@ export async function GET(
     isGlobalAdmin: isAdmin,
     classes: classesWithCount,
   })
+  } finally {
+    logApiTiming('GET', `/api/albums/${albumId}`, start)
+  }
 }
 
 /** PATCH: Update album (cover, description). Owner only. */

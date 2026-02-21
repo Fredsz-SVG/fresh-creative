@@ -1,19 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase-server'
+import { logApiTiming } from '@/lib/api-timing'
 
 // GET /api/albums/[id]/teachers - Fetch all teachers for an album
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const start = performance.now()
+  const { id: albumId } = await params
   try {
     const supabase = await createClient()
-    const { id: albumId } = await params
 
-    // Fetch teachers sorted by sort_order
     const { data: teachers, error } = await supabase
       .from('album_teachers')
-      .select('*')
+      .select('id, album_id, name, title, message, photo_url, video_url, sort_order, created_at')
       .eq('album_id', albumId)
       .order('sort_order', { ascending: true })
       .order('created_at', { ascending: true })
@@ -23,12 +24,11 @@ export async function GET(
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    // Fetch photos for each teacher
     if (teachers && teachers.length > 0) {
       const teacherIds = teachers.map(t => t.id)
       const { data: photos } = await supabase
         .from('album_teacher_photos')
-        .select('*')
+        .select('id, teacher_id, file_url, sort_order')
         .in('teacher_id', teacherIds)
         .order('sort_order', { ascending: true })
 
@@ -53,6 +53,8 @@ export async function GET(
   } catch (error: any) {
     console.error('Error in GET /api/albums/[id]/teachers:', error)
     return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 })
+  } finally {
+    logApiTiming('GET', `/api/albums/${albumId}/teachers`, start)
   }
 }
 

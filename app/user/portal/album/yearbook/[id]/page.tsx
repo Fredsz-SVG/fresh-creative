@@ -1,7 +1,7 @@
 
 import { createClient } from '@/lib/supabase-server'
 import { redirect, notFound } from 'next/navigation'
-import YearbookAlbumClient from './YearbookAlbumClient'
+import YearbookAlbumClient from '@/components/yearbook/YearbookAlbumClient'
 import { getAlbumOverview, getAlbumAllMembers, getMyAccessAndRequests } from '@/lib/services/yearbook-service'
 
 // Helper to group members by class

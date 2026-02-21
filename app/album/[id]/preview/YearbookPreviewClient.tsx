@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import PreviewView from '@/app/user/portal/album/yearbook/[id]/components/PreviewView'
+import PreviewView from '@/components/yearbook/components/PreviewView'
 
 export default function YearbookPreviewClient({ initialAlbum, initialMembers, initialTeachers, initialFirstPhotos }: any) {
     const [album] = useState<any>(initialAlbum)

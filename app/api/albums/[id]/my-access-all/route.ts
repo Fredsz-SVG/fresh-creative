@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase-server'
+import { logApiTiming } from '@/lib/api-timing'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,31 +13,33 @@ export async function GET(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
+    const start = performance.now()
+    let albumId: string | null = null
     try {
         const supabase = await createClient()
         const { data: { user } } = await supabase.auth.getUser()
 
-        // Return empty maps if no user, consistent with no access
         if (!user) {
             return NextResponse.json({ access: {}, requests: {} })
         }
 
-        const { id: albumId } = await params
+        const p = await params
+        albumId = p.id
         if (!albumId) {
             return NextResponse.json({ error: 'Album ID required' }, { status: 400 })
         }
 
-        // Parallel fetch: access and requests
+        // Parallel fetch: access and requests (only columns needed by frontend)
         const [accessRes, requestsRes] = await Promise.all([
             supabase
                 .from('album_class_access')
-                .select('*')
+                .select('id, class_id, album_id, user_id, student_name, email, status, date_of_birth, instagram, message, video_url, photos, created_at')
                 .eq('album_id', albumId)
                 .eq('user_id', user.id),
 
             supabase
                 .from('album_join_requests')
-                .select('*')
+                .select('id, album_id, user_id, student_name, email, phone, class_name, status, assigned_class_id, requested_at')
                 .eq('album_id', albumId)
                 .eq('user_id', user.id)
         ])
@@ -86,5 +89,7 @@ export async function GET(
     } catch (err: any) {
         console.error('Error in my-access-all:', err)
         return NextResponse.json({ error: err.message || 'Internal Server Error' }, { status: 500 })
+    } finally {
+        if (albumId) logApiTiming('GET', `/api/albums/${albumId}/my-access-all`, start)
     }
 }

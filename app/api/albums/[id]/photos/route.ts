@@ -89,6 +89,9 @@ export async function POST(
     return NextResponse.json({ error: 'file, class_id, and student_name required' }, { status: 400 })
   }
 
+  const MAX_PHOTO_BYTES = 10 * 1024 * 1024 // 10MB
+  if (file.size > MAX_PHOTO_BYTES) return NextResponse.json({ error: 'Foto maksimal 10MB' }, { status: 413 })
+
   const admin = createAdminClient()
   const client = admin ?? supabase
 
@@ -227,19 +230,7 @@ export async function DELETE(
   const role = await getRole(supabase, user)
   const isOwner = (album as { user_id: string }).user_id === user.id || role === 'admin'
 
-  console.log('[DELETE PHOTO] Ownership check:', {
-    currentUserId: user.id,
-    albumUserId: (album as { user_id: string }).user_id,
-    role,
-    isOwner,
-    albumId,
-    classId,
-    studentName,
-    photoIndex: index
-  })
-
   if (!isOwner) {
-    // Check if user is album member (admin/helper) - they can delete any photos
     const { data: member } = await client
       .from('album_members')
       .select('album_id')
@@ -247,13 +238,9 @@ export async function DELETE(
       .eq('user_id', user.id)
       .maybeSingle()
 
-    console.log('[DELETE PHOTO] Member check:', { hasMember: !!member })
-
     if (!member) {
-      // Not album member, so user can only delete their own photos
-      // Use admin client to bypass RLS for checking access
       const accessClient = admin ?? supabase
-      const { data: access, error: accessErr } = await accessClient
+      const { data: access } = await accessClient
         .from('album_class_access')
         .select('id, user_id, student_name')
         .eq('album_id', albumId)
@@ -261,16 +248,6 @@ export async function DELETE(
         .eq('user_id', user.id)
         .eq('status', 'approved')
         .maybeSingle()
-
-      console.log('[DELETE PHOTO] Access check:', { 
-        found: !!access, 
-        error: accessErr,
-        userId: user.id, 
-        classId, 
-        albumId,
-        studentName,
-        accessStudentName: access?.student_name
-      })
 
       if (!access) {
         return NextResponse.json({ error: 'Anda hanya dapat menghapus foto Anda sendiri' }, { status: 403 })

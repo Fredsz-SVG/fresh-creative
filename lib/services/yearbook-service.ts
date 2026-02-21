@@ -92,10 +92,10 @@ export async function getAlbumOverview(albumId: string, userId?: string) {
 
         const isActualOwner = row.user_id === userId
 
-        // Check admin status via profiles table
+        // Check admin status via users table
         let isAdmin = false
         try {
-            const { data: profile } = await supabase.from('profiles').select('role').eq('id', userId).single()
+            const { data: profile } = await supabase.from('users').select('role').eq('id', userId).single()
             if (profile?.role === 'admin') isAdmin = true
         } catch { }
 

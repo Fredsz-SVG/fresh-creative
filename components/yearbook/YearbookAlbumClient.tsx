@@ -1,13 +1,15 @@
 'use client'
 
 import { useEffect, useState, useCallback, useRef } from 'react'
-import { useParams, useSearchParams } from 'next/navigation'
+import { useParams, useSearchParams, useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import BackLink from '@/components/dashboard/BackLink'
 import { ChevronLeft, ChevronRight, BookOpen, ImagePlus, Video, Play, Users, Layout, Eye, Menu } from 'lucide-react'
 import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
 import YearbookClassesView from './YearbookClassesView'
+import YearbookSkeleton, { isValidYearbookSection } from './components/YearbookSkeleton'
+import { getSectionModeFromUrl, getYearbookSectionQueryUrl } from './lib/yearbook-paths'
 
 type Album = {
   id: string
@@ -50,6 +52,8 @@ export default function YearbookAlbumClient({
 }: YearbookAlbumClientProps) {
   const params = useParams()
   const searchParams = useSearchParams()
+  const router = useRouter()
+  const pathname = usePathname()
   const id = params?.id as string | undefined
   const toolParam = searchParams.get('tool')
   const aiLabsTool = (toolParam && AI_LABS_TOOLS.includes(toolParam as any)) ? toolParam : null
@@ -81,13 +85,7 @@ export default function YearbookAlbumClient({
   const [accessDataLoaded, setAccessDataLoaded] = useState(!!initialAccess?.access && Object.keys(initialAccess.access).length > 0)
   const [requestsByClass, setRequestsByClass] = useState<Record<string, ClassRequest[]>>({})
   const [selectedRequestId, setSelectedRequestId] = useState<string | null>(null)
-  const [sidebarMode, setSidebarMode] = useState<'classes' | 'approval' | 'team' | 'sambutan' | 'ai-labs' | 'flipbook' | 'preview'>(() => {
-    if (typeof window !== 'undefined' && id) {
-      const saved = localStorage.getItem(`yearbook-sidebarMode-${id}`)
-      return (saved as 'classes' | 'approval' | 'team' | 'sambutan' | 'ai-labs' | 'flipbook' | 'preview') || 'classes'
-    }
-    return 'classes'
-  })
+  const [sidebarMode, setSidebarMode] = useState<'classes' | 'approval' | 'team' | 'sambutan' | 'ai-labs' | 'flipbook' | 'preview'>('classes')
   const [requestForm, setRequestForm] = useState<{ student_name: string; email: string }>({ student_name: '', email: '' })
   const [membersByClass, setMembersByClass] = useState<Record<string, ClassMember[]>>(initialMembers || {})
   const [classViewMode, setClassViewMode] = useState<'list' | 'personal'>(() => {
@@ -156,10 +154,12 @@ export default function YearbookAlbumClient({
     fetchCurrentUser()
   }, [])
 
-  const fetchAlbum = useCallback(async () => {
+  const fetchAlbum = useCallback(async (silent = false) => {
     if (!id) return
-    setLoading(true)
-    setError(null)
+    if (!silent) {
+      setLoading(true)
+      setError(null)
+    }
     try {
       const res = await fetch(`/api/albums/${id}`, { credentials: 'include', cache: 'no-store' })
       const data = await res.json().catch(() => ({}))
@@ -175,7 +175,7 @@ export default function YearbookAlbumClient({
       }
       setAlbum(data)
     } finally {
-      setLoading(false)
+      if (!silent) setLoading(false)
     }
   }, [id])
 
@@ -197,17 +197,30 @@ export default function YearbookAlbumClient({
     }
   }, [classIndex, id])
 
-  // Simpan sidebarMode ke localStorage ketika berubah
+  // Section dari URL: path segment atau query ?section= (query = navigasi instant tanpa refetch)
+  const sectionMode = getSectionModeFromUrl(pathname, searchParams.get('section'), id ?? '')
+  const isCoverView = sectionMode === 'cover'
+  const sidebarModeFromPath = sectionMode === 'cover' ? 'classes' : sectionMode
+
+  // Sinkronkan state dari pathname agar komponen anak yang masih pakai state tetap benar
+  useEffect(() => {
+    setView(sectionMode === 'cover' ? 'cover' : 'classes')
+    setSidebarMode(sectionMode === 'cover' ? 'classes' : sectionMode)
+  }, [sectionMode])
+
+  // Simpan sidebarMode ke localStorage (untuk fallback)
   useEffect(() => {
     if (typeof window !== 'undefined' && id) {
-      localStorage.setItem(`yearbook-sidebarMode-${id}`, sidebarMode)
+      localStorage.setItem(`yearbook-sidebarMode-${id}`, sidebarModeFromPath)
     }
-  }, [sidebarMode, id])
+  }, [sidebarModeFromPath, id])
 
-  // Saat URL punya ?tool=..., tetap di section AI Labs (sidebar album)
+  // Saat URL punya ?tool=..., redirect ke path ai-labs
   useEffect(() => {
-    if (aiLabsTool) setSidebarMode('ai-labs')
-  }, [aiLabsTool])
+    if (aiLabsTool && id && sectionMode !== 'ai-labs') {
+      router.replace(getYearbookSectionQueryUrl(id, 'ai-labs', pathname) + (searchParams.toString() ? `&${searchParams.toString()}` : ''), { scroll: false })
+    }
+  }, [aiLabsTool, id, sectionMode, router, searchParams])
 
   // Simpan classViewMode ke localStorage ketika berubah
   useEffect(() => {
@@ -226,6 +239,13 @@ export default function YearbookAlbumClient({
   const currentClassId = album?.classes?.[classIndex]?.id
   const isOwner = album?.isOwner === true
   const isAlbumAdmin = album?.isAlbumAdmin === true
+
+  // Role admin (global): "Kembali" selalu ke dashboard admin (setelah album tersedia)
+  const isAdminPath = typeof pathname === 'string' && pathname.startsWith('/admin/')
+  const isGlobalAdminUser = album?.isGlobalAdmin === true
+  const useAdminBack = isAdminPath || isGlobalAdminUser
+  const effectiveBackHref = useAdminBack ? '/admin/albums' : backHref
+  const effectiveBackLabel = useAdminBack ? 'Ke Manajemen Album' : backLabel
 
   // Optimized: Fetch all access data in one go (using my-access-all endpoint)
   // No longer need per-class fetch because the new endpoint is efficient
@@ -299,7 +319,7 @@ export default function YearbookAlbumClient({
           // Skip if we just made a local update in the last 3 seconds (optimistic update)
           const timeSinceLastUpdate = Date.now() - lastLocalUpdateRef.current
           if (timeSinceLastUpdate > 3000) {
-            fetchAlbum()
+            fetchAlbum(true)
           }
         }
       )
@@ -310,14 +330,14 @@ export default function YearbookAlbumClient({
           // Skip if we just made a local update in the last 3 seconds
           const timeSinceLastUpdate = Date.now() - lastLocalUpdateRef.current
           if (timeSinceLastUpdate > 3000) {
-            fetchAlbum()
+            fetchAlbum(true)
           }
         }
       )
       .on(
         'postgres_changes',
         { event: 'DELETE', schema: 'public', table: 'album_classes', filter: `album_id=eq.${albumId}` },
-        () => { fetchAlbum() }
+        () => { fetchAlbum(true) }
       )
       .subscribe()
     return () => {
@@ -697,13 +717,13 @@ export default function YearbookAlbumClient({
     }).then(res => {
       if (!res.ok) {
         // Revert on error
-        fetchAlbum()
+        fetchAlbum(true)
         return null
       }
       return res.json()
     }).catch(() => {
       // Revert on error
-      fetchAlbum()
+      fetchAlbum(true)
       return null
     })
   }
@@ -751,13 +771,13 @@ export default function YearbookAlbumClient({
     }).then(res => {
       if (!res.ok) {
         // Revert on error
-        fetchAlbum()
+        fetchAlbum(true)
         return null
       }
       return optimisticUpdate
     }).catch(() => {
       // Revert on error
-      fetchAlbum()
+      fetchAlbum(true)
       return null
     })
   }
@@ -1177,8 +1197,8 @@ export default function YearbookAlbumClient({
         return
       }
       toast.success(`Role berhasil diubah menjadi ${role === 'admin' ? 'Admin' : 'Member'}`)
-      // Refresh album to get updated member list
-      await fetchAlbum()
+      // Refresh album to get updated member list (silent = no skeleton)
+      await fetchAlbum(true)
     } catch (error) {
       console.error('Error updating role:', error)
       toast.error('Gagal mengubah role')
@@ -1198,8 +1218,8 @@ export default function YearbookAlbumClient({
         return
       }
       toast.success('Member berhasil dihapus dari album')
-      // Refresh album to get updated member list
-      await fetchAlbum()
+      // Refresh album to get updated member list (silent = no skeleton)
+      await fetchAlbum(true)
     } catch (error) {
       console.error('Error removing member:', error)
       toast.error('Gagal menghapus member')
@@ -1249,6 +1269,10 @@ export default function YearbookAlbumClient({
 
   const handleUploadPhoto = async (classId: string, studentName: string, className: string, file: File) => {
     if (!id) return
+    if (file.size > MAX_PHOTO_BYTES) {
+      toast.error('Foto maksimal 10MB')
+      return
+    }
     const formData = new FormData()
     formData.append('file', file)
     formData.append('class_id', classId)
@@ -1283,6 +1307,10 @@ export default function YearbookAlbumClient({
 
   const handleUploadVideo = async (classId: string, studentName: string, _className: string, file: File) => {
     if (!id) return
+    if (file.size > MAX_VIDEO_BYTES) {
+      toast.error(`Video maksimal ${MAX_VIDEO_MB}MB`)
+      return
+    }
     const formData = new FormData()
     formData.append('file', file)
     formData.append('student_name', studentName)
@@ -1318,8 +1346,16 @@ export default function YearbookAlbumClient({
     setAlbum((prev) => prev ? { ...prev, cover_image_url: null, cover_image_position: null } : null)
   }
 
+  const MAX_VIDEO_MB = 20
+  const MAX_VIDEO_BYTES = MAX_VIDEO_MB * 1024 * 1024
+  const MAX_PHOTO_BYTES = 10 * 1024 * 1024 // 10MB
+
   const handleUploadCoverVideo = async (file: File) => {
     if (!id) return
+    if (file.size > MAX_VIDEO_BYTES) {
+      toast.error(`Video maksimal ${MAX_VIDEO_MB}MB`)
+      return
+    }
     setUploadingCoverVideo(true)
     try {
       const formData = new FormData()
@@ -1387,6 +1423,10 @@ export default function YearbookAlbumClient({
     dataUrlToRevoke?: string
   ) => {
     if (!id) return
+    if (file.size > MAX_PHOTO_BYTES) {
+      toast.error('Foto maksimal 10MB')
+      return
+    }
     setUploadingCover(true)
     try {
       const formData = new FormData()
@@ -1427,162 +1467,25 @@ export default function YearbookAlbumClient({
       <div className={mobileFirstWrapper}>
         <div className={`${contentWrapper} p-4`}>
           <p className="text-red-400">ID album tidak valid.</p>
-          <BackLink href={backHref} />
+          <BackLink href={effectiveBackHref} />
         </div>
       </div>
     )
   }
 
   if (loading) {
-    const isCover = view === 'cover'
-    const showClassesPanel = sidebarMode === 'classes' && !isCover
-    const isAiLabs = sidebarMode === 'ai-labs'
-    const isApproval = sidebarMode === 'approval'
-    const isTeam = sidebarMode === 'team'
-
-    return (
-      <div className={mobileFirstWrapper}>
-        {/* Navbar Skeleton */}
-        <div className="sticky top-0 z-50 w-full h-14 border-b border-white/10 bg-[#0a0a0b] flex items-center px-4 gap-4">
-          <div className="w-8 h-8 rounded-lg bg-white/5 animate-pulse lg:hidden" />
-          <div className="h-6 w-32 bg-white/5 rounded animate-pulse" />
-          <div className="ml-auto w-8 h-8 rounded-full bg-white/5 animate-pulse" />
-        </div>
-
-        <div className="min-h-[calc(100vh-3.5rem)] relative">
-          {/* Icon Sidebar Skeleton - Mimic Icon + Label */}
-          <div className="hidden lg:flex fixed left-0 top-14 bottom-0 w-16 border-r border-white/10 flex-col items-center py-4 bg-[#0a0a0b] z-30">
-            {[1, 2, 3, 4, 5, 6].map((i) => (
-              <div key={i} className="flex flex-col items-center gap-1 mb-6">
-                <div className="w-6 h-6 rounded-lg bg-white/5 animate-pulse" />
-                <div className="w-8 h-2 rounded bg-white/5 animate-pulse" />
-              </div>
-            ))}
-          </div>
-
-          {/* Panel Sidebar Skeleton (Classes List) - Only if Classes Mode */}
-          {showClassesPanel && (
-            <div className="hidden lg:flex fixed left-16 top-14 bottom-0 w-64 border-r border-white/10 flex-col p-4 bg-[#0a0a0b] z-20">
-              <div className="h-10 w-full bg-white/5 rounded-lg animate-pulse mb-6" />
-              <div className="space-y-3">
-                {[1, 2, 3, 4, 5, 6].map((i) => (
-                  <div key={i} className="h-12 w-full bg-white/5 rounded-lg animate-pulse" />
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Main Content Skeleton */}
-          <div className={`p-4 ${showClassesPanel ? 'lg:ml-80' : 'lg:ml-16'} transition-all duration-300`}>
-            <div className={`${contentWrapper} w-full`}>
-              {isCover ? (
-                /* 1. Cover Skeleton - Single Large Card */
-                <div className="flex flex-col items-center max-w-xs mx-auto pt-4 sm:pt-8 animate-in fade-in duration-500">
-                  <div className="w-full aspect-[3/4] bg-white/5 rounded-xl animate-pulse border border-white/10 mb-6 shadow-xl relative overflow-hidden">
-                    <div className="absolute inset-0 flex items-center justify-center opacity-30">
-                      <div className="w-16 h-16 rounded-full bg-white/10" />
-                    </div>
-                  </div>
-                  <div className="w-3/4 h-6 bg-white/5 rounded-lg animate-pulse mb-3" />
-                  <div className="w-1/2 h-4 bg-white/5 rounded animate-pulse" />
-                </div>
-              ) : isApproval ? (
-                /* 2. Approval Skeleton - Tabs & List */
-                <div className="flex flex-col gap-4 max-w-5xl mx-auto">
-                  {/* Stats Header */}
-                  <div className="flex gap-2 mb-2 px-1">
-                    <div className="h-6 w-20 bg-white/5 rounded-full animate-pulse" />
-                    <div className="h-6 w-20 bg-white/5 rounded-full animate-pulse" />
-                  </div>
-                  {/* Tabs */}
-                  <div className="flex gap-2 mb-4 bg-white/[0.03] p-1 rounded-xl w-full sm:w-80">
-                    <div className="flex-1 h-9 bg-white/10 rounded-lg animate-pulse" />
-                    <div className="flex-1 h-9 bg-white/5 rounded-lg animate-pulse" />
-                  </div>
-                  {/* Request Items */}
-                  {[1, 2, 3, 4].map((i) => (
-                    <div key={i} className="w-full h-20 bg-white/5 rounded-xl animate-pulse border border-white/5 p-4 flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-full bg-white/10" />
-                      <div className="flex-1 space-y-2">
-                        <div className="h-4 w-1/3 bg-white/10 rounded" />
-                        <div className="h-3 w-1/4 bg-white/10 rounded" />
-                      </div>
-                      <div className="w-20 h-8 bg-white/5 rounded-lg" />
-                    </div>
-                  ))}
-                </div>
-              ) : isTeam ? (
-                /* 3. Team Skeleton - Search & Compact List */
-                <div className="max-w-5xl mx-auto">
-                  {/* Search Bar */}
-                  <div className="mb-4">
-                    <div className="w-full sm:w-64 h-9 bg-white/5 rounded-lg animate-pulse border border-white/10" />
-                  </div>
-                  {/* Compact Members */}
-                  <div className="flex flex-col gap-1.5">
-                    {[1, 2, 3, 4, 5, 6].map((i) => (
-                      <div key={i} className="h-16 w-full bg-white/5 rounded-lg border border-white/10 flex items-center p-3 gap-3 animate-pulse">
-                        {/* No Avatar Circle */}
-                        <div className="flex-1 space-y-2">
-                          <div className="w-32 h-3 bg-white/10 rounded" />
-                          <div className="w-24 h-2 bg-white/10 rounded" />
-                        </div>
-                        <div className="w-16 h-6 rounded bg-white/5" />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                /* 4 & 5. Grid Layouts (AI Labs, Classes, Sambutan) */
-                <div className="max-w-5xl mx-auto">
-                  {/* Header with Add Button (Only for Sambutan) */}
-                  {sidebarMode === 'sambutan' && (
-                    <div className="mb-4 flex flex-col sm:flex-row sm:items-center gap-3">
-                      {/* Add Button on Left */}
-                      <div className="w-32 h-10 bg-white/10 rounded-xl animate-pulse" />
-                    </div>
-                  )}
-
-                  <div className={`grid grid-cols-2 sm:grid-cols-2 ${isAiLabs ? 'lg:grid-cols-5' : 'lg:grid-cols-3 xl:grid-cols-4'} gap-3 sm:gap-4`}>
-                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((i) => (
-                      isAiLabs ? (
-                        /* AI Labs - Wide Grid */
-                        <div key={i} className="bg-white/5 rounded-2xl animate-pulse border border-white/5 p-6 flex flex-col items-center justify-center gap-4 min-h-[160px]">
-                          <div className="w-16 h-16 rounded-2xl bg-white/10" />
-                          <div className="h-4 w-24 bg-white/10 rounded" />
-                          <div className="h-3 w-32 bg-white/10 rounded" />
-                        </div>
-                      ) : (
-                        /* Classes & Sambutan - Portrait Card Skeleton */
-                        /* Mimics Teacher/Student Card: Photo (4/5) + Content Block */
-                        <div key={i} className="bg-white/5 rounded-xl animate-pulse border border-white/5 overflow-hidden flex flex-col h-full">
-                          {/* Photo Aspect 4/5 */}
-                          <div className="w-full aspect-[4/5] bg-white/10" />
-                          {/* Info Body */}
-                          <div className="p-3 flex flex-col gap-2 flex-1">
-                            <div className="h-4 w-3/4 bg-white/10 rounded" />
-                            <div className="h-3 w-1/2 bg-white/10 rounded" />
-                            {/* Action Row Mimic */}
-                            <div className="mt-auto w-full h-7 bg-white/5 rounded-lg" />
-                          </div>
-                        </div>
-                      )
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-    )
+    const sectionParam = searchParams.get('section')
+    const skeletonSection = isValidYearbookSection(sectionParam)
+      ? sectionParam
+      : sectionMode
+    return <YearbookSkeleton section={skeletonSection} />
   }
 
   if (error || !album) {
     return (
       <div className={mobileFirstWrapper}>
         <div className={`${contentWrapper} p-4 pb-6`}>
-          <BackLink href={backHref} />
+          <BackLink href={effectiveBackHref} />
           <p className="text-red-400 mt-4">{error ?? 'Album tidak ditemukan.'}</p>
           <p className="text-muted text-sm mt-2">Pastikan album sudah disetujui (approved) dan Anda memiliki akses.</p>
         </div>
@@ -1591,39 +1494,39 @@ export default function YearbookAlbumClient({
   }
 
   if (view === 'cover' || view === 'classes') {
-    const isCoverView = view === 'cover'
+    const isCoverView = sectionMode === 'cover'
     const showBackLink = true
     const currentClass = album?.classes?.[classIndex]
     const aiLabsToolLabel: Record<string, string> = { tryon: 'Virtual Try On', pose: 'Pose', 'image-editor': 'Image Editor', photogroup: 'Photo Group', phototovideo: 'Photo to Video' }
-    const isAiLabsToolActive = sidebarMode === 'ai-labs' && !!aiLabsTool
-    const aiLabsBackHref = album?.id ? `/user/portal/album/yearbook/${album.id}` : backHref
+    const isAiLabsToolActive = sidebarModeFromPath === 'ai-labs' && !!aiLabsTool
+    const aiLabsBackHref = album?.id ? (useAdminBack ? `/admin/album/yearbook/${album.id}` : `/user/portal/album/yearbook/${album.id}`) : effectiveBackHref
     const sectionTitle =
       isCoverView ? 'Sampul Album'
-        : sidebarMode === 'ai-labs' ? (aiLabsTool ? (aiLabsToolLabel[aiLabsTool] ?? 'AI Labs') : 'AI Labs')
-          : sidebarMode === 'sambutan' ? 'Sambutan'
-            : sidebarMode === 'classes' ? (currentClass?.name ?? 'Kelas')
-              : sidebarMode === 'approval' ? 'Persetujuan'
-                : sidebarMode === 'team' ? 'Kelola Anggota'
-                  : sidebarMode === 'flipbook' ? 'Flipbook'
-                    : sidebarMode === 'preview' ? 'Preview'
+        : sidebarModeFromPath === 'ai-labs' ? (aiLabsTool ? (aiLabsToolLabel[aiLabsTool] ?? 'AI Labs') : 'AI Labs')
+          : sidebarModeFromPath === 'sambutan' ? 'Sambutan'
+            : sidebarModeFromPath === 'classes' ? (currentClass?.name ?? 'Kelas')
+              : sidebarModeFromPath === 'approval' ? 'Persetujuan'
+                : sidebarModeFromPath === 'team' ? 'Kelola Anggota'
+                  : sidebarModeFromPath === 'flipbook' ? 'Flipbook'
+                    : sidebarModeFromPath === 'preview' ? 'Preview'
                       : ''
     const sectionSubtitle =
       isCoverView ? 'Tampilan sampul dan pengaturan cover album.'
-        : sidebarMode === 'ai-labs' ? (aiLabsTool ? '' : 'Pilih fitur yang ingin digunakan. Semua fitur AI tersedia di sini.')
-          : sidebarMode === 'sambutan' ? 'Kartu sambutan dan profil.'
-            : sidebarMode === 'classes' ? (currentClass ? 'Profil dan foto anggota kelas.' : 'Daftar kelas dan anggota.')
-              : sidebarMode === 'approval' ? 'Kelola permintaan akses dan persetujuan.'
-                : sidebarMode === 'team' ? 'Kelola anggota tim album.'
-                  : sidebarMode === 'flipbook' ? 'Editor dan preview flipbook.'
-                    : sidebarMode === 'preview' ? 'Preview tampilan album yearbook.'
+        : sidebarModeFromPath === 'ai-labs' ? (aiLabsTool ? '' : 'Pilih fitur yang ingin digunakan. Semua fitur AI tersedia di sini.')
+          : sidebarModeFromPath === 'sambutan' ? 'Kartu sambutan dan profil.'
+            : sidebarModeFromPath === 'classes' ? (currentClass ? 'Profil dan foto anggota kelas.' : 'Daftar kelas dan anggota.')
+              : sidebarModeFromPath === 'approval' ? 'Kelola permintaan akses dan persetujuan.'
+                : sidebarModeFromPath === 'team' ? 'Kelola anggota tim album.'
+                  : sidebarModeFromPath === 'flipbook' ? 'Editor dan preview flipbook.'
+                    : sidebarModeFromPath === 'preview' ? 'Preview tampilan album yearbook.'
                       : ''
 
     const headerCount =
-      sidebarMode === 'classes' && !isCoverView && currentClass
+      sidebarModeFromPath === 'classes' && !isCoverView && currentClass
         ? (membersByClass[currentClass.id]?.length ?? currentClass.student_count ?? 0)
-        : sidebarMode === 'sambutan'
+        : sidebarModeFromPath === 'sambutan'
           ? teacherCount
-          : sidebarMode === 'team'
+          : sidebarModeFromPath === 'team'
             ? teamMemberCount
             : null
 
@@ -1633,12 +1536,12 @@ export default function YearbookAlbumClient({
         {showBackLink && (
           <div className="flex sticky top-0 z-50 bg-[#0a0a0b] border-b border-white/10 px-3 lg:px-4 h-14 items-center gap-3 lg:gap-4">
             {/* Mobile: compact back arrow */}
-            <Link href={isAiLabsToolActive ? aiLabsBackHref : backHref} className="lg:hidden inline-flex items-center justify-center p-1.5 -ml-1 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors touch-manipulation">
+            <Link href={isAiLabsToolActive ? aiLabsBackHref : effectiveBackHref} className="lg:hidden inline-flex items-center justify-center p-1.5 -ml-1 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors touch-manipulation">
               <ChevronLeft className="w-5 h-5" />
             </Link>
             {/* Desktop: full BackLink */}
             <div className="hidden lg:block">
-              <BackLink href={backHref} label={backLabel} />
+              <BackLink href={effectiveBackHref} label={effectiveBackLabel} />
             </div>
             {sectionTitle && (
               <>
@@ -1669,7 +1572,7 @@ export default function YearbookAlbumClient({
             )}
 
             {/* Flipbook Controls (Mobile & Desktop) */}
-            {sidebarMode === 'flipbook' && (isOwner || isAlbumAdmin) && (
+            {sidebarModeFromPath === 'flipbook' && (isOwner || isAlbumAdmin) && (
               <div className="ml-auto flex bg-[#0a0a0b] p-1 rounded-xl border border-white/10 gap-1 items-center scale-90 lg:scale-100 origin-right">
                 <button
                   onClick={() => setFlipbookPreviewMode(false)}
@@ -1687,7 +1590,7 @@ export default function YearbookAlbumClient({
             )}
 
             {/* Class Menu Button (Mobile) */}
-            {sidebarMode === 'classes' && !isCoverView && (
+            {sidebarModeFromPath === 'classes' && !isCoverView && (
               <button
                 type="button"
                 onClick={(e) => {
@@ -1728,8 +1631,9 @@ export default function YearbookAlbumClient({
             accessDataLoaded={accessDataLoaded}
             selectedRequestId={selectedRequestId}
             setSelectedRequestId={setSelectedRequestId}
-            sidebarMode={sidebarMode}
+            sidebarMode={sidebarModeFromPath}
             setSidebarMode={setSidebarMode}
+            albumId={id ?? ''}
             flipbookPreviewMode={flipbookPreviewMode}
             setFlipbookPreviewMode={setFlipbookPreviewMode}
             mobileMenuOpen={mobileMenuOpen}
@@ -1787,8 +1691,8 @@ export default function YearbookAlbumClient({
             fetchStudentPhotosForCard={fetchStudentPhotosForCard}
             handleUpdateClass={handleUpdateClass}
             handleUpdateAlbum={handleUpdateAlbum}
-            // Cover View Props
-            isCoverView={view === 'cover'}
+            // Cover View Props (pakai sectionMode agar tidak flash sidebar kelas saat buka Sampul dari URL)
+            isCoverView={sectionMode === 'cover'}
             uploadingCover={uploadingCover}
             coverPreview={coverPreview}
             setCoverPreview={setCoverPreview}

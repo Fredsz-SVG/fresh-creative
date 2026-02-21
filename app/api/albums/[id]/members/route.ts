@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase-server'
 import { createAdminClient } from '@/lib/supabase-admin'
 import { getRole } from '@/lib/auth'
+import { logApiTiming } from '@/lib/api-timing'
 
 export const dynamic = 'force-dynamic'
 
@@ -10,41 +11,41 @@ export async function GET(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
+    const start = performance.now()
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const { id: albumId } = await params
     if (!albumId) return NextResponse.json({ error: 'Album ID required' }, { status: 400 })
+    try {
 
     const supabaseAdmin = createAdminClient()
     const client = supabaseAdmin || supabase
 
-    const { data: album } = await client.from('albums').select('user_id').eq('id', albumId).single()
+    const [albumRes, globalRole, adminCheck] = await Promise.all([
+        client.from('albums').select('user_id').eq('id', albumId).single(),
+        getRole(supabase, user),
+        client.from('album_members').select('role').eq('album_id', albumId).eq('user_id', user.id).eq('role', 'admin').maybeSingle()
+    ])
+    const album = albumRes.data as { user_id: string } | null
     if (!album) return NextResponse.json({ error: 'Album not found' }, { status: 404 })
 
-    const isOwner = (album as { user_id: string }).user_id === user.id
-    const globalRole = await getRole(supabase, user)
+    const isOwner = album.user_id === user.id
     const isGlobalAdmin = globalRole === 'admin'
-
-    const { data: adminCheck } = await client
-        .from('album_members')
-        .select('role')
-        .eq('album_id', albumId)
-        .eq('user_id', user.id)
-        .eq('role', 'admin')
-        .maybeSingle()
-
-    const isAlbumAdmin = !!(adminCheck as { role?: string } | null)?.role
+    const isAlbumAdmin = !!(adminCheck.data as { role?: string } | null)?.role
     const canManage = isOwner || isAlbumAdmin || isGlobalAdmin
 
     if (!canManage) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-    // 1. Get existing members (those with explicit roles) - only columns from album_members so role is always correct
-    const { data: members } = await client
-        .from('album_members')
-        .select('user_id, role, joined_at')
-        .eq('album_id', albumId)
+    const [membersRes, allStudentsRes, ownerRes] = await Promise.all([
+        client.from('album_members').select('user_id, role, joined_at').eq('album_id', albumId),
+        client.from('album_class_access').select('user_id, student_name, email, status').eq('album_id', albumId).eq('status', 'approved'),
+        client.from('users').select('id, email').eq('id', album.user_id).single()
+    ])
+    const members = membersRes.data
+    const allStudents = allStudentsRes.data
+    const ownerData = ownerRes.data
 
     const memberIds = members?.map((m: any) => m.user_id).filter((id: string) => id !== album.user_id) ?? []
     let emailByUserId: Record<string, string> = {}
@@ -53,22 +54,7 @@ export async function GET(
         if (userRows) userRows.forEach((u: any) => { emailByUserId[u.id] = u.email || 'Unknown' })
     }
 
-    // 2. Get ALL students from class access (including those without user_id)
-    const { data: allStudents } = await client
-        .from('album_class_access')
-        .select('user_id, student_name, email, status')
-        .eq('album_id', albumId)
-        .eq('status', 'approved')
-
-    // Merge
     const userMap = new Map()
-
-    // Add owner first with special role
-    const { data: ownerData } = await client
-        .from('users')
-        .select('id, email')
-        .eq('id', album.user_id)
-        .single()
 
     if (ownerData) {
         userMap.set(ownerData.id, {
@@ -126,6 +112,9 @@ export async function GET(
     })
 
     return NextResponse.json(Array.from(userMap.values()))
+    } finally {
+        logApiTiming('GET', `/api/albums/${albumId}/members`, start)
+    }
 }
 
 // POST: Promote/Add member

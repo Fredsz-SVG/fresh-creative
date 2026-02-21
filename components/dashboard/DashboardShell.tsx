@@ -186,9 +186,9 @@ export default function DashboardShell({
     return segments.some((s) => pathname.endsWith('/' + s))
   }, [pathname])
 
-  // Halaman album yearbook (sampul/detail): full screen tanpa header, sidebar, dan bottom nav
+  // Halaman album yearbook (sampul atau section kelas/preview/dll): full screen tanpa header, sidebar, dan bottom nav
   const isYearbookAlbumPage = useMemo(() => {
-    return /\/album\/yearbook\/[^/]+$/.test(pathname)
+    return /\/album\/yearbook\/[^/]+(\/[^/]+)?$/.test(pathname ?? '')
   }, [pathname])
 
   // Derive bottom nav items for mobile (app-like): Home, Labs, Album, Riwayat Transaksi

@@ -27,6 +27,9 @@ export async function POST(
     return NextResponse.json({ error: 'file dan student_name required' }, { status: 400 })
   }
 
+  const MAX_VIDEO_BYTES = 20 * 1024 * 1024 // 20MB
+  if (file.size > MAX_VIDEO_BYTES) return NextResponse.json({ error: 'Video maksimal 20MB' }, { status: 413 })
+
   const admin = createAdminClient()
   if (!admin) return NextResponse.json({ error: 'Server configuration error' }, { status: 500 })
 
