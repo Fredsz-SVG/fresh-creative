@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase-server'
 import { createAdminClient } from '@/lib/supabase-admin'
 import { getRole } from '@/lib/auth'
-import { randomBytes } from 'crypto'
+import { generateShortInviteCode } from '@/lib/invite-code'
 
 export const dynamic = 'force-dynamic'
 
@@ -65,7 +65,7 @@ export async function POST(
     return NextResponse.json({ error: 'Only main owner can create admin invites' }, { status: 403 })
   }
 
-  const token = randomBytes(24).toString('base64url')
+  const token = generateShortInviteCode()
   const expiresAt = new Date()
   expiresAt.setDate(expiresAt.getDate() + 7)
 

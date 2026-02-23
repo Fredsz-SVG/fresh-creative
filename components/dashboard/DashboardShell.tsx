@@ -119,8 +119,19 @@ export default function DashboardShell({
 
     init()
 
+    const onCreditsUpdated = () => {
+      fetch('/api/user/me')
+        .then((res) => res.json())
+        .then((data) => {
+          if (typeof data.credits === 'number') setCredits(data.credits)
+        })
+        .catch(() => {})
+    }
+    window.addEventListener('credits-updated', onCreditsUpdated)
+
     return () => {
       if (channel) supabase.removeChannel(channel)
+      window.removeEventListener('credits-updated', onCreditsUpdated)
     }
   }, [])
 
@@ -131,6 +142,17 @@ export default function DashboardShell({
       setUnreadCount(prev => Math.max(0, prev - 1))
 
       await fetch(`/api/user/notifications/${id}`, { method: 'PATCH' }).catch(() => { })
+    } catch (e) {
+      fetchNotifications()
+    }
+  }
+
+  const handleMarkAllRead = async () => {
+    if (unreadCount === 0) return
+    try {
+      setNotifications(prev => prev.map(n => ({ ...n, is_read: true })))
+      setUnreadCount(0)
+      await fetch('/api/user/notifications', { method: 'PATCH' }).catch(() => { })
     } catch (e) {
       fetchNotifications()
     }
@@ -338,13 +360,23 @@ export default function DashboardShell({
 
             {showNotifications && (
               <>
-                <div className="absolute top-full right-0 mt-2 w-80 bg-[#18181b] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-200">
+                <div className="fixed left-1/2 -translate-x-1/2 top-[calc(3.5rem+env(safe-area-inset-top)+0.5rem)] w-[calc(100vw-2rem)] max-w-sm md:left-auto md:right-0 md:top-full md:mt-2 md:w-80 md:translate-x-0 md:absolute bg-[#18181b] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-200">
                   <div className="p-3 border-b border-white/5 flex items-center justify-between">
                     <h3 className="text-xs font-semibold text-white uppercase tracking-wider">Notifikasi</h3>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap justify-end">
                       <span className="text-[10px] text-gray-500">{unreadCount} baru</span>
+                      {unreadCount > 0 && (
+                        <button
+                          type="button"
+                          onClick={handleMarkAllRead}
+                          className="text-[10px] text-lime-400 hover:text-lime-300 transition-colors"
+                        >
+                          Tandai semua dibaca
+                        </button>
+                      )}
                       {notifications.length > 0 && (
                         <button
+                          type="button"
                           onClick={handleClearNotifications}
                           className="text-[10px] text-red-400 hover:text-red-300 transition-colors"
                         >

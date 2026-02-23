@@ -181,8 +181,20 @@ export default function AdminCreditSettingsPage() {
             </div>
 
             {loading ? (
-                <div className="flex items-center justify-center py-16 sm:p-20">
-                    <Loader2 className="w-8 h-8 text-lime-500 animate-spin" />
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {[1, 2, 3, 4, 5, 6].map((i) => (
+                        <div key={i} className="bg-white/[0.03] border border-white/10 rounded-2xl p-5 animate-pulse">
+                            <div className="flex justify-between items-start mb-4">
+                                <div className="space-y-2">
+                                    <div className="h-8 w-16 bg-white/10 rounded" />
+                                    <div className="h-3 w-14 bg-white/5 rounded" />
+                                </div>
+                            </div>
+                            <div className="pt-4 border-t border-white/10">
+                                <div className="h-6 w-24 bg-white/10 rounded" />
+                            </div>
+                        </div>
+                    ))}
                 </div>
             ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

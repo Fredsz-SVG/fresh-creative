@@ -1,10 +1,31 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Check, X, Trash2, UserPlus, Loader2 } from 'lucide-react'
+import { Check, X, Trash2, UserPlus, Loader2, ImagePlus, BookOpen, ChevronRight, Search } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
+
+/** Extract token from URL atau kode (alphanumeric + - _, 6–80 char; support token lama yang panjang). */
+function parseInviteToken(input: string): { token: string; type: 'join' | 'invite' | 'code' } | null {
+  let trimmed = input.trim()
+  // Buang prefix umum saat user copy-paste teks "Kode: xyz"
+  trimmed = trimmed.replace(/^(kode|code)\s*[:\-]\s*/i, '').trim()
+  if (!trimmed) return null
+  try {
+    // Terima kode 6–80 karakter (alphanumeric, base64url punya - dan _)
+    if (/^[a-zA-Z0-9_-]{6,80}$/.test(trimmed)) return { token: trimmed, type: 'code' }
+    const url = trimmed.startsWith('http') ? new URL(trimmed) : new URL(trimmed, 'https://x')
+    const path = url.pathname
+    const joinMatch = path.match(/\/join\/([^/]+)/i)
+    if (joinMatch) return { token: joinMatch[1], type: 'join' }
+    const inviteMatch = path.match(/\/invite\/([^/]+)/i)
+    if (inviteMatch) return { token: inviteMatch[1], type: 'invite' }
+    return null
+  } catch {
+    return null
+  }
+}
 
 export type AlbumRow = {
   id: string
@@ -158,8 +179,26 @@ export default function AlbumsView({ variant, initialData }: AlbumsViewProps) {
   const [loading, setLoading] = useState(!initialData)
   const [loadingId, setLoadingId] = useState<string | null>(null)
   const [inviteLoading, setInviteLoading] = useState<string | null>(null)
-  const [inviteModal, setInviteModal] = useState<{ link: string; albumName: string } | null>(null)
-  const router = useRouter() // Add router for navigation
+  const [inviteModal, setInviteModal] = useState<{ link: string; code: string; albumName: string } | null>(null)
+  const [inviteLinkInput, setInviteLinkInput] = useState('')
+  const [joinLoading, setJoinLoading] = useState(false)
+  const [joinError, setJoinError] = useState<string | null>(null)
+  const [confirmModal, setConfirmModal] = useState<'personal' | 'yearbook' | null>(null)
+  const [copyFeedback, setCopyFeedback] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const router = useRouter()
+
+  const filteredAlbums = useMemo(() => {
+    if (!searchQuery.trim()) return albums
+    const q = searchQuery.trim().toLowerCase()
+    return albums.filter((a) =>
+      a.name?.toLowerCase().includes(q) ||
+      a.school_city?.toLowerCase().includes(q) ||
+      a.pic_name?.toLowerCase().includes(q) ||
+      a.pricing_packages?.name?.toLowerCase().includes(q) ||
+      a.wa_e164?.includes(q)
+    )
+  }, [albums, searchQuery])
 
   const fetchAlbums = useCallback(async (silent = false) => {
     if (!silent) setLoading(true)
@@ -260,7 +299,8 @@ export default function AlbumsView({ variant, initialData }: AlbumsViewProps) {
       }
       const origin = typeof window !== 'undefined' ? window.location.origin : ''
       const link = data.inviteLink ?? `${origin}/join/${data.token}`
-      setInviteModal({ link, albumName: album.name })
+      const code = data.token ?? ''
+      setInviteModal({ link, code, albumName: album.name })
     } catch {
       alert('Gagal membuat link undangan')
     } finally {
@@ -298,9 +338,54 @@ export default function AlbumsView({ variant, initialData }: AlbumsViewProps) {
     router.push(destinationUrl)
   }
 
+  const handleOpenInviteLink = async () => {
+    setJoinError(null)
+    const parsed = parseInviteToken(inviteLinkInput)
+    if (!parsed) {
+      setJoinError('Masukkan kode undangan atau tempel link.')
+      return
+    }
+    const { token, type } = parsed
+    if (type === 'invite') {
+      router.push(`/invite/${token}`)
+      return
+    }
+    setJoinLoading(true)
+    try {
+      const res = await fetch(`/api/albums/invite/${encodeURIComponent(token)}/join`, {
+        method: 'POST',
+        credentials: 'include',
+      })
+      const data = await res.json().catch(() => ({}))
+      if (res.ok) {
+        const albumId = data?.albumId
+        if (albumId) {
+          const basePath = isAdmin ? '/admin' : '/user/portal'
+          router.push(`${basePath}/album/yearbook/${albumId}`)
+        } else {
+          fetchAlbums(true)
+          setInviteLinkInput('')
+        }
+        return
+      }
+      if (type === 'code' && res.status === 404) {
+        const checkRes = await fetch(`/api/albums/invite/${encodeURIComponent(token)}`, { credentials: 'include' })
+        if (checkRes.ok) {
+          router.push(`/invite/${token}`)
+          return
+        }
+      }
+      setJoinError(typeof data?.error === 'string' ? data.error : 'Gagal bergabung.')
+    } catch {
+      setJoinError('Gagal bergabung. Coba lagi.')
+    } finally {
+      setJoinLoading(false)
+    }
+  }
+
   const isAdmin = variant === 'admin'
-  const title = isAdmin ? 'Manajemen Album & Approve' : 'Album Saya'
-  const subtitle = isAdmin ? 'Edit status (Approve/Decline) dan hapus. Data tampil langsung dari tabel albums.' : 'Daftar album Anda.'
+  const title = isAdmin ? 'Manajemen Album' : 'Album Saya'
+  const subtitle = isAdmin ? 'Kelola status dan data album.' : 'Daftar album Anda.'
   const showroomHref = isAdmin ? '/admin/showroom' : '/user/showroom'
   const publicCreateHref = isAdmin ? '/admin/album/public/create' : '/user/portal/album/public/create'
 
@@ -312,66 +397,198 @@ export default function AlbumsView({ variant, initialData }: AlbumsViewProps) {
           <h1 className="text-xl font-bold text-app sm:text-2xl">{title}</h1>
           <p className="text-muted text-xs mt-0.5 sm:text-sm">{subtitle}</p>
         </div>
-        <div className="flex flex-col gap-2 sm:flex-row sm:gap-2">
-          <Link href={publicCreateHref} className="w-full sm:w-auto text-center px-4 py-3 sm:py-2 bg-sky-600 text-white text-sm font-semibold rounded-xl hover:bg-sky-700 active:bg-sky-800 touch-manipulation">
-            + Buat Public Album
-          </Link>
-          <Link href={showroomHref} className="w-full sm:w-auto text-center px-4 py-3 sm:py-2 bg-purple-600 text-white text-sm font-semibold rounded-xl hover:bg-purple-700 active:bg-purple-800 touch-manipulation">
-            + Order Yearbook
-          </Link>
+        <div className="flex flex-row gap-2">
+          <button
+            type="button"
+            onClick={() => setConfirmModal('personal')}
+            className="flex-1 min-h-[44px] flex items-center justify-center gap-2 px-3 py-2.5 text-sm font-semibold rounded-xl bg-sky-600 text-white hover:bg-sky-700 active:bg-sky-800 active:scale-[0.98] touch-manipulation transition-transform"
+            title="Buat Personal"
+          >
+            <ImagePlus className="w-4 h-4 shrink-0" />
+            <span className="hidden sm:inline">Personal</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setConfirmModal('yearbook')}
+            className="flex-1 min-h-[44px] flex items-center justify-center gap-2 px-3 py-2.5 text-sm font-semibold rounded-xl bg-purple-600 text-white hover:bg-purple-700 active:bg-purple-800 active:scale-[0.98] touch-manipulation transition-transform"
+            title="Order Yearbook"
+          >
+            <BookOpen className="w-4 h-4 shrink-0" />
+            <span className="hidden sm:inline">Yearbook</span>
+          </button>
         </div>
+      </div>
+
+      {/* Kotak: Cari + Kode undangan — simetris, satu border */}
+      <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4 mb-4 space-y-4">
+        <div className="flex items-center gap-2 w-full max-w-md mx-auto md:max-w-none md:mx-0">
+          <div className="flex-1 min-w-0 flex items-center gap-2 min-h-[44px] px-3 py-2 rounded-lg bg-white/5 border border-white/10">
+            <Search className="w-4 h-4 text-muted shrink-0 flex-shrink-0" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Cari nama, kota, paket..."
+              className="flex-1 min-w-0 bg-transparent text-sm text-app placeholder:text-muted focus:outline-none h-8 leading-normal"
+            />
+          </div>
+          <button
+            type="button"
+            aria-label="Cari"
+            className="shrink-0 flex items-center justify-center w-11 h-11 min-h-[44px] rounded-lg bg-white/5 border border-white/10 text-muted hover:text-app hover:bg-white/10 transition-colors"
+          >
+            <Search className="w-4 h-4" />
+          </button>
+        </div>
+        <div className="flex flex-col sm:flex-row gap-2">
+          <input
+            type="text"
+            value={inviteLinkInput}
+            onChange={(e) => { setInviteLinkInput(e.target.value); setJoinError(null) }}
+            onKeyDown={(e) => e.key === 'Enter' && handleOpenInviteLink()}
+            placeholder="Masukan kode undangan"
+            className="sm:max-w-md flex-1 min-w-0 px-3 py-2 text-sm rounded-lg bg-white/5 border border-white/10 text-app placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-sky-500/50"
+          />
+          <button
+            type="button"
+            onClick={handleOpenInviteLink}
+            disabled={joinLoading}
+            className="shrink-0 inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-sky-600 text-white hover:bg-sky-700 disabled:opacity-50"
+          >
+            {joinLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+            {joinLoading ? 'Memproses...' : 'Buka'}
+          </button>
+        </div>
+        {joinError && <p className="text-xs text-red-400">{joinError}</p>}
       </div>
 
       {loading ? (
         isAdmin ? (
-          <div className="bg-white/[0.02] border border-white/10 rounded-xl overflow-hidden animate-pulse">
-            {/* Table Header Skeleton */}
-            <div className="h-10 bg-white/5 border-b border-white/5 w-full"></div>
-            {/* Table Rows Skeleton */}
-            {[1, 2, 3, 4, 5, 6].map((i) => (
-              <div key={i} className="flex items-center px-4 py-4 border-b border-white/5 gap-4">
-                <div className="h-4 bg-white/10 rounded w-1/3"></div>
-                <div className="h-4 bg-white/5 rounded w-1/6"></div>
-                <div className="h-4 bg-white/5 rounded w-1/6 hidden sm:block"></div>
-                <div className="h-4 bg-white/5 rounded w-1/6 hidden md:block"></div>
-                <div className="h-8 w-8 bg-white/5 rounded-full ml-auto"></div>
-              </div>
-            ))}
-          </div>
+          <>
+            <div className="md:hidden grid grid-cols-1 gap-3">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="border border-white/10 rounded-xl p-4 bg-white/[0.02] animate-pulse space-y-3">
+                  <div className="h-5 bg-white/10 rounded w-3/4" />
+                  <div className="h-3 bg-white/5 rounded w-1/2" />
+                  <div className="h-3 bg-white/5 rounded w-full" />
+                  <div className="h-8 bg-white/5 rounded w-1/3" />
+                </div>
+              ))}
+            </div>
+            <div className="hidden md:block bg-white/[0.02] border border-white/10 rounded-xl overflow-hidden animate-pulse">
+              <div className="h-10 bg-white/5 border-b border-white/5 w-full" />
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <div key={i} className="flex items-center px-4 py-4 border-b border-white/5 gap-4">
+                  <div className="h-4 bg-white/10 rounded w-1/3" />
+                  <div className="h-4 bg-white/5 rounded w-1/6" />
+                  <div className="h-4 bg-white/5 rounded w-1/6 hidden sm:block" />
+                  <div className="h-4 bg-white/5 rounded w-1/6 hidden md:block" />
+                  <div className="h-8 w-8 bg-white/5 rounded-full ml-auto" />
+                </div>
+              ))}
+            </div>
+          </>
         ) : (
           <div className="grid grid-cols-1 gap-3 sm:gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
               <div key={i} className="border border-white/10 rounded-xl p-3 sm:p-4 flex flex-col h-full bg-white/[0.02] animate-pulse min-h-[160px]">
                 <div className="flex-grow">
-                  {/* Title & Subtitle */}
                   <div className="space-y-2 mb-3">
-                    <div className="h-6 bg-white/10 rounded-md w-3/4"></div>
-                    <div className="h-4 bg-white/5 rounded-md w-1/2"></div>
+                    <div className="h-6 bg-white/10 rounded-md w-3/4" />
+                    <div className="h-4 bg-white/5 rounded-md w-1/2" />
                   </div>
-
-                  {/* Badges (Status & Date) */}
                   <div className="flex flex-wrap gap-2 mt-auto">
-                    <div className="h-6 w-20 bg-white/5 rounded-full"></div>
-                    <div className="h-6 w-24 bg-white/5 rounded-full"></div>
+                    <div className="h-6 w-20 bg-white/5 rounded-full" />
+                    <div className="h-6 w-24 bg-white/5 rounded-full" />
                   </div>
                 </div>
-
-                {/* Footer (Divider & Action Text) */}
                 <div className="mt-4 pt-4 border-t border-white/10 flex flex-col items-center gap-2">
-                  {/* Mimic center text "Klik untuk buka" */}
-                  <div className="h-3 bg-white/5 rounded-full w-1/3"></div>
+                  <div className="h-3 bg-white/5 rounded-full w-1/3" />
                 </div>
               </div>
             ))}
           </div>
         )
-      ) : albums.length === 0 ? (
-        <div className="text-center py-12 sm:py-16 border-2 border-dashed border-white/10 rounded-xl">
-          <h3 className="text-base font-semibold text-app sm:text-lg">{isAdmin ? 'Belum ada data' : 'Belum ada album'}</h3>
-          <p className="text-muted text-sm mt-2">Buat Public Album atau Order Yearbook dari Showroom.</p>
+      ) : filteredAlbums.length === 0 ? (
+        <div className="text-center py-12 sm:py-16 border border-white/10 rounded-xl bg-white/[0.02]">
+          <h3 className="text-base font-semibold text-app sm:text-lg">
+            {albums.length === 0 ? (isAdmin ? 'Belum ada data' : 'Belum ada album') : 'Tidak ada hasil'}
+          </h3>
+          <p className="text-muted text-sm mt-2">
+            {albums.length === 0 ? 'Buat Personal atau Order Yearbook dari Showroom.' : 'Coba kata kunci lain.'}
+          </p>
         </div>
       ) : isAdmin ? (
-        <div className="bg-white/[0.02] border border-white/10 rounded-xl overflow-hidden">
+        <>
+          {/* Mobile: kartu dengan nama, paket, kota, WA, estimasi, status + tombol simetris */}
+          <div className="md:hidden grid grid-cols-1 gap-3">
+            {filteredAlbums.map((album) => {
+              const isProcessing = loadingId === album.id
+              const destUrl = album.type === 'public'
+                ? `/admin/album/public/${album.id}`
+                : `/admin/album/yearbook/${album.album_id ?? album.id}`
+              const estimasi = album.total_estimated_price
+                ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(album.total_estimated_price)
+                : '-'
+              return (
+                <div key={album.id} className="rounded-xl border border-white/10 bg-white/[0.02] p-4 flex flex-col gap-3">
+                  <div className="space-y-1.5 text-sm">
+                    <p className="font-semibold text-app break-words">{album.name}</p>
+                    <p className="text-muted"><span className="text-muted/80">Paket:</span> {album.pricing_packages?.name?.replace(/^Paket\s+/i, '') || '-'}</p>
+                    <p className="text-muted"><span className="text-muted/80">Kota:</span> {album.school_city || '-'}</p>
+                    <p className="text-muted"><span className="text-muted/80">WA:</span> {album.wa_e164 || '-'}</p>
+                    <p className="text-muted"><span className="text-muted/80">Estimasi:</span> {estimasi}</p>
+                    <span
+                      className={`inline-block px-2 py-0.5 text-xs font-semibold rounded-full ${(album.status ?? 'pending') === 'approved' ? 'bg-green-500/20 text-green-400' :
+                        (album.status ?? 'pending') === 'pending' ? 'bg-yellow-500/20 text-yellow-400' :
+                          (album.status ?? 'pending') === 'declined' ? 'bg-red-500/20 text-red-400' :
+                            'bg-sky-500/20 text-sky-400'
+                      }`}>
+                      {album.status ?? 'pending'}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-3 border-t border-white/10">
+                    <Link
+                      href={destUrl}
+                      className="col-span-2 sm:col-span-1 flex items-center justify-center gap-1 px-3 py-2.5 text-xs font-medium rounded-lg bg-sky-600 text-white hover:bg-sky-700 border border-transparent"
+                    >
+                      Details <ChevronRight className="w-3.5 h-3.5" />
+                    </Link>
+                    {album.type === 'yearbook' && (album.status ?? 'pending') !== 'approved' && (
+                      <button
+                        type="button"
+                        disabled={!!loadingId}
+                        onClick={(e) => { e.preventDefault(); handleApprove(e as any, album) }}
+                        className="flex items-center justify-center gap-1 px-3 py-2.5 text-xs font-medium rounded-lg bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 border border-transparent"
+                      >
+                        {isProcessing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />} Approve
+                      </button>
+                    )}
+                    {album.type === 'yearbook' && (album.status ?? 'pending') !== 'declined' && (
+                      <button
+                        type="button"
+                        disabled={!!loadingId}
+                        onClick={(e) => { e.preventDefault(); handleDecline(e as any, album) }}
+                        className="flex items-center justify-center gap-1 px-3 py-2.5 text-xs font-medium rounded-lg bg-amber-600 text-white hover:bg-amber-700 disabled:opacity-50 border border-transparent"
+                      >
+                        <X className="w-3.5 h-3.5" /> Decline
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      disabled={!!loadingId}
+                      onClick={(e) => { e.preventDefault(); handleDelete(e as any, album) }}
+                      className="flex items-center justify-center gap-1 px-3 py-2.5 text-xs font-medium rounded-lg bg-red-600/80 text-white hover:bg-red-700 disabled:opacity-50 border border-transparent"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" /> Hapus
+                    </button>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+          {/* Desktop: tabel */}
+          <div className="hidden md:block bg-white/[0.02] border border-white/10 rounded-xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead className="bg-white/[0.03]">
@@ -399,7 +616,7 @@ export default function AlbumsView({ variant, initialData }: AlbumsViewProps) {
                       <td className="px-4 py-3 text-sm font-medium text-app">
                         <div className="flex flex-col">
                           <span className="break-words line-clamp-2">{album.name}</span>
-                          {album.type === 'public' && <span className="text-xs text-sky-400">Public Album</span>}
+                          {album.type === 'public' && <span className="text-xs text-sky-400">Personal</span>}
                           <span className="text-xs text-muted sm:hidden mt-1">
                             {[album.school_city, album.pic_name].filter(Boolean).join(' • ')}
                           </span>
@@ -471,10 +688,11 @@ export default function AlbumsView({ variant, initialData }: AlbumsViewProps) {
               </tbody>
             </table>
           </div>
-        </div>
+          </div>
+        </>
       ) : (
         <div className="grid grid-cols-1 gap-3 sm:gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {albums.map((album) => (
+          {filteredAlbums.map((album) => (
             <AlbumCard
               key={album.id}
               album={album}
@@ -489,30 +707,62 @@ export default function AlbumsView({ variant, initialData }: AlbumsViewProps) {
         </div>
       )}
 
-      {inviteModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60" onClick={() => setInviteModal(null)}>
-          <div className="bg-app border border-white/10 rounded-xl p-4 sm:p-5 max-w-md w-full shadow-xl" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-base font-semibold text-app mb-2">Link Undangan — {inviteModal.albumName}</h3>
-            <p className="text-xs text-muted mb-2">Bagikan link ini ke teman agar bisa bergabung ke album.</p>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                readOnly
-                value={inviteModal.link}
-                className="flex-1 px-3 py-2 text-sm rounded-lg bg-white/5 border border-white/10 text-app"
-              />
+      {/* Modal konfirmasi buat Personal / Yearbook — UI custom, bukan dialog browser */}
+      {confirmModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setConfirmModal(null)}>
+          <div className="bg-app border border-white/10 rounded-xl p-5 max-w-sm w-full shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <p className="text-app font-medium mb-4">
+              {confirmModal === 'personal' ? 'Mau buat personal?' : 'Mau buat yearbook?'}
+            </p>
+            <div className="flex gap-3">
               <button
                 type="button"
-                onClick={() => { navigator.clipboard.writeText(inviteModal.link); alert('Link disalin!') }}
-                className="px-3 py-2 text-sm font-medium rounded-lg bg-sky-600 text-white hover:bg-sky-700"
+                onClick={() => setConfirmModal(null)}
+                className="flex-1 py-2.5 text-sm font-medium rounded-lg border border-white/10 text-app hover:bg-white/5 transition-colors"
               >
-                Salin
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (confirmModal === 'personal') router.push(publicCreateHref)
+                  else router.push(showroomHref)
+                  setConfirmModal(null)
+                }}
+                className={`flex-1 py-2.5 text-sm font-medium rounded-lg text-white transition-colors ${confirmModal === 'personal' ? 'bg-sky-600 hover:bg-sky-700' : 'bg-purple-600 hover:bg-purple-700'}`}
+              >
+                Ya
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {inviteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setInviteModal(null)}>
+          <div className="bg-app border border-white/10 rounded-xl p-4 sm:p-5 max-w-md w-full shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-base font-semibold text-app mb-1">Undangan — {inviteModal.albumName}</h3>
+            <p className="text-xs text-muted mb-3">Bagikan kode ini; penerima bisa masukkan kode di halaman Album.</p>
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-lg font-mono font-semibold text-app tracking-wide px-3 py-2 rounded-lg bg-white/5 border border-white/10">
+                {inviteModal.code}
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  navigator.clipboard.writeText(inviteModal.code)
+                  setCopyFeedback(true)
+                  setTimeout(() => setCopyFeedback(false), 2000)
+                }}
+                className="shrink-0 px-3 py-2 text-sm font-medium rounded-lg bg-sky-600 text-white hover:bg-sky-700 min-w-[72px]"
+              >
+                {copyFeedback ? 'Tersalin!' : 'Salin kode'}
               </button>
             </div>
             <button
               type="button"
               onClick={() => setInviteModal(null)}
-              className="mt-3 w-full py-2 text-sm font-medium rounded-lg border border-white/10 text-app hover:bg-white/5"
+              className="w-full py-2 text-sm font-medium rounded-lg border border-white/10 text-app hover:bg-white/5 transition-colors"
             >
               Tutup
             </button>

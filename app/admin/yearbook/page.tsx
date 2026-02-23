@@ -102,8 +102,18 @@ export default function YearbookManagementPage() {
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center p-20">
-          <div className="animate-spin rounded-full h-8 w-8 border-2 border-lime-500 border-t-transparent" />
+        <div className="bg-white/[0.02] border border-white/10 rounded-xl overflow-hidden animate-pulse">
+          <div className="h-10 bg-white/5 border-b border-white/5 w-full" />
+          {[1, 2, 3, 4, 5, 6, 7].map((i) => (
+            <div key={i} className="flex items-center px-4 py-4 border-b border-white/5 gap-4">
+              <div className="h-4 bg-white/10 rounded w-1/4" />
+              <div className="h-4 bg-white/5 rounded w-1/6 hidden sm:block" />
+              <div className="h-4 bg-white/5 rounded w-1/6 hidden md:block" />
+              <div className="h-4 bg-white/5 rounded w-1/6" />
+              <div className="h-4 bg-white/5 rounded w-16 ml-auto" />
+              <div className="h-8 w-20 bg-white/5 rounded" />
+            </div>
+          ))}
         </div>
       ) : orders.length === 0 ? (
         <div className="text-center py-16 border-2 border-dashed border-white/10 rounded-lg">

@@ -67,8 +67,22 @@ export default function AdminLayout({
 
   if (!ok) {
     return (
-      <div className="min-h-screen bg-[#0a0a0b] flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-2 border-lime-500 border-t-transparent" />
+      <div className="min-h-[100dvh] bg-[#0a0a0b] flex flex-col">
+        <div className="h-14 border-b border-white/10 bg-[#0a0a0b]/95 flex items-center justify-between px-4">
+          <div className="h-5 w-40 bg-white/10 rounded animate-pulse" />
+          <div className="h-8 w-24 bg-white/10 rounded animate-pulse" />
+        </div>
+        <div className="flex flex-1">
+          <aside className="w-56 border-r border-white/10 p-3 hidden md:block space-y-2">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div key={i} className="h-8 bg-white/10 rounded-lg animate-pulse" />
+            ))}
+          </aside>
+          <main className="flex-1 p-4 sm:p-6">
+            <div className="h-8 w-64 bg-white/10 rounded animate-pulse mb-6" />
+            <div className="h-64 bg-white/[0.02] border border-white/10 rounded-xl animate-pulse" />
+          </main>
+        </div>
       </div>
     )
   }

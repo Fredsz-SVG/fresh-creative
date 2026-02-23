@@ -58,6 +58,27 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(data)
 }
 
+// PATCH /api/user/notifications - Mark all as read
+export async function PATCH(request: NextRequest) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const { error } = await supabase
+        .from('notifications')
+        .update({ is_read: true })
+        .eq('user_id', user.id)
+
+    if (error) {
+        return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    return NextResponse.json({ success: true })
+}
+
 // DELETE /api/user/notifications - Clear all notifications
 export async function DELETE(request: NextRequest) {
     const supabase = await createClient()

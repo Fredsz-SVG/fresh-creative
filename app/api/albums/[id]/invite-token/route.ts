@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase-server'
 import { createAdminClient } from '@/lib/supabase-admin'
-import { randomBytes } from 'crypto'
+import { generateShortInviteCode } from '@/lib/invite-code'
 
 export const dynamic = 'force-dynamic'
 
@@ -106,8 +106,8 @@ export async function POST(
   const body = await request.json().catch(() => ({}))
   const expiresInDays = body?.expiresInDays || 7
 
-  // Generate new token
-  const token = randomBytes(24).toString('base64url')
+  // Generate new token (kode pendek saja)
+  const token = generateShortInviteCode()
   const expiresAt = new Date()
   expiresAt.setDate(expiresAt.getDate() + expiresInDays)
 

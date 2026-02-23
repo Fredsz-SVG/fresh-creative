@@ -240,7 +240,7 @@ export default function ApprovalView({
         <div className="mt-2 sm:mt-3 p-2.5 sm:p-3 rounded-lg sm:rounded-xl bg-white/[0.03] border border-white/10">
           <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2">
             <LinkIcon className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-gray-500 flex-shrink-0" />
-            <span className="text-[10px] sm:text-xs text-gray-400 font-medium">Link Undangan</span>
+            <span className="text-[10px] sm:text-xs text-gray-400 font-medium">Kode Undangan</span>
             {inviteToken && inviteExpiresAt && (
               <span className="ml-auto text-[10px] text-gray-600">
                 {new Date(inviteExpiresAt) > new Date() ? (
@@ -259,25 +259,20 @@ export default function ApprovalView({
           </div>
           {inviteToken ? (
             <div className="flex flex-col gap-1.5">
-              <div className="flex gap-1.5">
-                <input
-                  type="text"
-                  value={`${typeof window !== 'undefined' ? window.location.origin : ''}/invite/${inviteToken}`}
-                  readOnly
-                  className="flex-1 min-w-0 px-2 py-1.5 rounded-lg bg-white/5 border border-white/10 text-app text-[11px] truncate"
-                />
+              <div className="flex items-center gap-1.5">
+                <span className="font-mono font-semibold text-app text-sm px-2 py-1.5 rounded-lg bg-white/5 border border-white/10">
+                  {inviteToken}
+                </span>
                 <button
                   type="button"
                   onClick={() => {
-                    const baseUrl = typeof window !== 'undefined' ? window.location.origin : ''
-                    const url = `${baseUrl}/invite/${inviteToken}`
-                    navigator.clipboard.writeText(url)
-                    toast.success('Link disalin!')
+                    navigator.clipboard.writeText(inviteToken)
+                    toast.success('Kode disalin!')
                   }}
                   className="px-3 py-1.5 rounded-lg bg-lime-600 text-white hover:bg-lime-500 transition-colors text-[11px] font-medium flex items-center gap-1 whitespace-nowrap"
                 >
                   <Copy className="w-3 h-3" />
-                  Salin
+                  Salin kode
                 </button>
               </div>
               <button
@@ -286,7 +281,7 @@ export default function ApprovalView({
                 disabled={generatingInvite}
                 className="w-full px-2 py-1.5 rounded-lg bg-white/5 text-gray-500 hover:text-white hover:bg-white/10 transition-colors text-[11px] font-medium disabled:opacity-50"
               >
-                {generatingInvite ? 'Membuat...' : 'Generate Ulang'}
+                {generatingInvite ? 'Membuat...' : 'Buat Ulang Kode'}
               </button>
             </div>
           ) : (
@@ -297,7 +292,7 @@ export default function ApprovalView({
               className="w-full px-3 py-2 rounded-lg bg-lime-600 text-white hover:bg-lime-500 transition-colors text-xs font-medium flex items-center justify-center gap-1.5 disabled:opacity-50"
             >
               <LinkIcon className="w-3.5 h-3.5" />
-              {generatingInvite ? 'Membuat...' : 'Buat Link Undangan'}
+              {generatingInvite ? 'Membuat...' : 'Buat Kode Undangan'}
             </button>
           )}
         </div>
