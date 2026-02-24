@@ -7,7 +7,7 @@ import { getRole } from '@/lib/auth'
 import DashboardShell from '@/components/dashboard/DashboardShell'
 import { LayoutDashboard, History } from 'lucide-react'
 import type { NavSection } from '@/components/dashboard/DashboardShell'
-import { PRICING_SECTION_ADMIN, ALBUMS_SECTION_ADMIN, FILES_SECTION_ADMIN } from '@/lib/dashboard-nav'
+import { PRICING_SECTION_ADMIN, ALBUMS_SECTION_ADMIN } from '@/lib/dashboard-nav'
 
 const adminNavSections: NavSection[] = [
   {
@@ -18,7 +18,6 @@ const adminNavSections: NavSection[] = [
     ],
   },
   ALBUMS_SECTION_ADMIN,
-  FILES_SECTION_ADMIN,
   PRICING_SECTION_ADMIN,
   // AI Labs dipindah ke sidebar album (yearbook)
 ]

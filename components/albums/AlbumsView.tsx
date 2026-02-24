@@ -48,6 +48,8 @@ export type AlbumRow = {
   students_count?: number
   source?: string
   total_estimated_price?: number
+  payment_status?: 'unpaid' | 'paid'
+  payment_url?: string | null
 }
 
 export type AlbumsViewProps = {
@@ -62,6 +64,7 @@ function AlbumCard({
   onDecline,
   onDelete,
   onInvite,
+  onPay,
   loadingId,
 }: {
   album: AlbumRow
@@ -70,10 +73,13 @@ function AlbumCard({
   onDecline?: (album: AlbumRow) => void
   onDelete?: (album: AlbumRow) => void
   onInvite?: (album: AlbumRow) => void
+  onPay?: (album: AlbumRow) => void
   loadingId?: string | null
 }) {
   const isAdmin = variant === 'admin'
-  const isClickable = album.type === 'public' || album.status === 'approved'
+  const isPaid = album.payment_status === 'paid'
+  const isApproved = album.status === 'approved'
+  const isClickable = album.type === 'public' || (isApproved && (isPaid || isAdmin))
   const basePath = isAdmin ? '/admin' : '/user/portal'
   const destinationUrl = album.type === 'public'
     ? `${basePath}/album/public/${album.id}`
@@ -84,6 +90,7 @@ function AlbumCard({
   const canSeeApproved = isAdmin || album.isOwner === true
   const shouldShowStatus = !(statusLabel === 'approved' && !canSeeApproved)
   const displayStatus = statusLabel as string
+  const displayPaymentStatus = album.payment_status || 'unpaid'
   const isLoading = loadingId === album.id
 
   const CardContent = () => (
@@ -109,6 +116,12 @@ function AlbumCard({
             </span>
           )}
           {created && <span className="text-xs text-muted">{created}</span>}
+          {album.type === 'yearbook' && isApproved && (
+            <span
+              className={`px-2 py-1 text-xs font-semibold rounded-full ${isPaid ? 'bg-lime-500/20 text-lime-400' : 'bg-orange-500/20 text-orange-400'}`}>
+              {isPaid ? 'Lunas' : 'Belum Bayar'}
+            </span>
+          )}
         </div>
       </div>
 
@@ -149,6 +162,16 @@ function AlbumCard({
 
       {!isAdmin && (
         <div className="mt-4 pt-4 border-t border-white/10 flex flex-col gap-2">
+          {album.isOwner !== false && isApproved && !isPaid && onPay && (
+            <button
+              type="button"
+              disabled={!!loadingId}
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); onPay(album) }}
+              className="inline-flex items-center justify-center gap-1.5 px-2 py-1.5 text-xs font-medium rounded-lg bg-green-600 text-white hover:bg-green-700 disabled:opacity-50"
+            >
+              <Check className="w-3.5 h-3.5" /> Bayar Sekarang
+            </button>
+          )}
           {album.isOwner !== false && onInvite && (album.album_id ?? album.type === 'public') && (
             <button
               type="button"
@@ -159,7 +182,7 @@ function AlbumCard({
             </button>
           )}
           <p className="text-xs text-muted text-center">
-            {isClickable ? 'Klik untuk buka' : statusLabel === 'pending' ? 'Menunggu persetujuan admin' : statusLabel === 'declined' ? 'Akses dibatasi' : 'Klik untuk buka'}
+            {isClickable ? 'Klik untuk buka' : statusLabel === 'pending' ? 'Menunggu persetujuan admin' : isApproved && !isPaid ? 'Selesaikan pembayaran untuk akses' : statusLabel === 'declined' ? 'Akses dibatasi' : 'Klik untuk buka'}
           </p>
         </div>
       )}
@@ -184,8 +207,11 @@ export default function AlbumsView({ variant, initialData }: AlbumsViewProps) {
   const [joinLoading, setJoinLoading] = useState(false)
   const [joinError, setJoinError] = useState<string | null>(null)
   const [confirmModal, setConfirmModal] = useState<'personal' | 'yearbook' | null>(null)
+  const [invoicePopupUrl, setInvoicePopupUrl] = useState<string | null>(null)
   const [copyFeedback, setCopyFeedback] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 10
   const router = useRouter()
 
   const filteredAlbums = useMemo(() => {
@@ -199,6 +225,12 @@ export default function AlbumsView({ variant, initialData }: AlbumsViewProps) {
       a.wa_e164?.includes(q)
     )
   }, [albums, searchQuery])
+
+  const paginatedAlbums = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage
+    return filteredAlbums.slice(start, start + itemsPerPage)
+  }, [filteredAlbums, currentPage, itemsPerPage])
+  const totalPages = Math.ceil(filteredAlbums.length / itemsPerPage)
 
   const fetchAlbums = useCallback(async (silent = false) => {
     if (!silent) setLoading(true)
@@ -330,6 +362,34 @@ export default function AlbumsView({ variant, initialData }: AlbumsViewProps) {
     }
   }
 
+  const handlePay = async (album: AlbumRow) => {
+    if (album.payment_url) {
+      setInvoicePopupUrl(album.payment_url)
+      return
+    }
+
+    setLoadingId(album.id)
+    try {
+      const res = await fetch(`/api/albums/${album.id}/checkout`, {
+        method: 'POST',
+        credentials: 'include',
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        alert(data?.error ?? 'Gagal memproses pembayaran')
+        return
+      }
+      if (data.invoiceUrl) {
+        setInvoicePopupUrl(data.invoiceUrl)
+        fetchAlbums(true) // Refresh data untuk simpan payment_url
+      }
+    } catch {
+      alert('Gagal memproses pembayaran')
+    } finally {
+      setLoadingId(null)
+    }
+  }
+
   const handleRowClick = (album: AlbumRow) => {
     const basePath = '/admin'
     const destinationUrl = album.type === 'public'
@@ -391,6 +451,30 @@ export default function AlbumsView({ variant, initialData }: AlbumsViewProps) {
 
   return (
     <div>
+      {invoicePopupUrl && (
+        <div className="fixed inset-0 z-[110] flex flex-col bg-[#0a0a0b]" role="dialog" aria-modal="true" aria-label="Invoice pembayaran">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 bg-white/5 shrink-0">
+            <h3 className="text-sm font-semibold text-white">Invoice Pembayaran Album</h3>
+            <button
+              type="button"
+              onClick={() => setInvoicePopupUrl(null)}
+              className="flex items-center justify-center w-9 h-9 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+          <div className="flex-1 min-h-0 relative">
+            <iframe
+              src={invoicePopupUrl}
+              title="Invoice Xendit"
+              className="absolute inset-0 w-full h-full border-0"
+              sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-top-navigation"
+              allow="payment"
+            />
+          </div>
+        </div>
+      )}
+
       {/* Mobile first: header stack, lalu row di desktop */}
       <div className="flex flex-col gap-4 mb-5 md:mb-6 md:flex-row md:justify-between md:items-center">
         <div>
@@ -419,47 +503,44 @@ export default function AlbumsView({ variant, initialData }: AlbumsViewProps) {
         </div>
       </div>
 
-      {/* Kotak: Cari + Kode undangan — simetris, satu border */}
-      <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4 mb-4 space-y-4">
-        <div className="flex items-center gap-2 w-full max-w-md mx-auto md:max-w-none md:mx-0">
-          <div className="flex-1 min-w-0 flex items-center gap-2 min-h-[44px] px-3 py-2 rounded-lg bg-white/5 border border-white/10">
-            <Search className="w-4 h-4 text-muted shrink-0 flex-shrink-0" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Cari nama, kota, paket..."
-              className="flex-1 min-w-0 bg-transparent text-sm text-app placeholder:text-muted focus:outline-none h-8 leading-normal"
-            />
-          </div>
-          <button
-            type="button"
-            aria-label="Cari"
-            className="shrink-0 flex items-center justify-center w-11 h-11 min-h-[44px] rounded-lg bg-white/5 border border-white/10 text-muted hover:text-app hover:bg-white/10 transition-colors"
-          >
-            <Search className="w-4 h-4" />
-          </button>
+      {/* Kotak: Cari + Kode undangan — flex row di desktop */}
+      <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4 mb-4 flex flex-col md:flex-row gap-4">
+        {/* Search */}
+        <div className="flex-1 min-w-0 flex items-center gap-2 min-h-[44px] px-3 py-2 rounded-lg bg-white/5 border border-white/10">
+          <Search className="w-4 h-4 text-muted shrink-0 flex-shrink-0" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => {
+              setSearchQuery(e.target.value)
+              setCurrentPage(1)
+            }}
+            placeholder="Cari nama, kota, paket..."
+            className="flex-1 min-w-0 bg-transparent text-sm text-app placeholder:text-muted focus:outline-none h-8 leading-normal"
+          />
         </div>
-        <div className="flex flex-col sm:flex-row gap-2">
+
+        {/* Undang Teman */}
+        <div className="flex flex-col sm:flex-row gap-2 shrink-0 md:w-[400px]">
           <input
             type="text"
             value={inviteLinkInput}
             onChange={(e) => { setInviteLinkInput(e.target.value); setJoinError(null) }}
             onKeyDown={(e) => e.key === 'Enter' && handleOpenInviteLink()}
             placeholder="Masukan kode undangan"
-            className="sm:max-w-md flex-1 min-w-0 px-3 py-2 text-sm rounded-lg bg-white/5 border border-white/10 text-app placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-sky-500/50"
+            className="flex-1 min-w-0 px-3 py-2 text-sm rounded-lg bg-white/5 border border-white/10 text-app placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-sky-500/50 min-h-[44px]"
           />
           <button
             type="button"
             onClick={handleOpenInviteLink}
             disabled={joinLoading}
-            className="shrink-0 inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-sky-600 text-white hover:bg-sky-700 disabled:opacity-50"
+            className="shrink-0 inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-sky-600 text-white hover:bg-sky-700 disabled:opacity-50 min-h-[44px]"
           >
             {joinLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-            {joinLoading ? 'Memproses...' : 'Buka'}
+            {joinLoading ? 'Memproses...' : 'Gabung'}
           </button>
         </div>
-        {joinError && <p className="text-xs text-red-400">{joinError}</p>}
+        {joinError && <p className="text-xs text-red-400 absolute mt-12">{joinError}</p>}
       </div>
 
       {loading ? (
@@ -522,7 +603,7 @@ export default function AlbumsView({ variant, initialData }: AlbumsViewProps) {
         <>
           {/* Mobile: kartu dengan nama, paket, kota, WA, estimasi, status + tombol simetris */}
           <div className="md:hidden grid grid-cols-1 gap-3">
-            {filteredAlbums.map((album) => {
+            {paginatedAlbums.map((album) => {
               const isProcessing = loadingId === album.id
               const destUrl = album.type === 'public'
                 ? `/admin/album/public/${album.id}`
@@ -543,7 +624,7 @@ export default function AlbumsView({ variant, initialData }: AlbumsViewProps) {
                         (album.status ?? 'pending') === 'pending' ? 'bg-yellow-500/20 text-yellow-400' :
                           (album.status ?? 'pending') === 'declined' ? 'bg-red-500/20 text-red-400' :
                             'bg-sky-500/20 text-sky-400'
-                      }`}>
+                        }`}>
                       {album.status ?? 'pending'}
                     </span>
                   </div>
@@ -589,110 +670,110 @@ export default function AlbumsView({ variant, initialData }: AlbumsViewProps) {
           </div>
           {/* Desktop: tabel */}
           <div className="hidden md:block bg-white/[0.02] border border-white/10 rounded-xl overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead className="bg-white/[0.03]">
-                <tr>
-                  <th className="px-4 py-3 text-xs font-medium text-muted uppercase tracking-wider w-1/3">Sekolah / Nama</th>
-                  <th className="px-4 py-3 text-xs font-medium text-muted uppercase tracking-wider">Paket</th>
-                  <th className="px-4 py-3 text-xs font-medium text-muted uppercase tracking-wider hidden sm:table-cell">Kota</th>
-                  <th className="px-4 py-3 text-xs font-medium text-muted uppercase tracking-wider hidden md:table-cell">PIC</th>
-                  <th className="px-4 py-3 text-xs font-medium text-muted uppercase tracking-wider hidden lg:table-cell">WA</th>
-                  <th className="px-4 py-3 text-xs font-medium text-muted uppercase tracking-wider hidden xl:table-cell">Siswa</th>
-                  <th className="px-4 py-3 text-xs font-medium text-muted uppercase tracking-wider hidden xl:table-cell">Total Est.</th>
-                  <th className="px-4 py-3 text-center text-xs font-medium text-muted uppercase tracking-wider">Status</th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-muted uppercase tracking-wider">Aksi</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/10">
-                {albums.map((album) => {
-                  const isProcessing = loadingId === album.id
-                  return (
-                    <tr
-                      key={album.id}
-                      onClick={() => handleRowClick(album)}
-                      className="group hover:bg-white/[0.04] transition-colors cursor-pointer"
-                    >
-                      <td className="px-4 py-3 text-sm font-medium text-app">
-                        <div className="flex flex-col">
-                          <span className="break-words line-clamp-2">{album.name}</span>
-                          {album.type === 'public' && <span className="text-xs text-sky-400">Personal</span>}
-                          <span className="text-xs text-muted sm:hidden mt-1">
-                            {[album.school_city, album.pic_name].filter(Boolean).join(' • ')}
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead className="bg-white/[0.03]">
+                  <tr>
+                    <th className="px-4 py-3 text-xs font-medium text-muted uppercase tracking-wider w-1/3">Sekolah / Nama</th>
+                    <th className="px-4 py-3 text-xs font-medium text-muted uppercase tracking-wider">Paket</th>
+                    <th className="px-4 py-3 text-xs font-medium text-muted uppercase tracking-wider hidden sm:table-cell">Kota</th>
+                    <th className="px-4 py-3 text-xs font-medium text-muted uppercase tracking-wider hidden md:table-cell">PIC</th>
+                    <th className="px-4 py-3 text-xs font-medium text-muted uppercase tracking-wider hidden lg:table-cell">WA</th>
+                    <th className="px-4 py-3 text-xs font-medium text-muted uppercase tracking-wider hidden xl:table-cell">Siswa</th>
+                    <th className="px-4 py-3 text-xs font-medium text-muted uppercase tracking-wider hidden xl:table-cell">Total Est.</th>
+                    <th className="px-4 py-3 text-center text-xs font-medium text-muted uppercase tracking-wider">Status</th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-muted uppercase tracking-wider">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/10">
+                  {paginatedAlbums.map((album) => {
+                    const isProcessing = loadingId === album.id
+                    return (
+                      <tr
+                        key={album.id}
+                        onClick={() => handleRowClick(album)}
+                        className="group hover:bg-white/[0.04] transition-colors cursor-pointer"
+                      >
+                        <td className="px-4 py-3 text-sm font-medium text-app">
+                          <div className="flex flex-col">
+                            <span className="break-words line-clamp-2">{album.name}</span>
+                            {album.type === 'public' && <span className="text-xs text-sky-400">Personal</span>}
+                            <span className="text-xs text-muted sm:hidden mt-1">
+                              {[album.school_city, album.pic_name].filter(Boolean).join(' • ')}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-sm text-muted whitespace-nowrap">
+                          {album.pricing_packages?.name?.replace(/^Paket\s+/i, '') || '-'}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-muted hidden sm:table-cell whitespace-nowrap">
+                          {album.school_city || '-'}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-muted hidden md:table-cell whitespace-nowrap">{album.pic_name || '-'}</td>
+                        <td className="px-4 py-3 text-sm text-muted hidden lg:table-cell whitespace-nowrap">{album.wa_e164 || '-'}</td>
+                        <td className="px-4 py-3 text-sm text-muted hidden xl:table-cell whitespace-nowrap">{album.students_count || '-'}</td>
+                        <td className="px-4 py-3 text-sm text-muted hidden xl:table-cell whitespace-nowrap">
+                          {album.total_estimated_price
+                            ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(album.total_estimated_price)
+                            : '-'}
+                        </td>
+                        <td className="px-4 py-3 text-center whitespace-nowrap">
+                          <span
+                            className={`inline-block px-2 py-0.5 text-[10px] sm:text-xs font-semibold rounded-full ${(album.status ?? 'pending') === 'approved' ? 'bg-green-500/20 text-green-400' :
+                              (album.status ?? 'pending') === 'pending' ? 'bg-yellow-500/20 text-yellow-400' :
+                                (album.status ?? 'pending') === 'declined' ? 'bg-red-500/20 text-red-400' :
+                                  'bg-sky-500/20 text-sky-400'
+                              }`}>
+                            {album.status ?? 'pending'}
                           </span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-sm text-muted whitespace-nowrap">
-                        {album.pricing_packages?.name?.replace(/^Paket\s+/i, '') || '-'}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-muted hidden sm:table-cell whitespace-nowrap">
-                        {album.school_city || '-'}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-muted hidden md:table-cell whitespace-nowrap">{album.pic_name || '-'}</td>
-                      <td className="px-4 py-3 text-sm text-muted hidden lg:table-cell whitespace-nowrap">{album.wa_e164 || '-'}</td>
-                      <td className="px-4 py-3 text-sm text-muted hidden xl:table-cell whitespace-nowrap">{album.students_count || '-'}</td>
-                      <td className="px-4 py-3 text-sm text-muted hidden xl:table-cell whitespace-nowrap">
-                        {album.total_estimated_price
-                          ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(album.total_estimated_price)
-                          : '-'}
-                      </td>
-                      <td className="px-4 py-3 text-center whitespace-nowrap">
-                        <span
-                          className={`inline-block px-2 py-0.5 text-[10px] sm:text-xs font-semibold rounded-full ${(album.status ?? 'pending') === 'approved' ? 'bg-green-500/20 text-green-400' :
-                            (album.status ?? 'pending') === 'pending' ? 'bg-yellow-500/20 text-yellow-400' :
-                              (album.status ?? 'pending') === 'declined' ? 'bg-red-500/20 text-red-400' :
-                                'bg-sky-500/20 text-sky-400'
-                            }`}>
-                          {album.status ?? 'pending'}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-right whitespace-nowrap">
-                        <div className="flex items-center justify-end gap-2">
-                          {album.type === 'yearbook' && (
-                            <>
-                              {(album.status ?? 'pending') !== 'approved' && (
-                                <button
-                                  onClick={(e) => handleApprove(e, album)}
-                                  disabled={!!loadingId}
-                                  className="p-1.5 rounded-lg bg-green-500/10 text-green-400 hover:bg-green-500/20 disabled:opacity-50 transition-colors"
-                                  title="Approve"
-                                >
-                                  {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-                                </button>
-                              )}
-                              {(album.status ?? 'pending') !== 'declined' && (
-                                <button
-                                  onClick={(e) => handleDecline(e, album)}
-                                  disabled={!!loadingId}
-                                  className="p-1.5 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 disabled:opacity-50 transition-colors"
-                                  title="Decline"
-                                >
-                                  {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <X className="w-4 h-4" />}
-                                </button>
-                              )}
-                            </>
-                          )}
-                          <button
-                            onClick={(e) => handleDelete(e, album)}
-                            disabled={!!loadingId}
-                            className="p-1.5 rounded-lg bg-gray-500/10 text-gray-400 hover:bg-gray-500/20 disabled:opacity-50 transition-colors"
-                            title="Hapus"
-                          >
-                            {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
+                        </td>
+                        <td className="px-4 py-3 text-right whitespace-nowrap">
+                          <div className="flex items-center justify-end gap-2">
+                            {album.type === 'yearbook' && (
+                              <>
+                                {(album.status ?? 'pending') !== 'approved' && (
+                                  <button
+                                    onClick={(e) => handleApprove(e, album)}
+                                    disabled={!!loadingId}
+                                    className="p-1.5 rounded-lg bg-green-500/10 text-green-400 hover:bg-green-500/20 disabled:opacity-50 transition-colors"
+                                    title="Approve"
+                                  >
+                                    {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                                  </button>
+                                )}
+                                {(album.status ?? 'pending') !== 'declined' && (
+                                  <button
+                                    onClick={(e) => handleDecline(e, album)}
+                                    disabled={!!loadingId}
+                                    className="p-1.5 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 disabled:opacity-50 transition-colors"
+                                    title="Decline"
+                                  >
+                                    {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <X className="w-4 h-4" />}
+                                  </button>
+                                )}
+                              </>
+                            )}
+                            <button
+                              onClick={(e) => handleDelete(e, album)}
+                              disabled={!!loadingId}
+                              className="p-1.5 rounded-lg bg-gray-500/10 text-gray-400 hover:bg-gray-500/20 disabled:opacity-50 transition-colors"
+                              title="Hapus"
+                            >
+                              {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
         </>
       ) : (
         <div className="grid grid-cols-1 gap-3 sm:gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {filteredAlbums.map((album) => (
+          {paginatedAlbums.map((album) => (
             <AlbumCard
               key={album.id}
               album={album}
@@ -701,9 +782,40 @@ export default function AlbumsView({ variant, initialData }: AlbumsViewProps) {
               onDecline={isAdmin ? (e) => handleDecline(e as any, album) : undefined}
               onDelete={isAdmin ? (e) => handleDelete(e as any, album) : undefined}
               onInvite={!isAdmin ? handleInvite : undefined}
+              onPay={!isAdmin ? handlePay : undefined}
               loadingId={loadingId ?? inviteLoading}
             />
           ))}
+        </div>
+      )}
+
+      {/* Pagination Controls */}
+      {!loading && filteredAlbums.length > itemsPerPage && (
+        <div className="flex items-center justify-between mt-6 flex-wrap gap-4">
+          <p className="text-xs text-muted">
+            Menampilkan {((currentPage - 1) * itemsPerPage) + 1} hingga {Math.min(currentPage * itemsPerPage, filteredAlbums.length)} dari {filteredAlbums.length} entri
+          </p>
+          <div className="flex gap-1.5 shrink-0">
+            <button
+              type="button"
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(p => p - 1)}
+              className="px-3 py-1.5 text-xs font-medium rounded-lg bg-white/5 border border-white/10 text-app hover:bg-white/10 disabled:opacity-50 transition-colors"
+            >
+              Sebelumnya
+            </button>
+            <div className="flex items-center px-3 py-1.5 text-xs font-medium bg-white/5 border border-white/10 rounded-lg text-app">
+              {currentPage} / {totalPages}
+            </div>
+            <button
+              type="button"
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage(p => p + 1)}
+              className="px-3 py-1.5 text-xs font-medium rounded-lg bg-white/5 border border-white/10 text-app hover:bg-white/10 disabled:opacity-50 transition-colors"
+            >
+              Selanjutnya
+            </button>
+          </div>
         </div>
       )}
 

@@ -24,7 +24,8 @@ export async function getUserAlbums(userId: string, isAdmin: boolean = false) {
           id, name, type, status, created_at, 
           pricing_package_id, 
           pricing_packages(name), 
-          school_city, kab_kota, wa_e164, province_id, province_name, pic_name, students_count, source, total_estimated_price
+          school_city, kab_kota, wa_e164, province_id, province_name, pic_name, students_count, source, total_estimated_price,
+          payment_status, payment_url
         `)
             .order('created_at', { ascending: false })
 

@@ -10,7 +10,7 @@ import {
   History,
 } from 'lucide-react'
 import type { NavSection } from '@/components/dashboard/DashboardShell'
-import { ALBUMS_SECTION_USER, FILES_SECTION_USER } from '@/lib/dashboard-nav'
+import { ALBUMS_SECTION_USER } from '@/lib/dashboard-nav'
 import YearbookSkeleton from '@/components/yearbook/components/YearbookSkeleton'
 import { getSectionModeFromPathname, toSkeletonSection } from '@/components/yearbook/lib/yearbook-paths'
 
@@ -23,7 +23,6 @@ const userNavSections: NavSection[] = [
     ],
   },
   ALBUMS_SECTION_USER,
-  FILES_SECTION_USER,
   // AI Labs dipindah ke sidebar album (yearbook)
 ]
 

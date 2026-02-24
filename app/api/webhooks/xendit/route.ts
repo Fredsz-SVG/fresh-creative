@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { delCache, key } from '@/lib/redis'
 
 export async function POST(req: Request) {
     try {
@@ -18,6 +19,10 @@ export async function POST(req: Request) {
         const raw = payload?.data ?? payload
         const status = (raw?.status ?? payload?.status ?? '').toUpperCase()
         const externalId = raw?.external_id ?? payload?.external_id
+
+        // Prioritaskan spesifik channel (BCA, ALFAMART, OVO) daripada kategori umum (BANK_TRANSFER)
+        const specificChannel = raw?.payment_channel || raw?.bank_code || raw?.retail_outlet_name || raw?.ewallet_type
+        const paymentMethod = specificChannel || raw?.payment_method || null
 
         if (!externalId) {
             console.warn('Xendit webhook: no external_id in payload', payload)
@@ -44,63 +49,121 @@ export async function POST(req: Request) {
             return NextResponse.json({ message: 'Ignored, unhandled status', received: status })
         }
 
-        // Parse externalId: pkg_<pkgId>_user_<userId>_ts_<timestamp>
-        const match = externalId.match(/^pkg_(.+?)_user_(.+?)_ts_/)
-        if (!match) {
-            console.warn('Invalid externalId format:', externalId)
-            return NextResponse.json({ error: 'Invalid externalId format' }, { status: 400 })
-        }
+        // Parse externalId: 
+        // 1. pkg_<pkgId>_user_<userId>_ts_<timestamp>
+        // 2. album_<albumId>_user_<userId>_ts_<timestamp>
 
-        const packageId = match[1]
-        const userId = match[2]
+        const isPackage = externalId.startsWith('pkg_')
+        const isAlbum = externalId.startsWith('album_')
 
-        // 1. Get Package details to know how many credits to give
-        const { data: pkg, error: pkgError } = await supabase
-            .from('credit_packages')
-            .select('credits')
-            .eq('id', packageId)
-            .single()
+        if (isPackage) {
+            const match = externalId.match(/^pkg_(.+?)_user_(.+?)_ts_/)
+            if (!match) {
+                console.warn('Invalid externalId format for package:', externalId)
+                return NextResponse.json({ error: 'Invalid externalId format' }, { status: 400 })
+            }
 
-        if (pkgError || !pkg) {
-            console.error('Package not found for webhook:', packageId, pkgError)
-            return NextResponse.json({ error: 'Package not found' }, { status: 500 })
-        }
+            const packageId = match[1]
+            const userId = match[2]
+            console.log(`Processing Package Payment: pkg=${packageId}, user=${userId}, status=${status}`)
 
-        // 2. Fetch User's current credits
-        const { data: user, error: userError } = await supabase
-            .from('users')
-            .select('credits')
-            .eq('id', userId)
-            .single()
+            // 1. Get Package details
+            const { data: pkg, error: pkgError } = await supabase
+                .from('credit_packages')
+                .select('credits')
+                .eq('id', packageId)
+                .single()
 
-        if (userError || !user) {
-            console.error('User not found for webhook:', userId, userError)
-            return NextResponse.json({ error: 'User not found' }, { status: 500 })
-        }
+            if (pkgError || !pkg) {
+                console.error('Package not found for webhook:', packageId, pkgError)
+                return NextResponse.json({ error: 'Package not found' }, { status: 500 })
+            }
 
-        // 3. Update Transaction Table First
-        const { error: txError } = await supabase
-            .from('transactions')
-            .update({
-                status,
-                paid_at: new Date().toISOString()
-            })
-            .eq('external_id', externalId)
+            // 2. Fetch User
+            const { data: user, error: userError } = await supabase
+                .from('users')
+                .select('credits')
+                .eq('id', userId)
+                .single()
 
-        if (txError) {
-            console.warn('Could not update transaction status mapping:', txError)
-        }
+            if (userError || !user) {
+                console.error('User not found for webhook:', userId, userError)
+                return NextResponse.json({ error: 'User not found' }, { status: 500 })
+            }
 
-        // 4. Increment Credits
-        const newCreditBalance = (user.credits || 0) + pkg.credits
-        const { error: updateError } = await supabase
-            .from('users')
-            .update({ credits: newCreditBalance })
-            .eq('id', userId)
+            // 3. Update Transaction
+            const { error: txError } = await supabase
+                .from('transactions')
+                .update({
+                    status,
+                    payment_method: paymentMethod,
+                    paid_at: new Date().toISOString()
+                })
+                .eq('external_id', externalId)
 
-        if (updateError) {
-            console.error('Failed to update user credits:', updateError)
-            return NextResponse.json({ error: 'Update Failed' }, { status: 500 })
+            if (txError) {
+                console.error('Failed to update transaction status:', txError)
+            }
+
+            // 4. Increment Credits
+            const newCreditBalance = (user.credits || 0) + pkg.credits
+            const { error: updateError } = await supabase
+                .from('users')
+                .update({ credits: newCreditBalance })
+                .eq('id', userId)
+
+            if (updateError) {
+                console.error('Failed to update user credits:', updateError)
+            }
+
+            // 5. Clear Cache
+            await delCache(key.userAlbums(userId))
+
+        } else if (isAlbum) {
+            const match = externalId.match(/^album_(.+?)_user_(.+?)_ts_/)
+            if (!match) {
+                console.warn('Invalid externalId format for album:', externalId)
+                return NextResponse.json({ error: 'Invalid externalId format' }, { status: 400 })
+            }
+
+            const albumId = match[1]
+            const userId = match[2]
+            console.log(`Processing Album Payment: album=${albumId}, user=${userId}, status=${status}`)
+
+            // 1. Update Transaction
+            const { error: txError } = await supabase
+                .from('transactions')
+                .update({
+                    status,
+                    payment_method: paymentMethod,
+                    paid_at: new Date().toISOString()
+                })
+                .eq('external_id', externalId)
+
+            if (txError) {
+                console.error('Failed to update transaction status (album):', txError)
+            }
+
+            // 2. Update Album Status
+            const { error: albumUpdateErr } = await supabase
+                .from('albums')
+                .update({
+                    payment_status: 'paid',
+                })
+                .eq('id', albumId)
+
+            if (albumUpdateErr) {
+                console.error('Failed to update album payment status:', albumUpdateErr)
+            }
+
+            // 3. Clear Cache
+            await Promise.all([
+                delCache(key.userAlbums(userId)),
+                delCache(key.albumOverview(albumId))
+            ])
+        } else {
+            console.warn('Unknown externalId prefix:', externalId)
+            return NextResponse.json({ error: 'Unknown externalId prefix' }, { status: 400 })
         }
 
         return NextResponse.json({ message: 'Success' })

@@ -31,7 +31,7 @@ export async function GET() {
 
   const { data, error } = await adminClient
     .from('transactions')
-    .select('id, external_id, amount, status, invoice_url, created_at, credit_packages(credits)')
+    .select('id, external_id, amount, status, payment_method, invoice_url, created_at, album_id, albums(name), credit_packages(credits)')
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })
 
@@ -40,9 +40,16 @@ export async function GET() {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
-  const list = (Array.isArray(data) ? data : []).map((row: { credit_packages?: { credits: number } | null; [k: string]: unknown }) => {
-    const { credit_packages, ...rest } = row
-    return { ...rest, credits: credit_packages?.credits ?? null }
+  const list = (Array.isArray(data) ? data : []).map((row: any) => {
+    const { credit_packages, albums, ...rest } = row
+    // Supabase can return object or array, handle both just in case
+    const pkg = Array.isArray(credit_packages) ? credit_packages[0] : credit_packages
+    const album = Array.isArray(albums) ? albums[0] : albums
+    return {
+      ...rest,
+      credits: pkg?.credits ?? null,
+      album_name: album?.name ?? null
+    }
   })
   return NextResponse.json(list)
 }

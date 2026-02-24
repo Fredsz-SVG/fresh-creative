@@ -2,7 +2,7 @@
 
 import DashboardTitle from '@/components/dashboard/DashboardTitle'
 import { History, ExternalLink, Loader2, CreditCard, X } from 'lucide-react'
-import { useEffect, useState, useCallback, useRef } from 'react'
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react'
 import { supabase } from '@/lib/supabase'
 
 type Transaction = {
@@ -13,29 +13,41 @@ type Transaction = {
   invoice_url: string | null
   created_at: string
   credits: number | null
+  payment_method?: string | null
+  album_name?: string | null
 }
 
 export default function UserRiwayatPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [loading, setLoading] = useState(true)
   const [invoicePopupUrl, setInvoicePopupUrl] = useState<string | null>(null)
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 10
 
-  const fetchTransactions = useCallback(async () => {
-      setLoading(true)
-      try {
-        const res = await fetch('/api/user/transactions', { credentials: 'include' })
-        if (!res.ok) {
-          setTransactions([])
-          return
-        }
-        const data = await res.json()
-        setTransactions(Array.isArray(data) ? data : [])
-      } catch (err) {
-        console.error('Error fetching transactions:', err)
+  const paginatedTransactions = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage
+    return transactions.slice(start, start + itemsPerPage)
+  }, [transactions, currentPage])
+
+  const totalPages = Math.ceil(transactions.length / itemsPerPage)
+
+  const fetchTransactions = useCallback(async (skipLoading = false) => {
+    if (!skipLoading) setLoading(true)
+    try {
+      const ts = Date.now()
+      const res = await fetch(`/api/user/transactions?_t=${ts}`, { credentials: 'include', cache: 'no-store' })
+      if (!res.ok) {
         setTransactions([])
-      } finally {
-        setLoading(false)
+        return
       }
+      const data = await res.json()
+      setTransactions(Array.isArray(data) ? data : [])
+    } catch (err) {
+      console.error('Error fetching transactions:', err)
+      setTransactions([])
+    } finally {
+      if (!skipLoading) setLoading(false)
+    }
   }, [])
 
   useEffect(() => {
@@ -43,28 +55,30 @@ export default function UserRiwayatPage() {
   }, [fetchTransactions])
 
   // Realtime: update daftar saat ada INSERT/UPDATE/DELETE (tanpa filter agar DELETE ikut terkirim)
-  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
   useEffect(() => {
+    let isActive = true
+    let ch: ReturnType<typeof supabase.channel> | null = null
+
     supabase.auth.getUser().then(({ data: { user } }) => {
-      if (!user) return
-      const ch = supabase
+      if (!user || !isActive) return
+      ch = supabase
         .channel(`riwayat-user-${user.id}`)
         .on(
           'postgres_changes',
           { event: '*', schema: 'public', table: 'transactions' },
           () => {
-            fetchTransactions()
+            fetchTransactions(true)
           }
         )
         .subscribe((status, err) => {
           if (err) console.warn('Realtime transactions:', status, err)
         })
-      channelRef.current = ch
     })
+
     return () => {
-      if (channelRef.current) {
-        supabase.removeChannel(channelRef.current)
-        channelRef.current = null
+      isActive = false
+      if (ch) {
+        supabase.removeChannel(ch)
       }
     }
   }, [fetchTransactions])
@@ -134,8 +148,25 @@ export default function UserRiwayatPage() {
       />
 
       {loading ? (
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="w-8 h-8 text-lime-500 animate-spin" />
+        <div className="space-y-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="rounded-2xl border border-white/5 bg-white/[0.02] p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 animate-pulse">
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 rounded-xl bg-white/5 shrink-0" />
+                <div className="space-y-2 py-1">
+                  <div className="h-4 w-32 bg-white/5 rounded" />
+                  <div className="space-y-1">
+                    <div className="h-3 w-48 bg-white/5 rounded" />
+                    <div className="h-4 w-16 bg-white/5 rounded" />
+                  </div>
+                </div>
+              </div>
+              <div className="flex flex-col items-end gap-2">
+                <div className="h-5 w-24 bg-white/5 rounded" />
+                <div className="h-4 w-16 bg-white/5 rounded-full" />
+              </div>
+            </div>
+          ))}
         </div>
       ) : transactions.length === 0 ? (
         <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6 sm:p-8">
@@ -151,21 +182,31 @@ export default function UserRiwayatPage() {
         </div>
       ) : (
         <div className="space-y-4">
-          {transactions.map(tx => (
+          {paginatedTransactions.map(tx => (
             <div key={tx.id} className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div className="flex items-start gap-4">
                 <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${tx.status === 'PAID' || tx.status === 'SETTLED' ? 'bg-lime-500/20 text-lime-400'
-                    : tx.status === 'PENDING' ? 'bg-yellow-500/20 text-yellow-400'
-                      : 'bg-red-500/20 text-red-400'
+                  : tx.status === 'PENDING' ? 'bg-yellow-500/20 text-yellow-400'
+                    : 'bg-red-500/20 text-red-400'
                   }`}>
                   <CreditCard className="w-6 h-6" />
                 </div>
                 <div>
                   <h4 className="font-semibold text-white">
-                    {tx.credits != null ? `Top Up ${tx.credits} Credits` : 'Top Up Credit'}
+                    {tx.album_name ? `Pembayaran Album: ${tx.album_name}` : (tx.credits != null ? `Top Up ${tx.credits} Credits` : 'Top Up Credit')}
                   </h4>
-                  <div className="text-xs text-gray-400 mt-1">
+                  <div className="text-xs text-gray-400 mt-1 space-y-1">
                     <p>{new Date(tx.created_at).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
+                    {tx.external_id && (
+                      <p className="font-mono text-[10px] text-gray-500" title={tx.external_id}>
+                        ID: TR-{tx.external_id.split('_ts_')[1] || tx.external_id.slice(-8)}
+                      </p>
+                    )}
+                    {tx.payment_method && (
+                      <p className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-white/5 border border-white/10 w-fit">
+                        {tx.payment_method.replace(/_/g, ' ').toUpperCase()}
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -174,26 +215,56 @@ export default function UserRiwayatPage() {
                 <div className="text-right">
                   <span className="block font-bold text-white mb-1">Rp {tx.amount.toLocaleString('id-ID')}</span>
                   <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${tx.status === 'PAID' || tx.status === 'SETTLED' ? 'bg-lime-500/10 text-lime-400 border border-lime-500/20'
-                      : tx.status === 'PENDING' ? 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20'
-                        : 'bg-red-500/10 text-red-400 border border-red-500/20'
+                    : tx.status === 'PENDING' ? 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20'
+                      : 'bg-red-500/10 text-red-400 border border-red-500/20'
                     }`}>
                     {tx.status === 'PAID' || tx.status === 'SETTLED' ? 'SUCCESS' : tx.status}
                   </span>
                 </div>
 
-                {tx.invoice_url && (
+                {tx.invoice_url && tx.status === 'PENDING' && (
                   <button
                     type="button"
                     onClick={() => tx.invoice_url && setInvoicePopupUrl(tx.invoice_url)}
                     className="flex items-center gap-1.5 text-xs font-medium bg-lime-500 text-black px-3 py-1.5 rounded-lg hover:bg-lime-400 transition-colors"
                   >
-                    {tx.status === 'PENDING' ? 'Lanjutkan Bayar' : 'Lihat Invoice'}
+                    Lanjutkan Bayar
                     <ExternalLink className="w-3 h-3" />
                   </button>
                 )}
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Pagination Controls */}
+      {!loading && transactions.length > itemsPerPage && (
+        <div className="flex items-center justify-between mt-6 flex-wrap gap-4">
+          <p className="text-xs text-gray-400">
+            Menampilkan {((currentPage - 1) * itemsPerPage) + 1} hingga {Math.min(currentPage * itemsPerPage, transactions.length)} dari {transactions.length} entri
+          </p>
+          <div className="flex gap-1.5 shrink-0">
+            <button
+              type="button"
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(p => p - 1)}
+              className="px-3 py-1.5 text-xs font-medium rounded-lg bg-white/5 border border-white/10 text-white hover:bg-white/10 disabled:opacity-50 transition-colors"
+            >
+              Sebelumnya
+            </button>
+            <div className="flex items-center px-3 py-1.5 text-xs font-medium bg-white/5 border border-white/10 rounded-lg text-white">
+              {currentPage} / {totalPages}
+            </div>
+            <button
+              type="button"
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage(p => p + 1)}
+              className="px-3 py-1.5 text-xs font-medium rounded-lg bg-white/5 border border-white/10 text-white hover:bg-white/10 disabled:opacity-50 transition-colors"
+            >
+              Selanjutnya
+            </button>
+          </div>
         </div>
       )}
     </>

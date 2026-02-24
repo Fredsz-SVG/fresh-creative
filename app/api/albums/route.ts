@@ -38,7 +38,8 @@ export async function GET(request: NextRequest) {
           id, name, type, status, created_at, 
           pricing_package_id, 
           pricing_packages(name), 
-          school_city, kab_kota, wa_e164, province_id, province_name, pic_name, students_count, source, total_estimated_price
+          school_city, kab_kota, wa_e164, province_id, province_name, pic_name, students_count, source, total_estimated_price,
+          payment_status, payment_url
         `)
         .order('created_at', { ascending: false })
 
@@ -60,7 +61,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(result)
     }
 
-    const albumColumns = 'id, name, type, status, user_id, created_at, cover_image_url, pricing_package_id, pricing_packages(name)'
+    const albumColumns = 'id, name, type, status, user_id, created_at, cover_image_url, pricing_package_id, pricing_packages(name), payment_status, payment_url, total_estimated_price'
 
     const [ownedRes, memberRowsRes] = await Promise.all([
       supabase.from('albums').select(albumColumns).eq('user_id', user.id).order('created_at', { ascending: false }),

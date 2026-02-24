@@ -46,7 +46,7 @@ export async function GET(req: Request) {
   if (scope !== 'all') {
     const { data, error } = await adminClient
       .from('transactions')
-      .select('id, external_id, amount, status, invoice_url, created_at, credit_packages(credits)')
+      .select('id, external_id, amount, status, payment_method, invoice_url, created_at, album_id, albums(name), credit_packages(credits)')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
 
@@ -54,9 +54,15 @@ export async function GET(req: Request) {
       console.error('Admin own transactions fetch error:', error)
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
-    const list = (Array.isArray(data) ? data : []).map((row: { credit_packages?: { credits: number } | null; [k: string]: unknown }) => {
-      const { credit_packages, ...rest } = row
-      return { ...rest, credits: credit_packages?.credits ?? null }
+    const list = (Array.isArray(data) ? data : []).map((row: any) => {
+      const { credit_packages, albums, ...rest } = row
+      const pkg = Array.isArray(credit_packages) ? credit_packages[0] : credit_packages
+      const album = Array.isArray(albums) ? albums[0] : albums
+      return {
+        ...rest,
+        credits: pkg?.credits ?? null,
+        album_name: album?.name ?? null
+      }
     })
     return NextResponse.json(list)
   }
@@ -64,7 +70,7 @@ export async function GET(req: Request) {
   // Riwayat semua user (dengan detail nama, email, credits)
   const { data: rows, error } = await adminClient
     .from('transactions')
-    .select('id, user_id, external_id, amount, status, invoice_url, created_at, credit_packages(credits)')
+    .select('id, user_id, external_id, amount, status, payment_method, invoice_url, created_at, album_id, albums(name), credit_packages(credits)')
     .order('created_at', { ascending: false })
 
   if (error) {
@@ -85,12 +91,15 @@ export async function GET(req: Request) {
 
   const userMap = new Map((users || []).map((u: { id: string; full_name: string | null; email: string }) => [u.id, { full_name: u.full_name || '-', email: u.email || '-' }]))
 
-  const result = list.map((tx: { user_id: string; credit_packages?: { credits: number } | null; [k: string]: unknown }) => {
+  const result = list.map((tx: any) => {
     const u = userMap.get(tx.user_id) || { full_name: '-', email: '-' }
-    const { credit_packages, ...rest } = tx
+    const { credit_packages, albums, ...rest } = tx
+    const pkg = Array.isArray(credit_packages) ? credit_packages[0] : credit_packages
+    const album = Array.isArray(albums) ? albums[0] : albums
     return {
       ...rest,
-      credits: credit_packages?.credits ?? null,
+      credits: pkg?.credits ?? null,
+      album_name: album?.name ?? null,
       user_full_name: u.full_name,
       user_email: u.email,
     }

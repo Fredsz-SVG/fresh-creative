@@ -453,13 +453,8 @@ CREATE POLICY "Read Access" ON public.album_class_access FOR SELECT USING (
 
 
 -- ----------------------------------------------------------------------------
--- SOURCE: 05_user_assets.sql
--- ----------------------------------------------------------------------------
-
--- 05_user_assets.sql
--- Table for User Assets (File Saya) with generic file storage
--- ==========================================================
-
+-- SOURCE: 05_user_assets.sql (DISABLED - Feature removed)
+/*
 CREATE TABLE IF NOT EXISTS public.user_assets (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -479,13 +474,11 @@ CREATE POLICY "Users can manage own assets" ON public.user_assets
   FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
 
 -- Storage Bucket: user_files
--- ==========================
 INSERT INTO storage.buckets (id, name, public)
 VALUES ('user_files', 'user_files', true)
 ON CONFLICT (id) DO NOTHING;
 
 -- Storage Policies
--- Allow public access to read (or authenticated? The user request implies it's for them, but usually files are assets used elsewhere too. 'public' bucket helps.)
 DROP POLICY IF EXISTS "Assets Public Access" ON storage.objects;
 CREATE POLICY "Assets Public Access" ON storage.objects FOR SELECT
 USING ( bucket_id = 'user_files' ); 
@@ -501,6 +494,7 @@ USING ( bucket_id = 'user_files' AND auth.uid() = owner );
 DROP POLICY IF EXISTS "Users can delete own assets" ON storage.objects;
 CREATE POLICY "Users can delete own assets" ON storage.objects FOR DELETE
 USING ( bucket_id = 'user_files' AND auth.uid() = owner );
+*/
 
 
 -- ----------------------------------------------------------------------------
