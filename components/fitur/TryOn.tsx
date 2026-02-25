@@ -1,10 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Upload, X, Loader2, Download, User, Shirt, ChevronUp, ChevronDown, Save } from 'lucide-react'
 import { Client } from '@gradio/client'
 import { downloadImageWithWatermark } from '@/lib/download-image'
-import { saveToMyFiles } from '@/lib/save-to-files'
+
 
 const API_URL = 'https://virtual-try-on.fmind.dev/'
 const ENDPOINT = '/generate_try_on_images'
@@ -26,6 +26,31 @@ export default function TryOn() {
   const [error, setError] = useState<string | null>(null)
   const [downloadingIndex, setDownloadingIndex] = useState<number | null>(null)
   const [savingIndex, setSavingIndex] = useState<number | null>(null)
+  const [creditsPerGenerate, setCreditsPerGenerate] = useState<number | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    const loadPricing = async () => {
+      try {
+        const res = await fetch('/api/ai/pricing')
+        if (!res.ok) return
+        const data = await res.json()
+        if (!Array.isArray(data)) return
+        const item = data.find((p: any) => p.feature_slug === 'tryon')
+        if (!item) return
+        if (cancelled) return
+        if (typeof item.credits_per_use === 'number') {
+          setCreditsPerGenerate(item.credits_per_use)
+        }
+      } catch {
+        // ignore
+      }
+    }
+    loadPricing()
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const handlePersonUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -179,6 +204,29 @@ export default function TryOn() {
     setLoadingProgress({ current: 0, total: products.length })
 
     try {
+      const creditRes = await fetch('/api/ai/consume', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ feature_slug: 'tryon' }),
+      })
+      const creditData = await creditRes.json().catch(() => ({}))
+      if (!creditRes.ok || !creditData.ok) {
+        if (creditRes.status === 402) {
+          setError(
+            creditData.error ||
+              'Credit kamu tidak cukup untuk fitur Try On. Silakan top up credit terlebih dahulu.'
+          )
+        } else {
+          setError(creditData.error || 'Gagal memotong credit untuk fitur Try On.')
+        }
+        setLoading(false)
+        setLoadingProgress({ current: 0, total: 0 })
+        return
+      }
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('credits-updated'))
+      }
+
       const client = await Client.connect(API_URL)
       let currentPerson: File | Blob = personImage
       for (let i = 0; i < products.length; i++) {
@@ -215,12 +263,11 @@ export default function TryOn() {
   return (
     <section id="tryon-gradio" className="py-4 md:py-6">
       <div className="max-w-7xl mx-auto">
-        <p className="text-sm text-gray-500 dark:text-gray-400 mb-3 sm:mb-4 text-center">
-          Upload foto orang dan 1–3 item, lalu generate.
-        </p>
-
         <form onSubmit={handleGenerate} className="max-w-4xl mx-auto">
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-3 sm:p-4 md:p-6 border border-gray-200 dark:border-gray-700 space-y-4 sm:space-y-5 md:space-y-6">
+            <p className="text-sm text-gray-500 dark:text-gray-400 text-center">
+              Upload foto orang dan 1–3 item, lalu generate.
+            </p>
             {/* Person Image */}
             <div>
               <label className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-semibold mb-2 sm:mb-3 text-gray-700 dark:text-gray-300">
@@ -354,6 +401,12 @@ export default function TryOn() {
               </div>
             )}
 
+            {typeof creditsPerGenerate === 'number' && creditsPerGenerate >= 0 && (
+              <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
+                Biaya: {creditsPerGenerate} credit per generate Try On.
+              </p>
+            )}
+
             <button
               type="submit"
               disabled={loading || !personImage || products.length === 0}
@@ -394,32 +447,6 @@ export default function TryOn() {
                       alt={`Try-on result ${index + 1}`}
                       className="w-full h-auto max-h-64 sm:max-h-80 object-contain rounded-lg"
                     />
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        setSavingIndex(index)
-                        try {
-                          await saveToMyFiles(
-                            url,
-                            `tryon-${Date.now()}-${index + 1}.jpg`,
-                            'image/jpeg'
-                          )
-                        } catch (e) {
-                          setError(e instanceof Error ? e.message : 'Gagal menyimpan')
-                        } finally {
-                          setSavingIndex(null)
-                        }
-                      }}
-                      disabled={savingIndex === index}
-                      className="absolute top-1.5 right-12 sm:right-14 p-1.5 sm:p-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors disabled:opacity-70"
-                      title="Simpan ke File Saya"
-                    >
-                      {savingIndex === index ? (
-                        <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin" />
-                      ) : (
-                        <Save className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                      )}
-                    </button>
                     <button
                       type="button"
                       onClick={async () => {

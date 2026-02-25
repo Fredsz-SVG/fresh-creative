@@ -45,7 +45,7 @@ export async function GET(
 
       // Add photos array to each teacher
       teachers.forEach(teacher => {
-        teacher.photos = photosByTeacher[teacher.id] || []
+        (teacher as any).photos = photosByTeacher[teacher.id] || []
       })
     }
 

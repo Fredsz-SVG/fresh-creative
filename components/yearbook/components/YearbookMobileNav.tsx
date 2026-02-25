@@ -37,7 +37,7 @@ export interface YearbookMobileNavProps {
   joinStats: { pending_count?: number } | null
   classes: AlbumClass[]
   classIndex: number
-  setClassIndex: (fn: (i: number) => number) => void
+  setClassIndex: any
   myRequestByClass: Record<string, ClassRequest | null>
   membersByClass: Record<string, unknown[]>
   myAccessByClass: Record<string, { status?: string; student_name?: string } | null>
@@ -77,10 +77,15 @@ export default function YearbookMobileNav({
   const url = (mode: 'cover' | 'classes' | 'sambutan' | 'ai-labs' | 'preview' | 'flipbook' | 'approval' | 'team') =>
     getYearbookSectionQueryUrl(effectiveAlbumId, mode, pathname)
 
+  const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null
+  const aiLabsTool = searchParams?.get('tool')
+  const isAiLabsToolActive = sidebarMode === 'ai-labs' && !!aiLabsTool
+
   return (
     <>
       {/* Mobile Bottom Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 z-[60] bg-[#0a0a0b] border-t border-white/10 flex lg:hidden items-center justify-around h-16 pb-safe safe-area-bottom shadow-2xl">
+      {!isAiLabsToolActive && (
+        <div className="fixed bottom-0 left-0 right-0 z-[60] bg-[#0a0a0b] border-t border-white/10 flex lg:hidden items-center justify-around h-16 pb-safe safe-area-bottom shadow-2xl">
         <button
           onClick={() => effectiveAlbumId && router.push(url('cover'), { scroll: false })}
           className={`flex flex-col items-center justify-center flex-1 h-full gap-1 active:scale-95 transition-transform ${isCoverView ? 'text-lime-400' : 'text-gray-500 hover:text-white'}`}
@@ -138,7 +143,8 @@ export default function YearbookMobileNav({
             <span className="text-[10px] font-medium">Lainnya</span>
           </button>
         )}
-      </div>
+        </div>
+      )}
 
       {/* Mobile Class Drawer */}
       {mobileMenuOpen && (

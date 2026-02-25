@@ -1,8 +1,7 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Upload, X, Loader2, Download, Video, Save } from "lucide-react";
 import { downloadFileToDevice } from "@/lib/download-file";
-import { saveToMyFiles } from "@/lib/save-to-files";
 
 const DEFAULT_PROMPT = "A cinematic video with smooth motion and natural movement";
 
@@ -15,6 +14,30 @@ export default function PhotoToVideo() {
   const [error, setError] = useState<string | null>(null);
   const [downloading, setDownloading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [creditsPerGenerate, setCreditsPerGenerate] = useState<number | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const loadPricing = async () => {
+      try {
+        const res = await fetch("/api/ai/pricing");
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!Array.isArray(data)) return;
+        const item = data.find((p: any) => p.feature_slug === "phototovideo");
+        if (!item || cancelled) return;
+        if (typeof item.credits_per_use === "number") {
+          setCreditsPerGenerate(item.credits_per_use);
+        }
+      } catch {
+        // ignore
+      }
+    };
+    loadPricing();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -66,12 +89,11 @@ export default function PhotoToVideo() {
   return (
     <section id="phototovideo" className="py-4 md:py-6">
       <div className="max-w-7xl mx-auto">
-        <p className="text-sm text-gray-500 dark:text-gray-400 mb-3 sm:mb-4 text-center">
-          Upload foto dan tambahkan prompt untuk menghasilkan video.
-        </p>
-
         <form onSubmit={handleGenerateVideo} className="max-w-4xl mx-auto">
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-3 sm:p-4 md:p-6 border border-gray-200 dark:border-gray-700 space-y-4 sm:space-y-5 md:space-y-6">
+            <p className="text-sm text-gray-500 dark:text-gray-400 text-center">
+              Upload foto dan tambahkan prompt untuk menghasilkan video.
+            </p>
             {/* Photo Upload */}
             <div>
               <label className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-semibold mb-2 sm:mb-3 text-gray-700 dark:text-gray-300">
@@ -140,6 +162,12 @@ export default function PhotoToVideo() {
               </div>
             )}
 
+            {typeof creditsPerGenerate === "number" && creditsPerGenerate >= 0 && (
+              <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
+                Biaya: {creditsPerGenerate} credit per generate Photo to Video.
+              </p>
+            )}
+
             {/* Submit Button */}
             <button
               type="submit"
@@ -176,32 +204,6 @@ export default function PhotoToVideo() {
                 >
                   Browser Anda tidak mendukung video tag.
                 </video>
-                <button
-                  type="button"
-                  onClick={async () => {
-                    setSaving(true);
-                    try {
-                      await saveToMyFiles(
-                        videoResult,
-                        `photo-to-video-${Date.now()}.mp4`,
-                        "video/mp4"
-                      );
-                    } catch (e) {
-                      setError(e instanceof Error ? e.message : "Gagal menyimpan");
-                    } finally {
-                      setSaving(false);
-                    }
-                  }}
-                  disabled={saving}
-                  className="absolute top-1.5 sm:top-2 right-12 sm:right-14 p-1.5 sm:p-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors disabled:opacity-70"
-                  title="Simpan ke File Saya"
-                >
-                  {saving ? (
-                    <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin" />
-                  ) : (
-                    <Save className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                  )}
-                </button>
                 <button
                   type="button"
                   onClick={async () => {

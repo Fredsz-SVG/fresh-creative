@@ -10,6 +10,7 @@ import { supabase } from '@/lib/supabase'
 import YearbookClassesView from './YearbookClassesView'
 import YearbookSkeleton, { isValidYearbookSection } from './components/YearbookSkeleton'
 import { getSectionModeFromUrl, getYearbookSectionQueryUrl } from './lib/yearbook-paths'
+import CreditBadgeTop from './components/CreditBadgeTop'
 
 type Album = {
   id: string
@@ -1499,7 +1500,7 @@ export default function YearbookAlbumClient({
     const currentClass = album?.classes?.[classIndex]
     const aiLabsToolLabel: Record<string, string> = { tryon: 'Virtual Try On', pose: 'Pose', 'image-editor': 'Image Editor', photogroup: 'Photo Group', phototovideo: 'Photo to Video' }
     const isAiLabsToolActive = sidebarModeFromPath === 'ai-labs' && !!aiLabsTool
-    const aiLabsBackHref = album?.id ? (useAdminBack ? `/admin/album/yearbook/${album.id}` : `/user/portal/album/yearbook/${album.id}`) : effectiveBackHref
+    const aiLabsBackHref = album?.id ? (useAdminBack ? `/admin/album/yearbook/${album.id}?section=ai-labs` : `/user/portal/album/yearbook/${album.id}?section=ai-labs`) : effectiveBackHref
     const sectionTitle =
       isCoverView ? 'Sampul Album'
         : sidebarModeFromPath === 'ai-labs' ? (aiLabsTool ? (aiLabsToolLabel[aiLabsTool] ?? 'AI Labs') : 'AI Labs')
@@ -1541,7 +1542,11 @@ export default function YearbookAlbumClient({
             </Link>
             {/* Desktop: full BackLink */}
             <div className="hidden lg:block">
-              <BackLink href={effectiveBackHref} label={effectiveBackLabel} />
+              {isAiLabsToolActive ? (
+                <BackLink href={aiLabsBackHref} label="Ke Daftar Fitur" />
+              ) : (
+                <BackLink href={effectiveBackHref} label={effectiveBackLabel} />
+              )}
             </div>
             {sectionTitle && (
               <>
@@ -1568,6 +1573,13 @@ export default function YearbookAlbumClient({
               <div className="lg:hidden ml-auto flex items-center gap-1 px-2 py-1 rounded-full bg-white/5 border border-white/10">
                 <Users className="w-3.5 h-3.5 text-gray-400" />
                 <span className="text-xs font-medium text-gray-300">{headerCount}</span>
+              </div>
+            )}
+
+            {/* AI Labs Credit Badge */}
+            {isAiLabsToolActive && (
+              <div className="ml-auto flex items-center pr-1 lg:pr-2">
+                <CreditBadgeTop />
               </div>
             )}
 

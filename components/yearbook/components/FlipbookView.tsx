@@ -5,12 +5,12 @@ import ManualFlipbookViewer from './ManualFlipbookViewer'
 import LayoutEditor from './FlipbookLayoutEditor'
 
 interface FlipbookViewProps {
-  album: { id: string; [key: string]: unknown } | null
-  manualPages: unknown[]
+  album: { id: string;[key: string]: unknown } | null
+  manualPages: any[]
   canManage: boolean
   flipbookPreviewMode: boolean
   onPlayVideo: (url: string) => void
-  onUpdateAlbum?: (updates: Record<string, unknown>) => void | Promise<void>
+  onUpdateAlbum?: any
 }
 
 export default function FlipbookView({

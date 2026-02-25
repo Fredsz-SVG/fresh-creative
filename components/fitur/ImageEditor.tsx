@@ -4,7 +4,6 @@ import { useState, useRef, useEffect, useMemo, useCallback } from 'react'
 import { Upload, Download, Loader2, X, Scissors, Crop, RotateCw, RotateCcw, FlipHorizontal, FlipVertical, Palette, Sliders, Undo2, Redo2, Wand2, Save } from 'lucide-react'
 import Cropper from 'cropperjs'
 import 'cropperjs/dist/cropper.css'
-import { saveToMyFiles } from '@/lib/save-to-files'
 
 interface IconOverlay {
   id: string
@@ -55,6 +54,7 @@ export default function AiGenerate() {
   const [selectedGradientColor, setSelectedGradientColor] = useState<string>('rainbow')
   const [hasBackgroundRemoved, setHasBackgroundRemoved] = useState(false)
   const [imageWithoutBackground, setImageWithoutBackground] = useState<string | null>(null)
+  const [creditsPerRemoveBg, setCreditsPerRemoveBg] = useState<number | null>(null)
 
   // Crop aspect ratio state
   const [cropAspectRatio, setCropAspectRatio] = useState<number | undefined>(undefined)
@@ -79,6 +79,29 @@ export default function AiGenerate() {
   // Selected overlay for editing
   const [selectedOverlayId, setSelectedOverlayId] = useState<string | null>(null)
   const [isDragging, setIsDragging] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+    const loadPricing = async () => {
+      try {
+        const res = await fetch('/api/ai/pricing')
+        if (!res.ok) return
+        const data = await res.json()
+        if (!Array.isArray(data)) return
+        const item = data.find((p: any) => p.feature_slug === 'image_remove_bg')
+        if (!item || cancelled) return
+        if (typeof item.credits_per_use === 'number') {
+          setCreditsPerRemoveBg(item.credits_per_use)
+        }
+      } catch {
+        // ignore
+      }
+    }
+    loadPricing()
+    return () => {
+      cancelled = true
+    }
+  }, [])
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
   const [hasMoved, setHasMoved] = useState(false)
   const justFinishedDragRef = useRef(false)
@@ -1414,24 +1437,7 @@ export default function AiGenerate() {
     }
   }, [originalImage, generateFinalImage])
 
-  const handleSave = useCallback(async () => {
-    if (!originalImage) return
 
-    setIsSaving(true)
-    try {
-      const finalImage = await generateFinalImage()
-      await saveToMyFiles(
-        finalImage,
-        `edited-image-${Date.now()}.jpg`,
-        'image/jpeg'
-      )
-    } catch (error) {
-      console.error('Error saving image:', error)
-      setError('Gagal menyimpan gambar')
-    } finally {
-      setIsSaving(false)
-    }
-  }, [originalImage, generateFinalImage])
 
   const resetImage = useCallback(() => {
     setOriginalImage(null)
@@ -1547,19 +1553,7 @@ export default function AiGenerate() {
                   >
                     <Redo2 className="w-4 h-4" />
                   </button>
-                  <button
-                    onClick={handleSave}
-                    disabled={isSaving}
-                    className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm flex items-center gap-2"
-                    title="Simpan ke File Saya"
-                  >
-                    {isSaving ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <Save className="w-4 h-4" />
-                    )}
-                    <span className="hidden sm:inline">Simpan</span>
-                  </button>
+
                   <button
                     onClick={handleDownload}
                     className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm flex items-center gap-2"
@@ -1989,6 +1983,11 @@ export default function AiGenerate() {
                               <p className="text-[10px] sm:text-xs md:text-sm text-gray-600 dark:text-gray-400 px-2 sm:px-3">
                                 Hapus background dari foto Anda secara otomatis menggunakan AI
                               </p>
+                              {typeof creditsPerRemoveBg === 'number' && creditsPerRemoveBg >= 0 && (
+                                <p className="text-[9px] sm:text-[10px] text-gray-500 dark:text-gray-400 px-2 sm:px-3">
+                                  Biaya: {creditsPerRemoveBg} credit per aksi Remove Background.
+                                </p>
+                              )}
                               <button
                                 onClick={async () => {
                                   if (!originalImage) return
@@ -1996,6 +1995,29 @@ export default function AiGenerate() {
                                   setIsRemovingBackground(true)
                                   setError(null)
                                   try {
+                                    const creditRes = await fetch('/api/ai/consume', {
+                                      method: 'POST',
+                                      headers: { 'Content-Type': 'application/json' },
+                                      body: JSON.stringify({ feature_slug: 'image_remove_bg' }),
+                                    })
+                                    const creditData = await creditRes.json().catch(() => ({}))
+                                    if (!creditRes.ok || !creditData.ok) {
+                                      if (creditRes.status === 402) {
+                                        setError(
+                                          creditData.error ||
+                                            'Credit kamu tidak cukup untuk Remove Background. Silakan top up credit terlebih dahulu.'
+                                        )
+                                      } else {
+                                        setError(creditData.error || 'Gagal memotong credit untuk Remove Background.')
+                                      }
+                                      setIsRemovingBackground(false)
+                                      isUndoRedoRef.current = false
+                                      return
+                                    }
+                                    if (typeof window !== 'undefined') {
+                                      window.dispatchEvent(new CustomEvent('credits-updated'))
+                                    }
+
                                     const result = await removeBackground(originalImage)
 
                                     // Transform sudah diterapkan ke gambar secara permanen

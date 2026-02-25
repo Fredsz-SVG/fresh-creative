@@ -1,8 +1,7 @@
-"use client";
-import { useState } from "react";
-import { Upload, X, Loader2, Download, User, Save } from "lucide-react";
-import { downloadImageWithWatermark } from "@/lib/download-image";
-import { saveToMyFiles } from "@/lib/save-to-files";
+'use client';
+import { useEffect, useState } from 'react';
+import { Upload, X, Loader2, Download, User } from 'lucide-react';
+import { downloadImageWithWatermark } from '@/lib/download-image';
 
 export default function Pose() {
   const [subject, setSubject] = useState<File | null>(null);
@@ -10,9 +9,32 @@ export default function Pose() {
   const [results, setResults] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [prompt, setPrompt] = useState<string>("");
+  const [prompt, setPrompt] = useState<string>('');
   const [downloadingIndex, setDownloadingIndex] = useState<number | null>(null);
-  const [savingIndex, setSavingIndex] = useState<number | null>(null);
+  const [creditsPerGenerate, setCreditsPerGenerate] = useState<number | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const loadPricing = async () => {
+      try {
+        const res = await fetch('/api/ai/pricing');
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!Array.isArray(data)) return;
+        const item = data.find((p: any) => p.feature_slug === 'pose');
+        if (!item || cancelled) return;
+        if (typeof item.credits_per_use === 'number') {
+          setCreditsPerGenerate(item.credits_per_use);
+        }
+      } catch {
+        // ignore
+      }
+    };
+    loadPricing();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleSubjectUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -75,12 +97,11 @@ export default function Pose() {
   return (
     <section id="pose" className="py-4 md:py-6">
       <div className="max-w-7xl mx-auto">
-        <p className="text-sm text-gray-500 dark:text-gray-400 mb-3 sm:mb-4 text-center">
-          Upload foto karakter dan deskripsikan pose yang diinginkan.
-        </p>
-
         <form onSubmit={handleGeneratePose} className="max-w-4xl mx-auto">
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-3 sm:p-4 md:p-6 border border-gray-200 dark:border-gray-700 space-y-4 sm:space-y-5 md:space-y-6">
+            <p className="text-sm text-gray-500 dark:text-gray-400 text-center">
+              Upload foto karakter dan deskripsikan pose yang diinginkan.
+            </p>
             {/* Subject Upload */}
             <div>
               <label className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-semibold mb-2 sm:mb-3 text-gray-700 dark:text-gray-300">
@@ -157,6 +178,12 @@ export default function Pose() {
               </div>
             )}
 
+            {typeof creditsPerGenerate === 'number' && creditsPerGenerate >= 0 && (
+              <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
+                Biaya: {creditsPerGenerate} credit per generate Pose.
+              </p>
+            )}
+
             {/* Submit Button */}
             <button
               type="submit"
@@ -196,32 +223,6 @@ export default function Pose() {
                       alt={`Pose result ${index + 1}`}
                       className="w-full h-auto max-h-64 sm:max-h-80 md:max-h-96 object-contain rounded-lg"
                     />
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        setSavingIndex(index);
-                        try {
-                          await saveToMyFiles(
-                            result,
-                            `pose-${index + 1}-${Date.now()}.png`,
-                            "image/png"
-                          );
-                        } catch (e) {
-                          setError(e instanceof Error ? e.message : "Gagal menyimpan");
-                        } finally {
-                          setSavingIndex(null);
-                        }
-                      }}
-                      disabled={savingIndex !== null}
-                      className="absolute top-1.5 sm:top-2 right-12 sm:right-14 p-1.5 sm:p-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors shadow-lg disabled:opacity-70"
-                      title="Simpan ke File Saya"
-                    >
-                      {savingIndex === index ? (
-                        <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin" />
-                      ) : (
-                        <Save className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                      )}
-                    </button>
                     <button
                       type="button"
                       onClick={async () => {

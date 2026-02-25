@@ -1,8 +1,7 @@
-"use client";
-import { useState } from "react";
-import { Upload, X, Loader2, Download, Shirt, User, Save } from "lucide-react";
-import { downloadImageWithWatermark } from "@/lib/download-image";
-import { saveToMyFiles } from "@/lib/save-to-files";
+'use client';
+import { useState } from 'react';
+import { Upload, X, Loader2, Download, Shirt, User } from 'lucide-react';
+import { downloadImageWithWatermark } from '@/lib/download-image';
 
 interface Garment {
   file: File;
@@ -29,7 +28,6 @@ export default function TryonForm() {
   const [currentProcessing, setCurrentProcessing] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
-  const [savingId, setSavingId] = useState<number | null>(null);
 
   const handleHumanUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -357,32 +355,6 @@ export default function TryonForm() {
                         alt={`Try-on result ${index + 1}`}
                         className="w-full h-auto max-h-64 sm:max-h-80 md:max-h-96 object-contain rounded-lg"
                       />
-                      <button
-                        type="button"
-                        onClick={async () => {
-                          setSavingId(result.id);
-                          try {
-                            await saveToMyFiles(
-                              result.result,
-                              `tryon-${Date.now()}.jpg`,
-                              "image/jpeg"
-                            );
-                          } catch (e) {
-                            setError(e instanceof Error ? e.message : "Gagal menyimpan");
-                          } finally {
-                            setSavingId(null);
-                          }
-                        }}
-                        disabled={savingId === result.id}
-                        className="absolute top-1.5 sm:top-2 right-12 sm:right-14 p-1.5 sm:p-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors shadow-lg disabled:opacity-70"
-                        title="Simpan ke File Saya"
-                      >
-                        {savingId === result.id ? (
-                          <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin" />
-                        ) : (
-                          <Save className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                        )}
-                      </button>
                       <button
                         type="button"
                         onClick={async () => {

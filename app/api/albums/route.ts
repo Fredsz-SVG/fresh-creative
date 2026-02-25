@@ -24,9 +24,11 @@ export async function GET(request: NextRequest) {
       // ignore
     }
     const isAdmin = role === 'admin'
+    const scope = request.nextUrl.searchParams.get('scope')
+    const shouldUseAdminScope = isAdmin && scope !== 'mine'
 
     // Admin: Fetch ALL albums
-    if (isAdmin) {
+    if (shouldUseAdminScope) {
       const adminClient = createAdminClient()
       if (!adminClient) {
         return NextResponse.json({ error: 'Admin client not configured' }, { status: 500 })

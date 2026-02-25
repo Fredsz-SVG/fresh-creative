@@ -1,10 +1,11 @@
 'use client'
 
-import { useEffect, useState, useCallback, useMemo } from 'react'
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { Check, X, Trash2, UserPlus, Loader2, ImagePlus, BookOpen, ChevronRight, Search } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
+import { getYearbookSectionQueryUrl } from '../yearbook/lib/yearbook-paths'
 
 /** Extract token from URL atau kode (alphanumeric + - _, 6–80 char; support token lama yang panjang). */
 function parseInviteToken(input: string): { token: string; type: 'join' | 'invite' | 'code' } | null {
@@ -55,11 +56,16 @@ export type AlbumRow = {
 export type AlbumsViewProps = {
   variant: 'user' | 'admin'
   initialData?: AlbumRow[]
+  fetchUrl?: string
+  linkContext?: 'user' | 'admin'
+  active?: boolean
 }
 
 function AlbumCard({
   album,
   variant,
+  basePath,
+  pathname,
   onApprove,
   onDecline,
   onDelete,
@@ -69,21 +75,22 @@ function AlbumCard({
 }: {
   album: AlbumRow
   variant: 'user' | 'admin'
+  basePath: string
   onApprove?: (album: AlbumRow) => void
   onDecline?: (album: AlbumRow) => void
   onDelete?: (album: AlbumRow) => void
   onInvite?: (album: AlbumRow) => void
   onPay?: (album: AlbumRow) => void
   loadingId?: string | null
+  pathname?: string | null
 }) {
   const isAdmin = variant === 'admin'
   const isPaid = album.payment_status === 'paid'
   const isApproved = album.status === 'approved'
   const isClickable = album.type === 'public' || (isApproved && (isPaid || isAdmin))
-  const basePath = isAdmin ? '/admin' : '/user/portal'
   const destinationUrl = album.type === 'public'
     ? `${basePath}/album/public/${album.id}`
-    : `${basePath}/album/yearbook/${album.album_id ?? album.id}`
+    : getYearbookSectionQueryUrl(album.album_id ?? album.id, 'cover', pathname || null)
 
   const created = album.created_at ? new Date(album.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : null
   const statusLabel = album.type === 'yearbook' ? (album.status ?? 'pending') : 'public'
@@ -197,7 +204,7 @@ function AlbumCard({
   return <CardContent />
 }
 
-export default function AlbumsView({ variant, initialData }: AlbumsViewProps) {
+export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albums', linkContext, active = true }: AlbumsViewProps) {
   const [albums, setAlbums] = useState<AlbumRow[]>(initialData || [])
   const [loading, setLoading] = useState(!initialData)
   const [loadingId, setLoadingId] = useState<string | null>(null)
@@ -213,6 +220,13 @@ export default function AlbumsView({ variant, initialData }: AlbumsViewProps) {
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 10
   const router = useRouter()
+  const pathname = usePathname()
+  const isAdmin = variant === 'admin'
+  const resolvedLinkContext = linkContext ?? (isAdmin ? 'admin' : 'user')
+  const linkBasePath = resolvedLinkContext === 'admin' ? '/admin' : '/user/portal'
+  const hasFetchedRef = useRef<boolean>(!!initialData)
+  const isFetchingRef = useRef(false)
+  const lastRealtimeFetchRef = useRef(0)
 
   const filteredAlbums = useMemo(() => {
     if (!searchQuery.trim()) return albums
@@ -233,39 +247,53 @@ export default function AlbumsView({ variant, initialData }: AlbumsViewProps) {
   const totalPages = Math.ceil(filteredAlbums.length / itemsPerPage)
 
   const fetchAlbums = useCallback(async (silent = false) => {
+    if (isFetchingRef.current) return
     if (!silent) setLoading(true)
     try {
-      const res = await fetch('/api/albums', { credentials: 'include' })
+      isFetchingRef.current = true
+      const res = await fetch(fetchUrl, { credentials: 'include' })
       if (!res.ok) throw new Error('Failed to fetch albums')
       const data = await res.json()
       setAlbums(data)
     } catch (err) {
       console.error(err)
     } finally {
+      isFetchingRef.current = false
       setLoading(false)
     }
-  }, [])
-
-
+  }, [fetchUrl])
 
   useEffect(() => {
-    if (!initialData) {
-      fetchAlbums()
+    if (initialData && initialData.length >= 0) {
+      hasFetchedRef.current = true
     }
-  }, [fetchAlbums, initialData])
+  }, [initialData])
+
+  useEffect(() => {
+    if (hasFetchedRef.current) return
+    if (active) {
+      fetchAlbums()
+    } else {
+      fetchAlbums(true)
+    }
+    hasFetchedRef.current = true
+  }, [active, fetchAlbums])
 
   useEffect(() => {
     const channel = supabase
-      .channel('albums-realtime')
+      .channel(`albums-realtime-${variant}-${resolvedLinkContext}-${fetchUrl.includes('scope=mine') ? 'mine' : 'all'}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'albums' }, () => {
-        fetchAlbums(true) // Silent data update
+        const now = Date.now()
+        if (now - lastRealtimeFetchRef.current < 500) return
+        lastRealtimeFetchRef.current = now
+        fetchAlbums(true)
       })
       .subscribe()
 
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [fetchAlbums])
+  }, [fetchAlbums, fetchUrl, resolvedLinkContext, variant, active])
 
   const handleApprove = async (e: React.MouseEvent, album: AlbumRow) => {
     e.stopPropagation()
@@ -391,10 +419,9 @@ export default function AlbumsView({ variant, initialData }: AlbumsViewProps) {
   }
 
   const handleRowClick = (album: AlbumRow) => {
-    const basePath = '/admin'
     const destinationUrl = album.type === 'public'
-      ? `${basePath}/album/public/${album.id}`
-      : `${basePath}/album/yearbook/${album.album_id ?? album.id}`
+      ? `${linkBasePath}/album/public/${album.id}`
+      : `${linkBasePath}/album/yearbook/${album.album_id ?? album.id}`
     router.push(destinationUrl)
   }
 
@@ -420,8 +447,7 @@ export default function AlbumsView({ variant, initialData }: AlbumsViewProps) {
       if (res.ok) {
         const albumId = data?.albumId
         if (albumId) {
-          const basePath = isAdmin ? '/admin' : '/user/portal'
-          router.push(`${basePath}/album/yearbook/${albumId}`)
+          router.push(`${linkBasePath}/album/yearbook/${albumId}`)
         } else {
           fetchAlbums(true)
           setInviteLinkInput('')
@@ -443,11 +469,10 @@ export default function AlbumsView({ variant, initialData }: AlbumsViewProps) {
     }
   }
 
-  const isAdmin = variant === 'admin'
   const title = isAdmin ? 'Manajemen Album' : 'Album Saya'
   const subtitle = isAdmin ? 'Kelola status dan data album.' : 'Daftar album Anda.'
-  const showroomHref = isAdmin ? '/admin/showroom' : '/user/showroom'
-  const publicCreateHref = isAdmin ? '/admin/album/public/create' : '/user/portal/album/public/create'
+  const showroomHref = resolvedLinkContext === 'admin' ? '/admin/showroom' : '/user/showroom'
+  const publicCreateHref = resolvedLinkContext === 'admin' ? '/admin/album/public/create' : '/user/portal/album/public/create'
 
   return (
     <div>
@@ -507,7 +532,7 @@ export default function AlbumsView({ variant, initialData }: AlbumsViewProps) {
       <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4 mb-4 flex flex-col md:flex-row gap-4">
         {/* Search */}
         <div className="flex-1 min-w-0 flex items-center gap-2 min-h-[44px] px-3 py-2 rounded-lg bg-white/5 border border-white/10">
-          <Search className="w-4 h-4 text-muted shrink-0 flex-shrink-0" />
+          <Search className="w-4 h-4 text-muted shrink-0" />
           <input
             type="text"
             value={searchQuery}
@@ -627,6 +652,12 @@ export default function AlbumsView({ variant, initialData }: AlbumsViewProps) {
                         }`}>
                       {album.status ?? 'pending'}
                     </span>
+                    {album.type === 'yearbook' && (album.status ?? 'pending') === 'approved' && (
+                      <span
+                        className={`inline-block ml-2 px-2 py-0.5 text-[10px] sm:text-xs font-semibold rounded-full ${album.payment_status === 'paid' ? 'bg-lime-500/20 text-lime-400' : 'bg-orange-500/20 text-orange-400'}`}>
+                        {album.payment_status === 'paid' ? 'Lunas' : 'Belum Bayar'}
+                      </span>
+                    )}
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-3 border-t border-white/10">
                     <Link
@@ -726,6 +757,12 @@ export default function AlbumsView({ variant, initialData }: AlbumsViewProps) {
                               }`}>
                             {album.status ?? 'pending'}
                           </span>
+                          {album.type === 'yearbook' && (album.status ?? 'pending') === 'approved' && (
+                            <span
+                              className={`inline-block ml-1.5 px-2 py-0.5 mt-1 sm:mt-0 lg:block lg:ml-0 lg:mt-1 xl:inline-block xl:ml-1.5 xl:mt-0 text-[10px] sm:text-xs font-semibold rounded-full ${album.payment_status === 'paid' ? 'bg-lime-500/20 text-lime-400' : 'bg-orange-500/20 text-orange-400'}`}>
+                              {album.payment_status === 'paid' ? 'Lunas' : 'Belum Bayar'}
+                            </span>
+                          )}
                         </td>
                         <td className="px-4 py-3 text-right whitespace-nowrap">
                           <div className="flex items-center justify-end gap-2">
@@ -778,6 +815,8 @@ export default function AlbumsView({ variant, initialData }: AlbumsViewProps) {
               key={album.id}
               album={album}
               variant={variant}
+              basePath={linkBasePath}
+              pathname={pathname}
               onApprove={isAdmin ? (e) => handleApprove(e as any, album) : undefined}
               onDecline={isAdmin ? (e) => handleDecline(e as any, album) : undefined}
               onDelete={isAdmin ? (e) => handleDelete(e as any, album) : undefined}

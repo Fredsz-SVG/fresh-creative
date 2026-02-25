@@ -14,8 +14,8 @@ export async function getAlbumOverview(albumId: string, userId?: string) {
     const client = admin || await createClient()
 
     // Fetch Album Meta
-    const selectWithPosition = 'id, name, type, status, cover_image_url, cover_image_position, cover_video_url, description, user_id, created_at, flipbook_mode'
-    const selectWithoutPosition = 'id, name, type, status, cover_image_url, description, user_id, created_at, flipbook_mode'
+    const selectWithPosition = 'id, name, type, status, cover_image_url, cover_image_position, cover_video_url, description, user_id, created_at, flipbook_mode, payment_status, payment_url, total_estimated_price'
+    const selectWithoutPosition = 'id, name, type, status, cover_image_url, description, user_id, created_at, flipbook_mode, payment_status, payment_url, total_estimated_price'
 
     const { data: albumWithPosition, error: errWithPosition } = await client
         .from('albums')
@@ -88,7 +88,7 @@ export async function getAlbumOverview(albumId: string, userId?: string) {
         const admin = createAdminClient()
         const client = admin || supabase
 
-        const row = albumData as { id: string; name: string; type: string; status?: string; cover_image_url?: string | null; cover_image_position?: string | null; cover_video_url?: string | null; description?: string | null; user_id: string; flipbook_mode?: string | null; classes: any[] }
+        const row = albumData as { id: string; name: string; type: string; status?: string; cover_image_url?: string | null; cover_image_position?: string | null; cover_video_url?: string | null; description?: string | null; user_id: string; flipbook_mode?: string | null; payment_status?: string | null; payment_url?: string | null; total_estimated_price?: number | null; classes: any[] }
 
         const isActualOwner = row.user_id === userId
 
@@ -139,6 +139,9 @@ export async function getAlbumOverview(albumId: string, userId?: string) {
             isOwner,
             isAlbumAdmin,
             isGlobalAdmin: isAdmin,
+            payment_status: row.payment_status || 'unpaid',
+            payment_url: row.payment_url || null,
+            total_estimated_price: row.total_estimated_price || 0,
             classes: row.classes || [],
         }
     }

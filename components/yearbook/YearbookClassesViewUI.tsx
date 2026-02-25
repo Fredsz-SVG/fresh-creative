@@ -382,6 +382,7 @@ export default function YearbookClassesViewUI(props: any) {
 
   const searchParams = useSearchParams()
   const aiLabsTool = searchParams.get('tool')
+  const isAiLabsToolActive = sidebarMode === 'ai-labs' && !!aiLabsTool
 
   const stripOriginForDisplay = (url: string) => {
     if (!url) return ''
@@ -1050,18 +1051,19 @@ export default function YearbookClassesViewUI(props: any) {
 
 
         <div className="flex flex-col lg:flex-row gap-0 flex-1 lg:pl-16 lg:px-0 lg:py-0">
-          {/* Icon Sidebar untuk desktop - Fixed di kiri */}
-          {/* Icon Sidebar untuk desktop - Fixed di kiri */}
-          <IconSidebar
-            pathname={pathname}
-            albumId={effectiveAlbumId}
-            isCoverView={isCoverView}
-            sidebarMode={sidebarMode}
-            setSidebarMode={setSidebarMode}
-            setView={setView}
-            canManage={canManage}
-            requestsByClass={requestsByClass}
-          />
+          {/* Icon Sidebar untuk desktop - Fixed di kiri (disembunyikan saat fitur AI Labs aktif) */}
+          {!isAiLabsToolActive && (
+            <IconSidebar
+              pathname={pathname}
+              albumId={effectiveAlbumId}
+              isCoverView={isCoverView}
+              sidebarMode={sidebarMode}
+              setSidebarMode={setSidebarMode}
+              setView={setView}
+              canManage={canManage}
+              requestsByClass={requestsByClass}
+            />
+          )}
 
           {/* Panel Group List - Fixed di tengah (hanya tampil saat mode classes) */}
           {sidebarMode === 'classes' && !isCoverView && (
@@ -1986,4 +1988,3 @@ export default function YearbookClassesViewUI(props: any) {
     </div >
   )
 }
-

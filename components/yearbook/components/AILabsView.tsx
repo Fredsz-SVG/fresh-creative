@@ -16,18 +16,15 @@ interface AILabsViewProps {
 }
 
 export default function AILabsView({ album, aiLabsTool }: AILabsViewProps) {
+    const pathname = require('next/navigation').usePathname()
+    const isAdmin = pathname?.startsWith('/admin')
     const FEATURE_ICONS = [Shirt, UserCircle, ImageIcon, Images, Video] as const
-    const albumBase = album?.id ? `/user/portal/album/yearbook/${album.id}` : ''
+    const albumBase = album?.id ? (isAdmin ? `/admin/album/yearbook/${album.id}` : `/user/portal/album/yearbook/${album.id}`) : ''
 
     if (aiLabsTool && albumBase) {
-        const backUrl = albumBase
-
-        // Helper to render tool with back link
+        // Helper to render tool
         const renderTool = (Component: React.ComponentType) => (
             <div className="max-w-5xl mx-auto px-3 py-3 sm:p-4">
-                <NextLink href={backUrl} className="inline-flex items-center gap-2 text-sm text-lime-400 hover:text-lime-300 mb-4">
-                    ← Kembali ke daftar fitur
-                </NextLink>
                 <Component />
             </div>
         )
@@ -45,8 +42,7 @@ export default function AILabsView({ album, aiLabsTool }: AILabsViewProps) {
                 {AI_LABS_FEATURES_USER.map((feature, index) => {
                     const Icon = FEATURE_ICONS[index] ?? Video
                     const toolSlug = feature.href.replace(/\/$/, '').split('/').pop() ?? ''
-                    // If we have albumBase, construct URL with query param, otherwise fallback to feature href
-                    const href = albumBase ? `${albumBase}?tool=${encodeURIComponent(toolSlug)}` : feature.href
+                    const href = albumBase ? `${albumBase}?section=ai-labs&tool=${encodeURIComponent(toolSlug)}` : feature.href
 
                     return (
                         <NextLink

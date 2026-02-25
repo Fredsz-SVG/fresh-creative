@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import Replicate from "replicate";
+import { createClient } from "@/lib/supabase-server";
 
 const REPLICATE_API_TOKEN = process.env.REPLICATE_API_TOKEN || process.env.NEXT_PUBLIC_REPLICATE_API_TOKEN;
 // Sesuai template Replicate: wan-video/wan-2.2-i2v-fast
@@ -16,6 +17,46 @@ function getOutputUrl(output: unknown): string {
 
 export const POST = async (req: NextRequest) => {
   try {
+    const supabase = await createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { data: pricing, error: pricingError } = await supabase
+      .from("ai_feature_pricing")
+      .select("credits_per_use")
+      .eq("feature_slug", "phototovideo")
+      .maybeSingle();
+
+    if (pricingError) {
+      return NextResponse.json({ ok: false, error: pricingError.message }, { status: 500 });
+    }
+
+    const creditsPerUse = pricing?.credits_per_use ?? 0;
+    const { data: userRow, error: userError } = await supabase
+      .from("users")
+      .select("credits")
+      .eq("id", user.id)
+      .single();
+
+    if (userError) {
+      return NextResponse.json({ ok: false, error: userError.message }, { status: 500 });
+    }
+
+    const currentCredits = userRow?.credits ?? 0;
+
+    if (creditsPerUse > 0 && currentCredits < creditsPerUse) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error:
+            "Credit kamu tidak cukup untuk generate Photo to Video. Silakan top up credit terlebih dahulu.",
+        },
+        { status: 402 }
+      );
+    }
+
     if (!REPLICATE_API_TOKEN) {
       return NextResponse.json(
         { ok: false, error: "REPLICATE_API_TOKEN tidak dikonfigurasi" },
@@ -59,6 +100,23 @@ export const POST = async (req: NextRequest) => {
         { ok: false, error: "Tidak ada hasil video yang dihasilkan" },
         { status: 500 }
       );
+    }
+
+    if (creditsPerUse > 0) {
+      const { data: latestUser, error: updateFetchError } = await supabase
+        .from("users")
+        .select("credits")
+        .eq("id", user.id)
+        .single();
+
+      if (!updateFetchError) {
+        const latestCredits = latestUser?.credits ?? 0;
+        const newCredits = latestCredits >= creditsPerUse ? latestCredits - creditsPerUse : 0;
+        await supabase
+          .from("users")
+          .update({ credits: newCredits })
+          .eq("id", user.id);
+      }
     }
 
     return NextResponse.json({ ok: true, video: videoUrl });
