@@ -27,15 +27,19 @@ export async function GET() {
     // Get profile from public.users
     const { data, error } = await supabase
         .from('users')
-        .select('credits')
+        .select('credits, is_suspended')
         .eq('id', user.id)
         .maybeSingle()
 
     if (error || !data) {
         // User profile might not exist for older users if trigger wasn't there
-        // Create basic profile if needed or return 0
-        return NextResponse.json({ id: user.id, credits: 0 })
+        // Create basic profile if needed or return defaults
+        return NextResponse.json({ id: user.id, credits: 0, isSuspended: false })
     }
 
-    return NextResponse.json({ id: user.id, credits: data?.credits ?? 0 })
+    return NextResponse.json({
+        id: user.id,
+        credits: data?.credits ?? 0,
+        isSuspended: data?.is_suspended ?? false,
+    })
 }

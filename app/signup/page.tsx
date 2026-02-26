@@ -9,10 +9,11 @@ import { getRole } from '@/lib/auth'
 function SignUpContent() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [fullName, setFullName] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
   const [error, setError] = useState('')
-  const [checking, setChecking] = useState(true)
   const router = useRouter()
   const searchParams = useSearchParams()
   const nextPath = searchParams?.get('next') ?? ''
@@ -23,9 +24,7 @@ function SignUpContent() {
       if (session?.user) {
         const role = await getRole(supabase, session.user)
         router.replace(role === 'admin' ? '/admin' : '/user')
-        return
       }
-      setChecking(false)
     }
     redirectIfLoggedIn()
   }, [router])
@@ -35,13 +34,19 @@ function SignUpContent() {
     setLoading(true)
     setError('')
 
+     if (password !== confirmPassword) {
+      setError('Password dan konfirmasi password tidak sama')
+      setLoading(false)
+      return
+    }
+
     try {
       const origin = typeof window !== 'undefined' ? window.location.origin : ''
       const { error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          data: { role: 'user' },
+          data: { role: 'user', full_name: fullName },
           emailRedirectTo: origin ? `${origin}/auth/callback` : undefined,
         },
       })
@@ -67,7 +72,10 @@ function SignUpContent() {
       const origin = typeof window !== 'undefined' ? window.location.origin : ''
       const { error: oauthError } = await supabase.auth.signInWithOAuth({
         provider: 'google',
-        options: { redirectTo: origin ? `${origin}/auth/callback` : undefined },
+        options: {
+          redirectTo: origin ? `${origin}/auth/callback` : undefined,
+          queryParams: { prompt: 'select_account' },
+        },
       })
       if (oauthError) setError(oauthError.message)
     } catch {
@@ -77,20 +85,23 @@ function SignUpContent() {
     }
   }
 
-  if (checking) {
-    return (
-      <div className="auth-page flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500" />
-      </div>
-    )
-  }
-
   return (
     <div className="auth-page">
       <div className="auth-card">
         <h1 className="auth-title">Sign Up</h1>
 
         <form onSubmit={handleSignUp} className="auth-form">
+          <div className="auth-field">
+            <label>Full Name</label>
+            <input
+              type="text"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              placeholder="Enter your full name"
+              required
+            />
+          </div>
+
           <div className="auth-field">
             <label>Email</label>
             <input
@@ -109,6 +120,17 @@ function SignUpContent() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Create a password"
+              required
+            />
+          </div>
+
+          <div className="auth-field">
+            <label>Confirm Password</label>
+            <input
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="Re-type your password"
               required
             />
           </div>
@@ -146,7 +168,7 @@ function SignUpContent() {
 
 export default function SignUpPage() {
   return (
-    <Suspense fallback={<div className="auth-page flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500" /></div>}>
+    <Suspense fallback={null}>
       <SignUpContent />
     </Suspense>
   )

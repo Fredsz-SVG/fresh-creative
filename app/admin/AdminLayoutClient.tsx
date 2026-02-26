@@ -47,12 +47,41 @@ export default function AdminLayoutClient({
         : null
 
     useEffect(() => {
+        let unsubscribed = false
         const check = async () => {
             const { data: { session } } = await supabase.auth.getSession()
             if (!session) {
-                router.replace('/login')
+                if (!unsubscribed) router.replace('/login')
                 return
             }
+
+            try {
+                const resMe = await fetch('/api/user/me', { credentials: 'include' })
+                const me = await resMe.json().catch(() => ({}))
+                if (resMe.ok && me?.isSuspended) {
+                    await fetch('/api/auth/logout', { credentials: 'include' })
+                    await supabase.auth.signOut()
+                    if (!unsubscribed) router.replace('/login?error=account_suspended')
+                    return
+                }
+            } catch {
+            }
+
+            const channel = supabase
+                .channel(`admin-user-suspend-${session.user.id}`)
+                .on(
+                    'postgres_changes',
+                    { event: 'UPDATE', schema: 'public', table: 'users', filter: `id=eq.${session.user.id}` },
+                    async (payload) => {
+                        const nextSuspended = (payload.new as any)?.is_suspended
+                        if (nextSuspended) {
+                            await fetch('/api/auth/logout', { credentials: 'include' })
+                            await supabase.auth.signOut()
+                            if (!unsubscribed) router.replace('/login?error=account_suspended')
+                        }
+                    }
+                )
+                .subscribe()
 
             // Setting ok immediately so it acts like the user flow and bypasses the skeleton delay
             setUserEmail(session.user?.email ?? '')
@@ -62,16 +91,27 @@ export default function AdminLayoutClient({
             const res = await fetch('/api/auth/otp-status', { credentials: 'include' })
             const data = await res.json().catch(() => ({}))
             if (!data.verified) {
-                router.replace('/auth/verify-otp')
+                if (!unsubscribed) router.replace('/auth/verify-otp')
                 return
             }
             const role = await getRole(supabase, session.user)
             if (role !== 'admin') {
-                router.replace('/user')
+                if (!unsubscribed) router.replace('/user')
                 return
             }
+
+            return () => {
+                unsubscribed = true
+                supabase.removeChannel(channel)
+            }
         }
-        check()
+        const cleanupPromise = check()
+        return () => {
+            unsubscribed = true
+            cleanupPromise.then((cleanup) => {
+                if (typeof cleanup === 'function') cleanup()
+            })
+        }
     }, [router, pathname, searchParams])
 
     const handleLogout = async () => {

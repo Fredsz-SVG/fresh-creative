@@ -48,6 +48,7 @@ export default function DashboardShell({
   const [isOnline, setIsOnline] = useState(true)
   const [showTopUp, setShowTopUp] = useState(false)
   const [showNotifications, setShowNotifications] = useState(false)
+  const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false)
   // Credits state
   const [credits, setCredits] = useState(0)
 
@@ -289,8 +290,7 @@ export default function DashboardShell({
         <button
           type="button"
           onClick={() => {
-            setDrawerOpen(false)
-            onLogout()
+            setLogoutConfirmOpen(true)
           }}
           className="mt-1.5 w-full min-h-[32px] px-2.5 py-2 rounded-lg text-left text-xs font-medium text-red-400 hover:bg-red-500/10 active:bg-red-500/20 transition-colors touch-manipulation"
         >
@@ -310,6 +310,42 @@ export default function DashboardShell({
 
   return (
     <div className="dashboard-shell min-h-[100dvh] bg-[#0a0a0b] text-gray-100 flex flex-col">
+      {logoutConfirmOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[120] p-4"
+          onClick={() => setLogoutConfirmOpen(false)}
+        >
+          <div
+            className="bg-gray-900 border border-red-500/20 rounded-xl p-4 sm:p-6 max-w-md w-full shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-lg font-bold text-red-400 mb-2">Logout</h3>
+            <p className="text-sm text-gray-400 mb-4">
+              Yakin ingin logout dari akun ini?
+            </p>
+            <div className="flex gap-2 justify-end">
+              <button
+                type="button"
+                onClick={() => setLogoutConfirmOpen(false)}
+                className="px-4 py-2 rounded-lg bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white transition-colors text-sm font-medium"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setLogoutConfirmOpen(false)
+                  setDrawerOpen(false)
+                  onLogout?.()
+                }}
+                className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-500 transition-colors text-sm font-medium"
+              >
+                Ya, Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Top header - di mobile disembunyikan saat fitur AI Labs (tryon, pose, image-editor, photogroup, phototovideo) dibuka */}
       <header
         className={`fixed top-0 left-0 right-0 z-40 h-14 min-h-[44px] border-b border-white/10 bg-[#0a0a0b]/95 backdrop-blur flex items-center justify-between px-4 pt-[env(safe-area-inset-top)] ${isAiLabsFeaturePage ? 'max-md:hidden' : ''}`}

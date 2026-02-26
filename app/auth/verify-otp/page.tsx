@@ -112,6 +112,12 @@ function VerifyOtpContent() {
       }
       const res = await fetch('/api/auth/otp-status', { credentials: 'include' })
       const data = await res.json().catch(() => ({}))
+      if (data.suspended) {
+        await fetch('/api/auth/logout', { credentials: 'include' })
+        await supabase.auth.signOut()
+        router.replace('/login?error=account_suspended')
+        return
+      }
       if (data.verified) {
         const safeNext = nextPath.startsWith('/') && !nextPath.startsWith('//') ? nextPath : ''
         const { getRole } = await import('@/lib/auth')
@@ -265,8 +271,15 @@ function VerifyOtpContent() {
 
   if (checking) {
     return (
-      <div className="auth-page flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500" />
+      <div className="auth-page">
+        <div className="auth-card">
+          <div className="h-6 w-32 bg-white/10 rounded animate-pulse mb-4" />
+          <div className="h-3 w-48 bg-white/10 rounded animate-pulse mb-6" />
+          <div className="space-y-3">
+            <div className="h-10 bg-white/10 rounded animate-pulse" />
+            <div className="h-10 bg-white/10 rounded animate-pulse" />
+          </div>
+        </div>
       </div>
     )
   }
@@ -348,8 +361,15 @@ export default function VerifyOtpPage() {
   return (
     <Suspense
       fallback={
-        <div className="auth-page flex items-center justify-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500" />
+        <div className="auth-page">
+          <div className="auth-card">
+            <div className="h-6 w-32 bg-white/10 rounded animate-pulse mb-4" />
+            <div className="h-3 w-48 bg-white/10 rounded animate-pulse mb-6" />
+            <div className="space-y-3">
+              <div className="h-10 bg-white/10 rounded animate-pulse" />
+              <div className="h-10 bg-white/10 rounded animate-pulse" />
+            </div>
+          </div>
         </div>
       }
     >

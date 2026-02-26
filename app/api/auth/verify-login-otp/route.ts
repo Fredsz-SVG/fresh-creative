@@ -29,6 +29,20 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
+  const { data: profile } = await supabase
+    .from('users')
+    .select('is_suspended')
+    .eq('id', user.id)
+    .maybeSingle()
+
+  if (profile?.is_suspended) {
+    await supabase.auth.signOut()
+    return NextResponse.json(
+      { error: 'Akun Anda sedang disuspend. Silakan hubungi admin.' },
+      { status: 403 }
+    )
+  }
+
   const db = createAdminClient() ?? supabase
   const { data: row } = await db
     .from('login_otps')

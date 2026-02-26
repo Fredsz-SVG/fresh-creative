@@ -37,6 +37,20 @@ export async function GET(request: NextRequest) {
     // Sinkronkan ke public.users (langsung tersimpan saat konfirmasi email)
     await supabase.rpc('sync_user_from_auth')
 
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) {
+      const { data: profile } = await supabase
+        .from('users')
+        .select('is_suspended')
+        .eq('id', user.id)
+        .maybeSingle()
+
+      if (profile?.is_suspended) {
+        await supabase.auth.signOut()
+        return NextResponse.redirect(new URL('/login?error=account_suspended', requestUrl.origin))
+      }
+    }
+
     const verifyUrl = nextPath && nextPath.startsWith('/') && !nextPath.startsWith('//')
       ? `/auth/verify-otp?next=${encodeURIComponent(nextPath)}`
       : '/auth/verify-otp'

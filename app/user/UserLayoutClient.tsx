@@ -49,13 +49,42 @@ export default function UserLayoutClient({
         : null
 
     useEffect(() => {
+        let unsubscribed = false
         const check = async () => {
             const { data: { session } } = await supabase.auth.getSession()
             if (!session) {
-                router.replace('/login')
+                if (!unsubscribed) router.replace('/login')
                 return
             }
-            // Tampilkan konten dulu (tanpa spinner) begitu session ada; cek OTP & role di background
+
+            try {
+                const resMe = await fetch('/api/user/me', { credentials: 'include' })
+                const me = await resMe.json().catch(() => ({}))
+                if (resMe.ok && me?.isSuspended) {
+                    await fetch('/api/auth/logout', { credentials: 'include' })
+                    await supabase.auth.signOut()
+                    if (!unsubscribed) router.replace('/login?error=account_suspended')
+                    return
+                }
+            } catch {
+            }
+
+            const channel = supabase
+                .channel(`user-suspend-${session.user.id}`)
+                .on(
+                    'postgres_changes',
+                    { event: 'UPDATE', schema: 'public', table: 'users', filter: `id=eq.${session.user.id}` },
+                    async (payload) => {
+                        const nextSuspended = (payload.new as any)?.is_suspended
+                        if (nextSuspended) {
+                            await fetch('/api/auth/logout', { credentials: 'include' })
+                            await supabase.auth.signOut()
+                            if (!unsubscribed) router.replace('/login?error=account_suspended')
+                        }
+                    }
+                )
+                .subscribe()
+
             setUserEmail(session.user?.email ?? '')
             setUserName(session.user?.user_metadata?.full_name ?? session.user?.email ?? 'User')
             setOk(true)
@@ -63,28 +92,38 @@ export default function UserLayoutClient({
             const res = await fetch('/api/auth/otp-status', { credentials: 'include' })
             const data = await res.json().catch(() => ({}))
             if (!data.verified) {
-                router.replace('/auth/verify-otp')
+                if (!unsubscribed) router.replace('/auth/verify-otp')
                 return
             }
             const role = await getRole(supabase, session.user)
             if (role === 'admin') {
-                // Admin selalu pakai dashboard admin; redirect ke admin dengan URL yang setara (termasuk ?section=)
                 const p = pathname ?? ''
                 if (p.startsWith('/user/portal/album/yearbook/')) {
                     const id = p.split('/user/portal/album/yearbook/')[1]?.split('/')[0]
                     if (id) {
                         const q = searchParams?.toString?.() ?? ''
-                        router.replace(`/admin/album/yearbook/${id}${q ? '?' + q : ''}`)
+                        if (!unsubscribed) router.replace(`/admin/album/yearbook/${id}${q ? '?' + q : ''}`)
                         return
                     }
                 }
                 if (p.startsWith('/user/portal')) {
-                    router.replace('/admin')
+                    if (!unsubscribed) router.replace('/admin')
                     return
                 }
             }
+
+            return () => {
+                unsubscribed = true
+                supabase.removeChannel(channel)
+            }
         }
-        check()
+        const cleanupPromise = check()
+        return () => {
+            unsubscribed = true
+            cleanupPromise.then((cleanup) => {
+                if (typeof cleanup === 'function') cleanup()
+            })
+        }
     }, [router, pathname, searchParams])
 
     const handleLogout = async () => {

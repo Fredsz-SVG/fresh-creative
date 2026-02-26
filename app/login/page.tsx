@@ -5,32 +5,61 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { getRole } from '@/lib/auth'
+import { Eye, EyeOff } from 'lucide-react'
 
 function LoginContent() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
-  const [checking, setChecking] = useState(true)
+  const [suspended, setSuspended] = useState(false)
+  const [suspendedMessage, setSuspendedMessage] = useState('Akun Anda sedang disuspend. Silakan hubungi admin.')
+  const [dismissedSuspended, setDismissedSuspended] = useState(false)
   const router = useRouter()
   const searchParams = useSearchParams()
+  const suspendedFromQuery = searchParams.get('error') === 'account_suspended'
+  const showSuspended = !dismissedSuspended && (suspended || suspendedFromQuery)
 
   useEffect(() => {
     const err = searchParams.get('error')
     const msg = searchParams.get('message')
-    if (err) setError(decodeURIComponent(err))
+    if (err) {
+      const decoded = decodeURIComponent(err)
+      if (decoded === 'account_suspended') {
+        setSuspended(true)
+        setDismissedSuspended(false)
+        setError('')
+        setMessage('')
+      } else {
+        setError(decoded)
+      }
+    }
     if (msg) setMessage(decodeURIComponent(msg))
   }, [searchParams])
 
   const nextPath = searchParams.get('next') ?? ''
 
   useEffect(() => {
+    let cancelled = false
     const redirectIfLoggedIn = async () => {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session?.user) {
-        setChecking(false)
+        return
+      }
+      const { data: profile, error: profileError } = await supabase
+        .from('users')
+        .select('is_suspended')
+        .eq('id', session.user.id)
+        .maybeSingle()
+
+      if (!profileError && profile?.is_suspended) {
+        await fetch('/api/auth/logout', { credentials: 'include' })
+        await supabase.auth.signOut()
+        setSuspended(true)
+        setSuspendedMessage('Akun Anda sedang disuspend. Silakan hubungi admin.')
         return
       }
       const res = await fetch('/api/auth/otp-status', { credentials: 'include' })
@@ -45,6 +74,9 @@ function LoginContent() {
       router.replace(`/auth/verify-otp${q}`)
     }
     redirectIfLoggedIn()
+    return () => {
+      cancelled = true
+    }
   }, [router, nextPath])
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -58,11 +90,33 @@ function LoginContent() {
         password,
       })
 
-      if (error) setError(error.message)
-      else if (data.user) {
+      if (error) {
+        setError(error.message)
+      } else if (data.user) {
+        const { data: profile, error: profileError } = await supabase
+          .from('users')
+          .select('is_suspended')
+          .eq('id', data.user.id)
+          .maybeSingle()
+
+        if (!profileError && profile?.is_suspended) {
+          await supabase.auth.signOut()
+          setSuspended(true)
+          setSuspendedMessage('Akun Anda sedang disuspend. Silakan hubungi admin.')
+          setDismissedSuspended(false)
+          return
+        }
+
         router.refresh()
         const statusRes = await fetch('/api/auth/otp-status', { credentials: 'include' })
         const statusData = await statusRes.json().catch(() => ({}))
+        if (statusData.suspended) {
+          await supabase.auth.signOut()
+          setSuspended(true)
+          setSuspendedMessage('Akun Anda sedang disuspend. Silakan hubungi admin.')
+          setDismissedSuspended(false)
+          return
+        }
         if (statusData.verified) {
           const role = await getRole(supabase, data.user)
           const safeNext = nextPath.startsWith('/') && !nextPath.startsWith('//') ? nextPath : ''
@@ -86,7 +140,10 @@ function LoginContent() {
       const nextQ = nextPath && nextPath.startsWith('/') && !nextPath.startsWith('//') ? `?next=${encodeURIComponent(nextPath)}` : ''
       const { error: oauthError } = await supabase.auth.signInWithOAuth({
         provider: 'google',
-        options: { redirectTo: origin ? `${origin}/auth/callback${nextQ}` : undefined },
+        options: {
+          redirectTo: origin ? `${origin}/auth/callback${nextQ}` : undefined,
+          queryParams: { prompt: 'select_account' },
+        },
       })
       if (oauthError) setError(oauthError.message)
     } catch {
@@ -96,16 +153,28 @@ function LoginContent() {
     }
   }
 
-  if (checking) {
-    return (
-      <div className="auth-page flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500" />
-      </div>
-    )
-  }
-
   return (
     <div className="auth-page">
+      {showSuspended && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
+          <div className="bg-[#111827] border border-red-500/40 rounded-2xl p-5 max-w-sm w-full text-center">
+            <h2 className="text-lg font-bold text-red-400 mb-2">Account Suspended</h2>
+            <p className="text-xs text-gray-300 mb-4">
+              {suspendedMessage}
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                setSuspended(false)
+                setDismissedSuspended(true)
+              }}
+              className="px-4 py-2 rounded-lg bg-white/10 text-sm font-medium text-gray-100 hover:bg-white/20 transition-colors"
+            >
+              Tutup
+            </button>
+          </div>
+        </div>
+      )}
       <div className="auth-card">
         <h1 className="auth-title">Login</h1>
 
@@ -123,13 +192,24 @@ function LoginContent() {
 
           <div className="auth-field">
             <label>Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter your password"
-              required
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter your password"
+                required
+                className="w-full pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute inset-y-0 right-0 px-3 flex items-center text-gray-400 hover:text-white"
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
           </div>
 
           <div className="auth-forgot">
@@ -172,7 +252,7 @@ function LoginContent() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="auth-page flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500" /></div>}>
+    <Suspense fallback={null}>
       <LoginContent />
     </Suspense>
   )
