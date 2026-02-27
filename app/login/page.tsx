@@ -167,7 +167,6 @@ function LoginContent() {
           return
         }
 
-        router.refresh()
         const statusRes = await fetch('/api/auth/otp-status', { credentials: 'include' })
         const statusData = await statusRes.json().catch(() => ({}))
         if (statusData.suspended) {

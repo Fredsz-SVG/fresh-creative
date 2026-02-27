@@ -94,10 +94,6 @@ export default function UserLayoutClient({
                 )
                 .subscribe()
 
-            setUserEmail(session.user?.email ?? '')
-            setUserName(session.user?.user_metadata?.full_name ?? session.user?.email ?? 'User')
-            setOk(true)
-
             const res = await fetch('/api/auth/otp-status', { credentials: 'include' })
             const data = await res.json().catch(() => ({}))
             if (!data.verified) {
@@ -120,6 +116,10 @@ export default function UserLayoutClient({
                     return
                 }
             }
+
+            setUserEmail(session.user?.email ?? '')
+            setUserName(session.user?.user_metadata?.full_name ?? session.user?.email ?? 'User')
+            setOk(true)
 
             return () => {
                 unsubscribed = true

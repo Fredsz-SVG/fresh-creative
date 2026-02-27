@@ -92,11 +92,6 @@ export default function AdminLayoutClient({
                 )
                 .subscribe()
 
-            // Setting ok immediately so it acts like the user flow and bypasses the skeleton delay
-            setUserEmail(session.user?.email ?? '')
-            setUserName(session.user?.user_metadata?.full_name ?? session.user?.email ?? 'Admin')
-            setOk(true)
-
             const res = await fetch('/api/auth/otp-status', { credentials: 'include' })
             const data = await res.json().catch(() => ({}))
             if (!data.verified) {
@@ -108,6 +103,10 @@ export default function AdminLayoutClient({
                 if (!unsubscribed) router.replace('/user')
                 return
             }
+
+            setUserEmail(session.user?.email ?? '')
+            setUserName(session.user?.user_metadata?.full_name ?? session.user?.email ?? 'Admin')
+            setOk(true)
 
             return () => {
                 unsubscribed = true
