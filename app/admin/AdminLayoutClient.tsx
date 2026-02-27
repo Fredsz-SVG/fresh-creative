@@ -81,6 +81,15 @@ export default function AdminLayoutClient({
                         }
                     }
                 )
+                .on(
+                    'postgres_changes',
+                    { event: 'DELETE', schema: 'public', table: 'users', filter: `id=eq.${session.user.id}` },
+                    async () => {
+                        await fetch('/api/auth/logout', { credentials: 'include' })
+                        await supabase.auth.signOut()
+                        if (!unsubscribed) router.replace('/login?error=Akun+telah+dihapus+oleh+admin.')
+                    }
+                )
                 .subscribe()
 
             // Setting ok immediately so it acts like the user flow and bypasses the skeleton delay

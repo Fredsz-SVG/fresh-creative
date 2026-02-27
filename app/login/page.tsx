@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { getRole } from '@/lib/auth'
 import { Eye, EyeOff } from 'lucide-react'
+import { toast } from 'sonner'
 
 function LoginContent() {
   const [email, setEmail] = useState('')
@@ -18,6 +19,7 @@ function LoginContent() {
   const [suspended, setSuspended] = useState(false)
   const [suspendedMessage, setSuspendedMessage] = useState('Akun Anda sedang disuspend. Silakan hubungi admin.')
   const [dismissedSuspended, setDismissedSuspended] = useState(false)
+  const [popupState, setPopupState] = useState({ show: false, title: '', message: '' })
   const router = useRouter()
   const searchParams = useSearchParams()
   const suspendedFromQuery = searchParams.get('error') === 'account_suspended'
@@ -29,18 +31,49 @@ function LoginContent() {
     if (err) {
       const decoded = decodeURIComponent(err)
       if (decoded === 'account_suspended') {
-        setSuspended(true)
-        setDismissedSuspended(false)
+        setPopupState({
+          show: true,
+          title: 'Account Suspended',
+          message: 'Akun Anda sedang disuspend. Silakan hubungi admin.',
+        })
         setError('')
         setMessage('')
+      } else if (decoded.includes('Akun belum terdaftar')) {
+        setPopupState({
+          show: true,
+          title: 'Akun Belum Terdaftar',
+          message: decoded,
+        })
+        setError('')
       } else {
         setError(decoded)
       }
     }
     if (msg) setMessage(decodeURIComponent(msg))
+
+    // Bersihkan URL bar setelah parameter diproses agar saat direfresh tidak muncul lagi
+    if (err || msg) {
+      window.history.replaceState(null, '', '/login')
+    }
   }, [searchParams])
 
   const nextPath = searchParams.get('next') ?? ''
+  const isVerifiedQuery = searchParams.get('verified') === 'true'
+
+  useEffect(() => {
+    if (isVerifiedQuery) {
+      setPopupState({
+        show: true,
+        title: 'Verifikasi Berhasil',
+        message: 'Email Anda berhasil diverifikasi. Silakan login kembali.',
+      })
+      window.history.replaceState(null, '', '/login')
+    }
+  }, [isVerifiedQuery])
+
+  const handleClosePopup = () => {
+    setPopupState({ ...popupState, show: false })
+  }
 
   useEffect(() => {
     let cancelled = false
@@ -49,6 +82,13 @@ function LoginContent() {
       if (!session?.user) {
         return
       }
+
+      // Cek apakah email sudah diverifikasi (kecuali jika login dengan provider OAuth yang otomatis terverifikasi)
+      if (!session.user.email_confirmed_at && session.user.app_metadata?.provider === 'email') {
+        await supabase.auth.signOut()
+        return
+      }
+
       const { data: profile, error: profileError } = await supabase
         .from('users')
         .select('is_suspended')
@@ -91,8 +131,28 @@ function LoginContent() {
       })
 
       if (error) {
-        setError(error.message)
+        if (error.message.includes('Email not confirmed')) {
+          setPopupState({
+            show: true,
+            title: 'Verifikasi Email',
+            message: 'Silakan verifikasi email Anda terlebih dahulu dengan mengklik link yang dikirim ke email Anda.',
+          })
+          setError('')
+        } else {
+          setError(error.message)
+        }
       } else if (data.user) {
+        if (!data.user.email_confirmed_at && data.user.app_metadata?.provider === 'email') {
+          await supabase.auth.signOut()
+          setPopupState({
+            show: true,
+            title: 'Verifikasi Email',
+            message: 'Silakan verifikasi email Anda terlebih dahulu dengan mengklik link yang dikirim ke email Anda.',
+          })
+          setLoading(false)
+          return
+        }
+
         const { data: profile, error: profileError } = await supabase
           .from('users')
           .select('is_suspended')
@@ -137,11 +197,16 @@ function LoginContent() {
     setError('')
     try {
       const origin = typeof window !== 'undefined' ? window.location.origin : ''
-      const nextQ = nextPath && nextPath.startsWith('/') && !nextPath.startsWith('//') ? `?next=${encodeURIComponent(nextPath)}` : ''
+      const url = new URL(origin ? `${origin}/auth/callback` : window.location.href)
+      url.searchParams.set('type', 'login')
+      if (nextPath && nextPath.startsWith('/') && !nextPath.startsWith('//')) {
+        url.searchParams.set('next', nextPath)
+      }
+
       const { error: oauthError } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: origin ? `${origin}/auth/callback${nextQ}` : undefined,
+          redirectTo: url.toString(),
           queryParams: { prompt: 'select_account' },
         },
       })
@@ -168,6 +233,25 @@ function LoginContent() {
                 setSuspended(false)
                 setDismissedSuspended(true)
               }}
+              className="px-4 py-2 rounded-lg bg-white/10 text-sm font-medium text-gray-100 hover:bg-white/20 transition-colors"
+            >
+              Tutup
+            </button>
+          </div>
+        </div>
+      )}
+      {popupState.show && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
+          <div className="bg-[#111827] border border-red-500/40 rounded-2xl p-5 max-w-sm w-full text-center">
+            <h2 className="text-lg font-bold mb-2 text-red-400">
+              {popupState.title}
+            </h2>
+            <p className="text-xs text-gray-300 mb-4">
+              {popupState.message}
+            </p>
+            <button
+              type="button"
+              onClick={handleClosePopup}
               className="px-4 py-2 rounded-lg bg-white/10 text-sm font-medium text-gray-100 hover:bg-white/20 transition-colors"
             >
               Tutup

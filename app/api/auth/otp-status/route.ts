@@ -3,8 +3,8 @@ import { createClient } from '@/lib/supabase-server'
 
 const OTP_COOKIE_NAME = 'otp_verified'
 
-/** Di development, OTP di-skip: cukup punya session saja. */
-const isDevSkipOtp = process.env.NODE_ENV === 'development'
+/** Di development atau jika .env SKIP_LOGIN_OTP="true", OTP di-skip: cukup punya session saja. */
+const isDevSkipOtp = process.env.NODE_ENV === 'development' || process.env.SKIP_LOGIN_OTP === 'true'
 
 export async function GET(request: NextRequest) {
   const supabase = await createClient()

@@ -1,7 +1,9 @@
 'use client'
 
 import Link from 'next/link'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useState, useRef } from 'react'
+import { useSearchParams } from 'next/navigation'
+import { toast } from 'sonner'
 import DashboardTitle from '@/components/dashboard/DashboardTitle'
 import { BookOpen, History, X } from 'lucide-react'
 import { getYearbookSectionQueryUrl } from '@/components/yearbook/lib/yearbook-paths'
@@ -32,6 +34,16 @@ export default function UserPortalPage() {
   const [loadingTransactions, setLoadingTransactions] = useState(true)
   const [invoicePopupUrl, setInvoicePopupUrl] = useState<string | null>(null)
   const [userName, setUserName] = useState('Pengguna')
+  const searchParams = useSearchParams()
+  const hasToastedRef = useRef(false)
+
+  useEffect(() => {
+    if (searchParams.get('toast') === 'google_signup_success' && !hasToastedRef.current) {
+      toast.success('Berhasil buat! Anda telah masuk melalui Google.')
+      hasToastedRef.current = true
+      window.history.replaceState(null, '', '/user/portal')
+    }
+  }, [searchParams])
 
   const fetchRecentAlbums = useCallback(async (skipLoading = false) => {
     if (!skipLoading) setLoadingAlbums(true)

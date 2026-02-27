@@ -83,6 +83,15 @@ export default function UserLayoutClient({
                         }
                     }
                 )
+                .on(
+                    'postgres_changes',
+                    { event: 'DELETE', schema: 'public', table: 'users', filter: `id=eq.${session.user.id}` },
+                    async () => {
+                        await fetch('/api/auth/logout', { credentials: 'include' })
+                        await supabase.auth.signOut()
+                        if (!unsubscribed) router.replace('/login?error=Akun+telah+dihapus+oleh+admin.')
+                    }
+                )
                 .subscribe()
 
             setUserEmail(session.user?.email ?? '')

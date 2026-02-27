@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { getRole } from '@/lib/auth'
+import { toast } from 'sonner'
 
 function SignUpContent() {
   const [email, setEmail] = useState('')
@@ -22,6 +23,10 @@ function SignUpContent() {
     const redirectIfLoggedIn = async () => {
       const { data: { session } } = await supabase.auth.getSession()
       if (session?.user) {
+        if (!session.user.email_confirmed_at && session.user.app_metadata?.provider === 'email') {
+          await supabase.auth.signOut()
+          return
+        }
         const role = await getRole(supabase, session.user)
         router.replace(role === 'admin' ? '/admin' : '/user')
       }
@@ -34,7 +39,7 @@ function SignUpContent() {
     setLoading(true)
     setError('')
 
-     if (password !== confirmPassword) {
+    if (password !== confirmPassword) {
       setError('Password dan konfirmasi password tidak sama')
       setLoading(false)
       return
@@ -54,7 +59,7 @@ function SignUpContent() {
       if (error) {
         setError(error.message)
       } else {
-        alert('Check your email for confirmation link')
+        toast.success('Berhasil buat! Cek email untuk konfirmasi link yang dikirim ke email.')
         const q = nextPath && nextPath.startsWith('/') && !nextPath.startsWith('//') ? `?next=${encodeURIComponent(nextPath)}` : ''
         router.push(`/login${q}`)
       }
@@ -70,10 +75,16 @@ function SignUpContent() {
     setError('')
     try {
       const origin = typeof window !== 'undefined' ? window.location.origin : ''
+      const url = new URL(origin ? `${origin}/auth/callback` : window.location.href)
+      url.searchParams.set('type', 'signup')
+      if (nextPath && nextPath.startsWith('/') && !nextPath.startsWith('//')) {
+        url.searchParams.set('next', nextPath)
+      }
+
       const { error: oauthError } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: origin ? `${origin}/auth/callback` : undefined,
+          redirectTo: url.toString(),
           queryParams: { prompt: 'select_account' },
         },
       })
