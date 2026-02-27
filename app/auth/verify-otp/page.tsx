@@ -122,7 +122,11 @@ function VerifyOtpContent() {
         const safeNext = nextPath.startsWith('/') && !nextPath.startsWith('//') ? nextPath : ''
         const { getRole } = await import('@/lib/auth')
         const role = await getRole(supabase, session.user)
-        router.replace(safeNext || (role === 'admin' ? '/admin' : '/user'))
+        let finalNext = safeNext
+        if (role === 'admin' && finalNext.startsWith('/user/portal')) {
+          finalNext = finalNext.replace('/user/portal', '/admin')
+        }
+        router.replace(finalNext || (role === 'admin' ? '/admin' : '/user'))
         return
       }
       const userEmail = session.user.email ?? ''

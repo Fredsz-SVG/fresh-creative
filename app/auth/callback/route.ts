@@ -66,7 +66,7 @@ export async function GET(request: NextRequest) {
 
       const { data: profile } = await supabase
         .from('users')
-        .select('is_suspended')
+        .select('is_suspended, role')
         .eq('id', user.id)
         .maybeSingle()
 
@@ -86,7 +86,9 @@ export async function GET(request: NextRequest) {
       }
 
       // Untuk Google OAuth (login atau signup yang otomatis terverifikasi):
-      let finalUrl = nextPath && nextPath.startsWith('/') && !nextPath.startsWith('//') ? nextPath : '/user/portal'
+      const role = profile?.role || user.user_metadata?.role || user.app_metadata?.role
+      const defaultPath = role === 'admin' ? '/admin' : '/user/portal'
+      let finalUrl = nextPath && nextPath.startsWith('/') && !nextPath.startsWith('//') ? nextPath : defaultPath
       if (type === 'signup' && isNewUser) {
         finalUrl = finalUrl.includes('?') ? `${finalUrl}&toast=google_signup_success` : `${finalUrl}?toast=google_signup_success`
       }

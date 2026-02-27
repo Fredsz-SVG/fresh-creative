@@ -107,7 +107,11 @@ function LoginContent() {
       if (data.verified) {
         const safeNext = nextPath.startsWith('/') && !nextPath.startsWith('//') ? nextPath : ''
         const role = await getRole(supabase, session.user)
-        router.replace(safeNext || (role === 'admin' ? '/admin' : '/user'))
+        let finalNext = safeNext
+        if (role === 'admin' && finalNext.startsWith('/user/portal')) {
+          finalNext = finalNext.replace('/user/portal', '/admin')
+        }
+        router.replace(finalNext || (role === 'admin' ? '/admin' : '/user'))
         return
       }
       const q = nextPath ? `?next=${encodeURIComponent(nextPath)}` : ''
@@ -179,7 +183,11 @@ function LoginContent() {
         if (statusData.verified) {
           const role = await getRole(supabase, data.user)
           const safeNext = nextPath.startsWith('/') && !nextPath.startsWith('//') ? nextPath : ''
-          router.replace(safeNext || (role === 'admin' ? '/admin' : '/user'))
+          let finalNext = safeNext
+          if (role === 'admin' && finalNext.startsWith('/user/portal')) {
+            finalNext = finalNext.replace('/user/portal', '/admin')
+          }
+          router.replace(finalNext || (role === 'admin' ? '/admin' : '/user'))
         } else {
           router.push('/auth/verify-otp')
         }
