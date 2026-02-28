@@ -46,6 +46,11 @@ export interface YearbookMobileNavProps {
   setAddingClass: (v: boolean) => void
   handleUpdateClass?: (classId: string, updates: { name?: string }) => Promise<unknown>
   setDeleteClassConfirm: (v: { classId: string; className: string } | null) => void
+  isOwner?: boolean
+  handleJoinAsOwner?: (classId: string) => void
+  newClassName?: string
+  setNewClassName?: (v: string) => void
+  handleAddClass?: () => void
 }
 
 export default function YearbookMobileNav({
@@ -70,6 +75,11 @@ export default function YearbookMobileNav({
   setAddingClass,
   handleUpdateClass,
   setDeleteClassConfirm,
+  isOwner = false,
+  handleJoinAsOwner,
+  newClassName = '',
+  setNewClassName,
+  handleAddClass,
 }: YearbookMobileNavProps) {
   const router = useRouter()
   const [mobileEditingClassId, setMobileEditingClassId] = useState<string | null>(null)
@@ -252,18 +262,127 @@ export default function YearbookMobileNav({
               </div>
             )}
 
+            {/* Owner Join Button in Mobile Sidebar */}
+            {isOwner && currentClass && !myAccessByClass[currentClass.id] && (
+              <div className="p-3 border-t border-white/10 mx-2 mb-2 rounded-xl bg-blue-500/10 border border-blue-500/20">
+                {(() => {
+                  // Check if already registered in another class
+                  const hasAccessInOtherClass = Object.entries(myAccessByClass).some(
+                    ([classId, classAccess]) =>
+                      classId !== currentClass.id &&
+                      classAccess &&
+                      typeof classAccess === 'object' &&
+                      'status' in classAccess &&
+                      classAccess.status === 'approved'
+                  )
+
+                  if (hasAccessInOtherClass) {
+                    return (
+                      <div className="flex flex-col gap-2">
+                        <div className="flex items-center gap-2 text-amber-400 text-xs font-semibold">
+                          <Clock className="w-4 h-4" />
+                          <span>Batas Pendaftaran</span>
+                        </div>
+                        <p className="text-gray-400 text-[10px] leading-tight">
+                          Anda sudah terdaftar di kelas lain. Hanya bisa daftar di 1 kelas.
+                        </p>
+                      </div>
+                    )
+                  }
+
+                  return (
+                    <div className="flex flex-col gap-3">
+                      <div className="flex items-start gap-2">
+                        <div className="p-1.5 bg-blue-500/20 rounded-lg text-blue-400">
+                          <UserCog className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <h3 className="text-xs font-semibold text-blue-400">Akses Owner Album</h3>
+                          <p className="text-[10px] text-gray-400 mt-0.5 leading-tight">
+                            Daftar di kelas ini untuk upload foto profil.
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (handleJoinAsOwner) handleJoinAsOwner(currentClass.id)
+                          setMobileMenuOpen(false)
+                        }}
+                        className="w-full py-2 rounded-lg bg-blue-600 text-white text-xs font-bold hover:bg-blue-500 transition-all active:scale-95 shadow-lg shadow-blue-900/20"
+                      >
+                        Daftar di Kelas Ini
+                      </button>
+                    </div>
+                  )
+                })()}
+              </div>
+            )}
+
             <div className="p-3 pb-8 border-t border-white/10 flex flex-col gap-2 bg-[#0a0a0b]">
               {canManage && (
-                <button
-                  onClick={() => {
-                    setAddingClass(true)
-                    setMobileMenuOpen(false)
-                  }}
-                  className="w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-lime-600 text-white text-sm font-medium active:scale-95 transition-transform shadow-lg shadow-lime-900/20"
-                >
-                  <Plus className="w-4 h-4" />
-                  Nama kelas
-                </button>
+                <>
+                  {!addingClass ? (
+                    <button
+                      onClick={() => {
+                        setAddingClass(true)
+                      }}
+                      className="w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-lime-600 text-white text-sm font-medium active:scale-95 transition-transform shadow-lg shadow-lime-900/20"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Nama kelas
+                    </button>
+                  ) : (
+                    // In-sidebar add class form
+                    <div className="p-3 bg-white/5 border border-lime-500/50 rounded-xl animate-in slide-in-from-bottom-2 duration-200">
+                      <h3 className="text-xs font-semibold text-lime-400 mb-2 flex items-center gap-2">
+                        <Plus className="w-3.5 h-3.5" />
+                        Tambah Kelas
+                      </h3>
+                      <div className="flex flex-col gap-2">
+                        <input
+                          type="text"
+                          value={newClassName}
+                          onChange={(e) => setNewClassName && setNewClassName(e.target.value)}
+                          placeholder="Nama kelas baru..."
+                          className="w-full px-3 py-2 rounded-lg bg-black/50 border border-white/20 text-sm text-app focus:outline-none focus:border-lime-500 transition-colors"
+                          autoFocus
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              if (handleAddClass && newClassName.trim()) {
+                                handleAddClass()
+                              }
+                            }
+                          }}
+                        />
+                        <div className="flex gap-2 pt-1">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (handleAddClass && newClassName.trim()) {
+                                handleAddClass()
+                              }
+                            }}
+                            disabled={!newClassName.trim()}
+                            className="flex-1 py-2 rounded-lg bg-lime-600 text-white text-xs font-bold hover:bg-lime-500 disabled:opacity-50 transition-all active:scale-95"
+                          >
+                            Simpan
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setAddingClass(false)
+                              if (setNewClassName) setNewClassName('')
+                            }}
+                            className="flex-1 py-2 rounded-lg bg-white/5 border border-white/10 text-gray-300 text-xs font-bold hover:bg-white/10 transition-all active:scale-95"
+                          >
+                            Batal
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>

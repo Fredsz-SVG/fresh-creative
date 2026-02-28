@@ -1568,13 +1568,13 @@ export default function YearbookAlbumClient({
                 </div>
               </>
             )}
-            {/* Mobile: people count badge on the right */}
-            {headerCount !== null && headerCount !== undefined && (
+            {/* Mobile: people count badge on the right - REMOVED per user request to avoid overlapping title */}
+            {/* {headerCount !== null && headerCount !== undefined && (
               <div className="lg:hidden ml-auto flex items-center gap-1 px-2 py-1 rounded-full bg-white/5 border border-white/10">
                 <Users className="w-3.5 h-3.5 text-gray-400" />
                 <span className="text-xs font-medium text-gray-300">{headerCount}</span>
               </div>
-            )}
+            )} */}
 
             {/* AI Labs Credit Badge */}
             {isAiLabsToolActive && (

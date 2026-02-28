@@ -998,6 +998,11 @@ export default function YearbookClassesViewUI(props: any) {
         setAddingClass={setAddingClass}
         handleUpdateClass={handleUpdateClass}
         setDeleteClassConfirm={setDeleteClassConfirm}
+        isOwner={isOwner}
+        handleJoinAsOwner={handleJoinAsOwner}
+        newClassName={newClassName}
+        setNewClassName={setNewClassName}
+        handleAddClass={handleAddClass}
       />
       {/* Main Content - Header already sticky in parent (page.tsx) */}
       <div className="flex-1 flex flex-col p-4 pb-8">
@@ -1698,6 +1703,49 @@ export default function YearbookClassesViewUI(props: any) {
 
                   return (
                     <div className="flex flex-col gap-4 py-3">
+                      {/* Mobile Add Class Form - Only visible on mobile when addingClass is true AND no classes exist yet */}
+                      {addingClass && classes.length === 0 && (
+                        <div className="lg:hidden mx-4 p-4 bg-white/5 border border-lime-500/50 rounded-xl animate-in slide-in-from-top-2 duration-200 shadow-lg shadow-black/50">
+                          <h3 className="text-sm font-semibold text-lime-400 mb-3 flex items-center gap-2">
+                            <Plus className="w-4 h-4" />
+                            Tambah Kelas Baru
+                          </h3>
+                          <div className="flex flex-col gap-3">
+                            <div>
+                              <label className="text-xs text-gray-400 mb-1.5 block">Nama Kelas</label>
+                              <input
+                                type="text"
+                                value={newClassName}
+                                onChange={(e) => setNewClassName(e.target.value)}
+                                placeholder="Contoh: XII IPA 1"
+                                className="w-full px-3 py-2.5 rounded-lg bg-black/50 border border-white/20 text-sm text-app placeholder:text-gray-600 focus:outline-none focus:border-lime-500 transition-colors"
+                                autoFocus
+                              />
+                            </div>
+                            <div className="flex gap-2 pt-1">
+                              <button
+                                type="button"
+                                onClick={handleAddClass}
+                                disabled={!newClassName.trim()}
+                                className="flex-1 py-2.5 rounded-lg bg-lime-600 text-white text-sm font-bold hover:bg-lime-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95 shadow-lg shadow-lime-900/20"
+                              >
+                                Simpan
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setAddingClass(false)
+                                  setNewClassName('')
+                                }}
+                                className="flex-1 py-2.5 rounded-lg bg-white/5 border border-white/10 text-gray-300 text-sm font-bold hover:bg-white/10 hover:text-white transition-all active:scale-95"
+                              >
+                                Batal
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
                       {/* Batch Photo Section - Prominent Header */}
                       <div className="bg-white/5 border-y border-white/10 overflow-hidden px-3 py-3 flex flex-col sm:flex-row items-center sm:items-center gap-4">
                         <div className="flex-1 order-2 sm:order-1 text-center sm:text-left w-full sm:w-auto">
