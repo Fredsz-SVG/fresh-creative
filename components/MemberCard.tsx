@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { Edit3, Trash2, ImagePlus, Video, Play, X, ChevronLeft, ChevronRight } from 'lucide-react'
 
@@ -32,11 +32,11 @@ type MemberCardProps = {
     instagram: string
     message: string
     video_url: string
+    pendingPhotos?: File[]
+    pendingVideo?: File | null
   }) => void
   onDeleteClick?: () => void
-  onUploadPhoto?: (classId?: string, studentName?: string) => void
   onDeletePhoto?: (photoId: string, classId?: string, studentName?: string) => void
-  onUploadVideo?: (classId?: string, studentName?: string) => void
   onPlayVideo?: (videoUrl: string) => void
   onOpenGallery?: (classId?: string, studentName?: string) => void
   saving?: boolean
@@ -54,9 +54,7 @@ export default function MemberCard({
   onCancelEdit,
   onSave,
   onDeleteClick,
-  onUploadPhoto,
   onDeletePhoto,
-  onUploadVideo,
   onPlayVideo,
   onOpenGallery,
   saving = false,
@@ -74,6 +72,12 @@ export default function MemberCard({
   const [editMessage, setEditMessage] = useState(member.message || '')
   const [editVideoUrl, setEditVideoUrl] = useState(member.video_url || '')
 
+  // Pending (staged) files - not uploaded until Save
+  const [pendingPhotos, setPendingPhotos] = useState<{ file: File; previewUrl: string }[]>([])
+  const [pendingVideo, setPendingVideo] = useState<{ file: File; previewUrl: string } | null>(null)
+  const photoInputRef = React.useRef<HTMLInputElement>(null)
+  const videoInputRef = React.useRef<HTMLInputElement>(null)
+
   // Reset form when member data changes
   useEffect(() => {
     setEditName(member.student_name)
@@ -84,6 +88,26 @@ export default function MemberCard({
     setEditVideoUrl(member.video_url || '')
   }, [member])
 
+  // Cleanup blob URLs on unmount
+  useEffect(() => {
+    return () => {
+      pendingPhotos.forEach(p => URL.revokeObjectURL(p.previewUrl))
+      if (pendingVideo) URL.revokeObjectURL(pendingVideo.previewUrl)
+    }
+  }, [])
+
+  // Reset pending files when card flips back (cancel)
+  useEffect(() => {
+    if (!isFlipped) {
+      pendingPhotos.forEach(p => URL.revokeObjectURL(p.previewUrl))
+      setPendingPhotos([])
+      if (pendingVideo) {
+        URL.revokeObjectURL(pendingVideo.previewUrl)
+        setPendingVideo(null)
+      }
+    }
+  }, [isFlipped])
+
   const handleSave = () => {
     onSave?.({
       student_name: editName,
@@ -91,12 +115,74 @@ export default function MemberCard({
       date_of_birth: editTtl,
       instagram: editInstagram,
       message: editMessage,
-      video_url: editVideoUrl
+      video_url: editVideoUrl,
+      pendingPhotos: pendingPhotos.map(p => p.file),
+      pendingVideo: pendingVideo?.file || null,
+    })
+    // Cleanup after save
+    pendingPhotos.forEach(p => URL.revokeObjectURL(p.previewUrl))
+    setPendingPhotos([])
+    if (pendingVideo) {
+      URL.revokeObjectURL(pendingVideo.previewUrl)
+      setPendingVideo(null)
+    }
+  }
+
+  const handlePhotoSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 10 * 1024 * 1024) {
+      alert('Foto maksimal 10MB')
+      e.target.value = ''
+      return
+    }
+    const existingCount = (editPhotos?.length || photos.length)
+    const totalPhotos = existingCount + pendingPhotos.length
+    if (totalPhotos >= 4) {
+      alert('Maksimal 4 foto')
+      e.target.value = ''
+      return
+    }
+    const previewUrl = URL.createObjectURL(file)
+    setPendingPhotos(prev => [...prev, { file, previewUrl }])
+    e.target.value = ''
+  }
+
+  const handleVideoSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 20 * 1024 * 1024) {
+      alert('Video maksimal 20MB')
+      e.target.value = ''
+      return
+    }
+    if (pendingVideo) URL.revokeObjectURL(pendingVideo.previewUrl)
+    const previewUrl = URL.createObjectURL(file)
+    setPendingVideo({ file, previewUrl })
+    e.target.value = ''
+  }
+
+  const removePendingPhoto = (index: number) => {
+    setPendingPhotos(prev => {
+      const removed = prev[index]
+      if (removed) URL.revokeObjectURL(removed.previewUrl)
+      return prev.filter((_, i) => i !== index)
     })
   }
 
+  const removePendingVideo = () => {
+    if (pendingVideo) {
+      URL.revokeObjectURL(pendingVideo.previewUrl)
+      setPendingVideo(null)
+    }
+  }
+
   const photos = (member.photos || []).map((p, i) => ({ id: `${member.student_name}-${i}`, file_url: p, student_name: member.student_name }))
-  const displayPreviewPhotos = editPhotos && editPhotos.length > 0 ? editPhotos : photos
+  const basePhotos = editPhotos && editPhotos.length > 0 ? editPhotos : photos
+  const displayPreviewPhotos = [
+    ...basePhotos.map(p => ({ ...p, isPending: false })),
+    ...pendingPhotos.map((p, i) => ({ id: `pending-${i}`, file_url: p.previewUrl, isPending: true })),
+  ]
 
   return (
     <>
@@ -255,6 +341,9 @@ export default function MemberCard({
                   <div className="flex gap-1 flex-wrap mt-1">
                     {displayPreviewPhotos.map((photo, idx) => (
                       <div key={photo.id} className="relative w-12 h-12 rounded overflow-hidden bg-white/5 border border-white/10 group">
+                        {photo.isPending && (
+                          <div className="absolute top-0 left-0 bg-yellow-500 text-[6px] text-black px-0.5 rounded-br z-10">Baru</div>
+                        )}
                         <img
                           src={photo.file_url}
                           alt={`preview-${idx}`}
@@ -267,11 +356,16 @@ export default function MemberCard({
                         <button
                           type="button"
                           onClick={() => {
-                            setLocalConfirm({
-                              title: 'Hapus Foto',
-                              message: `Yakin ingin menghapus foto ${idx + 1}?`,
-                              onConfirm: () => onDeletePhoto?.(photo.id, classId, member.student_name)
-                            })
+                            if (photo.isPending) {
+                              const pendingIdx = idx - basePhotos.length
+                              removePendingPhoto(pendingIdx)
+                            } else {
+                              setLocalConfirm({
+                                title: 'Hapus Foto',
+                                message: `Yakin ingin menghapus foto ${idx + 1}?`,
+                                onConfirm: () => onDeletePhoto?.(photo.id, classId, member.student_name)
+                              })
+                            }
                           }}
                           className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
                         >
@@ -282,11 +376,26 @@ export default function MemberCard({
                   </div>
                 )}
 
+                {/* Pending video preview */}
+                {pendingVideo && (
+                  <div className="flex items-center gap-2 mt-1 p-1.5 rounded bg-blue-600/10 border border-blue-500/20">
+                    <Video className="w-3 h-3 text-blue-400 flex-shrink-0" />
+                    <span className="text-[9px] text-blue-300 truncate flex-1">{pendingVideo.file.name}</span>
+                    <button type="button" onClick={removePendingVideo} className="text-red-400 hover:text-red-300">
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                )}
+
+                {/* Hidden file inputs */}
+                <input ref={photoInputRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoSelected} />
+                <input ref={videoInputRef} type="file" accept="video/*" className="hidden" onChange={handleVideoSelected} />
+
                 {/* Media management */}
                 <div className="flex gap-1">
                   <button
                     type="button"
-                    onClick={() => onUploadPhoto?.(classId, member.student_name)}
+                    onClick={() => photoInputRef.current?.click()}
                     disabled={displayPreviewPhotos.length >= 4}
                     className="flex-1 px-1.5 py-1 rounded text-[9px] bg-green-600/20 text-green-400 hover:bg-green-600/30 transition-colors flex items-center justify-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
@@ -294,7 +403,7 @@ export default function MemberCard({
                   </button>
                   <button
                     type="button"
-                    onClick={() => onUploadVideo?.(classId, member.student_name)}
+                    onClick={() => videoInputRef.current?.click()}
                     className="flex-1 px-1.5 py-1 rounded text-[9px] bg-blue-600/20 text-blue-400 hover:bg-blue-600/30 transition-colors flex items-center justify-center gap-1"
                   >
                     <Video className="w-2.5 h-2.5" /> Video (maks. 20MB)

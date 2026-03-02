@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase-server'
 import { createAdminClient } from '@/lib/supabase-admin'
 import { getRole } from '@/lib/auth'
+import { delCache, key } from '@/lib/redis'
 
 export const dynamic = 'force-dynamic'
 
@@ -76,5 +77,9 @@ export async function POST(
     .eq('student_name', studentName)
 
   if (updateErr) return NextResponse.json({ error: updateErr.message }, { status: 500 })
+
+  // Invalidate cache so subsequent fetches return fresh data with video_url
+  await delCache(key.albumAllClassMembers(albumId))
+
   return NextResponse.json({ video_url: videoUrl })
 }

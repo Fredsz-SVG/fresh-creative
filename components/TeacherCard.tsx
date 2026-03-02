@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { Edit3, Trash2, ImagePlus, Video, Play, Briefcase, MessageSquare, X, ChevronLeft, ChevronRight } from 'lucide-react'
 
@@ -26,11 +26,11 @@ type TeacherCardProps = {
     title: string
     message: string
     video_url: string
+    pendingPhotos?: File[]
+    pendingVideo?: File | null
   }) => void
   onDelete: (teacherId: string) => void
-  onUploadPhoto: (teacherId: string) => void
   onDeletePhoto: (teacherId: string, photoId: string) => void
-  onUploadVideo: (teacherId: string) => void
   onPlayVideo: (videoUrl: string) => void
   onClickPhoto?: (teacher: Teacher, photoIndex: number) => void
   savingTeacher: boolean
@@ -44,9 +44,7 @@ export default function TeacherCard({
   onCancelEdit,
   onSave,
   onDelete,
-  onUploadPhoto,
   onDeletePhoto,
-  onUploadVideo,
   onPlayVideo,
   onClickPhoto,
   savingTeacher
@@ -60,7 +58,13 @@ export default function TeacherCard({
   const [viewerOpen, setViewerOpen] = useState(false)
   const [viewerIndex, setViewerIndex] = useState(0)
 
-  // Reset form when teacher data changes
+  // Pending (staged) files - not uploaded until Save
+  const [pendingPhotos, setPendingPhotos] = useState<{ file: File; previewUrl: string }[]>([])
+  const [pendingVideo, setPendingVideo] = useState<{ file: File; previewUrl: string } | null>(null)
+  const photoInputRef = React.useRef<HTMLInputElement>(null)
+  const videoInputRef = React.useRef<HTMLInputElement>(null)
+
+  // Reset form when teacher data changes or card flips
   useEffect(() => {
     setEditName(teacher.name)
     setEditTitle(teacher.title || '')
@@ -68,14 +72,98 @@ export default function TeacherCard({
     setEditVideoUrl(teacher.video_url || '')
   }, [teacher])
 
+  // Cleanup blob URLs on unmount or when pending files change
+  useEffect(() => {
+    return () => {
+      pendingPhotos.forEach(p => URL.revokeObjectURL(p.previewUrl))
+      if (pendingVideo) URL.revokeObjectURL(pendingVideo.previewUrl)
+    }
+  }, [])
+
+  // Reset pending files when card flips back (cancel)
+  useEffect(() => {
+    if (!isFlipped) {
+      pendingPhotos.forEach(p => URL.revokeObjectURL(p.previewUrl))
+      setPendingPhotos([])
+      if (pendingVideo) {
+        URL.revokeObjectURL(pendingVideo.previewUrl)
+        setPendingVideo(null)
+      }
+    }
+  }, [isFlipped])
+
   const handleSave = () => {
     onSave({
       name: editName,
       title: editTitle,
       message: editMessage,
-      video_url: editVideoUrl
+      video_url: editVideoUrl,
+      pendingPhotos: pendingPhotos.map(p => p.file),
+      pendingVideo: pendingVideo?.file || null,
+    })
+    // Cleanup after save
+    pendingPhotos.forEach(p => URL.revokeObjectURL(p.previewUrl))
+    setPendingPhotos([])
+    if (pendingVideo) {
+      URL.revokeObjectURL(pendingVideo.previewUrl)
+      setPendingVideo(null)
+    }
+  }
+
+  const handlePhotoSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 10 * 1024 * 1024) {
+      alert('Foto maksimal 10MB')
+      e.target.value = ''
+      return
+    }
+    const totalPhotos = (teacher.photos?.length || 0) + pendingPhotos.length
+    if (totalPhotos >= 4) {
+      alert('Maksimal 4 foto')
+      e.target.value = ''
+      return
+    }
+    const previewUrl = URL.createObjectURL(file)
+    setPendingPhotos(prev => [...prev, { file, previewUrl }])
+    e.target.value = ''
+  }
+
+  const handleVideoSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 20 * 1024 * 1024) {
+      alert('Video maksimal 20MB')
+      e.target.value = ''
+      return
+    }
+    if (pendingVideo) URL.revokeObjectURL(pendingVideo.previewUrl)
+    const previewUrl = URL.createObjectURL(file)
+    setPendingVideo({ file, previewUrl })
+    e.target.value = ''
+  }
+
+  const removePendingPhoto = (index: number) => {
+    setPendingPhotos(prev => {
+      const removed = prev[index]
+      if (removed) URL.revokeObjectURL(removed.previewUrl)
+      return prev.filter((_, i) => i !== index)
     })
   }
+
+  const removePendingVideo = () => {
+    if (pendingVideo) {
+      URL.revokeObjectURL(pendingVideo.previewUrl)
+      setPendingVideo(null)
+    }
+  }
+
+  // Combined photos: existing + pending previews (for display in edit form)
+  const existingPhotos = teacher.photos || []
+  const allDisplayPhotos = [
+    ...existingPhotos.map(p => ({ id: p.id, file_url: p.file_url, isPending: false })),
+    ...pendingPhotos.map((p, i) => ({ id: `pending-${i}`, file_url: p.previewUrl, isPending: true })),
+  ]
 
   return (
     <div className="relative h-full min-h-[380px]" style={{ perspective: '1000px' }}>
@@ -122,7 +210,7 @@ export default function TeacherCard({
                     </button>
                     <button
                       type="button"
-                      onClick={() => setViewerIndex((i) => (teacher.photos && i < (teacher.photos.length - 1) ? i + 1 : i))}
+                      onClick={() => setViewerIndex((i) => (allDisplayPhotos.length > 0 && i < (allDisplayPhotos.length - 1) ? i + 1 : i))}
                       className="p-1 rounded bg-white/5 text-gray-300 hover:bg-white/10"
                       title="Next"
                     >
@@ -136,15 +224,15 @@ export default function TeacherCard({
 
                 <div className="w-full flex items-center justify-center mb-2">
                   <img
-                    src={(teacher.photos && teacher.photos[viewerIndex]) ? teacher.photos[viewerIndex].file_url : teacher.photo_url}
+                    src={allDisplayPhotos[viewerIndex]?.file_url || teacher.photo_url}
                     alt={`${teacher.name} ${viewerIndex + 1}`}
                     className="max-h-[60vh] object-contain w-full rounded bg-black/5"
                   />
                 </div>
 
-                {teacher.photos && teacher.photos.length > 1 && (
+                {allDisplayPhotos.length > 1 && (
                   <div className="flex gap-2 overflow-x-auto mt-1">
-                    {teacher.photos.map((p, i) => (
+                    {allDisplayPhotos.map((p, i) => (
                       <button key={p.id} onClick={() => setViewerIndex(i)} className={`w-12 h-12 rounded overflow-hidden border ${i === viewerIndex ? 'ring-2 ring-lime-500' : 'border-white/10'}`}>
                         <img src={p.file_url} alt={`thumb-${i}`} className="w-full h-full object-cover" />
                       </button>
@@ -303,10 +391,13 @@ export default function TeacherCard({
               />
 
               {/* Photo Preview & Upload */}
-              {teacher.photos && teacher.photos.length > 0 && (
+              {allDisplayPhotos.length > 0 && (
                 <div className="flex gap-1 flex-wrap mt-1">
-                  {teacher.photos.map((photo, idx) => (
+                  {allDisplayPhotos.map((photo, idx) => (
                     <div key={photo.id} className="relative w-12 h-12 rounded overflow-hidden bg-white/5 border border-white/10 group">
+                      {photo.isPending && (
+                        <div className="absolute top-0 left-0 bg-yellow-500 text-[6px] text-black px-0.5 rounded-br z-10">Baru</div>
+                      )}
                       <img
                         src={photo.file_url}
                         alt={`${teacher.name} ${idx + 1}`}
@@ -319,11 +410,17 @@ export default function TeacherCard({
                       <button
                         type="button"
                         onClick={() => {
-                          setLocalConfirm({
-                            title: 'Hapus Foto',
-                            message: `Yakin ingin menghapus foto ${idx + 1}?`,
-                            onConfirm: () => onDeletePhoto(teacher.id, photo.id)
-                          })
+                          if (photo.isPending) {
+                            // Remove from pending
+                            const pendingIdx = idx - existingPhotos.length
+                            removePendingPhoto(pendingIdx)
+                          } else {
+                            setLocalConfirm({
+                              title: 'Hapus Foto',
+                              message: `Yakin ingin menghapus foto ${idx + 1}?`,
+                              onConfirm: () => onDeletePhoto(teacher.id, photo.id)
+                            })
+                          }
                         }}
                         className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
                       >
@@ -334,19 +431,34 @@ export default function TeacherCard({
                 </div>
               )}
 
+              {/* Pending video preview */}
+              {pendingVideo && (
+                <div className="flex items-center gap-2 mt-1 p-1.5 rounded bg-blue-600/10 border border-blue-500/20">
+                  <Video className="w-3 h-3 text-blue-400 flex-shrink-0" />
+                  <span className="text-[9px] text-blue-300 truncate flex-1">{pendingVideo.file.name}</span>
+                  <button type="button" onClick={removePendingVideo} className="text-red-400 hover:text-red-300">
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              )}
+
+              {/* Hidden file inputs */}
+              <input ref={photoInputRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoSelected} />
+              <input ref={videoInputRef} type="file" accept="video/*" className="hidden" onChange={handleVideoSelected} />
+
               {/* Media management */}
               <div className="flex gap-1">
                 <button
                   type="button"
-                  onClick={() => onUploadPhoto(teacher.id)}
-                  disabled={(teacher.photos?.length ?? 0) >= 4}
+                  onClick={() => photoInputRef.current?.click()}
+                  disabled={allDisplayPhotos.length >= 4}
                   className="flex-1 px-1.5 py-1 rounded text-[9px] bg-green-600/20 text-green-400 hover:bg-green-600/30 transition-colors flex items-center justify-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <ImagePlus className="w-2.5 h-2.5" /> Foto (maks. 10MB)
                 </button>
                 <button
                   type="button"
-                  onClick={() => onUploadVideo(teacher.id)}
+                  onClick={() => videoInputRef.current?.click()}
                   className="flex-1 px-1.5 py-1 rounded text-[9px] bg-blue-600/20 text-blue-400 hover:bg-blue-600/30 transition-colors flex items-center justify-center gap-1"
                 >
                   <Video className="w-2.5 h-2.5" /> Video (maks. 20MB)

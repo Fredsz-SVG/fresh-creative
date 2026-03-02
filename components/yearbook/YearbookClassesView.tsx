@@ -65,7 +65,7 @@ export type YearbookClassesViewProps = {
   setEditProfilePesan: (v: string) => void
   editProfileVideoUrl: string
   setEditProfileVideoUrl: (v: string) => void
-  handleSaveProfile: (classId: string, deleteProfile?: boolean, targetUserId?: string) => void
+  handleSaveProfile: (classId: string, deleteProfile?: boolean, targetUserId?: string, overrideData?: any, skipCloseAndFetch?: boolean) => void
   savingProfile: boolean
   membersByClass: Record<string, ClassMember[]>
   classViewMode: 'list' | 'personal'

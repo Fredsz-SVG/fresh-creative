@@ -19,11 +19,10 @@ interface SambutanViewProps {
   teachers: Teacher[]
   canManage: boolean
   onAddTeacher: (name: string, title: string) => void
-  onUpdateTeacher: (teacherId: string, updates: { name?: string; title?: string; message?: string; video_url?: string }) => void
+  onUpdateTeacher: (teacherId: string, updates: { name?: string; title?: string; message?: string; video_url?: string; pendingPhotos?: File[]; pendingVideo?: File | null }) => void
   onDeleteTeacher: (teacherId: string, teacherName: string) => void
-  onUploadPhoto: (teacherId: string) => void
-  onUploadVideo: (teacherId: string) => void
   onDeletePhoto: (teacherId: string, photoId: string) => void
+  onPlayVideo?: (videoUrl: string) => void
 }
 
 export default function SambutanView({
@@ -32,15 +31,13 @@ export default function SambutanView({
   onAddTeacher,
   onUpdateTeacher,
   onDeleteTeacher,
-  onUploadPhoto,
-  onUploadVideo,
   onDeletePhoto,
+  onPlayVideo,
 }: SambutanViewProps) {
   const [addingTeacher, setAddingTeacher] = useState(false)
   const [newTeacherName, setNewTeacherName] = useState('')
   const [editingTeacherId, setEditingTeacherId] = useState<string | null>(null)
   const [teacherPhotoViewer, setTeacherPhotoViewer] = useState<{ teacher: Teacher; photoIndex: number } | null>(null)
-  const [teacherVideoViewer, setTeacherVideoViewer] = useState<{ teacher: Teacher; videoUrl: string } | null>(null)
 
   // Teacher Photo Viewer Modal
   if (teacherPhotoViewer) {
@@ -83,32 +80,6 @@ export default function SambutanView({
               <ChevronRight className="w-8 h-8" />
             </button>
           )}
-        </div>
-      </div>
-    )
-  }
-
-  // Teacher Video Viewer Modal
-  if (teacherVideoViewer) {
-    const { teacher, videoUrl } = teacherVideoViewer
-    return (
-      <div className="fixed inset-0 z-[100] bg-black flex flex-col">
-        <div className="flex items-center justify-between gap-2 p-3 border-b border-white/10 bg-black/80">
-          <button type="button" onClick={() => setTeacherVideoViewer(null)} className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-white hover:bg-white/10">
-            <X className="w-5 h-5" /> Tutup
-          </button>
-          <span className="text-white font-medium">{teacher.name}</span>
-        </div>
-        <div className="flex-1 flex items-center justify-center overflow-hidden bg-black p-4">
-          <video
-            src={videoUrl}
-            className="max-w-full max-h-full cursor-pointer"
-            autoPlay
-            loop
-            muted
-            playsInline
-            onClick={() => setTeacherVideoViewer(null)}
-          />
         </div>
       </div>
     )
@@ -193,10 +164,8 @@ export default function SambutanView({
                 setEditingTeacherId(null)
               }}
               onDelete={(teacherId) => onDeleteTeacher(teacherId, teacher.name)}
-              onUploadPhoto={(teacherId) => onUploadPhoto(teacherId)}
               onDeletePhoto={onDeletePhoto}
-              onUploadVideo={(teacherId) => onUploadVideo(teacherId)}
-              onPlayVideo={(videoUrl) => setTeacherVideoViewer({ teacher, videoUrl })}
+              onPlayVideo={(videoUrl) => onPlayVideo?.(videoUrl)}
               onClickPhoto={(_, photoIndex) => setTeacherPhotoViewer({ teacher, photoIndex })}
               savingTeacher={false}
             />

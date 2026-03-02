@@ -1037,7 +1037,7 @@ export default function YearbookAlbumClient({
     toast.success('Berhasil! Silakan isi profil Anda.')
   }
 
-  const handleSaveProfile = async (classId: string, deleteProfile: boolean = false, targetUserId?: string, overrideData?: any) => {
+  const handleSaveProfile = async (classId: string, deleteProfile: boolean = false, targetUserId?: string, overrideData?: any, skipCloseAndFetch?: boolean) => {
     if (!id) {
       toast.error('Album ID tidak ditemukan')
       return
@@ -1142,10 +1142,32 @@ export default function YearbookAlbumClient({
           } : null,
         }))
       }
+      // Optimistic update: immediately reflect text changes in membersByClass
+      const targetUid = isEditingOther ? targetUserId : currentUserId
+      if (targetUid) {
+        setMembersByClass(prev => {
+          const list = prev[classId]
+          if (!list) return prev
+          const updated = list.map(m =>
+            m.user_id === targetUid ? {
+              ...m,
+              student_name: d.student_name ?? m.student_name,
+              email: d.email ?? null,
+              date_of_birth: d.date_of_birth ?? null,
+              instagram: d.instagram ?? null,
+              message: d.message ?? null,
+              video_url: d.video_url ?? m.video_url,
+            } : m
+          )
+          return { ...prev, [classId]: updated }
+        })
+      }
       toast.success('Profil berhasil disimpan')
-      if (album?.classes) await fetchMembersForAllClasses(album.classes)
-      setEditingProfileClassId(null)
-      setEditingMemberUserId(null)
+      if (!skipCloseAndFetch) {
+        if (album?.classes) await fetchMembersForAllClasses(album.classes)
+        setEditingProfileClassId(null)
+        setEditingMemberUserId(null)
+      }
     } catch (error) {
       console.error('[handleSaveProfile] PATCH error:', error)
       toast.error('Gagal menyimpan profil: ' + (error instanceof Error ? error.message : 'Network error'))
@@ -1230,6 +1252,9 @@ export default function YearbookAlbumClient({
   // Delete member from class with optimistic update (instant UI) + realtime for other devices
   const handleDeleteClassMember = useCallback(async (classId: string, userId: string) => {
     if (!id) return
+    // Find the member's student_name before removal (for clearing photo cache)
+    const memberToDelete = (membersByClass[classId] ?? []).find(m => m.user_id === userId)
+    const deletedStudentName = memberToDelete?.student_name
     // Optimistic update: remove immediately from membersByClass
     setMembersByClass(prev => {
       const updated = { ...prev }
@@ -1238,6 +1263,16 @@ export default function YearbookAlbumClient({
       }
       return updated
     })
+    // Clear firstPhotoByStudentByClass for the deleted member so stale photos don't reappear
+    if (deletedStudentName) {
+      setFirstPhotoByStudentByClass(prev => {
+        const classPhotos = prev[classId]
+        if (!classPhotos || !(deletedStudentName in classPhotos)) return prev
+        const updated = { ...classPhotos }
+        delete updated[deletedStudentName]
+        return { ...prev, [classId]: updated }
+      })
+    }
     // Also clear myAccessByClass for this class if it's the current user being removed
     if (userId === currentUserId) {
       setMyAccessByClass(prev => ({ ...prev, [classId]: null }))
@@ -1253,12 +1288,16 @@ export default function YearbookAlbumClient({
         // Rollback: refetch to restore correct state
         await fetchAllClassMembers()
         await fetchAllAccess()
+        // Also refetch photos to restore
+        if (currentClassId) fetchFirstPhotosForClass(currentClassId)
         return
       }
       toast.success('Anggota berhasil dihapus dari kelas')
       // Refetch in background to sync with server (other devices get update via realtime)
       fetchAllClassMembers()
       fetchAllAccess()
+      // Refetch first photos to ensure cache is fresh
+      fetchFirstPhotosForClass(classId)
     } catch (err) {
       console.error('Error deleting class member:', err)
       toast.error('Gagal menghapus anggota')
@@ -1266,7 +1305,7 @@ export default function YearbookAlbumClient({
       await fetchAllClassMembers()
       await fetchAllAccess()
     }
-  }, [id, currentUserId, fetchAllClassMembers, fetchAllAccess])
+  }, [id, currentUserId, fetchAllClassMembers, fetchAllAccess, membersByClass, currentClassId, fetchFirstPhotosForClass])
 
   const handleUploadPhoto = async (classId: string, studentName: string, className: string, file: File) => {
     if (!id) return
@@ -1288,10 +1327,9 @@ export default function YearbookAlbumClient({
       toast.error(data?.error ?? 'Gagal upload foto')
       return
     }
-    toast.success('Foto berhasil diupload')
 
     await fetchFirstPhotosForClass(classId)
-    await fetchMembersForClass(classId)
+    // Note: no fetchMembersForClass here — the caller (onSave flow) does a final fetch after all uploads complete.
     // Refresh preview: ambil daftar foto dari API agar langsung muncul (tanpa tunggu membersByClass)
     const resPhotos = await fetch(`/api/albums/${id}/photos?class_id=${encodeURIComponent(classId)}&student_name=${encodeURIComponent(studentName)}`, { credentials: 'include', cache: 'no-store' })
     const photoList = await resPhotos.json().catch(() => [])
@@ -1325,14 +1363,23 @@ export default function YearbookAlbumClient({
       toast.error(data?.error ?? 'Gagal upload video')
       return
     }
-    toast.success('Video berhasil diupload')
     setLastUploadedVideoName(file.name)
     setTimeout(() => setLastUploadedVideoName(null), 5000)
     // Update the form field with the new video URL so it appears in the edit form
     if (data?.video_url) {
       setEditProfileVideoUrl(data.video_url)
+      // Optimistic update: immediately reflect video_url in membersByClass so the play icon shows
+      setMembersByClass(prev => {
+        const list = prev[classId]
+        if (!list) return prev
+        const updated = list.map(m =>
+          m.student_name === studentName ? { ...m, video_url: data.video_url } : m
+        )
+        return { ...prev, [classId]: updated }
+      })
     }
-    await fetchMembersForClass(classId)
+    // Note: no fetchMembersForClass here — optimistic update above is sufficient.
+    // The caller (onSave flow) does a final fetchMembersForClass after all uploads complete.
 
   }
 

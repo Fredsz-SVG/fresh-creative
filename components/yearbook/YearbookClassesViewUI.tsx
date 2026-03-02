@@ -339,14 +339,6 @@ export default function YearbookClassesViewUI(props: any) {
   const router = useRouter()
   const pathname = usePathname()
   const effectiveAlbumId = albumIdProp || album?.id || ''
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const videoInputRef = useRef<HTMLInputElement>(null)
-  const uploadPhotoTargetRef = useRef<any>(null)
-  const uploadVideoTargetRef = useRef<any>(null)
-  const teacherPhotoInputRef = useRef<HTMLInputElement>(null)
-  const teacherVideoInputRef = useRef<HTMLInputElement>(null)
-  const uploadTeacherPhotoTargetRef = useRef<string | null>(null)
-  const uploadTeacherVideoTargetRef = useRef<string | null>(null)
   const coverPreviewContainerRef = useRef<HTMLDivElement>(null)
   const coverDragRef = useRef<{ startX: number; startY: number; startPosX: number; startPosY: number } | null>(null)
   const coverUploadInputRef = useRef<HTMLInputElement>(null)
@@ -749,21 +741,39 @@ export default function YearbookClassesViewUI(props: any) {
     }
   }
 
-  const handleUpdateTeacher = async (teacherId: string, updates: { name?: string; title?: string; message?: string; video_url?: string }) => {
+  const handleUpdateTeacher = async (teacherId: string, updates: { name?: string; title?: string; message?: string; video_url?: string; pendingPhotos?: File[]; pendingVideo?: File | null }) => {
     if (!album?.id) return
+
+    const { pendingPhotos, pendingVideo, ...textUpdates } = updates
+
     try {
+      // 1. Save text fields
       const res = await fetch(`/api/albums/${album.id}/teachers/${teacherId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updates),
+        body: JSON.stringify(textUpdates),
       })
       const data = await res.json()
       if (res.ok && data.id) {
         setTeachers(prev => prev.map(t => t.id === teacherId ? { ...data, photos: t.photos } : t))
-        toast.success('Data guru berhasil diperbarui')
       } else {
         toast.error(data.error || 'Gagal memperbarui guru')
+        return
       }
+
+      // 2. Upload pending photos
+      if (pendingPhotos && pendingPhotos.length > 0) {
+        for (const file of pendingPhotos) {
+          await handleUploadTeacherPhoto(teacherId, file)
+        }
+      }
+
+      // 3. Upload pending video
+      if (pendingVideo) {
+        await handleUploadTeacherVideo(teacherId, pendingVideo)
+      }
+
+      toast.success('Data profil berhasil diperbarui')
     } catch (error) {
       console.error('Error updating teacher:', error)
       toast.error('Terjadi kesalahan')
@@ -813,7 +823,6 @@ export default function YearbookClassesViewUI(props: any) {
           }
           return t
         }))
-        toast.success('Foto berhasil diupload')
       } else {
         toast.error(data.error || 'Gagal upload foto')
       }
@@ -892,7 +901,6 @@ export default function YearbookClassesViewUI(props: any) {
         setTeachers(prev => prev.map(t =>
           t.id === teacherId ? { ...t, video_url: data.video_url } : t
         ))
-        toast.success('Video berhasil diupload')
       } else {
         toast.error(data.error || 'Gagal upload video')
       }
@@ -1006,52 +1014,6 @@ export default function YearbookClassesViewUI(props: any) {
       />
       {/* Main Content - Header already sticky in parent (page.tsx) */}
       <div className="flex-1 flex flex-col p-4 pb-8">
-        <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => {
-          const file = e.target.files?.[0]
-          const target = uploadPhotoTargetRef.current
-          if (target && file) {
-            if (file.size > MAX_PHOTO_BYTES) {
-              toast.error('Foto maksimal 10MB')
-              e.target.value = ''
-              return
-            }
-            if (typeof onUploadPhoto === 'function') onUploadPhoto(target.classId, target.studentName, target.className, file)
-          }
-          uploadPhotoTargetRef.current = null
-          e.target.value = ''
-        }} />
-        <input ref={videoInputRef} type="file" accept="video/*" className="hidden" onChange={(e) => {
-          const file = e.target.files?.[0]
-          const target = uploadVideoTargetRef.current
-          if (target && file) {
-            if (file.size > 20 * 1024 * 1024) {
-              toast.error('Video maksimal 20MB')
-              e.target.value = ''
-              return
-            }
-            if (typeof onUploadVideo === 'function') onUploadVideo(target.classId, target.studentName, target.className, file)
-          }
-          uploadVideoTargetRef.current = null
-          e.target.value = ''
-        }} />
-        <input ref={teacherPhotoInputRef} type="file" accept="image/*" className="hidden" onChange={async (e) => {
-          const file = e.target.files?.[0]
-          const teacherId = uploadTeacherPhotoTargetRef.current
-          if (teacherId && file) {
-            await handleUploadTeacherPhoto(teacherId, file)
-          }
-          uploadTeacherPhotoTargetRef.current = null
-          e.target.value = ''
-        }} />
-        <input ref={teacherVideoInputRef} type="file" accept="video/*" className="hidden" onChange={async (e) => {
-          const file = e.target.files?.[0]
-          const teacherId = uploadTeacherVideoTargetRef.current
-          if (teacherId && file) {
-            await handleUploadTeacherVideo(teacherId, file)
-          }
-          uploadTeacherVideoTargetRef.current = null
-          e.target.value = ''
-        }} />
 
 
 
@@ -1652,19 +1614,8 @@ export default function YearbookClassesViewUI(props: any) {
                   onAddTeacher={handleAddTeacher}
                   onUpdateTeacher={handleUpdateTeacher}
                   onDeleteTeacher={handleDeleteTeacher}
-                  onUploadPhoto={(teacherId) => {
-                    if (teacherPhotoInputRef.current) {
-                      uploadTeacherPhotoTargetRef.current = teacherId
-                      teacherPhotoInputRef.current.click()
-                    }
-                  }}
-                  onUploadVideo={(teacherId) => {
-                    if (teacherVideoInputRef.current) {
-                      uploadTeacherVideoTargetRef.current = teacherId
-                      teacherVideoInputRef.current.click()
-                    }
-                  }}
                   onDeletePhoto={handleDeleteTeacherPhoto}
+                  onPlayVideo={onPlayVideo}
                 />
               ) : sidebarMode === 'classes' && classes.length === 0 ? (
                 <ClassesEmptyView
@@ -1892,7 +1843,7 @@ export default function YearbookClassesViewUI(props: any) {
                                   setEditingProfileClassId(null)
                                   setEditingMemberUserId?.(null)
                                 }}
-                                onSave={async (data) => {
+                                onSave={(data) => {
                                   setEditProfileName(data.student_name)
                                   setEditProfileEmail(data.email)
                                   setEditProfileTtl(data.date_of_birth)
@@ -1900,25 +1851,45 @@ export default function YearbookClassesViewUI(props: any) {
                                   setEditProfilePesan(data.message)
                                   setEditProfileVideoUrl(data.video_url)
 
-                                  await handleSaveProfile?.(currentClass.id, false, m.user_id, data)
+                                  // Flip card back immediately (like TeacherCard)
                                   setEditingMemberUserId?.(null)
                                   setEditingProfileClassId(null)
+
+                                  // Fire-and-forget: save text + upload files in background
+                                  const { pendingPhotos, pendingVideo, ...textData } = data
+                                  const studentName = data.student_name || m.student_name
+
+                                  ;(async () => {
+                                    try {
+                                      // 1. Save text fields (always skip close since we already closed above)
+                                      await handleSaveProfile?.(currentClass.id, false, m.user_id, textData, true)
+
+                                      // 2. Upload pending photos
+                                      if (pendingPhotos && pendingPhotos.length > 0) {
+                                        for (const file of pendingPhotos) {
+                                          if (typeof onUploadPhoto === 'function') {
+                                            await onUploadPhoto(currentClass.id, studentName, currentClass.name, file)
+                                          }
+                                        }
+                                      }
+
+                                      // 3. Upload pending video
+                                      if (pendingVideo && typeof onUploadVideo === 'function') {
+                                        await onUploadVideo(currentClass.id, studentName, currentClass.name, pendingVideo)
+                                      }
+
+                                      // 4. Final fetch to sync all data after uploads complete
+                                      if (fetchMembersForClass) {
+                                        await fetchMembersForClass(currentClass.id)
+                                      }
+                                    } catch (err) {
+                                      console.error('[MemberCard onSave] Error:', err)
+                                    }
+                                  })()
                                 }}
                                 onDeleteClick={() => setDeleteMemberConfirm({ classId: currentClass.id, userId: m.is_me ? undefined : m.user_id, memberName: m.student_name })}
-                                onUploadPhoto={(cid, sname) => {
-                                  if (fileInputRef.current) {
-                                    uploadPhotoTargetRef.current = { classId: cid || currentClass.id, studentName: sname || m.student_name }
-                                    fileInputRef.current.click()
-                                  }
-                                }}
                                 onDeletePhoto={(pid, cid, sname) => {
                                   if (onDeletePhoto) onDeletePhoto(pid, cid || currentClass.id, sname || m.student_name)
-                                }}
-                                onUploadVideo={(cid, sname) => {
-                                  if (videoInputRef.current) {
-                                    uploadVideoTargetRef.current = { classId: cid || currentClass.id, studentName: sname || m.student_name }
-                                    videoInputRef.current.click()
-                                  }
                                 }}
                                 onPlayVideo={onPlayVideo}
                                 onOpenGallery={(cid, sname) => openGallery(cid || currentClass.id, sname || m.student_name, currentClass.name)}
