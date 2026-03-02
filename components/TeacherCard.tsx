@@ -4,6 +4,11 @@ import React, { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { Edit3, Trash2, ImagePlus, Video, Play, Briefcase, MessageSquare, X, ChevronLeft, ChevronRight } from 'lucide-react'
 
+/** Strip surrounding quote characters (straight & curly) so the UI can add its own consistently */
+function stripQuotes(s: string): string {
+  return s.replace(/^["""\u201C\u201D]+/, '').replace(/["""\u201C\u201D]+$/, '').trim()
+}
+
 type Teacher = {
   id: string
   name: string
@@ -315,7 +320,7 @@ export default function TeacherCard({
                     className="italic text-gray-400 overflow-hidden leading-tight flex-1"
                     style={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical' }}
                   >
-                    "{teacher.message}"
+                    "{stripQuotes(teacher.message)}"
                   </p>
                 </div>
               )}

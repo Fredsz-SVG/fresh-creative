@@ -11,6 +11,10 @@ import {
 } from 'framer-motion'
 import { BookOpen, MessageSquare, Users, Play, X, Instagram, Cake, Mail } from 'lucide-react'
 
+function stripQuotes(s: string): string {
+    return s.replace(/^["""\u201C\u201D]+/, '').replace(/["""\u201C\u201D]+$/, '').trim()
+}
+
 type Teacher = {
     id: string
     name: string
@@ -251,7 +255,7 @@ export default function PreviewView({
                 imageUrl: t.photo_url || t.photos?.[0]?.file_url || null,
                 title: t.name,
                 subtitle: t.title || '',
-                description: t.message ? `"${t.message}"` : undefined,
+                description: t.message ? stripQuotes(t.message) : undefined,
                 videoUrl: t.video_url,
             }))
         }
@@ -270,7 +274,7 @@ export default function PreviewView({
                 title: m.student_name,
                 subtitle: classObj?.name || '',
                 videoUrl: m.video_url,
-                description: m.message ? `"${m.message}"` : undefined,
+                description: m.message ? stripQuotes(m.message) : undefined,
                 meta: [
                     ...(m.date_of_birth ? [{ icon: <Cake className="w-3.5 h-3.5" />, text: m.date_of_birth }] : []),
                     ...(m.instagram ? [{ icon: <Instagram className="w-3.5 h-3.5" />, text: m.instagram }] : []),

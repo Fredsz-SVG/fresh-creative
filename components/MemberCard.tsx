@@ -4,6 +4,11 @@ import React, { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { Edit3, Trash2, ImagePlus, Video, Play, X, ChevronLeft, ChevronRight } from 'lucide-react'
 
+/** Strip surrounding quote characters (straight & curly) so the UI can add its own consistently */
+function stripQuotes(s: string): string {
+  return s.replace(/^["""\u201C\u201D]+/, '').replace(/["""\u201C\u201D]+$/, '').trim()
+}
+
 type Member = {
   user_id: string
   student_name: string
@@ -271,7 +276,7 @@ export default function MemberCard({
                     <span className="truncate">{member.instagram.startsWith('@') ? member.instagram : '@' + member.instagram}</span>
                   </a>
                 )}
-                {member.message && <p className="italic text-gray-400 overflow-hidden leading-tight" style={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical' }}>"{member.message}"</p>}
+                {member.message && <p className="italic text-gray-400 overflow-hidden leading-tight" style={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical' }}>"{stripQuotes(member.message)}"</p>}
               </div>
             </div>
 
