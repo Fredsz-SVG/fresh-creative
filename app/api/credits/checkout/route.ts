@@ -58,14 +58,14 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Package not found' }, { status: 404 })
         }
 
-        // Cek role: admin redirect ke /admin/riwayat, user ke /user/portal/riwayat
+        // Cek role: admin redirect ke /admin/riwayat, user ke /user/riwayat
         const { data: profile } = await supabase
             .from('users')
             .select('role')
             .eq('id', userId)
             .maybeSingle()
         const isAdmin = profile?.role === 'admin'
-        const redirectPath = isAdmin ? '/admin/riwayat' : '/user/portal/riwayat'
+        const redirectPath = isAdmin ? '/admin/riwayat' : '/user/riwayat'
 
         // Create Invoice
         const xendit = new Xendit({ secretKey: process.env.XENDIT_SECRET_KEY || 'xnd_development_...' })

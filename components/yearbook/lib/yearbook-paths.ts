@@ -29,7 +29,7 @@ const MODE_TO_SLUG: Record<SectionMode, SectionSlug | null> = {
   'ai-labs': 'ai-labs',
 }
 
-const BASE_USER = '/user/portal/album/yearbook'
+const BASE_USER = '/user/album/yearbook'
 const BASE_ADMIN = '/admin/album/yearbook'
 
 /** Base path album (sampul/cover). Deteksi admin dari pathname agar sidebar tidak selalu balik ke Sampul. */

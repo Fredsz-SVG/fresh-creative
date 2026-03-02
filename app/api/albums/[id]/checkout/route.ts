@@ -97,7 +97,7 @@ export async function POST(
         const baseUrl = process.env.NEXT_PUBLIC_APP_URL || ''
         const { data: profile } = await adminSupabase.from('users').select('role').eq('id', user.id).single()
         const isAdmin = profile?.role === 'admin'
-        const redirectPath = isAdmin ? '/admin/riwayat' : '/user/portal/riwayat'
+        const redirectPath = isAdmin ? '/admin/riwayat' : '/user/riwayat'
 
         const invoiceData: any = {
             externalId: `album_${album.id}_user_${user.id}_ts_${Date.now()}`,

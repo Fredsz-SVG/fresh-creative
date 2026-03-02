@@ -108,8 +108,8 @@ function LoginContent() {
         const safeNext = nextPath.startsWith('/') && !nextPath.startsWith('//') ? nextPath : ''
         const role = await getRole(supabase, session.user)
         let finalNext = safeNext
-        if (role === 'admin' && finalNext.startsWith('/user/portal')) {
-          finalNext = finalNext.replace('/user/portal', '/admin')
+        if (role === 'admin' && finalNext.startsWith('/user')) {
+          finalNext = finalNext.replace('/user', '/admin')
         }
         router.replace(finalNext || (role === 'admin' ? '/admin' : '/user'))
         return
@@ -184,8 +184,8 @@ function LoginContent() {
           const role = await getRole(supabase, data.user)
           const safeNext = nextPath.startsWith('/') && !nextPath.startsWith('//') ? nextPath : ''
           let finalNext = safeNext
-          if (role === 'admin' && finalNext.startsWith('/user/portal')) {
-            finalNext = finalNext.replace('/user/portal', '/admin')
+          if (role === 'admin' && finalNext.startsWith('/user')) {
+            finalNext = finalNext.replace('/user', '/admin')
           }
           router.replace(finalNext || (role === 'admin' ? '/admin' : '/user'))
         } else {

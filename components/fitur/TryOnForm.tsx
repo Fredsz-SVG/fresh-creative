@@ -118,7 +118,7 @@ export default function TryonForm() {
         await new Promise(resolve => setTimeout(resolve, 100)); // Small delay for UI update
       }
 
-      const res = await fetch("/api/tryon", {
+      const res = await fetch("/api/ai-features/tryon", {
         method: "POST",
         body: formData,
       });

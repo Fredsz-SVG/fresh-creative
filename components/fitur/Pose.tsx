@@ -17,7 +17,7 @@ export default function Pose() {
     let cancelled = false;
     const loadPricing = async () => {
       try {
-        const res = await fetch('/api/ai/pricing');
+        const res = await fetch('/api/admin/ai-edit');
         if (!res.ok) return;
         const data = await res.json();
         if (!Array.isArray(data)) return;
@@ -68,7 +68,7 @@ export default function Pose() {
       formData.append("subject", subject);
       formData.append("prompt", prompt);
 
-      const res = await fetch("/api/pose", {
+      const res = await fetch("/api/ai-features/pose", {
         method: "POST",
         body: formData,
       });

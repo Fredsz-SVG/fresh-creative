@@ -89,12 +89,12 @@ export default function AlbumRegisterForm({ albumId: albumIdProp, token, loginRe
           if (checkData.hasRequest) {
             if (checkData.status === 'pending') {
               toast.error('Anda sudah mendaftar dan menunggu persetujuan')
-              setTimeout(() => router.push('/user/portal'), 2000)
+              setTimeout(() => router.push('/user'), 2000)
               return
             }
             if (checkData.status === 'approved') {
               toast.error('Anda sudah terdaftar dan disetujui')
-              setTimeout(() => router.push('/user/portal'), 2000)
+              setTimeout(() => router.push('/user'), 2000)
               return
             }
           }
@@ -158,7 +158,7 @@ export default function AlbumRegisterForm({ albumId: albumIdProp, token, loginRe
 
       toast.success(data.message || 'Pendaftaran berhasil!')
       setSuccess(true)
-      setTimeout(() => router.push('/user/portal'), 2000)
+      setTimeout(() => router.push('/user'), 2000)
     } catch (error) {
       console.error(error)
       toast.error('Terjadi kesalahan')

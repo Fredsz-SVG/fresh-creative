@@ -24,7 +24,7 @@ export default function PhotoGroup() {
     let cancelled = false;
     const loadPricing = async () => {
       try {
-        const res = await fetch('/api/ai/pricing');
+        const res = await fetch('/api/admin/ai-edit');
         if (!res.ok) return;
         const data = await res.json();
         if (!Array.isArray(data)) return;
@@ -107,7 +107,7 @@ export default function PhotoGroup() {
       subjects.forEach((subject) => formData.append("subjects", subject.file));
       formData.append("prompt", prompt);
 
-      const res = await fetch("/api/photogroup", {
+      const res = await fetch("/api/ai-features/photogroup", {
         method: "POST",
         body: formData,
       });

@@ -19,7 +19,7 @@ export default function AILabsView({ album, aiLabsTool }: AILabsViewProps) {
     const pathname = require('next/navigation').usePathname()
     const isAdmin = pathname?.startsWith('/admin')
     const FEATURE_ICONS = [Shirt, UserCircle, ImageIcon, Images, Video] as const
-    const albumBase = album?.id ? (isAdmin ? `/admin/album/yearbook/${album.id}` : `/user/portal/album/yearbook/${album.id}`) : ''
+    const albumBase = album?.id ? (isAdmin ? `/admin/album/yearbook/${album.id}` : `/user/album/yearbook/${album.id}`) : ''
 
     if (aiLabsTool && albumBase) {
         // Helper to render tool

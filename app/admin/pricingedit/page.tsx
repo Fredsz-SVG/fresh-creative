@@ -94,7 +94,7 @@ export default function PricingEditPage() {
   const fetchAiPricing = async () => {
     setLoadingAi(true)
     try {
-      const res = await fetch(`/api/ai/pricing?t=${Date.now()}`)
+      const res = await fetch(`/api/admin/ai-edit?t=${Date.now()}`)
       if (!res.ok) throw new Error('Failed to fetch AI pricing')
       setAiPricing(await res.json())
     } catch (err) {
@@ -127,7 +127,7 @@ export default function PricingEditPage() {
 
   const handleSaveAi = async (item: AiFeaturePricing) => {
     try {
-      const res = await fetch('/api/ai/pricing', {
+      const res = await fetch('/api/admin/ai-edit', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

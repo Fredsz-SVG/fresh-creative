@@ -45,7 +45,7 @@ export type YearbookAlbumClientProps = {
 const AI_LABS_TOOLS = ['tryon', 'pose', 'image-editor', 'photogroup', 'phototovideo'] as const
 
 export default function YearbookAlbumClient({
-  backHref = '/user/portal/albums',
+  backHref = '/user/albums',
   backLabel = 'Ke Album Saya',
   initialAlbum = null,
   initialMembers = {},
@@ -1500,7 +1500,7 @@ export default function YearbookAlbumClient({
     const currentClass = album?.classes?.[classIndex]
     const aiLabsToolLabel: Record<string, string> = { tryon: 'Virtual Try On', pose: 'Pose', 'image-editor': 'Image Editor', photogroup: 'Photo Group', phototovideo: 'Photo to Video' }
     const isAiLabsToolActive = sidebarModeFromPath === 'ai-labs' && !!aiLabsTool
-    const aiLabsBackHref = album?.id ? (useAdminBack ? `/admin/album/yearbook/${album.id}?section=ai-labs` : `/user/portal/album/yearbook/${album.id}?section=ai-labs`) : effectiveBackHref
+    const aiLabsBackHref = album?.id ? (useAdminBack ? `/admin/album/yearbook/${album.id}?section=ai-labs` : `/user/album/yearbook/${album.id}?section=ai-labs`) : effectiveBackHref
     const sectionTitle =
       isCoverView ? 'Sampul Album'
         : sidebarModeFromPath === 'ai-labs' ? (aiLabsTool ? (aiLabsToolLabel[aiLabsTool] ?? 'AI Labs') : 'AI Labs')

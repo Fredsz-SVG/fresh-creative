@@ -4,12 +4,12 @@ import type { NavSection } from '@/components/dashboard/DashboardShell'
 /** AI Labs: satu item di sidebar, isi fitur di halaman hub (grid kartu seperti Gojek). */
 export const AI_LABS_SECTION_USER: NavSection = {
   title: 'AI Labs',
-  items: [{ href: '/user/portal/ai-labs', label: 'AI Labs', icon: Sparkles }],
+  items: [{ href: '/user/ai-labs', label: 'AI Labs', icon: Sparkles }],
 }
 
 export const ALBUMS_SECTION_USER: NavSection = {
   title: 'Album Saya',
-  items: [{ href: '/user/portal/albums', label: 'Album', icon: Library }],
+  items: [{ href: '/user/albums', label: 'Album', icon: Library }],
 }
 
 export const AI_LABS_SECTION_ADMIN: NavSection = {
@@ -33,7 +33,7 @@ export const ALBUMS_SECTION_ADMIN: NavSection = {
 
 export const FILES_SECTION_USER: NavSection = {
   title: 'File Saya',
-  items: [{ href: '/user/portal/files', label: 'File Saya', icon: Folder }],
+  items: [{ href: '/user/files', label: 'File Saya', icon: Folder }],
 }
 
 export const FILES_SECTION_ADMIN: NavSection = {
@@ -43,11 +43,11 @@ export const FILES_SECTION_ADMIN: NavSection = {
 
 /** Daftar fitur AI Labs untuk halaman hub (grid kartu seperti Gojek). */
 export const AI_LABS_FEATURES_USER = [
-  { href: '/user/portal/tryon', label: 'Try On', description: 'Virtual try-on baju & celana' },
-  { href: '/user/portal/pose', label: 'Pose', description: 'Transfer pose dari referensi' },
-  { href: '/user/portal/image-editor', label: 'Image Editor', description: 'Edit & Remove Background' },
-  { href: '/user/portal/photogroup', label: 'Photo Group', description: 'Gabungkan beberapa foto jadi satu' },
-  { href: '/user/portal/phototovideo', label: 'Photo to Video', description: 'Ubah foto jadi video singkat' },
+  { href: '/user/tryon', label: 'Try On', description: 'Virtual try-on baju & celana' },
+  { href: '/user/pose', label: 'Pose', description: 'Transfer pose dari referensi' },
+  { href: '/user/image-editor', label: 'Image Editor', description: 'Edit & Remove Background' },
+  { href: '/user/photogroup', label: 'Photo Group', description: 'Gabungkan beberapa foto jadi satu' },
+  { href: '/user/phototovideo', label: 'Photo to Video', description: 'Ubah foto jadi video singkat' },
 ] as const
 
 export const AI_LABS_FEATURES_ADMIN = [

@@ -15,5 +15,5 @@ export default async function YearbookSectionRedirect(props: {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/auth/login')
 
-  redirect(`/user/portal/album/yearbook/${id}?section=${section}`)
+  redirect(`/user/album/yearbook/${id}?section=${section}`)
 }

@@ -46,9 +46,9 @@ export default function JoinAlbumPage() {
       setStatus('success')
       const albumId = data?.albumId
       if (albumId) {
-        router.replace(`/user/portal/album/yearbook/${albumId}`)
+        router.replace(`/user/album/yearbook/${albumId}`)
       } else {
-        router.replace('/user/portal/albums')
+        router.replace('/user/albums')
       }
     }
 
@@ -106,7 +106,7 @@ export default function JoinAlbumPage() {
       <div className="min-h-screen flex items-center justify-center p-4 bg-[var(--bg)]">
         <div className="text-center">
           <p className="text-red-400">{errorMessage}</p>
-          <Link href="/user/portal/albums" className="mt-4 inline-block text-sky-400 hover:underline">Ke Album Saya</Link>
+          <Link href="/user/albums" className="mt-4 inline-block text-sky-400 hover:underline">Ke Album Saya</Link>
         </div>
       </div>
     )

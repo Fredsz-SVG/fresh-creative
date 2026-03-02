@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase-server'
 import { getRole } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase-admin'
 import { logApiTiming } from '@/lib/api-timing'
+import { delCache, key } from '@/lib/redis'
 
 export const dynamic = 'force-dynamic'
 
@@ -182,6 +183,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
+  // Invalidate user albums cache so the list page shows the new album immediately
+  await delCache(key.userAlbums(user.id))
+
   return NextResponse.json(data)
 }
 
@@ -215,6 +219,11 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
+  // Invalidate album owner's cache so status change shows immediately
+  if (data?.user_id) {
+    await delCache(key.userAlbums(data.user_id))
+  }
+
   return NextResponse.json(data)
 }
 
@@ -233,12 +242,16 @@ export async function DELETE(request: NextRequest) {
   if (role === 'admin') {
     const admin = createAdminClient()
     if (!admin) return NextResponse.json({ error: 'Admin client not configured' }, { status: 500 })
+    // Fetch album owner before deleting to invalidate their cache
+    const { data: albumData } = await admin.from('albums').select('user_id').eq('id', id).single()
     const { error } = await admin.from('albums').delete().eq('id', id)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (albumData?.user_id) await delCache(key.userAlbums(albumData.user_id))
   } else {
     // User can only delete OWN albums
     const { error } = await supabase.from('albums').delete().eq('id', id).eq('user_id', user.id)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    await delCache(key.userAlbums(user.id))
   }
 
   return NextResponse.json({ message: 'Album deleted successfully' })

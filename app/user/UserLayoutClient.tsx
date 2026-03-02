@@ -18,8 +18,8 @@ const userNavSections: NavSection[] = [
     {
         title: 'Main Menu',
         items: [
-            { href: '/user/portal', label: 'Overview', icon: LayoutDashboard },
-            { href: '/user/portal/riwayat', label: 'Riwayat Transaksi', icon: History },
+            { href: '/user', label: 'Overview', icon: LayoutDashboard },
+            { href: '/user/riwayat', label: 'Riwayat Transaksi', icon: History },
         ],
     },
     ALBUMS_SECTION_USER,
@@ -38,7 +38,7 @@ export default function UserLayoutClient({
     const [userName, setUserName] = useState<string>('')
     const [userEmail, setUserEmail] = useState<string>('')
     // Base yearbook atau yearbook + section (e.g. /yearbook/123 atau /yearbook/123/sampul, .../kelas, .../preview)
-    const isYearbookAlbumPath = /^\/user\/portal\/album\/yearbook\/[^/]+(\/[^/]+)?$/.test(pathname ?? '')
+    const isYearbookAlbumPath = /^\/user\/album\/yearbook\/[^/]+(\/[^/]+)?$/.test(pathname ?? '')
     const pathParts = (pathname ?? '').split('/')
     const yearbookIdx = pathParts.indexOf('yearbook')
     const yearbookId = yearbookIdx >= 0 && pathParts[yearbookIdx + 1] ? pathParts[yearbookIdx + 1] : ''
@@ -103,15 +103,15 @@ export default function UserLayoutClient({
             const role = await getRole(supabase, session.user)
             if (role === 'admin') {
                 const p = pathname ?? ''
-                if (p.startsWith('/user/portal/album/yearbook/')) {
-                    const id = p.split('/user/portal/album/yearbook/')[1]?.split('/')[0]
+                if (p.startsWith('/user/album/yearbook/')) {
+                    const id = p.split('/user/album/yearbook/')[1]?.split('/')[0]
                     if (id) {
                         const q = searchParams?.toString?.() ?? ''
                         if (!unsubscribed) router.replace(`/admin/album/yearbook/${id}${q ? '?' + q : ''}`)
                         return
                     }
                 }
-                if (p.startsWith('/user/portal')) {
+                if (p.startsWith('/user')) {
                     if (!unsubscribed) router.replace('/admin')
                     return
                 }

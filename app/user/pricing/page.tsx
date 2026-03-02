@@ -9,7 +9,7 @@ export default function UserPricingPage() {
       leadIdKey="lead_id"
       redirectNoDraft="/user/showroom"
       backHrefNoDraft="/user/showroom"
-      backHrefSaved="/user/portal/albums"
+      backHrefSaved="/user/albums"
       source="showroom"
     />
   );

@@ -12,7 +12,7 @@ const stripPrefix = (s: string) => (s ?? "").trim().replace(/^(kota|kabupaten)\s
 const norm = (s: string) => (s ?? "").trim().toLowerCase();
 
 export type ShowroomFormProps = {
-  /** Link "Kembali" (mis. /user/portal/album atau /admin/albums) */
+  /** Link "Kembali" (mis. /user/album atau /admin/albums) */
   backHref: string;
   /** Path setelah submit (mis. /user/pricing atau /admin/showroom/pricing) */
   pricingPath: string;
@@ -90,7 +90,7 @@ export default function ShowroomForm({ backHref, pricingPath, draftKey, source }
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch("/api/ref/provinces");
+        const res = await fetch("/api/select-area?type=provinces");
         const json = await res.json();
         if (!cancelled) setProvinces(json?.data ?? []);
       } catch {
@@ -118,7 +118,7 @@ export default function ShowroomForm({ backHref, pricingPath, draftKey, source }
     setCityText("");
     setCityName("");
     setCityKind("");
-    fetch(`/api/ref/cities?province_id=${encodeURIComponent(provinceId)}&limit=300`)
+    fetch(`/api/select-area?type=cities&province_id=${encodeURIComponent(provinceId)}&limit=300`)
       .then((res) => res.json())
       .then((json) => { if (!cancelled) setCities(json?.data ?? []); })
       .catch(() => { if (!cancelled) setCities([]); })

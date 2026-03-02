@@ -223,7 +223,7 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
   const pathname = usePathname()
   const isAdmin = variant === 'admin'
   const resolvedLinkContext = linkContext ?? (isAdmin ? 'admin' : 'user')
-  const linkBasePath = resolvedLinkContext === 'admin' ? '/admin' : '/user/portal'
+  const linkBasePath = resolvedLinkContext === 'admin' ? '/admin' : '/user'
   const hasFetchedRef = useRef<boolean>(!!initialData)
   const isFetchingRef = useRef(false)
   const lastRealtimeFetchRef = useRef(0)
@@ -251,7 +251,7 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
     if (!silent) setLoading(true)
     try {
       isFetchingRef.current = true
-      const res = await fetch(fetchUrl, { credentials: 'include' })
+      const res = await fetch(fetchUrl, { credentials: 'include', cache: 'no-store' })
       if (!res.ok) throw new Error('Failed to fetch albums')
       const data = await res.json()
       setAlbums(data)
@@ -269,15 +269,21 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
     }
   }, [initialData])
 
+  // Fetch data on mount or when tab becomes active
   useEffect(() => {
-    if (hasFetchedRef.current) return
-    if (active) {
-      fetchAlbums()
-    } else {
-      fetchAlbums(true)
+    if (initialData) return // SSR data provided, skip client fetch
+    if (!active) {
+      // Inactive tab: fetch silently if never fetched
+      if (!hasFetchedRef.current) {
+        fetchAlbums(true)
+        hasFetchedRef.current = true
+      }
+      return
     }
+    // Active: always fetch fresh data (handles navigation from pricing → albums)
+    fetchAlbums(hasFetchedRef.current) // silent if already fetched once
     hasFetchedRef.current = true
-  }, [active, fetchAlbums])
+  }, [active, fetchUrl, initialData, fetchAlbums])
 
   useEffect(() => {
     const channel = supabase
@@ -472,7 +478,7 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
   const title = isAdmin ? 'Manajemen Album' : 'Album Saya'
   const subtitle = isAdmin ? 'Kelola status dan data album.' : 'Daftar album Anda.'
   const showroomHref = resolvedLinkContext === 'admin' ? '/admin/showroom' : '/user/showroom'
-  const publicCreateHref = resolvedLinkContext === 'admin' ? '/admin/album/public/create' : '/user/portal/album/public/create'
+  const publicCreateHref = resolvedLinkContext === 'admin' ? '/admin/album/public/create' : '/user/album/public/create'
 
   return (
     <div>

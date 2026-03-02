@@ -20,7 +20,7 @@ export default function PhotoToVideo() {
     let cancelled = false;
     const loadPricing = async () => {
       try {
-        const res = await fetch("/api/ai/pricing");
+        const res = await fetch("/api/admin/ai-edit");
         if (!res.ok) return;
         const data = await res.json();
         if (!Array.isArray(data)) return;
@@ -67,7 +67,7 @@ export default function PhotoToVideo() {
       formData.append("photo", photo);
       formData.append("prompt", prompt.trim() || DEFAULT_PROMPT);
 
-      const res = await fetch("/api/phototovideo", {
+      const res = await fetch("/api/ai-features/phototovideo", {
         method: "POST",
         body: formData,
       });

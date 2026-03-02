@@ -110,7 +110,7 @@ export default function UserRiwayatPage() {
           if (n > 0) window.dispatchEvent(new CustomEvent('credits-updated'))
         }
         await fetchTransactions()
-        window.history.replaceState({}, '', '/user/portal/riwayat')
+        window.history.replaceState({}, '', '/user/riwayat')
       }
       run()
     }

@@ -30,7 +30,7 @@ export default function UserError({
             Coba lagi
           </button>
           <Link
-            href="/user/portal/riwayat"
+            href="/user/riwayat"
             className="px-4 py-2.5 rounded-xl border border-white/20 text-white font-medium hover:bg-white/10 transition-colors inline-block"
           >
             Ke Riwayat Transaksi

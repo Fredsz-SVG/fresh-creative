@@ -32,7 +32,7 @@ export default function TryOn() {
     let cancelled = false
     const loadPricing = async () => {
       try {
-        const res = await fetch('/api/ai/pricing')
+        const res = await fetch('/api/admin/ai-edit')
         if (!res.ok) return
         const data = await res.json()
         if (!Array.isArray(data)) return
@@ -204,7 +204,7 @@ export default function TryOn() {
     setLoadingProgress({ current: 0, total: products.length })
 
     try {
-      const creditRes = await fetch('/api/ai/consume', {
+      const creditRes = await fetch('/api/admin/ai-edit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ feature_slug: 'tryon' }),

@@ -177,6 +177,9 @@ export default function PricingView({
       setDraft(null);
       setLeadId(newAlbumId);
 
+      // Force Next.js to invalidate cached routes so albums page shows fresh data
+      router.refresh();
+
       if (afterSaveRedirect) {
         router.push(afterSaveRedirect);
         return;
