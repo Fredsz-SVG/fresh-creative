@@ -112,8 +112,8 @@ export default function AdminCreditSettingsPage() {
     const [showCreateRedeem, setShowCreateRedeem] = useState(false)
     const [newCode, setNewCode] = useState({ code: '', credits: 10, max_uses: 1, expires_at: '' })
 
-    const fetchPackages = async () => {
-        setLoading(true)
+    const fetchPackages = async (silent = false) => {
+        if (!silent) setLoading(true)
         try {
             const res = await fetch(`/api/credits/packages?t=${Date.now()}`)
             if (!res.ok) throw new Error('Failed to fetch packages')
@@ -132,12 +132,19 @@ export default function AdminCreditSettingsPage() {
         fetchRedeemCodes()
 
         const channel = supabase
-            .channel('realtime-admin-packages')
+            .channel('realtime-admin-credits')
             .on(
                 'postgres_changes',
                 { event: '*', schema: 'public', table: 'credit_packages' },
                 () => {
-                    fetchPackages()
+                    fetchPackages(true)
+                }
+            )
+            .on(
+                'postgres_changes',
+                { event: '*', schema: 'public', table: 'redeem_codes' },
+                () => {
+                    fetchRedeemCodes(true)
                 }
             )
             .subscribe()
@@ -158,7 +165,7 @@ export default function AdminCreditSettingsPage() {
             if (!res.ok) throw new Error(await res.text())
             setEditingPackage(null)
             toast.success(pkg.id ? 'Paket diperbarui' : 'Paket dibuat')
-            fetchPackages()
+            fetchPackages(true)
         } catch (err) {
             console.error('Save failed:', err)
             toast.error('Gagal menyimpan paket')
@@ -175,7 +182,7 @@ export default function AdminCreditSettingsPage() {
             })
             if (!res.ok) throw new Error(await res.text())
             toast.success('Paket dihapus')
-            fetchPackages()
+            fetchPackages(true)
         } catch (err) {
             console.error('Delete failed:', err)
             toast.error('Gagal menghapus paket')
@@ -184,8 +191,8 @@ export default function AdminCreditSettingsPage() {
 
     // ── Redeem Code Functions ──
 
-    const fetchRedeemCodes = async () => {
-        setLoadingRedeem(true)
+    const fetchRedeemCodes = async (silent = false) => {
+        if (!silent) setLoadingRedeem(true)
         try {
             const res = await fetch(`/api/credits/redeem?t=${Date.now()}`)
             if (!res.ok) throw new Error('Failed to fetch redeem codes')
@@ -222,7 +229,7 @@ export default function AdminCreditSettingsPage() {
             toast.success(`Kode ${data.code} berhasil dibuat!`)
             setShowCreateRedeem(false)
             setNewCode({ code: '', credits: 10, max_uses: 1, expires_at: '' })
-            fetchRedeemCodes()
+            fetchRedeemCodes(true)
         } catch (err) {
             toast.error(err instanceof Error ? err.message : 'Gagal membuat kode')
         }
@@ -237,7 +244,7 @@ export default function AdminCreditSettingsPage() {
             })
             if (!res.ok) throw new Error(await res.text())
             toast.success(item.is_active ? 'Kode dinonaktifkan' : 'Kode diaktifkan')
-            fetchRedeemCodes()
+            fetchRedeemCodes(true)
         } catch (err) {
             toast.error('Gagal mengubah status')
         }
@@ -253,7 +260,7 @@ export default function AdminCreditSettingsPage() {
             })
             if (!res.ok) throw new Error(await res.text())
             toast.success('Kode dihapus')
-            fetchRedeemCodes()
+            fetchRedeemCodes(true)
         } catch (err) {
             toast.error('Gagal menghapus kode')
         }
@@ -373,22 +380,20 @@ export default function AdminCreditSettingsPage() {
                 <button
                     type="button"
                     onClick={() => setActiveTab('packages')}
-                    className={`px-4 py-2 text-sm font-medium ${
-                        activeTab === 'packages'
+                    className={`px-4 py-2 text-sm font-medium ${activeTab === 'packages'
                             ? 'text-app border-b-2 border-app'
                             : 'text-muted hover:text-app'
-                    }`}
+                        }`}
                 >
                     Credit Packages
                 </button>
                 <button
                     type="button"
                     onClick={() => setActiveTab('redeem')}
-                    className={`px-4 py-2 text-sm font-medium ${
-                        activeTab === 'redeem'
+                    className={`px-4 py-2 text-sm font-medium ${activeTab === 'redeem'
                             ? 'text-app border-b-2 border-app'
                             : 'text-muted hover:text-app'
-                    }`}
+                        }`}
                 >
                     Redeem Codes
                 </button>
@@ -488,11 +493,10 @@ export default function AdminCreditSettingsPage() {
                                 return (
                                     <div
                                         key={item.id}
-                                        className={`bg-white/[0.03] border rounded-2xl p-4 sm:p-5 transition-colors ${
-                                            item.is_active && !isExpired && !isFull
+                                        className={`bg-white/[0.03] border rounded-2xl p-4 sm:p-5 transition-colors ${item.is_active && !isExpired && !isFull
                                                 ? 'border-white/10 hover:border-purple-500/50'
                                                 : 'border-white/5 opacity-60'
-                                        }`}
+                                            }`}
                                     >
                                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                                             <div className="flex-1 min-w-0">
@@ -507,13 +511,12 @@ export default function AdminCreditSettingsPage() {
                                                     >
                                                         <Copy size={14} />
                                                     </button>
-                                                    <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
-                                                        statusColor === 'text-emerald-400'
+                                                    <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${statusColor === 'text-emerald-400'
                                                             ? 'bg-emerald-500/20 text-emerald-400'
                                                             : statusColor === 'text-amber-400'
                                                                 ? 'bg-amber-500/20 text-amber-400'
                                                                 : 'bg-red-500/20 text-red-400'
-                                                    }`}>
+                                                        }`}>
                                                         {statusText}
                                                     </span>
                                                 </div>
@@ -531,11 +534,10 @@ export default function AdminCreditSettingsPage() {
                                             <div className="flex items-center gap-2 shrink-0">
                                                 <button
                                                     onClick={() => handleToggleRedeem(item)}
-                                                    className={`p-2 rounded-lg transition-colors ${
-                                                        item.is_active
+                                                    className={`p-2 rounded-lg transition-colors ${item.is_active
                                                             ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30'
                                                             : 'bg-white/5 text-gray-500 hover:bg-white/10'
-                                                    }`}
+                                                        }`}
                                                     title={item.is_active ? 'Nonaktifkan' : 'Aktifkan'}
                                                 >
                                                     {item.is_active ? <ToggleRight size={18} /> : <ToggleLeft size={18} />}
