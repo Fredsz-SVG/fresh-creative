@@ -34,6 +34,12 @@ export default function TopUpModal({ isOpen, onClose, currentCredit = 0, onCredi
         onClose()
     }
 
+    const handleCloseModal = () => {
+        setShowRedeem(false)
+        setRedeemCode('')
+        onClose()
+    }
+
     const handleRedeem = async () => {
         if (!redeemCode.trim()) return
         setRedeemLoading(true)
@@ -48,7 +54,7 @@ export default function TopUpModal({ isOpen, onClose, currentCredit = 0, onCredi
                 toast.success(`🎉 Berhasil! +${data.credits_received} credit ditambahkan.`)
                 setRedeemCode('')
                 setShowRedeem(false)
-                onClose()
+                handleCloseModal()
                 if (onCreditChange) onCreditChange()
             } else {
                 toast.error(data.error || 'Kode tidak valid.')
@@ -158,146 +164,146 @@ export default function TopUpModal({ isOpen, onClose, currentCredit = 0, onCredi
 
     return (
         <>
-        {/* Popup pembayaran Xendit di dalam halaman */}
-        {checkoutInvoiceUrl && (
-            <div className="fixed inset-0 z-[110] flex flex-col bg-[#0a0a0b]" role="dialog" aria-modal="true" aria-label="Pembayaran Xendit">
-                <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 bg-white/5 shrink-0">
-                    <h3 className="text-sm font-semibold text-white">Selesaikan Pembayaran</h3>
-                    <button
-                        type="button"
-                        onClick={handleCloseCheckoutPopup}
-                        className="flex items-center justify-center w-9 h-9 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
-                    >
-                        <X className="w-5 h-5" />
-                    </button>
-                </div>
-                <div className="flex-1 min-h-0 relative">
-                    <iframe
-                        src={checkoutInvoiceUrl}
-                        title="Xendit Invoice"
-                        className="absolute inset-0 w-full h-full border-0"
-                        sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-top-navigation"
-                        allow="payment"
-                    />
-                </div>
-            </div>
-        )}
-
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" onClick={checkoutInvoiceUrl ? undefined : onClose}>
-            <div
-                className="relative w-full max-w-md bg-[#0a0a0b] border border-white/10 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200"
-                onClick={(e) => e.stopPropagation()}
-            >
-                {/* Header */}
-                <div className="flex items-center justify-between p-5 border-b border-white/10 bg-white/5">
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-lime-500/20 flex items-center justify-center text-lime-400">
-                            <Wallet className="w-5 h-5" />
-                        </div>
-                        <div>
-                            <h3 className="text-lg font-bold text-white leading-tight">Top Up Credit</h3>
-                            <p className="text-xs text-gray-400">Balance: {currentCredit} Credits</p>
-                        </div>
+            {/* Popup pembayaran Xendit di dalam halaman */}
+            {checkoutInvoiceUrl && (
+                <div className="fixed inset-0 z-[110] flex flex-col bg-[#0a0a0b]" role="dialog" aria-modal="true" aria-label="Pembayaran Xendit">
+                    <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 bg-white/5 shrink-0">
+                        <h3 className="text-sm font-semibold text-white">Selesaikan Pembayaran</h3>
+                        <button
+                            type="button"
+                            onClick={handleCloseCheckoutPopup}
+                            className="flex items-center justify-center w-9 h-9 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
+                        >
+                            <X className="w-5 h-5" />
+                        </button>
                     </div>
-                    <button
-                        onClick={onClose}
-                        className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
-                    >
-                        <X className="w-5 h-5" />
-                    </button>
+                    <div className="flex-1 min-h-0 relative">
+                        <iframe
+                            src={checkoutInvoiceUrl}
+                            title="Xendit Invoice"
+                            className="absolute inset-0 w-full h-full border-0"
+                            sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-top-navigation"
+                            allow="payment"
+                        />
+                    </div>
                 </div>
+            )}
 
-                {/* Body */}
-                <div className="p-5">
-                    <p className="text-sm text-gray-400 mb-4">Pilih paket credit yang ingin dibeli:</p>
-
-                    {loading ? (
-                        <div className="flex items-center justify-center py-8">
-                            <Loader2 className="w-8 h-8 text-lime-500 animate-spin" />
-                        </div>
-                    ) : (
-                        <div className="mb-6 max-h-[280px] overflow-y-auto pr-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-                            <div className="grid grid-cols-2 gap-3 pt-3 pb-2 px-1">
-                                {packages.map((pkg) => (
-                                    <button
-                                        key={pkg.id}
-                                        onClick={() => setSelectedPkg(pkg.id)}
-                                        className={`
-                          relative flex flex-col items-center justify-center p-4 rounded-xl border transition-all duration-200
-                          ${selectedPkg === pkg.id
-                                                ? 'border-lime-500 bg-lime-500/10 text-white'
-                                                : 'border-white/10 bg-white/[0.03] text-gray-400 hover:border-white/20 hover:bg-white/5'}
-                        `}
-                                    >
-                                        {pkg.popular && (
-                                            <span className="absolute -top-3 bg-lime-500 text-black text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider z-10">
-                                                Popular
-                                            </span>
-                                        )}
-                                        <span className={`text-2xl font-bold mb-1 ${selectedPkg === pkg.id ? 'text-lime-400' : 'text-white'}`}>
-                                            {pkg.credits}
-                                        </span>
-                                        <span className="text-xs uppercase tracking-wide opacity-80">Credits</span>
-                                        <div className={`mt-3 text-sm font-medium px-2 py-1 w-full rounded-lg ${selectedPkg === pkg.id ? 'bg-lime-500 text-black' : 'bg-white/10 text-white'}`}>
-                                            <div className="truncate text-center">Rp {pkg.price.toLocaleString('id-ID')}</div>
-                                        </div>
-                                    </button>
-                                ))}
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" onClick={checkoutInvoiceUrl ? undefined : handleCloseModal}>
+                <div
+                    className="relative w-full max-w-md bg-[#0a0a0b] border border-white/10 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200"
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    {/* Header */}
+                    <div className="flex items-center justify-between p-5 border-b border-white/10 bg-white/5">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-lime-500/20 flex items-center justify-center text-lime-400">
+                                <Wallet className="w-5 h-5" />
+                            </div>
+                            <div>
+                                <h3 className="text-lg font-bold text-white leading-tight">Top Up Credit</h3>
+                                <p className="text-xs text-gray-400">Balance: {currentCredit} Credits</p>
                             </div>
                         </div>
-                    )}
+                        <button
+                            onClick={handleCloseModal}
+                            className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
+                        >
+                            <X className="w-5 h-5" />
+                        </button>
+                    </div>
 
-                    <button
-                        onClick={handleCheckout}
-                        disabled={!selectedPkg || loadingCheckout}
-                        className="w-full py-3.5 px-4 bg-lime-500 hover:bg-lime-400 disabled:opacity-50 disabled:cursor-not-allowed text-black font-bold rounded-xl transition-colors flex items-center justify-center gap-2"
-                    >
-                        {loadingCheckout ? <Loader2 className="w-4 h-4 animate-spin" /> : <CreditCard className="w-4 h-4" />}
-                        {loadingCheckout ? 'Memproses...' : 'Beli Sekarang'}
-                    </button>
+                    {/* Body */}
+                    <div className="p-5">
+                        <p className="text-sm text-gray-400 mb-4">Pilih paket credit yang ingin dibeli:</p>
 
-                    {/* Redeem Code Section */}
-                    <div className="mt-4 pt-4 border-t border-white/10">
-                        {!showRedeem ? (
-                            <button
-                                type="button"
-                                onClick={() => setShowRedeem(true)}
-                                className="w-full text-center text-sm text-purple-400 hover:text-purple-300 transition-colors flex items-center justify-center gap-1.5"
-                            >
-                                <Gift className="w-4 h-4" />
-                                Punya kode voucher? Redeem di sini
-                            </button>
+                        {loading ? (
+                            <div className="flex items-center justify-center py-8">
+                                <Loader2 className="w-8 h-8 text-lime-500 animate-spin" />
+                            </div>
                         ) : (
-                            <div className="space-y-2">
-                                <div className="flex gap-2">
-                                    <input
-                                        type="text"
-                                        value={redeemCode}
-                                        onChange={(e) => setRedeemCode(e.target.value.toUpperCase())}
-                                        onKeyDown={(e) => e.key === 'Enter' && handleRedeem()}
-                                        placeholder="Masukkan kode"
-                                        className="flex-1 px-3 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white font-mono uppercase tracking-widest text-sm placeholder:text-gray-600 placeholder:tracking-normal placeholder:font-sans focus:outline-none focus:border-purple-500"
-                                        autoFocus
-                                    />
-                                    <button
-                                        onClick={handleRedeem}
-                                        disabled={!redeemCode.trim() || redeemLoading}
-                                        className="px-4 py-2.5 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-colors flex items-center gap-1.5 text-sm shrink-0"
-                                    >
-                                        {redeemLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Gift className="w-4 h-4" />}
-                                        Redeem
-                                    </button>
+                            <div className="mb-6 max-h-[280px] overflow-y-auto pr-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                                <div className="grid grid-cols-2 gap-3 pt-3 pb-2 px-1">
+                                    {packages.map((pkg) => (
+                                        <button
+                                            key={pkg.id}
+                                            onClick={() => setSelectedPkg(pkg.id)}
+                                            className={`
+                          relative flex flex-col items-center justify-center p-4 rounded-xl border transition-all duration-200
+                          ${selectedPkg === pkg.id
+                                                    ? 'border-lime-500 bg-lime-500/10 text-white'
+                                                    : 'border-white/10 bg-white/[0.03] text-gray-400 hover:border-white/20 hover:bg-white/5'}
+                        `}
+                                        >
+                                            {pkg.popular && (
+                                                <span className="absolute -top-3 bg-lime-500 text-black text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider z-10">
+                                                    Popular
+                                                </span>
+                                            )}
+                                            <span className={`text-2xl font-bold mb-1 ${selectedPkg === pkg.id ? 'text-lime-400' : 'text-white'}`}>
+                                                {pkg.credits}
+                                            </span>
+                                            <span className="text-xs uppercase tracking-wide opacity-80">Credits</span>
+                                            <div className={`mt-3 text-sm font-medium px-2 py-1 w-full rounded-lg ${selectedPkg === pkg.id ? 'bg-lime-500 text-black' : 'bg-white/10 text-white'}`}>
+                                                <div className="truncate text-center">Rp {pkg.price.toLocaleString('id-ID')}</div>
+                                            </div>
+                                        </button>
+                                    ))}
                                 </div>
                             </div>
                         )}
-                    </div>
 
-                    <p className="text-center text-[10px] text-gray-500 mt-3">
-                        Pembayaran aman & terpercaya via Payment Gateway.
-                    </p>
+                        <button
+                            onClick={handleCheckout}
+                            disabled={!selectedPkg || loadingCheckout}
+                            className="w-full py-3.5 px-4 bg-lime-500 hover:bg-lime-400 disabled:opacity-50 disabled:cursor-not-allowed text-black font-bold rounded-xl transition-colors flex items-center justify-center gap-2"
+                        >
+                            {loadingCheckout ? <Loader2 className="w-4 h-4 animate-spin" /> : <CreditCard className="w-4 h-4" />}
+                            {loadingCheckout ? 'Memproses...' : 'Beli Sekarang'}
+                        </button>
+
+                        {/* Redeem Code Section */}
+                        <div className="mt-4 pt-4 border-t border-white/10">
+                            {!showRedeem ? (
+                                <button
+                                    type="button"
+                                    onClick={() => setShowRedeem(true)}
+                                    className="w-full text-center text-sm text-purple-400 hover:text-purple-300 transition-colors flex items-center justify-center gap-1.5"
+                                >
+                                    <Gift className="w-4 h-4" />
+                                    Punya kode voucher? Redeem di sini
+                                </button>
+                            ) : (
+                                <div className="space-y-2">
+                                    <div className="flex gap-2">
+                                        <input
+                                            type="text"
+                                            value={redeemCode}
+                                            onChange={(e) => setRedeemCode(e.target.value.toUpperCase())}
+                                            onKeyDown={(e) => e.key === 'Enter' && handleRedeem()}
+                                            placeholder="Masukkan kode"
+                                            className="flex-1 px-3 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white font-mono uppercase tracking-widest text-sm placeholder:text-gray-600 placeholder:tracking-normal placeholder:font-sans focus:outline-none focus:border-purple-500"
+                                            autoFocus
+                                        />
+                                        <button
+                                            onClick={handleRedeem}
+                                            disabled={!redeemCode.trim() || redeemLoading}
+                                            className="px-4 py-2.5 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-colors flex items-center gap-1.5 text-sm shrink-0"
+                                        >
+                                            {redeemLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Gift className="w-4 h-4" />}
+                                            Redeem
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        <p className="text-center text-[10px] text-gray-500 mt-3">
+                            Pembayaran aman & terpercaya via Payment Gateway.
+                        </p>
+                    </div>
                 </div>
             </div>
-        </div>
         </>
     )
 }

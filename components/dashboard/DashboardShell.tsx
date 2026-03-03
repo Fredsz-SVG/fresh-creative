@@ -56,6 +56,15 @@ export default function DashboardShell({
   const [notifications, setNotifications] = useState<any[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
 
+  const refreshCredits = () => {
+    fetch('/api/user/me')
+      .then((res) => res.json())
+      .then((data) => {
+        if (typeof data.credits === 'number') setCredits(data.credits)
+      })
+      .catch(() => {})
+  }
+
   const fetchNotifications = async () => {
     if (typeof window !== 'undefined' && !navigator.onLine) return
     try {
@@ -571,7 +580,7 @@ export default function DashboardShell({
         </nav>
       )}
       {/* TopUp Modal */}
-      <TopUpModal isOpen={showTopUp} onClose={() => setShowTopUp(false)} currentCredit={credits} />
+      <TopUpModal isOpen={showTopUp} onClose={() => setShowTopUp(false)} currentCredit={credits} onCreditChange={refreshCredits} />
     </div>
   )
 }
