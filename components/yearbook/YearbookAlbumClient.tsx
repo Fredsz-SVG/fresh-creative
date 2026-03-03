@@ -25,6 +25,9 @@ type Album = {
   isAlbumAdmin?: boolean
   isGlobalAdmin?: boolean
   flipbook_mode?: 'manual' | null
+  payment_status?: string
+  payment_url?: string | null
+  total_estimated_price?: number
   classes: { id: string; name: string; sort_order: number; student_count: number; batch_photo_url?: string | null }[]
 }
 
@@ -700,7 +703,7 @@ export default function YearbookAlbumClient({
     })
   }
 
-  const handleUpdateAlbum = async (updates: { description?: string; cover_image_url?: string; students_count?: number; flipbook_mode?: 'manual' }) => {
+  const handleUpdateAlbum = async (updates: { description?: string; cover_image_url?: string; students_count?: number; flipbook_mode?: 'manual'; total_estimated_price?: number }) => {
     if (!id) return
 
     // Optimistic update

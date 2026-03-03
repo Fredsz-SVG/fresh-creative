@@ -29,11 +29,30 @@ export async function GET() {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
-  const { data, error } = await adminClient
+  // Try with description column first, fallback without if column doesn't exist
+  const selectWithDesc = 'id, external_id, amount, status, payment_method, invoice_url, created_at, album_id, description, albums(name), credit_packages(credits)'
+  const selectWithoutDesc = 'id, external_id, amount, status, payment_method, invoice_url, created_at, album_id, albums(name), credit_packages(credits)'
+
+  let data: any[] | null = null
+  let error: any = null
+
+  const res1 = await adminClient
     .from('transactions')
-    .select('id, external_id, amount, status, payment_method, invoice_url, created_at, album_id, albums(name), credit_packages(credits)')
+    .select(selectWithDesc)
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })
+
+  if (res1.error) {
+    const res2 = await adminClient
+      .from('transactions')
+      .select(selectWithoutDesc)
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+    data = res2.data
+    error = res2.error
+  } else {
+    data = res1.data
+  }
 
   if (error) {
     console.error('User transactions fetch error:', error)

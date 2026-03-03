@@ -44,11 +44,30 @@ export async function GET(req: Request) {
 
   // Riwayat sendiri (default)
   if (scope !== 'all') {
-    const { data, error } = await adminClient
+    // Try with description column first, fallback without if column doesn't exist
+    let data: any[] | null = null
+    let error: any = null
+
+    const selectWithDesc = 'id, external_id, amount, status, payment_method, invoice_url, created_at, album_id, description, albums(name), credit_packages(credits)'
+    const selectWithoutDesc = 'id, external_id, amount, status, payment_method, invoice_url, created_at, album_id, albums(name), credit_packages(credits)'
+
+    const res1 = await adminClient
       .from('transactions')
-      .select('id, external_id, amount, status, payment_method, invoice_url, created_at, album_id, albums(name), credit_packages(credits)')
+      .select(selectWithDesc)
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
+    
+    if (res1.error) {
+      const res2 = await adminClient
+        .from('transactions')
+        .select(selectWithoutDesc)
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+      data = res2.data
+      error = res2.error
+    } else {
+      data = res1.data
+    }
 
     if (error) {
       console.error('Admin own transactions fetch error:', error)
@@ -68,14 +87,24 @@ export async function GET(req: Request) {
   }
 
   // Riwayat semua user (dengan detail nama, email, credits)
-  const { data: rows, error } = await adminClient
-    .from('transactions')
-    .select('id, user_id, external_id, amount, status, payment_method, invoice_url, created_at, album_id, albums(name), credit_packages(credits)')
-    .order('created_at', { ascending: false })
+  const selectAllWithDesc = 'id, user_id, external_id, amount, status, payment_method, invoice_url, created_at, album_id, description, albums(name), credit_packages(credits)'
+  const selectAllWithoutDesc = 'id, user_id, external_id, amount, status, payment_method, invoice_url, created_at, album_id, albums(name), credit_packages(credits)'
 
-  if (error) {
-    console.error('Admin all transactions fetch error:', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+  let rows: any[] | null = null
+  let rowsError: any = null
+
+  const r1 = await adminClient.from('transactions').select(selectAllWithDesc).order('created_at', { ascending: false })
+  if (r1.error) {
+    const r2 = await adminClient.from('transactions').select(selectAllWithoutDesc).order('created_at', { ascending: false })
+    rows = r2.data
+    rowsError = r2.error
+  } else {
+    rows = r1.data
+  }
+
+  if (rowsError) {
+    console.error('Admin all transactions fetch error:', rowsError)
+    return NextResponse.json({ error: rowsError.message }, { status: 500 })
   }
 
   const list = Array.isArray(rows) ? rows : []

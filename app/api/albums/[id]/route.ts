@@ -191,13 +191,14 @@ export async function PATCH(
   }
 
   const body = await request.json().catch(() => ({}))
-  const { cover_image_url, description, students_count, flipbook_mode } = body as { cover_image_url?: string; description?: string; students_count?: number; flipbook_mode?: string }
+  const { cover_image_url, description, students_count, flipbook_mode, total_estimated_price } = body as { cover_image_url?: string; description?: string; students_count?: number; flipbook_mode?: string; total_estimated_price?: number }
 
-  const updates: { cover_image_url?: string; description?: string; students_count?: number; flipbook_mode?: string } = {}
+  const updates: { cover_image_url?: string; description?: string; students_count?: number; flipbook_mode?: string; total_estimated_price?: number } = {}
   if (cover_image_url !== undefined) updates.cover_image_url = cover_image_url
   if (description !== undefined) updates.description = description
   if (students_count !== undefined) updates.students_count = students_count
   if (flipbook_mode !== undefined) updates.flipbook_mode = flipbook_mode
+  if (total_estimated_price !== undefined) updates.total_estimated_price = total_estimated_price
   if (Object.keys(updates).length === 0) return NextResponse.json(album)
 
   const { data: updated, error } = await client

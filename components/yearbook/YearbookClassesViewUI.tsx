@@ -1596,6 +1596,8 @@ export default function YearbookClassesViewUI(props: any) {
                   onSaveLimit={handleSaveLimit}
                   onApproveRequest={handleApproveJoinRequest}
                   onRejectRequest={handleRejectJoinRequest}
+                  albumId={album?.id}
+                  paymentStatus={album?.payment_status}
                 />
               ) : sidebarMode === 'team' ? (
                 <TeamView

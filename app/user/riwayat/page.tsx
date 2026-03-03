@@ -15,6 +15,7 @@ type Transaction = {
   credits: number | null
   payment_method?: string | null
   album_name?: string | null
+  description?: string | null
 }
 
 export default function UserRiwayatPage() {
@@ -193,7 +194,7 @@ export default function UserRiwayatPage() {
                 </div>
                 <div>
                   <h4 className="font-semibold text-white">
-                    {tx.album_name ? `Pembayaran Album: ${tx.album_name}` : (tx.credits != null ? `Top Up ${tx.credits} Credits` : 'Top Up Credit')}
+                    {tx.description || (tx.album_name ? `Pembayaran Album: ${tx.album_name}` : (tx.credits != null ? `Top Up ${tx.credits} Credits` : 'Top Up Credit'))}
                   </h4>
                   <div className="text-xs text-gray-400 mt-1 space-y-1">
                     <p>{new Date(tx.created_at).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>

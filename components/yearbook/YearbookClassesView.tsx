@@ -31,7 +31,7 @@ export type YearbookClassesViewProps = {
   handleAddClass: () => void
   handleDeleteClass: (classId: string, className: string) => void
   handleUpdateClass?: (classId: string, updates: { name?: string; sort_order?: number; batch_photo_url?: string }) => Promise<{ id: string; name: string; sort_order?: number; batch_photo_url: string | null } | null>
-  handleUpdateAlbum?: (updates: { description?: string; cover_image_url?: string; students_count?: number; flipbook_mode?: 'manual' }) => Promise<void>
+  handleUpdateAlbum?: (updates: { description?: string; cover_image_url?: string; students_count?: number; flipbook_mode?: 'manual'; total_estimated_price?: number }) => Promise<void>
   goPrevClass: () => void
   goNextClass: () => void
   requestsByClass: Record<string, ClassRequest[]>

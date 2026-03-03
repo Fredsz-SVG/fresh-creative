@@ -18,6 +18,7 @@ type Transaction = {
   user_email?: string
   payment_method?: string | null
   album_name?: string | null
+  description?: string | null
 }
 
 type ViewMode = 'mine' | 'all'
@@ -286,7 +287,7 @@ export default function AdminRiwayatPage() {
                 </div>
                 <div>
                   <h4 className="font-semibold text-white">
-                    {tx.album_name ? `Pembayaran Album: ${tx.album_name}` : (tx.credits != null ? `Top Up ${tx.credits} Credits` : 'Top Up Credit')}
+                    {tx.description || (tx.album_name ? `Pembayaran Album: ${tx.album_name}` : (tx.credits != null ? `Top Up ${tx.credits} Credits` : 'Top Up Credit'))}
                   </h4>
                   <div className="text-xs text-gray-400 mt-1 space-y-0.5">
                     {viewMode === 'all' && (tx.user_full_name != null || tx.user_email != null) && (

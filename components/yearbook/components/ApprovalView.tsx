@@ -1,7 +1,7 @@
 'use client'
 
-import React, { useState } from 'react'
-import { Edit3, Plus, Minus, Check, X, Clock, ClipboardList, Copy, Link as LinkIcon } from 'lucide-react'
+import React, { useState, useEffect, useMemo } from 'react'
+import { Edit3, Plus, Minus, Check, X, Clock, ClipboardList, Copy, Link as LinkIcon, CreditCard, Loader2, Wallet } from 'lucide-react'
 import { toast } from 'sonner'
 
 type AlbumClass = { id: string; name: string; sort_order?: number; student_count?: number }
@@ -20,6 +20,13 @@ type JoinStats = {
   limit_count?: number | null
   available_slots?: number
 }
+type PricingPackage = {
+  id: string
+  name: string
+  pricePerStudent: number
+  minStudents: number
+  features: string[]
+}
 
 interface ApprovalViewProps {
   joinStats: JoinStats | null
@@ -36,6 +43,8 @@ interface ApprovalViewProps {
   onSaveLimit: (value: number) => Promise<void>
   onApproveRequest: (requestId: string, assignedClassId: string) => Promise<void>
   onRejectRequest: (requestId: string) => void | Promise<void>
+  albumId?: string
+  paymentStatus?: string
 }
 
 export default function ApprovalView({
@@ -53,6 +62,8 @@ export default function ApprovalView({
   onSaveLimit,
   onApproveRequest,
   onRejectRequest,
+  albumId,
+  paymentStatus,
 }: ApprovalViewProps) {
   const [editingLimit, setEditingLimit] = useState(false)
   const [editLimitValue, setEditLimitValue] = useState('')
@@ -60,6 +71,93 @@ export default function ApprovalView({
   const [approvalClassIndex, setApprovalClassIndex] = useState(0)
   const [assigningRequest, setAssigningRequest] = useState<string | null>(null)
   const [selectedClassForAssign, setSelectedClassForAssign] = useState('')
+  const [pricingPackages, setPricingPackages] = useState<PricingPackage[]>([])
+  const [loadingPricing, setLoadingPricing] = useState(false)
+  const [loadingCheckout, setLoadingCheckout] = useState(false)
+  const [checkoutInvoiceUrl, setCheckoutInvoiceUrl] = useState<string | null>(null)
+
+  // Fetch pricing packages when editing limit
+  useEffect(() => {
+    if (!editingLimit) return
+    setLoadingPricing(true)
+    fetch('/api/pricing')
+      .then(res => res.ok ? res.json() : [])
+      .then((data: unknown[]) => {
+        if (Array.isArray(data) && data.length > 0) {
+          const normalized = data.map((p: Record<string, unknown>) => ({
+            id: String(p.id ?? ''),
+            name: String(p.name ?? ''),
+            pricePerStudent: Number(p.price_per_student ?? p.pricePerStudent ?? 0),
+            minStudents: Number(p.min_students ?? p.minStudents ?? 100),
+            features: Array.isArray(p.features) ? p.features.map(String) : [],
+          }))
+          setPricingPackages(normalized)
+        }
+      })
+      .catch(() => { })
+      .finally(() => setLoadingPricing(false))
+  }, [editingLimit])
+
+  // Calculate price for the new limit
+  const newLimitVal = parseInt(editLimitValue) || 0
+  const isIncreasingLimit = newLimitVal > originalLimitValue
+  const addedStudents = isIncreasingLimit ? newLimitVal - originalLimitValue : 0
+
+  // Use lowest price package as default for calculation
+  const cheapestPackage = useMemo(() => {
+    if (pricingPackages.length === 0) return null
+    return pricingPackages.reduce((prev, curr) =>
+      curr.pricePerStudent < prev.pricePerStudent ? curr : prev
+    )
+  }, [pricingPackages])
+
+  const estimatedPrice = useMemo(() => {
+    if (!cheapestPackage || newLimitVal <= 0) return 0
+    return newLimitVal * cheapestPackage.pricePerStudent
+  }, [cheapestPackage, newLimitVal])
+
+  const additionalPrice = useMemo(() => {
+    if (!cheapestPackage || addedStudents <= 0) return 0
+    return addedStudents * cheapestPackage.pricePerStudent
+  }, [cheapestPackage, addedStudents])
+
+  const needsPayment = isIncreasingLimit
+
+  const handleCheckoutForLimit = async () => {
+    if (!albumId) return
+    setLoadingCheckout(true)
+    try {
+      // Determine if this is an upgrade (already paid before) or first-time payment
+      const isUpgrade = paymentStatus === 'paid'
+      const chargePrice = isUpgrade ? additionalPrice : estimatedPrice
+
+      // DO NOT update students_count here — it will be updated by webhook after payment succeeds
+      // Only create the invoice with the new limit info
+      const res = await fetch(`/api/albums/${albumId}/checkout`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          upgrade: isUpgrade,
+          amount: chargePrice,
+          added_students: addedStudents,
+          new_students_count: newLimitVal,
+        }),
+      })
+      const data = await res.json()
+      if (res.ok && data.invoiceUrl) {
+        toast.success('Faktur pembayaran berhasil dibuat!')
+        setCheckoutInvoiceUrl(data.invoiceUrl)
+        setEditingLimit(false)
+      } else {
+        toast.error(data.error || 'Gagal membuat tagihan pembayaran')
+      }
+    } catch {
+      toast.error('Gagal memproses pembayaran')
+    } finally {
+      setLoadingCheckout(false)
+    }
+  }
 
   const handleSaveLimit = async () => {
     const val = parseInt(editLimitValue)
@@ -70,6 +168,11 @@ export default function ApprovalView({
     }
     if (val < currentLimit) {
       toast.error(`Tidak bisa dikurangi. Batas saat ini: ${currentLimit}`)
+      return
+    }
+    // If increasing limit, require payment
+    if (val > originalLimitValue) {
+      await handleCheckoutForLimit()
       return
     }
     await onSaveLimit(val)
@@ -116,6 +219,31 @@ export default function ApprovalView({
 
   return (
     <div className="max-w-5xl mx-auto px-3 py-3 sm:px-3 sm:py-4">
+      {/* Checkout Invoice Popup */}
+      {checkoutInvoiceUrl && (
+        <div className="fixed inset-0 z-[110] flex flex-col bg-[#0a0a0b]" role="dialog" aria-modal="true" aria-label="Pembayaran">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 bg-white/5 shrink-0">
+            <h3 className="text-sm font-semibold text-white">Selesaikan Pembayaran</h3>
+            <button
+              type="button"
+              onClick={() => setCheckoutInvoiceUrl(null)}
+              className="flex items-center justify-center w-9 h-9 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+          <div className="flex-1 min-h-0 relative">
+            <iframe
+              src={checkoutInvoiceUrl}
+              title="Invoice Pembayaran"
+              className="absolute inset-0 w-full h-full border-0"
+              sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-top-navigation"
+              allow="payment"
+            />
+          </div>
+        </div>
+      )}
+
       <div className="mb-4 sm:mb-5">
         {joinStats && (
           <div className="flex flex-wrap items-center justify-center sm:justify-start gap-x-3 gap-y-2 mt-1.5 sm:mt-2">
@@ -215,6 +343,44 @@ export default function ApprovalView({
                   </button>
                 ))}
               </div>
+
+              {/* Pricing Info - shown when increasing limit */}
+              {isIncreasingLimit && cheapestPackage && (
+                <div className="p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                  <div className="flex items-center gap-1.5 mb-1.5">
+                    <Wallet className="w-3 h-3 text-amber-400 flex-shrink-0" />
+                    <span className="text-[11px] font-semibold text-amber-400">Biaya Tambahan Anggota</span>
+                  </div>
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between text-[10px]">
+                      <span className="text-gray-400">Tambahan anggota</span>
+                      <span className="text-white font-medium">+{addedStudents} siswa</span>
+                    </div>
+                    <div className="flex items-center justify-between text-[10px]">
+                      <span className="text-gray-400">Harga per siswa</span>
+                      <span className="text-white font-medium">Rp {cheapestPackage.pricePerStudent.toLocaleString('id-ID')}</span>
+                    </div>
+                    <div className="border-t border-amber-500/20 pt-1 mt-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] text-amber-400 font-semibold">
+                          {paymentStatus === 'paid' ? 'Biaya Tambahan' : 'Total Baru'}
+                        </span>
+                        <span className="text-sm text-amber-400 font-bold">
+                          Rp {(paymentStatus === 'paid' ? additionalPrice : estimatedPrice).toLocaleString('id-ID')}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {loadingPricing && isIncreasingLimit && (
+                <div className="flex items-center justify-center py-2">
+                  <Loader2 className="w-4 h-4 text-lime-500 animate-spin" />
+                  <span className="text-[10px] text-gray-500 ml-1.5">Memuat harga...</span>
+                </div>
+              )}
+
               <div className="flex gap-2">
                 <button
                   type="button"
@@ -223,15 +389,31 @@ export default function ApprovalView({
                 >
                   Batal
                 </button>
-                <button
-                  type="button"
-                  disabled={savingLimit}
-                  onClick={handleSaveLimit}
-                  className="flex-1 px-2.5 py-1.5 rounded-lg bg-lime-600 text-white hover:bg-lime-500 transition-colors text-xs font-medium disabled:opacity-50 flex items-center justify-center gap-1.5"
-                >
-                  <Check className="w-3 h-3" />
-                  {savingLimit ? 'Menyimpan...' : 'Simpan'}
-                </button>
+                {isIncreasingLimit ? (
+                  <button
+                    type="button"
+                    disabled={savingLimit || loadingCheckout || !cheapestPackage}
+                    onClick={handleSaveLimit}
+                    className="flex-1 px-2.5 py-1.5 rounded-lg bg-amber-600 text-white hover:bg-amber-500 transition-colors text-xs font-medium disabled:opacity-50 flex items-center justify-center gap-1.5"
+                  >
+                    {loadingCheckout ? (
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                    ) : (
+                      <CreditCard className="w-3 h-3" />
+                    )}
+                    {loadingCheckout ? 'Memproses...' : 'Bayar & Tambah'}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    disabled={savingLimit}
+                    onClick={handleSaveLimit}
+                    className="flex-1 px-2.5 py-1.5 rounded-lg bg-lime-600 text-white hover:bg-lime-500 transition-colors text-xs font-medium disabled:opacity-50 flex items-center justify-center gap-1.5"
+                  >
+                    <Check className="w-3 h-3" />
+                    {savingLimit ? 'Menyimpan...' : 'Simpan'}
+                  </button>
+                )}
               </div>
             </div>
           </div>

@@ -131,7 +131,7 @@ export async function POST(req: Request) {
             console.log(`Processing Album Payment: album=${albumId}, user=${userId}, status=${status}`)
 
             // 1. Update Transaction
-            const { error: txError } = await supabase
+            const { data: txData, error: txError } = await supabase
                 .from('transactions')
                 .update({
                     status,
@@ -139,17 +139,25 @@ export async function POST(req: Request) {
                     paid_at: new Date().toISOString()
                 })
                 .eq('external_id', externalId)
+                .select('new_students_count, amount')
+                .single()
 
             if (txError) {
                 console.error('Failed to update transaction status (album):', txError)
             }
 
-            // 2. Update Album Status
+            // 2. Update Album Status + students_count if specified in transaction
+            const albumUpdates: Record<string, unknown> = {
+                payment_status: 'paid',
+            }
+            if (txData?.new_students_count) {
+                albumUpdates.students_count = txData.new_students_count
+                albumUpdates.total_estimated_price = txData.amount
+            }
+
             const { error: albumUpdateErr } = await supabase
                 .from('albums')
-                .update({
-                    payment_status: 'paid',
-                })
+                .update(albumUpdates)
                 .eq('id', albumId)
 
             if (albumUpdateErr) {

@@ -111,7 +111,7 @@ export async function POST() {
           const albumId = match[1]
           const userId = match[2]
 
-          await adminClient
+          const { data: txData } = await adminClient
             .from('transactions')
             .update({
               status: invStatus,
@@ -119,10 +119,18 @@ export async function POST() {
               paid_at: new Date().toISOString(),
             })
             .eq('external_id', externalId)
+            .select('new_students_count, amount')
+            .single()
+
+          const albumUpdates: Record<string, unknown> = { payment_status: 'paid' }
+          if (txData?.new_students_count) {
+            albumUpdates.students_count = txData.new_students_count
+            albumUpdates.total_estimated_price = txData.amount
+          }
 
           await adminClient
             .from('albums')
-            .update({ payment_status: 'paid' })
+            .update(albumUpdates)
             .eq('id', albumId)
 
           await Promise.all([
