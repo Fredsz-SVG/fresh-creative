@@ -28,6 +28,7 @@ type Album = {
   payment_status?: string
   payment_url?: string | null
   total_estimated_price?: number
+  pricing_package_id?: string | null
   classes: { id: string; name: string; sort_order: number; student_count: number; batch_photo_url?: string | null }[]
 }
 
@@ -144,6 +145,10 @@ export default function YearbookAlbumClient({
   const albumRef = useRef(album)
   const [flipbookPreviewMode, setFlipbookPreviewMode] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [featureUnlocks, setFeatureUnlocks] = useState<string[]>([])
+  const [flipbookEnabledByPackage, setFlipbookEnabledByPackage] = useState(false)
+  const [aiLabsFeaturesByPackage, setAiLabsFeaturesByPackage] = useState<string[]>([])
+  const [featureCreditCosts, setFeatureCreditCosts] = useState<Record<string, number>>({})
   useEffect(() => { albumRef.current = album }, [album])
 
   const isFetchingMembersRef = useRef(false)
@@ -186,6 +191,27 @@ export default function YearbookAlbumClient({
   useEffect(() => {
     if (!initialAlbum) fetchAlbum()
   }, [fetchAlbum, initialAlbum])
+
+  // Fetch feature unlocks for this album
+  const fetchFeatureUnlocks = useCallback(async () => {
+    if (!id) return
+    try {
+      const res = await fetch(`/api/albums/${id}/unlock-feature`, { credentials: 'include', cache: 'no-store' })
+      if (res.ok) {
+        const data = await res.json()
+        setFeatureUnlocks(data.unlocked_features ?? [])
+        setFlipbookEnabledByPackage(data.flipbook_enabled_by_package ?? false)
+        setAiLabsFeaturesByPackage(data.ai_labs_features_by_package ?? [])
+        setFeatureCreditCosts(data.credit_costs ?? {})
+      }
+    } catch (e) {
+      console.error('Error fetching feature unlocks:', e)
+    }
+  }, [id])
+
+  useEffect(() => {
+    if (id) fetchFeatureUnlocks()
+  }, [id, fetchFeatureUnlocks])
 
   // Simpan view ke localStorage ketika berubah
   useEffect(() => {
@@ -1634,7 +1660,7 @@ export default function YearbookAlbumClient({
             )}
 
             {/* Flipbook Controls (Mobile & Desktop) */}
-            {sidebarModeFromPath === 'flipbook' && (isOwner || isAlbumAdmin) && (
+            {sidebarModeFromPath === 'flipbook' && (isOwner || isAlbumAdmin) && (flipbookEnabledByPackage || featureUnlocks.includes('flipbook')) && (
               <div className="ml-auto flex bg-[#0a0a0b] p-1 rounded-xl border border-white/10 gap-1 items-center scale-90 lg:scale-100 origin-right">
                 <button
                   onClick={() => setFlipbookPreviewMode(false)}
@@ -1772,6 +1798,11 @@ export default function YearbookAlbumClient({
             fetchAlbum={fetchAlbum}
             onTeacherCountChange={setTeacherCount}
             onTeamMemberCountChange={setTeamMemberCount}
+            featureUnlocks={featureUnlocks}
+            flipbookEnabledByPackage={flipbookEnabledByPackage}
+            aiLabsFeaturesByPackage={aiLabsFeaturesByPackage}
+            featureCreditCosts={featureCreditCosts}
+            onFeatureUnlocked={fetchFeatureUnlocks}
           />
         </div>
         {videoPopupUrl && id && (

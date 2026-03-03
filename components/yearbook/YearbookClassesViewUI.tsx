@@ -22,6 +22,7 @@ import SambutanView from './components/SambutanView'
 import TeamView from './components/TeamView'
 import ApprovalView from './components/ApprovalView'
 import FlipbookView from './components/FlipbookView'
+import FlipbookLockedView from './components/FlipbookLockedView'
 import ClassesEmptyView from './components/ClassesEmptyView'
 import YearbookMobileNav from './components/YearbookMobileNav'
 
@@ -334,11 +335,22 @@ export default function YearbookClassesViewUI(props: any) {
     setFlipbookPreviewMode = () => { },
     mobileMenuOpen = false,
     setMobileMenuOpen = () => { },
+    featureUnlocks = [] as string[],
+    flipbookEnabledByPackage = false,
+    aiLabsFeaturesByPackage = [] as string[],
+    featureCreditCosts = {} as Record<string, number>,
+    onFeatureUnlocked,
   } = props
 
   const router = useRouter()
   const pathname = usePathname()
   const effectiveAlbumId = albumIdProp || album?.id || ''
+
+  // Flipbook is accessible if: enabled by pricing package OR unlocked by owner via credits
+  const flipbookAccessible = flipbookEnabledByPackage || featureUnlocks.includes('flipbook')
+
+  // AI Labs is accessible if: at least one feature enabled by package OR at least one AI feature unlocked individually
+  const aiLabsAccessible = aiLabsFeaturesByPackage.length > 0 || featureUnlocks.some(f => ['tryon', 'pose', 'photogroup', 'phototovideo', 'image_remove_bg'].includes(f))
   const coverPreviewContainerRef = useRef<HTMLDivElement>(null)
   const coverDragRef = useRef<{ startX: number; startY: number; startPosX: number; startPosY: number } | null>(null)
   const coverUploadInputRef = useRef<HTMLInputElement>(null)
@@ -1011,6 +1023,8 @@ export default function YearbookClassesViewUI(props: any) {
         newClassName={newClassName}
         setNewClassName={setNewClassName}
         handleAddClass={handleAddClass}
+        flipbookAccessible={flipbookAccessible}
+        aiLabsAccessible={aiLabsAccessible}
       />
       {/* Main Content - Header already sticky in parent (page.tsx) */}
       <div className="flex-1 flex flex-col p-4 pb-8">
@@ -1029,6 +1043,8 @@ export default function YearbookClassesViewUI(props: any) {
               setView={setView}
               canManage={canManage}
               requestsByClass={requestsByClass}
+              flipbookAccessible={flipbookAccessible}
+              aiLabsAccessible={aiLabsAccessible}
             />
           )}
 
@@ -1579,7 +1595,14 @@ export default function YearbookClassesViewUI(props: any) {
               ) : sidebarMode === 'ai-labs' ? (
                 /* AI Labs - Fitur (Try On, Pose, dll.) tetap di album, URL ?tool=... */
                 /* AI Labs - Fitur (Try On, Pose, dll.) tetap di album, URL ?tool=... */
-                <AILabsView album={album} aiLabsTool={aiLabsTool ?? null} />
+                <AILabsView
+                  album={album}
+                  aiLabsTool={aiLabsTool ?? null}
+                  aiLabsFeaturesByPackage={aiLabsFeaturesByPackage}
+                  featureUnlocks={featureUnlocks}
+                  featureCreditCosts={featureCreditCosts}
+                  onFeatureUnlocked={onFeatureUnlocked}
+                />
               ) : sidebarMode === 'approval' ? (
                 <ApprovalView
                   joinStats={joinStats}
@@ -1639,14 +1662,23 @@ export default function YearbookClassesViewUI(props: any) {
                   onClose={() => effectiveAlbumId && router.push(getYearbookSectionQueryUrl(effectiveAlbumId, lastSectionBeforePreviewRef.current, pathname), { scroll: false })}
                 />
               ) : sidebarMode === 'flipbook' ? (
-                <FlipbookView
-                  album={album}
-                  manualPages={manualPages}
-                  canManage={canManage}
-                  flipbookPreviewMode={flipbookPreviewMode}
-                  onPlayVideo={onPlayVideo}
-                  onUpdateAlbum={props.handleUpdateAlbum}
-                />
+                flipbookAccessible ? (
+                  <FlipbookView
+                    album={album}
+                    manualPages={manualPages}
+                    canManage={canManage}
+                    flipbookPreviewMode={flipbookPreviewMode}
+                    onPlayVideo={onPlayVideo}
+                    onUpdateAlbum={props.handleUpdateAlbum}
+                  />
+                ) : (
+                  <FlipbookLockedView
+                    albumId={album?.id}
+                    isOwner={isOwner}
+                    creditCost={featureCreditCosts['flipbook_unlock'] ?? 0}
+                    onUnlocked={onFeatureUnlocked}
+                  />
+                )
               ) : sidebarMode === 'classes' ? (
                 /* Classes Content - Original grid view */
                 (() => {

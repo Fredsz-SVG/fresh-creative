@@ -27,8 +27,8 @@ export async function GET(
     const admin = createAdminClient()
     const client = admin ?? supabase
 
-    const selectWithPosition = 'id, name, type, status, cover_image_url, cover_image_position, cover_video_url, description, user_id, created_at, flipbook_mode, payment_status, payment_url, total_estimated_price'
-    const selectWithoutPosition = 'id, name, type, status, cover_image_url, description, user_id, created_at, flipbook_mode, payment_status, payment_url, total_estimated_price'
+    const selectWithPosition = 'id, name, type, status, cover_image_url, cover_image_position, cover_video_url, description, user_id, created_at, flipbook_mode, payment_status, payment_url, total_estimated_price, pricing_package_id'
+    const selectWithoutPosition = 'id, name, type, status, cover_image_url, description, user_id, created_at, flipbook_mode, payment_status, payment_url, total_estimated_price, pricing_package_id'
 
     const [albumRes, role] = await Promise.all([
       client.from('albums').select(selectWithPosition).eq('id', albumId).single(),
@@ -49,7 +49,7 @@ export async function GET(
       return NextResponse.json({ error: 'Album not found' }, { status: 404 })
     }
 
-    const row = album as { id: string; name: string; type: string; status?: string; cover_image_url?: string | null; cover_image_position?: string | null; cover_video_url?: string | null; description?: string | null; user_id: string; flipbook_mode?: string | null; payment_status?: string | null; payment_url?: string | null; total_estimated_price?: number | null }
+    const row = album as { id: string; name: string; type: string; status?: string; cover_image_url?: string | null; cover_image_position?: string | null; cover_video_url?: string | null; description?: string | null; user_id: string; flipbook_mode?: string | null; payment_status?: string | null; payment_url?: string | null; total_estimated_price?: number | null; pricing_package_id?: string | null }
     const isActualOwner = row.user_id === user.id
     const isAdmin = role === 'admin'
     const isOwner = isActualOwner || isAdmin
@@ -156,6 +156,7 @@ export async function GET(
       payment_status: row.payment_status || 'unpaid',
       payment_url: row.payment_url || null,
       total_estimated_price: row.total_estimated_price || 0,
+      pricing_package_id: row.pricing_package_id || null,
       classes: classesWithCount,
     })
   } finally {

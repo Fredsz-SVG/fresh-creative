@@ -114,6 +114,11 @@ export type YearbookClassesViewProps = {
   setFlipbookPreviewMode: (v: boolean) => void
   mobileMenuOpen: boolean
   setMobileMenuOpen: (v: boolean) => void
+  featureUnlocks?: string[]
+  flipbookEnabledByPackage?: boolean
+  aiLabsFeaturesByPackage?: string[]
+  featureCreditCosts?: Record<string, number>
+  onFeatureUnlocked?: () => void
 }
 
 export default function YearbookClassesView(props: YearbookClassesViewProps) {

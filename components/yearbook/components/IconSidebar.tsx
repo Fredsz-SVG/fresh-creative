@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { BookOpen, Users, ClipboardList, UserCog, MessageSquare, Sparkles, Book, Eye } from 'lucide-react'
+import { BookOpen, Users, ClipboardList, UserCog, MessageSquare, Sparkles, Book, Eye, Lock } from 'lucide-react'
 import { getYearbookSectionQueryUrl } from '../lib/yearbook-paths'
 
 interface IconSidebarProps {
@@ -13,6 +13,8 @@ interface IconSidebarProps {
   setView: (view: 'cover' | 'classes' | 'gallery') => void
   canManage: boolean
   requestsByClass: Record<string, any[]>
+  flipbookAccessible?: boolean
+  aiLabsAccessible?: boolean
 }
 
 const linkClass = (active: boolean) =>
@@ -27,6 +29,8 @@ export default function IconSidebar({
   sidebarMode,
   canManage,
   requestsByClass,
+  flipbookAccessible = true,
+  aiLabsAccessible = true,
 }: IconSidebarProps) {
   const pendingCount = Object.values(requestsByClass).flat().length
   const url = (mode: Parameters<typeof getYearbookSectionQueryUrl>[1]) => getYearbookSectionQueryUrl(albumId, mode, pathname)
@@ -37,8 +41,13 @@ export default function IconSidebar({
         <Eye className="w-6 h-6" />
         <span className="text-[10px]">Preview</span>
       </Link>
-      <Link prefetch={false} href={url('ai-labs')} className={linkClass(sidebarMode === 'ai-labs')} title="AI Labs">
-        <Sparkles className="w-6 h-6" />
+      <Link prefetch={false} href={url('ai-labs')} className={`relative ${linkClass(sidebarMode === 'ai-labs')}`} title="AI Labs">
+        <div className="relative">
+          <Sparkles className="w-6 h-6" />
+          {!aiLabsAccessible && (
+            <Lock className="w-3 h-3 absolute -top-1 -right-1 text-purple-400" />
+          )}
+        </div>
         <span className="text-[10px]">AI Labs</span>
       </Link>
       <Link prefetch={false} href={url('cover')} className={linkClass(isCoverView)} title="Sampul Album">
@@ -58,8 +67,13 @@ export default function IconSidebar({
         <span className="text-[10px]">Kelas</span>
       </Link>
 
-      <Link prefetch={false} href={url('flipbook')} className={linkClass(sidebarMode === 'flipbook')} title="Flipbook">
-        <Book className="w-6 h-6" />
+      <Link prefetch={false} href={url('flipbook')} className={`relative ${linkClass(sidebarMode === 'flipbook')}`} title="Flipbook">
+        <div className="relative">
+          <Book className="w-6 h-6" />
+          {!flipbookAccessible && (
+            <Lock className="w-3 h-3 absolute -top-1 -right-1 text-amber-400" />
+          )}
+        </div>
         <span className="text-[10px]">Flipbook</span>
       </Link>
 

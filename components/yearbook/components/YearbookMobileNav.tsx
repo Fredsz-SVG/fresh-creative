@@ -18,6 +18,7 @@ import {
   ClipboardList,
   UserCog,
   Trash2,
+  Lock,
 } from 'lucide-react'
 import { getYearbookSectionQueryUrl } from '../lib/yearbook-paths'
 
@@ -51,6 +52,8 @@ export interface YearbookMobileNavProps {
   newClassName?: string
   setNewClassName?: (v: string) => void
   handleAddClass?: () => void
+  flipbookAccessible?: boolean
+  aiLabsAccessible?: boolean
 }
 
 export default function YearbookMobileNav({
@@ -80,6 +83,8 @@ export default function YearbookMobileNav({
   newClassName = '',
   setNewClassName,
   handleAddClass,
+  flipbookAccessible = true,
+  aiLabsAccessible = true,
 }: YearbookMobileNavProps) {
   const router = useRouter()
   const [mobileEditingClassId, setMobileEditingClassId] = useState<string | null>(null)
@@ -121,7 +126,12 @@ export default function YearbookMobileNav({
               : 'bg-gray-800 border-[#0a0a0b] text-gray-400 lg:hover:text-white lg:hover:bg-gray-700'
               }`}
           >
-            <Sparkles className="w-6 h-6" />
+            <div className="relative">
+              <Sparkles className="w-6 h-6" />
+              {!aiLabsAccessible && (
+                <Lock className="w-3 h-3 absolute -top-1 -right-1 text-purple-400" />
+              )}
+            </div>
           </button>
           <span className={`text-[10px] font-medium mt-8 ${sidebarMode === 'ai-labs' ? 'text-lime-400' : 'text-gray-500'}`}>
             AI Labs
@@ -432,12 +442,17 @@ export default function YearbookMobileNav({
                   : 'bg-white/5 border-white/5 text-gray-300 hover:bg-white/10'
                   }`}
               >
-                <div className={`p-2 rounded-lg ${sidebarMode === 'flipbook' ? 'bg-lime-500/20' : 'bg-white/5'}`}>
+                <div className={`p-2 rounded-lg ${sidebarMode === 'flipbook' ? 'bg-lime-500/20' : 'bg-white/5'} relative`}>
                   <Book className="w-5 h-5" />
+                  {!flipbookAccessible && (
+                    <Lock className="w-3 h-3 absolute -top-1 -right-1 text-amber-400" />
+                  )}
                 </div>
                 <div className="text-left">
                   <p className="text-sm font-bold">Flipbook</p>
-                  <p className="text-[10px] text-gray-500">Baca buku tahunan digital</p>
+                  <p className="text-[10px] text-gray-500">
+                    {flipbookAccessible ? 'Baca buku tahunan digital' : 'Terkunci — buka dengan credit'}
+                  </p>
                 </div>
               </button>
 

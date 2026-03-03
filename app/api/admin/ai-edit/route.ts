@@ -1,4 +1,5 @@
 import { createServerClient } from '@supabase/ssr'
+import { createClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 
@@ -30,18 +31,11 @@ async function getAuthClient() {
   )
 }
 
-async function getServiceClient() {
-  const cookieStore = await cookies()
-  return createServerClient(
+function getAdminClient() {
+  return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    {
-      cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value
-        },
-      },
-    }
+    { auth: { autoRefreshToken: false, persistSession: false } }
   )
 }
 
@@ -52,7 +46,7 @@ export async function GET() {
 
   const { data, error } = await supabase
     .from('ai_feature_pricing')
-    .select('id, feature_slug, credits_per_use')
+    .select('id, feature_slug, credits_per_use, credits_per_unlock')
     .order('feature_slug', { ascending: true })
 
   if (error) {
@@ -66,7 +60,7 @@ export async function GET() {
 
 export async function PUT(request: Request) {
   const authClient = await getAuthClient()
-  const adminClient = await getServiceClient()
+  const adminClient = getAdminClient()
 
   const { data: { user }, error: authError } = await authClient.auth.getUser()
   if (authError || !user) {
@@ -91,15 +85,25 @@ export async function PUT(request: Request) {
   const id = body?.id as string | undefined
   const featureSlug = body?.feature_slug as string | undefined
   const creditsPerUse = body?.credits_per_use
+  const creditsPerUnlock = body?.credits_per_unlock
 
-  if ((!id && !featureSlug) || typeof creditsPerUse !== 'number' || creditsPerUse < 0) {
+  // At least one of credits_per_use or credits_per_unlock must be a valid number
+  const hasCreditsPerUse = typeof creditsPerUse === 'number' && creditsPerUse >= 0
+  const hasCreditsPerUnlock = typeof creditsPerUnlock === 'number' && creditsPerUnlock >= 0
+
+  if ((!id && !featureSlug) || (!hasCreditsPerUse && !hasCreditsPerUnlock)) {
     return NextResponse.json({ error: 'Invalid payload' }, { status: 400 })
   }
 
+  // Build update object
+  const updateObj: Record<string, number> = {}
+  if (hasCreditsPerUse) updateObj.credits_per_use = creditsPerUse
+  if (hasCreditsPerUnlock) updateObj.credits_per_unlock = creditsPerUnlock
+
   let query = adminClient
     .from('ai_feature_pricing')
-    .update({ credits_per_use: creditsPerUse })
-    .select('id, feature_slug, credits_per_use')
+    .update(updateObj)
+    .select('id, feature_slug, credits_per_use, credits_per_unlock')
 
   if (id) {
     query = query.eq('id', id)
