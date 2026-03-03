@@ -213,6 +213,13 @@ export default function AdminCreditSettingsPage() {
 
     const handleCreateRedeem = async () => {
         const code = newCode.code.trim() || generateRandomCode()
+
+        // Convert datetime-local to ISO string to preserve local timezone properly when sending
+        let expiresAtISO = null;
+        if (newCode.expires_at) {
+            expiresAtISO = new Date(newCode.expires_at).toISOString();
+        }
+
         try {
             const res = await fetch('/api/credits/redeem', {
                 method: 'POST',
@@ -221,7 +228,7 @@ export default function AdminCreditSettingsPage() {
                     code,
                     credits: newCode.credits,
                     max_uses: newCode.max_uses,
-                    expires_at: newCode.expires_at || null,
+                    expires_at: expiresAtISO,
                 }),
             })
             const data = await res.json()
@@ -381,8 +388,8 @@ export default function AdminCreditSettingsPage() {
                     type="button"
                     onClick={() => setActiveTab('packages')}
                     className={`px-4 py-2 text-sm font-medium ${activeTab === 'packages'
-                            ? 'text-app border-b-2 border-app'
-                            : 'text-muted hover:text-app'
+                        ? 'text-app border-b-2 border-app'
+                        : 'text-muted hover:text-app'
                         }`}
                 >
                     Credit Packages
@@ -391,8 +398,8 @@ export default function AdminCreditSettingsPage() {
                     type="button"
                     onClick={() => setActiveTab('redeem')}
                     className={`px-4 py-2 text-sm font-medium ${activeTab === 'redeem'
-                            ? 'text-app border-b-2 border-app'
-                            : 'text-muted hover:text-app'
+                        ? 'text-app border-b-2 border-app'
+                        : 'text-muted hover:text-app'
                         }`}
                 >
                     Redeem Codes
@@ -494,8 +501,8 @@ export default function AdminCreditSettingsPage() {
                                     <div
                                         key={item.id}
                                         className={`bg-white/[0.03] border rounded-2xl p-4 sm:p-5 transition-colors ${item.is_active && !isExpired && !isFull
-                                                ? 'border-white/10 hover:border-purple-500/50'
-                                                : 'border-white/5 opacity-60'
+                                            ? 'border-white/10 hover:border-purple-500/50'
+                                            : 'border-white/5 opacity-60'
                                             }`}
                                     >
                                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -512,10 +519,10 @@ export default function AdminCreditSettingsPage() {
                                                         <Copy size={14} />
                                                     </button>
                                                     <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${statusColor === 'text-emerald-400'
-                                                            ? 'bg-emerald-500/20 text-emerald-400'
-                                                            : statusColor === 'text-amber-400'
-                                                                ? 'bg-amber-500/20 text-amber-400'
-                                                                : 'bg-red-500/20 text-red-400'
+                                                        ? 'bg-emerald-500/20 text-emerald-400'
+                                                        : statusColor === 'text-amber-400'
+                                                            ? 'bg-amber-500/20 text-amber-400'
+                                                            : 'bg-red-500/20 text-red-400'
                                                         }`}>
                                                         {statusText}
                                                     </span>
@@ -526,7 +533,7 @@ export default function AdminCreditSettingsPage() {
                                                     {item.expires_at && (
                                                         <span className="flex items-center gap-1">
                                                             <Clock size={12} />
-                                                            {new Date(item.expires_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                                            {new Date(item.expires_at).toLocaleString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                                                         </span>
                                                     )}
                                                 </div>
@@ -535,8 +542,8 @@ export default function AdminCreditSettingsPage() {
                                                 <button
                                                     onClick={() => handleToggleRedeem(item)}
                                                     className={`p-2 rounded-lg transition-colors ${item.is_active
-                                                            ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30'
-                                                            : 'bg-white/5 text-gray-500 hover:bg-white/10'
+                                                        ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30'
+                                                        : 'bg-white/5 text-gray-500 hover:bg-white/10'
                                                         }`}
                                                     title={item.is_active ? 'Nonaktifkan' : 'Aktifkan'}
                                                 >
