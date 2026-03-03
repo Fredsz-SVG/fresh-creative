@@ -1,6 +1,6 @@
 'use client'
 
-import { X, CreditCard, Wallet, Loader2 } from 'lucide-react'
+import { X, CreditCard, Wallet, Loader2, Gift } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
@@ -9,6 +9,7 @@ type TopUpModalProps = {
     isOpen: boolean
     onClose: () => void
     currentCredit?: number
+    onCreditChange?: () => void
 }
 
 type CreditPackage = {
@@ -18,16 +19,45 @@ type CreditPackage = {
     popular: boolean
 }
 
-export default function TopUpModal({ isOpen, onClose, currentCredit = 0 }: TopUpModalProps) {
+export default function TopUpModal({ isOpen, onClose, currentCredit = 0, onCreditChange }: TopUpModalProps) {
     const [selectedPkg, setSelectedPkg] = useState<string | null>(null)
     const [packages, setPackages] = useState<CreditPackage[]>([])
     const [loading, setLoading] = useState(true)
     const [loadingCheckout, setLoadingCheckout] = useState(false)
     const [checkoutInvoiceUrl, setCheckoutInvoiceUrl] = useState<string | null>(null)
+    const [redeemCode, setRedeemCode] = useState('')
+    const [redeemLoading, setRedeemLoading] = useState(false)
+    const [showRedeem, setShowRedeem] = useState(false)
 
     const handleCloseCheckoutPopup = () => {
         setCheckoutInvoiceUrl(null)
         onClose()
+    }
+
+    const handleRedeem = async () => {
+        if (!redeemCode.trim()) return
+        setRedeemLoading(true)
+        try {
+            const res = await fetch('/api/credits/redeem', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'redeem', code: redeemCode.trim() }),
+            })
+            const data = await res.json()
+            if (res.ok && data.ok) {
+                toast.success(`🎉 Berhasil! +${data.credits_received} credit ditambahkan.`)
+                setRedeemCode('')
+                setShowRedeem(false)
+                onClose()
+                if (onCreditChange) onCreditChange()
+            } else {
+                toast.error(data.error || 'Kode tidak valid.')
+            }
+        } catch {
+            toast.error('Gagal redeem. Coba lagi.')
+        } finally {
+            setRedeemLoading(false)
+        }
     }
 
     const handleCheckout = async () => {
@@ -225,6 +255,43 @@ export default function TopUpModal({ isOpen, onClose, currentCredit = 0 }: TopUp
                         {loadingCheckout ? <Loader2 className="w-4 h-4 animate-spin" /> : <CreditCard className="w-4 h-4" />}
                         {loadingCheckout ? 'Memproses...' : 'Beli Sekarang'}
                     </button>
+
+                    {/* Redeem Code Section */}
+                    <div className="mt-4 pt-4 border-t border-white/10">
+                        {!showRedeem ? (
+                            <button
+                                type="button"
+                                onClick={() => setShowRedeem(true)}
+                                className="w-full text-center text-sm text-purple-400 hover:text-purple-300 transition-colors flex items-center justify-center gap-1.5"
+                            >
+                                <Gift className="w-4 h-4" />
+                                Punya kode voucher? Redeem di sini
+                            </button>
+                        ) : (
+                            <div className="space-y-2">
+                                <div className="flex gap-2">
+                                    <input
+                                        type="text"
+                                        value={redeemCode}
+                                        onChange={(e) => setRedeemCode(e.target.value.toUpperCase())}
+                                        onKeyDown={(e) => e.key === 'Enter' && handleRedeem()}
+                                        placeholder="Masukkan kode"
+                                        className="flex-1 px-3 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white font-mono uppercase tracking-widest text-sm placeholder:text-gray-600 placeholder:tracking-normal placeholder:font-sans focus:outline-none focus:border-purple-500"
+                                        autoFocus
+                                    />
+                                    <button
+                                        onClick={handleRedeem}
+                                        disabled={!redeemCode.trim() || redeemLoading}
+                                        className="px-4 py-2.5 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-colors flex items-center gap-1.5 text-sm shrink-0"
+                                    >
+                                        {redeemLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Gift className="w-4 h-4" />}
+                                        Redeem
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
                     <p className="text-center text-[10px] text-gray-500 mt-3">
                         Pembayaran aman & terpercaya via Payment Gateway.
                     </p>

@@ -60,6 +60,20 @@ export default function CreditBadgeTop() {
         }
     }, [])
 
+    // Callback to refresh credits after redeem
+    const refreshCredits = () => {
+        fetch('/api/user/me')
+            .then((res) => res.json())
+            .then((data) => {
+                if (typeof data.credits === 'number') setCredits(data.credits)
+                // Debug log
+                console.log('[CreditBadgeTop] Credits refreshed after redeem:', data.credits)
+                // Dispatch event for any listeners
+                window.dispatchEvent(new Event('credits-updated'))
+            })
+            .catch(() => { })
+    }
+
     return (
         <>
             <button
@@ -73,7 +87,7 @@ export default function CreditBadgeTop() {
                     <span>{credits}</span>
                 </div>
             </button>
-            <TopUpModal isOpen={showTopUp} onClose={() => setShowTopUp(false)} currentCredit={credits} />
+            <TopUpModal isOpen={showTopUp} onClose={() => setShowTopUp(false)} currentCredit={credits} onCreditChange={refreshCredits} />
         </>
     )
 }
