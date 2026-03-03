@@ -1,9 +1,11 @@
 'use client'
 
 import React, { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import PreviewView from '@/components/yearbook/components/PreviewView'
 
 export default function YearbookPreviewClient({ initialAlbum, initialMembers, initialTeachers, initialFirstPhotos }: any) {
+    const router = useRouter()
     const [album] = useState<any>(initialAlbum)
     const [membersByClass] = useState<any>(initialMembers)
     const [teachers] = useState<any[]>(initialTeachers || [])
@@ -25,9 +27,12 @@ export default function YearbookPreviewClient({ initialAlbum, initialMembers, in
             membersByClass={membersByClass}
             firstPhotoByStudent={firstPhotos}
             onClose={() => {
-                // Public view mode, no where else to "close" to right now. 
-                // Redirect to login or home if closed.
-                window.location.href = '/'
+                // Go back to previous page if there's history, otherwise go home
+                if (window.history.length > 1) {
+                    router.back()
+                } else {
+                    window.location.href = '/'
+                }
             }}
         />
     )

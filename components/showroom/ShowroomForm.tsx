@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, AlertTriangle } from "lucide-react";
 
 type Province = { id: string; name: string };
 type City = { id: string; province_id: string; name: string; kind: "kota" | "kabupaten" };
@@ -59,6 +59,49 @@ export default function ShowroomForm({ backHref, pricingPath, draftKey, source }
   const [honeypot, setHoneypot] = useState("");
   const [error, setError] = useState("");
   const [submitted, setSubmitted] = useState(false);
+
+  // School name validation
+  const SCHOOL_NAME_REGEX = /^(SMAN|SMKN|SMK|SMA|MAN|MA|SMPN|SMP|MTsN|MTs|SDN|SD|MIN|MI)\s+\d+\s+.{2,}$/i;
+  const schoolNameValid = useMemo(() => {
+    const t = school_name.trim();
+    if (!t) return true; // don't show error when empty
+    return SCHOOL_NAME_REGEX.test(t);
+  }, [school_name]);
+
+  // Duplicate school name check
+  const [dupCheck, setDupCheck] = useState<{ exists: boolean; matched_name?: string; pic_name?: string; wa_e164?: string } | null>(null);
+  const [checkingDup, setCheckingDup] = useState(false);
+  const dupTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const checkDuplicate = useCallback(async (name: string) => {
+    const trimmed = name.trim();
+    if (!trimmed || trimmed.length < 5) {
+      setDupCheck(null);
+      return;
+    }
+    setCheckingDup(true);
+    try {
+      const res = await fetch(`/api/albums/check-name?name=${encodeURIComponent(trimmed)}`);
+      const data = await res.json();
+      setDupCheck(data);
+    } catch {
+      setDupCheck(null);
+    } finally {
+      setCheckingDup(false);
+    }
+  }, []);
+
+  // Debounced duplicate check on school_name change
+  useEffect(() => {
+    if (dupTimerRef.current) clearTimeout(dupTimerRef.current);
+    const trimmed = school_name.trim();
+    if (!trimmed || trimmed.length < 5 || !SCHOOL_NAME_REGEX.test(trimmed)) {
+      setDupCheck(null);
+      return;
+    }
+    dupTimerRef.current = setTimeout(() => checkDuplicate(trimmed), 500);
+    return () => { if (dupTimerRef.current) clearTimeout(dupTimerRef.current); };
+  }, [school_name, checkDuplicate]);
 
   const cityLabel = (c: City) => `${c.kind === "kota" ? "Kota" : "Kabupaten"} ${stripPrefix(c.name)}`;
 
@@ -180,6 +223,13 @@ export default function ShowroomForm({ backHref, pricingPath, draftKey, source }
     setError("");
 
     if (school_name.trim().length < 5) return setError("Nama sekolah minimal 5 karakter.");
+    if (!SCHOOL_NAME_REGEX.test(school_name.trim())) {
+      return setError("Format nama sekolah harus seperti: SMAN 1 Salatiga, SMKN 2 Bandung, MAN 1 Jakarta, SMPN 3 Surabaya, SDN 5 Malang.");
+    }
+    if (dupCheck?.exists) {
+      const matchedInfo = dupCheck.matched_name ? `"${dupCheck.matched_name}"` : `"${school_name.trim()}"`;
+      return setError(`Nama sekolah mirip dengan ${matchedInfo} yang sudah terdaftar. Hubungi ${dupCheck.pic_name || 'PIC'} (${dupCheck.wa_e164 || '-'}) untuk informasi lebih lanjut.`);
+    }
     if (!provinceId) return setError("Pilih provinsi.");
     if (!cityId) return setError("Pilih Kab/Kota.");
     if (!pic_name.trim()) return setError("PIC name wajib diisi.");
@@ -241,10 +291,40 @@ export default function ShowroomForm({ backHref, pricingPath, draftKey, source }
               name="school_name"
               value={school_name}
               onChange={(e) => setSchoolName(e.target.value)}
-              placeholder="Contoh: SMAN 1 Salatiga (min 5)"
-              className="w-full px-4 py-2 bg-[rgb(var(--input))] border border-[rgb(var(--border))] rounded-lg text-app placeholder-gray-400 focus:outline-none focus:border-blue-500"
+              placeholder="Contoh: SMAN 1 Salatiga"
+              className={`w-full px-4 py-2 bg-[rgb(var(--input))] border rounded-lg text-app placeholder-gray-400 focus:outline-none focus:border-blue-500 ${
+                school_name.trim() && !schoolNameValid
+                  ? 'border-red-500'
+                  : dupCheck?.exists
+                    ? 'border-orange-500'
+                    : 'border-[rgb(var(--border))]'
+              }`}
               autoComplete="organization"
             />
+            {school_name.trim() && !schoolNameValid && (
+              <p className="text-xs text-red-400 mt-1">
+                Format: SMAN/SMKN/SMA/SMK/MAN/MA/SMPN/SMP/MTsN/MTs/SDN/SD/MIN/MI + nomor + nama kota.
+                <br />Contoh: SMAN 1 Salatiga, SMKN 2 Bandung, MAN 1 Jakarta
+              </p>
+            )}
+            {dupCheck?.exists && (
+              <div className="mt-2 flex items-start gap-2 bg-orange-900/30 border border-orange-700 rounded-lg p-3">
+                <AlertTriangle className="w-4 h-4 text-orange-400 mt-0.5 flex-shrink-0" />
+                <p className="text-xs text-orange-200">
+                  Nama sekolah mirip dengan <strong>&quot;{dupCheck.matched_name || school_name.trim()}&quot;</strong> yang sudah terdaftar.
+                  {dupCheck.pic_name && (
+                    <> Hubungi <strong>{dupCheck.pic_name}</strong></>
+                  )}
+                  {dupCheck.wa_e164 && (
+                    <> di <strong>{dupCheck.wa_e164}</strong></>
+                  )}
+                  {(dupCheck.pic_name || dupCheck.wa_e164) && <> untuk informasi lebih lanjut.</>}
+                </p>
+              </div>
+            )}
+            {checkingDup && schoolNameValid && school_name.trim().length >= 5 && (
+              <p className="text-xs text-muted mt-1">Memeriksa nama sekolah...</p>
+            )}
           </div>
 
           <div ref={provBoxRef} className="relative">

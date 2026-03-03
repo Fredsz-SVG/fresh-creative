@@ -646,9 +646,15 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
                 <div key={album.id} className="rounded-xl border border-white/10 bg-white/[0.02] p-4 flex flex-col gap-3">
                   <div className="space-y-1.5 text-sm">
                     <p className="font-semibold text-app break-words">{album.name}</p>
+                    {album.pic_name && (
+                      <p className="text-muted"><span className="text-muted/80">Nama:</span> {album.pic_name}</p>
+                    )}
                     <p className="text-muted"><span className="text-muted/80">Paket:</span> {album.pricing_packages?.name?.replace(/^Paket\s+/i, '') || '-'}</p>
                     <p className="text-muted"><span className="text-muted/80">Kota:</span> {album.school_city || '-'}</p>
                     <p className="text-muted"><span className="text-muted/80">WA:</span> {album.wa_e164 || '-'}</p>
+                    {album.students_count != null && album.students_count > 0 && (
+                      <p className="text-muted"><span className="text-muted/80">Siswa:</span> {album.students_count}</p>
+                    )}
                     <p className="text-muted"><span className="text-muted/80">Estimasi:</span> {estimasi}</p>
                     <span
                       className={`inline-block px-2 py-0.5 text-xs font-semibold rounded-full ${(album.status ?? 'pending') === 'approved' ? 'bg-green-500/20 text-green-400' :
@@ -714,7 +720,7 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
                     <th className="px-4 py-3 text-xs font-medium text-muted uppercase tracking-wider w-1/3">Sekolah / Nama</th>
                     <th className="px-4 py-3 text-xs font-medium text-muted uppercase tracking-wider">Paket</th>
                     <th className="px-4 py-3 text-xs font-medium text-muted uppercase tracking-wider hidden sm:table-cell">Kota</th>
-                    <th className="px-4 py-3 text-xs font-medium text-muted uppercase tracking-wider hidden md:table-cell">PIC</th>
+                    <th className="px-4 py-3 text-xs font-medium text-muted uppercase tracking-wider hidden md:table-cell">Nama</th>
                     <th className="px-4 py-3 text-xs font-medium text-muted uppercase tracking-wider hidden lg:table-cell">WA</th>
                     <th className="px-4 py-3 text-xs font-medium text-muted uppercase tracking-wider hidden xl:table-cell">Siswa</th>
                     <th className="px-4 py-3 text-xs font-medium text-muted uppercase tracking-wider hidden xl:table-cell">Total Est.</th>

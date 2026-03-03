@@ -4,6 +4,7 @@ import { getRole } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase-admin'
 import { logApiTiming } from '@/lib/api-timing'
 import { delCache, key } from '@/lib/redis'
+import { normalizeName, levenshtein } from '@/lib/school-name-utils'
 
 export const dynamic = 'force-dynamic'
 
@@ -149,6 +150,41 @@ export async function POST(request: NextRequest) {
     const finalName = (school_name || name || '').trim()
     if (!finalName) {
       return NextResponse.json({ error: 'Nama sekolah wajib.' }, { status: 400 })
+    }
+
+    // Validate school name format
+    const SCHOOL_NAME_REGEX = /^(SMAN|SMKN|SMK|SMA|MAN|MA|SMPN|SMP|MTsN|MTs|SDN|SD|MIN|MI)\s+\d+\s+.{2,}$/i
+    if (!SCHOOL_NAME_REGEX.test(finalName)) {
+      return NextResponse.json({ error: 'Format nama sekolah harus seperti: SMAN 1 Salatiga, SMKN 2 Bandung, dst.' }, { status: 400 })
+    }
+
+    // Check for duplicate school name (fuzzy)
+    const adminClient = createAdminClient()
+    if (adminClient) {
+      const { data: albums } = await adminClient
+        .from('albums')
+        .select('id, name, pic_name, wa_e164')
+        .eq('type', 'yearbook')
+
+      if (albums && albums.length > 0) {
+        const inputNorm = normalizeName(finalName)
+        const inputNoSpaces = inputNorm.replace(/\s/g, '')
+        for (const album of albums) {
+          const albumNorm = normalizeName(album.name || '')
+          const albumNoSpaces = albumNorm.replace(/\s/g, '')
+          const isSimilar =
+            albumNorm === inputNorm ||
+            albumNoSpaces === inputNoSpaces ||
+            levenshtein(albumNorm, inputNorm) <= 2 ||
+            levenshtein(albumNoSpaces, inputNoSpaces) <= 2
+          if (isSimilar) {
+            const contact = [album.pic_name, album.wa_e164].filter(Boolean).join(' - ')
+            return NextResponse.json({
+              error: `Nama sekolah "${finalName}" mirip dengan "${album.name}" yang sudah terdaftar.${contact ? ` Hubungi ${contact} untuk informasi lebih lanjut.` : ''}`
+            }, { status: 409 })
+          }
+        }
+      }
     }
 
     dataToInsert.name = finalName
