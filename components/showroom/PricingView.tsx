@@ -136,7 +136,14 @@ export default function PricingView({
   const totalPrice = useMemo(() => {
     if (!selectedPkg) return null;
     const n = Math.max(selectedPkg.minStudents, studentsCount || selectedPkg.minStudents);
-    return n * selectedPkg.pricePerStudent;
+    let addonsTotal = 0;
+    selectedPkg.features.forEach((f) => {
+      try {
+        const j = JSON.parse(f);
+        if (j.price) addonsTotal += Number(j.price);
+      } catch { }
+    });
+    return (n * selectedPkg.pricePerStudent) + (n * addonsTotal);
   }, [selectedPkg, studentsCount]);
 
   const handleSaveToDb = async () => {
@@ -246,7 +253,14 @@ export default function PricingView({
           <div className="space-y-3">
             {packages.map((pkg) => {
               const n = Math.max(pkg.minStudents, studentsCount || pkg.minStudents);
-              const total = n * pkg.pricePerStudent;
+              let addonsTotal = 0;
+              pkg.features.forEach((f) => {
+                try {
+                  const j = JSON.parse(f);
+                  if (j.price) addonsTotal += Number(j.price);
+                } catch { }
+              });
+              const total = n * (pkg.pricePerStudent + addonsTotal);
               const isSelected = selectedPackageId === pkg.id;
               return (
                 <button
@@ -277,7 +291,7 @@ export default function PricingView({
                     </div>
                     <div className="text-right shrink-0">
                       <p className="text-lg font-bold text-app leading-tight">
-                        Rp {pkg.pricePerStudent.toLocaleString("id-ID")}
+                        Rp {(pkg.pricePerStudent + addonsTotal).toLocaleString("id-ID")}
                       </p>
                       <p className="text-[11px] text-muted">/siswa</p>
                     </div>
@@ -288,12 +302,19 @@ export default function PricingView({
 
                   {/* Features list */}
                   <ul className="space-y-1.5 ml-0.5">
-                    {pkg.features.map((f) => (
-                      <li key={f} className="flex items-center gap-2 text-xs text-muted">
-                        <Check className="w-3 h-3 text-lime-500 shrink-0" />
-                        {f}
-                      </li>
-                    ))}
+                    {pkg.features.map((f, i) => {
+                      let parsed = { name: f, price: 0 }
+                      try {
+                        const j = JSON.parse(f)
+                        if (j.name) parsed = j
+                      } catch { }
+                      return (
+                        <li key={i} className="flex items-center gap-2 text-xs text-muted">
+                          <Check className="w-3 h-3 text-lime-500 shrink-0" />
+                          <span>{parsed.name}</span>
+                        </li>
+                      )
+                    })}
                   </ul>
 
                   {/* Flipbook & AI Labs badges */}

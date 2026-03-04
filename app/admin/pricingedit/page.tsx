@@ -45,20 +45,49 @@ const PackageForm = ({ pkg, onSave, onCancel }: { pkg: Partial<PricingPackage> |
     is_popular: false,
   })
 
+  // Parse existing features into addons structure
+  const [addons, setAddons] = useState<{ name: string, price: number }[]>(() => {
+    return (formData.features || []).map(f => {
+      try {
+        const parsed = JSON.parse(f);
+        if (parsed.name) return { name: parsed.name, price: Number(parsed.price) || 0 };
+      } catch (e) {
+        // legacy string
+      }
+      return { name: f, price: 0 };
+    })
+  });
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target
-    if (name === 'features') {
-      setFormData({ ...formData, features: value.split('\n') })
-    } else if (type === 'number') {
+    if (type === 'number') {
       setFormData({ ...formData, [name]: Number(value) })
     } else {
       setFormData({ ...formData, [name]: value })
     }
   }
 
+  const handleAddonNameChange = (index: number, name: string) => {
+    const newAddons = [...addons];
+    newAddons[index].name = name;
+    setAddons(newAddons);
+  }
+
+  const handleAddonPriceChange = (index: number, price: number) => {
+    const newAddons = [...addons];
+    newAddons[index].price = price;
+    setAddons(newAddons);
+  }
+
+  const removeAddon = (index: number) => {
+    setAddons(addons.filter((_, i) => i !== index));
+  }
+
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault()
-    onSave(formData)
+    // Transform addons back to strings (JSON)
+    const features = addons.map(a => JSON.stringify(a));
+    onSave({ ...formData, features })
   }
 
   return (
@@ -70,7 +99,40 @@ const PackageForm = ({ pkg, onSave, onCancel }: { pkg: Partial<PricingPackage> |
             <input name="name" value={formData.name} onChange={handleChange} placeholder="Package Name" className="w-full p-2 bg-gray-700 rounded" required />
             <input name="price_per_student" type="number" value={formData.price_per_student} onChange={handleChange} placeholder="Price per Student" className="w-full p-2 bg-gray-700 rounded" required />
             <input name="min_students" type="number" value={formData.min_students} onChange={handleChange} placeholder="Min. Students" className="w-full p-2 bg-gray-700 rounded" required />
-            <textarea name="features" value={formData.features?.join('\n')} onChange={handleChange} placeholder="Features (one per line)" className="w-full p-2 bg-gray-700 rounded" rows={4} />
+
+            <div className="bg-gray-700/50 p-3 rounded border border-gray-600">
+              <div className="flex justify-between items-center mb-2">
+                <p className="text-sm font-medium text-gray-300">Features / Add-ons</p>
+                <button type="button" onClick={() => setAddons([...addons, { name: '', price: 0 }])} className="text-xs bg-lime-600/20 text-lime-400 px-2 py-1 rounded hover:bg-lime-600/40">
+                  + Add Item
+                </button>
+              </div>
+              <div className="space-y-2 max-h-40 overflow-y-auto pr-2">
+                {addons.length === 0 && <p className="text-xs text-gray-500 italic">Belum ada add-on/fitur.</p>}
+                {addons.map((addon, idx) => (
+                  <div key={idx} className="flex gap-2 items-center">
+                    <input
+                      type="text"
+                      value={addon.name}
+                      onChange={(e) => handleAddonNameChange(idx, e.target.value)}
+                      placeholder="Nama fitur/addon"
+                      className="flex-1 p-1.5 text-sm bg-gray-800 rounded focus:border-lime-500"
+                      required
+                    />
+                    <input
+                      type="number"
+                      value={addon.price || ''}
+                      onChange={(e) => handleAddonPriceChange(idx, Number(e.target.value))}
+                      placeholder="Harga (Rp)"
+                      className="w-28 p-1.5 text-sm bg-gray-800 rounded focus:border-lime-500"
+                    />
+                    <button type="button" onClick={() => removeAddon(idx)} className="text-red-400 hover:text-red-300 p-1">
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
             <label className="flex items-center gap-3 cursor-pointer select-none">
               <div className="relative">
                 <input
@@ -247,14 +309,13 @@ export default function PricingEditPage() {
         <PackageForm pkg={editingPackage} onSave={handleSave} onCancel={() => setEditingPackage(null)} />
       )}
       {saveStatus && (
-        <div className={`mb-4 p-3 rounded-lg text-sm font-medium ${
-          saveStatus === 'saving' ? 'bg-yellow-500/20 text-yellow-300' :
+        <div className={`mb-4 p-3 rounded-lg text-sm font-medium ${saveStatus === 'saving' ? 'bg-yellow-500/20 text-yellow-300' :
           saveStatus === 'success' ? 'bg-green-500/20 text-green-300' :
-          'bg-red-500/20 text-red-300'
-        }`}>
+            'bg-red-500/20 text-red-300'
+          }`}>
           {saveStatus === 'saving' ? '⏳ Menyimpan...' :
-           saveStatus === 'success' ? '✅ Berhasil disimpan!' :
-           `❌ ${saveStatus}`}
+            saveStatus === 'success' ? '✅ Berhasil disimpan!' :
+              `❌ ${saveStatus}`}
         </div>
       )}
       {editingAi && (
@@ -344,22 +405,20 @@ export default function PricingEditPage() {
         <button
           type="button"
           onClick={() => setActiveTab('yearbook')}
-          className={`px-4 py-2 text-sm font-medium ${
-            activeTab === 'yearbook'
-              ? 'text-app border-b-2 border-app'
-              : 'text-muted hover:text-app'
-          }`}
+          className={`px-4 py-2 text-sm font-medium ${activeTab === 'yearbook'
+            ? 'text-app border-b-2 border-app'
+            : 'text-muted hover:text-app'
+            }`}
         >
           Paket Yearbook
         </button>
         <button
           type="button"
           onClick={() => setActiveTab('ai')}
-          className={`px-4 py-2 text-sm font-medium ${
-            activeTab === 'ai'
-              ? 'text-app border-b-2 border-app'
-              : 'text-muted hover:text-app'
-          }`}
+          className={`px-4 py-2 text-sm font-medium ${activeTab === 'ai'
+            ? 'text-app border-b-2 border-app'
+            : 'text-muted hover:text-app'
+            }`}
         >
           Unlock &amp; Generate
         </button>
@@ -384,59 +443,80 @@ export default function PricingEditPage() {
           </div>
         ) : (
           <div className="space-y-4">
-            {packages.map((pkg) => (
-              <div
-                key={pkg.id}
-                className="bg-white/[0.03] p-4 rounded-lg flex justify-between items-start border border-white/10"
-              >
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-bold text-lg text-app">{pkg.name}</h3>
-                    {pkg.is_popular && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 text-xs font-medium">
-                        <Star size={10} /> Popular
+            {packages.map((pkg) => {
+              let addonsTotal = 0;
+              pkg.features.forEach((f) => {
+                try {
+                  const j = JSON.parse(f);
+                  if (j.price) addonsTotal += Number(j.price);
+                } catch { }
+              });
+              const totalPerStudent = pkg.price_per_student + addonsTotal;
+
+              return (
+                <div
+                  key={pkg.id}
+                  className="bg-white/[0.03] p-4 rounded-lg flex justify-between items-start border border-white/10"
+                >
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-bold text-lg text-app">{pkg.name}</h3>
+                      {pkg.is_popular && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 text-xs font-medium">
+                          <Star size={10} /> Popular
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-muted">
+                      Rp {totalPerStudent.toLocaleString('id-ID')} / student (min. {pkg.min_students})
+                    </p>
+                    {pkg.flipbook_enabled && (
+                      <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full bg-lime-500/20 text-lime-400 text-xs font-medium">
+                        <Book size={12} /> Flipbook
                       </span>
                     )}
+                    {(pkg.ai_labs_features ?? []).length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {(pkg.ai_labs_features ?? []).map((slug) => (
+                          <span key={slug} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-400 text-xs font-medium">
+                            <Sparkles size={10} /> {AI_FEATURE_LABELS[slug] ?? slug}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    <ul className="text-sm text-muted mt-2 list-disc list-inside">
+                      {pkg.features.map((f, i) => {
+                        let parsed = { name: f, price: 0 }
+                        try {
+                          const j = JSON.parse(f)
+                          if (j.name) parsed = j
+                        } catch { }
+                        return (
+                          <li key={i} className="flex items-center gap-1.5 text-xs py-0.5 border-b border-white/5 last:border-0 overflow-hidden text-muted">
+                            <span className="w-1.5 h-1.5 rounded-full bg-lime-500 shrink-0" />
+                            <span className="truncate">{parsed.name}</span>
+                          </li>
+                        )
+                      })}
+                    </ul>
                   </div>
-                  <p className="text-muted">
-                    Rp {pkg.price_per_student.toLocaleString('id-ID')} / student (min. {pkg.min_students})
-                  </p>
-                  {pkg.flipbook_enabled && (
-                    <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full bg-lime-500/20 text-lime-400 text-xs font-medium">
-                      <Book size={12} /> Flipbook
-                    </span>
-                  )}
-                  {(pkg.ai_labs_features ?? []).length > 0 && (
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {(pkg.ai_labs_features ?? []).map((slug) => (
-                        <span key={slug} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-400 text-xs font-medium">
-                          <Sparkles size={10} /> {AI_FEATURE_LABELS[slug] ?? slug}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                  <ul className="text-sm text-muted mt-2 list-disc list-inside">
-                    {pkg.features.map((f) => (
-                      <li key={f}>{f}</li>
-                    ))}
-                  </ul>
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => setEditingPackage(pkg)}
+                      className="p-2 text-yellow-400 hover:text-yellow-300"
+                    >
+                      <Edit size={20} />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(pkg.id)}
+                      className="p-2 text-red-500 hover:text-red-400"
+                    >
+                      <Trash2 size={20} />
+                    </button>
+                  </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={() => setEditingPackage(pkg)}
-                    className="p-2 text-yellow-400 hover:text-yellow-300"
-                  >
-                    <Edit size={20} />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(pkg.id)}
-                    className="p-2 text-red-500 hover:text-red-400"
-                  >
-                    <Trash2 size={20} />
-                  </button>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )
       ) : loadingAi ? (

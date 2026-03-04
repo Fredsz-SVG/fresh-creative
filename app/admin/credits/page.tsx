@@ -106,6 +106,10 @@ export default function AdminCreditSettingsPage() {
     const [editingPackage, setEditingPackage] = useState<Partial<CreditPackage> | null>(null)
     const [activeTab, setActiveTab] = useState<'packages' | 'redeem'>('packages')
 
+    // Delete confirmation state
+    const [deletePrompt, setDeletePrompt] = useState<{ id: string, type: 'package' | 'redeem', title: string, text: string } | null>(null)
+    const [isDeleting, setIsDeleting] = useState(false)
+
     // Redeem code state
     const [redeemCodes, setRedeemCodes] = useState<RedeemCode[]>([])
     const [loadingRedeem, setLoadingRedeem] = useState(true)
@@ -172,21 +176,13 @@ export default function AdminCreditSettingsPage() {
         }
     }
 
-    const handleDelete = async (id: string) => {
-        if (!confirm('Yakin ingin menghapus paket ini?')) return
-        try {
-            const res = await fetch('/api/credits/packages', {
-                method: 'DELETE',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id }),
-            })
-            if (!res.ok) throw new Error(await res.text())
-            toast.success('Paket dihapus')
-            fetchPackages(true)
-        } catch (err) {
-            console.error('Delete failed:', err)
-            toast.error('Gagal menghapus paket')
-        }
+    const handleDelete = (id: string, creditsText?: number) => {
+        setDeletePrompt({
+            id,
+            type: 'package',
+            title: 'Hapus Paket Credit',
+            text: `Yakin ingin menghapus paket kredit ${creditsText ? `(${creditsText} credits)` : ''} ini? Tindakan ini tidak dapat dibatalkan.`
+        })
     }
 
     // ── Redeem Code Functions ──
@@ -257,19 +253,44 @@ export default function AdminCreditSettingsPage() {
         }
     }
 
-    const handleDeleteRedeem = async (id: string) => {
-        if (!confirm('Yakin ingin menghapus kode redeem ini?')) return
+    const handleDeleteRedeem = (id: string, code: string) => {
+        setDeletePrompt({
+            id,
+            type: 'redeem',
+            title: 'Hapus Kode Redeem',
+            text: `Yakin ingin menghapus kode redeem "${code}"? Tindakan ini tidak dapat dibatalkan.`
+        })
+    }
+
+    const executeDelete = async () => {
+        if (!deletePrompt) return
+        setIsDeleting(true)
         try {
-            const res = await fetch('/api/credits/redeem', {
-                method: 'DELETE',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id }),
-            })
-            if (!res.ok) throw new Error(await res.text())
-            toast.success('Kode dihapus')
-            fetchRedeemCodes(true)
+            if (deletePrompt.type === 'package') {
+                const res = await fetch('/api/credits/packages', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: deletePrompt.id }),
+                })
+                if (!res.ok) throw new Error(await res.text())
+                toast.success('Paket dihapus')
+                fetchPackages(true)
+            } else if (deletePrompt.type === 'redeem') {
+                const res = await fetch('/api/credits/redeem', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: deletePrompt.id }),
+                })
+                if (!res.ok) throw new Error(await res.text())
+                toast.success('Kode dihapus')
+                fetchRedeemCodes(true)
+            }
         } catch (err) {
-            toast.error('Gagal menghapus kode')
+            console.error('Delete failed:', err)
+            toast.error(`Gagal menghapus ${deletePrompt.type === 'package' ? 'paket' : 'kode'}`)
+        } finally {
+            setIsDeleting(false)
+            setDeletePrompt(null)
         }
     }
 
@@ -354,6 +375,41 @@ export default function AdminCreditSettingsPage() {
                                 className="px-4 py-2 bg-lime-600 rounded-xl hover:bg-lime-500 text-white flex items-center gap-2 text-sm font-medium"
                             >
                                 <Gift size={16} /> Buat Kode
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Delete Confirmation Modal */}
+            {deletePrompt && (
+                <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50 backdrop-blur-sm" onClick={() => !isDeleting && setDeletePrompt(null)}>
+                    <div
+                        className="bg-[#0a0a0b] border border-red-500/20 rounded-2xl shadow-2xl p-6 w-full max-w-sm animate-in fade-in zoom-in duration-200"
+                        onClick={e => e.stopPropagation()}
+                    >
+                        <div className="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center text-red-500 mb-4 mx-auto">
+                            <Trash2 size={24} />
+                        </div>
+                        <h3 className="text-xl font-bold text-white text-center mb-2">{deletePrompt.title}</h3>
+                        <p className="text-sm text-gray-400 text-center mb-6">{deletePrompt.text}</p>
+
+                        <div className="flex justify-center gap-3 font-medium text-sm">
+                            <button
+                                type="button"
+                                onClick={() => setDeletePrompt(null)}
+                                disabled={isDeleting}
+                                className="px-4 py-2 flex-1 border border-white/10 rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-colors disabled:opacity-50"
+                            >
+                                Batal
+                            </button>
+                            <button
+                                type="button"
+                                onClick={executeDelete}
+                                disabled={isDeleting}
+                                className="px-4 py-2 flex-1 bg-red-600 rounded-xl hover:bg-red-500 text-white flex justify-center items-center gap-2 transition-colors disabled:opacity-50"
+                            >
+                                {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Hapus'}
                             </button>
                         </div>
                     </div>
@@ -448,7 +504,7 @@ export default function AdminCreditSettingsPage() {
                                         <button onClick={() => setEditingPackage(pkg)} className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-white">
                                             <Edit size={16} />
                                         </button>
-                                        <button onClick={() => handleDelete(pkg.id)} className="p-2 rounded-lg bg-red-500/20 hover:bg-red-500/40 text-red-400">
+                                        <button onClick={() => handleDelete(pkg.id, pkg.credits)} className="p-2 rounded-lg bg-red-500/20 hover:bg-red-500/40 text-red-400">
                                             <Trash2 size={16} />
                                         </button>
                                     </div>
@@ -550,7 +606,7 @@ export default function AdminCreditSettingsPage() {
                                                     {item.is_active ? <ToggleRight size={18} /> : <ToggleLeft size={18} />}
                                                 </button>
                                                 <button
-                                                    onClick={() => handleDeleteRedeem(item.id)}
+                                                    onClick={() => handleDeleteRedeem(item.id, item.code)}
                                                     className="p-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors"
                                                     title="Hapus"
                                                 >
