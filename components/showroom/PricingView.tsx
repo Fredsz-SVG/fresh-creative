@@ -34,7 +34,8 @@ const AI_FEATURE_LABELS: Record<string, string> = {
   pose: "Pose",
   photogroup: "Photo Group",
   phototovideo: "Photo to Video",
-  image_remove_bg: "Image Editor - Remove BG",
+  image_remove_bg: "Image Editor",
+  flipbook_unlock: "Flipbook",
 };
 
 const DEFAULT_PACKAGES: PricingPackage[] = [
@@ -320,14 +321,19 @@ export default function PricingView({
                   {/* Flipbook & AI Labs badges */}
                   {(pkg.flipbook_enabled || pkg.ai_labs_features.length > 0) && (
                     <div className="mt-3 flex flex-wrap gap-1.5">
-                      {pkg.flipbook_enabled && (
+                      {pkg.flipbook_enabled && !pkg.ai_labs_features.includes('flipbook_unlock') && (
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-lime-500/15 text-lime-400 text-[11px] font-medium border border-lime-500/20">
                           <Book className="w-3 h-3" /> Flipbook
                         </span>
                       )}
                       {pkg.ai_labs_features.map((slug) => (
-                        <span key={slug} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-purple-500/15 text-purple-400 text-[11px] font-medium border border-purple-500/20">
-                          <Sparkles className="w-2.5 h-2.5" /> {AI_FEATURE_LABELS[slug] ?? slug}
+                        <span
+                          key={slug}
+                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium border ${slug === 'flipbook_unlock' ? 'bg-lime-500/15 text-lime-400 border-lime-500/20' : 'bg-purple-500/15 text-purple-400 border-purple-500/20'
+                            }`}
+                        >
+                          {slug === 'flipbook_unlock' ? <Book className="w-2.5 h-2.5" /> : <Sparkles className="w-2.5 h-2.5" />}
+                          {AI_FEATURE_LABELS[slug] ?? slug}
                         </span>
                       ))}
                     </div>

@@ -27,8 +27,8 @@ const AI_FEATURE_LABELS: Record<string, string> = {
   pose: 'Pose',
   photogroup: 'Photo Group',
   phototovideo: 'Photo to Video',
-  image_remove_bg: 'Image Editor - Remove BG',
-  flipbook_unlock: 'Flipbook Unlock',
+  image_remove_bg: 'Image Editor',
+  flipbook_unlock: 'Flipbook',
 }
 
 // Slugs yang punya biaya generate (bukan unlock-only)
@@ -133,19 +133,7 @@ const PackageForm = ({ pkg, onSave, onCancel }: { pkg: Partial<PricingPackage> |
                 ))}
               </div>
             </div>
-            <label className="flex items-center gap-3 cursor-pointer select-none">
-              <div className="relative">
-                <input
-                  type="checkbox"
-                  checked={!!formData.flipbook_enabled}
-                  onChange={(e) => setFormData({ ...formData, flipbook_enabled: e.target.checked })}
-                  className="sr-only peer"
-                />
-                <div className="w-10 h-5 bg-gray-600 rounded-full peer-checked:bg-lime-500 transition-colors" />
-                <div className="absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-5" />
-              </div>
-              <span className="text-sm text-gray-300">Flipbook Enabled</span>
-            </label>
+            {/* Flipbook specific checkbox removed to avoid confusion, please use 'AI Labs Features -> Flipbook Unlock' instead */}
             <label className="flex items-center gap-3 cursor-pointer select-none">
               <div className="relative">
                 <input
@@ -160,7 +148,7 @@ const PackageForm = ({ pkg, onSave, onCancel }: { pkg: Partial<PricingPackage> |
               <span className="text-sm text-gray-300">Popular Badge</span>
             </label>
             <div>
-              <p className="text-sm text-gray-300 mb-2">AI Labs Features</p>
+              <p className="text-sm text-gray-300 mb-2">Features</p>
               <div className="space-y-2 pl-1">
                 {Object.entries(AI_FEATURE_LABELS).map(([slug, label]) => (
                   <label key={slug} className="flex items-center gap-2 cursor-pointer select-none">
@@ -322,7 +310,7 @@ export default function PricingEditPage() {
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50">
           <div className="bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md">
             <h2 className="text-xl font-bold text-app mb-4">
-              Edit AI Pricing - {AI_FEATURE_LABELS[editingAi.feature_slug] ?? editingAi.feature_slug}
+              Edit Fitur Pricing - {AI_FEATURE_LABELS[editingAi.feature_slug] ?? editingAi.feature_slug}
             </h2>
             <form
               onSubmit={(e) => {
@@ -394,7 +382,7 @@ export default function PricingEditPage() {
       <div className="flex flex-col gap-4 mb-5 md:mb-6 md:flex-row md:justify-between md:items-center">
         <DashboardTitle
           title="Pricing Edit"
-          subtitle="Kelola paket harga yearbook & AI Labs pricing."
+          subtitle="Kelola paket harga yearbook & fitur pricing."
         />
         <button onClick={() => setEditingPackage({})} className="w-full sm:w-auto px-4 py-3 sm:py-2 bg-sky-600 text-white text-sm font-semibold rounded-xl hover:bg-sky-700 flex items-center justify-center gap-2 touch-manipulation">
           <Plus size={18} /> Create New
@@ -470,16 +458,16 @@ export default function PricingEditPage() {
                     <p className="text-muted">
                       Rp {totalPerStudent.toLocaleString('id-ID')} / student (min. {pkg.min_students})
                     </p>
-                    {pkg.flipbook_enabled && (
-                      <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full bg-lime-500/20 text-lime-400 text-xs font-medium">
-                        <Book size={12} /> Flipbook
-                      </span>
-                    )}
                     {(pkg.ai_labs_features ?? []).length > 0 && (
                       <div className="flex flex-wrap gap-1 mt-1">
                         {(pkg.ai_labs_features ?? []).map((slug) => (
-                          <span key={slug} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-400 text-xs font-medium">
-                            <Sparkles size={10} /> {AI_FEATURE_LABELS[slug] ?? slug}
+                          <span
+                            key={slug}
+                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${slug === 'flipbook_unlock' ? 'bg-lime-500/20 text-lime-400' : 'bg-purple-500/20 text-purple-400'
+                              }`}
+                          >
+                            {slug === 'flipbook_unlock' ? <Book size={10} /> : <Sparkles size={10} />}
+                            {AI_FEATURE_LABELS[slug] ?? slug}
                           </span>
                         ))}
                       </div>
