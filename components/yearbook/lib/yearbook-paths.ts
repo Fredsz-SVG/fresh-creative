@@ -2,13 +2,13 @@
  * Path per section sidebar yearbook. Setiap sidebar punya path sendiri agar navigasi instant.
  */
 
-export const SECTION_SLUGS = ['sampul', 'kelas', 'preview', 'sambutan', 'flipbook', 'akses', 'tim', 'ai-labs'] as const
+export const SECTION_SLUGS = ['cover', 'kelas', 'preview', 'sambutan', 'flipbook', 'akses', 'tim', 'ai-labs'] as const
 export type SectionSlug = typeof SECTION_SLUGS[number]
 
 export type SectionMode = 'cover' | 'classes' | 'approval' | 'team' | 'sambutan' | 'ai-labs' | 'flipbook' | 'preview'
 
 const SLUG_TO_MODE: Record<SectionSlug, SectionMode> = {
-  sampul: 'cover',
+  cover: 'cover',
   kelas: 'classes',
   preview: 'preview',
   sambutan: 'sambutan',
@@ -19,7 +19,7 @@ const SLUG_TO_MODE: Record<SectionSlug, SectionMode> = {
 }
 
 const MODE_TO_SLUG: Record<SectionMode, SectionSlug | null> = {
-  cover: 'sampul',
+  cover: 'cover',
   classes: 'kelas',
   preview: 'preview',
   sambutan: 'sambutan',

@@ -1,16 +1,20 @@
 'use client'
 
+import React from 'react'
 import Link from 'next/link'
-import { BookOpen, Users, ClipboardList, UserCog, MessageSquare, Sparkles, Book, Eye, Lock } from 'lucide-react'
+import { Sparkles, ClipboardList, Book, Eye, Lock, Edit3 } from 'lucide-react'
 import { getYearbookSectionQueryUrl } from '../lib/yearbook-paths'
+
+type SectionMode = 'classes' | 'approval' | 'team' | 'sambutan' | 'ai-labs' | 'flipbook' | 'preview'
 
 interface IconSidebarProps {
   pathname?: string | null
   albumId: string
   isCoverView: boolean
   sidebarMode: string
-  setSidebarMode: (mode: 'classes' | 'approval' | 'team' | 'sambutan' | 'ai-labs' | 'flipbook' | 'preview') => void
-  setView: (view: 'cover' | 'classes' | 'gallery') => void
+  setSidebarMode?: (mode: SectionMode) => void
+  setView?: (view: 'cover' | 'classes' | 'gallery') => void
+  onSectionChange?: (section: SectionMode) => void
   canManage: boolean
   requestsByClass: Record<string, any[]>
   flipbookAccessible?: boolean
@@ -18,80 +22,68 @@ interface IconSidebarProps {
 }
 
 const linkClass = (active: boolean) =>
-  `flex-shrink-0 flex flex-col items-center justify-center gap-1 py-4 border-b border-white/10 text-xs font-medium transition-colors w-full ${
-    active ? 'bg-lime-600/20 text-lime-400' : 'text-gray-400 hover:text-white hover:bg-white/5'
-  }`
+  `flex-shrink-0 flex flex-col items-center justify-center gap-1.5 py-4 border-b-2 border-slate-900 text-[10px] font-black uppercase tracking-tight transition-all w-full ${active ? 'bg-slate-900 text-white' : 'bg-white text-slate-500 hover:text-slate-900 hover:bg-slate-50'}`
 
-export default function IconSidebar({
+function IconSidebarInner({
   pathname = null,
   albumId,
   isCoverView,
   sidebarMode,
   canManage,
   requestsByClass,
+  onSectionChange,
   flipbookAccessible = true,
   aiLabsAccessible = true,
 }: IconSidebarProps) {
   const pendingCount = Object.values(requestsByClass).flat().length
   const url = (mode: Parameters<typeof getYearbookSectionQueryUrl>[1]) => getYearbookSectionQueryUrl(albumId, mode, pathname)
 
+  const handleClick = (section: SectionMode) => (e: React.MouseEvent) => {
+    if (onSectionChange) {
+      e.preventDefault()
+      onSectionChange(section)
+    }
+  }
+
   return (
-    <div className="hidden lg:fixed lg:left-0 lg:top-14 lg:w-16 lg:h-[calc(100vh-3.5rem)] lg:flex flex-col lg:z-40 lg:bg-black/40 lg:backdrop-blur-sm lg:border-r lg:border-white/10">
-      <Link href={url('preview')} prefetch={false} className={linkClass(sidebarMode === 'preview')} title="Preview Album">
-        <Eye className="w-6 h-6" />
-        <span className="text-[10px]">Preview</span>
+    <div className="hidden lg:fixed lg:left-0 lg:top-14 lg:w-16 lg:h-[calc(100vh-3.5rem)] lg:flex flex-col lg:z-40 lg:bg-white lg:border-r-2 lg:border-slate-900 lg:shadow-[2px_0_0_0_#0f172a]">
+      <Link href={url('preview')} prefetch={false} className={linkClass(sidebarMode === 'preview')} title="Preview Album" onClick={handleClick('preview')}>
+        <Eye className="w-6 h-6" strokeWidth={2.5} />
+        <span>Preview</span>
       </Link>
-      <Link prefetch={false} href={url('ai-labs')} className={`relative ${linkClass(sidebarMode === 'ai-labs')}`} title="AI Labs">
+      <Link prefetch={false} href={url('ai-labs')} className={`relative ${linkClass(sidebarMode === 'ai-labs')}`} title="AI Labs" onClick={handleClick('ai-labs')}>
         <div className="relative">
-          <Sparkles className="w-6 h-6" />
+          <Sparkles className="w-6 h-6" strokeWidth={2.5} />
           {!aiLabsAccessible && (
-            <Lock className="w-3 h-3 absolute -top-1 -right-1 text-purple-400" />
+            <Lock className="w-3.5 h-3.5 absolute -top-1.5 -right-1.5 text-purple-600 bg-white rounded-full p-0.5 border border-slate-900 shadow-[1px_1px_0_0_#0f172a]" />
           )}
         </div>
-        <span className="text-[10px]">AI Labs</span>
+        <span>AI Labs</span>
       </Link>
-      <Link prefetch={false} href={url('cover')} className={linkClass(isCoverView)} title="Sampul Album">
-        <BookOpen className="w-6 h-6" />
-        <span className="text-[10px]">Sampul</span>
+      <Link prefetch={false} href={url('classes')} className={linkClass((['classes', 'sambutan', 'cover'].includes(sidebarMode) || isCoverView))} title="Edit Konten" onClick={handleClick('classes')}>
+        <Edit3 className="w-6 h-6" strokeWidth={2.5} />
+        <span>Edit</span>
       </Link>
-
-      {canManage && (
-        <Link prefetch={false} href={url('sambutan')} className={linkClass(sidebarMode === 'sambutan')} title="Sambutan Guru">
-          <MessageSquare className="w-6 h-6" />
-          <span className="text-[10px]">Sambutan</span>
-        </Link>
-      )}
-
-      <Link prefetch={false} href={url('classes')} className={linkClass(sidebarMode === 'classes' && !isCoverView)} title="Daftar Kelas">
-        <Users className="w-6 h-6" />
-        <span className="text-[10px]">Kelas</span>
-      </Link>
-
-      <Link prefetch={false} href={url('flipbook')} className={`relative ${linkClass(sidebarMode === 'flipbook')}`} title="Flipbook">
+      <Link prefetch={false} href={url('flipbook')} className={`relative ${linkClass(sidebarMode === 'flipbook')}`} title="Flipbook" onClick={handleClick('flipbook')}>
         <div className="relative">
-          <Book className="w-6 h-6" />
+          <Book className="w-6 h-6" strokeWidth={2.5} />
           {!flipbookAccessible && (
-            <Lock className="w-3 h-3 absolute -top-1 -right-1 text-amber-400" />
+            <Lock className="w-3.5 h-3.5 absolute -top-1.5 -right-1.5 text-amber-600 bg-white rounded-full p-0.5 border border-slate-900 shadow-[1px_1px_0_0_#0f172a]" />
           )}
         </div>
-        <span className="text-[10px]">Flipbook</span>
+        <span>Flipbook</span>
       </Link>
-
       {canManage && (
-        <>
-          <Link prefetch={false} href={url('approval')} className={`relative ${linkClass(sidebarMode === 'approval')}`} title="Kelola Akses">
-            <ClipboardList className="w-6 h-6" />
-            <span className="text-[10px]">Akses</span>
-            {pendingCount > 0 && (
-              <span className="absolute top-2 right-2 flex h-2 w-2 rounded-full bg-red-500" />
-            )}
-          </Link>
-          <Link prefetch={false} href={url('team')} className={linkClass(sidebarMode === 'team')} title="Kelola Tim">
-            <UserCog className="w-6 h-6" />
-            <span className="text-[10px]">Tim</span>
-          </Link>
-        </>
+        <Link prefetch={false} href={url('approval')} className={`relative ${linkClass(sidebarMode === 'approval')}`} title="Kelola Approval" onClick={handleClick('approval')}>
+          <ClipboardList className="w-6 h-6" strokeWidth={2.5} />
+          <span>Approval</span>
+          {pendingCount > 0 && (
+            <span className="absolute top-3 right-3 flex h-3 w-3 rounded-full bg-red-500 border-2 border-slate-900 shadow-[1px_1px_0_0_#0f172a] animate-pulse" />
+          )}
+        </Link>
       )}
     </div>
   )
 }
+
+export default React.memo(IconSidebarInner)

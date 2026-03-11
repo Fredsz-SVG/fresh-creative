@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useEffect, useRef, useState } from 'react'
-import { ChevronLeft, ChevronRight, Plus, Trash2, Check, X, Edit3, ImagePlus, Video, Play, Minus, Instagram, Users, ClipboardList, Menu, Cake, Copy, Link, Clock, BookOpen, MessageSquare, Search, Shirt, UserCircle, ImageIcon, Images, Link as LinkIcon, Sparkles, Book, Layout, Eye, UserCog } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Plus, Trash2, Check, X, Edit3, ImagePlus, Video, Play, Minus, Instagram, Users, ClipboardList, Menu, Cake, Copy, Link, Clock, BookOpen, MessageSquare, Search, Shirt, UserCircle, ImageIcon, Images, Link as LinkIcon, Sparkles, Book, Layout, Eye, UserCog, LayoutGrid, Zap, ShieldCheck, Lock } from 'lucide-react'
 import { toast } from 'sonner'
 import NextLink from 'next/link'
 import { useSearchParams, useRouter, usePathname } from 'next/navigation'
@@ -25,6 +25,8 @@ import FlipbookView from './components/FlipbookView'
 import FlipbookLockedView from './components/FlipbookLockedView'
 import ClassesEmptyView from './components/ClassesEmptyView'
 import YearbookMobileNav from './components/YearbookMobileNav'
+import { apiUrl } from '../../lib/api-url'
+import { fetchWithAuth } from '../../lib/api-client'
 
 type AlbumClass = { id: string; name: string; sort_order?: number; student_count?: number; batch_photo_url?: string | null }
 type ClassAccess = { id: string; student_name: string; email?: string | null; status: string; date_of_birth?: string | null; instagram?: string | null; message?: string | null; video_url?: string | null }
@@ -116,124 +118,105 @@ function InlineClassEditor(p: any) {
   }
 
   return (
-    <div className={`flex items-center gap-2 w-full ${p.center ? 'justify-center' : ''}`}>
+    <div className={`w-full ${p.center ? 'flex justify-center' : ''}`}>
       {!editing ? (
-        <>
-          <h2 className={`text-sm lg:text-base font-semibold text-app flex-1 break-words ${p.center ? 'text-center' : 'text-left'}`}>{classObj.name}</h2>
-          {isOwner && (
-            <>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault()
-                  e.stopPropagation()
-                  setEditing(true)
-                }}
-                className="w-8 h-8 lg:w-9 lg:h-9 flex items-center justify-center rounded-lg hover:bg-lime-600/20 hover:text-lime-400 border border-transparent hover:border-lime-500/30 flex-shrink-0 transition-all"
-                title="Edit kelas"
-              >
-                <Edit3 className="w-4 h-4 lg:w-4.5 lg:h-4.5" />
-              </button>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault()
-                  e.stopPropagation()
-                  onDelete && onDelete(classObj.id, classObj.name)
-                }}
-                className="w-8 h-8 lg:w-9 lg:h-9 flex items-center justify-center rounded-lg hover:bg-red-500/20 text-red-400 border border-transparent hover:border-red-500/30 flex-shrink-0 transition-all"
-                title="Hapus kelas"
-              >
-                <Trash2 className="w-4 h-4 lg:w-4.5 lg:h-4.5" />
-              </button>
-            </>
-          )}
-        </>
-      ) : (
-        <div className="flex flex-col gap-3 w-full bg-white/5 p-3 rounded-lg border border-lime-500/50">
-          {/* Title */}
-          <div className="flex items-center gap-2 pb-2 border-b border-white/10">
-            <Edit3 className="w-4 h-4 text-lime-400 flex-shrink-0" />
-            <span className="text-xs font-semibold text-lime-400">Edit Nama Kelas</span>
-          </div>
-
-          {/* Input Field */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs text-gray-400 font-medium">Nama Kelas</label>
-            <input
-              ref={nameRef}
-              value={name}
-              onChange={handleNameChange}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault()
-                  e.stopPropagation()
-                  handleSaveName()
-                } else if (e.key === 'Escape') {
-                  e.preventDefault()
-                  e.stopPropagation()
-                  handleCancel()
-                }
-              }}
-              placeholder="Masukkan nama kelas..."
-              className="w-full px-3 py-2 rounded-lg text-sm bg-black/30 border border-white/20 text-app placeholder:text-gray-600 focus:outline-none focus:border-lime-500 focus:ring-1 focus:ring-lime-500 transition-all"
-            />
-            <span className="text-[10px] text-gray-500">Tekan Enter untuk simpan, Esc untuk batal</span>
-          </div>
-
-          {/* Urutan Section */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs text-gray-400 font-medium">Urutan Kelas</label>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={(e) => handleOrderChange(Math.max(0, (order ?? 0) - 1), e)}
-                className="flex items-center justify-center px-3 py-2 rounded-lg hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed flex-shrink-0 border border-white/10 transition-all"
-                disabled={order === 0}
-                title="Pindah ke atas"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-
-              <div className="flex-1 text-center px-3 py-2 bg-black/30 rounded-lg border border-white/10">
-                <span className="text-sm font-bold text-lime-400">{Math.min((order ?? 0) + 1, classesCount || 1)}</span>
-                <span className="text-xs text-gray-500"> dari {classesCount || 1}</span>
+        <div className={`w-full p-4 bg-white border-2 border-slate-900 rounded-2xl shadow-[2px_2px_0_0_#0f172a] ${p.center ? 'flex justify-center' : ''}`}>
+          <div className={`flex items-center gap-3 w-full ${p.center ? 'justify-center border-b-4 border-slate-900/5 pb-2' : ''}`}>
+            <h2 className={`${p.mainHeader ? 'text-4xl lg:text-5xl' : 'text-sm lg:text-base'} font-black text-slate-900 flex-1 break-words uppercase tracking-tight ${p.center ? 'text-center' : 'text-left'}`}>{classObj.name}</h2>
+            {isOwner && (
+              <div className="flex gap-2 flex-shrink-0">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    setEditing(true)
+                  }}
+                  className={`${p.mainHeader ? 'w-10 h-10 lg:w-12 lg:h-12 rounded-xl lg:rounded-2xl' : 'w-8 h-8 lg:w-9 lg:h-9 rounded-xl'} flex items-center justify-center bg-white border-2 border-slate-900 text-slate-900 hover:bg-amber-300 hover:shadow-[3px_3px_0_0_#0f172a] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all`}
+                  title="Edit kelas"
+                >
+                  <Edit3 className={p.mainHeader ? 'w-4 h-4 lg:w-5 h-5' : 'w-4 h-4'} strokeWidth={2.5} />
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    onDelete && onDelete(classObj.id, classObj.name)
+                  }}
+                  className={`${p.mainHeader ? 'w-10 h-10 lg:w-12 lg:h-12 rounded-xl lg:rounded-2xl' : 'w-8 h-8 lg:w-9 lg:h-9 rounded-xl'} flex items-center justify-center bg-white border-2 border-slate-900 text-red-500 hover:bg-red-50 hover:shadow-[3px_3px_0_0_#0f172a] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all`}
+                  title="Hapus kelas"
+                >
+                  <Trash2 className={p.mainHeader ? 'w-4 h-4 lg:w-5 h-5' : 'w-4 h-4'} strokeWidth={2.5} />
+                </button>
               </div>
+            )}
+          </div>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-4 w-full bg-amber-50 p-4 rounded-[24px] border-2 border-slate-900 shadow-[2px_2px_0_0_#0f172a] animate-in zoom-in-95 duration-200">
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-1.5 w-full">
+              <label className="text-[10px] text-slate-400 font-black uppercase tracking-widest pl-1">Nama Kelas</label>
+              <input
+                ref={nameRef}
+                value={name}
+                onChange={handleNameChange}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleSaveName()
+                  else if (e.key === 'Escape') handleCancel()
+                }}
+                placeholder="Nama kelas..."
+                className="w-full px-4 py-2 rounded-xl text-sm bg-white border-2 border-slate-900 text-slate-900 font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500/10 transition-all placeholder:text-slate-300"
+              />
+            </div>
 
-              <button
-                type="button"
-                onClick={(e) => handleOrderChange(Math.min((classesCount || 1) - 1, (order ?? 0) + 1), e)}
-                className="flex items-center justify-center px-3 py-2 rounded-lg hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed flex-shrink-0 border border-white/10 transition-all"
-                disabled={order >= (classesCount || 1) - 1}
-                title="Pindah ke bawah"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
+            <div className="flex flex-col gap-1.5 w-full">
+              <label className="text-[10px] text-slate-400 font-black uppercase tracking-widest pl-1">Urutan Kelas</label>
+              <div className="flex items-center gap-1.5 bg-white border-2 border-slate-900 rounded-xl p-1 shadow-[2px_2px_0_0_#0f172a] w-fit">
+                <button
+                  type="button"
+                  onClick={(e) => handleOrderChange(Math.max(0, (order ?? 0) - 1), e)}
+                  disabled={order === 0}
+                  className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-50 text-slate-900 disabled:opacity-20"
+                >
+                  <Minus className="w-4 h-4" strokeWidth={3} />
+                </button>
+                <div className="px-2 text-center min-w-[40px]">
+                  <span className="text-sm font-black text-indigo-600">{(order ?? 0) + 1}</span>
+                  <span className="text-[10px] text-slate-300 font-black tracking-tighter">/{classesCount}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={(e) => handleOrderChange(Math.min((classesCount || 1) - 1, (order ?? 0) + 1), e)}
+                  disabled={order >= (classesCount || 1) - 1}
+                  className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-50 text-slate-900 disabled:opacity-20"
+                >
+                  <Plus className="w-4 h-4" strokeWidth={3} />
+                </button>
+              </div>
             </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex gap-2 pt-2 border-t border-white/10">
+          <div className="flex gap-2">
             <button
               type="button"
-              onClick={(e) => handleSaveName(e)}
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-lime-600 text-white hover:bg-lime-500 font-medium text-sm transition-all active:scale-95"
+              onClick={handleSaveName}
+              className="flex-1 py-3 rounded-xl bg-indigo-500 text-white border-2 border-slate-900 font-black text-[10px] uppercase tracking-widest shadow-[2px_2px_0_0_#0f172a] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all"
             >
-              <Check className="w-4 h-4" />
-              <span>Simpan</span>
+              Simpan
             </button>
             <button
               type="button"
-              onClick={(e) => handleCancel(e)}
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-white/20 text-gray-300 hover:bg-white/5 font-medium text-sm transition-all active:scale-95"
+              onClick={handleCancel}
+              className="flex-1 py-3 rounded-xl bg-white text-slate-400 border-2 border-slate-900 font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 transition-all shadow-[2px_2px_0_0_#0f172a] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none"
             >
-              <X className="w-4 h-4" />
-              <span>Batal</span>
+              Batal
             </button>
           </div>
+          <p className="text-[8px] text-slate-400 font-bold uppercase tracking-tight text-center">Tekan Enter untuk simpan</p>
         </div>
       )}
-
     </div>
   )
 }
@@ -269,6 +252,7 @@ export default function YearbookClassesViewUI(props: any) {
     setSelectedRequestId,
     sidebarMode = 'classes' as 'classes' | 'approval' | 'team' | 'sambutan' | 'ai-labs' | 'flipbook' | 'preview',
     setSidebarMode,
+    onSectionChange,
     requestForm = { student_name: '', email: '' },
     setRequestForm,
     handleRequestAccess,
@@ -340,6 +324,8 @@ export default function YearbookClassesViewUI(props: any) {
     aiLabsFeaturesByPackage = [] as string[],
     featureCreditCosts = {} as Record<string, number>,
     onFeatureUnlocked,
+    teacherSearchQuery = '',
+    classMemberSearchQuery = '',
   } = props
 
   const router = useRouter()
@@ -360,7 +346,6 @@ export default function YearbookClassesViewUI(props: any) {
   useEffect(() => {
     if (sidebarMode !== 'preview') lastSectionBeforePreviewRef.current = sidebarMode
   }, [sidebarMode])
-  const [moreMenuOpen, setMoreMenuOpen] = useState(false)
   const [members, setMembers] = useState<{ user_id: string; email: string; name?: string; role: string }[]>([])
   const [teachers, setTeachers] = useState<Teacher[]>([])
   // Batch Photo additions
@@ -369,11 +354,15 @@ export default function YearbookClassesViewUI(props: any) {
   const [viewingBatchPhotoClass, setViewingBatchPhotoClass] = useState<AlbumClass | null>(null)
 
 
-  // Join requests state
-  const [joinRequests, setJoinRequests] = useState<any[]>([])
+  // Join requests state: cache per tab, only refetch on realtime (no refetch on tab switch)
+  const [pendingList, setPendingList] = useState<any[]>([])
+  const [approvedList, setApprovedList] = useState<any[]>([])
+  const [pendingLoaded, setPendingLoaded] = useState(false)
+  const [approvedLoaded, setApprovedLoaded] = useState(false)
+  const [teamLoaded, setTeamLoaded] = useState(false)
   const [joinStats, setJoinStats] = useState<any>(null)
   const [savingLimit, setSavingLimit] = useState(false)
-  const [approvalTab, setApprovalTab] = useState<'pending' | 'approved'>('pending')
+  const [approvalTab, setApprovalTab] = useState<'pending' | 'approved' | 'team'>('pending')
   const [inviteToken, setInviteToken] = useState<string | null>(null)
   const [inviteExpiresAt, setInviteExpiresAt] = useState<string | null>(null)
   const [generatingInvite, setGeneratingInvite] = useState(false)
@@ -403,7 +392,7 @@ export default function YearbookClassesViewUI(props: any) {
 
   const fetchMembers = async () => {
     if (!album?.id) return
-    const res = await fetch(`/api/albums/${album.id}/members`, { credentials: 'include' })
+    const res = await fetchWithAuth(`/api/albums/${album.id}/members`, { credentials: 'include' })
     const data = await res.json().catch(() => [])
     if (res.ok && Array.isArray(data)) {
       setMembers(data)
@@ -430,20 +419,18 @@ export default function YearbookClassesViewUI(props: any) {
   const handleDeleteClassMember = async (classId: string, userId: string) => {
     if (handleDeleteClassMemberProp) {
       await handleDeleteClassMemberProp(classId, userId)
+      // Refresh team list so removed member disappears from section "tim" if they had no other class
+      await fetchMembers()
     }
   }
 
-  useEffect(() => {
-    if (sidebarMode === 'team' && canManage) {
-      fetchMembers()
-    }
-  }, [sidebarMode, canManage, album?.id])
+
 
   // Fetch teachers
   const fetchTeachers = async () => {
     if (!album?.id) return
     try {
-      const res = await fetch(`/api/albums/${album.id}/teachers`, { credentials: 'include' })
+      const res = await fetchWithAuth(`/api/albums/${album.id}/teachers`, { credentials: 'include' })
       const data = await res.json().catch(() => [])
       if (res.ok && Array.isArray(data)) {
         setTeachers(data)
@@ -569,7 +556,7 @@ export default function YearbookClassesViewUI(props: any) {
   const fetchInviteToken = async () => {
     if (!album?.id) return
     try {
-      const res = await fetch(`/api/albums/${album.id}/invite-token`, { credentials: 'include' })
+      const res = await fetchWithAuth(`/api/albums/${album.id}/invite-token`, { credentials: 'include' })
       if (res.ok) {
         const data = await res.json()
         setInviteToken(data.token || null)
@@ -585,7 +572,7 @@ export default function YearbookClassesViewUI(props: any) {
     if (!album?.id || generatingInvite) return
     setGeneratingInvite(true)
     try {
-      const res = await fetch(`/api/albums/${album.id}/invite-token`, {
+      const res = await fetchWithAuth(`/api/albums/${album.id}/invite-token`, {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
@@ -613,25 +600,27 @@ export default function YearbookClassesViewUI(props: any) {
     }
   }, [sidebarMode, canManage, album?.id])
 
-  // Fetch join requests and stats
-  const fetchJoinRequests = async (status?: 'pending' | 'approved' | 'all') => {
+  // Fetch join requests for one status only (backend: pending from album_join_requests, approved from album_class_access)
+  const fetchJoinRequests = async (status: 'pending' | 'approved') => {
     if (!album?.id || !canManage) return
     try {
-      const params = status ? `?status=${status}` : '?status=all'
-      const res = await fetch(`/api/albums/${album.id}/join-requests${params}`, { credentials: 'include' })
+      const res = await fetchWithAuth(`/api/albums/${album.id}/join-requests?status=${status}`, { credentials: 'include', cache: 'no-store' })
       const data = await res.json().catch(() => [])
       if (res.ok && Array.isArray(data)) {
-        setJoinRequests(data)
+        if (status === 'pending') setPendingList(data)
+        else setApprovedList(data)
       }
     } catch (error) {
       console.error('Error fetching join requests:', error)
+      if (status === 'pending') setPendingList([])
+      else setApprovedList([])
     }
   }
 
   const fetchJoinStats = async () => {
     if (!album?.id) return
     try {
-      const res = await fetch(`/api/albums/${album.id}/join-stats`, { credentials: 'include' })
+      const res = await fetchWithAuth(`/api/albums/${album.id}/join-stats`, { credentials: 'include', cache: 'no-store' })
       const data = await res.json()
       if (res.ok) {
         setJoinStats(data)
@@ -641,18 +630,79 @@ export default function YearbookClassesViewUI(props: any) {
     }
   }
 
+  // Approval section: load stats + invite once
   useEffect(() => {
-    if (sidebarMode === 'approval' && canManage) {
-      fetchJoinRequests(approvalTab)
-      fetchJoinStats()
+    if (sidebarMode !== 'approval' || !canManage || !album?.id) return
+    fetchJoinStats()
+    fetchInviteToken()
+  }, [sidebarMode, canManage, album?.id])
+
+  // Fetch tab data only on first view of that tab (no refetch on switch, no spinner)
+  useEffect(() => {
+    if (sidebarMode !== 'approval' || !canManage || !album?.id) return
+    if (approvalTab === 'pending' && !pendingLoaded) {
+      fetchJoinRequests('pending')
+      setPendingLoaded(true)
+    } else if (approvalTab === 'approved' && !approvedLoaded) {
+      fetchJoinRequests('approved')
+      setApprovedLoaded(true)
+    } else if (approvalTab === 'team' && !teamLoaded) {
+      fetchMembers()
+      setTeamLoaded(true)
     }
-  }, [sidebarMode, approvalTab, canManage, album?.id])
+  }, [sidebarMode, canManage, album?.id, approvalTab, pendingLoaded, approvedLoaded, teamLoaded])
+
+  // Reset loaded flags when leaving approval section so next time we fetch fresh
+  useEffect(() => {
+    if (sidebarMode !== 'approval') {
+      setPendingLoaded(false)
+      setApprovedLoaded(false)
+      setTeamLoaded(false)
+    }
+  }, [sidebarMode])
+
+  // Realtime: only when data actually changes, update the cached list (no refetch on tab switch)
+  useEffect(() => {
+    if (sidebarMode !== 'approval' || !album?.id || !canManage) return
+
+    const channel = supabase
+      .channel(`album-team-requests-${album.id}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'album_join_requests', filter: `album_id=eq.${album.id}` },
+        () => {
+          fetchJoinStats()
+          fetchJoinRequests('pending')
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'album_members', filter: `album_id=eq.${album.id}` },
+        () => {
+          fetchJoinStats()
+          fetchMembers()
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'album_class_access', filter: `album_id=eq.${album.id}` },
+        () => {
+          fetchJoinStats()
+          fetchJoinRequests('approved')
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [sidebarMode, album?.id, canManage])
 
   // Handle approve join request
   const handleApproveJoinRequest = async (requestId: string, assigned_class_id: string) => {
     if (!album?.id || !assigned_class_id) return
     try {
-      const res = await fetch(`/api/albums/${album.id}/join-requests/${requestId}`, {
+      const res = await fetchWithAuth(`/api/albums/${album.id}/join-requests/${requestId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'approve', assigned_class_id }),
@@ -660,11 +710,10 @@ export default function YearbookClassesViewUI(props: any) {
       const data = await res.json()
       if (res.ok) {
         toast.success('Request disetujui! Member berhasil ditambahkan.')
-        fetchJoinRequests(approvalTab)
         fetchJoinStats()
-        if (fetchMembersForClass) {
-          await fetchMembersForClass(assigned_class_id)
-        }
+        fetchJoinRequests('pending')
+        fetchJoinRequests('approved')
+        if (fetchMembersForClass) await fetchMembersForClass(assigned_class_id)
       } else {
         toast.error(data.error || 'Gagal menyetujui request')
       }
@@ -686,7 +735,7 @@ export default function YearbookClassesViewUI(props: any) {
     }
     setSavingLimit(true)
     try {
-      const res = await fetch(`/api/albums/${album?.id}`, {
+      const res = await fetchWithAuth(`/api/albums/${album?.id}`, {
         method: 'PATCH',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
@@ -711,7 +760,7 @@ export default function YearbookClassesViewUI(props: any) {
     if (!album?.id) return
     if (!confirm('Yakin ingin menolak request ini?')) return
     try {
-      const res = await fetch(`/api/albums/${album.id}/join-requests/${requestId}`, {
+      const res = await fetchWithAuth(`/api/albums/${album.id}/join-requests/${requestId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'reject', rejected_reason: reason }),
@@ -719,8 +768,8 @@ export default function YearbookClassesViewUI(props: any) {
       const data = await res.json()
       if (res.ok) {
         toast.success('Request ditolak')
-        fetchJoinRequests(approvalTab)
         fetchJoinStats()
+        fetchJoinRequests('pending')
       } else {
         toast.error(data.error || 'Gagal menolak request')
       }
@@ -734,7 +783,7 @@ export default function YearbookClassesViewUI(props: any) {
   const handleAddTeacher = async (name: string, title: string) => {
     if (!album?.id) return
     try {
-      const res = await fetch(`/api/albums/${album.id}/teachers`, {
+      const res = await fetchWithAuth(`/api/albums/${album.id}/teachers`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, title }),
@@ -760,7 +809,7 @@ export default function YearbookClassesViewUI(props: any) {
 
     try {
       // 1. Save text fields
-      const res = await fetch(`/api/albums/${album.id}/teachers/${teacherId}`, {
+      const res = await fetchWithAuth(`/api/albums/${album.id}/teachers/${teacherId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(textUpdates),
@@ -795,7 +844,7 @@ export default function YearbookClassesViewUI(props: any) {
   const handleDeleteTeacher = async (teacherId: string, teacherName: string) => {
     if (!album?.id) return
     try {
-      const res = await fetch(`/api/albums/${album.id}/teachers/${teacherId}`, {
+      const res = await fetchWithAuth(`/api/albums/${album.id}/teachers/${teacherId}`, {
         method: 'DELETE',
       })
       if (res.ok) {
@@ -821,7 +870,7 @@ export default function YearbookClassesViewUI(props: any) {
     try {
       const formData = new FormData()
       formData.append('file', file)
-      const res = await fetch(`/api/albums/${album.id}/teachers/${teacherId}/photos`, {
+      const res = await fetchWithAuth(`/api/albums/${album.id}/teachers/${teacherId}/photos`, {
         method: 'POST',
         body: formData,
       })
@@ -847,7 +896,7 @@ export default function YearbookClassesViewUI(props: any) {
   const handleDeleteTeacherPhoto = async (teacherId: string, photoId: string) => {
     if (!album?.id) return
     try {
-      const res = await fetch(`/api/albums/${album.id}/teachers/${teacherId}/photos/${photoId}`, {
+      const res = await fetchWithAuth(`/api/albums/${album.id}/teachers/${teacherId}/photos/${photoId}`, {
         method: 'DELETE',
       })
       if (res.ok) {
@@ -874,7 +923,7 @@ export default function YearbookClassesViewUI(props: any) {
     if (!album?.id) return
     if (!confirm('Hapus foto guru?')) return
     try {
-      const res = await fetch(`/api/albums/${album.id}/teachers/${teacherId}/photo`, {
+      const res = await fetchWithAuth(`/api/albums/${album.id}/teachers/${teacherId}/photo`, {
         method: 'DELETE',
       })
       if (res.ok) {
@@ -904,7 +953,7 @@ export default function YearbookClassesViewUI(props: any) {
     try {
       const formData = new FormData()
       formData.append('file', file)
-      const res = await fetch(`/api/albums/${album.id}/teachers/${teacherId}/video`, {
+      const res = await fetchWithAuth(`/api/albums/${album.id}/teachers/${teacherId}/video`, {
         method: 'POST',
         body: formData,
       })
@@ -937,7 +986,7 @@ export default function YearbookClassesViewUI(props: any) {
       const formData = new FormData()
       formData.append('file', file)
 
-      const res = await fetch(`/api/albums/${album.id}/classes/${classId}/photo`, {
+      const res = await fetchWithAuth(`/api/albums/${album.id}/classes/${classId}/photo`, {
         method: 'POST',
         body: formData,
       })
@@ -971,7 +1020,7 @@ export default function YearbookClassesViewUI(props: any) {
     }
 
     try {
-      const res = await fetch(`/api/albums/${album.id}/classes/${classId}/photo`, {
+      const res = await fetchWithAuth(`/api/albums/${album.id}/classes/${classId}/photo`, {
         method: 'DELETE',
       })
 
@@ -995,7 +1044,7 @@ export default function YearbookClassesViewUI(props: any) {
   }
 
   return (
-    <div className="min-h-screen flex flex-col w-full lg:max-w-full">
+    <div className={`flex flex-col w-full lg:max-w-full ${sidebarMode === 'flipbook' && flipbookPreviewMode ? 'flex-1 min-h-0' : 'min-h-screen'}`}>
       <YearbookMobileNav
         pathname={pathname}
         effectiveAlbumId={effectiveAlbumId ?? ''}
@@ -1004,8 +1053,6 @@ export default function YearbookClassesViewUI(props: any) {
         canManage={canManage}
         mobileMenuOpen={mobileMenuOpen}
         setMobileMenuOpen={setMobileMenuOpen}
-        moreMenuOpen={moreMenuOpen}
-        setMoreMenuOpen={setMoreMenuOpen}
         joinStats={joinStats}
         classes={classes}
         classIndex={classIndex}
@@ -1025,9 +1072,10 @@ export default function YearbookClassesViewUI(props: any) {
         handleAddClass={handleAddClass}
         flipbookAccessible={flipbookAccessible}
         aiLabsAccessible={aiLabsAccessible}
+        flipbookPreviewMode={flipbookPreviewMode}
       />
       {/* Main Content - Header already sticky in parent (page.tsx) */}
-      <div className="flex-1 flex flex-col p-4 pb-8">
+      <div className={`flex-1 flex flex-col ${sidebarMode === 'flipbook' && flipbookPreviewMode ? 'p-0' : 'p-4 pb-8'}`}>
 
 
 
@@ -1039,8 +1087,7 @@ export default function YearbookClassesViewUI(props: any) {
               albumId={effectiveAlbumId}
               isCoverView={isCoverView}
               sidebarMode={sidebarMode}
-              setSidebarMode={setSidebarMode}
-              setView={setView}
+              onSectionChange={onSectionChange}
               canManage={canManage}
               requestsByClass={requestsByClass}
               flipbookAccessible={flipbookAccessible}
@@ -1048,228 +1095,215 @@ export default function YearbookClassesViewUI(props: any) {
             />
           )}
 
-          {/* Panel Group List - Fixed di tengah (hanya tampil saat mode classes) */}
-          {sidebarMode === 'classes' && !isCoverView && (
-            <div className="hidden lg:fixed lg:left-16 lg:top-[3.75rem] lg:w-56 lg:h-[calc(100vh-3.75rem)] lg:flex flex-col lg:z-35 lg:bg-black/30 lg:backdrop-blur-sm lg:border-r lg:border-white/10">
-              {/* Header Fixed - Group Name + Edit */}
-              {currentClass && (
-                <div className="flex-shrink-0 px-4 py-4 border-b border-white/10">
-                  <InlineClassEditor
-                    classObj={currentClass}
-                    isOwner={canManage}
-                    onDelete={(classId, className) => setDeleteClassConfirm({ classId, className: className ?? currentClass?.name ?? '' })}
-                    onUpdate={handleUpdateClass}
-                    classIndex={classIndex}
-                    classesCount={classes.length}
-                  />
-                </div>
-              )}
-
-              {/* Form Fixed - Daftarkan Nama */}
-              {currentClass && (
-                <div className="flex-shrink-0 px-3 py-5 border-b border-white/10">
-                  {(() => {
-                    const access = myAccessByClass[currentClass.id]
-                    const request = myRequestByClass[currentClass.id] as ClassRequest | null | undefined
-                    const isPendingRequest = request?.status === 'pending'
-                    const isRejectedRequest = request?.status === 'rejected'
-                    const isLoadingThisClass = !accessDataLoaded && !access && !request
-
-                    // DEBUG LOG
-                    if (isOwner) {
-                      console.log('[GroupPanel DEBUG]', {
-                        currentClassId: currentClass.id,
-                        isOwner,
-                        canManage,
-                        access,
-                        request,
-                        isPendingRequest,
-                        isLoadingThisClass,
-                        accessDataLoaded,
-                        allAccess: myAccessByClass
-                      })
-                    }
-
-                    // Show compact loading hanya untuk class ini
-                    if (isLoadingThisClass) {
-                      return (
-                        <div className="flex items-center gap-2 text-xs text-muted">
-                          <div className="animate-spin rounded-full h-3 w-3 border border-lime-500 border-t-transparent" />
-                          <span>Memuat...</span>
-                        </div>
-                      )
-                    }
-
-                    // User dengan access approved (termasuk owner/admin yang sudah terdaftar)
-                    if (access?.status === 'approved') {
-                      return (
-                        <>
-                          <p className="text-xs text-muted mb-1">Status:</p>
-                          <p className="text-xs font-medium text-lime-400">✓ {access.student_name}</p>
-                        </>
-                      )
-                    }
-
-                    // Owner tanpa akses - cek apakah sudah terdaftar di kelas lain
-                    if (isOwner && !isPendingRequest && !access) {
-                      // Check if already registered in another class
-                      const hasAccessInOtherClass = Object.entries(myAccessByClass).some(
-                        ([classId, classAccess]) =>
-                          classId !== currentClass.id &&
-                          classAccess &&
-                          typeof classAccess === 'object' &&
-                          'status' in classAccess &&
-                          classAccess.status === 'approved'
-                      )
-
-                      if (hasAccessInOtherClass) {
-                        return (
-                          <>
-                            <p className="text-amber-400 text-xs mb-1">⚠️ Batas Pendaftaran</p>
-                            <p className="text-muted text-xs">
-                              Anda sudah terdaftar di kelas lain. Hanya bisa daftar di 1 kelas.
-                            </p>
-                          </>
-                        )
-                      }
-
-                      // Show join button — teks khusus owner
-                      return (
-                        <>
-                          <p className="text-muted text-xs mb-2">
-                            Kamu owner album. Daftar sendiri untuk masuk kelas ini dan upload foto.
-                          </p>
-                          <button
-                            type="button"
-                            onClick={() => handleJoinAsOwner(currentClass.id)}
-                            className="px-3 py-2 rounded-lg bg-blue-600 text-white text-xs font-medium hover:bg-blue-500 transition-colors w-full"
-                          >
-                            Daftar di Kelas Ini
-                          </button>
-                        </>
-                      )
-                    }
-
-                    // Admin/helper yang bukan owner - tidak perlu form
-                    if (canManage) {
-                      return null
-                    }
-
-                    // User biasa dengan pending request
-                    if (isPendingRequest) {
-                      return (
-                        <>
-                          <p className="text-xs text-muted mb-1">Status Pendaftaran:</p>
-                          <p className="text-amber-400 text-xs flex items-center gap-1">
-                            <Clock className="w-3.5 h-3.5 flex-shrink-0" /> Menunggu persetujuan
-                          </p>
-                        </>
-                      )
-                    }
-
-                    // User tanpa akses - tidak tampilkan form, sistem menggunakan link registrasi universal
-                    return null
-
-                  })()}
-                </div>
-              )}
-
-              {/* Scrollable Content Area with Hidden Scrollbar */}
-              <div className="flex-1 flex flex-col overflow-y-auto" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-                <style>{`
-                    div::-webkit-scrollbar {
-                      display: none;
-                    }
-                  `}</style>
-
-                {/* Scrollable Group List */}
-                <div className="flex-1 flex flex-col gap-1.5 px-2 py-2">
-                  {classes.map((c, idx) => {
-                    const req = myRequestByClass[c.id] as ClassRequest | undefined
-                    const hasPendingRequest = req?.status === 'pending'
-                    return (
-                      <div
-                        key={c.id}
-                        role="button"
-                        tabIndex={0}
-                        onClick={() => {
-                          setClassIndex(idx)
-                          if (isCoverView) setView('classes')
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' || e.key === ' ') {
-                            setClassIndex(idx)
-                            if (isCoverView) setView('classes')
-                          }
-                        }}
-                        className={`px-2 py-1.5 rounded-lg text-left text-sm transition-colors touch-manipulation cursor-pointer ${idx === classIndex && !isCoverView
-                          ? 'bg-lime-600/20 border border-lime-500/50 text-lime-400'
-                          : 'border border-white/10 text-gray-400 hover:text-white hover:bg-white/5 active:bg-white/10'
-                          }`}
-                      >
-                        <p className="font-medium truncate">{c.name}</p>
-                        {hasPendingRequest ? (
-                          <p className="text-xs text-amber-400 flex items-center gap-1"><Clock className="w-3.5 h-3.5 flex-shrink-0" /> menunggu persetujuan</p>
-                        ) : (
-                          <div className="flex items-center justify-between">
-                            <p className="text-xs text-muted">{(membersByClass[c.id]?.length ?? 0)} orang</p>
-                            {/* Batch Photo Indicator/Button */}
-                            {(c.batch_photo_url || canManage) && (
-                              <div className="flex items-center gap-1">
-                                {c.batch_photo_url && (
-                                  <button
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.stopPropagation()
-                                      setViewingBatchPhotoClass(c)
-                                    }}
-                                    className="p-1 hover:bg-white/10 rounded text-lime-400"
-                                    title="Lihat Foto Angkatan"
-                                  >
-                                    <ImageIcon className="w-3 h-3" />
-                                  </button>
-                                )}
-                                {canManage && (
-                                  <button
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.stopPropagation()
-                                      setUploadingBatchPhotoClassId(c.id)
-                                      batchPhotoInputRef.current?.click()
-                                    }}
-                                    className="p-1 hover:bg-white/10 rounded text-gray-400 hover:text-white"
-                                    title={c.batch_photo_url ? "Ganti Foto Angkatan" : "Tambah Foto Angkatan"}
-                                  >
-                                    <ImagePlus className="w-3 h-3" />
-                                  </button>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    )
-                  })}
+          {/* Secondary Sidebar Panel - Hanya untuk Edit (Cover, Sambutan, Kelas); Flipbook ada di sidebar utama */}
+          {((['classes', 'sambutan'].includes(sidebarMode) || isCoverView)) && (
+            <div className="hidden lg:fixed lg:left-16 lg:top-14 lg:w-64 lg:h-[calc(100vh-3.5rem)] lg:flex flex-col lg:z-35 lg:bg-white lg:border-r-2 lg:border-slate-900 shadow-[4px_0_10px_0_rgba(0,0,0,0.05)]">
+              {/* Main "Edit" Switcher - Cover, Sambutan, Kelas saja */}
+              <div className="p-3 bg-slate-50 border-b-2 border-slate-100 flex flex-col gap-1.5 shrink-0">
+                <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] px-1">Menu Edit</p>
+                <div className="grid grid-cols-2 gap-1.5">
+                  <button
+                    onClick={() => {
+                      setView('cover')
+                      const url = getYearbookSectionQueryUrl(effectiveAlbumId!, 'cover', pathname)
+                      router.push(url, { scroll: false })
+                    }}
+                    className={`flex items-center gap-2 p-2 rounded-xl border-2 transition-all ${isCoverView ? 'bg-white border-slate-900 shadow-[2px_2px_0_0_#0f172a] -translate-y-0.5' : 'bg-transparent border-transparent text-slate-400 hover:text-slate-600'}`}
+                  >
+                    <BookOpen className={`w-3.5 h-3.5 ${isCoverView ? 'text-indigo-500' : 'text-slate-400'}`} />
+                    <span className="text-[9px] font-black uppercase tracking-tight">Cover</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setSidebarMode('sambutan')
+                      const url = getYearbookSectionQueryUrl(effectiveAlbumId!, 'sambutan', pathname)
+                      router.push(url, { scroll: false })
+                    }}
+                    className={`flex items-center gap-2 p-2 rounded-xl border-2 transition-all ${sidebarMode === 'sambutan' ? 'bg-white border-slate-900 shadow-[2px_2px_0_0_#0f172a] -translate-y-0.5' : 'bg-transparent border-transparent text-slate-400 hover:text-slate-600'}`}
+                  >
+                    <MessageSquare className={`w-3.5 h-3.5 ${sidebarMode === 'sambutan' ? 'text-violet-500' : 'text-slate-400'}`} />
+                    <span className="text-[9px] font-black uppercase tracking-tight">Sambutan</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setSidebarMode('classes')
+                      setView('classes')
+                      const url = getYearbookSectionQueryUrl(effectiveAlbumId!, 'classes', pathname)
+                      router.push(url, { scroll: false })
+                    }}
+                    className={`flex items-center gap-2 p-2 rounded-xl border-2 transition-all col-span-2 ${sidebarMode === 'classes' && !isCoverView ? 'bg-white border-slate-900 shadow-[2px_2px_0_0_#0f172a] -translate-y-0.5' : 'bg-transparent border-transparent text-slate-400 hover:text-slate-600'}`}
+                  >
+                    <Users className={`w-3.5 h-3.5 ${sidebarMode === 'classes' && !isCoverView ? 'text-emerald-500' : 'text-slate-400'}`} />
+                    <span className="text-[9px] font-black uppercase tracking-tight">Kelas</span>
+                  </button>
                 </div>
               </div>
 
-              {/* Add Group Button - Restored; saat belum ada kelas form hanya di main konten */}
-              <div className="flex-shrink-0 px-2 py-2 border-t border-white/10">
-                {canManage && (
-                  <div className="flex gap-2">
-                    {!addingClass || classes.length === 0 ? (
-                      <button type="button" onClick={() => setAddingClass(true)} className="w-full px-3 py-2 rounded-lg border border-white/10 text-sm text-gray-400 hover:text-white hover:bg-white/5 active:bg-white/10 transition-colors touch-manipulation">
-                        <Plus className="w-4 h-4 inline mr-1" /> Nama kelas
-                      </button>
-                    ) : (
-                      <div className="flex flex-col gap-2 w-full">
-                        <input type="text" value={newClassName} onChange={(e) => setNewClassName(e.target.value)} placeholder="Nama kelas" className="px-2 py-1.5 rounded-lg bg-white/5 border border-white/10 text-sm text-app placeholder:text-gray-600" autoFocus />
-                        <div className="flex gap-2">
-                          <button type="button" onClick={handleAddClass} className="flex-1 px-2 py-1.5 rounded-lg bg-lime-600 text-white text-sm font-medium hover:bg-lime-500 transition-colors touch-manipulation">Tambah</button>
-                          <button type="button" onClick={() => { setAddingClass(false); setNewClassName('') }} className="flex-1 px-2 py-1.5 rounded-lg border border-white/10 text-sm text-gray-400 hover:text-white hover:bg-white/5 transition-colors touch-manipulation">Batal</button>
-                        </div>
+              {/* Header Sidebar Generik */}
+              {(sidebarMode === 'classes' || sidebarMode === 'sambutan') && !isCoverView && (
+                <div className="px-6 py-5 border-b-2 border-slate-100 shrink-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    {sidebarMode === 'classes' && <LayoutGrid className="w-4 h-4 text-indigo-500" />}
+                    {sidebarMode === 'sambutan' && <MessageSquare className="w-4 h-4 text-violet-500" />}
+                    <h2 className="text-xs font-black text-slate-900 uppercase tracking-[0.2em]">
+                      {sidebarMode === 'classes' && 'Daftar Kelas'}
+                      {sidebarMode === 'sambutan' && 'Daftar Sambutan'}
+                    </h2>
+                  </div>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">
+                    {sidebarMode === 'classes' && `${classes.length} Kelas Terdaftar`}
+                    {sidebarMode === 'sambutan' && `${teachers.length} Pemberi Sambutan`}
+                  </p>
+                </div>
+              )}
+
+              {/* Sidebar Content Based on Mode */}
+              <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
+                {sidebarMode === 'classes' && !isCoverView && (
+                  <div className="space-y-6">
+                    {/* Inline Editor for Current Class */}
+                    {currentClass && (
+                      <div className="mb-4">
+                        <InlineClassEditor
+                          classObj={currentClass}
+                          isOwner={canManage}
+                          onDelete={(classId, className) => setDeleteClassConfirm({ classId, className: className ?? currentClass?.name ?? '' })}
+                          onUpdate={handleUpdateClass}
+                          classIndex={classIndex}
+                          classesCount={classes.length}
+                        />
                       </div>
                     )}
+
+                    {/* Registration Status for User */}
+                    {currentClass && (
+                      <div className="px-1 mb-4">
+                        {(() => {
+                          const access = myAccessByClass[currentClass.id]
+                          const request = myRequestByClass[currentClass.id] as ClassRequest | null | undefined
+                          const isPendingRequest = request?.status === 'pending'
+                          const isLoadingThisClass = !accessDataLoaded && !access && !request
+
+                          if (isLoadingThisClass) {
+                            return (
+                              <div className="flex items-center gap-2 p-2 bg-slate-50 border-2 border-slate-200 rounded-xl">
+                                <div className="animate-spin rounded-full h-3 w-3 border-2 border-indigo-500 border-t-transparent" />
+                                <span className="text-[9px] font-black text-slate-400">Loading...</span>
+                              </div>
+                            )
+                          }
+
+                          if (access?.status === 'approved') {
+                            return (
+                              <div className="flex items-center gap-2 p-2 bg-indigo-50 border-2 border-indigo-200 rounded-xl">
+                                <Check className="w-3.5 h-3.5 text-indigo-600" strokeWidth={3} />
+                                <span className="text-[10px] font-black text-indigo-700 uppercase truncate">{access.student_name}</span>
+                              </div>
+                            )
+                          }
+
+                          if (isPendingRequest) {
+                            return (
+                              <div className="p-2 bg-amber-50 border-2 border-amber-200 rounded-xl text-center">
+                                <p className="text-[9px] font-black text-amber-600 uppercase">Menunggu Persetujuan</p>
+                              </div>
+                            )
+                          }
+
+                          if (isOwner && !access) {
+                            return (
+                              <button
+                                onClick={() => handleJoinAsOwner(currentClass.id)}
+                                className="w-full py-2 bg-indigo-500 text-white border-2 border-slate-900 rounded-xl text-[10px] font-black uppercase shadow-[2.5px_2.5px_0_0_#0f172a] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 active:shadow-none transition-all"
+                              >
+                                Daftar Sekarang
+                              </button>
+                            )
+                          }
+                          return null
+                        })()}
+                      </div>
+                    )}
+
+                    {/* Compact Class List */}
+                    <div className="flex flex-col gap-2">
+                      {classes.map((c, idx) => {
+                        const isActive = idx === classIndex && !isCoverView
+                        return (
+                          <button
+                            key={c.id}
+                            onClick={() => {
+                              setClassIndex(idx)
+                              const url = getYearbookSectionQueryUrl(effectiveAlbumId!, 'classes', pathname)
+                              router.push(url, { scroll: false })
+                            }}
+                            className={`flex items-center justify-between w-full px-4 py-3.5 rounded-2xl border-2 transition-all duration-300 font-black uppercase text-[10px] tracking-widest ${isActive
+                              ? 'bg-amber-400 border-slate-900 text-slate-900 shadow-[3px_3px_0_0_#0f172a] -translate-x-1 -translate-y-1'
+                              : 'bg-white border-slate-100 text-slate-400 opacity-60 hover:opacity-100 hover:border-slate-300'
+                              }`}
+                          >
+                            <span className="truncate">{c.name}</span>
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              {c.batch_photo_url && (
+                                <div className="w-2 h-2 bg-emerald-400 rounded-full border border-slate-900" />
+                              )}
+                              {isActive && <Check className="w-3.5 h-3.5 text-slate-900" strokeWidth={3} />}
+                            </div>
+                          </button>
+                        )
+                      })}
+                    </div>
+                    {canManage && (
+                      <div className="pt-2">
+                        {!addingClass ? (
+                          <button
+                            type="button"
+                            onClick={() => setAddingClass(true)}
+                            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-slate-50 border-2 border-dashed border-slate-300 text-slate-500 hover:border-indigo-500 hover:text-indigo-600 hover:bg-indigo-50 transition-all font-black text-[10px] uppercase tracking-widest"
+                          >
+                            <Plus className="w-4 h-4" /> Tambah Kelas
+                          </button>
+                        ) : (
+                          <div className="p-3 bg-white border-2 border-slate-900 rounded-xl shadow-[4px_4px_0_0_#0f172a]">
+                            <input
+                              type="text"
+                              autoFocus
+                              value={newClassName}
+                              onChange={(e) => setNewClassName(e.target.value)}
+                              placeholder="Nama Kelas..."
+                              className="w-full px-3 py-2 text-xs font-bold rounded-lg border-2 border-slate-900 bg-slate-50 mb-2 focus:outline-none"
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') handleAddClass()
+                                if (e.key === 'Escape') setAddingClass(false)
+                              }}
+                            />
+                            <div className="flex gap-2">
+                              <button
+                                onClick={handleAddClass}
+                                className="flex-1 py-1.5 bg-indigo-500 text-white text-[9px] font-black uppercase rounded-lg border-2 border-slate-900 shadow-[2px_2px_0_0_#0f172a]"
+                              >
+                                Simpan
+                              </button>
+                              <button
+                                onClick={() => setAddingClass(false)}
+                                className="flex-1 py-1.5 bg-slate-100 text-slate-500 text-[9px] font-black uppercase rounded-lg border-2 border-slate-900"
+                              >
+                                Batal
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {sidebarMode === 'sambutan' && !isCoverView && (
+                  <div className="space-y-4">
+                    <div className="p-6 bg-indigo-50 border-4 border-slate-900 rounded-[32px] shadow-[8px_8px_0_0_#0f172a] text-center">
+                      <p className="text-3xl font-black text-slate-900 mb-1">{teachers.length}</p>
+                      <p className="text-[10px] font-black text-indigo-500 uppercase tracking-widest leading-none">Pemberi Sambutan</p>
+                    </div>
                   </div>
                 )}
               </div>
@@ -1277,66 +1311,8 @@ export default function YearbookClassesViewUI(props: any) {
           )}
 
 
-          {/* Approval Detail Panel - Fixed di sebelah kanan sidebar icon */}
-          {sidebarMode === 'approval' && selectedRequestId && (
-            <>
-              {/* Backdrop untuk close */}
-              <div
-                className="hidden lg:fixed lg:inset-0 lg:z-30"
-                onClick={() => setSelectedRequestId(null)}
-              />
-              <div className="hidden lg:flex lg:fixed lg:left-16 lg:top-[3.75rem] lg:w-56 lg:h-[calc(100vh-3.75rem)] lg:bg-black/40 lg:backdrop-blur-sm lg:border-l lg:border-white/10 lg:p-4 lg:z-35 lg:flex-col lg:items-stretch lg:justify-start lg:overflow-y-auto">
-                <button
-                  type="button"
-                  onClick={() => setSelectedRequestId(null)}
-                  className="self-end text-gray-400 hover:text-white mb-4 text-lg"
-                  title="Tutup"
-                >
-                  ✕
-                </button>
-                {(() => {
-                  const allRequests = Object.values(requestsByClass).flat() as ClassRequest[]
-                  const request = allRequests.find(r => r.id === selectedRequestId)
-                  const classId = Object.entries(requestsByClass).find(([_, reqs]) => {
-                    const reqList = reqs as ClassRequest[]
-                    return reqList.find(r => r.id === selectedRequestId)
-                  })?.[0]
-                  if (!request || !classId) return null
-                  return (
-                    <div className="w-full flex flex-col gap-4">
-                      <div className="text-center">
-                        <p className="text-app font-medium text-sm">{request.student_name}</p>
-                        {request.email && <p className="text-muted text-xs break-all">{request.email}</p>}
-                      </div>
-                      <div className="flex flex-col gap-2">
-                        <button
-                          type="button"
-                          onClick={() => handleApproveReject(classId, selectedRequestId, 'approved')}
-                          className="px-4 py-2.5 rounded-lg bg-green-600/80 text-white hover:bg-green-600 text-xs font-medium transition-colors w-full"
-                          title="Setujui"
-                        >
-                          ✓ Setujui
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleApproveReject(classId, selectedRequestId, 'rejected')}
-                          className="px-4 py-2.5 rounded-lg bg-red-600/80 text-white hover:bg-red-600 text-xs font-medium transition-colors w-full"
-                          title="Tolak"
-                        >
-                          ✕ Tolak
-                        </button>
-                      </div>
-                    </div>
-                  )
-                })()}
-              </div>
-            </>
-          )}
 
-          {/* Sambutan Panel - Removed, now using grid layout like students */}
-
-          {/* Main content area - Shows Classes/Approval/Team based on sidebarMode */}
-          <div className={`flex-1 flex flex-col gap-0 min-h-0 ${(!isCoverView && sidebarMode === 'classes') ? 'pt-14 lg:pt-0' : 'pt-0'}`}>
+          <div className={`flex-1 flex flex-col gap-0 min-h-0 ${(!isCoverView && (sidebarMode === 'classes' || sidebarMode === 'sambutan')) ? 'pt-14 lg:pt-0' : 'pt-0'}`}>
             {/* Mobile class header - Fixed - Only for classes mode */}
             {/* Mobile class header removed - now in Global Header */}
 
@@ -1347,186 +1323,203 @@ export default function YearbookClassesViewUI(props: any) {
             {/* Mobile Sambutan View - Removed, using grid layout */}
 
             {/* Main content - scrollable container */}
-            <div className={`flex-1 overflow-y-auto rounded-t-none pb-40 lg:pb-0 ${sidebarMode === 'classes' && !isCoverView ? 'lg:ml-[18rem]' : 'lg:ml-0'}`}>
+            <main className={`flex-1 ${sidebarMode === 'flipbook' ? 'overflow-hidden pb-0' : 'overflow-y-auto pb-40 lg:pb-0'} rounded-t-none transition-all duration-300 relative
+              ${(['classes', 'sambutan'].includes(sidebarMode) || isCoverView) ? 'lg:ml-[20rem]' : sidebarMode === 'flipbook' ? 'lg:ml-16' : 'lg:ml-0'}
+              ${sidebarMode === 'preview' ? 'bg-slate-900' : 'bg-white'}
+            `}>
               {/* Show different content based on sidebarMode */}
               {isCoverView ? (
-                <div className="max-w-5xl mx-auto px-3 py-3 sm:px-3 sm:py-4">
-                  <div className="flex flex-col items-center">
-                    <div className="w-full max-w-xs mx-auto flex flex-col items-center">
-                      <div className="relative w-full aspect-[3/4] bg-white/5 rounded-xl overflow-hidden shadow-xl border border-white/10 group">
-                        {album?.cover_image_url ? (
-                          <img
-                            src={album.cover_image_url}
-                            alt={album.name}
-                            className="w-full h-full object-cover"
-                            style={album.cover_image_position ? { objectPosition: `${album.cover_image_position}` } : undefined}
-                          />
-                        ) : (
-                          <div className="flex flex-col items-center justify-center w-full h-full text-muted gap-3">
-                            <BookOpen className="w-12 h-12 opacity-50" />
-                            <span className="text-xs">Sampul album</span>
-                          </div>
-                        )}
+                <div className="max-w-4xl mx-auto px-4 pt-0 pb-4 lg:py-12 relative">
+                  <div className="flex flex-col gap-0 lg:gap-10">
 
-                        {/* Video Overlay Button */}
-                        {album?.cover_video_url && (
-                          <button
-                            type="button"
-                            onClick={() => onPlayVideo && onPlayVideo(album.cover_video_url!)}
-                            className="absolute bottom-3 right-3 w-10 h-10 rounded-full bg-black/70 hover:bg-black/90 flex items-center justify-center group/play transition-all hover:scale-110 backdrop-blur-sm border border-white/10"
-                            title="Putar Video Sampul"
-                          >
-                            <Play className="w-4 h-4 text-white ml-0.5" fill="currentColor" />
-                          </button>
-                        )}
+
+                    {/* Hero Section - Cover Preview & Info */}
+                    <div className="flex flex-col lg:flex-row items-center lg:items-stretch gap-8 lg:gap-10 w-full relative">
+                      {/* Left: Preview Container */}
+                      <div className="w-full max-w-[240px] sm:max-w-xs shrink-0">
+                        <div className="relative aspect-[3/4] bg-white border-4 border-slate-900 rounded-[32px] overflow-hidden shadow-[8px_8px_0_0_#0f172a] lg:shadow-[12px_12px_0_0_#0f172a] group rotate-1">
+                          {album?.cover_image_url ? (
+                            <img
+                              src={album.cover_image_url}
+                              alt={album.name}
+                              className="w-full h-full object-cover"
+                              style={album.cover_image_position ? { objectPosition: `${album.cover_image_position}` } : undefined}
+                            />
+                          ) : (
+                            <div className="flex flex-col items-center justify-center w-full h-full bg-slate-50 gap-4">
+                              <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center border-2 border-dashed border-slate-300">
+                                <ImageIcon className="w-8 h-8 text-slate-300" />
+                              </div>
+                              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Belum ada cover</span>
+                            </div>
+                          )}
+
+                          {/* Play Button (Always Visible) */}
+                          {album?.cover_video_url && (
+                            <button
+                              type="button"
+                              onClick={() => onPlayVideo && onPlayVideo(album.cover_video_url!)}
+                              className="absolute bottom-3 right-3 z-10 w-10 h-10 lg:w-12 lg:h-12 rounded-2xl bg-amber-400 border-4 border-slate-900 flex items-center justify-center shadow-[4px_4px_0_0_#0f172a] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all active:scale-95"
+                            >
+                              <Play className="w-5 h-5 lg:w-6 lg:h-6 text-slate-900 ml-0.5 lg:ml-1" fill="currentColor" />
+                            </button>
+                          )}
+
+                          {/* Controls Overlay */}
+                          {isOwner && (
+                            <div className="absolute inset-0 bg-slate-900/10 lg:opacity-0 group-hover:opacity-100 transition-all duration-300 flex flex-col justify-between p-3 lg:p-4">
+                              {/* Top controls: Image */}
+                              <div className="flex justify-end items-start gap-2">
+                                {!album?.cover_image_url ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => coverUploadInputRef.current?.click()}
+                                    disabled={uploadingCover}
+                                    className="h-9 lg:h-10 px-3 lg:px-4 rounded-xl bg-white border-2 border-slate-900 shadow-[2px_2px_0_0_#0f172a] text-slate-900 font-black text-[9px] lg:text-[10px] uppercase tracking-widest flex items-center gap-2 active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all"
+                                  >
+                                    <ImagePlus className="w-3.5 h-3.5 lg:w-4 h-4" />
+                                    Upload Cover
+                                  </button>
+                                ) : (
+                                  <div className="relative group/btn">
+                                    <button
+                                      type="button"
+                                      onClick={handleDeleteCover}
+                                      className="w-9 h-9 lg:w-10 lg:h-10 rounded-xl bg-red-500 border-2 border-slate-900 shadow-[2px_2px_0_0_#0f172a] text-white flex items-center justify-center active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all"
+                                    >
+                                      <Trash2 className="w-4 h-4" strokeWidth={3} />
+                                    </button>
+                                    <div className="absolute -bottom-1 -right-1 w-4 h-4 lg:w-5 lg:h-5 bg-slate-900 flex items-center justify-center border border-white rounded lg:rounded-lg shadow-sm">
+                                      <ImageIcon className="w-2 h-2 lg:w-2.5 lg:h-2.5 text-white" />
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Bottom controls: Video */}
+                              <div className="flex justify-between items-end gap-2">
+                                <div className="flex gap-2">
+                                  {!album?.cover_video_url ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => coverVideoInputRef.current?.click()}
+                                      disabled={uploadingCoverVideo}
+                                      className="h-9 lg:h-10 px-3 lg:px-4 rounded-xl bg-slate-900 border-2 border-slate-800 text-white font-black text-[9px] lg:text-[10px] uppercase tracking-widest flex items-center gap-2 active:translate-x-0.5 active:translate-y-0.5 transition-all"
+                                    >
+                                      <Video className="w-3.5 h-3.5 lg:w-4 h-4" />
+                                      Video
+                                    </button>
+                                  ) : (
+                                    <div className="relative group/btn">
+                                      <button
+                                        type="button"
+                                        onClick={handleDeleteCoverVideo}
+                                        className="w-9 h-9 lg:w-10 lg:h-10 rounded-xl bg-red-500 border-2 border-slate-900 shadow-[2px_2px_0_0_#0f172a] text-white flex items-center justify-center active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all"
+                                      >
+                                        <Trash2 className="w-4 h-4" strokeWidth={3} />
+                                      </button>
+                                      <div className="absolute -bottom-1 -right-1 w-4 h-4 lg:w-5 lg:h-5 bg-slate-900 flex items-center justify-center border border-white rounded lg:rounded-lg shadow-sm">
+                                        <Video className="w-2 h-2 lg:w-2.5 lg:h-2.5 text-white" />
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
                       </div>
 
-                      <div className="mt-4 text-center w-full">
-                        <h1 className="text-2xl font-bold text-app mb-1">{album?.name}</h1>
-                        {album?.description && <p className="text-muted text-xs max-w-lg mx-auto leading-relaxed">{album.description}</p>}
-                      </div>
+                      {/* Right: Info Container */}
+                      <div className="flex-1 flex flex-col justify-between self-stretch text-center lg:text-left pt-0 lg:pt-2">
+                        <div className="mb-6 lg:mb-0">
+                          <h1 className="text-2xl lg:text-5xl font-black text-slate-900 mb-2 lg:mb-6 tracking-tight leading-none uppercase">{album?.name}</h1>
+                          <p className="text-slate-500 text-[10px] lg:text-lg font-bold leading-relaxed max-w-xl">
+                            {album?.description || "Selamat datang di yearbook digital Anda. Kelola sampul dan media utama album di sini."}
+                          </p>
+                        </div>
 
-                      {isOwner && (
-                        <>
-                          {/* Cover Settings Section */}
-                          <div className="mt-3 p-3 w-full rounded-xl bg-white/5 border border-white/10">
-                            <div className="mb-3 text-center">
-                              <p className="text-xs font-semibold text-app">Pengaturan Sampul</p>
-                            </div>
-
-                            {/* Gambar Section */}
-                            <div className="mb-3">
-                              <p className="text-[10px] font-medium text-muted/60 uppercase tracking-wide mb-1.5">Gambar <span className="normal-case text-muted/80">(maks. 10MB)</span></p>
-                              <div className="grid grid-cols-2 gap-2">
-                                <button
-                                  type="button"
-                                  onClick={() => coverUploadInputRef.current?.click()}
-                                  disabled={uploadingCover}
-                                  className="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 text-[11px] font-medium border border-blue-500/20 transition-all disabled:opacity-50 min-h-[36px]"
-                                >
-                                  <ImagePlus className="w-3.5 h-3.5 flex-shrink-0" />
-                                  <span className="truncate">{uploadingCover ? 'Upload...' : (album?.cover_image_url ? 'Ubah' : 'Upload')}</span>
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={handleDeleteCover}
-                                  disabled={!album?.cover_image_url || !handleDeleteCover}
-                                  className="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 text-[11px] font-medium border border-red-500/20 transition-all disabled:opacity-30 disabled:cursor-not-allowed min-h-[36px]"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5 flex-shrink-0" />
-                                  <span className="truncate">Hapus</span>
-                                </button>
-                              </div>
-                            </div>
-
-                            {/* Divider */}
-                            <div className="h-px bg-white/10 my-2.5"></div>
-
-                            {/* Video Section */}
-                            <div>
-                              <p className="text-[10px] font-medium text-muted/60 uppercase tracking-wide mb-1.5">Video <span className="normal-case text-muted/80">(maks. 20MB)</span></p>
-                              <div className="grid grid-cols-2 gap-2">
-                                <button
-                                  type="button"
-                                  onClick={() => coverVideoInputRef.current?.click()}
-                                  disabled={uploadingCoverVideo}
-                                  className="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 text-[11px] font-medium border border-blue-500/20 transition-all disabled:opacity-50 min-h-[36px]"
-                                >
-                                  <Video className="w-3.5 h-3.5 flex-shrink-0" />
-                                  <span className="truncate">{uploadingCoverVideo ? 'Upload...' : (album?.cover_video_url ? 'Ubah' : 'Upload')}</span>
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={handleDeleteCoverVideo}
-                                  disabled={!album?.cover_video_url || !handleDeleteCoverVideo}
-                                  className="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 text-[11px] font-medium border border-red-500/20 transition-all disabled:opacity-30 disabled:cursor-not-allowed min-h-[36px]"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5 flex-shrink-0" />
-                                  <span className="truncate">Hapus</span>
-                                </button>
-                              </div>
-                            </div>
-
-                            {/* Divider */}
-                            <div className="h-px bg-white/10 my-2.5"></div>
-
-                            {/* Public Preview Link Section */}
-                            <div>
-                              <p className="text-[10px] font-medium text-muted/60 uppercase tracking-wide mb-1.5">Link Preview Publik</p>
-                              <div className="flex gap-2">
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    const url = `${window.location.origin}/album/${album?.id}/preview`;
-                                    navigator.clipboard.writeText(url);
-                                    toast.success('Link berhasil disalin');
-                                  }}
-                                  className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg bg-white/5 text-gray-300 hover:bg-white/10 hover:text-white text-[11px] font-medium border border-white/10 transition-all min-h-[36px]"
-                                >
-                                  <Copy className="w-3.5 h-3.5 flex-shrink-0" />
-                                  <span className="truncate">Salin Link</span>
-                                </button>
-                                <NextLink
-                                  href={`/album/${album?.id}/preview`}
-                                  target="_blank"
-                                  className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg bg-lime-500/10 text-lime-400 hover:bg-lime-500/20 text-[11px] font-medium border border-lime-500/20 transition-all min-h-[36px]"
-                                >
-                                  <Eye className="w-3.5 h-3.5 flex-shrink-0" />
-                                  <span className="truncate">Buka Preview</span>
-                                </NextLink>
-                              </div>
-                            </div>
-
-                            {/* Hidden inputs */}
-                            <input
-                              ref={coverUploadInputRef}
-                              type="file"
-                              accept="image/*"
-                              className="hidden"
-                              onChange={(e) => {
-                                const file = e.target.files?.[0]
-                                if (file && setCoverPreview) {
-                                  if (file.size > MAX_PHOTO_BYTES) {
-                                    toast.error('Foto maksimal 10MB')
-                                    e.target.value = ''
-                                    return
-                                  }
-                                  const dataUrl = URL.createObjectURL(file)
-                                  setCoverPreview({ file, dataUrl })
-                                  setCoverPosition && setCoverPosition({ x: 50, y: 50 })
-                                }
-                                e.target.value = ''
+                        {/* Desktop Controls (Aligned with Bottom of Image) */}
+                        {canManage && (
+                          <div className="hidden lg:flex items-center gap-4 mt-auto">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                const url = `${window.location.origin}/album/${album?.id}/preview`;
+                                navigator.clipboard.writeText(url);
+                                toast.success('Link berhasil disalin');
                               }}
-                            />
-                            <input
-                              ref={coverVideoInputRef}
-                              type="file"
-                              accept="video/*"
-                              className="hidden"
-                              onChange={async (e) => {
-                                const file = e.target.files?.[0]
-                                e.target.value = ''
-                                if (file && handleUploadCoverVideo) {
-                                  if (file.size > 20 * 1024 * 1024) {
-                                    toast.error('Video maksimal 20MB')
-                                    return
-                                  }
-                                  await handleUploadCoverVideo(file)
-                                }
-                              }}
-                            />
+                              className="px-8 py-4 rounded-2xl bg-white border-4 border-slate-900 text-slate-900 font-black text-sm uppercase tracking-widest shadow-[8px_8px_0_0_#0f172a] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all active:scale-95 flex items-center justify-center gap-3"
+                            >
+                              <LinkIcon className="w-5 h-5" strokeWidth={3} />
+                              Salin Link
+                            </button>
+                            <NextLink
+                              href={`/album/${album?.id}/preview`}
+                              target="_blank"
+                              className="px-8 py-4 rounded-2xl bg-emerald-400 border-4 border-slate-900 text-slate-900 font-black text-sm uppercase tracking-widest shadow-[8px_8px_0_0_#0f172a] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all active:scale-95 flex items-center justify-center gap-3"
+                            >
+                              <Eye className="w-5 h-5" strokeWidth={3} />
+                              Preview Album
+                            </NextLink>
                           </div>
-                        </>
-                      )}
+                        )}
+                      </div>
+                    </div>
 
-                      {/* Cover Preview Modal */}
-                      {coverPreview && (
-                        <div className="fixed inset-0 z-[100] bg-black/90 flex flex-col items-center justify-center p-4">
-                          <p className="text-app font-medium mb-3">Geser gambar agar posisi pas, lalu Terapkan</p>
+                    {/* Hidden inputs for file upload */}
+                    <div className="hidden">
+                      <input
+                        ref={coverUploadInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0]
+                          if (file && setCoverPreview) {
+                            const MAX_PHOTO_BYTES = 10 * 1024 * 1024
+                            if (file.size > MAX_PHOTO_BYTES) {
+                              toast.error('Foto maksimal 10MB')
+                              e.target.value = ''
+                              return
+                            }
+                            const dataUrl = URL.createObjectURL(file)
+                            setCoverPreview({ file, dataUrl })
+                            setCoverPosition && setCoverPosition({ x: 50, y: 50 })
+                          }
+                          e.target.value = ''
+                        }}
+                      />
+                      <input
+                        ref={coverVideoInputRef}
+                        type="file"
+                        accept="video/*"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0]
+                          e.target.value = ''
+                          if (file && handleUploadCoverVideo) {
+                            if (file.size > 20 * 1024 * 1024) {
+                              toast.error('Video maksimal 20MB')
+                              return
+                            }
+                            await handleUploadCoverVideo(file)
+                          }
+                        }}
+                      />
+                    </div>
+
+                    {/* Cover Preview Modal */}
+                    {coverPreview && (
+                      <div className="fixed inset-0 z-[100] bg-slate-900/90 backdrop-blur-md flex flex-col items-center justify-center p-4">
+                        <div className="flex flex-col items-center gap-6 w-full max-w-lg">
+                          <div className="text-center space-y-2">
+                            <h3 className="text-xl font-black text-white uppercase tracking-tight">Atur Posisi Cover</h3>
+                            <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Geser gambar untuk menyesuaikan tampilan</p>
+                          </div>
+
                           <div
                             ref={coverPreviewContainerRef}
-                            className="w-full max-w-xs aspect-[3/4] rounded-xl overflow-hidden bg-white/10 relative touch-none select-none border border-white/20"
+                            className="w-full aspect-[3/4] bg-white border-8 border-slate-900 rounded-[40px] overflow-hidden shadow-[20px_20px_0_0_#0f172a] relative touch-none select-none cursor-move group"
                             onPointerDown={(e) => {
                               if (e.button !== 0) return
                               coverDragRef.current = {
@@ -1555,26 +1548,24 @@ export default function YearbookClassesViewUI(props: any) {
                                 coverDragRef.current = null
                               }
                             }}
-                            onPointerCancel={(e) => {
-                              coverDragRef.current = null;
-                              (e.target as HTMLElement).releasePointerCapture(e.pointerId)
-                            }}
                           >
                             <img
                               src={coverPreview.dataUrl}
-                              alt="Preview sampul"
-                              className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+                              alt="Preview cover"
+                              className="absolute inset-0 w-full h-full object-cover pointer-events-none transition-transform duration-75"
                               style={{ objectPosition: `${coverPosition.x}% ${coverPosition.y}%` }}
                             />
+                            <div className="absolute inset-0 border-[16px] border-slate-900/10 pointer-events-none" />
                           </div>
-                          <div className="flex gap-3 mt-4">
+
+                          <div className="flex gap-4 w-full">
                             <button
                               type="button"
                               onClick={() => {
                                 if (coverPreview?.dataUrl) URL.revokeObjectURL(coverPreview.dataUrl)
                                 setCoverPreview && setCoverPreview(null)
                               }}
-                              className="px-5 py-2.5 rounded-xl border border-white/20 text-app font-medium hover:bg-white/10"
+                              className="flex-1 py-4 rounded-2xl bg-slate-800 text-slate-400 font-black text-xs uppercase tracking-widest border-2 border-slate-700 hover:bg-slate-700 transition-all"
                             >
                               Batal
                             </button>
@@ -1582,14 +1573,14 @@ export default function YearbookClassesViewUI(props: any) {
                               type="button"
                               disabled={uploadingCover}
                               onClick={() => handleUploadCover && handleUploadCover(coverPreview.file, coverPosition, coverPreview.dataUrl)}
-                              className="px-5 py-2.5 rounded-xl bg-lime-600 text-white font-medium hover:bg-lime-500 disabled:opacity-50"
+                              className="flex-[2] py-4 rounded-2xl bg-emerald-400 border-4 border-slate-900 text-slate-900 font-black text-xs uppercase tracking-widest shadow-[6px_6px_0_0_#0f172a] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all disabled:opacity-50"
                             >
-                              {uploadingCover ? 'Mengunggah...' : 'Terapkan'}
+                              {uploadingCover ? 'Mengunggah...' : 'Simpan & Terapkan'}
                             </button>
                           </div>
                         </div>
-                      )}
-                    </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               ) : sidebarMode === 'ai-labs' ? (
@@ -1609,7 +1600,7 @@ export default function YearbookClassesViewUI(props: any) {
                   canManage={canManage}
                   approvalTab={approvalTab}
                   setApprovalTab={setApprovalTab}
-                  joinRequests={joinRequests}
+                  joinRequests={approvalTab === 'pending' ? pendingList : approvalTab === 'approved' ? approvedList : []}
                   classes={classes}
                   inviteToken={inviteToken}
                   inviteExpiresAt={inviteExpiresAt}
@@ -1621,20 +1612,16 @@ export default function YearbookClassesViewUI(props: any) {
                   onRejectRequest={handleRejectJoinRequest}
                   albumId={album?.id}
                   paymentStatus={album?.payment_status}
-                />
-              ) : sidebarMode === 'team' ? (
-                <TeamView
                   members={members}
                   isOwner={isOwner}
                   isGlobalAdmin={isGlobalAdmin}
-                  canManage={canManage}
                   currentUserId={currentUserId}
                   onUpdateRole={handleUpdateRoleWrapper}
                   onRemoveMember={handleRemoveMemberWrapper}
                 />
               ) : sidebarMode === 'sambutan' ? (
                 <SambutanView
-                  teachers={teachers}
+                  teachers={teachers.filter(t => t.name.toLowerCase().includes(teacherSearchQuery.toLowerCase()))}
                   canManage={canManage}
                   onAddTeacher={handleAddTeacher}
                   onUpdateTeacher={handleUpdateTeacher}
@@ -1659,7 +1646,13 @@ export default function YearbookClassesViewUI(props: any) {
                   membersByClass={membersByClass}
                   firstPhotoByStudent={firstPhotoByStudent}
                   onPlayVideo={onPlayVideo}
-                  onClose={() => effectiveAlbumId && router.push(getYearbookSectionQueryUrl(effectiveAlbumId, lastSectionBeforePreviewRef.current, pathname), { scroll: false })}
+                  onClose={() => {
+                    if (props.effectiveBackHref) {
+                      router.push(props.effectiveBackHref, { scroll: false })
+                    } else if (effectiveAlbumId) {
+                      router.push(getYearbookSectionQueryUrl(effectiveAlbumId, lastSectionBeforePreviewRef.current, pathname), { scroll: false })
+                    }
+                  }}
                 />
               ) : sidebarMode === 'flipbook' ? (
                 flipbookAccessible ? (
@@ -1684,170 +1677,215 @@ export default function YearbookClassesViewUI(props: any) {
                 (() => {
                   const access = myAccessByClass[currentClass.id]
                   const hasApprovedAccess = access?.status === 'approved'
-                  const classMembers = membersByClass[currentClass.id] ?? []
+                  const rawClassMembers = membersByClass[currentClass.id] ?? []
+                  const classMembers = classMemberSearchQuery
+                    ? rawClassMembers.filter(m => m.student_name.toLowerCase().includes(classMemberSearchQuery.toLowerCase()))
+                    : rawClassMembers
 
                   return (
-                    <div className="flex flex-col gap-4 py-3">
-                      {/* Mobile Add Class Form - Only visible on mobile when addingClass is true AND no classes exist yet */}
-                      {addingClass && classes.length === 0 && (
-                        <div className="lg:hidden mx-4 p-4 bg-white/5 border border-lime-500/50 rounded-xl animate-in slide-in-from-top-2 duration-200 shadow-lg shadow-black/50">
-                          <h3 className="text-sm font-semibold text-lime-400 mb-3 flex items-center gap-2">
-                            <Plus className="w-4 h-4" />
-                            Tambah Kelas Baru
-                          </h3>
-                          <div className="flex flex-col gap-3">
-                            <div>
-                              <label className="text-xs text-gray-400 mb-1.5 block">Nama Kelas</label>
-                              <input
-                                type="text"
-                                value={newClassName}
-                                onChange={(e) => setNewClassName(e.target.value)}
-                                placeholder="Contoh: XII IPA 1"
-                                className="w-full px-3 py-2.5 rounded-lg bg-black/50 border border-white/20 text-sm text-app placeholder:text-gray-600 focus:outline-none focus:border-lime-500 transition-colors"
-                                autoFocus
-                              />
-                            </div>
-                            <div className="flex gap-2 pt-1">
-                              <button
-                                type="button"
-                                onClick={handleAddClass}
-                                disabled={!newClassName.trim()}
-                                className="flex-1 py-2.5 rounded-lg bg-lime-600 text-white text-sm font-bold hover:bg-lime-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95 shadow-lg shadow-lime-900/20"
-                              >
-                                Simpan
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setAddingClass(false)
-                                  setNewClassName('')
-                                }}
-                                className="flex-1 py-2.5 rounded-lg bg-white/5 border border-white/10 text-gray-300 text-sm font-bold hover:bg-white/10 hover:text-white transition-all active:scale-95"
-                              >
-                                Batal
-                              </button>
+                    <div className="flex flex-col gap-4 pt-0 pb-6 lg:gap-8">
+                      {/* Floating Action Button for Adding Class */}
+                      {canManage && !isCoverView && !addingClass && (
+                        <button
+                          type="button"
+                          onClick={() => setAddingClass(true)}
+                          className="fixed bottom-24 right-6 lg:bottom-10 lg:right-10 z-[60] flex items-center justify-center w-14 h-14 lg:w-16 lg:h-16 rounded-full bg-amber-400 border-2 border-slate-900 shadow-[3px_3px_0_0_#0f172a] active:scale-90 transition-all group"
+                          title="Tambah Kelas"
+                        >
+                          <Plus className="w-8 h-8 text-slate-900 transition-transform group-hover:rotate-90" strokeWidth={2.5} />
+                        </button>
+                      )}
+
+                      {/* Add Class Modal/Overlay (Responsive) */}
+                      {addingClass && (
+                        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                          <div
+                            className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+                            onClick={() => { setAddingClass(false); setNewClassName('') }}
+                          />
+                          <div className="relative w-full max-w-md bg-white border-4 border-slate-900 rounded-[32px] shadow-[12px_12px_0_0_#0f172a] overflow-hidden animate-in zoom-in-95 duration-200">
+                            <div className="p-6">
+                              <div className="flex items-center justify-between mb-6">
+                                <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Tambah Kelas Baru</h3>
+                                <button
+                                  onClick={() => { setAddingClass(false); setNewClassName('') }}
+                                  className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center hover:bg-slate-200 transition-all"
+                                >
+                                  <X className="w-5 h-5 text-slate-500" />
+                                </button>
+                              </div>
+
+                              <div className="flex flex-col gap-6">
+                                <div>
+                                  <label className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2 block">Nama Kelas</label>
+                                  <input
+                                    type="text"
+                                    value={newClassName}
+                                    onChange={(e) => setNewClassName(e.target.value)}
+                                    placeholder="Contoh: XII IPA 1"
+                                    className="w-full px-5 py-4 rounded-xl bg-slate-50 border-4 border-slate-900 text-base font-black text-slate-900 placeholder:text-slate-300 focus:outline-none focus:bg-white transition-all shadow-[4px_4px_0_0_#f1f5f9]"
+                                    autoFocus
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter') handleAddClass()
+                                      if (e.key === 'Escape') { setAddingClass(false); setNewClassName('') }
+                                    }}
+                                  />
+                                </div>
+
+                                <div className="flex gap-3">
+                                  <button
+                                    type="button"
+                                    onClick={() => { setAddingClass(false); setNewClassName('') }}
+                                    className="flex-1 py-4 rounded-2xl bg-slate-100 text-slate-500 text-xs font-black uppercase tracking-widest border-2 border-slate-200 hover:bg-slate-200 transition-all shadow-[2px_2px_0_0_#e2e8f0]"
+                                  >
+                                    Batal
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={handleAddClass}
+                                    disabled={!newClassName.trim()}
+                                    className="flex-[2] py-4 rounded-2xl bg-emerald-400 text-slate-900 text-xs font-black uppercase tracking-widest border-2 border-slate-900 shadow-[4px_4px_0_0_#0f172a] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all disabled:opacity-50"
+                                  >
+                                    Simpan Kelas
+                                  </button>
+                                </div>
+                              </div>
                             </div>
                           </div>
                         </div>
                       )}
 
-                      {/* Batch Photo Section - Prominent Header */}
-                      <div className="bg-white/5 border-y border-white/10 overflow-hidden px-3 py-3 flex flex-col sm:flex-row items-center sm:items-center gap-4">
-                        <div className="flex-1 order-2 sm:order-1 text-center sm:text-left w-full sm:w-auto">
-                          <h2 className="text-xl sm:text-2xl font-bold text-white mb-1">{currentClass.name}</h2>
-                          <div className="flex items-center justify-center sm:justify-start gap-2 text-gray-400">
-                            <Users className="w-4 h-4" />
-                            <span className="text-sm">{classMembers.length} Anggota</span>
+                      {/* Class Info */}
+                      <div className="px-4">
+                        {/* Group Photo Section */}
+                        <div className="mb-14">
+                          <div className="flex items-center gap-3 mb-6">
+                            <div className="w-2 h-8 bg-indigo-500 rounded-full border-2 border-slate-900 shadow-[2px_2px_0_0_#0f172a]"></div>
+                            <h3 className="text-xs font-black text-slate-900 uppercase tracking-[0.2em]">Foto Angkatan</h3>
+                          </div>
+                          <div className="relative">
+                            {currentClass.batch_photo_url ? (
+                              <div
+                                className="relative group aspect-[3/4] lg:max-w-md lg:mx-auto rounded-[40px] border-4 border-slate-900 overflow-hidden bg-slate-100 shadow-[12px_12px_0_0_#0f172a] hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all duration-500"
+                                onClick={() => setViewingBatchPhotoClass(currentClass)}
+                              >
+                                <img
+                                  src={currentClass.batch_photo_url}
+                                  alt={`Foto Angkatan ${currentClass.name}`}
+                                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                                />
+                                <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                  <div className="px-8 py-4 bg-white border-4 border-slate-900 rounded-2xl shadow-[8px_8px_0_0_#0f172a] flex items-center gap-3 active:scale-95 transition-all">
+                                    <Eye className="w-6 h-6 text-slate-900" strokeWidth={3} />
+                                    <span className="text-sm font-black text-slate-900 uppercase tracking-widest">Lihat Layar Penuh</span>
+                                  </div>
+                                </div>
+                                {canManage && (
+                                  <div className="absolute top-6 right-6 flex gap-3 opacity-100 lg:opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        handleDeleteBatchPhoto(currentClass.id)
+                                      }}
+                                      className="w-14 h-14 flex items-center justify-center bg-red-500 rounded-2xl text-white hover:bg-red-600 transition-all border-2 border-slate-900 shadow-[4px_4px_0_0_#0f172a] active:shadow-none active:translate-x-0.5 active:translate-y-0.5"
+                                      title="Hapus Foto"
+                                    >
+                                      <Trash2 className="w-7 h-7" strokeWidth={2.5} />
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+                            ) : (
+                              canManage ? (
+                                <button
+                                  onClick={() => {
+                                    setUploadingBatchPhotoClassId(currentClass.id)
+                                    batchPhotoInputRef.current?.click()
+                                  }}
+                                  className="w-full flex flex-col items-center justify-center aspect-[3/4] lg:max-w-md lg:mx-auto p-12 rounded-[40px] border-4 border-dashed border-slate-300 bg-slate-50 hover:border-indigo-400 hover:bg-slate-100 transition-all group"
+                                >
+                                  <div className="w-24 h-24 rounded-3xl bg-white border-2 border-slate-900 flex items-center justify-center mb-8 shadow-[8px_8px_0_0_#0f172a] group-hover:shadow-none group-hover:translate-x-1 group-hover:translate-y-1 transition-all">
+                                    <ImageIcon className="w-12 h-12 text-indigo-500" strokeWidth={2.5} />
+                                  </div>
+                                  <span className="text-xl font-black text-slate-900 uppercase tracking-tight">Upload Foto Angkatan</span>
+                                  <span className="text-xs text-slate-400 font-bold mt-3 uppercase tracking-widest">Pilih file gambar (Maks. 10MB)</span>
+                                </button>
+                              ) : (
+                                <div className="w-full aspect-[3/4] lg:max-w-md lg:mx-auto flex flex-col items-center justify-center rounded-[40px] border-4 border-dashed border-slate-200 bg-slate-50">
+                                  <ImageIcon className="w-16 h-16 text-slate-300 mb-6 opacity-20" strokeWidth={1} />
+                                  <span className="text-sm font-black text-slate-400 uppercase tracking-widest">Foto Angkatan Belum Tersedia</span>
+                                </div>
+                              )
+                            )}
                           </div>
                         </div>
 
-                        {/* Photo Section */}
-                        <div className="relative group w-full sm:w-auto sm:max-w-md order-1 sm:order-2">
-                          {currentClass.batch_photo_url ? (
-                            <div className="relative w-full aspect-video bg-black/50 rounded-lg overflow-hidden border border-white/10 shadow-lg">
-                              <img
-                                src={currentClass.batch_photo_url}
-                                alt={`Foto Angkatan ${currentClass.name}`}
-                                className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
-                                onClick={() => setViewingBatchPhotoClass(currentClass)}
-                              />
-                              {canManage && (
-                                <div className="absolute top-2 right-2 flex gap-1 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation()
-                                      handleDeleteBatchPhoto(currentClass.id)
-                                    }}
-                                    className="p-2 bg-black/60 backdrop-blur-md rounded-full text-white hover:bg-red-600 transition-all border border-white/10"
-                                    title="Hapus Foto"
-                                  >
-                                    <Trash2 className="w-4 h-4" />
-                                  </button>
-                                </div>
-                              )}
-                            </div>
-                          ) : (
-                            canManage ? (
-                              <button
-                                onClick={() => {
-                                  setUploadingBatchPhotoClassId(currentClass.id)
-                                  batchPhotoInputRef.current?.click()
-                                }}
-                                className="w-full flex flex-col items-center justify-center aspect-video p-6 rounded-lg border-2 border-dashed border-white/10 hover:border-lime-500/50 hover:bg-white/5 transition-all group"
-                              >
-                                <ImageIcon className="w-10 h-10 text-gray-500 group-hover:text-lime-400 mb-3 transition-colors" />
-                                <span className="text-sm font-medium text-gray-400 group-hover:text-white transition-colors">Upload Foto Angkatan</span>
-                                <span className="text-[10px] text-muted mt-0.5">maks. 10MB</span>
-                              </button>
-                            ) : (
-                              <div className="w-full aspect-video flex items-center justify-center rounded-lg border border-white/5 bg-white/[0.02]">
-                                <span className="text-sm text-gray-500 italic">Belum ada foto angkatan</span>
-                              </div>
-                            )
-                          )}
+                        {/* Members Grid/List */}
+                        <div className="flex items-center gap-3 mb-8">
+                          <div className="w-2 h-8 bg-amber-400 rounded-full border-2 border-slate-900 shadow-[2px_2px_0_0_#0f172a]"></div>
+                          <h3 className="text-xs font-black text-slate-900 uppercase tracking-[0.2em]">Daftar Anggota</h3>
                         </div>
-                      </div>
 
-                      {/* Members Grid/List */}
-                      {
-                        classMembers.length === 0 ? (
-                          <div className="flex flex-col items-center justify-center py-20 opacity-60 min-h-[70vh] w-full px-3">
-                            <Users className="w-12 h-12 mb-3 opacity-50" />
-                            <p className="text-center text-sm lg:text-base">Belum ada anggota terdaftar di group ini.</p>
+                        {classMembers.length === 0 ? (
+                          <div className="flex flex-col items-center justify-center py-20 opacity-60 min-h-[40vh] bg-slate-50 rounded-[32px] border-4 border-dashed border-slate-200">
+                            <Users className="w-16 h-16 mb-4 opacity-20 text-slate-400" strokeWidth={1} />
+                            <p className="text-center text-sm font-black text-slate-400 uppercase tracking-widest">Belum ada anggota terdaftar</p>
                           </div>
                         ) : classViewMode === 'list' ? (
-                          <div className="space-y-1 px-3">
+                          <div className="space-y-4">
                             {classMembers.map((m, idx) => (
-                              <div key={idx} className="flex flex-col p-1.5 lg:p-2 rounded-lg border border-white/10 hover:bg-white/5 transition-colors">
-                                <div className="flex items-center justify-between w-full">
-                                  <div className="flex-1 min-w-0">
-                                    <p className="text-app font-medium text-xs lg:text-sm truncate">{m.student_name}{m.is_me ? ' (Anda)' : ''}</p>
-                                    {m.email && <p className="text-muted text-xs truncate">{m.email}</p>}
-                                  </div>
-                                  <div className="flex gap-1 flex-shrink-0 ml-2">
-                                    <button type="button" onClick={() => openGallery(currentClass.id, m.student_name, currentClass.name)} className="px-2 py-1 text-xs rounded-lg border border-white/10 text-app hover:bg-white/5 flex-shrink-0">
-                                      Lihat
-                                    </button>
-                                    {(canManage || (m.is_me && hasApprovedAccess)) && (
-                                      <button
-                                        type="button"
-                                        onClick={(e) => {
-                                          e.stopPropagation()
-                                          if (canManage && !m.is_me && onStartEditMember) {
-                                            setEditingProfileClassId(currentClass.id)
-                                            setEditingMemberUserId?.(m.user_id)
-                                            onStartEditMember(m, currentClass.id)
-                                          } else if (m.is_me && onStartEditMyProfile) {
-                                            setEditingProfileClassId(currentClass.id)
-                                            setEditingMemberUserId?.(null)
-                                            onStartEditMyProfile(currentClass.id)
-                                            if (fetchStudentPhotosForCard) {
-                                              fetchStudentPhotosForCard(currentClass.id, m.student_name)
-                                            }
+                              <div key={idx} className="flex items-center justify-between p-5 rounded-[24px] border-4 border-slate-900 bg-white shadow-[6px_6px_0_0_#0f172a] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all">
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-base font-black text-slate-900 uppercase tracking-tight truncate">{m.student_name}{m.is_me ? ' (Anda)' : ''}</p>
+                                  {m.email && <p className="text-[11px] font-bold text-slate-400 truncate lowercase">{m.email}</p>}
+                                </div>
+                                <div className="flex gap-3 flex-shrink-0 ml-6">
+                                  <button
+                                    type="button"
+                                    onClick={() => openGallery(currentClass.id, m.student_name, currentClass.name)}
+                                    className="px-5 py-2.5 text-[11px] font-black uppercase tracking-widest rounded-xl border-2 border-slate-900 bg-slate-50 text-slate-900 hover:bg-slate-100 shadow-[3px_3px_0_0_#0f172a] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all"
+                                  >
+                                    Lihat
+                                  </button>
+                                  {(canManage || (m.is_me && hasApprovedAccess)) && (
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        if (canManage && !m.is_me && onStartEditMember) {
+                                          setEditingProfileClassId(currentClass.id)
+                                          setEditingMemberUserId?.(m.user_id)
+                                          onStartEditMember(m, currentClass.id)
+                                        } else if (m.is_me && onStartEditMyProfile) {
+                                          setEditingProfileClassId(currentClass.id)
+                                          setEditingMemberUserId?.(null)
+                                          onStartEditMyProfile(currentClass.id)
+                                          if (fetchStudentPhotosForCard) {
+                                            fetchStudentPhotosForCard(currentClass.id, m.student_name)
                                           }
-                                        }}
-                                        className="px-2 py-1 text-xs font-medium rounded-lg bg-lime-600/20 text-lime-400 hover:bg-lime-600/30 flex-shrink-0 flex items-center gap-1"
-                                      >
-                                        <Edit3 className="w-3.5 h-3.5" /> Edit
-                                      </button>
-                                    )}
-                                    {canManage && (
-                                      <button
-                                        type="button"
-                                        onClick={() => setDeleteMemberConfirm({ classId: currentClass.id, userId: m.is_me ? undefined : m.user_id, memberName: m.student_name })}
-                                        className="p-1.5 text-xs font-medium rounded-lg text-red-400 hover:bg-red-600/20 transition-colors flex items-center gap-1"
-                                        title="Hapus anggota"
-                                      >
-                                        <Trash2 className="w-3.5 h-3.5" /> Hapus
-                                      </button>
-                                    )}
-                                  </div>
+                                        }
+                                      }}
+                                      className="px-5 py-2.5 text-[11px] font-black uppercase tracking-widest rounded-xl border-2 border-slate-900 bg-indigo-100 text-indigo-700 hover:bg-indigo-700 hover:text-white shadow-[3px_3px_0_0_#4338ca] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all flex items-center gap-2"
+                                    >
+                                      <Edit3 className="w-4 h-4" strokeWidth={3} />
+                                      <span>Edit</span>
+                                    </button>
+                                  )}
+                                  {canManage && (
+                                    <button
+                                      type="button"
+                                      onClick={() => setDeleteMemberConfirm({ classId: currentClass.id, userId: m.is_me ? undefined : m.user_id, memberName: m.student_name })}
+                                      className="w-12 h-12 flex items-center justify-center rounded-xl bg-red-100 text-red-600 border-2 border-red-600 hover:bg-red-600 hover:text-white transition-all shadow-[3px_3px_0_0_#dc2626] active:shadow-none active:translate-x-0.5 active:translate-y-0.5"
+                                    >
+                                      <Trash2 className="w-5 h-5" strokeWidth={2.5} />
+                                    </button>
+                                  )}
                                 </div>
                               </div>
                             ))}
                           </div>
                         ) : (
-                          <div className="grid gap-2 grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 px-3">
+                          <div className="grid gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
                             {classMembers.map((m) => (
                               <MemberCard
                                 key={m.user_id || m.student_name}
@@ -1861,7 +1899,6 @@ export default function YearbookClassesViewUI(props: any) {
                                 onStartEdit={(member) => {
                                   setEditingProfileClassId(currentClass.id)
                                   setEditingMemberUserId?.(member.user_id)
-                                  // Prepare states in case needed by other logic
                                   setEditProfileName(member.student_name || '')
                                   setEditProfileEmail(member.email || '')
                                   setEditProfileTtl(member.date_of_birth || '')
@@ -1885,41 +1922,35 @@ export default function YearbookClassesViewUI(props: any) {
                                   setEditProfilePesan(data.message)
                                   setEditProfileVideoUrl(data.video_url)
 
-                                  // Flip card back immediately (like TeacherCard)
                                   setEditingMemberUserId?.(null)
                                   setEditingProfileClassId(null)
 
-                                  // Fire-and-forget: save text + upload files in background
                                   const { pendingPhotos, pendingVideo, ...textData } = data
                                   const studentName = data.student_name || m.student_name
 
-                                  ;(async () => {
-                                    try {
-                                      // 1. Save text fields (always skip close since we already closed above)
-                                      await handleSaveProfile?.(currentClass.id, false, m.user_id, textData, true)
+                                    ; (async () => {
+                                      try {
+                                        await handleSaveProfile?.(currentClass.id, false, m.user_id, textData, true)
 
-                                      // 2. Upload pending photos
-                                      if (pendingPhotos && pendingPhotos.length > 0) {
-                                        for (const file of pendingPhotos) {
-                                          if (typeof onUploadPhoto === 'function') {
-                                            await onUploadPhoto(currentClass.id, studentName, currentClass.name, file)
+                                        if (pendingPhotos && pendingPhotos.length > 0) {
+                                          for (const file of pendingPhotos) {
+                                            if (typeof onUploadPhoto === 'function') {
+                                              await onUploadPhoto(currentClass.id, studentName, currentClass.name, file)
+                                            }
                                           }
                                         }
-                                      }
 
-                                      // 3. Upload pending video
-                                      if (pendingVideo && typeof onUploadVideo === 'function') {
-                                        await onUploadVideo(currentClass.id, studentName, currentClass.name, pendingVideo)
-                                      }
+                                        if (pendingVideo && typeof onUploadVideo === 'function') {
+                                          await onUploadVideo(currentClass.id, studentName, currentClass.name, pendingVideo)
+                                        }
 
-                                      // 4. Final fetch to sync all data after uploads complete
-                                      if (fetchMembersForClass) {
-                                        await fetchMembersForClass(currentClass.id)
+                                        if (fetchMembersForClass) {
+                                          await fetchMembersForClass(currentClass.id)
+                                        }
+                                      } catch (err) {
+                                        console.error('[MemberCard onSave] Error:', err)
                                       }
-                                    } catch (err) {
-                                      console.error('[MemberCard onSave] Error:', err)
-                                    }
-                                  })()
+                                    })()
                                 }}
                                 onDeleteClick={() => setDeleteMemberConfirm({ classId: currentClass.id, userId: m.is_me ? undefined : m.user_id, memberName: m.student_name })}
                                 onDeletePhoto={(pid, cid, sname) => {
@@ -1932,109 +1963,130 @@ export default function YearbookClassesViewUI(props: any) {
                             ))}
                           </div>
                         )}
+                      </div>
                     </div>
                   )
                 })()
               ) : null}
-            </div>
-
-            {/* Custom Confirmation Modals */}
-            {
-              deleteClassConfirm && (
-                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
-                  <div className="bg-gray-900 border border-red-500/20 rounded-xl p-4 sm:p-6 max-w-md w-full shadow-2xl">
-                    <h3 className="text-lg font-bold text-red-400 mb-2">Hapus Kelas</h3>
-                    <p className="text-sm text-gray-400 mb-4">
-                      Yakin ingin menghapus kelas "{deleteClassConfirm.className}"? Semua data member di dalamnya akan hilang.
-                    </p>
-                    <div className="flex gap-2 justify-end">
-                      <button onClick={() => setDeleteClassConfirm(null)} className="px-4 py-2 rounded-lg bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white transition-colors text-sm font-medium">Batal</button>
-                      <button
-                        onClick={() => {
-                          handleDeleteClass(deleteClassConfirm.classId)
-                          setDeleteClassConfirm(null)
-                        }}
-                        className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-500 transition-colors text-sm font-medium"
-                      >
-                        Ya, Hapus
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )
-            }
-
-            {
-              deleteMemberConfirm && (
-                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
-                  <div className="bg-gray-900 border border-red-500/20 rounded-xl p-4 sm:p-6 max-w-md w-full shadow-2xl">
-                    <h3 className="text-lg font-bold text-red-400 mb-2">Hapus Anggota</h3>
-                    <p className="text-sm text-gray-400 mb-4">
-                      Hapus "{deleteMemberConfirm.memberName}" dari kelas?
-                    </p>
-                    <div className="flex gap-2 justify-end">
-                      <button onClick={() => setDeleteMemberConfirm(null)} className="px-4 py-2 rounded-lg bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white transition-colors text-sm font-medium">Batal</button>
-                      <button
-                        onClick={async () => {
-                          const targetUserId = deleteMemberConfirm.userId ?? currentUserId!
-                          await handleDeleteClassMember(deleteMemberConfirm.classId, targetUserId)
-                          setDeleteMemberConfirm(null)
-                        }}
-                        className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-500 transition-colors text-sm font-medium"
-                      >
-                        Ya, Hapus
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )
-            }
-
-
-
-            {/* Hidden Batch Photo Input */}
-            <input
-              type="file"
-              ref={batchPhotoInputRef}
-              className="hidden"
-              accept="image/*"
-              onChange={handleUploadBatchPhoto}
-            />
-
-            {/* Batch Photo Viewer */}
-            {
-              viewingBatchPhotoClass && viewingBatchPhotoClass.batch_photo_url && (
-                <div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-sm flex flex-col animate-in fade-in duration-200">
-                  <div className="flex items-center justify-between p-4 border-b border-white/10">
-                    <h3 className="text-white font-medium text-lg">Foto Angkatan - {viewingBatchPhotoClass.name}</h3>
-                    <div className="flex items-center gap-2">
-                      {canManage && (
+              {
+                deleteClassConfirm && (
+                  <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-md flex items-center justify-center z-[200] p-4">
+                    <div className="bg-white border-4 border-slate-900 rounded-[32px] p-6 lg:p-8 max-w-sm w-full shadow-[12px_12px_0_0_#0f172a] text-center">
+                      <h3 className="text-xl lg:text-2xl font-black text-slate-900 mb-2 uppercase tracking-tight">Hapus Kelas</h3>
+                      <p className="text-sm font-bold text-slate-500 mb-8 lowercase first-letter:uppercase">
+                        Yakin ingin menghapus kelas "{deleteClassConfirm.className}"? Semua data member di dalamnya akan hilang selamanya.
+                      </p>
+                      <div className="flex gap-3">
                         <button
-                          onClick={() => handleDeleteBatchPhoto(viewingBatchPhotoClass.id)}
-                          className="p-2 text-red-400 hover:text-red-300 hover:bg-white/10 rounded-full transition-colors"
-                          title="Hapus Foto"
+                          onClick={() => setDeleteClassConfirm(null)}
+                          className="flex-1 py-3.5 rounded-xl bg-slate-50 border-2 border-slate-900 text-slate-900 text-xs font-black uppercase tracking-widest hover:bg-slate-100 transition-all"
                         >
-                          <Trash2 className="w-5 h-5" />
+                          Batal
                         </button>
-                      )}
-                      <button
-                        onClick={() => setViewingBatchPhotoClass(null)}
-                        className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-full transition-colors"
-                      >
-                        <X className="w-6 h-6" />
-                      </button>
+                        <button
+                          onClick={() => {
+                            handleDeleteClass(deleteClassConfirm.classId)
+                            setDeleteClassConfirm(null)
+                          }}
+                          className="flex-1 py-3.5 rounded-xl bg-red-500 border-2 border-slate-900 text-white text-xs font-black uppercase tracking-widest shadow-[4px_4px_0_0_#0f172a] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
+                        >
+                          Ya, Hapus
+                        </button>
+                      </div>
                     </div>
                   </div>
-                  <div className="flex-1 p-4 flex items-center justify-center overflow-auto">
-                    <img
-                      src={viewingBatchPhotoClass.batch_photo_url}
-                      alt={`Foto Angkatan ${viewingBatchPhotoClass.name}`}
-                      className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
-                    />
+                )
+              }
+
+              {
+                deleteMemberConfirm && (
+                  <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-md flex items-center justify-center z-[200] p-4">
+                    <div className="bg-white border-4 border-slate-900 rounded-[32px] p-6 lg:p-8 max-w-sm w-full shadow-[12px_12px_0_0_#0f172a] text-center">
+                      <h3 className="text-xl lg:text-2xl font-black text-slate-900 mb-2 uppercase tracking-tight">Hapus Anggota</h3>
+                      <p className="text-sm font-bold text-slate-500 mb-8">
+                        Hapus "{deleteMemberConfirm.memberName}" dari daftar kelas?
+                      </p>
+                      <div className="flex gap-3">
+                        <button
+                          onClick={() => setDeleteMemberConfirm(null)}
+                          className="flex-1 py-3.5 rounded-xl bg-slate-50 border-2 border-slate-900 text-slate-900 text-xs font-black uppercase tracking-widest hover:bg-slate-100 transition-all"
+                        >
+                          Batal
+                        </button>
+                        <button
+                          onClick={async () => {
+                            const targetUserId = deleteMemberConfirm.userId ?? currentUserId!
+                            await handleDeleteClassMember(deleteMemberConfirm.classId, targetUserId)
+                            setDeleteMemberConfirm(null)
+                          }}
+                          className="flex-1 py-3.5 rounded-xl bg-red-500 border-2 border-slate-900 text-white text-xs font-black uppercase tracking-widest shadow-[4px_4px_0_0_#0f172a] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
+                        >
+                          Ya, Hapus
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              )
-            }
+                )
+              }
+
+
+
+              {/* Hidden Batch Photo Input */}
+              <input
+                type="file"
+                ref={batchPhotoInputRef}
+                className="hidden"
+                accept="image/*"
+                onChange={handleUploadBatchPhoto}
+              />
+
+              {/* Batch Photo Viewer */}
+              {
+                viewingBatchPhotoClass && viewingBatchPhotoClass.batch_photo_url && (
+                  <div className="fixed inset-0 z-[200] bg-slate-900/95 backdrop-blur-md flex flex-col animate-in fade-in duration-300 p-4 lg:p-10">
+                    <div className="flex items-center justify-between mb-6 lg:mb-10 w-full max-w-6xl mx-auto">
+                      <div className="bg-amber-300 border-4 border-slate-900 px-6 py-3 rounded-2xl shadow-[6px_6px_0_0_#0f172a]">
+                        <h3 className="text-slate-900 font-black text-sm lg:text-xl uppercase tracking-widest">Foto Angkatan — {viewingBatchPhotoClass.name}</h3>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        {canManage && (
+                          <button
+                            onClick={() => {
+                              if (confirm('Hapus foto angkatan ini?')) {
+                                handleDeleteBatchPhoto(viewingBatchPhotoClass.id)
+                                setViewingBatchPhotoClass(null)
+                              }
+                            }}
+                            className="w-12 h-12 flex items-center justify-center bg-red-500 rounded-2xl border-4 border-slate-900 text-white shadow-[4px_4px_0_0_#0f172a] active:shadow-none active:translate-x-1 active:translate-y-1 transition-all"
+                            title="Hapus Foto"
+                          >
+                            <Trash2 className="w-6 h-6" strokeWidth={3} />
+                          </button>
+                        )}
+                        <button
+                          onClick={() => setViewingBatchPhotoClass(null)}
+                          className="w-12 h-12 flex items-center justify-center bg-white rounded-2xl border-4 border-slate-900 text-slate-900 shadow-[4px_4px_0_0_#0f172a] active:shadow-none active:translate-x-1 active:translate-y-1 transition-all"
+                        >
+                          <X className="w-7 h-7" strokeWidth={4} />
+                        </button>
+                      </div>
+                    </div>
+                    <div className="flex-1 flex items-center justify-center overflow-hidden w-full max-w-7xl mx-auto">
+                      <div className="relative p-2 bg-white border-4 border-slate-900 rounded-[32px] shadow-[20px_20px_0_0_rgba(0,0,0,0.3)] max-h-full">
+                        <img
+                          src={viewingBatchPhotoClass.batch_photo_url}
+                          alt={`Foto Angkatan ${viewingBatchPhotoClass.name}`}
+                          className="max-w-full max-h-[70vh] object-contain rounded-[24px]"
+                        />
+                      </div>
+                    </div>
+                    <div className="mt-8 text-center">
+                      <p className="text-white/60 text-[10px] font-black uppercase tracking-[0.3em]">Fresh Creative Yearbook Digital System</p>
+                    </div>
+                  </div>
+                )
+              }
+            </main>
           </div>
         </div >
       </div >

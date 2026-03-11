@@ -1,3 +1,5 @@
+import { apiUrl } from './api-url'
+
 /**
  * Fetch URL (via proxy jika eksternal), lalu download blob ke device.
  * Untuk video / file non-gambar (tanpa watermark).
@@ -5,7 +7,7 @@
 function getFetchUrl(url: string): string {
   if (url.startsWith("data:")) return url;
   if (url.startsWith("http://") || url.startsWith("https://")) {
-    return `/api/proxy-image?url=${encodeURIComponent(url)}`;
+    return apiUrl(`/api/proxy-image?url=${encodeURIComponent(url)}`);
   }
   return url;
 }

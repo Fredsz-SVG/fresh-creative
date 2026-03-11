@@ -12,10 +12,13 @@ import {
   Sparkles,
   History,
   Coins,
+  Trash2,
   type LucideIcon,
 } from 'lucide-react'
 import TopUpModal from './TopUpModal'
 import { supabase } from '@/lib/supabase'
+import { apiUrl } from '../../lib/api-url'
+import { fetchWithAuth } from '../../lib/api-client'
 
 export type NavSection = {
   title: string
@@ -57,18 +60,18 @@ export default function DashboardShell({
   const [unreadCount, setUnreadCount] = useState(0)
 
   const refreshCredits = () => {
-    fetch('/api/user/me')
+    fetchWithAuth('/api/user/me')
       .then((res) => res.json())
       .then((data) => {
         if (typeof data.credits === 'number') setCredits(data.credits)
       })
-      .catch(() => {})
+      .catch(() => { })
   }
 
   const fetchNotifications = async () => {
     if (typeof window !== 'undefined' && !navigator.onLine) return
     try {
-      const res = await fetch('/api/user/notifications')
+      const res = await fetchWithAuth('/api/user/notifications')
       if (!res.ok) return
       const data = await res.json().catch(() => null)
       if (data && Array.isArray(data)) {
@@ -87,7 +90,7 @@ export default function DashboardShell({
 
     const init = async () => {
       try {
-        const res = await fetch('/api/user/me')
+        const res = await fetchWithAuth('/api/user/me')
         const data = await res.json()
         if (typeof data.credits === 'number') setCredits(data.credits)
 
@@ -111,13 +114,56 @@ export default function DashboardShell({
             .on(
               'postgres_changes',
               {
-                event: '*',
+                event: 'INSERT',
                 schema: 'public',
                 table: 'notifications',
                 filter: `user_id=eq.${data.id}`
               },
-              () => {
-                fetchNotifications()
+              (payload: any) => {
+                if (payload.new) {
+                  setNotifications(prev => [payload.new, ...prev])
+                  if (!payload.new.is_read) {
+                    setUnreadCount(prev => prev + 1)
+                  }
+                }
+              }
+            )
+            .on(
+              'postgres_changes',
+              {
+                event: 'UPDATE',
+                schema: 'public',
+                table: 'notifications',
+                filter: `user_id=eq.${data.id}`
+              },
+              (payload: any) => {
+                if (payload.new) {
+                  setNotifications(prev => prev.map(n => n.id === payload.new.id ? payload.new : n))
+                  // Re-calculate unread count from the new state to be safe
+                  setNotifications(currentNotifs => {
+                    const updated = currentNotifs.map(n => n.id === payload.new.id ? payload.new : n)
+                    setUnreadCount(updated.filter(n => !n.is_read).length)
+                    return updated
+                  })
+                }
+              }
+            )
+            .on(
+              'postgres_changes',
+              {
+                event: 'DELETE',
+                schema: 'public',
+                table: 'notifications',
+                filter: `user_id=eq.${data.id}`
+              },
+              (payload: any) => {
+                if (payload.old) {
+                  setNotifications(prev => {
+                    const filtered = prev.filter(n => n.id !== payload.old.id)
+                    setUnreadCount(filtered.filter(n => !n.is_read).length)
+                    return filtered
+                  })
+                }
               }
             )
             .subscribe()
@@ -130,12 +176,12 @@ export default function DashboardShell({
     init()
 
     const onCreditsUpdated = () => {
-      fetch('/api/user/me')
+      fetchWithAuth('/api/user/me')
         .then((res) => res.json())
         .then((data) => {
           if (typeof data.credits === 'number') setCredits(data.credits)
         })
-        .catch(() => {})
+        .catch(() => { })
     }
     window.addEventListener('credits-updated', onCreditsUpdated)
 
@@ -149,9 +195,26 @@ export default function DashboardShell({
     try {
       // Optimistic update
       setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n))
-      setUnreadCount(prev => Math.max(0, prev - 1))
+      const notif = notifications.find(n => n.id === id)
+      if (notif && !notif.is_read) {
+        setUnreadCount(prev => Math.max(0, prev - 1))
+      }
 
-      await fetch(`/api/user/notifications/${id}`, { method: 'PATCH' }).catch(() => { })
+      await fetchWithAuth(`/api/user/notifications/${id}`, { method: 'PATCH' }).catch(() => { })
+    } catch (e) {
+      fetchNotifications()
+    }
+  }
+
+  const handleDeleteNotification = async (e: React.MouseEvent, id: string) => {
+    e.stopPropagation() // Prevent marking as read when deleting
+    try {
+      const notif = notifications.find(n => n.id === id)
+      setNotifications(prev => prev.filter(n => n.id !== id))
+      if (notif && !notif.is_read) {
+        setUnreadCount(prev => Math.max(0, prev - 1))
+      }
+      await fetchWithAuth(`/api/user/notifications/${id}`, { method: 'DELETE' }).catch(() => { })
     } catch (e) {
       fetchNotifications()
     }
@@ -162,7 +225,7 @@ export default function DashboardShell({
     try {
       setNotifications(prev => prev.map(n => ({ ...n, is_read: true })))
       setUnreadCount(0)
-      await fetch('/api/user/notifications', { method: 'PATCH' }).catch(() => { })
+      await fetchWithAuth('/api/user/notifications', { method: 'PATCH' }).catch(() => { })
     } catch (e) {
       fetchNotifications()
     }
@@ -173,7 +236,7 @@ export default function DashboardShell({
     try {
       setNotifications([])
       setUnreadCount(0)
-      await fetch('/api/user/notifications', { method: 'DELETE' }).catch(() => { })
+      await fetchWithAuth('/api/user/notifications', { method: 'DELETE' }).catch(() => { })
     } catch (e) {
       fetchNotifications()
     }
@@ -194,6 +257,13 @@ export default function DashboardShell({
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [showNotifications])
 
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', 'light')
+    return () => {
+      document.documentElement.removeAttribute('data-theme')
+    }
+  }, [])
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -220,7 +290,8 @@ export default function DashboardShell({
 
   // Halaman album yearbook (sampul atau section kelas/preview/dll): full screen tanpa header, sidebar, dan bottom nav
   const isYearbookAlbumPage = useMemo(() => {
-    return /\/album\/yearbook\/[^/]+(\/[^/]+)?$/.test(pathname ?? '')
+    const re = new RegExp('/album/yearbook/[^/]+(/[^/]+)?$')
+    return re.test(pathname ?? '')
   }, [pathname])
 
   // Derive bottom nav items for mobile (app-like): Home, Labs, Album, Riwayat Transaksi
@@ -243,9 +314,9 @@ export default function DashboardShell({
   }, [navSections])
 
   const navLinkClass = (isActive: boolean) =>
-    `flex items-center gap-2 min-h-[32px] px-2.5 py-2 rounded-lg text-xs font-medium transition-all touch-manipulation ${isActive
-      ? 'bg-lime-500/20 text-lime-400'
-      : 'text-gray-400 hover:bg-white/5 hover:text-white active:bg-white/10'
+    `group flex items-center gap-2.5 min-h-[36px] px-3 py-2 rounded-xl text-[13px] font-black transition-all duration-200 touch-manipulation border-2 border-transparent ${isActive
+      ? 'bg-indigo-300 border-slate-900 text-slate-900 shadow-[3px_3px_0_0_#0f172a] -translate-y-0.5'
+      : 'text-slate-600 hover:border-slate-900 hover:bg-emerald-300 hover:text-slate-900 hover:shadow-[3px_3px_0_0_#0f172a] hover:-translate-y-0.5 active:translate-y-0 active:shadow-none'
     }`
 
   const NavSections = () => (
@@ -254,7 +325,7 @@ export default function DashboardShell({
         if (!section?.items?.length) return null
         return (
           <div key={section.title} className="space-y-0.5">
-            <p className="px-2.5 pt-2 pb-1 text-[9px] font-semibold uppercase tracking-wider text-gray-500">
+            <p className="px-3 pt-3 pb-1 text-[10px] font-bold uppercase tracking-widest text-gray-400">
               {section.title}
             </p>
             <ul className="space-y-0.5">
@@ -268,10 +339,10 @@ export default function DashboardShell({
                       onClick={() => setDrawerOpen(false)}
                       className={navLinkClass(isActive)}
                     >
-                      <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-lime-400' : 'text-gray-500'}`} />
+                      <Icon className={`w-4 h-4 shrink-0 transition-colors ${isActive ? 'text-slate-900' : 'text-slate-500 group-hover:text-slate-900'}`} />
                       <span className="truncate">{item.label}</span>
                       {item.badge && (
-                        <span className="ml-auto text-[9px] text-gray-500">({item.badge})</span>
+                        <span className="ml-auto text-[9px] text-slate-800 bg-white border border-slate-900 px-1.5 py-0.5 flex items-center rounded-full shadow-[1px_1px_0_0_#0f172a] font-black leading-none pt-1">({item.badge})</span>
                       )}
                     </Link>
                   </li>
@@ -285,14 +356,14 @@ export default function DashboardShell({
   )
 
   const NavFooter = () => (
-    <div className="p-2 border-t border-white/10">
-      <div className="flex items-center gap-2 px-2.5 py-2 rounded-lg bg-white/5 min-h-[32px]">
-        <div className="w-7 h-7 rounded-full bg-gradient-to-br from-cyan-500 to-purple-600 flex items-center justify-center text-white font-bold text-[10px] shrink-0">
+    <div className="p-3 border-t-2 border-slate-900 bg-white">
+      <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-orange-200 border-2 border-slate-900 shadow-[4px_4px_0_0_#0f172a] min-h-[36px]">
+        <div className="w-8 h-8 rounded-full bg-emerald-400 border-2 border-slate-900 flex items-center justify-center text-slate-900 font-black text-[13px] shrink-0 shadow-[2px_2px_0_0_#0f172a]">
           {(userDisplayName || userEmail || 'U').charAt(0).toUpperCase()}
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-xs font-medium text-white truncate">{userDisplayName || 'User'}</p>
-          {userBadge && <p className="text-[10px] text-purple-400 truncate">{userBadge}</p>}
+          <p className="text-xs font-black text-slate-900 truncate tracking-tight">{userDisplayName || 'User'}</p>
+          {userBadge && <p className="text-[10px] text-indigo-700 font-black truncate">{userBadge}</p>}
         </div>
       </div>
       {onLogout && (
@@ -301,9 +372,9 @@ export default function DashboardShell({
           onClick={() => {
             setLogoutConfirmOpen(true)
           }}
-          className="mt-1.5 w-full min-h-[32px] px-2.5 py-2 rounded-lg text-left text-xs font-medium text-red-400 hover:bg-red-500/10 active:bg-red-500/20 transition-colors touch-manipulation"
+          className="mt-3 w-full min-h-[36px] px-3 py-2 rounded-xl text-center text-xs font-black text-white bg-red-500 border-2 border-slate-900 shadow-[3px_3px_0_0_#0f172a] hover:translate-y-1 hover:translate-x-1 hover:shadow-none hover:bg-red-400 touch-manipulation transition-all"
         >
-          Logout
+          LOGOUT
         </button>
       )}
     </div>
@@ -311,32 +382,32 @@ export default function DashboardShell({
 
   if (isYearbookAlbumPage) {
     return (
-      <div className="dashboard-shell min-h-[100dvh] bg-[#0a0a0b] text-gray-100">
+      <div className="dashboard-shell min-h-[100dvh] bg-white text-gray-900">
         {children}
       </div>
     )
   }
 
   return (
-    <div className="dashboard-shell min-h-[100dvh] bg-[#0a0a0b] text-gray-100 flex flex-col">
+    <div className="dashboard-shell min-h-[100dvh] bg-white text-gray-800 flex flex-col">
       {logoutConfirmOpen && (
         <div
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[120] p-4"
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[120] p-4"
           onClick={() => setLogoutConfirmOpen(false)}
         >
           <div
-            className="bg-gray-900 border border-red-500/20 rounded-xl p-4 sm:p-6 max-w-md w-full shadow-2xl"
+            className="bg-white border border-gray-100 rounded-2xl p-5 sm:p-6 max-w-md w-full shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="text-lg font-bold text-red-400 mb-2">Logout</h3>
-            <p className="text-sm text-gray-400 mb-4">
+            <h3 className="text-lg font-bold text-red-500 mb-2">Logout</h3>
+            <p className="text-sm text-gray-500 mb-5">
               Yakin ingin logout dari akun ini?
             </p>
             <div className="flex gap-2 justify-end">
               <button
                 type="button"
                 onClick={() => setLogoutConfirmOpen(false)}
-                className="px-4 py-2 rounded-lg bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white transition-colors text-sm font-medium"
+                className="px-4 py-2 rounded-xl bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors text-sm font-semibold"
               >
                 Batal
               </button>
@@ -347,7 +418,7 @@ export default function DashboardShell({
                   setDrawerOpen(false)
                   onLogout?.()
                 }}
-                className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-500 transition-colors text-sm font-medium"
+                className="px-4 py-2 rounded-xl bg-red-500 text-white hover:bg-red-600 transition-colors text-sm font-semibold shadow-sm"
               >
                 Ya, Logout
               </button>
@@ -355,19 +426,21 @@ export default function DashboardShell({
           </div>
         </div>
       )}
-      {/* Top header - di mobile disembunyikan saat fitur AI Labs (tryon, pose, image-editor, photogroup, phototovideo) dibuka */}
+      {/* Top header */}
       <header
-        className={`fixed top-0 left-0 right-0 z-40 h-14 min-h-[44px] border-b border-white/10 bg-[#0a0a0b]/95 backdrop-blur flex items-center justify-between px-4 pt-[env(safe-area-inset-top)] ${isAiLabsFeaturePage ? 'max-md:hidden' : ''}`}
+        className={`fixed top-0 left-0 right-0 z-40 h-14 min-h-[44px] border-b-2 border-slate-900 bg-white flex items-center justify-between px-4 pt-[env(safe-area-inset-top)] shadow-[0_4px_0_0_#0f172a] ${isAiLabsFeaturePage ? 'max-md:hidden' : ''}`}
       >
         <div className="flex items-center gap-3 min-w-0">
           <Link
             href={logoHref}
-            className="flex items-center gap-2 text-lime-400 font-bold uppercase tracking-wider text-sm shrink-0 min-h-[44px]"
+            className="flex items-center gap-1 md:gap-2 text-slate-900 font-black uppercase tracking-wider text-[10px] md:text-[15px] shrink-0 min-h-[44px]"
           >
-            <Zap className="w-5 h-5 shrink-0" />
+            <div className="w-5 h-5 md:w-7 md:h-7 bg-orange-300 border-2 border-slate-900 rounded shadow-[1.5px_1.5px_0_0_#0f172a] md:shadow-[2px_2px_0_0_#0f172a] flex items-center justify-center -mt-0.5 shrink-0">
+              <Zap className="w-2.5 h-2.5 md:w-3.5 md:h-3.5 shrink-0 text-slate-900 fill-slate-900" />
+            </div>
             <span className="inline">FRESHCREATIVE.ID</span>
           </Link>
-          <span className="hidden sm:inline-flex items-center gap-2 text-white/90 text-sm font-medium uppercase tracking-wide truncate ml-1">
+          <span className="hidden sm:inline-flex items-center gap-2 text-slate-400 text-sm font-black uppercase tracking-widest truncate ml-1">
             {sectionTitle}
           </span>
         </div>
@@ -376,113 +449,128 @@ export default function DashboardShell({
           <button
             type="button"
             onClick={() => setShowTopUp(true)}
-            className="flex flex-col items-end mr-2 md:mr-4 group cursor-pointer"
+            className="flex flex-col items-end mr-3 sm:mr-4 group cursor-pointer"
           >
-            <p className="text-[10px] uppercase tracking-wider text-gray-500 group-hover:text-lime-400 transition-colors">Credit</p>
-            <div className="flex items-center gap-1.5 text-xs font-medium text-white group-hover:text-lime-400 transition-colors">
-              <Coins className="w-3.5 h-3.5 text-lime-400" />
-              <span>{credits}</span>
+            <p className="text-[10px] uppercase tracking-wider text-slate-900 group-hover:text-indigo-600 transition-colors font-black">Credit</p>
+            <div className="flex items-center gap-1.5 text-xs font-black text-slate-900 group-hover:text-indigo-600 transition-colors">
+              <Coins className="w-3.5 h-3.5 text-amber-500" />
+              <span className="text-[15px]">{credits}</span>
             </div>
           </button>
-          <div className="hidden md:block text-right mr-2">
-            <p className="text-[10px] uppercase tracking-wider text-gray-500">Status</p>
-            <p className={`text-xs font-medium ${isOnline ? 'text-lime-400' : 'text-red-500'}`}>
-              {isOnline ? 'Connected' : 'Disconnected'}
+
+          <div className="hidden md:flex flex-col items-end mr-4">
+            <p className="text-[10px] uppercase tracking-wider text-slate-900 font-black">Status</p>
+            <p className={`text-[12px] font-black uppercase tracking-tight py-0.5 px-2 rounded-lg border-2 border-slate-900 shadow-[2px_2px_0_0_#0f172a] -rotate-1 ${isOnline ? 'bg-emerald-300 text-slate-900' : 'bg-red-400 text-white'}`}>
+              {isOnline ? 'Connected' : 'Offline'}
             </p>
           </div>
-          {/* Notification - Updated per user request */}
+          {/* Notification */}
           <div className="relative" ref={notificationRef}>
             <button
               type="button"
               onClick={() => setShowNotifications(!showNotifications)}
-              className="relative flex items-center justify-center w-10 h-10 rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-colors touch-manipulation"
+              className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-white border-2 border-slate-900 text-slate-900 shadow-[3px_3px_0_0_#0f172a] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all touch-manipulation"
             >
-              <Bell className="w-5 h-5" />
+              <Bell className="w-5 h-5" strokeWidth={3} />
               {unreadCount > 0 && (
-                <span className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-red-500 border border-[#0a0a0b] animate-pulse" />
+                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-pink-500 border-2 border-slate-900 animate-pulse flex items-center justify-center text-[9px] font-black text-white">
+                  {unreadCount}
+                </span>
               )}
             </button>
 
             {showNotifications && (
-              <>
-                <div className="fixed left-1/2 -translate-x-1/2 top-[calc(3.5rem+env(safe-area-inset-top)+0.5rem)] w-[calc(100vw-2rem)] max-w-sm md:left-auto md:right-0 md:top-full md:mt-2 md:w-80 md:translate-x-0 md:absolute bg-[#18181b] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-200">
-                  <div className="p-3 border-b border-white/5 flex items-center justify-between">
-                    <h3 className="text-xs font-semibold text-white uppercase tracking-wider">Notifikasi</h3>
-                    <div className="flex items-center gap-2 flex-wrap justify-end">
-                      <span className="text-[10px] text-gray-500">{unreadCount} baru</span>
-                      {unreadCount > 0 && (
-                        <button
-                          type="button"
-                          onClick={handleMarkAllRead}
-                          className="text-[10px] text-lime-400 hover:text-lime-300 transition-colors"
-                        >
-                          Tandai semua dibaca
-                        </button>
-                      )}
-                      {notifications.length > 0 && (
-                        <button
-                          type="button"
-                          onClick={handleClearNotifications}
-                          className="text-[10px] text-red-400 hover:text-red-300 transition-colors"
-                        >
-                          Clear
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                  <div className="max-h-[300px] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-                    {notifications.length === 0 ? (
-                      <div className="p-4 text-center">
-                        <p className="text-xs text-gray-500 mb-2">Tidak ada notifikasi</p>
-                      </div>
-                    ) : (
-                      notifications.map((n) => (
-                        <div
-                          key={n.id}
-                          onClick={() => !n.is_read && handleMarkRead(n.id)}
-                          className={`p-3 hover:bg-white/5 transition-colors cursor-pointer border-l-2 ${n.is_read ? 'border-transparent opacity-60' : 'border-lime-500 bg-white/[0.02]'}`}
-                        >
-                          <div className="flex items-start gap-3">
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${n.type === 'error' ? 'bg-red-500/20 text-red-400' : 'bg-lime-500/20 text-lime-400'}`}>
-                              <Bell className="w-4 h-4" />
-                            </div>
-                            <div className="space-y-1 min-w-0 flex-1">
-                              <div className="flex justify-between items-start gap-2">
-                                <p className="text-xs font-semibold text-white leading-tight truncate">{n.title}</p>
-                                {!n.is_read && <span className="w-1.5 h-1.5 rounded-full bg-lime-500 shrink-0 mt-1" />}
-                              </div>
-                              <div className="text-[11px] text-gray-400 space-y-0.5 whitespace-pre-line">
-                                {n.message}
-                              </div>
-                              {n.metadata?.status && (
-                                <p className="text-[10px] text-lime-400 font-medium pt-1">{n.metadata.status}</p>
-                              )}
-                              <p className="text-[9px] text-gray-600 pt-1">
-                                {new Date(n.created_at).toLocaleDateString()} {new Date(n.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      ))
+              <div className="fixed left-1/2 -translate-x-1/2 top-[calc(4rem+env(safe-area-inset-top))] w-[calc(100vw-2rem)] max-w-sm md:left-auto md:right-0 md:top-full md:mt-4 md:w-80 md:translate-x-0 md:absolute bg-white border-4 border-slate-900 rounded-3xl shadow-[8px_8px_0_0_#0f172a] overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-200">
+                <div className="p-4 border-b-2 border-slate-900 flex items-center justify-between bg-indigo-50">
+                  <h3 className="text-[13px] font-black text-slate-900 uppercase tracking-widest">Notifikasi</h3>
+                  <div className="flex items-center gap-2 flex-wrap justify-end">
+                    {unreadCount > 0 && (
+                      <button
+                        type="button"
+                        onClick={handleMarkAllRead}
+                        className="text-[10px] text-indigo-600 hover:text-indigo-800 transition-colors font-black uppercase tracking-tight underline decoration-2 underline-offset-2"
+                      >
+                        Baca Semua
+                      </button>
+                    )}
+                    {notifications.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={handleClearNotifications}
+                        className="text-[10px] text-red-500 hover:text-red-700 transition-colors font-black uppercase tracking-tight underline decoration-2 underline-offset-2"
+                      >
+                        Hapus Semua
+                      </button>
                     )}
                   </div>
                 </div>
-              </>
+                <div className="max-h-[350px] overflow-y-auto no-scrollbar">
+                  {notifications.length === 0 ? (
+                    <div className="p-10 text-center">
+                      <div className="w-16 h-16 rounded-2xl bg-slate-50 border-2 border-slate-900 flex items-center justify-center mx-auto mb-4 text-slate-300">
+                        <Bell className="w-8 h-8 opacity-20" />
+                      </div>
+                      <p className="text-[14px] font-black text-slate-400">Kosong melompong</p>
+                    </div>
+                  ) : (
+                    notifications.map((n) => (
+                      <div
+                        key={n.id}
+                        onClick={() => !n.is_read && handleMarkRead(n.id)}
+                        className={`p-4 hover:bg-emerald-50 transition-colors cursor-pointer border-b-2 border-slate-100 last:border-0 relative group/item ${n.is_read ? 'opacity-60 grayscale-[0.5]' : 'bg-white'}`}
+                      >
+                        {!n.is_read && <div className="absolute left-0 top-0 bottom-0 w-1 bg-indigo-500" />}
+                        <div className="flex items-start gap-3 sm:gap-4">
+                          <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl border-2 border-slate-900 flex items-center justify-center shrink-0 shadow-[2px_2px_0_0_#0f172a] ${n.type === 'error' ? 'bg-red-400 text-white' : 'bg-indigo-300 text-slate-900'}`}>
+                            <Bell className="w-4 h-4 sm:w-5 sm:h-5" />
+                          </div>
+                          <div className="space-y-1 min-w-0 flex-1">
+                            <div className="flex justify-between items-start gap-2">
+                              <p className="text-[13px] font-black text-slate-900 leading-tight pr-6">{n.title}</p>
+                              <div className="flex items-center gap-2">
+                                {!n.is_read && <span className="w-2 h-2 rounded-full bg-pink-500 border border-slate-900 shrink-0 mt-1 animate-pulse" />}
+                                <button
+                                  type="button"
+                                  onClick={(e) => handleDeleteNotification(e, n.id)}
+                                  className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all absolute right-3 top-3"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </div>
+                            <p className="text-[12px] font-bold text-slate-600 leading-snug">
+                              {n.message}
+                            </p>
+                            <div className="flex items-center justify-between pt-2">
+                              <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider">
+                                {new Date(n.created_at).toLocaleDateString()} {new Date(n.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              </p>
+                              {n.metadata?.status && (
+                                <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-slate-100 border border-slate-900 text-slate-900 uppercase">
+                                  {n.metadata.status}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
             )}
           </div>
           {onLogout && (
-            // show person icon only on mobile; desktop hides it
             <button
               type="button"
               onClick={() => {
-                // on mobile open drawer; desktop action not needed because icon hidden
                 if (typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches) {
                   setDrawerOpen(true)
                 } else {
                   onLogout()
                 }
               }}
-              className="md:hidden flex items-center justify-center w-10 h-10 rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-colors touch-manipulation"
+              className="md:hidden flex items-center justify-center w-10 h-10 rounded-xl bg-white border-2 border-slate-900 text-slate-900 shadow-[3px_3px_0_0_#0f172a] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all touch-manipulation"
               aria-label="Profile / Menu"
             >
               <User className="w-5 h-5" />
@@ -491,59 +579,61 @@ export default function DashboardShell({
         </div>
       </header>
 
-      {/* Mobile drawer overlay - z-50 agar di atas bottom nav (z-40) */}
-      {drawerOpen && (
-        <div
-          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm md:hidden"
-          aria-hidden
-          onClick={() => setDrawerOpen(false)}
-        />
-      )}
+      {/* Mobile drawer overlay */}
+      {
+        drawerOpen && (
+          <div
+            className="fixed inset-0 z-50 bg-black/30 backdrop-blur-sm md:hidden"
+            aria-hidden
+            onClick={() => setDrawerOpen(false)}
+          />
+        )
+      }
 
-      {/* Mobile drawer - slide from left; z-50 agar di atas bottom nav */}
+      {/* Mobile drawer - slide from left */}
       <aside
         className={`
           fixed top-0 left-0 bottom-0 z-[60] w-[min(260px,88vw)] max-w-full
-          bg-[#0a0a0b] border-r border-white/10
+          bg-white border-r border-gray-100
           flex flex-col overflow-hidden
           transform transition-transform duration-300 ease-out
-          md:hidden
+          md:hidden shadow-2xl
           ${drawerOpen ? 'translate-x-0' : '-translate-x-full'}
         `}
         style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
-        <div className="flex items-center justify-between p-4 border-b border-white/10 shrink-0">
-          <span className="text-sm font-semibold text-white uppercase tracking-wide">Menu</span>
+        <div className="flex items-center justify-between p-4 border-b border-gray-100 shrink-0">
+          <span className="text-sm font-bold text-gray-800 uppercase tracking-wide">Menu</span>
           <button
             type="button"
             onClick={() => setDrawerOpen(false)}
-            className="flex items-center justify-center w-10 h-10 rounded-xl text-gray-400 hover:bg-white/5 hover:text-white touch-manipulation"
+            className="flex items-center justify-center w-10 h-10 rounded-xl text-gray-400 hover:bg-gray-100 hover:text-gray-700 touch-manipulation"
             aria-label="Close menu"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
         <nav className="flex flex-col flex-1 min-h-0">
-          <div className="flex-1 min-h-0 overflow-y-auto py-4">
+          <div className="flex-1 min-h-0 overflow-y-auto py-3 px-2">
             <NavSections />
           </div>
-          <div className="shrink-0 border-t border-white/10">
+          <div className="shrink-0">
             <NavFooter />
           </div>
         </nav>
       </aside>
 
-      {/* Desktop sidebar - hidden on mobile; menu scroll bila banyak, footer tetap di bawah */}
-      <aside className="hidden md:flex fixed left-0 top-14 bottom-0 z-30 w-56 lg:w-64 border-r border-white/10 bg-[#0a0a0b] flex-col">
-        <nav className="flex-1 min-h-0 overflow-y-auto py-4 px-3 space-y-2">
+      {/* Desktop sidebar */}
+      <aside className="hidden md:flex fixed left-0 top-14 bottom-0 z-30 w-56 lg:w-64 border-r-4 border-slate-900 bg-white flex-col">
+        <nav className="flex-1 min-h-0 overflow-y-auto py-4 px-3 space-y-1">
           <NavSections />
         </nav>
-        <div className="shrink-0 border-t border-white/10">
+        <div className="shrink-0">
           <NavFooter />
         </div>
       </aside>
 
-      {/* Main content - mobile first: padding bawah untuk fixed bottom nav + safe area */}
+      {/* Main content */}
       <main
         className={`flex-1 w-full md:pb-8 md:pl-56 lg:pl-64 ${isAiLabsFeaturePage ? 'max-md:pt-0 max-md:pb-8 pt-14 pb-[5.5rem]' : 'pt-14 pb-[5.5rem] md:pb-20'}`}
         style={{ paddingBottom: isAiLabsFeaturePage ? undefined : 'max(5.5rem, calc(4rem + env(safe-area-inset-bottom)))' }}
@@ -553,34 +643,36 @@ export default function DashboardShell({
         </div>
       </main>
 
-      {/* Bottom navigation - fixed seperti aplikasi mobile; z-40 agar di bawah sidebar saat drawer buka */}
-      {bottomNavItems.length > 0 && (
-        <nav
-          className={`fixed bottom-0 left-0 right-0 z-40 md:hidden min-h-[4rem] pt-2 border-t border-white/10 bg-[#0a0a0b] flex items-center justify-around px-1 shadow-[0_-4px_20px_rgba(0,0,0,0.3)] ${isAiLabsFeaturePage ? 'max-md:hidden' : ''}`}
-          style={{ paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom))' }}
-        >
-          {bottomNavItems.map((item) => {
-            const isActive = pathname === item.href
-            const Icon = item.icon
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`
-                  flex flex-col items-center justify-center gap-0.5 flex-1 min-h-[3rem] py-2 rounded-xl
-                  transition-colors touch-manipulation active:scale-95
-                  ${isActive ? 'text-lime-400' : 'text-gray-500 hover:text-gray-300 active:text-white'}
+      {/* Bottom navigation - mobile */}
+      {
+        bottomNavItems.length > 0 && (
+          <nav
+            className={`fixed bottom-0 left-0 right-0 z-40 md:hidden min-h-[4.5rem] pt-2 border-t-[3px] border-slate-900 bg-white flex items-center justify-around px-2 shadow-[0_-4px_0_0_#0f172a] ${isAiLabsFeaturePage ? 'max-md:hidden' : ''}`}
+            style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}
+          >
+            {bottomNavItems.map((item) => {
+              const isActive = pathname === item.href
+              const Icon = item.icon
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`
+                  flex flex-col items-center justify-center gap-1 flex-1 min-h-[3.25rem] py-2 rounded-xl border-2 border-transparent
+                  transition-all duration-200 touch-manipulation active:scale-95 mx-1
+                  ${isActive ? 'text-slate-900 bg-emerald-300 border-slate-900 shadow-[2px_2px_0_0_#0f172a] -translate-y-1' : 'text-slate-500 hover:text-slate-900'}
                 `}
-              >
-                <Icon className="w-6 h-6 shrink-0" />
-                <span className="text-[10px] font-medium uppercase tracking-wide">{item.label}</span>
-              </Link>
-            )
-          })}
-        </nav>
-      )}
+                >
+                  <Icon className={`w-5 h-5 shrink-0 ${isActive ? 'fill-emerald-300' : ''}`} />
+                  <span className="text-[10px] font-bold uppercase tracking-wide">{item.label}</span>
+                </Link>
+              )
+            })}
+          </nav>
+        )
+      }
       {/* TopUp Modal */}
       <TopUpModal isOpen={showTopUp} onClose={() => setShowTopUp(false)} currentCredit={credits} onCreditChange={refreshCredits} />
-    </div>
+    </div >
   )
 }

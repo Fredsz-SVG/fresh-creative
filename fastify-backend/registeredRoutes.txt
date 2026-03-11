@@ -1,0 +1,130 @@
+import admintransactionsRoute from './routes/admin/transactions'
+server.register(admintransactionsRoute, { prefix: '/api/admin/transactions' })
+import adminusersoverviewRoute from './routes/admin/users/overview'
+server.register(adminusersoverviewRoute, { prefix: '/api/admin/users/overview' })
+import aifeaturesphotogroupRoute from './routes/ai-features/photogroup'
+server.register(aifeaturesphotogroupRoute, { prefix: '/api/ai-features/photogroup' })
+import aifeaturesphototovideoRoute from './routes/ai-features/phototovideo'
+server.register(aifeaturesphototovideoRoute, { prefix: '/api/ai-features/phototovideo' })
+import aifeaturesposeRoute from './routes/ai-features/pose'
+server.register(aifeaturesposeRoute, { prefix: '/api/ai-features/pose' })
+import aifeaturestryonRoute from './routes/ai-features/tryon'
+server.register(aifeaturestryonRoute, { prefix: '/api/ai-features/tryon' })
+import albumschecknameRoute from './routes/albums/check-name'
+server.register(albumschecknameRoute, { prefix: '/api/albums/check-name' })
+import albumsinvitetokenjoinRoute from './routes/albums/invite/[token]/join'
+server.register(albumsinvitetokenjoinRoute, { prefix: '/api/albums/invite/:token/join' })
+import albumsinvitetokenRoute from './routes/albums/invite/[token]'
+server.register(albumsinvitetokenRoute, { prefix: '/api/albums/invite/:token' })
+import albumsRoute from './routes/albums'
+server.register(albumsRoute, { prefix: '/api/albums' })
+import albumsidallclassmembersRoute from './routes/albums/[id]/all-class-members'
+server.register(albumsidallclassmembersRoute, { prefix: '/api/albums/:id/all-class-members' })
+import albumsidcheckuserRoute from './routes/albums/[id]/check-user'
+server.register(albumsidcheckuserRoute, { prefix: '/api/albums/:id/check-user' })
+import albumsidcheckoutRoute from './routes/albums/[id]/checkout'
+server.register(albumsidcheckoutRoute, { prefix: '/api/albums/:id/checkout' })
+import albumsidclassesRoute from './routes/albums/[id]/classes'
+server.register(albumsidclassesRoute, { prefix: '/api/albums/:id/classes' })
+import albumsidclassesclassIdjoinasownerRoute from './routes/albums/[id]/classes/[classId]/join-as-owner'
+server.register(albumsidclassesclassIdjoinasownerRoute, { prefix: '/api/albums/:id/classes/:classId/join-as-owner' })
+import albumsidclassesclassIdmembersRoute from './routes/albums/[id]/classes/[classId]/members'
+server.register(albumsidclassesclassIdmembersRoute, { prefix: '/api/albums/:id/classes/:classId/members' })
+import albumsidclassesclassIdmembersuserIdRoute from './routes/albums/[id]/classes/[classId]/members/[userId]'
+server.register(albumsidclassesclassIdmembersuserIdRoute, { prefix: '/api/albums/:id/classes/:classId/members/:userId' })
+import albumsidclassesclassIdmyaccessRoute from './routes/albums/[id]/classes/[classId]/my-access'
+server.register(albumsidclassesclassIdmyaccessRoute, { prefix: '/api/albums/:id/classes/:classId/my-access' })
+import albumsidclassesclassIdmyrequestRoute from './routes/albums/[id]/classes/[classId]/my-request'
+server.register(albumsidclassesclassIdmyrequestRoute, { prefix: '/api/albums/:id/classes/:classId/my-request' })
+import albumsidclassesclassIdphotoRoute from './routes/albums/[id]/classes/[classId]/photo'
+server.register(albumsidclassesclassIdphotoRoute, { prefix: '/api/albums/:id/classes/:classId/photo' })
+import albumsidclassesclassIdrequestRoute from './routes/albums/[id]/classes/[classId]/request'
+server.register(albumsidclassesclassIdrequestRoute, { prefix: '/api/albums/:id/classes/:classId/request' })
+import albumsidclassesclassIdrequestsRoute from './routes/albums/[id]/classes/[classId]/requests'
+server.register(albumsidclassesclassIdrequestsRoute, { prefix: '/api/albums/:id/classes/:classId/requests' })
+import albumsidclassesclassIdrequestsrequestIdRoute from './routes/albums/[id]/classes/[classId]/requests/[requestId]'
+server.register(albumsidclassesclassIdrequestsrequestIdRoute, { prefix: '/api/albums/:id/classes/:classId/requests/:requestId' })
+import albumsidclassesclassIdRoute from './routes/albums/[id]/classes/[classId]'
+server.register(albumsidclassesclassIdRoute, { prefix: '/api/albums/:id/classes/:classId' })
+import albumsidclassesclassIdstudentsRoute from './routes/albums/[id]/classes/[classId]/students'
+server.register(albumsidclassesclassIdstudentsRoute, { prefix: '/api/albums/:id/classes/:classId/students' })
+import albumsidclassesclassIdvideoRoute from './routes/albums/[id]/classes/[classId]/video'
+server.register(albumsidclassesclassIdvideoRoute, { prefix: '/api/albums/:id/classes/:classId/video' })
+import albumsidcoverRoute from './routes/albums/[id]/cover'
+server.register(albumsidcoverRoute, { prefix: '/api/albums/:id/cover' })
+import albumsidcovervideoRoute from './routes/albums/[id]/cover-video'
+server.register(albumsidcovervideoRoute, { prefix: '/api/albums/:id/cover-video' })
+import albumsidflipbookRoute from './routes/albums/[id]/flipbook'
+server.register(albumsidflipbookRoute, { prefix: '/api/albums/:id/flipbook' })
+import albumsidinviteRoute from './routes/albums/[id]/invite'
+server.register(albumsidinviteRoute, { prefix: '/api/albums/:id/invite' })
+import albumsidinvitetokenRoute from './routes/albums/[id]/invite-token'
+server.register(albumsidinvitetokenRoute, { prefix: '/api/albums/:id/invite-token' })
+import albumsidjoinrequestsRoute from './routes/albums/[id]/join-requests'
+server.register(albumsidjoinrequestsRoute, { prefix: '/api/albums/:id/join-requests' })
+import albumsidjoinrequestsrequestIdRoute from './routes/albums/[id]/join-requests/[requestId]'
+server.register(albumsidjoinrequestsrequestIdRoute, { prefix: '/api/albums/:id/join-requests/:requestId' })
+import albumsidjoinstatsRoute from './routes/albums/[id]/join-stats'
+server.register(albumsidjoinstatsRoute, { prefix: '/api/albums/:id/join-stats' })
+import albumsidmembersRoute from './routes/albums/[id]/members'
+server.register(albumsidmembersRoute, { prefix: '/api/albums/:id/members' })
+import albumsidmyaccessallRoute from './routes/albums/[id]/my-access-all'
+server.register(albumsidmyaccessallRoute, { prefix: '/api/albums/:id/my-access-all' })
+import albumsidphotosRoute from './routes/albums/[id]/photos'
+server.register(albumsidphotosRoute, { prefix: '/api/albums/:id/photos' })
+import albumsidphotosphotoIdRoute from './routes/albums/[id]/photos/[photoId]'
+server.register(albumsidphotosphotoIdRoute, { prefix: '/api/albums/:id/photos/:photoId' })
+import albumsidpublicRoute from './routes/albums/[id]/public'
+server.register(albumsidpublicRoute, { prefix: '/api/albums/:id/public' })
+import albumsidRoute from './routes/albums/[id]'
+server.register(albumsidRoute, { prefix: '/api/albums/:id' })
+import albumsidteachersRoute from './routes/albums/[id]/teachers'
+server.register(albumsidteachersRoute, { prefix: '/api/albums/:id/teachers' })
+import albumsidteachersteacherIdphotoRoute from './routes/albums/[id]/teachers/[teacherId]/photo'
+server.register(albumsidteachersteacherIdphotoRoute, { prefix: '/api/albums/:id/teachers/:teacherId/photo' })
+import albumsidteachersteacherIdphotosRoute from './routes/albums/[id]/teachers/[teacherId]/photos'
+server.register(albumsidteachersteacherIdphotosRoute, { prefix: '/api/albums/:id/teachers/:teacherId/photos' })
+import albumsidteachersteacherIdphotosphotoIdRoute from './routes/albums/[id]/teachers/[teacherId]/photos/[photoId]'
+server.register(albumsidteachersteacherIdphotosphotoIdRoute, { prefix: '/api/albums/:id/teachers/:teacherId/photos/:photoId' })
+import albumsidteachersteacherIdRoute from './routes/albums/[id]/teachers/[teacherId]'
+server.register(albumsidteachersteacherIdRoute, { prefix: '/api/albums/:id/teachers/:teacherId' })
+import albumsidteachersteacherIdvideoRoute from './routes/albums/[id]/teachers/[teacherId]/video'
+server.register(albumsidteachersteacherIdvideoRoute, { prefix: '/api/albums/:id/teachers/:teacherId/video' })
+import albumsidunlockfeatureRoute from './routes/albums/[id]/unlock-feature'
+server.register(albumsidunlockfeatureRoute, { prefix: '/api/albums/:id/unlock-feature' })
+import albumsidvideoplayRoute from './routes/albums/[id]/video-play'
+server.register(albumsidvideoplayRoute, { prefix: '/api/albums/:id/video-play' })
+import authlogoutRoute from './routes/auth/logout'
+server.register(authlogoutRoute, { prefix: '/api/auth/logout' })
+import authotpstatusRoute from './routes/auth/otp-status'
+server.register(authotpstatusRoute, { prefix: '/api/auth/otp-status' })
+import authsendloginotpRoute from './routes/auth/send-login-otp'
+server.register(authsendloginotpRoute, { prefix: '/api/auth/send-login-otp' })
+import authverifyloginotpRoute from './routes/auth/verify-login-otp'
+server.register(authverifyloginotpRoute, { prefix: '/api/auth/verify-login-otp' })
+import creditscheckoutRoute from './routes/credits/checkout'
+server.register(creditscheckoutRoute, { prefix: '/api/credits/checkout' })
+import creditspackagesRoute from './routes/credits/packages'
+server.register(creditspackagesRoute, { prefix: '/api/credits/packages' })
+import creditsredeemRoute from './routes/credits/redeem'
+server.register(creditsredeemRoute, { prefix: '/api/credits/redeem' })
+import creditssyncinvoiceRoute from './routes/credits/sync-invoice'
+server.register(creditssyncinvoiceRoute, { prefix: '/api/credits/sync-invoice' })
+import pricingRoute from './routes/pricing'
+server.register(pricingRoute, { prefix: '/api/pricing' })
+import proxyimageRoute from './routes/proxy-image'
+server.register(proxyimageRoute, { prefix: '/api/proxy-image' })
+import selectareaRoute from './routes/select-area'
+server.register(selectareaRoute, { prefix: '/api/select-area' })
+import userjoinrequestsRoute from './routes/user/join-requests'
+server.register(userjoinrequestsRoute, { prefix: '/api/user/join-requests' })
+import usermeRoute from './routes/user/me'
+server.register(usermeRoute, { prefix: '/api/user/me' })
+import usernotificationsRoute from './routes/user/notifications'
+server.register(usernotificationsRoute, { prefix: '/api/user/notifications' })
+import usernotificationsidRoute from './routes/user/notifications/[id]'
+server.register(usernotificationsidRoute, { prefix: '/api/user/notifications/:id' })
+import usertransactionsRoute from './routes/user/transactions'
+server.register(usertransactionsRoute, { prefix: '/api/user/transactions' })
+import webhooksxenditRoute from './routes/webhooks/xendit'
+server.register(webhooksxenditRoute, { prefix: '/api/webhooks/xendit' })

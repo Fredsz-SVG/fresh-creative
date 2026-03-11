@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { Upload, X, Loader2, Download, Shirt, User } from 'lucide-react';
 import { downloadImageWithWatermark } from '@/lib/download-image';
+import { fetchWithAuth } from '../../lib/api-client'
 
 interface Garment {
   file: File;
@@ -118,7 +119,7 @@ export default function TryonForm() {
         await new Promise(resolve => setTimeout(resolve, 100)); // Small delay for UI update
       }
 
-      const res = await fetch("/api/ai-features/tryon", {
+      const res = await fetchWithAuth("/api/ai-features/tryon", {
         method: "POST",
         body: formData,
       });
@@ -157,8 +158,8 @@ export default function TryonForm() {
 
         </div>
 
-        <form onSubmit={handleTryOn} className="max-w-4xl mx-auto">
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-3 sm:p-4 md:p-6 border border-gray-200 dark:border-gray-700 space-y-4 sm:space-y-5 md:space-y-6">
+        <form onSubmit={handleTryOn} className="max-w-3xl mx-auto">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-3 sm:p-5 border border-gray-200 dark:border-gray-700 space-y-4 sm:space-y-5">
             {/* Human Image Upload */}
             <div>
               <label className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-semibold mb-2 sm:mb-3 text-gray-700 dark:text-gray-300">

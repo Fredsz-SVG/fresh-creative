@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useMemo, useCallback } from 'react'
 import { Upload, Download, Loader2, X, Scissors, Crop, RotateCw, RotateCcw, FlipHorizontal, FlipVertical, Palette, Sliders, Undo2, Redo2, Wand2, Save } from 'lucide-react'
 import Cropper from 'cropperjs'
 import 'cropperjs/dist/cropper.css'
+import { fetchWithAuth } from '../../lib/api-client'
 
 interface IconOverlay {
   id: string
@@ -84,7 +85,7 @@ export default function AiGenerate() {
     let cancelled = false
     const loadPricing = async () => {
       try {
-        const res = await fetch('/api/admin/ai-edit')
+        const res = await fetchWithAuth('/api/admin/ai-edit')
         if (!res.ok) return
         const data = await res.json()
         if (!Array.isArray(data)) return
@@ -1523,40 +1524,40 @@ export default function AiGenerate() {
 
   return (
     <section id="image-editor" className="py-4 md:py-6">
-      <div className="max-w-7xl mx-auto">
-        <p className="text-sm text-gray-500 dark:text-gray-400 mb-3 sm:mb-4 text-center">
+      <div className="max-w-5xl mx-auto">
+        <p className="text-[10px] sm:text-xs font-black text-slate-500 mb-3 sm:mb-4 text-center uppercase tracking-widest">
           Edit foto, hapus background, dan tambahkan efek.
         </p>
 
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div className="bg-white rounded-2xl border-4 border-slate-900 shadow-[6px_6px_0_0_#0f172a] overflow-hidden">
           {originalImage ? (
             <>
               {/* Top Bar */}
-              <div className="flex justify-between items-center p-3 md:p-4 border-b border-gray-200 dark:border-gray-700">
-                <h3 className="text-base md:text-lg font-semibold text-gray-900 dark:text-white">
+              <div className="flex justify-between items-center p-3 md:p-4 border-b-2 border-slate-900 bg-slate-50">
+                <h3 className="text-sm md:text-base font-black text-slate-900 uppercase tracking-tight">
                   Photo Editor
                 </h3>
                 <div className="flex items-center gap-2">
                   <button
                     onClick={handleUndo}
                     disabled={historyIndex <= 0}
-                    className="p-2 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="p-2 bg-white border-2 border-slate-900 rounded-xl hover:bg-slate-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-[2px_2px_0_0_#0f172a]"
                     title="Undo"
                   >
-                    <Undo2 className="w-4 h-4" />
+                    <Undo2 className="w-4 h-4 text-slate-900" />
                   </button>
                   <button
                     onClick={handleRedo}
                     disabled={historyIndex >= history.length - 1}
-                    className="p-2 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="p-2 bg-white border-2 border-slate-900 rounded-xl hover:bg-slate-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-[2px_2px_0_0_#0f172a]"
                     title="Redo"
                   >
-                    <Redo2 className="w-4 h-4" />
+                    <Redo2 className="w-4 h-4 text-slate-900" />
                   </button>
 
                   <button
                     onClick={handleDownload}
-                    className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm flex items-center gap-2"
+                    className="px-4 py-2 bg-emerald-500 text-white rounded-xl border-2 border-slate-900 font-black text-xs uppercase tracking-widest shadow-[2px_2px_0_0_#0f172a] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all flex items-center gap-2"
                   >
                     <Download className="w-4 h-4" />
                     <span className="hidden sm:inline">Download</span>
@@ -1566,7 +1567,7 @@ export default function AiGenerate() {
                       e.stopPropagation()
                       resetImage()
                     }}
-                    className="p-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+                    className="p-2 bg-red-500 text-white rounded-xl border-2 border-slate-900 hover:bg-red-600 transition-colors shadow-[2px_2px_0_0_#0f172a]"
                     title="Hapus foto"
                   >
                     <X className="w-4 h-4" />
@@ -1688,7 +1689,7 @@ export default function AiGenerate() {
                 ) : (
                   <div
                     onClick={() => fileInputRef.current?.click()}
-                    className="w-full h-full flex flex-col items-center justify-center p-4 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:border-primary transition-colors"
+                    className="w-full h-full flex flex-col items-center justify-center p-4 border-2 border-dashed border-slate-300 rounded-xl cursor-pointer hover:border-slate-900 transition-colors"
                   >
                     <Upload className="w-12 h-12 md:w-16 md:h-16 mx-auto mb-3 md:mb-4 text-gray-400" />
                     <p className="text-sm md:text-base text-gray-600 dark:text-gray-400 mb-1">
@@ -1995,7 +1996,7 @@ export default function AiGenerate() {
                                   setIsRemovingBackground(true)
                                   setError(null)
                                   try {
-                                    const creditRes = await fetch('/api/admin/ai-edit', {
+                                    const creditRes = await fetchWithAuth('/api/admin/ai-edit', {
                                       method: 'POST',
                                       headers: { 'Content-Type': 'application/json' },
                                       body: JSON.stringify({ feature_slug: 'image_remove_bg' }),

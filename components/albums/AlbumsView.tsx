@@ -3,9 +3,11 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { Check, X, Trash2, UserPlus, Loader2, ImagePlus, BookOpen, ChevronRight, Search } from 'lucide-react'
+import { Check, X, Trash2, UserPlus, Loader2, ImagePlus, BookOpen, ChevronRight, Search, Edit, LayoutDashboard, MoreVertical, Calendar, ShieldCheck, CreditCard, Package, Plus, Eye, ClipboardPaste } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { getYearbookSectionQueryUrl } from '../yearbook/lib/yearbook-paths'
+import { apiUrl } from '../../lib/api-url'
+import { fetchWithAuth } from '../../lib/api-client'
 
 /** Extract token from URL atau kode (alphanumeric + - _, 6–80 char; support token lama yang panjang). */
 function parseInviteToken(input: string): { token: string; type: 'join' | 'invite' | 'code' } | null {
@@ -51,6 +53,8 @@ export type AlbumRow = {
   total_estimated_price?: number
   payment_status?: 'unpaid' | 'paid'
   payment_url?: string | null
+  cover_image_url?: string | null
+  cover_image_position?: string | null
 }
 
 export type AlbumsViewProps = {
@@ -84,13 +88,19 @@ function AlbumCard({
   loadingId?: string | null
   pathname?: string | null
 }) {
+  const router = useRouter()
+  const [showInfo, setShowInfo] = useState(false)
   const isAdmin = variant === 'admin'
   const isPaid = album.payment_status === 'paid'
   const isApproved = album.status === 'approved'
   const isClickable = album.type === 'public' || (isApproved && (isPaid || isAdmin))
   const destinationUrl = album.type === 'public'
     ? `${basePath}/album/public/${album.id}`
-    : getYearbookSectionQueryUrl(album.album_id ?? album.id, 'cover', pathname || null)
+    : getYearbookSectionQueryUrl(album.album_id ?? album.id, 'preview', pathname || null)
+
+  const editorUrl = album.type === 'yearbook'
+    ? getYearbookSectionQueryUrl(album.album_id ?? album.id, 'cover', pathname || null)
+    : null
 
   const created = album.created_at ? new Date(album.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : null
   const statusLabel = album.type === 'yearbook' ? (album.status ?? 'pending') : 'public'
@@ -102,44 +112,128 @@ function AlbumCard({
 
   const CardContent = () => (
     <div
-      className={`border border-white/10 rounded-xl p-3 sm:p-4 flex flex-col h-full transition-all duration-200 min-h-[120px] ${isClickable ? 'cursor-pointer hover:border-lime-500/50 active:bg-white/5' : 'cursor-default bg-white/[0.03]'
+      onClick={(e) => {
+        if (isClickable && !isLoading) {
+          router.push(destinationUrl)
+        }
+      }}
+      className={`relative border-2 border-slate-900 rounded-3xl p-4 sm:p-5 flex flex-col h-full transition-all duration-200 min-h-[120px] shadow-[4px_4px_0_0_#0f172a] bg-white ${isClickable ? 'cursor-pointer hover:shadow-none hover:translate-x-1 hover:translate-y-1' : 'cursor-default opacity-80'
         }`}>
-      <div className="flex-grow">
-        <h2 className="text-base font-semibold text-app truncate sm:text-lg" title={album.name}>{album.name}</h2>
-        {album.type === 'yearbook' ? (
-          <p className="text-xs text-muted mt-0.5 sm:text-sm">{album.pricing_packages?.name?.replace(/^Paket\s+/i, '') || 'Yearbook'}</p>
+      {/* Album Cover - Main Primary Visual */}
+      <div className="aspect-[4/3] w-full bg-slate-100 border-2 border-slate-900 rounded-2xl mb-4 overflow-hidden relative shadow-[2px_2px_0_0_#0f172a]">
+        {album.cover_image_url ? (
+          <img
+            src={album.cover_image_url}
+            alt={album.name}
+            className="w-full h-full object-cover"
+            style={album.cover_image_position ? { objectPosition: album.cover_image_position } : undefined}
+          />
         ) : (
-          <p className="text-xs text-sky-400 mt-0.5 sm:text-sm">Public Album</p>
+          <div className="w-full h-full flex flex-col items-center justify-center gap-2 opacity-30">
+            <BookOpen className="w-8 h-8" />
+            <span className="text-[10px] font-black uppercase">No Cover Image</span>
+          </div>
         )}
-        <div className="mt-2 sm:mt-3 flex flex-wrap items-center gap-1.5 sm:gap-2">
-          {shouldShowStatus && (
-            <span
-              className={`px-2 py-1 text-xs font-semibold rounded-full ${displayStatus === 'approved' ? 'bg-green-500/20 text-green-400' :
-                displayStatus === 'pending' ? 'bg-yellow-500/20 text-yellow-400' :
-                  displayStatus === 'declined' ? 'bg-red-500/20 text-red-400' :
-                    'bg-sky-500/20 text-sky-400'
-                }`}>
-              Status: {displayStatus}
-            </span>
-          )}
-          {created && <span className="text-xs text-muted">{created}</span>}
-          {album.type === 'yearbook' && isApproved && (
-            <span
-              className={`px-2 py-1 text-xs font-semibold rounded-full ${isPaid ? 'bg-lime-500/20 text-lime-400' : 'bg-orange-500/20 text-orange-400'}`}>
-              {isPaid ? 'Lunas' : 'Belum Bayar'}
-            </span>
-          )}
-        </div>
+        {album.type === 'public' && (
+          <div className="absolute top-2 left-2 px-2 py-0.5 bg-indigo-500 text-white text-[9px] font-black uppercase rounded border border-slate-900">
+            Public
+          </div>
+        )}
       </div>
 
+      <div className="flex justify-between items-start gap-2">
+        <div className="flex-grow min-w-0">
+          <h2 className="text-base font-black text-slate-900 truncate" title={album.name}>{album.name}</h2>
+        </div>
+        {!isAdmin && (
+          <button
+            type="button"
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowInfo(!showInfo) }}
+            className="p-1 rounded-lg hover:bg-slate-100 text-slate-500 transition-colors shrink-0"
+          >
+            <MoreVertical className="w-5 h-5" />
+          </button>
+        )}
+      </div>
+
+      {/* Info Detail Popup */}
+      {showInfo && !isAdmin && (
+        <div
+          className="absolute top-12 right-4 z-50 w-64 bg-white border-4 border-slate-900 shadow-[6px_6px_0_0_#0f172a] rounded-2xl p-4 animate-in fade-in zoom-in duration-200 cursor-default"
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+        >
+          <div className="flex justify-between items-center mb-4 pb-2 border-b-2 border-slate-100">
+            <h3 className="font-black text-slate-900 text-sm">Informasi Album</h3>
+            <button
+              type="button"
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowInfo(false) }}
+              className="text-slate-400 hover:text-slate-900"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-emerald-100 border-2 border-slate-900 flex items-center justify-center shrink-0">
+                <ShieldCheck className="w-4 h-4 text-emerald-600" />
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-slate-400 uppercase">Status</p>
+                <p className={`text-xs font-black ${displayStatus === 'approved' ? 'text-emerald-600' : 'text-orange-500'}`}>
+                  {displayStatus === 'approved' ? 'Approved' : displayStatus === 'pending' ? 'Pending' : 'Declined'}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <div className={`w-8 h-8 rounded-lg border-2 border-slate-900 flex items-center justify-center shrink-0 ${isPaid ? 'bg-indigo-100' : 'bg-red-100'}`}>
+                <CreditCard className={`w-4 h-4 ${isPaid ? 'text-indigo-600' : 'text-red-500'}`} />
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-slate-400 uppercase">Pembayaran</p>
+                <p className={`text-xs font-black ${isPaid ? 'text-indigo-600' : 'text-red-500'}`}>
+                  {isPaid ? 'Lunas' : 'Belum Bayar'}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-orange-100 border-2 border-slate-900 flex items-center justify-center shrink-0">
+                <Package className="w-4 h-4 text-orange-600" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] font-bold text-slate-400 uppercase">Paket Album</p>
+                <p className="text-xs font-black text-slate-900 truncate">
+                  {album.type === 'yearbook'
+                    ? (album.pricing_packages?.name?.replace(/^Paket\s+/i, '') || 'Yearbook')
+                    : 'Shared Gallery'
+                  }
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-slate-100 border-2 border-slate-900 flex items-center justify-center shrink-0">
+                <Calendar className="w-4 h-4 text-slate-600" />
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-slate-400 uppercase">Tanggal Masukan</p>
+                <p className="text-xs font-black text-slate-900">{created || '-'}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {isAdmin && album.type === 'yearbook' && (onApprove || onDecline || onDelete) && (
-        <div className="mt-4 pt-4 border-t border-white/10 flex flex-wrap gap-2">
+        <div className="mt-4 pt-4 border-t border-gray-100 flex flex-wrap gap-2">
           {album.status !== 'approved' && onApprove && (
             <button
               type="button"
               disabled={!!loadingId}
               onClick={(e) => { e.preventDefault(); e.stopPropagation(); onApprove(album) }}
-              className="inline-flex items-center gap-1 px-2 py-1.5 text-xs font-medium rounded-lg bg-green-600 text-white hover:bg-green-700 disabled:opacity-50"
+              className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-black rounded-xl bg-emerald-400 border-2 border-slate-900 shadow-[2px_2px_0_0_#0f172a] text-slate-900 hover:translate-y-0.5 hover:translate-x-0.5 hover:shadow-none transition-all disabled:opacity-50"
             >
               <Check className="w-3.5 h-3.5" /> Approve
             </button>
@@ -149,7 +243,7 @@ function AlbumCard({
               type="button"
               disabled={!!loadingId}
               onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDecline(album) }}
-              className="inline-flex items-center gap-1 px-2 py-1.5 text-xs font-medium rounded-lg bg-amber-600 text-white hover:bg-amber-700 disabled:opacity-50"
+              className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-black rounded-xl bg-orange-400 border-2 border-slate-900 shadow-[2px_2px_0_0_#0f172a] text-slate-900 hover:translate-y-0.5 hover:translate-x-0.5 hover:shadow-none transition-all disabled:opacity-50"
             >
               <X className="w-3.5 h-3.5" /> Decline
             </button>
@@ -159,7 +253,7 @@ function AlbumCard({
               type="button"
               disabled={!!loadingId}
               onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDelete(album) }}
-              className="inline-flex items-center gap-1 px-2 py-1.5 text-xs font-medium rounded-lg bg-red-600/80 text-white hover:bg-red-700 disabled:opacity-50"
+              className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-black rounded-xl bg-red-500 border-2 border-slate-900 shadow-[2px_2px_0_0_#0f172a] text-white hover:translate-y-0.5 hover:translate-x-0.5 hover:shadow-none transition-all disabled:opacity-50"
             >
               <Trash2 className="w-3.5 h-3.5" /> Hapus
             </button>
@@ -168,13 +262,13 @@ function AlbumCard({
       )}
 
       {!isAdmin && (
-        <div className="mt-4 pt-4 border-t border-white/10 flex flex-col gap-2">
+        <div className="mt-4 pt-4 border-t border-gray-100 flex flex-col gap-2">
           {album.isOwner !== false && isApproved && !isPaid && onPay && (
             <button
               type="button"
               disabled={!!loadingId}
               onClick={(e) => { e.preventDefault(); e.stopPropagation(); onPay(album) }}
-              className="inline-flex items-center justify-center gap-1.5 px-2 py-1.5 text-xs font-medium rounded-lg bg-green-600 text-white hover:bg-green-700 disabled:opacity-50"
+              className="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-black rounded-xl bg-emerald-400 border-2 border-slate-900 text-slate-900 shadow-[3px_3px_0_0_#0f172a] hover:translate-y-1 hover:translate-x-1 hover:shadow-none transition-all disabled:opacity-50"
             >
               <Check className="w-3.5 h-3.5" /> Bayar Sekarang
             </button>
@@ -183,10 +277,19 @@ function AlbumCard({
             <button
               type="button"
               onClick={(e) => { e.preventDefault(); e.stopPropagation(); onInvite(album) }}
-              className="inline-flex items-center justify-center gap-1.5 px-2 py-1.5 text-xs font-medium rounded-lg bg-sky-600/80 text-white hover:bg-sky-600"
+              className="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-black rounded-xl bg-slate-100 border-2 border-slate-900 shadow-[2px_2px_0_0_#0f172a] text-slate-900 hover:translate-y-0.5 hover:translate-x-0.5 hover:shadow-none transition-all"
             >
               <UserPlus className="w-3.5 h-3.5" /> Undang Teman
             </button>
+          )}
+          {album.type === 'yearbook' && isApproved && (isPaid || isAdmin) && editorUrl && (
+            <Link
+              href={editorUrl}
+              onClick={(e) => e.stopPropagation()}
+              className="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-black rounded-xl bg-indigo-300 border-2 border-slate-900 shadow-[3px_3px_0_0_#0f172a] text-slate-900 hover:translate-y-1 hover:translate-x-1 hover:shadow-none transition-all"
+            >
+              <LayoutDashboard className="w-3.5 h-3.5" /> Edit Album
+            </Link>
           )}
           <p className="text-xs text-muted text-center">
             {isClickable ? 'Klik untuk buka' : statusLabel === 'pending' ? 'Menunggu persetujuan admin' : isApproved && !isPaid ? 'Selesaikan pembayaran untuk akses' : statusLabel === 'declined' ? 'Akses dibatasi' : 'Klik untuk buka'}
@@ -196,11 +299,6 @@ function AlbumCard({
     </div>
   )
 
-  if (isClickable && !isLoading) {
-    return (
-      <Link href={destinationUrl}><CardContent /></Link>
-    )
-  }
   return <CardContent />
 }
 
@@ -216,7 +314,12 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
   const [confirmModal, setConfirmModal] = useState<'personal' | 'yearbook' | null>(null)
   const [invoicePopupUrl, setInvoicePopupUrl] = useState<string | null>(null)
   const [copyFeedback, setCopyFeedback] = useState(false)
+  const [showJoinForm, setShowJoinForm] = useState(false)
+  const [showSearch, setShowSearch] = useState(false)
+  const [showPreviewForm, setShowPreviewForm] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const [previewInput, setPreviewInput] = useState('')
+  const [previewError, setPreviewError] = useState<string | null>(null)
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 10
   const router = useRouter()
@@ -251,7 +354,7 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
     if (!silent) setLoading(true)
     try {
       isFetchingRef.current = true
-      const res = await fetch(fetchUrl, { credentials: 'include', cache: 'no-store' })
+      const res = await fetchWithAuth(fetchUrl, { credentials: 'include', cache: 'no-store' })
       if (!res.ok) throw new Error('Failed to fetch albums')
       const data = await res.json()
       setAlbums(data)
@@ -305,7 +408,7 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
     e.stopPropagation()
     setLoadingId(album.id)
     try {
-      const res = await fetch('/api/albums', {
+      const res = await fetchWithAuth('/api/albums', {
         method: 'PUT',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
@@ -326,7 +429,7 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
     e.stopPropagation()
     setLoadingId(album.id)
     try {
-      const res = await fetch('/api/albums', {
+      const res = await fetchWithAuth('/api/albums', {
         method: 'PUT',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
@@ -354,7 +457,7 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
 
     setInviteLoading(albumId)
     try {
-      const res = await fetch(`/api/albums/${albumId}/invite`, {
+      const res = await fetchWithAuth(`/api/albums/${albumId}/invite`, {
         method: 'POST',
         credentials: 'include',
       })
@@ -379,7 +482,7 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
     if (!confirm('Yakin ingin menghapus?')) return
     setLoadingId(album.id)
     try {
-      const res = await fetch('/api/albums', {
+      const res = await fetchWithAuth('/api/albums', {
         method: 'DELETE',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
@@ -404,7 +507,7 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
 
     setLoadingId(album.id)
     try {
-      const res = await fetch(`/api/albums/${album.id}/checkout`, {
+      const res = await fetchWithAuth(`/api/albums/${album.id}/checkout`, {
         method: 'POST',
         credentials: 'include',
       })
@@ -445,12 +548,17 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
     }
     setJoinLoading(true)
     try {
-      const res = await fetch(`/api/albums/invite/${encodeURIComponent(token)}/join`, {
+      const res = await fetchWithAuth(`/api/albums/invite/${encodeURIComponent(token)}/join`, {
         method: 'POST',
         credentials: 'include',
       })
       const data = await res.json().catch(() => ({}))
       if (res.ok) {
+        if (data?.redirectTo) {
+          setJoinError('')
+          router.push(data.redirectTo)
+          return
+        }
         const albumId = data?.albumId
         if (albumId) {
           router.push(`${linkBasePath}/album/yearbook/${albumId}`)
@@ -461,8 +569,14 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
         return
       }
       if (type === 'code' && res.status === 404) {
-        const checkRes = await fetch(`/api/albums/invite/${encodeURIComponent(token)}`, { credentials: 'include' })
+        if (data?.redirectTo) {
+          setJoinError('')
+          router.push(data.redirectTo)
+          return
+        }
+        const checkRes = await fetchWithAuth(`/api/albums/invite/${encodeURIComponent(token)}`)
         if (checkRes.ok) {
+          setJoinError('')
           router.push(`/invite/${token}`)
           return
         }
@@ -475,6 +589,43 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
     }
   }
 
+  const handleOpenPreview = () => {
+    setPreviewError(null)
+    const albumId = ((): string | null => {
+      const trimmed = previewInput.trim()
+      if (!trimmed) return null
+      const uuidPattern = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i
+      try {
+        if (trimmed.startsWith('http')) {
+          const url = new URL(trimmed)
+          const match = url.pathname.match(/\/album\/([^/]+)/)
+          if (match) return match[1]
+        }
+      } catch { /* ignore */ }
+      const uuidMatch = trimmed.match(uuidPattern)
+      if (uuidMatch) return uuidMatch[0]
+      return null
+    })()
+
+    if (!albumId) {
+      setPreviewError('Masukkan link preview atau Album ID yang valid.')
+      return
+    }
+    const isFlipbook = previewInput.toLowerCase().includes('/flipbook')
+    router.push(`/album/${albumId}/${isFlipbook ? 'flipbook' : 'preview'}`)
+    setPreviewInput('')
+  }
+
+  const handlePastePreview = async () => {
+    setPreviewError(null)
+    try {
+      const text = await navigator.clipboard.readText()
+      if (text) setPreviewInput(text)
+    } catch {
+      setPreviewError('Gagal baca clipboard.')
+    }
+  }
+
   const title = isAdmin ? 'Manajemen Album' : 'Album Saya'
   const subtitle = isAdmin ? 'Kelola status dan data album.' : 'Daftar album Anda.'
   const showroomHref = resolvedLinkContext === 'admin' ? '/admin/showroom' : '/user/showroom'
@@ -483,13 +634,13 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
   return (
     <div>
       {invoicePopupUrl && (
-        <div className="fixed inset-0 z-[110] flex flex-col bg-[#0a0a0b]" role="dialog" aria-modal="true" aria-label="Invoice pembayaran">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 bg-white/5 shrink-0">
-            <h3 className="text-sm font-semibold text-white">Invoice Pembayaran Album</h3>
+        <div className="fixed inset-0 z-[110] flex flex-col bg-white" role="dialog" aria-modal="true" aria-label="Invoice pembayaran">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-gray-50 shrink-0">
+            <h3 className="text-sm font-bold text-gray-800">Invoice Pembayaran Album</h3>
             <button
               type="button"
               onClick={() => setInvoicePopupUrl(null)}
-              className="flex items-center justify-center w-9 h-9 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
+              className="flex items-center justify-center w-9 h-9 rounded-xl text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
@@ -506,128 +657,205 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
         </div>
       )}
 
-      {/* Mobile first: header stack, lalu row di desktop */}
-      <div className="flex flex-col gap-4 mb-5 md:mb-6 md:flex-row md:justify-between md:items-center">
+      {/* 1. Search Bar - Paling Atas */}
+      {/* 1. Header: Title & Action Buttons Row */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 mt-2">
         <div>
-          <h1 className="text-xl font-bold text-app sm:text-2xl">{title}</h1>
-          <p className="text-muted text-xs mt-0.5 sm:text-sm">{subtitle}</p>
+          <h1 className="text-3xl font-black text-slate-900 sm:text-4xl tracking-tight">{title}</h1>
+          <p className="text-slate-600 font-bold text-sm mt-1 sm:text-base">{subtitle}</p>
         </div>
-        <div className="flex flex-row gap-2">
+
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
+          {/* Public Preview Toggle Button */}
           <button
             type="button"
-            onClick={() => setConfirmModal('personal')}
-            className="flex-1 min-h-[44px] flex items-center justify-center gap-2 px-3 py-2.5 text-sm font-semibold rounded-xl bg-sky-600 text-white hover:bg-sky-700 active:bg-sky-800 active:scale-[0.98] touch-manipulation transition-transform"
-            title="Buat Personal"
+            onClick={() => {
+              setShowPreviewForm(!showPreviewForm)
+              if (showSearch) setShowSearch(false)
+              if (showJoinForm) setShowJoinForm(false)
+            }}
+            className={`inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-black rounded-xl border-2 border-slate-900 shadow-[4px_4px_0_0_#0f172a] transition-all active:scale-95 ${showPreviewForm ? 'bg-slate-200 text-slate-600' : 'bg-emerald-100 text-slate-900 hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none'}`}
           >
-            <ImagePlus className="w-4 h-4 shrink-0" />
-            <span className="hidden sm:inline">Personal</span>
+            <Eye className="w-4 h-4 shrink-0" />
+            <span>{showPreviewForm ? 'Tutup' : 'Preview'}</span>
           </button>
+
+          {/* Search Toggle Button */}
+          <button
+            type="button"
+            onClick={() => {
+              setShowSearch(!showSearch)
+              if (showJoinForm) setShowJoinForm(false)
+              if (showPreviewForm) setShowPreviewForm(false)
+            }}
+            className={`inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-black rounded-xl border-2 border-slate-900 shadow-[4px_4px_0_0_#0f172a] transition-all active:scale-95 ${showSearch ? 'bg-slate-200 text-slate-600' : 'bg-white text-slate-900 hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none'}`}
+          >
+            <Search className="w-4 h-4 shrink-0" />
+            <span>{showSearch ? 'Tutup' : 'Search'}</span>
+          </button>
+
+          {/* Create Project Button */}
           <button
             type="button"
             onClick={() => setConfirmModal('yearbook')}
-            className="flex-1 min-h-[44px] flex items-center justify-center gap-2 px-3 py-2.5 text-sm font-semibold rounded-xl bg-purple-600 text-white hover:bg-purple-700 active:bg-purple-800 active:scale-[0.98] touch-manipulation transition-transform"
-            title="Order Yearbook"
+            className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-black rounded-xl bg-emerald-400 border-2 border-slate-900 shadow-[4px_4px_0_0_#0f172a] text-slate-900 hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all active:scale-95"
           >
-            <BookOpen className="w-4 h-4 shrink-0" />
-            <span className="hidden sm:inline">Yearbook</span>
+            <Plus className="w-4 h-4 shrink-0" />
+            <span>Create</span>
+          </button>
+
+          {/* Join Project Button */}
+          <button
+            type="button"
+            onClick={() => {
+              setShowJoinForm(!showJoinForm)
+              if (showSearch) setShowSearch(false)
+              if (showPreviewForm) setShowPreviewForm(false)
+            }}
+            className={`inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-black rounded-xl border-2 border-slate-900 shadow-[4px_4px_0_0_#0f172a] transition-all active:scale-95 ${showJoinForm ? 'bg-slate-200 text-slate-600' : 'bg-orange-400 text-slate-900 hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none'}`}
+          >
+            <UserPlus className="w-4 h-4 shrink-0" />
+            <span>{showJoinForm ? 'Tutup' : 'Join'}</span>
           </button>
         </div>
       </div>
 
-      {/* Kotak: Cari + Kode undangan — flex row di desktop */}
-      <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4 mb-4 flex flex-col md:flex-row gap-4">
-        {/* Search */}
-        <div className="flex-1 min-w-0 flex items-center gap-2 min-h-[44px] px-3 py-2 rounded-lg bg-white/5 border border-white/10">
-          <Search className="w-4 h-4 text-muted shrink-0" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => {
-              setSearchQuery(e.target.value)
-              setCurrentPage(1)
-            }}
-            placeholder="Cari nama, kota, paket..."
-            className="flex-1 min-w-0 bg-transparent text-sm text-app placeholder:text-muted focus:outline-none h-8 leading-normal"
-          />
-        </div>
+      {/* 2. Revealable Forms (Preview, Search or Join) */}
+      <div className="mb-8">
+        {/* Public Preview Form */}
+        {showPreviewForm && (
+          <div className="flex flex-col sm:flex-row gap-3 p-4 bg-emerald-50 border-2 border-slate-900 rounded-2xl animate-in slide-in-from-top-2 duration-200 shadow-inner max-w-2xl ml-auto">
+            <div className="flex-1 relative">
+              <input
+                type="text"
+                autoFocus
+                value={previewInput}
+                onChange={(e) => { setPreviewInput(e.target.value); setPreviewError(null) }}
+                onKeyDown={(e) => e.key === 'Enter' && handleOpenPreview()}
+                placeholder="Tempel link preview atau Album ID..."
+                className="w-full px-4 py-2.5 text-sm font-bold rounded-xl bg-white border-2 border-slate-900 shadow-inner text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-300 transition-all"
+              />
+              {previewError && <p className="text-[10px] text-red-500 absolute -bottom-4 left-1 font-bold">{previewError}</p>}
+            </div>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={handlePastePreview}
+                className="px-3 py-2.5 rounded-xl bg-white border-2 border-slate-900 text-slate-600 shadow-[2px_2px_0_0_#0f172a] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all"
+                title="Tempel"
+              >
+                <ClipboardPaste className="w-5 h-5" />
+              </button>
+              <button
+                type="button"
+                onClick={handleOpenPreview}
+                className="px-6 py-2.5 text-sm font-black rounded-xl bg-slate-900 text-white shadow-[3px_3px_0_0_#475569] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all"
+              >
+                Buka Preview
+              </button>
+            </div>
+          </div>
+        )}
 
-        {/* Undang Teman */}
-        <div className="flex flex-col sm:flex-row gap-2 shrink-0 md:w-[400px]">
-          <input
-            type="text"
-            value={inviteLinkInput}
-            onChange={(e) => { setInviteLinkInput(e.target.value); setJoinError(null) }}
-            onKeyDown={(e) => e.key === 'Enter' && handleOpenInviteLink()}
-            placeholder="Masukan kode undangan"
-            className="flex-1 min-w-0 px-3 py-2 text-sm rounded-lg bg-white/5 border border-white/10 text-app placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-sky-500/50 min-h-[44px]"
-          />
-          <button
-            type="button"
-            onClick={handleOpenInviteLink}
-            disabled={joinLoading}
-            className="shrink-0 inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-sky-600 text-white hover:bg-sky-700 disabled:opacity-50 min-h-[44px]"
-          >
-            {joinLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-            {joinLoading ? 'Memproses...' : 'Gabung'}
-          </button>
-        </div>
-        {joinError && <p className="text-xs text-red-400 absolute mt-12">{joinError}</p>}
+        {/* Search Form */}
+        {showSearch && (
+          <div className="flex items-center gap-3 p-4 bg-slate-50 border-2 border-slate-900 rounded-2xl animate-in slide-in-from-top-2 duration-200 shadow-inner max-w-2xl ml-auto">
+            <Search className="w-5 h-5 text-slate-400 shrink-0" />
+            <input
+              type="text"
+              autoFocus
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value)
+                setCurrentPage(1)
+              }}
+              placeholder="Cari nama project, sekolah, atau paket..."
+              className="flex-1 min-w-0 bg-transparent text-base font-bold text-slate-900 placeholder:text-slate-400 focus:outline-none"
+            />
+          </div>
+        )}
+
+        {/* 3. Revealable Join Form - Muncul di bawah row header */}
+        {showJoinForm && (
+          <div className="flex flex-col sm:flex-row gap-3 p-4 bg-slate-50 border-2 border-slate-900 rounded-2xl animate-in slide-in-from-top-2 duration-200 shadow-inner max-w-2xl ml-auto">
+            <div className="flex-1 relative">
+              <input
+                type="text"
+                autoFocus
+                value={inviteLinkInput}
+                onChange={(e) => { setInviteLinkInput(e.target.value); setJoinError(null) }}
+                onKeyDown={(e) => e.key === 'Enter' && handleOpenInviteLink()}
+                placeholder="Masukan kode undangan..."
+                className="w-full px-4 py-2.5 text-sm font-bold rounded-xl bg-white border-2 border-slate-900 shadow-inner text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-300 transition-all"
+              />
+              {joinError && <p className="text-[10px] text-red-500 absolute -bottom-4 left-1 font-bold">{joinError}</p>}
+            </div>
+            <button
+              type="button"
+              onClick={handleOpenInviteLink}
+              disabled={joinLoading}
+              className="px-6 py-2.5 text-sm font-black rounded-xl bg-slate-900 text-white shadow-[3px_3px_0_0_#475569] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all disabled:opacity-50"
+            >
+              {joinLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Gas Lanjut!'}
+            </button>
+          </div>
+        )}
       </div>
 
       {loading ? (
         isAdmin ? (
           <>
-            <div className="md:hidden grid grid-cols-1 gap-3">
+            <div className="md:hidden grid grid-cols-1 gap-4">
               {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="border border-white/10 rounded-xl p-4 bg-white/[0.02] animate-pulse space-y-3">
-                  <div className="h-5 bg-white/10 rounded w-3/4" />
-                  <div className="h-3 bg-white/5 rounded w-1/2" />
-                  <div className="h-3 bg-white/5 rounded w-full" />
-                  <div className="h-8 bg-white/5 rounded w-1/3" />
+                <div key={i} className="border-2 border-slate-900 rounded-3xl p-5 bg-white shadow-[4px_4px_0_0_#0f172a] animate-pulse space-y-4">
+                  <div className="h-6 bg-slate-200 rounded w-3/4" />
+                  <div className="h-4 bg-slate-100 rounded w-1/2" />
+                  <div className="h-4 bg-slate-100 rounded w-full" />
+                  <div className="h-10 bg-slate-100 rounded w-1/3 mt-2" />
                 </div>
               ))}
             </div>
-            <div className="hidden md:block bg-white/[0.02] border border-white/10 rounded-xl overflow-hidden animate-pulse">
-              <div className="h-10 bg-white/5 border-b border-white/5 w-full" />
+            <div className="hidden md:block bg-white border-2 border-slate-900 rounded-3xl overflow-hidden animate-pulse shadow-[6px_6px_0_0_#0f172a]">
+              <div className="h-14 bg-emerald-200 border-b-2 border-slate-900 w-full" />
               {[1, 2, 3, 4, 5, 6].map((i) => (
-                <div key={i} className="flex items-center px-4 py-4 border-b border-white/5 gap-4">
-                  <div className="h-4 bg-white/10 rounded w-1/3" />
-                  <div className="h-4 bg-white/5 rounded w-1/6" />
-                  <div className="h-4 bg-white/5 rounded w-1/6 hidden sm:block" />
-                  <div className="h-4 bg-white/5 rounded w-1/6 hidden md:block" />
-                  <div className="h-8 w-8 bg-white/5 rounded-full ml-auto" />
+                <div key={i} className="flex items-center px-5 py-5 border-b-2 border-slate-100 gap-4">
+                  <div className="h-5 bg-slate-200 rounded w-1/3" />
+                  <div className="h-5 bg-slate-100 rounded w-1/6" />
+                  <div className="h-5 bg-slate-100 rounded w-1/6 hidden sm:block" />
+                  <div className="h-5 bg-slate-100 rounded w-1/6 hidden md:block" />
+                  <div className="h-10 w-10 bg-slate-200 border-2 border-slate-900 rounded-xl ml-auto" />
                 </div>
               ))}
             </div>
           </>
         ) : (
-          <div className="grid grid-cols-1 gap-3 sm:gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-              <div key={i} className="border border-white/10 rounded-xl p-3 sm:p-4 flex flex-col h-full bg-white/[0.02] animate-pulse min-h-[160px]">
+              <div key={i} className="border-2 border-slate-900 rounded-3xl p-5 flex flex-col h-full bg-white animate-pulse min-h-[160px] shadow-[4px_4px_0_0_#0f172a]">
                 <div className="flex-grow">
-                  <div className="space-y-2 mb-3">
-                    <div className="h-6 bg-white/10 rounded-md w-3/4" />
-                    <div className="h-4 bg-white/5 rounded-md w-1/2" />
+                  <div className="space-y-3 mb-4">
+                    <div className="h-6 bg-slate-200 rounded-md w-3/4" />
+                    <div className="h-4 bg-slate-100 rounded-md w-1/2" />
                   </div>
                   <div className="flex flex-wrap gap-2 mt-auto">
-                    <div className="h-6 w-20 bg-white/5 rounded-full" />
-                    <div className="h-6 w-24 bg-white/5 rounded-full" />
+                    <div className="h-6 w-20 bg-slate-200 rounded" />
+                    <div className="h-6 w-24 bg-slate-200 rounded" />
                   </div>
                 </div>
-                <div className="mt-4 pt-4 border-t border-white/10 flex flex-col items-center gap-2">
-                  <div className="h-3 bg-white/5 rounded-full w-1/3" />
+                <div className="mt-4 pt-4 border-t-2 border-slate-900 flex flex-col items-center gap-2">
+                  <div className="h-4 bg-slate-100 rounded w-1/3" />
                 </div>
               </div>
             ))}
           </div>
         )
       ) : filteredAlbums.length === 0 ? (
-        <div className="text-center py-12 sm:py-16 border border-white/10 rounded-xl bg-white/[0.02]">
-          <h3 className="text-base font-semibold text-app sm:text-lg">
+        <div className="text-center py-12 sm:py-16 border-2 border-slate-900 rounded-3xl bg-white shadow-[6px_6px_0_0_#0f172a]">
+          <h3 className="text-base font-black text-slate-900 sm:text-xl tracking-tight">
             {albums.length === 0 ? (isAdmin ? 'Belum ada data' : 'Belum ada album') : 'Tidak ada hasil'}
           </h3>
-          <p className="text-muted text-sm mt-2">
-            {albums.length === 0 ? 'Buat Personal atau Order Yearbook dari Showroom.' : 'Coba kata kunci lain.'}
+          <p className="text-slate-500 font-bold text-sm sm:text-base mt-2">
+            {albums.length === 0 ? 'Order Yearbook dari Showroom untuk memulai.' : 'Coba kata kunci lain.'}
           </p>
         </div>
       ) : isAdmin ? (
@@ -643,38 +871,40 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
                 ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(album.total_estimated_price)
                 : '-'
               return (
-                <div key={album.id} className="rounded-xl border border-white/10 bg-white/[0.02] p-4 flex flex-col gap-3">
-                  <div className="space-y-1.5 text-sm">
-                    <p className="font-semibold text-app break-words">{album.name}</p>
+                <div key={album.id} className="rounded-3xl border-2 border-slate-900 bg-white p-5 flex flex-col gap-4 shadow-[4px_4px_0_0_#0f172a] hover:shadow-[6px_6px_0_0_#0f172a] hover:-translate-y-1 hover:-translate-x-1 transition-all">
+                  <div className="space-y-1.5 text-[13px] sm:text-sm font-bold text-slate-600">
+                    <p className="font-black text-slate-900 text-[15px] sm:text-base break-words mb-2">{album.name}</p>
                     {album.pic_name && (
-                      <p className="text-muted"><span className="text-muted/80">Nama:</span> {album.pic_name}</p>
+                      <p><span className="text-slate-400">Nama:</span> <span className="text-slate-800">{album.pic_name}</span></p>
                     )}
-                    <p className="text-muted"><span className="text-muted/80">Paket:</span> {album.pricing_packages?.name?.replace(/^Paket\s+/i, '') || '-'}</p>
-                    <p className="text-muted"><span className="text-muted/80">Kota:</span> {album.school_city || '-'}</p>
-                    <p className="text-muted"><span className="text-muted/80">WA:</span> {album.wa_e164 || '-'}</p>
+                    <p><span className="text-slate-400">Paket:</span> <span className="text-slate-800">{album.pricing_packages?.name?.replace(/^Paket\s+/i, '') || '-'}</span></p>
+                    <p><span className="text-slate-400">Kota:</span> <span className="text-slate-800">{album.school_city || '-'}</span></p>
+                    <p><span className="text-slate-400">WA:</span> <span className="text-slate-800">{album.wa_e164 || '-'}</span></p>
                     {album.students_count != null && album.students_count > 0 && (
-                      <p className="text-muted"><span className="text-muted/80">Siswa:</span> {album.students_count}</p>
+                      <p><span className="text-slate-400">Siswa:</span> <span className="text-slate-800">{album.students_count}</span></p>
                     )}
-                    <p className="text-muted"><span className="text-muted/80">Estimasi:</span> {estimasi}</p>
-                    <span
-                      className={`inline-block px-2 py-0.5 text-xs font-semibold rounded-full ${(album.status ?? 'pending') === 'approved' ? 'bg-green-500/20 text-green-400' :
-                        (album.status ?? 'pending') === 'pending' ? 'bg-yellow-500/20 text-yellow-400' :
-                          (album.status ?? 'pending') === 'declined' ? 'bg-red-500/20 text-red-400' :
-                            'bg-sky-500/20 text-sky-400'
-                        }`}>
-                      {album.status ?? 'pending'}
-                    </span>
-                    {album.type === 'yearbook' && (album.status ?? 'pending') === 'approved' && (
+                    <p><span className="text-slate-400">Estimasi:</span> <span className="text-slate-800">{estimasi}</span></p>
+                    <div className="mt-2 pt-1 flex flex-wrap gap-2">
                       <span
-                        className={`inline-block ml-2 px-2 py-0.5 text-[10px] sm:text-xs font-semibold rounded-full ${album.payment_status === 'paid' ? 'bg-lime-500/20 text-lime-400' : 'bg-orange-500/20 text-orange-400'}`}>
-                        {album.payment_status === 'paid' ? 'Lunas' : 'Belum Bayar'}
+                        className={`inline-block px-2 py-0.5 text-[10px] font-black uppercase tracking-wider rounded border-2 border-slate-900 shadow-[2px_2px_0_0_#0f172a] ${(album.status ?? 'pending') === 'approved' ? 'bg-emerald-300 text-slate-900' :
+                          (album.status ?? 'pending') === 'pending' ? 'bg-orange-300 text-slate-900' :
+                            (album.status ?? 'pending') === 'declined' ? 'bg-red-400 text-white' :
+                              'bg-indigo-300 text-slate-900'
+                          }`}>
+                        {album.status ?? 'pending'}
                       </span>
-                    )}
+                      {album.type === 'yearbook' && (album.status ?? 'pending') === 'approved' && (
+                        <span
+                          className={`inline-block px-2 py-0.5 text-[10px] sm:text-xs font-black uppercase tracking-wider rounded border-2 border-slate-900 shadow-[2px_2px_0_0_#0f172a] ${album.payment_status === 'paid' ? 'bg-emerald-300 text-slate-900' : 'bg-red-400 text-white'}`}>
+                          {album.payment_status === 'paid' ? 'Lunas' : 'Belum Bayar'}
+                        </span>
+                      )}
+                    </div>
                   </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-3 border-t border-white/10">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-4 border-t-2 border-slate-900">
                     <Link
                       href={destUrl}
-                      className="col-span-2 sm:col-span-1 flex items-center justify-center gap-1 px-3 py-2.5 text-xs font-medium rounded-lg bg-sky-600 text-white hover:bg-sky-700 border border-transparent"
+                      className="col-span-2 sm:col-span-1 flex items-center justify-center gap-1 px-3 py-2.5 text-xs font-black rounded-xl bg-sky-400 border-2 border-slate-900 text-slate-900 shadow-[3px_3px_0_0_#0f172a] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all"
                     >
                       Details <ChevronRight className="w-3.5 h-3.5" />
                     </Link>
@@ -683,7 +913,7 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
                         type="button"
                         disabled={!!loadingId}
                         onClick={(e) => { e.preventDefault(); handleApprove(e as any, album) }}
-                        className="flex items-center justify-center gap-1 px-3 py-2.5 text-xs font-medium rounded-lg bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 border border-transparent"
+                        className="flex items-center justify-center gap-1 px-3 py-2.5 text-xs font-black rounded-xl bg-emerald-400 border-2 border-slate-900 text-slate-900 shadow-[3px_3px_0_0_#0f172a] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all disabled:opacity-50"
                       >
                         {isProcessing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />} Approve
                       </button>
@@ -693,7 +923,7 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
                         type="button"
                         disabled={!!loadingId}
                         onClick={(e) => { e.preventDefault(); handleDecline(e as any, album) }}
-                        className="flex items-center justify-center gap-1 px-3 py-2.5 text-xs font-medium rounded-lg bg-amber-600 text-white hover:bg-amber-700 disabled:opacity-50 border border-transparent"
+                        className="flex items-center justify-center gap-1 px-3 py-2.5 text-xs font-black rounded-xl bg-orange-400 border-2 border-slate-900 text-slate-900 shadow-[3px_3px_0_0_#0f172a] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all disabled:opacity-50"
                       >
                         <X className="w-3.5 h-3.5" /> Decline
                       </button>
@@ -702,7 +932,7 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
                       type="button"
                       disabled={!!loadingId}
                       onClick={(e) => { e.preventDefault(); handleDelete(e as any, album) }}
-                      className="flex items-center justify-center gap-1 px-3 py-2.5 text-xs font-medium rounded-lg bg-red-600/80 text-white hover:bg-red-700 disabled:opacity-50 border border-transparent"
+                      className="flex items-center justify-center gap-1 px-3 py-2.5 text-xs font-black rounded-xl bg-red-500 border-2 border-slate-900 text-white shadow-[3px_3px_0_0_#0f172a] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all disabled:opacity-50"
                     >
                       <Trash2 className="w-3.5 h-3.5" /> Hapus
                     </button>
@@ -712,92 +942,103 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
             })}
           </div>
           {/* Desktop: tabel */}
-          <div className="hidden md:block bg-white/[0.02] border border-white/10 rounded-xl overflow-hidden">
+          <div className="hidden md:block bg-white border-2 border-slate-900 rounded-3xl overflow-hidden shadow-[6px_6px_0_0_#0f172a]">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
-                <thead className="bg-white/[0.03]">
+                <thead className="bg-emerald-300 border-b-2 border-slate-900">
                   <tr>
-                    <th className="px-4 py-3 text-xs font-medium text-muted uppercase tracking-wider w-1/3">Sekolah / Nama</th>
-                    <th className="px-4 py-3 text-xs font-medium text-muted uppercase tracking-wider">Paket</th>
-                    <th className="px-4 py-3 text-xs font-medium text-muted uppercase tracking-wider hidden sm:table-cell">Kota</th>
-                    <th className="px-4 py-3 text-xs font-medium text-muted uppercase tracking-wider hidden md:table-cell">Nama</th>
-                    <th className="px-4 py-3 text-xs font-medium text-muted uppercase tracking-wider hidden lg:table-cell">WA</th>
-                    <th className="px-4 py-3 text-xs font-medium text-muted uppercase tracking-wider hidden xl:table-cell">Siswa</th>
-                    <th className="px-4 py-3 text-xs font-medium text-muted uppercase tracking-wider hidden xl:table-cell">Total Est.</th>
-                    <th className="px-4 py-3 text-center text-xs font-medium text-muted uppercase tracking-wider">Status</th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-muted uppercase tracking-wider">Aksi</th>
+                    <th className="px-3 py-3 text-[11px] font-black text-slate-900 uppercase tracking-wider">Nama Project</th>
+                    <th className="px-3 py-3 text-[11px] font-black text-slate-900 uppercase tracking-wider text-center">Paket</th>
+                    <th className="px-3 py-3 text-[11px] font-black text-slate-900 uppercase tracking-wider text-center">WA</th>
+                    <th className="px-3 py-3 text-[11px] font-black text-slate-900 uppercase tracking-wider text-center hidden lg:table-cell">Siswa</th>
+                    <th className="px-3 py-3 text-[11px] font-black text-slate-900 uppercase tracking-wider text-center hidden xl:table-cell">Estimasi</th>
+                    <th className="px-3 py-3 text-center text-[11px] font-black text-slate-900 uppercase tracking-wider">Status</th>
+                    <th className="px-3 py-3 text-right text-[11px] font-black text-slate-900 uppercase tracking-wider">Aksi</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-white/10">
+                <tbody className="divide-y-2 divide-slate-100">
                   {paginatedAlbums.map((album) => {
                     const isProcessing = loadingId === album.id
                     return (
                       <tr
                         key={album.id}
                         onClick={() => handleRowClick(album)}
-                        className="group hover:bg-white/[0.04] transition-colors cursor-pointer"
+                        className="group hover:bg-slate-50 transition-colors cursor-pointer"
                       >
-                        <td className="px-4 py-3 text-sm font-medium text-app">
-                          <div className="flex flex-col">
-                            <span className="break-words line-clamp-2">{album.name}</span>
-                            {album.type === 'public' && <span className="text-xs text-sky-400">Personal</span>}
-                            <span className="text-xs text-muted sm:hidden mt-1">
-                              {[album.school_city, album.pic_name].filter(Boolean).join(' • ')}
-                            </span>
+                        <td className="px-3 py-2.5 text-[14px] font-black text-slate-900">
+                          <div className="flex flex-col gap-0.5">
+                            <span className="break-words line-clamp-1">{album.name}</span>
+                            <div className="flex items-center gap-2 text-[10px] font-bold text-slate-500">
+                              {album.school_city && <span>{album.school_city}</span>}
+                              {album.pic_name && (
+                                <>
+                                  <span className="w-1 h-1 rounded-full bg-slate-300" />
+                                  <span className="text-slate-400">{album.pic_name}</span>
+                                </>
+                              )}
+                              {album.type === 'public' && (
+                                <>
+                                  <span className="w-1 h-1 rounded-full bg-slate-300" />
+                                  <span className="text-sky-500 uppercase tracking-tighter">Personal</span>
+                                </>
+                              )}
+                            </div>
                           </div>
                         </td>
-                        <td className="px-4 py-3 text-sm text-muted whitespace-nowrap">
+                        <td className="px-3 py-2.5 text-[11px] font-bold text-slate-600 text-center whitespace-nowrap">
                           {album.pricing_packages?.name?.replace(/^Paket\s+/i, '') || '-'}
                         </td>
-                        <td className="px-4 py-3 text-sm text-muted hidden sm:table-cell whitespace-nowrap">
-                          {album.school_city || '-'}
+                        <td className="px-3 py-2.5 text-[11px] font-bold text-slate-600 text-center whitespace-nowrap">
+                          {album.wa_e164 || '-'}
                         </td>
-                        <td className="px-4 py-3 text-sm text-muted hidden md:table-cell whitespace-nowrap">{album.pic_name || '-'}</td>
-                        <td className="px-4 py-3 text-sm text-muted hidden lg:table-cell whitespace-nowrap">{album.wa_e164 || '-'}</td>
-                        <td className="px-4 py-3 text-sm text-muted hidden xl:table-cell whitespace-nowrap">{album.students_count || '-'}</td>
-                        <td className="px-4 py-3 text-sm text-muted hidden xl:table-cell whitespace-nowrap">
+                        <td className="px-3 py-2.5 text-[11px] font-bold text-slate-600 text-center hidden lg:table-cell whitespace-nowrap">
+                          {album.students_count || '-'}
+                        </td>
+                        <td className="px-3 py-2.5 text-[11px] text-slate-600 font-bold text-center hidden xl:table-cell whitespace-nowrap">
                           {album.total_estimated_price
                             ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(album.total_estimated_price)
                             : '-'}
                         </td>
-                        <td className="px-4 py-3 text-center whitespace-nowrap">
-                          <span
-                            className={`inline-block px-2 py-0.5 text-[10px] sm:text-xs font-semibold rounded-full ${(album.status ?? 'pending') === 'approved' ? 'bg-green-500/20 text-green-400' :
-                              (album.status ?? 'pending') === 'pending' ? 'bg-yellow-500/20 text-yellow-400' :
-                                (album.status ?? 'pending') === 'declined' ? 'bg-red-500/20 text-red-400' :
-                                  'bg-sky-500/20 text-sky-400'
-                              }`}>
-                            {album.status ?? 'pending'}
-                          </span>
-                          {album.type === 'yearbook' && (album.status ?? 'pending') === 'approved' && (
+                        <td className="px-3 py-2.5 text-center whitespace-nowrap">
+                          <div className="flex flex-col items-center gap-1">
                             <span
-                              className={`inline-block ml-1.5 px-2 py-0.5 mt-1 sm:mt-0 lg:block lg:ml-0 lg:mt-1 xl:inline-block xl:ml-1.5 xl:mt-0 text-[10px] sm:text-xs font-semibold rounded-full ${album.payment_status === 'paid' ? 'bg-lime-500/20 text-lime-400' : 'bg-orange-500/20 text-orange-400'}`}>
-                              {album.payment_status === 'paid' ? 'Lunas' : 'Belum Bayar'}
+                              className={`inline-block px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider rounded border-2 border-slate-900 shadow-[1px_1px_0_0_#0f172a] ${(album.status ?? 'pending') === 'approved' ? 'bg-emerald-300 text-slate-900' :
+                                (album.status ?? 'pending') === 'pending' ? 'bg-orange-300 text-slate-900' :
+                                  (album.status ?? 'pending') === 'declined' ? 'bg-red-400 text-white' :
+                                    'bg-indigo-300 text-slate-900'
+                                }`}>
+                              {album.status ?? 'pending'}
                             </span>
-                          )}
+                            {album.type === 'yearbook' && (album.status ?? 'pending') === 'approved' && (
+                              <span
+                                className={`inline-block px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider rounded border-2 border-slate-900 shadow-[1px_1px_0_0_#0f172a] ${album.payment_status === 'paid' ? 'bg-emerald-300 text-slate-900' : 'bg-red-400 text-white'}`}>
+                                {album.payment_status === 'paid' ? 'Paid' : 'Unpaid'}
+                              </span>
+                            )}
+                          </div>
                         </td>
-                        <td className="px-4 py-3 text-right whitespace-nowrap">
-                          <div className="flex items-center justify-end gap-2">
+                        <td className="px-3 py-2.5 text-right whitespace-nowrap">
+                          <div className="flex items-center justify-end gap-1.5">
                             {album.type === 'yearbook' && (
                               <>
                                 {(album.status ?? 'pending') !== 'approved' && (
                                   <button
                                     onClick={(e) => handleApprove(e, album)}
                                     disabled={!!loadingId}
-                                    className="p-1.5 rounded-lg bg-green-500/10 text-green-400 hover:bg-green-500/20 disabled:opacity-50 transition-colors"
+                                    className="p-1 rounded-md bg-emerald-300 border-2 border-slate-900 text-slate-900 shadow-[1.5px_1.5px_0_0_#0f172a] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none disabled:opacity-50 transition-all"
                                     title="Approve"
                                   >
-                                    {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                                    {isProcessing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
                                   </button>
                                 )}
                                 {(album.status ?? 'pending') !== 'declined' && (
                                   <button
                                     onClick={(e) => handleDecline(e, album)}
                                     disabled={!!loadingId}
-                                    className="p-1.5 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 disabled:opacity-50 transition-colors"
+                                    className="p-1 rounded-md bg-orange-300 border-2 border-slate-900 text-slate-900 shadow-[1.5px_1.5px_0_0_#0f172a] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none disabled:opacity-50 transition-all"
                                     title="Decline"
                                   >
-                                    {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <X className="w-4 h-4" />}
+                                    {isProcessing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <X className="w-3.5 h-3.5" />}
                                   </button>
                                 )}
                               </>
@@ -805,10 +1046,10 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
                             <button
                               onClick={(e) => handleDelete(e, album)}
                               disabled={!!loadingId}
-                              className="p-1.5 rounded-lg bg-gray-500/10 text-gray-400 hover:bg-gray-500/20 disabled:opacity-50 transition-colors"
+                              className="p-1 rounded-md bg-red-400 border-2 border-slate-900 text-white shadow-[1.5px_1.5px_0_0_#0f172a] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none disabled:opacity-50 transition-all"
                               title="Hapus"
                             >
-                              {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                              {isProcessing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
                             </button>
                           </div>
                         </td>
@@ -842,27 +1083,27 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
 
       {/* Pagination Controls */}
       {!loading && filteredAlbums.length > itemsPerPage && (
-        <div className="flex items-center justify-between mt-6 flex-wrap gap-4">
-          <p className="text-xs text-muted">
+        <div className="flex items-center justify-between mt-8 flex-wrap gap-4">
+          <p className="text-[13px] font-bold text-slate-500">
             Menampilkan {((currentPage - 1) * itemsPerPage) + 1} hingga {Math.min(currentPage * itemsPerPage, filteredAlbums.length)} dari {filteredAlbums.length} entri
           </p>
-          <div className="flex gap-1.5 shrink-0">
+          <div className="flex gap-2 shrink-0">
             <button
               type="button"
               disabled={currentPage === 1}
               onClick={() => setCurrentPage(p => p - 1)}
-              className="px-3 py-1.5 text-xs font-medium rounded-lg bg-white/5 border border-white/10 text-app hover:bg-white/10 disabled:opacity-50 transition-colors"
+              className="px-4 py-2 text-[13px] font-black rounded-xl bg-white border-2 border-slate-900 text-slate-900 shadow-[2px_2px_0_0_#0f172a] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none disabled:opacity-50 transition-all"
             >
               Sebelumnya
             </button>
-            <div className="flex items-center px-3 py-1.5 text-xs font-medium bg-white/5 border border-white/10 rounded-lg text-app">
+            <div className="flex items-center px-4 py-2 text-[13px] font-black bg-indigo-200 border-2 border-slate-900 shadow-[2px_2px_0_0_#0f172a] rounded-xl text-slate-900">
               {currentPage} / {totalPages}
             </div>
             <button
               type="button"
               disabled={currentPage === totalPages}
               onClick={() => setCurrentPage(p => p + 1)}
-              className="px-3 py-1.5 text-xs font-medium rounded-lg bg-white/5 border border-white/10 text-app hover:bg-white/10 disabled:opacity-50 transition-colors"
+              className="px-4 py-2 text-[13px] font-black rounded-xl bg-white border-2 border-slate-900 text-slate-900 shadow-[2px_2px_0_0_#0f172a] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none disabled:opacity-50 transition-all"
             >
               Selanjutnya
             </button>
@@ -872,16 +1113,16 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
 
       {/* Modal konfirmasi buat Personal / Yearbook — UI custom, bukan dialog browser */}
       {confirmModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setConfirmModal(null)}>
-          <div className="bg-app border border-white/10 rounded-xl p-5 max-w-sm w-full shadow-xl" onClick={(e) => e.stopPropagation()}>
-            <p className="text-app font-medium mb-4">
-              {confirmModal === 'personal' ? 'Mau buat personal?' : 'Mau buat yearbook?'}
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" onClick={() => setConfirmModal(null)}>
+          <div className="bg-white border-4 border-slate-900 rounded-3xl p-6 max-w-sm w-full shadow-[8px_8px_0_0_#0f172a]" onClick={(e) => e.stopPropagation()}>
+            <p className="text-xl font-black text-slate-900 mb-6">
+              Mau buat project baru?
             </p>
-            <div className="flex gap-3">
+            <div className="flex gap-4">
               <button
                 type="button"
                 onClick={() => setConfirmModal(null)}
-                className="flex-1 py-2.5 text-sm font-medium rounded-lg border border-white/10 text-app hover:bg-white/5 transition-colors"
+                className="flex-1 py-3 text-sm font-black rounded-2xl bg-white border-2 border-slate-900 text-slate-900 shadow-[3px_3px_0_0_#0f172a] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all"
               >
                 Batal
               </button>
@@ -892,9 +1133,9 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
                   else router.push(showroomHref)
                   setConfirmModal(null)
                 }}
-                className={`flex-1 py-2.5 text-sm font-medium rounded-lg text-white transition-colors ${confirmModal === 'personal' ? 'bg-sky-600 hover:bg-sky-700' : 'bg-purple-600 hover:bg-purple-700'}`}
+                className={`flex-1 py-3 text-sm font-black rounded-2xl border-2 border-slate-900 shadow-[3px_3px_0_0_#0f172a] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all text-slate-900 ${confirmModal === 'personal' ? 'bg-indigo-300' : 'bg-emerald-400'}`}
               >
-                Ya
+                Gas Lanjut!
               </button>
             </div>
           </div>
@@ -902,12 +1143,14 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
       )}
 
       {inviteModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setInviteModal(null)}>
-          <div className="bg-app border border-white/10 rounded-xl p-4 sm:p-5 max-w-md w-full shadow-xl" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-base font-semibold text-app mb-1">Undangan — {inviteModal.albumName}</h3>
-            <p className="text-xs text-muted mb-3">Bagikan kode ini; penerima bisa masukkan kode di halaman Album.</p>
-            <div className="flex items-center gap-2 mb-3">
-              <span className="text-lg font-mono font-semibold text-app tracking-wide px-3 py-2 rounded-lg bg-white/5 border border-white/10">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" onClick={() => setInviteModal(null)}>
+          <div className="bg-white border-4 border-slate-900 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-[8px_8px_0_0_#0f172a]" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-[22px] font-black text-slate-900 mb-1 leading-tight">Undangan Album</h3>
+            <p className="font-bold text-slate-600 mb-4">{inviteModal.albumName}</p>
+            <p className="text-[13px] font-bold text-slate-500 mb-6">Bagikan kode ini; penerima bisa masukkan kode di halaman Album.</p>
+
+            <div className="flex flex-col sm:flex-row items-center gap-3 mb-6">
+              <span className="w-full sm:w-auto text-lg font-mono font-black text-slate-900 tracking-wider px-4 py-3 rounded-2xl bg-orange-100 border-2 border-slate-900 shadow-inner flex-1 text-center sm:text-left">
                 {inviteModal.code}
               </span>
               <button
@@ -917,21 +1160,23 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
                   setCopyFeedback(true)
                   setTimeout(() => setCopyFeedback(false), 2000)
                 }}
-                className="shrink-0 px-3 py-2 text-sm font-medium rounded-lg bg-sky-600 text-white hover:bg-sky-700 min-w-[72px]"
+                className="w-full sm:w-auto px-5 py-3 text-[15px] font-black rounded-2xl bg-indigo-300 border-2 border-slate-900 text-slate-900 shadow-[3px_3px_0_0_#0f172a] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all"
               >
-                {copyFeedback ? 'Tersalin!' : 'Salin kode'}
+                {copyFeedback ? 'Tersalin!' : 'Salin Kode'}
               </button>
             </div>
+
             <button
               type="button"
               onClick={() => setInviteModal(null)}
-              className="w-full py-2 text-sm font-medium rounded-lg border border-white/10 text-app hover:bg-white/5 transition-colors"
+              className="w-full py-3 text-[15px] font-black rounded-2xl bg-white border-2 border-slate-900 text-slate-900 shadow-[3px_3px_0_0_#0f172a] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all"
             >
               Tutup
             </button>
           </div>
         </div>
-      )}
-    </div>
+      )
+      }
+    </div >
   )
 }

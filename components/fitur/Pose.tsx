@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { Upload, X, Loader2, Download, User } from 'lucide-react';
 import { downloadImageWithWatermark } from '@/lib/download-image';
+import { fetchWithAuth } from '../../lib/api-client'
 
 export default function Pose() {
   const [subject, setSubject] = useState<File | null>(null);
@@ -17,7 +18,7 @@ export default function Pose() {
     let cancelled = false;
     const loadPricing = async () => {
       try {
-        const res = await fetch('/api/admin/ai-edit');
+        const res = await fetchWithAuth('/api/admin/ai-edit');
         if (!res.ok) return;
         const data = await res.json();
         if (!Array.isArray(data)) return;
@@ -68,7 +69,7 @@ export default function Pose() {
       formData.append("subject", subject);
       formData.append("prompt", prompt);
 
-      const res = await fetch("/api/ai-features/pose", {
+      const res = await fetchWithAuth("/api/ai-features/pose", {
         method: "POST",
         body: formData,
       });
@@ -96,31 +97,31 @@ export default function Pose() {
 
   return (
     <section id="pose" className="py-4 md:py-6">
-      <div className="max-w-7xl mx-auto">
-        <form onSubmit={handleGeneratePose} className="max-w-4xl mx-auto">
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-3 sm:p-4 md:p-6 border border-gray-200 dark:border-gray-700 space-y-4 sm:space-y-5 md:space-y-6">
-            <p className="text-sm text-gray-500 dark:text-gray-400 text-center">
+      <div className="max-w-3xl mx-auto">
+        <form onSubmit={handleGeneratePose}>
+          <div className="bg-white rounded-2xl border-4 border-slate-900 shadow-[6px_6px_0_0_#0f172a] p-4 sm:p-6 space-y-4 sm:space-y-5">
+            <p className="text-[10px] sm:text-xs font-black text-slate-500 text-center uppercase tracking-widest">
               Upload foto karakter dan deskripsikan pose yang diinginkan.
             </p>
             {/* Subject Upload */}
             <div>
-              <label className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-semibold mb-2 sm:mb-3 text-gray-700 dark:text-gray-300">
+              <label className="flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs font-black mb-2 sm:mb-3 text-slate-900 uppercase tracking-tight">
                 <User className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 <span>1. Upload Foto Karakter (Subject) <span className="text-red-500">*</span></span>
               </label>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-2 sm:mb-3">
+              <p className="text-[10px] text-slate-500 mb-2 sm:mb-3 uppercase tracking-widest">
                 Upload foto closeup headshot seseorang. Foto square closeup wajah memberikan hasil terbaik.
               </p>
               <div
                 onClick={() => document.getElementById("subject-upload")?.click()}
-                className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-4 sm:p-6 md:p-8 text-center cursor-pointer hover:border-primary transition-colors"
+                className="border-2 border-dashed border-slate-300 rounded-xl p-4 sm:p-6 md:p-8 text-center cursor-pointer hover:border-slate-900 transition-colors"
               >
                 {subjectPreview ? (
-                  <User className="w-6 h-6 sm:w-8 sm:h-8 mx-auto mb-1.5 sm:mb-2 text-green-500" />
+                  <User className="w-6 h-6 sm:w-8 sm:h-8 mx-auto mb-1.5 sm:mb-2 text-emerald-500" />
                 ) : (
-                  <Upload className="w-6 h-6 sm:w-8 sm:h-8 mx-auto mb-1.5 sm:mb-2 text-gray-400" />
+                  <Upload className="w-6 h-6 sm:w-8 sm:h-8 mx-auto mb-1.5 sm:mb-2 text-slate-400" />
                 )}
-                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+                <p className="text-[10px] sm:text-sm text-slate-600 uppercase tracking-widest">
                   {subjectPreview ? "Foto karakter sudah diupload" : "Klik untuk upload foto karakter"}
                 </p>
                 <input
@@ -136,7 +137,7 @@ export default function Pose() {
               {/* Subject Preview */}
               {subjectPreview && (
                 <div className="mt-3 sm:mt-4">
-                  <div className="relative max-w-[200px] sm:max-w-[250px] md:max-w-[300px] mx-auto h-48 sm:h-56 md:h-64 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center overflow-hidden">
+                  <div className="relative max-w-[200px] sm:max-w-[250px] md:max-w-[300px] mx-auto h-48 sm:h-56 md:h-64 bg-slate-100 rounded-xl border-2 border-slate-900 flex items-center justify-center overflow-hidden shadow-[3px_3px_0_0_#0f172a]">
                     <img
                       src={subjectPreview}
                       alt="Subject preview"
@@ -148,7 +149,7 @@ export default function Pose() {
                         setSubject(null);
                         setSubjectPreview(null);
                       }}
-                      className="absolute top-1.5 sm:top-2 right-1.5 sm:right-2 p-1.5 sm:p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors z-10"
+                      className="absolute top-1.5 sm:top-2 right-1.5 sm:right-2 p-1.5 sm:p-2 bg-red-500 text-white rounded-full border-2 border-slate-900 hover:bg-red-600 transition-colors z-10"
                     >
                       <X className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     </button>
@@ -159,7 +160,7 @@ export default function Pose() {
 
             {/* Prompt Input */}
             <div>
-              <label className="block text-xs sm:text-sm font-semibold mb-2 sm:mb-3 text-gray-700 dark:text-gray-300">
+              <label className="block text-[10px] sm:text-xs font-black mb-2 sm:mb-3 text-slate-900 uppercase tracking-tight">
                 2. Deskripsi Karakter (Prompt) <span className="text-red-500">*</span>
               </label>
               <textarea
@@ -167,19 +168,19 @@ export default function Pose() {
                 onChange={(e) => setPrompt(e.target.value)}
                 placeholder="Contoh: 'Foto closeup seorang wanita muda dengan rambut panjang cokelat, memakai sweater abu-abu' atau kosongkan untuk default"
                 rows={3}
-                className="w-full px-3 sm:px-4 py-2 sm:py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+                className="w-full px-3 sm:px-4 py-2.5 border-2 border-slate-900 rounded-xl bg-white text-slate-900 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-slate-900 resize-none"
               />
             </div>
 
             {/* Error Message */}
             {error && (
-              <div className="p-2.5 sm:p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-600 dark:text-red-400 text-xs sm:text-sm whitespace-pre-line">
+              <div className="p-3 bg-red-50 border-2 border-red-500 rounded-xl text-red-600 text-[10px] sm:text-xs font-black uppercase tracking-widest whitespace-pre-line">
                 {error}
               </div>
             )}
 
             {typeof creditsPerGenerate === 'number' && creditsPerGenerate >= 0 && (
-              <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
+              <p className="text-[10px] font-black text-slate-500 text-center uppercase tracking-widest">
                 Biaya: {creditsPerGenerate} credit per generate Pose.
               </p>
             )}
@@ -188,7 +189,7 @@ export default function Pose() {
             <button
               type="submit"
               disabled={loading || !subject}
-              className="w-full flex items-center justify-center gap-2 sm:gap-3 px-4 sm:px-5 md:px-6 py-2.5 sm:py-2.5 md:py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg text-sm sm:text-base font-medium hover:from-purple-600 hover:to-pink-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-indigo-500 text-white rounded-xl border-2 border-slate-900 font-black text-xs uppercase tracking-widest shadow-[4px_4px_0_0_#0f172a] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? (
                 <>
@@ -207,21 +208,21 @@ export default function Pose() {
 
         {/* Results */}
         {results.length > 0 && (
-          <div className="mt-6 sm:mt-8 md:mt-12 max-w-4xl mx-auto px-2 sm:px-4">
-            <h3 className="text-xl sm:text-2xl md:text-3xl font-bold mb-4 sm:mb-5 md:mb-6 text-gray-900 dark:text-white text-center">
+          <div className="mt-6 sm:mt-8 max-w-3xl mx-auto px-2 sm:px-4">
+            <h3 className="text-base sm:text-xl font-black mb-4 text-slate-900 text-center uppercase tracking-tight">
               Hasil Pose Transfer ({results.length} gambar)
             </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-5 md:gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
               {results.map((result, index) => (
                 <div
                   key={index}
-                  className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-3 sm:p-4 border border-gray-200 dark:border-gray-700"
+                  className="bg-white rounded-2xl border-4 border-slate-900 shadow-[6px_6px_0_0_#0f172a] p-3 sm:p-4"
                 >
                   <div className="relative">
                     <img
                       src={result}
                       alt={`Pose result ${index + 1}`}
-                      className="w-full h-auto max-h-64 sm:max-h-80 md:max-h-96 object-contain rounded-lg"
+                      className="w-full h-auto max-h-64 sm:max-h-80 object-contain rounded-xl"
                     />
                     <button
                       type="button"
@@ -239,7 +240,7 @@ export default function Pose() {
                         }
                       }}
                       disabled={downloadingIndex !== null}
-                      className="absolute top-1.5 sm:top-2 right-1.5 sm:right-2 p-1.5 sm:p-2 bg-green-500 text-white rounded-full hover:bg-green-600 transition-colors shadow-lg disabled:opacity-70"
+                      className="absolute top-1.5 sm:top-2 right-1.5 sm:right-2 p-1.5 sm:p-2 bg-emerald-500 text-white rounded-full border-2 border-slate-900 hover:bg-emerald-600 transition-colors shadow-[2px_2px_0_0_#0f172a] disabled:opacity-70"
                       title="Download (langsung ke device)"
                     >
                       {downloadingIndex === index ? (
@@ -248,7 +249,7 @@ export default function Pose() {
                         <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                       )}
                     </button>
-                    <div className="absolute bottom-1.5 sm:bottom-2 left-1.5 sm:left-2 px-2 py-1 bg-black/50 text-white text-xs rounded">
+                    <div className="absolute bottom-1.5 sm:bottom-2 left-1.5 sm:left-2 px-2 py-1 bg-slate-900 text-white text-[10px] font-black rounded-lg">
                       #{index + 1}
                     </div>
                   </div>

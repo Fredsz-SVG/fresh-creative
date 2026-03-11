@@ -22,7 +22,7 @@ export default function ClassesEmptyView({
 }: ClassesEmptyViewProps) {
   return (
     <div className="flex-1 flex flex-col items-center justify-center min-h-[50vh] px-4 py-8">
-      <div className="flex flex-col items-center justify-center text-center border-2 border-dashed border-white/10 rounded-xl py-16 px-8 max-w-md w-full">
+      <div className="flex flex-col items-center justify-center text-center border-2 border-dashed border-gray-200 rounded-xl py-16 px-8 max-w-md w-full">
         <p className="text-app font-medium text-lg mb-3">Belum ada kelas</p>
         {canManage && (
           <>
@@ -36,7 +36,7 @@ export default function ClassesEmptyView({
               <button
                 type="button"
                 onClick={() => setAddingClass(true)}
-                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-lime-600 text-white text-sm font-medium hover:bg-lime-500 active:scale-95 transition-all"
+                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-violet-500 text-white text-sm font-medium hover:bg-violet-500 active:scale-95 transition-all"
               >
                 <Plus className="w-4 h-4" /> Nama kelas
               </button>
@@ -47,14 +47,14 @@ export default function ClassesEmptyView({
                   value={newClassName}
                   onChange={(e) => setNewClassName(e.target.value)}
                   placeholder="Nama kelas"
-                  className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-app text-sm placeholder:text-gray-500 w-full"
+                  className="px-3 py-2 rounded-lg bg-gray-100 border border-gray-200 text-app text-sm placeholder:text-gray-500 w-full"
                   autoFocus
                 />
                 <div className="flex gap-2">
                   <button
                     type="button"
                     onClick={onAddClass}
-                    className="flex-1 px-4 py-2 rounded-lg bg-lime-600 text-white text-sm font-medium hover:bg-lime-500"
+                    className="flex-1 px-4 py-2 rounded-lg bg-violet-500 text-white text-sm font-medium hover:bg-violet-500"
                   >
                     Tambah
                   </button>
@@ -64,7 +64,7 @@ export default function ClassesEmptyView({
                       setAddingClass(false)
                       setNewClassName('')
                     }}
-                    className="flex-1 px-4 py-2 rounded-lg border border-white/10 text-gray-400 hover:text-white text-sm"
+                    className="flex-1 px-4 py-2 rounded-lg border border-gray-200 text-gray-400 hover:text-gray-800 text-sm"
                   >
                     Batal
                   </button>

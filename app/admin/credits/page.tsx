@@ -1,10 +1,10 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Edit, Plus, Save, Trash2, X, Loader2, Check, Copy, Gift, ToggleLeft, ToggleRight, Clock } from 'lucide-react'
-import DashboardTitle from '@/components/dashboard/DashboardTitle'
+import { Edit, Plus, Save, Trash2, X, Loader2, Check, Copy, Gift, ToggleLeft, ToggleRight, Clock, ChevronRight, Layout, Zap, Hash, Calendar, AlertCircle, Users, Star } from 'lucide-react'
 import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
+import { fetchWithAuth } from '../../../lib/api-client'
 
 interface CreditPackage {
     id: string
@@ -47,51 +47,65 @@ const PackageForm = ({ pkg, onSave, onCancel }: { pkg: Partial<CreditPackage> | 
     }
 
     return (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
-            <div className="bg-[#0a0a0b] border border-white/10 rounded-2xl shadow-2xl p-6 w-full max-w-md animate-in fade-in zoom-in duration-200">
-                <h2 className="text-xl font-bold text-app mb-4">{pkg?.id ? 'Edit Package' : 'Create New Package'}</h2>
-                <form onSubmit={handleSubmit}>
+        <div className="fixed inset-0 bg-slate-900/60 flex items-center justify-center p-4 z-[100] backdrop-blur-md">
+            <div className="bg-white border-4 border-slate-900 rounded-[32px] shadow-[12px_12px_0_0_#0f172a] p-8 w-full max-w-md animate-in fade-in zoom-in duration-200 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                <div className="flex justify-between items-center mb-6">
+                    <h2 className="text-2xl font-black text-slate-900 tracking-tight">{pkg?.id ? 'Edit Package' : 'New Package'}</h2>
+                    <button onClick={onCancel} className="p-2 rounded-xl hover:bg-slate-100 transition-colors">
+                        <X size={24} className="text-slate-900" strokeWidth={3} />
+                    </button>
+                </div>
+
+                <form onSubmit={handleSubmit} className="space-y-6">
                     <div className="space-y-4">
                         <div>
-                            <label className="block text-xs font-medium text-gray-500 mb-1">Credits Amount</label>
+                            <label className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1.5 block">Credits Amount</label>
                             <input
                                 name="credits"
                                 type="number"
                                 value={formData.credits}
                                 onChange={handleChange}
-                                className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-lime-500"
+                                className="w-full px-5 py-3.5 bg-slate-50 border-4 border-slate-900 rounded-2xl text-slate-900 font-bold placeholder:text-slate-300 focus:outline-none focus:ring-4 focus:ring-indigo-100 transition-all shadow-[4px_4px_0_0_#0f172a] focus:shadow-none"
                                 required
                             />
                         </div>
                         <div>
-                            <label className="block text-xs font-medium text-gray-500 mb-1">Price (IDR)</label>
+                            <label className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1.5 block">Price (IDR)</label>
                             <input
                                 name="price"
                                 type="number"
                                 value={formData.price}
                                 onChange={handleChange}
-                                className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-lime-500"
+                                className="w-full px-5 py-3.5 bg-slate-50 border-4 border-slate-900 rounded-2xl text-slate-900 font-bold placeholder:text-slate-300 focus:outline-none focus:ring-4 focus:ring-indigo-100 transition-all shadow-[4px_4px_0_0_#0f172a] focus:shadow-none"
                                 required
                             />
                         </div>
-                        <div className="flex items-center gap-2">
-                            <input
-                                id="popular"
-                                name="popular"
-                                type="checkbox"
-                                checked={formData.popular}
-                                onChange={handleChange}
-                                className="w-4 h-4 rounded border-gray-600 text-lime-600 focus:ring-lime-500 bg-gray-700"
-                            />
-                            <label htmlFor="popular" className="text-sm text-gray-300">Mark as Popular</label>
+                        <div className="p-4 border-4 border-slate-900 rounded-2xl bg-amber-50 shadow-[4px_4px_0_0_#0f172a]">
+                            <label className="flex items-center gap-4 cursor-pointer select-none">
+                                <div className="relative">
+                                    <input
+                                        type="checkbox"
+                                        checked={formData.popular}
+                                        onChange={handleChange}
+                                        name="popular"
+                                        className="sr-only peer"
+                                    />
+                                    <div className="w-12 h-6 bg-slate-200 border-2 border-slate-900 rounded-full peer-checked:bg-amber-400 transition-colors" />
+                                    <div className="absolute left-1 top-1 w-4 h-4 bg-white border-2 border-slate-900 rounded-full transition-transform peer-checked:translate-x-6" />
+                                </div>
+                                <span className="text-sm text-slate-900 font-black flex items-center gap-2">
+                                    <Star size={16} className="text-amber-500 fill-amber-500" />
+                                    Mark as Popular
+                                </span>
+                            </label>
                         </div>
                     </div>
-                    <div className="mt-6 flex justify-end gap-3">
-                        <button type="button" onClick={onCancel} className="px-4 py-2 border border-white/10 rounded-xl text-gray-400 hover:bg-white/5 flex items-center gap-2 text-sm font-medium">
-                            <X size={16} /> Cancel
+                    <div className="flex gap-4 pt-4">
+                        <button type="button" onClick={onCancel} className="flex-1 px-6 py-4 border-4 border-slate-900 rounded-2xl text-slate-900 font-black hover:bg-slate-50 transition-all active:scale-95 shadow-[4px_4px_0_0_#0f172a] active:shadow-none">
+                            Cancel
                         </button>
-                        <button type="submit" className="px-4 py-2 bg-lime-600 rounded-xl hover:bg-lime-500 text-white flex items-center gap-2 text-sm font-medium">
-                            <Save size={16} /> Save
+                        <button type="submit" className="flex-1 px-6 py-4 bg-indigo-400 text-slate-900 border-4 border-slate-900 rounded-2xl font-black hover:translate-x-1 hover:translate-y-1 transition-all shadow-[6px_6px_0_0_#0f172a] hover:shadow-none">
+                            Save
                         </button>
                     </div>
                 </form>
@@ -119,7 +133,7 @@ export default function AdminCreditSettingsPage() {
     const fetchPackages = async (silent = false) => {
         if (!silent) setLoading(true)
         try {
-            const res = await fetch(`/api/credits/packages?t=${Date.now()}`)
+            const res = await fetchWithAuth(`/api/credits/packages?t=${Date.now()}`)
             if (!res.ok) throw new Error('Failed to fetch packages')
             const data = await res.json()
             setPackages(data)
@@ -161,7 +175,7 @@ export default function AdminCreditSettingsPage() {
     const handleSave = async (pkg: Partial<CreditPackage>) => {
         const method = pkg.id ? 'PUT' : 'POST'
         try {
-            const res = await fetch('/api/credits/packages', {
+            const res = await fetchWithAuth('/api/credits/packages', {
                 method,
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(pkg),
@@ -190,7 +204,7 @@ export default function AdminCreditSettingsPage() {
     const fetchRedeemCodes = async (silent = false) => {
         if (!silent) setLoadingRedeem(true)
         try {
-            const res = await fetch(`/api/credits/redeem?t=${Date.now()}`)
+            const res = await fetchWithAuth(`/api/credits/redeem?t=${Date.now()}`)
             if (!res.ok) throw new Error('Failed to fetch redeem codes')
             setRedeemCodes(await res.json())
         } catch (err) {
@@ -210,14 +224,13 @@ export default function AdminCreditSettingsPage() {
     const handleCreateRedeem = async () => {
         const code = newCode.code.trim() || generateRandomCode()
 
-        // Convert datetime-local to ISO string to preserve local timezone properly when sending
         let expiresAtISO = null;
         if (newCode.expires_at) {
             expiresAtISO = new Date(newCode.expires_at).toISOString();
         }
 
         try {
-            const res = await fetch('/api/credits/redeem', {
+            const res = await fetchWithAuth('/api/credits/redeem', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -240,7 +253,7 @@ export default function AdminCreditSettingsPage() {
 
     const handleToggleRedeem = async (item: RedeemCode) => {
         try {
-            const res = await fetch('/api/credits/redeem', {
+            const res = await fetchWithAuth('/api/credits/redeem', {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ id: item.id, is_active: !item.is_active }),
@@ -267,7 +280,7 @@ export default function AdminCreditSettingsPage() {
         setIsDeleting(true)
         try {
             if (deletePrompt.type === 'package') {
-                const res = await fetch('/api/credits/packages', {
+                const res = await fetchWithAuth('/api/credits/packages', {
                     method: 'DELETE',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ id: deletePrompt.id }),
@@ -276,7 +289,7 @@ export default function AdminCreditSettingsPage() {
                 toast.success('Paket dihapus')
                 fetchPackages(true)
             } else if (deletePrompt.type === 'redeem') {
-                const res = await fetch('/api/credits/redeem', {
+                const res = await fetchWithAuth('/api/credits/redeem', {
                     method: 'DELETE',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ id: deletePrompt.id }),
@@ -307,74 +320,86 @@ export default function AdminCreditSettingsPage() {
 
             {/* Create Redeem Code Modal */}
             {showCreateRedeem && (
-                <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
-                    <div className="bg-[#0a0a0b] border border-white/10 rounded-2xl shadow-2xl p-6 w-full max-w-md animate-in fade-in zoom-in duration-200">
-                        <h2 className="text-xl font-bold text-app mb-4">Buat Kode Redeem</h2>
-                        <div className="space-y-4">
+                <div className="fixed inset-0 bg-slate-900/60 flex items-center justify-center p-4 z-[100] backdrop-blur-md">
+                    <div className="bg-white border-4 border-slate-900 rounded-[32px] shadow-[12px_12px_0_0_#0f172a] p-8 w-full max-w-md animate-in fade-in zoom-in duration-200 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                        <div className="flex justify-between items-center mb-6">
+                            <h2 className="text-2xl font-black text-slate-900 tracking-tight">Buat Kode Redeem</h2>
+                            <button onClick={() => setShowCreateRedeem(false)} className="p-2 rounded-xl hover:bg-slate-100 transition-colors">
+                                <X size={24} className="text-slate-900" strokeWidth={3} />
+                            </button>
+                        </div>
+
+                        <div className="space-y-6">
                             <div>
-                                <label className="block text-xs font-medium text-gray-500 mb-1">Kode (kosongkan untuk auto-generate)</label>
+                                <label className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1.5 block">Kode Voucher</label>
                                 <div className="flex gap-2">
                                     <input
                                         value={newCode.code}
                                         onChange={(e) => setNewCode({ ...newCode, code: e.target.value.toUpperCase() })}
                                         placeholder="AUTO-GENERATE"
-                                        className="flex-1 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white uppercase tracking-wider font-mono focus:outline-none focus:border-lime-500"
+                                        className="flex-1 px-5 py-3.5 bg-slate-50 border-4 border-slate-900 rounded-2xl text-slate-900 font-bold placeholder:text-slate-300 focus:outline-none focus:ring-4 focus:ring-indigo-100 transition-all shadow-[4px_4px_0_0_#0f172a] focus:shadow-none uppercase font-mono"
                                     />
                                     <button
                                         type="button"
                                         onClick={() => setNewCode({ ...newCode, code: generateRandomCode() })}
-                                        className="px-3 py-2 bg-white/10 border border-white/10 rounded-lg text-gray-400 hover:bg-white/20 text-xs font-medium"
+                                        className="px-4 py-2 bg-slate-100 border-2 border-slate-900 rounded-xl text-slate-900 text-[10px] font-black hover:translate-x-0.5 hover:translate-y-0.5 shadow-[2px_2px_0_0_#0f172a] hover:shadow-none transition-all"
                                     >
-                                        Generate
+                                        GENERATE
                                     </button>
                                 </div>
                             </div>
-                            <div>
-                                <label className="block text-xs font-medium text-gray-500 mb-1">Jumlah Credit</label>
-                                <input
-                                    type="number"
-                                    min={1}
-                                    value={newCode.credits}
-                                    onChange={(e) => setNewCode({ ...newCode, credits: Number(e.target.value) })}
-                                    className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-lime-500"
-                                    required
-                                />
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1.5 block">Jumlah Credit</label>
+                                    <input
+                                        type="number"
+                                        min={1}
+                                        value={newCode.credits}
+                                        onChange={(e) => setNewCode({ ...newCode, credits: Number(e.target.value) })}
+                                        className="w-full px-5 py-3.5 bg-slate-50 border-4 border-slate-900 rounded-2xl text-slate-900 font-bold focus:outline-none shadow-[4px_4px_0_0_#0f172a]"
+                                        required
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1.5 block">Limit Pakai</label>
+                                    <input
+                                        type="number"
+                                        min={1}
+                                        value={newCode.max_uses}
+                                        onChange={(e) => setNewCode({ ...newCode, max_uses: Number(e.target.value) })}
+                                        className="w-full px-5 py-3.5 bg-slate-50 border-4 border-slate-900 rounded-2xl text-slate-900 font-bold focus:outline-none shadow-[4px_4px_0_0_#0f172a]"
+                                        required
+                                    />
+                                </div>
                             </div>
+
                             <div>
-                                <label className="block text-xs font-medium text-gray-500 mb-1">Maks. Pemakaian</label>
-                                <input
-                                    type="number"
-                                    min={1}
-                                    value={newCode.max_uses}
-                                    onChange={(e) => setNewCode({ ...newCode, max_uses: Number(e.target.value) })}
-                                    className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-lime-500"
-                                    required
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-xs font-medium text-gray-500 mb-1">Kadaluarsa (opsional)</label>
+                                <label className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1.5 block">Kadaluarsa (Opsional)</label>
                                 <input
                                     type="datetime-local"
                                     value={newCode.expires_at}
                                     onChange={(e) => setNewCode({ ...newCode, expires_at: e.target.value })}
-                                    className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-lime-500"
+                                    className="w-full px-5 py-3.5 bg-slate-50 border-4 border-slate-900 rounded-2xl text-slate-900 font-bold focus:outline-none shadow-[4px_4px_0_0_#0f172a]"
                                 />
                             </div>
                         </div>
-                        <div className="mt-6 flex justify-end gap-3">
+
+                        <div className="flex gap-4 pt-8">
                             <button
                                 type="button"
                                 onClick={() => setShowCreateRedeem(false)}
-                                className="px-4 py-2 border border-white/10 rounded-xl text-gray-400 hover:bg-white/5 flex items-center gap-2 text-sm font-medium"
+                                className="flex-1 px-6 py-4 border-4 border-slate-900 rounded-2xl text-slate-900 font-black hover:bg-slate-50 transition-all active:scale-95 shadow-[4px_4px_0_0_#0f172a] active:shadow-none"
                             >
-                                <X size={16} /> Batal
+                                Batal
                             </button>
                             <button
                                 type="button"
                                 onClick={handleCreateRedeem}
-                                className="px-4 py-2 bg-lime-600 rounded-xl hover:bg-lime-500 text-white flex items-center gap-2 text-sm font-medium"
+                                className="flex-1 px-6 py-4 bg-purple-400 text-slate-900 border-4 border-slate-900 rounded-2xl font-black hover:translate-x-1 hover:translate-y-1 transition-all shadow-[6px_6px_0_0_#0f172a] hover:shadow-none flex items-center justify-center gap-2"
                             >
-                                <Gift size={16} /> Buat Kode
+                                <Gift size={18} strokeWidth={3} />
+                                Buat Kode
                             </button>
                         </div>
                     </div>
@@ -383,23 +408,23 @@ export default function AdminCreditSettingsPage() {
 
             {/* Delete Confirmation Modal */}
             {deletePrompt && (
-                <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50 backdrop-blur-sm" onClick={() => !isDeleting && setDeletePrompt(null)}>
+                <div className="fixed inset-0 bg-slate-900/60 flex items-center justify-center p-4 z-[100] backdrop-blur-md" onClick={() => !isDeleting && setDeletePrompt(null)}>
                     <div
-                        className="bg-[#0a0a0b] border border-red-500/20 rounded-2xl shadow-2xl p-6 w-full max-w-sm animate-in fade-in zoom-in duration-200"
+                        className="bg-white border-4 border-slate-900 rounded-[32px] shadow-[12px_12px_0_0_#0f172a] p-8 w-full max-w-sm animate-in fade-in zoom-in duration-200 overflow-hidden"
                         onClick={e => e.stopPropagation()}
                     >
-                        <div className="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center text-red-500 mb-4 mx-auto">
-                            <Trash2 size={24} />
+                        <div className="w-20 h-20 rounded-3xl bg-red-50 border-4 border-red-100 flex items-center justify-center text-red-500 mb-6 mx-auto">
+                            <Trash2 size={32} strokeWidth={2.5} />
                         </div>
-                        <h3 className="text-xl font-bold text-white text-center mb-2">{deletePrompt.title}</h3>
-                        <p className="text-sm text-gray-400 text-center mb-6">{deletePrompt.text}</p>
+                        <h3 className="text-2xl font-black text-slate-900 text-center mb-2 tracking-tight">{deletePrompt.title}</h3>
+                        <p className="text-sm font-bold text-slate-400 text-center mb-8">{deletePrompt.text}</p>
 
-                        <div className="flex justify-center gap-3 font-medium text-sm">
+                        <div className="flex gap-4">
                             <button
                                 type="button"
                                 onClick={() => setDeletePrompt(null)}
                                 disabled={isDeleting}
-                                className="px-4 py-2 flex-1 border border-white/10 rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-colors disabled:opacity-50"
+                                className="flex-1 px-6 py-4 border-4 border-slate-900 rounded-2xl text-slate-900 font-black hover:bg-slate-50 transition-all active:scale-95 shadow-[4px_4px_0_0_#0f172a] active:shadow-none"
                             >
                                 Batal
                             </button>
@@ -407,105 +432,105 @@ export default function AdminCreditSettingsPage() {
                                 type="button"
                                 onClick={executeDelete}
                                 disabled={isDeleting}
-                                className="px-4 py-2 flex-1 bg-red-600 rounded-xl hover:bg-red-500 text-white flex justify-center items-center gap-2 transition-colors disabled:opacity-50"
+                                className="flex-1 px-6 py-4 bg-red-500 text-white border-4 border-slate-900 rounded-2xl font-black hover:translate-x-1 hover:translate-y-1 transition-all shadow-[6px_6px_0_0_#0f172a] hover:shadow-none flex justify-center items-center gap-2"
                             >
-                                {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Hapus'}
+                                {isDeleting ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Hapus'}
                             </button>
                         </div>
                     </div>
                 </div>
             )}
 
-            <div className="flex flex-col gap-4 mb-5 md:mb-6 md:flex-row md:justify-between md:items-center">
-                <DashboardTitle
-                    title="Credit Settings"
-                    subtitle="Atur harga paket top up & kode redeem credit."
-                />
+            <div className="flex flex-col gap-4 mb-8 lg:flex-row lg:justify-between lg:items-end">
+                <div className="space-y-1">
+                    <h1 className="text-2xl md:text-4xl font-black text-slate-900 tracking-tight">Credit Settings</h1>
+                    <p className="text-sm md:text-base font-bold text-slate-500">Atur harga paket top up & management voucher code promo.</p>
+                </div>
                 {activeTab === 'packages' ? (
                     <button
                         onClick={() => setEditingPackage({})}
-                        className="w-full sm:w-auto px-4 py-3 sm:py-2 bg-sky-600 text-white text-sm font-semibold rounded-xl hover:bg-sky-700 flex items-center justify-center gap-2 touch-manipulation"
+                        className="flex items-center justify-center gap-2 px-6 py-3 md:px-8 md:py-4 bg-indigo-400 text-slate-900 border-4 border-slate-900 rounded-2xl font-black hover:translate-x-1 hover:translate-y-1 transition-all shadow-[4px_4px_0_0_#0f172a] md:shadow-[6px_6px_0_0_#0f172a] hover:shadow-none text-sm md:text-base"
                     >
-                        <Plus size={18} /> Add Package
+                        <Plus size={20} className="md:w-6 md:h-6" strokeWidth={3} />
+                        Add Package
                     </button>
                 ) : (
                     <button
                         onClick={() => setShowCreateRedeem(true)}
-                        className="w-full sm:w-auto px-4 py-3 sm:py-2 bg-purple-600 text-white text-sm font-semibold rounded-xl hover:bg-purple-700 flex items-center justify-center gap-2 touch-manipulation"
+                        className="flex items-center justify-center gap-2 px-6 py-3 md:px-8 md:py-4 bg-purple-400 text-slate-900 border-4 border-slate-900 rounded-2xl font-black hover:translate-x-1 hover:translate-y-1 transition-all shadow-[4px_4px_0_0_#0f172a] md:shadow-[6px_6px_0_0_#0f172a] hover:shadow-none text-sm md:text-base"
                     >
-                        <Gift size={18} /> Buat Kode Redeem
+                        <Gift size={20} className="md:w-6 md:h-6" strokeWidth={3} />
+                        Buat Kode Redeem
                     </button>
                 )}
             </div>
 
             {/* Tabs */}
-            <div className="mb-4 flex border-b border-white/10">
+            <div className="mb-8 grid grid-cols-2 gap-2 md:flex md:flex-nowrap md:gap-3">
                 <button
                     type="button"
                     onClick={() => setActiveTab('packages')}
-                    className={`px-4 py-2 text-sm font-medium ${activeTab === 'packages'
-                        ? 'text-app border-b-2 border-app'
-                        : 'text-muted hover:text-app'
-                        }`}
+                    className={`flex items-center justify-center gap-2 md:gap-3 px-2 py-3 md:px-8 md:py-4 rounded-xl md:rounded-2xl text-[11px] md:text-base font-black border-4 border-slate-900 transition-all active:scale-95 ${activeTab === 'packages' ? 'bg-violet-400 text-slate-900 shadow-[4px_4px_0_0_#0f172a] md:shadow-[6px_6px_0_0_#0f172a]' : 'bg-white text-slate-400 hover:bg-slate-50 shadow-none'}`}
                 >
-                    Credit Packages
+                    <Layout className="w-4 h-4 md:w-6 md:h-6" strokeWidth={3} />
+                    <span>Packages</span>
+                    <span className="px-1.5 py-0.5 bg-slate-900 text-white text-[9px] md:text-xs rounded-lg border-2 border-slate-900 ml-0.5 md:ml-1">
+                        {packages.length}
+                    </span>
                 </button>
                 <button
                     type="button"
                     onClick={() => setActiveTab('redeem')}
-                    className={`px-4 py-2 text-sm font-medium ${activeTab === 'redeem'
-                        ? 'text-app border-b-2 border-app'
-                        : 'text-muted hover:text-app'
-                        }`}
+                    className={`flex items-center justify-center gap-2 md:gap-3 px-2 py-3 md:px-8 md:py-4 rounded-xl md:rounded-2xl text-[11px] md:text-base font-black border-4 border-slate-900 transition-all active:scale-95 ${activeTab === 'redeem' ? 'bg-purple-400 text-slate-900 shadow-[4px_4px_0_0_#0f172a] md:shadow-[6px_6px_0_0_#0f172a]' : 'bg-white text-slate-400 hover:bg-slate-50 shadow-none'}`}
                 >
-                    Redeem Codes
+                    <Hash className="w-4 h-4 md:w-6 md:h-6" strokeWidth={3} />
+                    <span className="truncate">Redeems</span>
+                    <span className="px-1.5 py-0.5 bg-slate-900 text-white text-[9px] md:text-xs rounded-lg border-2 border-slate-900 ml-0.5 md:ml-1">
+                        {redeemCodes.length}
+                    </span>
                 </button>
             </div>
 
             {activeTab === 'packages' ? (
                 <>
                     {loading ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {[1, 2, 3, 4, 5, 6].map((i) => (
-                                <div key={i} className="bg-white/[0.03] border border-white/10 rounded-2xl p-5 animate-pulse">
-                                    <div className="flex justify-between items-start mb-4">
-                                        <div className="space-y-2">
-                                            <div className="h-8 w-16 bg-white/10 rounded" />
-                                            <div className="h-3 w-14 bg-white/5 rounded" />
-                                        </div>
-                                    </div>
-                                    <div className="pt-4 border-t border-white/10">
-                                        <div className="h-6 w-24 bg-white/10 rounded" />
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-8">
+                            {[1, 2, 3, 4].map((i) => (
+                                <div key={i} className="bg-white border-4 border-slate-900 rounded-[24px] md:rounded-[32px] p-6 md:p-8 animate-pulse shadow-[4px_4px_0_0_#0f172a] md:shadow-[8px_8px_0_0_#0f172a]">
+                                    <div className="space-y-4">
+                                        <div className="h-8 bg-slate-100 rounded-xl w-16" />
+                                        <div className="h-3 bg-slate-50 rounded-lg w-12" />
+                                        <div className="h-8 bg-slate-50 rounded-xl w-full mt-2" />
                                     </div>
                                 </div>
                             ))}
                         </div>
                     ) : (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-8 pb-12">
                             {packages.map((pkg) => (
-                                <div key={pkg.id} className="group relative bg-white/[0.03] border border-white/10 rounded-2xl p-5 hover:border-lime-500/50 transition-colors">
-                                    <div className="flex justify-between items-start mb-4">
+                                <div key={pkg.id} className="group relative bg-white border-4 border-slate-900 rounded-[24px] md:rounded-[32px] p-6 md:p-8 shadow-[4px_4px_0_0_#0f172a] md:shadow-[8px_8px_0_0_#0f172a] hover:shadow-[6px_6px_0_0_#0f172a] md:hover:shadow-[12px_12px_0_0_#0f172a] hover:-translate-x-1 hover:-translate-y-1 transition-all overflow-hidden">
+                                    <div className="flex justify-between items-start mb-4 md:mb-6">
                                         <div>
-                                            <p className="text-3xl font-bold text-white">{pkg.credits}</p>
-                                            <p className="text-xs uppercase tracking-wider text-gray-500 font-medium">Credits</p>
+                                            <p className="text-3xl md:text-5xl font-black text-slate-900 tracking-tight leading-none mb-1">{pkg.credits}</p>
+                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Credits</p>
                                         </div>
                                         {pkg.popular && (
-                                            <span className="bg-lime-500 text-black text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
+                                            <span className="bg-amber-400 text-slate-900 text-[9px] md:text-[10px] font-black px-2 py-1 md:px-3 md:py-1.5 rounded-full uppercase tracking-widest border-2 border-slate-900 shadow-[2px_2px_0_0_#0f172a]">
                                                 Popular
                                             </span>
                                         )}
                                     </div>
 
-                                    <div className="pt-4 border-t border-white/10">
-                                        <p className="text-lg font-semibold text-lime-400">Rp {pkg.price.toLocaleString('id-ID')}</p>
+                                    <div className="pt-4 md:pt-6 border-t-[3px] md:border-t-4 border-slate-100">
+                                        <p className="text-xl md:text-2xl font-black text-violet-600">Rp {pkg.price.toLocaleString('id-ID')}</p>
                                     </div>
 
-                                    <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <button onClick={() => setEditingPackage(pkg)} className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-white">
-                                            <Edit size={16} />
+                                    <div className="absolute top-3 right-3 md:top-4 md:right-4 flex gap-1.5 md:gap-2 lg:opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all scale-90 md:scale-100">
+                                        <button onClick={() => setEditingPackage(pkg)} className="p-2 md:p-3 rounded-xl md:rounded-2xl bg-amber-300 border-2 border-slate-900 text-slate-900 hover:translate-x-0.5 hover:translate-y-0.5 shadow-[2px_2px_0_0_#0f172a] hover:shadow-none transition-all active:scale-95">
+                                            <Edit size={16} className="md:w-[18px] md:h-[18px]" strokeWidth={3} />
                                         </button>
-                                        <button onClick={() => handleDelete(pkg.id, pkg.credits)} className="p-2 rounded-lg bg-red-500/20 hover:bg-red-500/40 text-red-400">
-                                            <Trash2 size={16} />
+                                        <button onClick={() => handleDelete(pkg.id, pkg.credits)} className="p-2 md:p-3 rounded-xl md:rounded-2xl bg-red-400 border-2 border-slate-900 text-white hover:translate-x-0.5 hover:translate-y-0.5 shadow-[2px_2px_0_0_#0f172a] hover:shadow-none transition-all active:scale-95">
+                                            <Trash2 size={16} className="md:w-[18px] md:h-[18px]" strokeWidth={3} />
                                         </button>
                                     </div>
                                 </div>
@@ -516,35 +541,37 @@ export default function AdminCreditSettingsPage() {
             ) : (
                 <>
                     {loadingRedeem ? (
-                        <div className="space-y-4">
+                        <div className="space-y-6">
                             {[1, 2, 3].map((i) => (
-                                <div key={i} className="bg-white/[0.03] border border-white/10 rounded-2xl p-5 animate-pulse">
+                                <div key={i} className="bg-white border-4 border-slate-900 rounded-[24px] md:rounded-[32px] p-5 md:p-8 animate-pulse shadow-[4px_4px_0_0_#0f172a] md:shadow-[6px_6px_0_0_#0f172a]">
                                     <div className="flex justify-between items-center">
-                                        <div className="space-y-2">
-                                            <div className="h-6 w-32 bg-white/10 rounded" />
-                                            <div className="h-4 w-48 bg-white/5 rounded" />
+                                        <div className="space-y-3">
+                                            <div className="h-5 md:h-6 bg-slate-100 rounded-lg w-32 md:w-40" />
+                                            <div className="h-3 md:h-4 bg-slate-50 rounded-lg w-48 md:w-64" />
                                         </div>
-                                        <div className="h-8 w-20 bg-white/5 rounded" />
+                                        <div className="h-8 md:h-10 bg-slate-100 rounded-xl w-20 md:w-24" />
                                     </div>
                                 </div>
                             ))}
                         </div>
                     ) : redeemCodes.length === 0 ? (
-                        <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-10 text-center">
-                            <Gift className="w-12 h-12 text-gray-600 mx-auto mb-3" />
-                            <p className="text-gray-400 text-sm">Belum ada kode redeem.</p>
-                            <p className="text-gray-600 text-xs mt-1">Klik &quot;Buat Kode Redeem&quot; untuk memulai.</p>
+                        <div className="bg-white border-4 border-slate-900 rounded-[24px] md:rounded-[32px] p-8 md:p-16 text-center shadow-[6px_6px_0_0_#0f172a] md:shadow-[12px_12px_0_0_#0f172a]">
+                            <div className="w-16 h-16 md:w-24 md:h-24 rounded-2xl md:rounded-3xl bg-slate-50 border-4 border-slate-100 flex items-center justify-center mx-auto mb-4 md:mb-6 text-slate-200">
+                                <Gift className="w-8 h-8 md:w-12 md:h-12" strokeWidth={1.5} />
+                            </div>
+                            <h3 className="text-lg md:text-xl font-black text-slate-900 mb-2">Belum ada kode redeem.</h3>
+                            <p className="text-xs md:text-base text-slate-400 font-bold">Klik &quot;Buat Kode Redeem&quot; untuk mencetak voucher baru.</p>
                         </div>
                     ) : (
-                        <div className="space-y-3">
+                        <div className="space-y-6 pb-20">
                             {redeemCodes.map((item) => {
                                 const isExpired = item.expires_at && new Date(item.expires_at) < new Date()
                                 const isFull = item.used_count >= item.max_uses
                                 const statusColor = !item.is_active || isExpired
-                                    ? 'text-red-400'
+                                    ? 'red'
                                     : isFull
-                                        ? 'text-amber-400'
-                                        : 'text-emerald-400'
+                                        ? 'amber'
+                                        : 'emerald'
                                 const statusText = !item.is_active
                                     ? 'Nonaktif'
                                     : isExpired
@@ -556,61 +583,84 @@ export default function AdminCreditSettingsPage() {
                                 return (
                                     <div
                                         key={item.id}
-                                        className={`bg-white/[0.03] border rounded-2xl p-4 sm:p-5 transition-colors ${item.is_active && !isExpired && !isFull
-                                            ? 'border-white/10 hover:border-purple-500/50'
-                                            : 'border-white/5 opacity-60'
+                                        className={`group relative bg-white border-4 border-slate-900 rounded-[24px] md:rounded-[32px] p-5 md:p-8 transition-all shadow-[4px_4px_0_0_#0f172a] md:shadow-[6px_6px_0_0_#0f172a] hover:shadow-[6px_6px_0_0_#0f172a] md:hover:shadow-[10px_10px_0_0_#0f172a] hover:-translate-x-1 hover:-translate-y-1 ${!item.is_active || isExpired || isFull ? 'opacity-60 grayscale-[0.5]' : ''
                                             }`}
                                     >
-                                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 md:gap-8">
                                             <div className="flex-1 min-w-0">
-                                                <div className="flex items-center gap-2 mb-1">
-                                                    <code className="text-lg sm:text-xl font-bold font-mono text-white tracking-widest">
+                                                <div className="flex flex-wrap items-center gap-2 md:gap-4 mb-3 md:mb-6">
+                                                    <div className="px-3 py-1.5 md:px-4 md:py-2 bg-slate-900 text-white rounded-lg md:rounded-xl font-mono text-base md:text-2xl font-black tracking-[0.1em] md:tracking-[0.2em] shadow-[3px_3px_0_0_#a855f7] md:shadow-[4px_4px_0_0_#a855f7]">
                                                         {item.code}
-                                                    </code>
-                                                    <button
-                                                        onClick={() => copyCode(item.code)}
-                                                        className="p-1 rounded-md hover:bg-white/10 text-gray-500 hover:text-white transition-colors"
-                                                        title="Copy"
-                                                    >
-                                                        <Copy size={14} />
-                                                    </button>
-                                                    <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${statusColor === 'text-emerald-400'
-                                                        ? 'bg-emerald-500/20 text-emerald-400'
-                                                        : statusColor === 'text-amber-400'
-                                                            ? 'bg-amber-500/20 text-amber-400'
-                                                            : 'bg-red-500/20 text-red-400'
-                                                        }`}>
-                                                        {statusText}
-                                                    </span>
-                                                </div>
-                                                <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-400">
-                                                    <span>🎁 <strong className="text-purple-400">{item.credits}</strong> credit</span>
-                                                    <span>👥 {item.used_count}/{item.max_uses} dipakai</span>
-                                                    {item.expires_at && (
-                                                        <span className="flex items-center gap-1">
-                                                            <Clock size={12} />
-                                                            {new Date(item.expires_at).toLocaleString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <button
+                                                            onClick={() => copyCode(item.code)}
+                                                            className="p-2 md:p-3 rounded-xl bg-slate-100 border-2 border-slate-900 text-slate-500 hover:text-slate-900 transition-all shadow-[2px_2px_0_0_#0f172a] hover:shadow-none"
+                                                            title="Copy Code"
+                                                        >
+                                                            <Copy size={16} className="md:w-[18px] md:h-[18px]" strokeWidth={2.5} />
+                                                        </button>
+                                                        <span className={`text-[9px] md:text-[11px] font-black uppercase tracking-widest px-3 py-1 md:px-4 md:py-1.5 rounded-full border-2 border-slate-900 shadow-[2px_2px_0_0_#0f172a] md:shadow-[3px_3px_0_0_#0f172a] ${statusColor === 'emerald' ? 'bg-emerald-300 text-slate-900' :
+                                                            statusColor === 'amber' ? 'bg-amber-300 text-slate-900' :
+                                                                'bg-red-400 text-white'
+                                                            }`}>
+                                                            {statusText}
                                                         </span>
+                                                    </div>
+                                                </div>
+
+                                                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
+                                                    <div className="flex items-center gap-2 md:gap-3">
+                                                        <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl bg-purple-100 border-2 border-slate-900 flex items-center justify-center shadow-[2px_2px_0_0_#0f172a]">
+                                                            <Gift className="w-4 h-4 md:w-5 md:h-5 text-purple-600" strokeWidth={2.5} />
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest">Bonus</p>
+                                                            <p className="text-xs md:text-sm font-black text-slate-900">{item.credits} Credits</p>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="flex items-center gap-2 md:gap-3">
+                                                        <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl bg-orange-100 border-2 border-slate-900 flex items-center justify-center shadow-[2px_2px_0_0_#0f172a]">
+                                                            <Users className="w-4 h-4 md:w-5 md:h-5 text-orange-600" strokeWidth={2.5} />
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest">Usage</p>
+                                                            <p className="text-xs md:text-sm font-black text-slate-900">{item.used_count}/{item.max_uses}</p>
+                                                        </div>
+                                                    </div>
+
+                                                    {item.expires_at && (
+                                                        <div className="flex items-center gap-2 md:gap-3 col-span-2 md:col-span-1">
+                                                            <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl bg-blue-100 border-2 border-slate-900 flex items-center justify-center shadow-[2px_2px_0_0_#0f172a]">
+                                                                <Clock className="w-4 h-4 md:w-5 md:h-5 text-blue-600" strokeWidth={2.5} />
+                                                            </div>
+                                                            <div>
+                                                                <p className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest">Expiry</p>
+                                                                <p className="text-xs md:text-sm font-black text-slate-900">
+                                                                    {new Date(item.expires_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}
+                                                                </p>
+                                                            </div>
+                                                        </div>
                                                     )}
                                                 </div>
                                             </div>
-                                            <div className="flex items-center gap-2 shrink-0">
+
+                                            <div className="flex lg:flex-col items-center justify-end gap-3 md:gap-4 lg:pl-8 lg:border-l-4 lg:border-slate-100 shrink-0 mt-2 lg:mt-0">
                                                 <button
                                                     onClick={() => handleToggleRedeem(item)}
-                                                    className={`p-2 rounded-lg transition-colors ${item.is_active
-                                                        ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30'
-                                                        : 'bg-white/5 text-gray-500 hover:bg-white/10'
+                                                    className={`flex items-center justify-center w-11 h-11 md:w-14 md:h-14 rounded-xl md:rounded-2xl border-2 border-slate-900 shadow-[3px_3px_0_0_#0f172a] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all active:scale-95 ${item.is_active ? 'bg-emerald-300' : 'bg-slate-100'
                                                         }`}
                                                     title={item.is_active ? 'Nonaktifkan' : 'Aktifkan'}
                                                 >
-                                                    {item.is_active ? <ToggleRight size={18} /> : <ToggleLeft size={18} />}
+                                                    {item.is_active ? <ToggleRight size={22} className="md:w-7 md:h-7" strokeWidth={2.5} /> : <ToggleLeft size={22} className="md:w-7 md:h-7" strokeWidth={2.5} />}
                                                 </button>
                                                 <button
                                                     onClick={() => handleDeleteRedeem(item.id, item.code)}
-                                                    className="p-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors"
+                                                    className="flex items-center justify-center w-11 h-11 md:w-14 md:h-14 rounded-xl md:rounded-2xl bg-red-400 border-2 border-slate-900 text-white shadow-[3px_3px_0_0_#0f172a] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all active:scale-95"
                                                     title="Hapus"
                                                 >
-                                                    <Trash2 size={16} />
+                                                    <Trash2 size={20} className="md:w-6 md:h-6" strokeWidth={2.5} />
                                                 </button>
                                             </div>
                                         </div>

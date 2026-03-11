@@ -4,13 +4,15 @@ import { useEffect, useState, useCallback, useRef } from 'react'
 import { useParams, useSearchParams, useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import BackLink from '@/components/dashboard/BackLink'
-import { ChevronLeft, ChevronRight, BookOpen, ImagePlus, Video, Play, Users, Layout, Eye, Menu } from 'lucide-react'
+import { ChevronLeft, ChevronRight, BookOpen, ImagePlus, Video, Play, Users, Layout, Eye, Menu, MessageSquare, Book, Lock, Link as LinkIcon, Search, SearchX, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
 import YearbookClassesView from './YearbookClassesView'
 import YearbookSkeleton, { isValidYearbookSection } from './components/YearbookSkeleton'
 import { getSectionModeFromUrl, getYearbookSectionQueryUrl } from './lib/yearbook-paths'
 import CreditBadgeTop from './components/CreditBadgeTop'
+import { apiUrl } from '../../lib/api-url'
+import { fetchWithAuth } from '../../lib/api-client'
 
 type Album = {
   id: string
@@ -149,6 +151,11 @@ export default function YearbookAlbumClient({
   const [flipbookEnabledByPackage, setFlipbookEnabledByPackage] = useState(false)
   const [aiLabsFeaturesByPackage, setAiLabsFeaturesByPackage] = useState<string[]>([])
   const [featureCreditCosts, setFeatureCreditCosts] = useState<Record<string, number>>({})
+  const [lastEditorSection, setLastEditorSection] = useState<string | null>(null)
+  const [teacherSearchQuery, setTeacherSearchQuery] = useState('')
+  const [showTeacherSearch, setShowTeacherSearch] = useState(false)
+  const [classMemberSearchQuery, setClassMemberSearchQuery] = useState('')
+  const [showClassMemberSearch, setShowClassMemberSearch] = useState(false)
   useEffect(() => { albumRef.current = album }, [album])
 
   const isFetchingMembersRef = useRef(false)
@@ -170,7 +177,7 @@ export default function YearbookAlbumClient({
       setError(null)
     }
     try {
-      const res = await fetch(`/api/albums/${id}`, { credentials: 'include', cache: 'no-store' })
+      const res = await fetchWithAuth(`/api/albums/${id}`, { credentials: 'include', cache: 'no-store' })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) {
         setError(data?.error ?? 'Album tidak ditemukan')
@@ -196,7 +203,7 @@ export default function YearbookAlbumClient({
   const fetchFeatureUnlocks = useCallback(async () => {
     if (!id) return
     try {
-      const res = await fetch(`/api/albums/${id}/unlock-feature`, { credentials: 'include', cache: 'no-store' })
+      const res = await fetchWithAuth(`/api/albums/${id}/unlock-feature`, { credentials: 'include', cache: 'no-store' })
       if (res.ok) {
         const data = await res.json()
         setFeatureUnlocks(data.unlocked_features ?? [])
@@ -227,16 +234,35 @@ export default function YearbookAlbumClient({
     }
   }, [classIndex, id])
 
-  // Section dari URL: path segment atau query ?section= (query = navigasi instant tanpa refetch)
+  // Section dari URL: path segment atau query ?section=
   const sectionMode = getSectionModeFromUrl(pathname, searchParams.get('section'), id ?? '')
   const isCoverView = sectionMode === 'cover'
   const sidebarModeFromPath = sectionMode === 'cover' ? 'classes' : sectionMode
 
-  // Sinkronkan state dari pathname agar komponen anak yang masih pakai state tetap benar
+  // Optimistic section: state-driven agar klik sidebar instan (tanpa tunggu router)
+  const [activeSection, setActiveSection] = useState<typeof sectionMode>(sectionMode)
   useEffect(() => {
-    setView(sectionMode === 'cover' ? 'cover' : 'classes')
-    setSidebarMode(sectionMode === 'cover' ? 'classes' : sectionMode)
+    setActiveSection(sectionMode)
   }, [sectionMode])
+
+  useEffect(() => {
+    setView(activeSection === 'cover' ? 'cover' : 'classes')
+    setSidebarMode(activeSection === 'cover' ? 'classes' : activeSection)
+    if (activeSection !== 'preview' && activeSection !== 'ai-labs') {
+      setLastEditorSection(activeSection)
+    }
+  }, [activeSection])
+
+  const handleSectionChange = useCallback(
+    (section: typeof sectionMode) => {
+      setActiveSection(section)
+      setView(section === 'cover' ? 'cover' : 'classes')
+      setSidebarMode(section === 'cover' ? 'classes' : section)
+      if (section !== 'preview' && section !== 'ai-labs') setLastEditorSection(section)
+      if (id) router.push(getYearbookSectionQueryUrl(id, section, pathname), { scroll: false })
+    },
+    [id, pathname, router]
+  )
 
   // Simpan sidebarMode ke localStorage (untuk fallback)
   useEffect(() => {
@@ -274,8 +300,17 @@ export default function YearbookAlbumClient({
   const isAdminPath = typeof pathname === 'string' && pathname.startsWith('/admin/')
   const isGlobalAdminUser = album?.isGlobalAdmin === true
   const useAdminBack = isAdminPath || isGlobalAdminUser
-  const effectiveBackHref = useAdminBack ? '/admin/albums' : backHref
-  const effectiveBackLabel = useAdminBack ? 'Ke Manajemen Album' : backLabel
+
+  const originalBackHref = useAdminBack ? '/admin/albums' : backHref
+  const originalBackLabel = useAdminBack ? 'Ke Manajemen Album' : backLabel
+
+  const effectiveBackHref = (sectionMode === 'preview' && lastEditorSection && id)
+    ? getYearbookSectionQueryUrl(id, lastEditorSection as any, pathname)
+    : originalBackHref
+
+  const effectiveBackLabel = (sectionMode === 'preview' && lastEditorSection)
+    ? 'Kembali ke Editor'
+    : originalBackLabel
 
   // Optimized: Fetch all access data in one go (using my-access-all endpoint)
   // No longer need per-class fetch because the new endpoint is efficient
@@ -287,7 +322,7 @@ export default function YearbookAlbumClient({
     try {
       isFetchingAccessRef.current = true
       // 1. Fetch My Access & My Requests for ALL classes
-      const myAccessRes = await fetch(`/api/albums/${id}/my-access-all`, { credentials: 'include', cache: 'no-store' })
+      const myAccessRes = await fetchWithAuth(`/api/albums/${id}/my-access-all`, { credentials: 'include', cache: 'no-store' })
       const myAccessData = await myAccessRes.json().catch(() => ({}))
 
       if (myAccessRes.ok) {
@@ -297,7 +332,7 @@ export default function YearbookAlbumClient({
 
       // 2. If Admin, fetch ALL pending requests for approval
       if (canManageAlbum) {
-        const requestsRes = await fetch(`/api/albums/${id}/join-requests?status=pending`, { credentials: 'include', cache: 'no-store' })
+        const requestsRes = await fetchWithAuth(`/api/albums/${id}/join-requests?status=pending`, { credentials: 'include', cache: 'no-store' })
         const requestsData = await requestsRes.json().catch(() => [])
 
         if (requestsRes.ok && Array.isArray(requestsData)) {
@@ -380,7 +415,7 @@ export default function YearbookAlbumClient({
     if (!id || isFetchingMembersRef.current) return
     try {
       isFetchingMembersRef.current = true
-      const res = await fetch(`/api/albums/${id}/all-class-members`, { credentials: 'include', cache: 'no-store' })
+      const res = await fetchWithAuth(`/api/albums/${id}/all-class-members`, { credentials: 'include', cache: 'no-store' })
       const data = await res.json().catch(() => [])
 
       const groupedMembers: Record<string, ClassMember[]> = {}
@@ -632,7 +667,7 @@ export default function YearbookAlbumClient({
 
   const fetchFirstPhotosForClass = useCallback(async (classId: string) => {
     if (!id) return
-    const res = await fetch(`/api/albums/${id}/photos?class_id=${encodeURIComponent(classId)}`, { credentials: 'include', cache: 'no-store' })
+    const res = await fetchWithAuth(`/api/albums/${id}/photos?class_id=${encodeURIComponent(classId)}`, { credentials: 'include', cache: 'no-store' })
     const list = await res.json().catch(() => []) as { student_name: string; file_url: string }[]
     if (!Array.isArray(list)) return
     const map: Record<string, string> = {}
@@ -675,10 +710,7 @@ export default function YearbookAlbumClient({
     setView('gallery')
     setPhotoIndex(0)
     try {
-      const res = await fetch(
-        `/api/albums/${id}/photos?class_id=${encodeURIComponent(classId)}&student_name=${encodeURIComponent(studentName)}`,
-        { credentials: 'include', cache: 'no-store' }
-      )
+      const res = await fetchWithAuth(`/api/albums/${id}/photos?class_id=${encodeURIComponent(classId)}&student_name=${encodeURIComponent(studentName)}`, { credentials: 'include', cache: 'no-store' })
       const data = await res.json().catch(() => [])
       setPhotos(Array.isArray(data) ? data : [])
     } catch {
@@ -691,7 +723,7 @@ export default function YearbookAlbumClient({
 
   const handleDeleteClass = async (classId: string, className?: string) => {
     if (!id) return
-    const res = await fetch(`/api/albums/${id}/classes/${classId}`, {
+    const res = await fetchWithAuth(`/api/albums/${id}/classes/${classId}`, {
       method: 'DELETE',
       credentials: 'include',
     })
@@ -739,7 +771,7 @@ export default function YearbookAlbumClient({
     })
 
     // Background API call
-    return fetch(`/api/albums/${id}`, {
+    return fetchWithAuth(`/api/albums/${id}`, {
       method: 'PATCH',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
@@ -793,7 +825,7 @@ export default function YearbookAlbumClient({
     })
 
     // Background API call - fire and forget
-    return fetch(`/api/albums/${id}/classes/${classId}`, {
+    return fetchWithAuth(`/api/albums/${id}/classes/${classId}`, {
       method: 'PATCH',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
@@ -848,7 +880,7 @@ export default function YearbookAlbumClient({
 
     // Background API call
     try {
-      const res = await fetch(`/api/albums/${id}/classes`, {
+      const res = await fetchWithAuth(`/api/albums/${id}/classes`, {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
@@ -923,7 +955,7 @@ export default function YearbookAlbumClient({
 
   const handleRequestAccess = async (classId: string) => {
     if (!id || !requestForm.student_name.trim()) return
-    const res = await fetch(`/api/albums/${id}/classes/${classId}/request`, {
+    const res = await fetchWithAuth(`/api/albums/${id}/classes/${classId}/request`, {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
@@ -971,7 +1003,7 @@ export default function YearbookAlbumClient({
 
   const handleApproveReject = async (classId: string, requestId: string, status: 'approved' | 'rejected') => {
     if (!id) return
-    const res = await fetch(`/api/albums/${id}/classes/${classId}/requests/${requestId}`, {
+    const res = await fetchWithAuth(`/api/albums/${id}/classes/${classId}/requests/${requestId}`, {
       method: 'PATCH',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
@@ -1001,7 +1033,7 @@ export default function YearbookAlbumClient({
   const handleJoinAsOwner = async (classId: string) => {
     if (!id) return
 
-    const res = await fetch(`/api/albums/${id}/classes/${classId}/join-as-owner`, {
+    const res = await fetchWithAuth(`/api/albums/${id}/classes/${classId}/join-as-owner`, {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
@@ -1084,7 +1116,7 @@ export default function YearbookAlbumClient({
     if (deleteProfile) {
       setSavingProfile(true)
       try {
-        const res = await fetch(url, { method: 'DELETE', credentials: 'include' })
+        const res = await fetchWithAuth(url, { method: 'DELETE', credentials: 'include' })
         const data = await res.json().catch(() => ({}))
         if (!res.ok) {
           toast.error(data?.error ?? 'Gagal menghapus profil')
@@ -1138,7 +1170,7 @@ export default function YearbookAlbumClient({
 
     setSavingProfile(true)
     try {
-      const res = await fetch(url, {
+      const res = await fetchWithAuth(url, {
         method: 'PATCH',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
@@ -1237,7 +1269,7 @@ export default function YearbookAlbumClient({
   const handleUpdateRole = useCallback(async (userId: string, role: 'admin' | 'member') => {
     if (!id) return
     try {
-      const res = await fetch(`/api/albums/${id}/members?user_id=${userId}`, {
+      const res = await fetchWithAuth(`/api/albums/${id}/members?user_id=${userId}`, {
         method: 'PATCH',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
@@ -1260,7 +1292,7 @@ export default function YearbookAlbumClient({
   const handleRemoveMember = useCallback(async (userId: string) => {
     if (!id) return
     try {
-      const res = await fetch(`/api/albums/${id}/members?user_id=${userId}`, {
+      const res = await fetchWithAuth(`/api/albums/${id}/members?user_id=${userId}`, {
         method: 'DELETE',
         credentials: 'include',
       })
@@ -1307,7 +1339,7 @@ export default function YearbookAlbumClient({
       setMyAccessByClass(prev => ({ ...prev, [classId]: null }))
     }
     try {
-      const res = await fetch(`/api/albums/${id}/classes/${classId}/members/${userId}`, {
+      const res = await fetchWithAuth(`/api/albums/${id}/classes/${classId}/members/${userId}`, {
         method: 'DELETE',
         credentials: 'include',
       })
@@ -1346,7 +1378,7 @@ export default function YearbookAlbumClient({
     formData.append('file', file)
     formData.append('class_id', classId)
     formData.append('student_name', studentName)
-    const res = await fetch(`/api/albums/${id}/photos`, {
+    const res = await fetchWithAuth(`/api/albums/${id}/photos`, {
       method: 'POST',
       credentials: 'include',
       body: formData,
@@ -1360,7 +1392,7 @@ export default function YearbookAlbumClient({
     await fetchFirstPhotosForClass(classId)
     // Note: no fetchMembersForClass here — the caller (onSave flow) does a final fetch after all uploads complete.
     // Refresh preview: ambil daftar foto dari API agar langsung muncul (tanpa tunggu membersByClass)
-    const resPhotos = await fetch(`/api/albums/${id}/photos?class_id=${encodeURIComponent(classId)}&student_name=${encodeURIComponent(studentName)}`, { credentials: 'include', cache: 'no-store' })
+    const resPhotos = await fetchWithAuth(`/api/albums/${id}/photos?class_id=${encodeURIComponent(classId)}&student_name=${encodeURIComponent(studentName)}`, { credentials: 'include', cache: 'no-store' })
     const photoList = await resPhotos.json().catch(() => [])
     if (currentClassId === classId && studentNameForPhotosInCard === studentName && Array.isArray(photoList)) {
       const photoObjects = photoList.map((p: { id?: string; file_url: string; student_name?: string }, index: number) => ({
@@ -1382,7 +1414,7 @@ export default function YearbookAlbumClient({
     const formData = new FormData()
     formData.append('file', file)
     formData.append('student_name', studentName)
-    const res = await fetch(`/api/albums/${id}/classes/${classId}/video`, {
+    const res = await fetchWithAuth(`/api/albums/${id}/classes/${classId}/video`, {
       method: 'POST',
       credentials: 'include',
       body: formData,
@@ -1414,10 +1446,10 @@ export default function YearbookAlbumClient({
 
   const handleDeleteCover = async () => {
     if (!id || !album?.cover_image_url) return
-    const res = await fetch(`/api/albums/${id}/cover`, { method: 'DELETE', credentials: 'include' })
+    const res = await fetchWithAuth(`/api/albums/${id}/cover`, { method: 'DELETE', credentials: 'include' })
     const data = await res.json().catch(() => ({}))
     if (!res.ok) {
-      alert(data?.error ?? 'Gagal menghapus sampul')
+      alert(data?.error ?? 'Gagal menghapus cover')
       return
     }
     setAlbum((prev) => prev ? { ...prev, cover_image_url: null, cover_image_position: null } : null)
@@ -1437,14 +1469,14 @@ export default function YearbookAlbumClient({
     try {
       const formData = new FormData()
       formData.append('file', file)
-      const res = await fetch(`/api/albums/${id}/cover-video`, {
+      const res = await fetchWithAuth(`/api/albums/${id}/cover-video`, {
         method: 'POST',
         credentials: 'include',
         body: formData,
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) {
-        alert(data?.error ?? 'Gagal upload video sampul')
+        alert(data?.error ?? 'Gagal upload video cover')
         return
       }
       setAlbum((prev) => prev ? { ...prev, cover_video_url: data.cover_video_url ?? null } : null)
@@ -1455,10 +1487,10 @@ export default function YearbookAlbumClient({
 
   const handleDeleteCoverVideo = async () => {
     if (!id || !album?.cover_video_url) return
-    const res = await fetch(`/api/albums/${id}/cover-video`, { method: 'DELETE', credentials: 'include' })
+    const res = await fetchWithAuth(`/api/albums/${id}/cover-video`, { method: 'DELETE', credentials: 'include' })
     const data = await res.json().catch(() => ({}))
     if (!res.ok) {
-      alert(data?.error ?? 'Gagal menghapus video sampul')
+      alert(data?.error ?? 'Gagal menghapus video cover')
       return
     }
     setAlbum((prev) => prev ? { ...prev, cover_video_url: null } : null)
@@ -1476,10 +1508,7 @@ export default function YearbookAlbumClient({
     }
 
     // Konfirmasi sudah dilakukan di UI component sebelum memanggil fungsi ini
-    const res = await fetch(
-      `/api/albums/${id}/photos?class_id=${encodeURIComponent(classId)}&student_name=${encodeURIComponent(studentName)}&index=${index}`,
-      { method: 'DELETE', credentials: 'include' }
-    )
+    const res = await fetchWithAuth(`/api/albums/${id}/photos?class_id=${encodeURIComponent(classId)}&student_name=${encodeURIComponent(studentName)}&index=${index}`, { method: 'DELETE', credentials: 'include' })
     const data = await res.json().catch(() => ({}))
     if (!res.ok) {
       toast.error(data?.error ?? 'Gagal menghapus foto')
@@ -1510,14 +1539,14 @@ export default function YearbookAlbumClient({
       formData.append('file', file)
       formData.append('position_x', String(position.x))
       formData.append('position_y', String(position.y))
-      const res = await fetch(`/api/albums/${id}/cover`, {
+      const res = await fetchWithAuth(`/api/albums/${id}/cover`, {
         method: 'POST',
         credentials: 'include',
         body: formData,
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) {
-        alert(data?.error ?? 'Gagal upload sampul')
+        alert(data?.error ?? 'Gagal upload cover')
         return
       }
       setAlbum((prev) =>
@@ -1536,7 +1565,7 @@ export default function YearbookAlbumClient({
     }
   }
 
-  const mobileFirstWrapper = 'w-full min-h-screen mx-auto bg-[#0a0a0b] lg:max-w-full'
+  const mobileFirstWrapper = `w-full mx-auto bg-white lg:max-w-full flex flex-col ${sidebarModeFromPath === 'flipbook' && flipbookPreviewMode ? 'h-[100dvh] overflow-hidden' : 'min-h-screen'}`
   const contentWrapper = 'max-w-[420px] md:max-w-full w-full mx-auto'
 
   if (!id) {
@@ -1578,25 +1607,23 @@ export default function YearbookAlbumClient({
     const isAiLabsToolActive = sidebarModeFromPath === 'ai-labs' && !!aiLabsTool
     const aiLabsBackHref = album?.id ? (useAdminBack ? `/admin/album/yearbook/${album.id}?section=ai-labs` : `/user/album/yearbook/${album.id}?section=ai-labs`) : effectiveBackHref
     const sectionTitle =
-      isCoverView ? 'Sampul Album'
+      isCoverView ? 'Cover'
         : sidebarModeFromPath === 'ai-labs' ? (aiLabsTool ? (aiLabsToolLabel[aiLabsTool] ?? 'AI Labs') : 'AI Labs')
           : sidebarModeFromPath === 'sambutan' ? 'Sambutan'
             : sidebarModeFromPath === 'classes' ? (currentClass?.name ?? 'Kelas')
-              : sidebarModeFromPath === 'approval' ? 'Persetujuan'
-                : sidebarModeFromPath === 'team' ? 'Kelola Anggota'
-                  : sidebarModeFromPath === 'flipbook' ? 'Flipbook'
-                    : sidebarModeFromPath === 'preview' ? 'Preview'
-                      : ''
+              : sidebarModeFromPath === 'approval' ? 'Approval'
+                : sidebarModeFromPath === 'flipbook' ? 'Flipbook'
+                  : sidebarModeFromPath === 'preview' ? 'Preview'
+                    : ''
     const sectionSubtitle =
-      isCoverView ? 'Tampilan sampul dan pengaturan cover album.'
+      isCoverView ? 'Tampilan cover dan pengaturan cover album.'
         : sidebarModeFromPath === 'ai-labs' ? (aiLabsTool ? '' : 'Pilih fitur yang ingin digunakan. Semua fitur AI tersedia di sini.')
           : sidebarModeFromPath === 'sambutan' ? 'Kartu sambutan dan profil.'
             : sidebarModeFromPath === 'classes' ? (currentClass ? 'Profil dan foto anggota kelas.' : 'Daftar kelas dan anggota.')
-              : sidebarModeFromPath === 'approval' ? 'Kelola permintaan akses dan persetujuan.'
-                : sidebarModeFromPath === 'team' ? 'Kelola anggota tim album.'
-                  : sidebarModeFromPath === 'flipbook' ? 'Editor dan preview flipbook.'
-                    : sidebarModeFromPath === 'preview' ? 'Preview tampilan album yearbook.'
-                      : ''
+              : sidebarModeFromPath === 'approval' ? 'Persetujuan siswa & manajemen tim album.'
+                : sidebarModeFromPath === 'flipbook' ? 'Editor dan preview flipbook.'
+                  : sidebarModeFromPath === 'preview' ? 'Preview tampilan album yearbook.'
+                    : ''
 
     const headerCount =
       sidebarModeFromPath === 'classes' && !isCoverView && currentClass
@@ -1611,9 +1638,9 @@ export default function YearbookAlbumClient({
       <div className={mobileFirstWrapper}>
         {/* Sticky Header - BackLink + judul section sejajar (mobile + desktop) */}
         {showBackLink && (
-          <div className="flex sticky top-0 z-50 bg-[#0a0a0b] border-b border-white/10 px-3 lg:px-4 h-14 items-center gap-3 lg:gap-4">
+          <div className="flex sticky top-0 z-50 bg-amber-300 border-b-2 border-slate-900 px-3 lg:px-4 h-14 items-center gap-3 lg:gap-4 shadow-[0_2.5px_0_0_#0f172a]">
             {/* Mobile: compact back arrow */}
-            <Link href={isAiLabsToolActive ? aiLabsBackHref : effectiveBackHref} className="lg:hidden inline-flex items-center justify-center p-1.5 -ml-1 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors touch-manipulation">
+            <Link href={isAiLabsToolActive ? aiLabsBackHref : effectiveBackHref} className="lg:hidden inline-flex items-center justify-center w-9 h-9 bg-white border-2 border-slate-900 rounded-xl text-slate-900 shadow-[2px_2px_0_0_#0f172a] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all">
               <ChevronLeft className="w-5 h-5" />
             </Link>
             {/* Desktop: full BackLink */}
@@ -1626,70 +1653,184 @@ export default function YearbookAlbumClient({
             </div>
             {sectionTitle && (
               <>
-                {/* Mobile: title centered */}
-                <div className="lg:hidden absolute left-0 right-0 flex justify-center pointer-events-none">
-                  <h1 className="text-base font-bold text-app truncate max-w-[60%] text-center">{sectionTitle}</h1>
+                {/* Mobile: title left-aligned */}
+                <div className="lg:hidden flex-1 min-w-0">
+                  <h1 className="text-base font-black text-slate-900 truncate max-w-full text-left uppercase tracking-tight leading-none">{sectionTitle}</h1>
                 </div>
                 {/* Desktop: title centered */}
                 <div className="hidden lg:block absolute left-1/2 -translate-x-1/2 text-center min-w-0 max-w-[50%]">
-                  <div className="flex items-center justify-center gap-2">
-                    <h1 className="text-lg font-bold text-app truncate">{sectionTitle}</h1>
+                  <div className="flex items-center justify-center gap-3">
+                    <h1 className="text-xl font-black text-slate-900 truncate uppercase tracking-tight">{sectionTitle}</h1>
                     {headerCount !== null && headerCount !== undefined && (
-                      <span className="px-2 py-0.5 rounded-full bg-white/10 text-xs font-medium text-gray-300 border border-white/5">
+                      <span className="px-3 py-0.5 rounded-lg bg-slate-900 text-white text-xs font-black shadow-[2px_2px_0_0_#0f172a]">
                         {headerCount}
                       </span>
                     )}
                   </div>
-                  {sectionSubtitle && <p className="text-xs text-muted mt-0.5 truncate">{sectionSubtitle}</p>}
+                  {sectionSubtitle && <p className="text-[10px] font-bold text-slate-700 mt-0.5 truncate uppercase tracking-wider">{sectionSubtitle}</p>}
                 </div>
               </>
             )}
-            {/* Mobile: people count badge on the right - REMOVED per user request to avoid overlapping title */}
-            {/* {headerCount !== null && headerCount !== undefined && (
-              <div className="lg:hidden ml-auto flex items-center gap-1 px-2 py-1 rounded-full bg-white/5 border border-white/10">
-                <Users className="w-3.5 h-3.5 text-gray-400" />
-                <span className="text-xs font-medium text-gray-300">{headerCount}</span>
-              </div>
-            )} */}
 
-            {/* AI Labs Credit Badge */}
-            {isAiLabsToolActive && (
-              <div className="ml-auto flex items-center pr-1 lg:pr-2">
-                <CreditBadgeTop />
+
+            {/* Header Actions (Right) - satu container ml-auto agar Credit/aksi selalu di pojok kanan */}
+            <div className="ml-auto flex items-center gap-2 pr-1 lg:pr-2">
+              {/* AI Labs: Credit di pojok kanan */}
+              {sidebarModeFromPath === 'ai-labs' && <CreditBadgeTop />}
+              {/* Flipbook Controls (Mobile & Desktop) */}
+              {sidebarModeFromPath === 'flipbook' && (isOwner || isAlbumAdmin) && (flipbookEnabledByPackage || featureUnlocks.includes('flipbook')) && (
+                <div className="flex bg-white p-1 rounded-xl border-2 border-slate-900 gap-1 items-center scale-90 lg:scale-100 origin-right shadow-[3px_3px_0_0_#0f172a]">
+                  <button
+                    onClick={() => setFlipbookPreviewMode(false)}
+                    className={`flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black uppercase transition-all ${!flipbookPreviewMode ? 'bg-indigo-400 text-white border-2 border-slate-900 shadow-[2px_2px_0_0_#0f172a]' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100'}`}
+                  >
+                    <Layout className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Editor</span>
+                  </button>
+                  <button
+                    onClick={() => setFlipbookPreviewMode(true)}
+                    className={`flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black uppercase transition-all ${flipbookPreviewMode ? 'bg-indigo-400 text-white border-2 border-slate-900 shadow-[2px_2px_0_0_#0f172a]' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100'}`}
+                  >
+                    <Eye className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Preview</span>
+                  </button>
+                  {flipbookPreviewMode && (
+                    <button
+                      onClick={() => {
+                        const url = `${window.location.origin}/album/${album?.id}/flipbook`;
+                        navigator.clipboard.writeText(url);
+                        toast.success('Link Flipbook berhasil disalin');
+                      }}
+                      className="flex items-center justify-center px-3 py-1.5 rounded-lg text-xs font-black uppercase transition-all bg-emerald-400 text-slate-900 border-2 border-slate-900 shadow-[2px_2px_0_0_#0f172a] hover:bg-emerald-300 active:translate-x-0.5 active:translate-y-0.5 active:shadow-none ml-1"
+                      title="Salin Link Publik Flipbook"
+                    >
+                      <LinkIcon className="w-3.5 h-3.5" /> <span className="hidden sm:inline ml-1.5">Salin Link</span>
+                    </button>
+                  )}
+                </div>
+              )}
+              {/* Flipbook Locked: Credit di pojok kanan */}
+              {sidebarModeFromPath === 'flipbook' && !(flipbookEnabledByPackage || featureUnlocks.includes('flipbook')) && <CreditBadgeTop />}
+              {/* Sambutan & Classes: Search Toggle */}
+              {(sidebarModeFromPath === 'sambutan' || (sidebarModeFromPath === 'classes' && !isCoverView)) && (
+                <>
+                  {(sidebarModeFromPath === 'sambutan' ? showTeacherSearch : showClassMemberSearch) ? (
+                    <div className={`absolute left-[52px] ${sidebarModeFromPath === 'classes' ? 'right-[52px]' : 'right-2'} top-2 bottom-2 bg-white border-2 border-slate-900 rounded-xl px-3 flex items-center shadow-[2px_2px_0_0_#0f172a] lg:static lg:w-auto lg:h-9 lg:px-2 lg:py-1 animate-in slide-in-from-right-2 duration-200 z-[60]`}>
+                      <Search className="w-4 h-4 text-slate-400 mr-2 flex-shrink-0" />
+                      <input
+                        type="text"
+                        placeholder="Cari..."
+                        value={sidebarModeFromPath === 'sambutan' ? teacherSearchQuery : classMemberSearchQuery}
+                        onChange={(e) => sidebarModeFromPath === 'sambutan' ? setTeacherSearchQuery(e.target.value) : setClassMemberSearchQuery(e.target.value)}
+                        className="flex-1 bg-transparent border-none outline-none text-[11px] font-black uppercase tracking-tight text-slate-900 min-w-0"
+                        autoFocus
+                      />
+                      <button
+                        onClick={() => {
+                          if (sidebarModeFromPath === 'sambutan') {
+                            setShowTeacherSearch(false);
+                            setTeacherSearchQuery('');
+                          } else {
+                            setShowClassMemberSearch(false);
+                            setClassMemberSearchQuery('');
+                          }
+                        }}
+                        className="ml-1 p-1.5 hover:bg-slate-100 rounded-lg transition-colors flex-shrink-0"
+                      >
+                        <SearchX className="w-4 h-4 text-slate-500" strokeWidth={3} />
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => sidebarModeFromPath === 'sambutan' ? setShowTeacherSearch(true) : setShowClassMemberSearch(true)}
+                      className="w-9 h-9 flex items-center justify-center bg-white border-2 border-slate-900 rounded-xl text-slate-900 shadow-[2px_2px_0_0_#0f172a] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all"
+                    >
+                      <Search className="w-4 h-4" strokeWidth={3} />
+                    </button>
+                  )}
+                </>
+              )}
+
+              {sidebarModeFromPath === 'classes' && !isCoverView && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setMobileMenuOpen(true)
+                  }}
+                  className="lg:hidden flex items-center justify-center w-9 h-9 bg-white border-2 border-slate-900 rounded-xl text-slate-900 shadow-[2px_2px_0_0_#0f172a] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all flex-shrink-0"
+                >
+                  <Menu className="w-5 h-5" />
+                </button>
+              )}
+            </div>
+
+            {/* Mobile: Cover View Actions - Icon Only */}
+            {isCoverView && (isOwner || isAlbumAdmin || isGlobalAdminUser) && (
+              <div className="lg:hidden ml-auto flex items-center gap-2 pr-1">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    const url = `${window.location.origin}/album/${album?.id}/preview`;
+                    navigator.clipboard.writeText(url);
+                    toast.success('Link berhasil disalin');
+                  }}
+                  className="w-9 h-9 flex items-center justify-center bg-white border-2 border-slate-900 rounded-xl text-slate-900 shadow-[2px_2px_0_0_#0f172a] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all"
+                  title="Salin Link"
+                >
+                  <LinkIcon className="w-4 h-4" strokeWidth={3} />
+                </button>
+                <Link
+                  href={`/album/${album?.id}/preview`}
+                  target="_blank"
+                  className="w-9 h-9 flex items-center justify-center bg-emerald-400 border-2 border-slate-900 rounded-xl text-slate-900 shadow-[2px_2px_0_0_#0f172a] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all"
+                  title="Preview"
+                >
+                  <Eye className="w-4 h-4" strokeWidth={3} />
+                </Link>
               </div>
             )}
+          </div>
+        )}
 
-            {/* Flipbook Controls (Mobile & Desktop) */}
-            {sidebarModeFromPath === 'flipbook' && (isOwner || isAlbumAdmin) && (flipbookEnabledByPackage || featureUnlocks.includes('flipbook')) && (
-              <div className="ml-auto flex bg-[#0a0a0b] p-1 rounded-xl border border-white/10 gap-1 items-center scale-90 lg:scale-100 origin-right">
-                <button
-                  onClick={() => setFlipbookPreviewMode(false)}
-                  className={`flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${!flipbookPreviewMode ? 'bg-lime-500 text-black shadow-lg' : 'text-gray-300 hover:text-white hover:bg-white/10'}`}
-                >
-                  <Layout className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Editor</span>
-                </button>
-                <button
-                  onClick={() => setFlipbookPreviewMode(true)}
-                  className={`flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${flipbookPreviewMode ? 'bg-lime-500 text-black shadow-lg' : 'text-gray-300 hover:text-white hover:bg-white/10'}`}
-                >
-                  <Eye className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Preview</span>
-                </button>
-              </div>
-            )}
-
-            {/* Class Menu Button (Mobile) */}
-            {sidebarModeFromPath === 'classes' && !isCoverView && (
+        {/* Mobile Persistent Edit Navigation - Cover, Sambutan, Kelas saja; Flipbook ada di bottom nav */}
+        {((['classes', 'sambutan'].includes(sidebarModeFromPath) || isCoverView)) && !isAiLabsToolActive && (
+          <div className="lg:hidden sticky top-14 z-40 bg-transparent px-4 pt-0 pb-0">
+            <div className="flex gap-2 overflow-x-auto no-scrollbar py-2">
               <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  setMobileMenuOpen(true)
+                onClick={() => {
+                  setView('cover')
+                  const url = getYearbookSectionQueryUrl(id!, 'cover', pathname)
+                  router.push(url, { scroll: false })
                 }}
-                className="lg:hidden ml-auto flex items-center justify-center w-10 h-10 bg-white/5 border border-white/10 rounded-xl text-gray-300 hover:bg-white/10 hover:text-white transition-all active:scale-95 flex-shrink-0 shadow-sm"
+                className={`flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-xl border-2 transition-all ${isCoverView ? 'bg-slate-900 border-slate-900 text-white shadow-[2px_2px_0_0_#0f172a]' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300 hover:text-slate-900'}`}
               >
-                <Menu className="w-5 h-5" />
+                <BookOpen className={`w-4 h-4 ${isCoverView ? 'text-white' : 'text-slate-500'}`} />
+                <span className="text-[10px] font-black uppercase tracking-widest whitespace-nowrap">Cover</span>
               </button>
-            )}
+              <button
+                onClick={() => {
+                  setSidebarMode('sambutan')
+                  const url = getYearbookSectionQueryUrl(id!, 'sambutan', pathname)
+                  router.push(url, { scroll: false })
+                }}
+                className={`flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-xl border-2 transition-all ${sidebarModeFromPath === 'sambutan' ? 'bg-slate-900 border-slate-900 text-white shadow-[2px_2px_0_0_#0f172a]' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300 hover:text-slate-900'}`}
+              >
+                <MessageSquare className={`w-4 h-4 ${sidebarModeFromPath === 'sambutan' ? 'text-white' : 'text-slate-500'}`} />
+                <span className="text-[10px] font-black uppercase tracking-widest whitespace-nowrap">Sambutan</span>
+              </button>
+              <button
+                onClick={() => {
+                  setSidebarMode('classes')
+                  setView('classes')
+                  const url = getYearbookSectionQueryUrl(id!, 'classes', pathname)
+                  router.push(url, { scroll: false })
+                }}
+                className={`flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-xl border-2 transition-all ${sidebarModeFromPath === 'classes' && !isCoverView ? 'bg-slate-900 border-slate-900 text-white shadow-[2px_2px_0_0_#0f172a]' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300 hover:text-slate-900'}`}
+              >
+                <Users className={`w-4 h-4 ${sidebarModeFromPath === 'classes' && !isCoverView ? 'text-white' : 'text-slate-500'}`} />
+                <span className="text-[10px] font-black uppercase tracking-widest whitespace-nowrap">Kelas</span>
+              </button>
+            </div>
           </div>
         )}
 
@@ -1719,8 +1860,9 @@ export default function YearbookAlbumClient({
             accessDataLoaded={accessDataLoaded}
             selectedRequestId={selectedRequestId}
             setSelectedRequestId={setSelectedRequestId}
-            sidebarMode={sidebarModeFromPath}
+            sidebarMode={activeSection === 'cover' ? 'classes' : activeSection}
             setSidebarMode={setSidebarMode}
+            onSectionChange={handleSectionChange}
             albumId={id ?? ''}
             flipbookPreviewMode={flipbookPreviewMode}
             setFlipbookPreviewMode={setFlipbookPreviewMode}
@@ -1803,93 +1945,127 @@ export default function YearbookAlbumClient({
             aiLabsFeaturesByPackage={aiLabsFeaturesByPackage}
             featureCreditCosts={featureCreditCosts}
             onFeatureUnlocked={fetchFeatureUnlocks}
+            effectiveBackHref={effectiveBackHref}
+            teacherSearchQuery={teacherSearchQuery}
+            classMemberSearchQuery={classMemberSearchQuery}
           />
         </div>
         {videoPopupUrl && id && (
-          <div className="fixed inset-0 z-[100] bg-black/95 flex flex-col items-center justify-center p-4" onClick={() => { setVideoPopupUrl(null); setVideoPopupError(null) }}>
-            <div className="relative w-full max-w-lg max-h-[85vh] flex flex-col items-center" onClick={(e) => e.stopPropagation()}>
-              <video
-                src={`/api/albums/${id}/video-play?url=${encodeURIComponent(videoPopupUrl)}`}
-                autoPlay
-                playsInline
-                className="w-full rounded-xl bg-black"
-                onError={() => setVideoPopupError('Video tidak dapat dimuat')}
-                onEnded={() => { setVideoPopupUrl(null); setVideoPopupError(null) }}
-              />
+          <div className="fixed inset-0 z-[100] bg-slate-900/80 backdrop-blur-sm flex flex-col items-center justify-center p-4 animate-in fade-in duration-200" onClick={() => { setVideoPopupUrl(null); setVideoPopupError(null) }}>
+            <div className="relative w-full max-w-2xl bg-white border-4 border-slate-900 rounded-[32px] p-2 shadow-[20px_20px_0_0_#0f172a] overflow-hidden" onClick={(e) => e.stopPropagation()}>
+              <div className="aspect-video bg-black rounded-[24px] overflow-hidden border-2 border-slate-900">
+                <video
+                  src={apiUrl(`/api/albums/${id}/video-play?url=${encodeURIComponent(videoPopupUrl)}`)}
+                  autoPlay
+                  controls
+                  playsInline
+                  className="w-full h-full object-contain"
+                  onError={() => setVideoPopupError('Video tidak dapat dimuat')}
+                  onEnded={() => { setVideoPopupUrl(null); setVideoPopupError(null) }}
+                />
+              </div>
+
               {videoPopupError && (
-                <>
-                  <p className="mt-2 text-sm text-red-400 text-center">{videoPopupError}</p>
-                  <button type="button" onClick={() => { setVideoPopupUrl(null); setVideoPopupError(null) }} className="mt-3 px-4 py-2 rounded-xl bg-white/10 text-app font-medium hover:bg-white/20">Tutup</button>
-                </>
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/95 p-6 text-center">
+                  <p className="text-sm font-black text-red-500 uppercase tracking-widest mb-4">{videoPopupError}</p>
+                  <button
+                    type="button"
+                    onClick={() => { setVideoPopupUrl(null); setVideoPopupError(null) }}
+                    className="px-6 py-3 bg-red-500 text-white border-4 border-slate-900 rounded-2xl font-black text-xs uppercase tracking-widest shadow-[4px_4px_0_0_#0f172a] hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all"
+                  >
+                    Tutup
+                  </button>
+                </div>
               )}
+
+              <button
+                onClick={() => { setVideoPopupUrl(null); setVideoPopupError(null) }}
+                className="absolute top-4 right-4 w-10 h-10 bg-white border-4 border-slate-900 rounded-xl flex items-center justify-center shadow-[2px_2px_0_0_#0f172a] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all text-slate-900"
+              >
+                <X className="w-6 h-6" strokeWidth={3} />
+              </button>
             </div>
           </div>
         )}
         {coverPreview && (
-          <div className="fixed inset-0 z-[100] bg-black/90 flex flex-col items-center justify-center p-4">
-            <p className="text-app font-medium mb-3">Geser gambar agar posisi pas, lalu Terapkan</p>
-            <div
-              ref={coverPreviewContainerRef}
-              className="w-full max-w-md aspect-[3/4] rounded-xl overflow-hidden bg-white/10 relative touch-none select-none"
-              onPointerDown={(e) => {
-                if (e.button !== 0) return
-                coverDragRef.current = {
-                  startX: e.clientX,
-                  startY: e.clientY,
-                  startPosX: coverPosition.x,
-                  startPosY: coverPosition.y,
-                }
-                  ; (e.target as HTMLElement).setPointerCapture(e.pointerId)
-              }}
-              onPointerMove={(e) => {
-                if (!coverDragRef.current) return
-                const el = coverPreviewContainerRef.current
-                if (!el) return
-                const rect = el.getBoundingClientRect()
-                const dx = (e.clientX - coverDragRef.current.startX) / rect.width * 100
-                const dy = (e.clientY - coverDragRef.current.startY) / rect.height * 100
-                setCoverPosition({
-                  x: Math.min(100, Math.max(0, coverDragRef.current.startPosX - dx)),
-                  y: Math.min(100, Math.max(0, coverDragRef.current.startPosY - dy)),
-                })
-              }}
-              onPointerUp={(e) => {
-                if (coverDragRef.current) {
-                  (e.target as HTMLElement).releasePointerCapture(e.pointerId)
-                  coverDragRef.current = null
-                }
-              }}
-              onPointerCancel={(e) => {
-                coverDragRef.current = null
-                  ; (e.target as HTMLElement).releasePointerCapture(e.pointerId)
-              }}
-            >
-              <img
-                src={coverPreview.dataUrl}
-                alt="Preview sampul"
-                className="absolute inset-0 w-full h-full object-cover pointer-events-none"
-                style={{ objectPosition: `${coverPosition.x}% ${coverPosition.y}%` }}
-              />
-            </div>
-            <div className="flex gap-3 mt-4">
-              <button
-                type="button"
-                onClick={() => {
-                  URL.revokeObjectURL(coverPreview.dataUrl)
-                  setCoverPreview(null)
+          <div className="fixed inset-0 z-[100] bg-slate-900/80 backdrop-blur-sm flex flex-col items-center justify-center p-4 animate-in zoom-in-95 duration-200">
+            <div className="bg-white border-4 border-slate-900 rounded-[32px] p-4 shadow-[16px_16px_0_0_#0f172a] max-w-md w-full">
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-[10px] font-black text-slate-900 uppercase tracking-widest bg-amber-400 px-3 py-1 border-2 border-slate-900 rounded-lg shadow-[2px_2px_0_0_#0f172a]">PENYESUAIAN COVER</p>
+                <button
+                  onClick={() => { URL.revokeObjectURL(coverPreview.dataUrl); setCoverPreview(null) }}
+                  className="text-slate-400 hover:text-slate-900 transition-colors"
+                >
+                  <X className="w-5 h-5" strokeWidth={3} />
+                </button>
+              </div>
+
+              <p className="text-[11px] font-bold text-slate-500 mb-4 uppercase tracking-tight">Geser gambar agar posisi pas, lalu klik Terapkan.</p>
+
+              <div
+                ref={coverPreviewContainerRef}
+                className="w-full aspect-[3/4] rounded-2xl overflow-hidden bg-slate-100 border-4 border-slate-900 relative touch-none select-none shadow-[8px_8px_0_0_#f1f5f9]"
+                onPointerDown={(e) => {
+                  if (e.button !== 0) return
+                  coverDragRef.current = {
+                    startX: e.clientX,
+                    startY: e.clientY,
+                    startPosX: coverPosition.x,
+                    startPosY: coverPosition.y,
+                  }
+                    ; (e.target as HTMLElement).setPointerCapture(e.pointerId)
                 }}
-                className="px-5 py-2.5 rounded-xl border border-white/20 text-app font-medium hover:bg-white/10"
+                onPointerMove={(e) => {
+                  if (!coverDragRef.current) return
+                  const el = coverPreviewContainerRef.current
+                  if (!el) return
+                  const rect = el.getBoundingClientRect()
+                  const dx = (e.clientX - coverDragRef.current.startX) / rect.width * 100
+                  const dy = (e.clientY - coverDragRef.current.startY) / rect.height * 100
+                  setCoverPosition({
+                    x: Math.min(100, Math.max(0, coverDragRef.current.startPosX - dx)),
+                    y: Math.min(100, Math.max(0, coverDragRef.current.startPosY - dy)),
+                  })
+                }}
+                onPointerUp={(e) => {
+                  if (coverDragRef.current) {
+                    (e.target as HTMLElement).releasePointerCapture(e.pointerId)
+                    coverDragRef.current = null
+                  }
+                }}
+                onPointerCancel={(e) => {
+                  coverDragRef.current = null
+                    ; (e.target as HTMLElement).releasePointerCapture(e.pointerId)
+                }}
               >
-                Batal
-              </button>
-              <button
-                type="button"
-                disabled={uploadingCover}
-                onClick={() => handleUploadCover(coverPreview.file, coverPosition, coverPreview.dataUrl)}
-                className="px-5 py-2.5 rounded-xl bg-lime-600 text-white font-medium hover:bg-lime-500 disabled:opacity-50"
-              >
-                {uploadingCover ? 'Mengunggah…' : 'Terapkan'}
-              </button>
+                <img
+                  src={coverPreview.dataUrl}
+                  alt="Preview cover"
+                  className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+                  style={{ objectPosition: `${coverPosition.x}% ${coverPosition.y}%` }}
+                />
+              </div>
+
+              <div className="flex gap-4 mt-6">
+                <button
+                  type="button"
+                  onClick={() => {
+                    URL.revokeObjectURL(coverPreview.dataUrl)
+                    setCoverPreview(null)
+                  }}
+                  className="flex-1 px-5 py-3.5 rounded-xl border-4 border-slate-900 bg-white text-slate-900 font-black text-xs uppercase tracking-widest hover:bg-slate-50 active:translate-x-1 active:translate-y-1 transition-all"
+                >
+                  Batal
+                </button>
+                <button
+                  type="button"
+                  disabled={uploadingCover}
+                  onClick={() => handleUploadCover(coverPreview.file, coverPosition, coverPreview.dataUrl)}
+                  className="flex-3 px-8 py-3.5 rounded-xl bg-violet-500 text-white border-4 border-slate-900 font-black text-sm uppercase tracking-widest shadow-[6px_6px_0_0_#0f172a] hover:shadow-none hover:translate-x-1 hover:translate-y-1 active:translate-x-1.5 active:translate-y-1.5 transition-all disabled:opacity-50"
+                >
+                  {uploadingCover ? 'Mengunggah…' : 'Terapkan'}
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -1904,16 +2080,16 @@ export default function YearbookAlbumClient({
     const canUpload = isOwnGallery || isOwner
     return (
       <div className="fixed inset-0 z-50 bg-black flex flex-col">
-        <div className="flex items-center justify-between gap-2 p-3 border-b border-white/10 bg-black/80 flex-wrap">
+        <div className="flex items-center justify-between gap-2 p-3 border-b border-gray-200 bg-white/95 backdrop-blur-sm flex-wrap shadow-sm">
           <button
             type="button"
             onClick={() => { setView('classes'); setGalleryStudent(null); setPhotos([]) }}
-            className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-app hover:bg-white/10"
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-gray-700 hover:bg-gray-100 font-semibold transition-colors"
           >
             <ChevronLeft className="w-5 h-5" /> Kembali
           </button>
-          <span className="text-app font-medium truncate max-w-[40%]">{galleryStudent.studentName} — {galleryStudent.className}</span>
-          <span className="text-muted text-sm">{hasPhotos ? `${photoIndex + 1}/${photos.length}` : '0'}</span>
+          <span className="text-gray-800 font-bold truncate max-w-[40%]">{galleryStudent.studentName} — {galleryStudent.className}</span>
+          <span className="text-gray-400 text-sm font-semibold">{hasPhotos ? `${photoIndex + 1}/${photos.length}` : '0'}</span>
           {isOwnGallery && (
             <>
               <input
@@ -1932,7 +2108,7 @@ export default function YearbookAlbumClient({
               <button
                 type="button"
                 onClick={() => galleryUploadInputRef.current?.click()}
-                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-lime-600 text-white text-sm font-medium hover:bg-lime-500"
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-violet-500 text-white text-sm font-bold hover:bg-violet-600 transition-all shadow-sm"
               >
                 <ImagePlus className="w-4 h-4" /> Upload foto
               </button>
@@ -1967,7 +2143,7 @@ export default function YearbookAlbumClient({
                 <button
                   type="button"
                   onClick={() => galleryUploadInputRef.current?.click()}
-                  className="inline-flex items-center gap-2 mt-4 px-4 py-2 rounded-xl bg-lime-600 text-white text-sm font-medium hover:bg-lime-500"
+                  className="inline-flex items-center gap-2 mt-4 px-4 py-2 rounded-xl bg-violet-500 text-white text-sm font-bold hover:bg-violet-600 transition-all shadow-sm"
                 >
                   <ImagePlus className="w-4 h-4" /> Upload foto
                 </button>

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
+import { fetchWithAuth } from '../../../lib/api-client'
 
 // Interface for Yearbook orders in the admin management context
 interface YearbookOrder {
@@ -28,7 +29,7 @@ export default function YearbookManagementPage() {
     // Keep loading true only on first load if needed, or handle it gracefully
     // setLoading(true) 
     try {
-      const res = await fetch('/api/albums', { credentials: 'include' })
+      const res = await fetchWithAuth('/api/albums')
       if (!res.ok) throw new Error('Failed to fetch data')
       const allAlbums = await res.json()
       // We filter for 'yearbook' type on the client-side
@@ -60,7 +61,7 @@ export default function YearbookManagementPage() {
   const handleUpdateStatus = async (e: React.MouseEvent, order: YearbookOrder, status: 'approved' | 'declined') => {
     e.stopPropagation() // Prevent row click
     try {
-      const res = await fetch('/api/albums', {
+      const res = await fetchWithAuth('/api/albums', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: order.id, status }),
@@ -77,7 +78,7 @@ export default function YearbookManagementPage() {
     e.stopPropagation() // Prevent row click
     if (!confirm('Are you sure you want to permanently delete this yearbook order?')) return
     try {
-      const res = await fetch('/api/albums', {
+      const res = await fetchWithAuth('/api/albums', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id }),

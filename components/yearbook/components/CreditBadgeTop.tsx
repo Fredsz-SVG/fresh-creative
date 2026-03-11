@@ -4,6 +4,8 @@ import React, { useState, useEffect } from 'react'
 import { Coins } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import TopUpModal from '@/components/dashboard/TopUpModal'
+import { apiUrl } from '../../../lib/api-url'
+import { fetchWithAuth } from '../../../lib/api-client'
 
 export default function CreditBadgeTop() {
     const [credits, setCredits] = useState(0)
@@ -14,7 +16,7 @@ export default function CreditBadgeTop() {
 
         const init = async () => {
             try {
-                const res = await fetch('/api/user/me')
+                const res = await fetchWithAuth('/api/user/me')
                 const data = await res.json()
                 if (typeof data.credits === 'number') setCredits(data.credits)
 
@@ -45,7 +47,7 @@ export default function CreditBadgeTop() {
         init()
 
         const onCreditsUpdated = () => {
-            fetch('/api/user/me')
+            fetchWithAuth('/api/user/me')
                 .then((res) => res.json())
                 .then((data) => {
                     if (typeof data.credits === 'number') setCredits(data.credits)
@@ -62,7 +64,7 @@ export default function CreditBadgeTop() {
 
     // Callback to refresh credits after redeem
     const refreshCredits = () => {
-        fetch('/api/user/me')
+        fetchWithAuth('/api/user/me')
             .then((res) => res.json())
             .then((data) => {
                 if (typeof data.credits === 'number') setCredits(data.credits)
@@ -79,12 +81,12 @@ export default function CreditBadgeTop() {
             <button
                 type="button"
                 onClick={() => setShowTopUp(true)}
-                className="flex flex-col items-end group cursor-pointer"
+                className="flex flex-col items-end group cursor-pointer transition-all active:scale-95"
             >
-                <p className="text-[10px] uppercase tracking-wider text-gray-500 group-hover:text-lime-400 transition-colors">Credit</p>
-                <div className="flex items-center gap-1.5 text-xs font-medium text-white group-hover:text-lime-400 transition-colors">
-                    <Coins className="w-3.5 h-3.5 text-lime-400" />
-                    <span>{credits}</span>
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 group-hover:text-slate-900 transition-colors">Credits</p>
+                <div className="flex items-center gap-2 text-sm font-black text-slate-900 group-hover:text-indigo-600 transition-colors">
+                    <Coins className="w-4 h-4 text-amber-500" strokeWidth={3} />
+                    <span className="tabular-nums">{credits}</span>
                 </div>
             </button>
             <TopUpModal isOpen={showTopUp} onClose={() => setShowTopUp(false)} currentCredit={credits} onCreditChange={refreshCredits} />

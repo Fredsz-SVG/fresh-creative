@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { Upload, X, Loader2, Download, User, Shirt, ChevronUp, ChevronDown, Save } from 'lucide-react'
 import { Client } from '@gradio/client'
 import { downloadImageWithWatermark } from '@/lib/download-image'
+import { fetchWithAuth } from '../../lib/api-client'
 
 
 const API_URL = 'https://virtual-try-on.fmind.dev/'
@@ -32,7 +33,7 @@ export default function TryOn() {
     let cancelled = false
     const loadPricing = async () => {
       try {
-        const res = await fetch('/api/admin/ai-edit')
+        const res = await fetchWithAuth('/api/admin/ai-edit')
         if (!res.ok) return
         const data = await res.json()
         if (!Array.isArray(data)) return
@@ -204,7 +205,7 @@ export default function TryOn() {
     setLoadingProgress({ current: 0, total: products.length })
 
     try {
-      const creditRes = await fetch('/api/admin/ai-edit', {
+      const creditRes = await fetchWithAuth('/api/admin/ai-edit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ feature_slug: 'tryon' }),
@@ -214,7 +215,7 @@ export default function TryOn() {
         if (creditRes.status === 402) {
           setError(
             creditData.error ||
-              'Credit kamu tidak cukup untuk fitur Try On. Silakan top up credit terlebih dahulu.'
+            'Credit kamu tidak cukup untuk fitur Try On. Silakan top up credit terlebih dahulu.'
           )
         } else {
           setError(creditData.error || 'Gagal memotong credit untuk fitur Try On.')
@@ -262,25 +263,25 @@ export default function TryOn() {
 
   return (
     <section id="tryon-gradio" className="py-4 md:py-6">
-      <div className="max-w-7xl mx-auto">
-        <form onSubmit={handleGenerate} className="max-w-4xl mx-auto">
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-3 sm:p-4 md:p-6 border border-gray-200 dark:border-gray-700 space-y-4 sm:space-y-5 md:space-y-6">
-            <p className="text-sm text-gray-500 dark:text-gray-400 text-center">
+      <div className="max-w-3xl mx-auto">
+        <form onSubmit={handleGenerate}>
+          <div className="bg-white rounded-2xl border-4 border-slate-900 shadow-[6px_6px_0_0_#0f172a] p-4 sm:p-6 space-y-4 sm:space-y-5">
+            <p className="text-[10px] sm:text-xs font-black text-slate-500 text-center uppercase tracking-widest">
               Upload foto orang dan 1–3 item, lalu generate.
             </p>
             {/* Person Image */}
             <div>
-              <label className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-semibold mb-2 sm:mb-3 text-gray-700 dark:text-gray-300">
+              <label className="flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs font-black mb-2 sm:mb-3 text-slate-900 uppercase tracking-tight">
                 <User className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 Foto Orang (Person Image) <span className="text-red-500">*</span>
               </label>
               {!personPreview ? (
                 <div
                   onClick={() => document.getElementById('person-upload')?.click()}
-                  className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-4 sm:p-6 md:p-8 text-center cursor-pointer hover:border-primary transition-colors"
+                  className="border-2 border-dashed border-slate-300 rounded-xl p-4 sm:p-6 md:p-8 text-center cursor-pointer hover:border-slate-900 transition-colors"
                 >
-                  <Upload className="w-8 h-8 sm:w-10 sm:h-10 mx-auto mb-2 sm:mb-3 text-gray-400" />
-                  <p className="text-xs sm:text-sm md:text-base text-gray-600 dark:text-gray-400">
+                  <Upload className="w-8 h-8 sm:w-10 sm:h-10 mx-auto mb-2 sm:mb-3 text-slate-400" />
+                  <p className="text-[10px] sm:text-sm text-slate-600 uppercase tracking-widest">
                     Klik untuk upload foto orang
                   </p>
                   <input
@@ -294,7 +295,7 @@ export default function TryOn() {
                 </div>
               ) : (
                 <div className="relative max-w-[200px] sm:max-w-[250px] md:max-w-[300px]">
-                  <div className="relative w-full h-48 sm:h-56 md:h-64 bg-gray-100 dark:bg-gray-700 rounded-lg border-2 border-gray-300 dark:border-gray-600 flex items-center justify-center overflow-hidden">
+                  <div className="relative w-full h-48 sm:h-56 md:h-64 bg-slate-100 rounded-xl border-2 border-slate-900 flex items-center justify-center overflow-hidden shadow-[3px_3px_0_0_#0f172a]">
                     <img
                       src={personPreview}
                       alt="Person preview"
@@ -306,7 +307,7 @@ export default function TryOn() {
                         setPersonImage(null)
                         setPersonPreview(null)
                       }}
-                      className="absolute top-1.5 right-1.5 p-1.5 sm:p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors z-10"
+                      className="absolute top-1.5 right-1.5 p-1.5 sm:p-2 bg-red-500 text-white rounded-full border-2 border-slate-900 hover:bg-red-600 transition-colors z-10"
                     >
                       <X className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     </button>
@@ -317,22 +318,22 @@ export default function TryOn() {
 
             {/* Product Images (max 3) */}
             <div>
-              <label className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-semibold mb-2 sm:mb-3 text-gray-700 dark:text-gray-300">
+              <label className="flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs font-black mb-2 sm:mb-3 text-slate-900 uppercase tracking-tight">
                 <Shirt className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 Foto Produk / Item (maks. {MAX_PRODUCTS}) <span className="text-red-500">*</span>
               </label>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+              <p className="text-[10px] text-slate-500 mb-2 uppercase tracking-widest">
                 Urutan berpengaruh — pastikan dari outfit atas ke bawah.
               </p>
               <div
                 onClick={() => products.length < MAX_PRODUCTS && document.getElementById('product-upload')?.click()}
-                className={`border-2 border-dashed rounded-lg p-4 sm:p-5 md:p-6 text-center transition-colors ${products.length < MAX_PRODUCTS
-                  ? 'border-gray-300 dark:border-gray-600 cursor-pointer hover:border-primary'
-                  : 'border-gray-200 dark:border-gray-700 opacity-60 cursor-not-allowed'
+                className={`border-2 border-dashed rounded-xl p-4 sm:p-6 md:p-8 text-center transition-colors ${products.length < MAX_PRODUCTS
+                  ? 'border-slate-300 cursor-pointer hover:border-slate-900'
+                  : 'border-slate-200 opacity-60 cursor-not-allowed'
                   }`}
               >
-                <Upload className="w-6 h-6 sm:w-8 sm:h-8 mx-auto mb-1.5 sm:mb-2 text-gray-400" />
-                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+                <Upload className="w-8 h-8 sm:w-10 sm:h-10 mx-auto mb-2 sm:mb-3 text-slate-400" />
+                <p className="text-[10px] sm:text-sm text-slate-600 uppercase tracking-widest">
                   {products.length < MAX_PRODUCTS
                     ? `Klik untuk upload foto baju (${products.length}/${MAX_PRODUCTS})`
                     : `Sudah ${MAX_PRODUCTS} foto. Hapus salah satu untuk menambah.`}
@@ -351,14 +352,14 @@ export default function TryOn() {
                   {products.map((p, index) => (
                     <div
                       key={p.id}
-                      className="relative bg-gray-100 dark:bg-gray-700 rounded-lg border-2 border-gray-300 dark:border-gray-600 overflow-hidden"
+                      className="relative bg-slate-100 rounded-xl border-2 border-slate-900 overflow-hidden shadow-[2px_2px_0_0_#0f172a]"
                     >
                       <img
                         src={p.preview}
                         alt="Product"
                         className="w-full h-32 sm:h-36 object-contain"
                       />
-                      <span className="block text-center text-xs text-gray-600 dark:text-gray-400 py-1">
+                      <span className="block text-center text-[10px] font-black text-slate-600 py-1 uppercase tracking-widest">
                         Urutan {index + 1} (dipakai {index + 1 === 1 ? 'pertama' : index + 1 === 2 ? 'kedua' : 'terakhir'})
                       </span>
                       <div className="absolute top-1 right-1 flex gap-1 z-10">
@@ -366,7 +367,7 @@ export default function TryOn() {
                           type="button"
                           onClick={() => moveProduct(index, 'up')}
                           disabled={index === 0}
-                          className="p-1.5 bg-gray-600 text-white rounded-full hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed"
+                          className="p-1.5 bg-slate-900 text-white rounded-full border-2 border-slate-900 hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed"
                           title="Pindah ke atas"
                         >
                           <ChevronUp className="w-3 h-3" />
@@ -375,7 +376,7 @@ export default function TryOn() {
                           type="button"
                           onClick={() => moveProduct(index, 'down')}
                           disabled={index === products.length - 1}
-                          className="p-1.5 bg-gray-600 text-white rounded-full hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed"
+                          className="p-1.5 bg-slate-900 text-white rounded-full border-2 border-slate-900 hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed"
                           title="Pindah ke bawah"
                         >
                           <ChevronDown className="w-3 h-3" />
@@ -383,7 +384,7 @@ export default function TryOn() {
                         <button
                           type="button"
                           onClick={() => removeProduct(p.id)}
-                          className="p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600"
+                          className="p-1.5 bg-red-500 text-white rounded-full border-2 border-slate-900 hover:bg-red-600"
                           title="Hapus"
                         >
                           <X className="w-3 h-3" />
@@ -396,13 +397,13 @@ export default function TryOn() {
             </div>
 
             {error && (
-              <div className="p-2.5 sm:p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-600 dark:text-red-400 text-xs sm:text-sm">
+              <div className="p-3 bg-red-50 border-2 border-red-500 rounded-xl text-red-600 text-[10px] sm:text-xs font-black uppercase tracking-widest">
                 {error}
               </div>
             )}
 
             {typeof creditsPerGenerate === 'number' && creditsPerGenerate >= 0 && (
-              <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
+              <p className="text-[10px] font-black text-slate-500 text-center uppercase tracking-widest">
                 Biaya: {creditsPerGenerate} credit per generate Try On.
               </p>
             )}
@@ -410,7 +411,7 @@ export default function TryOn() {
             <button
               type="submit"
               disabled={loading || !personImage || products.length === 0}
-              className="w-full flex items-center justify-center gap-2 sm:gap-3 px-4 sm:px-5 md:px-6 py-2.5 sm:py-2.5 md:py-3 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-lg text-sm sm:text-base font-medium hover:from-blue-600 hover:to-indigo-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-indigo-500 text-white rounded-xl border-2 border-slate-900 font-black text-xs uppercase tracking-widest shadow-[4px_4px_0_0_#0f172a] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? (
                 <>
@@ -431,21 +432,21 @@ export default function TryOn() {
 
         {/* Results */}
         {results.length > 0 && (
-          <div className="mt-6 sm:mt-8 md:mt-12 max-w-6xl mx-auto px-2 sm:px-4">
-            <h3 className="text-xl sm:text-2xl md:text-3xl font-bold mb-4 sm:mb-5 md:mb-6 text-gray-900 dark:text-white text-center">
+          <div className="mt-6 sm:mt-8 max-w-3xl mx-auto px-2 sm:px-4">
+            <h3 className="text-base sm:text-xl font-black mb-4 text-slate-900 text-center uppercase tracking-tight">
               Hasil Virtual Try-On (1 foto)
             </h3>
-            <div className="grid gap-4 sm:gap-5 grid-cols-1 max-w-xl mx-auto">
+            <div className="grid gap-4 grid-cols-1 max-w-md mx-auto">
               {results.map((url, index) => (
                 <div
                   key={index}
-                  className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-3 sm:p-4 border border-gray-200 dark:border-gray-700"
+                  className="bg-white rounded-2xl border-4 border-slate-900 shadow-[6px_6px_0_0_#0f172a] p-3 sm:p-4"
                 >
                   <div className="relative">
                     <img
                       src={url}
                       alt={`Try-on result ${index + 1}`}
-                      className="w-full h-auto max-h-64 sm:max-h-80 object-contain rounded-lg"
+                      className="w-full h-auto max-h-64 sm:max-h-80 object-contain rounded-xl"
                     />
                     <button
                       type="button"
@@ -463,7 +464,7 @@ export default function TryOn() {
                         }
                       }}
                       disabled={downloadingIndex === index}
-                      className="absolute top-1.5 right-1.5 p-1.5 sm:p-2 bg-green-500 text-white rounded-full hover:bg-green-600 transition-colors disabled:opacity-70"
+                      className="absolute top-1.5 right-1.5 p-1.5 sm:p-2 bg-emerald-500 text-white rounded-full border-2 border-slate-900 hover:bg-emerald-600 transition-colors disabled:opacity-70 shadow-[2px_2px_0_0_#0f172a]"
                       title="Download"
                     >
                       {downloadingIndex === index ? (

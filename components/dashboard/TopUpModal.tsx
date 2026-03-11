@@ -1,9 +1,10 @@
 'use client'
 
-import { X, CreditCard, Wallet, Loader2, Gift } from 'lucide-react'
+import { X, CreditCard, Wallet, Loader2, Gift, ChevronDown } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
+import { fetchWithAuth } from '../../lib/api-client'
 
 type TopUpModalProps = {
     isOpen: boolean
@@ -44,7 +45,7 @@ export default function TopUpModal({ isOpen, onClose, currentCredit = 0, onCredi
         if (!redeemCode.trim()) return
         setRedeemLoading(true)
         try {
-            const res = await fetch('/api/credits/redeem', {
+            const res = await fetchWithAuth('/api/credits/redeem', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ action: 'redeem', code: redeemCode.trim() }),
@@ -70,7 +71,7 @@ export default function TopUpModal({ isOpen, onClose, currentCredit = 0, onCredi
         if (!selectedPkg) return
         setLoadingCheckout(true)
         try {
-            const res = await fetch('/api/credits/checkout', {
+            const res = await fetchWithAuth('/api/credits/checkout', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ packageId: selectedPkg })
@@ -94,7 +95,7 @@ export default function TopUpModal({ isOpen, onClose, currentCredit = 0, onCredi
             // Fetch initial data if empty
             if (packages.length === 0) {
                 setLoading(true)
-                fetch(`/api/credits/packages?t=${Date.now()}`)
+                fetchWithAuth(`/api/credits/packages?t=${Date.now()}`)
                     .then(res => res.json())
                     .then(data => {
                         if (Array.isArray(data)) setPackages(data)
@@ -131,7 +132,7 @@ export default function TopUpModal({ isOpen, onClose, currentCredit = 0, onCredi
 
                         // Backup Fetch (debounced)
                         setTimeout(() => {
-                            fetch(`/api/credits/packages?t=${Date.now()}`)
+                            fetchWithAuth(`/api/credits/packages?t=${Date.now()}`)
                                 .then((res) => res.json())
                                 .then((data) => {
                                     if (Array.isArray(data)) {
@@ -145,7 +146,7 @@ export default function TopUpModal({ isOpen, onClose, currentCredit = 0, onCredi
 
             // Polling Backup (Every 3s)
             const interval = setInterval(() => {
-                fetch(`/api/credits/packages?t=${Date.now()}`)
+                fetchWithAuth(`/api/credits/packages?t=${Date.now()}`)
                     .then((res) => res.json())
                     .then((data) => {
                         if (Array.isArray(data)) setPackages(data)
@@ -166,15 +167,15 @@ export default function TopUpModal({ isOpen, onClose, currentCredit = 0, onCredi
         <>
             {/* Popup pembayaran Xendit di dalam halaman */}
             {checkoutInvoiceUrl && (
-                <div className="fixed inset-0 z-[110] flex flex-col bg-[#0a0a0b]" role="dialog" aria-modal="true" aria-label="Pembayaran Xendit">
-                    <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 bg-white/5 shrink-0">
-                        <h3 className="text-sm font-semibold text-white">Selesaikan Pembayaran</h3>
+                <div className="fixed inset-0 z-[110] flex flex-col bg-white" role="dialog" aria-modal="true" aria-label="Pembayaran Xendit">
+                    <div className="flex items-center justify-between px-6 py-4 border-b-4 border-slate-900 bg-slate-50 shrink-0">
+                        <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest">Selesaikan Pembayaran</h3>
                         <button
                             type="button"
                             onClick={handleCloseCheckoutPopup}
-                            className="flex items-center justify-center w-9 h-9 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
+                            className="flex items-center justify-center w-10 h-10 rounded-xl border-4 border-slate-900 bg-white text-slate-900 hover:bg-slate-100 transition-all shadow-[4px_4px_0_0_#0f172a] active:shadow-none active:translate-x-1 active:translate-y-1"
                         >
-                            <X className="w-5 h-5" />
+                            <X className="w-6 h-6" strokeWidth={3} />
                         </button>
                     </div>
                     <div className="flex-1 min-h-0 relative">
@@ -189,117 +190,140 @@ export default function TopUpModal({ isOpen, onClose, currentCredit = 0, onCredi
                 </div>
             )}
 
-            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" onClick={checkoutInvoiceUrl ? undefined : handleCloseModal}>
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" onClick={checkoutInvoiceUrl ? undefined : handleCloseModal}>
                 <div
-                    className="relative w-full max-w-md bg-[#0a0a0b] border border-white/10 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200"
+                    className="relative w-full max-w-md bg-white border-4 border-slate-900 rounded-[32px] shadow-[12px_12px_0_0_#0f172a] overflow-hidden animate-in fade-in zoom-in-95 duration-200"
                     onClick={(e) => e.stopPropagation()}
                 >
                     {/* Header */}
-                    <div className="flex items-center justify-between p-5 border-b border-white/10 bg-white/5">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-lime-500/20 flex items-center justify-center text-lime-400">
-                                <Wallet className="w-5 h-5" />
+                    <div className="flex items-center justify-between p-6 border-b-4 border-slate-900 bg-indigo-50">
+                        <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-2xl bg-amber-400 border-4 border-slate-900 flex items-center justify-center text-slate-900 shadow-[4px_4px_0_0_#0f172a]">
+                                <Wallet className="w-6 h-6" strokeWidth={3} />
                             </div>
                             <div>
-                                <h3 className="text-lg font-bold text-white leading-tight">Top Up Credit</h3>
-                                <p className="text-xs text-gray-400">Balance: {currentCredit} Credits</p>
+                                <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight leading-none">Top Up Credit</h3>
+                                <div className="flex items-center gap-2 mt-1.5">
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Saldo Anda:</p>
+                                    <span className="text-xs font-black text-indigo-600 bg-indigo-100 px-2 py-0.5 rounded-md border-2 border-slate-900">{currentCredit} CREDITS</span>
+                                </div>
                             </div>
                         </div>
                         <button
                             onClick={handleCloseModal}
-                            className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
+                            className="w-10 h-10 flex items-center justify-center rounded-xl border-4 border-slate-900 bg-white text-slate-900 hover:bg-slate-100 transition-all shadow-[4px_4px_0_0_#0f172a] active:shadow-none active:translate-x-1 active:translate-y-1"
                         >
-                            <X className="w-5 h-5" />
+                            <X className="w-6 h-6" strokeWidth={3} />
                         </button>
                     </div>
 
-                    {/* Body */}
-                    <div className="p-5">
-                        <p className="text-sm text-gray-400 mb-4">Pilih paket credit yang ingin dibeli:</p>
+                    {/* Body - Non-scrollable parent */}
+                    <div className="p-6 bg-white">
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Pilih Paket Credit</p>
 
                         {loading ? (
-                            <div className="flex items-center justify-center py-8">
-                                <Loader2 className="w-8 h-8 text-lime-500 animate-spin" />
+                            <div className="flex flex-col items-center justify-center py-12 gap-4">
+                                <Loader2 className="w-10 h-10 text-indigo-500 animate-spin" strokeWidth={3} />
+                                <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Memuat Paket...</span>
                             </div>
                         ) : (
-                            <div className="mb-6 max-h-[280px] overflow-y-auto pr-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-                                <div className="grid grid-cols-2 gap-3 pt-3 pb-2 px-1">
-                                    {packages.map((pkg) => (
-                                        <button
-                                            key={pkg.id}
-                                            onClick={() => setSelectedPkg(pkg.id)}
-                                            className={`
-                          relative flex flex-col items-center justify-center p-4 rounded-xl border transition-all duration-200
-                          ${selectedPkg === pkg.id
-                                                    ? 'border-lime-500 bg-lime-500/10 text-white'
-                                                    : 'border-white/10 bg-white/[0.03] text-gray-400 hover:border-white/20 hover:bg-white/5'}
-                        `}
-                                        >
-                                            {pkg.popular && (
-                                                <span className="absolute -top-3 bg-lime-500 text-black text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider z-10">
-                                                    Popular
-                                                </span>
-                                            )}
-                                            <span className={`text-2xl font-bold mb-1 ${selectedPkg === pkg.id ? 'text-lime-400' : 'text-white'}`}>
-                                                {pkg.credits}
-                                            </span>
-                                            <span className="text-xs uppercase tracking-wide opacity-80">Credits</span>
-                                            <div className={`mt-3 text-sm font-medium px-2 py-1 w-full rounded-lg ${selectedPkg === pkg.id ? 'bg-lime-500 text-black' : 'bg-white/10 text-white'}`}>
-                                                <div className="truncate text-center">Rp {pkg.price.toLocaleString('id-ID')}</div>
-                                            </div>
-                                        </button>
-                                    ))}
+                            <div className="mb-6">
+                                <div className="max-h-[290px] overflow-y-auto no-scrollbar px-2">
+                                    <div className="grid grid-cols-2 gap-3 pt-4 pb-3">
+                                        {packages.map((pkg) => (
+                                            <button
+                                                key={pkg.id}
+                                                onClick={() => setSelectedPkg(pkg.id)}
+                                                className={`
+                                                    relative flex flex-col items-center justify-center p-3.5 rounded-[20px] border-4 transition-all duration-200
+                                                    ${selectedPkg === pkg.id
+                                                        ? 'border-slate-900 bg-indigo-400 text-slate-900 shadow-[4px_4px_0_0_#0f172a]'
+                                                        : 'border-slate-900 bg-white text-slate-400 hover:bg-slate-50 shadow-[3px_3px_0_0_#0f172a] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5'}
+                                                `}
+                                            >
+                                                {pkg.popular && (
+                                                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-amber-400 text-slate-900 text-[10px] font-black px-2.5 py-0.5 rounded-full border-2 border-slate-900 uppercase tracking-wider z-10 shadow-[2px_2px_0_0_#0f172a]">
+                                                        Popular
+                                                    </span>
+                                                )}
+                                                <div className="flex items-center gap-1.5 mb-1">
+                                                    <span className={`text-2xl font-black ${selectedPkg === pkg.id ? 'text-slate-900' : 'text-slate-900'}`}>
+                                                        {pkg.credits}
+                                                    </span>
+                                                </div>
+                                                <span className={`text-[9px] font-black uppercase tracking-widest ${selectedPkg === pkg.id ? 'text-slate-900' : 'text-slate-400'}`}>Credits</span>
+                                                <div className={`mt-3 text-[10px] font-black px-2 py-1.5 w-full rounded-lg border-2 border-slate-900 ${selectedPkg === pkg.id ? 'bg-white text-slate-900' : 'bg-slate-100 text-slate-500'}`}>
+                                                    <div className="truncate text-center">Rp {pkg.price.toLocaleString('id-ID')}</div>
+                                                </div>
+                                            </button>
+                                        ))}
+                                    </div>
                                 </div>
+                                {packages.length > 4 && (
+                                    <div className="flex items-center justify-center gap-2 mt-3 animate-bounce">
+                                        <ChevronDown className="w-3.5 h-3.5 text-slate-400" strokeWidth={3} />
+                                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Scroll untuk lainnya</span>
+                                        <ChevronDown className="w-3.5 h-3.5 text-slate-400" strokeWidth={3} />
+                                    </div>
+                                )}
                             </div>
                         )}
 
                         <button
                             onClick={handleCheckout}
                             disabled={!selectedPkg || loadingCheckout}
-                            className="w-full py-3.5 px-4 bg-lime-500 hover:bg-lime-400 disabled:opacity-50 disabled:cursor-not-allowed text-black font-bold rounded-xl transition-colors flex items-center justify-center gap-2"
+                            className="w-full py-3.5 px-6 bg-emerald-400 text-slate-900 border-4 border-slate-900 disabled:opacity-50 disabled:cursor-not-allowed font-black text-xs uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-3 shadow-[6px_6px_0_0_#0f172a] hover:shadow-none hover:translate-x-1 hover:translate-y-1 active:shadow-none active:translate-x-1.5 active:translate-y-1.5"
                         >
-                            {loadingCheckout ? <Loader2 className="w-4 h-4 animate-spin" /> : <CreditCard className="w-4 h-4" />}
+                            {loadingCheckout ? <Loader2 className="w-4 h-4 animate-spin" strokeWidth={3} /> : <CreditCard className="w-4 h-4" strokeWidth={3} />}
                             {loadingCheckout ? 'Memproses...' : 'Beli Sekarang'}
                         </button>
 
                         {/* Redeem Code Section */}
-                        <div className="mt-4 pt-4 border-t border-white/10">
-                            {!showRedeem ? (
-                                <button
-                                    type="button"
-                                    onClick={() => setShowRedeem(true)}
-                                    className="w-full text-center text-sm text-purple-400 hover:text-purple-300 transition-colors flex items-center justify-center gap-1.5"
-                                >
-                                    <Gift className="w-4 h-4" />
-                                    Punya kode voucher? Redeem di sini
-                                </button>
-                            ) : (
-                                <div className="space-y-2">
-                                    <div className="flex gap-2">
+                        <div className="mt-6 pt-6 border-t-4 border-slate-100">
+                            <div className="h-[48px] flex items-center text-center">
+                                {!showRedeem ? (
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowRedeem(true)}
+                                        className="w-full h-full flex items-center justify-center gap-2 rounded-xl border-4 border-dashed border-slate-300 text-[10px] font-black text-slate-400 hover:text-indigo-500 hover:border-indigo-400 uppercase tracking-widest transition-colors"
+                                    >
+                                        <Gift className="w-4 h-4" strokeWidth={3} />
+                                        Punya kode voucher?
+                                    </button>
+                                ) : (
+                                    <div className="w-full h-full flex items-center gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowRedeem(false)}
+                                            className="w-10 h-10 flex items-center justify-center shrink-0 rounded-lg border-4 border-slate-900 bg-white text-slate-400 hover:text-red-500 hover:bg-slate-50 shadow-[3px_3px_0_0_#0f172a] active:shadow-none active:translate-x-1 active:translate-y-1"
+                                            title="Batal"
+                                        >
+                                            <X className="w-4 h-4" strokeWidth={3} />
+                                        </button>
                                         <input
                                             type="text"
                                             value={redeemCode}
                                             onChange={(e) => setRedeemCode(e.target.value.toUpperCase())}
                                             onKeyDown={(e) => e.key === 'Enter' && handleRedeem()}
-                                            placeholder="Masukkan kode"
-                                            className="flex-1 px-3 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white font-mono uppercase tracking-widest text-sm placeholder:text-gray-600 placeholder:tracking-normal placeholder:font-sans focus:outline-none focus:border-purple-500"
+                                            placeholder="KODE VOUCHER"
+                                            className="flex-1 min-w-0 h-10 px-3 bg-slate-50 border-4 border-slate-900 rounded-lg text-slate-900 font-mono font-black uppercase tracking-widest text-[10px] placeholder:text-slate-300 placeholder:font-sans focus:outline-none focus:bg-white shadow-[inset_2px_2px_0_0_rgba(15,23,42,0.1)]"
                                             autoFocus
                                         />
                                         <button
                                             onClick={handleRedeem}
                                             disabled={!redeemCode.trim() || redeemLoading}
-                                            className="px-4 py-2.5 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-colors flex items-center gap-1.5 text-sm shrink-0"
+                                            className="h-10 px-4 bg-indigo-500 text-white border-4 border-slate-900 disabled:opacity-50 disabled:cursor-not-allowed font-black rounded-lg flex items-center justify-center gap-2 text-[9px] uppercase tracking-widest shadow-[3px_3px_0_0_#0f172a] hover:shadow-none hover:translate-x-1 hover:translate-y-1 shrink-0"
                                         >
-                                            {redeemLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Gift className="w-4 h-4" />}
+                                            {redeemLoading ? <Loader2 className="w-3 h-3 animate-spin" strokeWidth={3} /> : <Gift className="w-3 h-3" strokeWidth={3} />}
                                             Redeem
                                         </button>
                                     </div>
-                                </div>
-                            )}
+                                )}
+                            </div>
                         </div>
 
-                        <p className="text-center text-[10px] text-gray-500 mt-3">
-                            Pembayaran aman & terpercaya via Payment Gateway.
+                        <p className="text-center text-[9px] font-black text-slate-400 mt-5 uppercase tracking-widest">
+                            ⚡ Aman & Terpercaya via Payment Gateway.
                         </p>
                     </div>
                 </div>

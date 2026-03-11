@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { Check, Loader2, X, ChevronDown } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
+import { apiUrl } from '../../lib/api-url'
+import { fetchWithAuth } from '../../lib/api-client'
 
 export type AlbumRegisterFormProps = {
   /** Langsung pakai albumId (halaman /register/[id]) */
@@ -50,7 +52,7 @@ export default function AlbumRegisterForm({ albumId: albumIdProp, token, loginRe
     }
     setLoading(true)
     setInviteError(null)
-    fetch(`/api/albums/invite/${token}`)
+    fetchWithAuth(`/api/albums/invite/${token}`)
       .then((res) => res.json())
       .then((result) => {
         if (result.error) throw new Error(result.error)
@@ -71,9 +73,9 @@ export default function AlbumRegisterForm({ albumId: albumIdProp, token, loginRe
         // Auth + data album paralel supaya form muncul lebih cepat
         const [authResult, checkRes, albumRes, statsRes] = await Promise.all([
           supabase.auth.getUser(),
-          fetch(`/api/albums/${albumId}/check-user`, { cache: 'no-store' }),
-          fetch(`/api/albums/${albumId}/public`, { cache: 'no-store' }),
-          fetch(`/api/albums/${albumId}/join-stats`, { cache: 'no-store' })
+          fetchWithAuth(`/api/albums/${albumId}/check-user`, { cache: 'no-store' }),
+          fetchWithAuth(`/api/albums/${albumId}/public`, { cache: 'no-store' }),
+          fetchWithAuth(`/api/albums/${albumId}/join-stats`, { cache: 'no-store' })
         ])
 
         const currentUser = authResult.data.user
@@ -144,7 +146,7 @@ export default function AlbumRegisterForm({ albumId: albumIdProp, token, loginRe
 
     setSubmitting(true)
     try {
-      const res = await fetch(`/api/albums/${resolvedAlbumId}/join-requests`, {
+      const res = await fetchWithAuth(`/api/albums/${resolvedAlbumId}/join-requests`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)

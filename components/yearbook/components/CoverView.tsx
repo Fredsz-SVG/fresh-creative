@@ -34,7 +34,7 @@ export default function CoverView({
   return (
     <div className="flex-1 flex flex-col items-center justify-center p-4 relative min-h-full">
       <div className="w-full max-w-xs mx-auto flex flex-col items-center">
-        <div className="relative w-full aspect-[3/4] bg-white/5 rounded-xl overflow-hidden shadow-xl border border-white/10 group">
+        <div className="relative w-full aspect-[3/4] bg-gray-100 rounded-xl overflow-hidden shadow-xl border border-gray-200 group">
           {album?.cover_image_url ? (
             <img
               src={album.cover_image_url}
@@ -45,7 +45,7 @@ export default function CoverView({
           ) : (
             <div className="flex flex-col items-center justify-center w-full h-full text-muted gap-3">
               <BookOpen className="w-12 h-12 opacity-50" />
-              <span className="text-xs">Sampul album</span>
+              <span className="text-xs">Cover album</span>
             </div>
           )}
 
@@ -54,10 +54,10 @@ export default function CoverView({
             <button
               type="button"
               onClick={() => onPlayVideo && onPlayVideo(album.cover_video_url!)}
-              className="absolute bottom-3 right-3 w-10 h-10 rounded-full bg-black/70 hover:bg-black/90 flex items-center justify-center group/play transition-all hover:scale-110 backdrop-blur-sm border border-white/10"
-              title="Play Video Sampul"
+              className="absolute bottom-3 right-3 w-10 h-10 rounded-full bg-black/70 hover:bg-black/90 flex items-center justify-center group/play transition-all hover:scale-110 backdrop-blur-sm border border-gray-200"
+              title="Play Video Cover"
             >
-              <Play className="w-4 h-4 text-white ml-0.5" fill="currentColor" />
+              <Play className="w-4 h-4 text-gray-800 ml-0.5" fill="currentColor" />
             </button>
           )}
         </div>
@@ -68,11 +68,11 @@ export default function CoverView({
         </div>
 
         {isOwner && (
-          <div className="mt-6 p-3 w-full rounded-xl bg-white/5 border border-white/10">
+          <div className="mt-6 p-3 w-full rounded-xl bg-gray-100 border border-gray-200">
             <div className="mb-3 text-center">
-              <p className="text-xs font-semibold text-app">Pengaturan Sampul</p>
+              <p className="text-xs font-semibold text-app">Pengaturan Cover</p>
             </div>
-            
+
             {/* Gambar Section */}
             <div className="mb-3">
               <p className="text-[10px] font-medium text-muted/60 uppercase tracking-wide mb-1.5">Gambar <span className="normal-case text-muted/80">(maks. 10MB)</span></p>
@@ -99,7 +99,7 @@ export default function CoverView({
             </div>
 
             {/* Divider */}
-            <div className="h-px bg-white/10 my-2.5"></div>
+            <div className="h-px bg-gray-100 my-2.5"></div>
 
             {/* Video Section */}
             <div>

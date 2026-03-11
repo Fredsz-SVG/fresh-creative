@@ -80,11 +80,15 @@ interface TinderCardProps {
     children: React.ReactNode
     onSwipe?: (direction: 'left' | 'right' | 'up' | 'down') => void
     onCardLeftScreen?: (direction: 'left' | 'right' | 'up' | 'down') => void
+    onDragStart?: () => void
+    onDrag?: (offset: { x: number; y: number }) => void
+    onDragEnd?: () => void
+    onFlyOffStart?: (direction: 'left' | 'right' | 'up') => void
     index: number  // 0 = front, 1+ = behind
     preventSwipe?: ('left' | 'right' | 'up' | 'down')[]
 }
 
-function TinderCard({ children, onSwipe, onCardLeftScreen, index, preventSwipe = [] }: TinderCardProps) {
+function TinderCard({ children, onSwipe, onCardLeftScreen, onDragStart, onDrag, onDragEnd, onFlyOffStart, index, preventSwipe = [] }: TinderCardProps) {
     const controls = useAnimation()
     const x = useMotionValue(0)
     const y = useMotionValue(0)
@@ -143,6 +147,7 @@ function TinderCard({ children, onSwipe, onCardLeftScreen, index, preventSwipe =
 
             isAnimating.current = true
             onSwipe?.(direction)
+            onFlyOffStart?.(direction)
 
             const flyVal = 300
             let targetX = 0, targetY = 0, targetRotate = 0
@@ -184,18 +189,19 @@ function TinderCard({ children, onSwipe, onCardLeftScreen, index, preventSwipe =
             style={{ zIndex: 3 - index }}
         >
             <motion.div
-                className={`absolute w-full h-full rounded-3xl ${isFront ? 'cursor-grab active:cursor-grabbing pointer-events-auto' : ''}`}
+                className={`absolute w-full h-full rounded-2xl ${isFront ? 'cursor-grab active:cursor-grabbing pointer-events-auto' : ''}`}
                 style={{ x, y, rotate, opacity }}
                 animate={controls}
                 drag={isFront}
                 dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
                 dragElastic={0.7}
-                onDragEnd={isFront ? handleDragEnd : undefined}
+                onDragStart={isFront ? () => onDragStart?.() : undefined}
+                onDrag={isFront ? (_: unknown, info: PanInfo) => onDrag?.({ x: info.offset.x, y: info.offset.y }) : undefined}
+                onDragEnd={isFront ? (e: unknown, info: PanInfo) => { handleDragEnd(e, info); onDragEnd?.() } : undefined}
                 whileTap={isFront ? { cursor: 'grabbing' } : undefined}
             >
-                {/* Scale wrapper with entrance popup animation (like swiparr's card appear) */}
                 <motion.div
-                    className="w-full h-full rounded-3xl"
+                    className="w-full h-full rounded-2xl"
                     initial={{ scale: 0.85, opacity: 0 }}
                     animate={{ scale: isFront ? 1 : 0.95, opacity: 1 }}
                     transition={{ type: 'spring', stiffness: 350, damping: 28 }}
@@ -218,7 +224,7 @@ export default function PreviewView({
     onClose,
 }: PreviewViewProps) {
     const sections: Section[] = useMemo(() => [
-        { type: 'cover', label: 'Sampul', icon: <BookOpen className="w-4 h-4" /> },
+        { type: 'cover', label: 'Cover', icon: <BookOpen className="w-4 h-4" /> },
         ...(teachers.length > 0 ? [{ type: 'sambutan' as const, label: 'Sambutan', icon: <MessageSquare className="w-4 h-4" /> }] : []),
         ...classes.map((c, i) => ({
             type: 'class' as const,
@@ -235,6 +241,13 @@ export default function PreviewView({
     const [sectionDirection, setSectionDirection] = useState(0) // -1 = left, 1 = right
     const [isTransitioning, setIsTransitioning] = useState(false)
     const sectionTransitioning = useRef(false)
+    const [videoPopupUrl, setVideoPopupUrl] = useState<string | null>(null)
+    // Deck belakang hanya kelihatan saat swipe naik/turun (satu tab), tidak saat swipe kiri/kanan (pindah tab)
+    const [showDeckBehind, setShowDeckBehind] = useState(false)
+    // Kartu yang sedang terbang (swipe off) taruh di belakang agar tidak menimpa kartu baru
+    const [exitingCardId, setExitingCardId] = useState<string | null>(null)
+    // Arah fly-off: hanya swipe UP yang boleh tampilkan deck belakang (bukan kiri/kanan)
+    const [exitingDirection, setExitingDirection] = useState<'left' | 'right' | 'up' | null>(null)
 
     const currentSection = sections[sectionIndex] || sections[0]
 
@@ -349,6 +362,8 @@ export default function PreviewView({
 
     // Handle card leaving screen (called after fly-off animation completes)
     const handleCardLeftScreen = useCallback((id: string, direction: 'left' | 'right' | 'up' | 'down') => {
+        setExitingCardId(null)
+        setExitingDirection(null)
         if (direction === 'left') {
             goSection(1)
         } else if (direction === 'right') {
@@ -386,46 +401,43 @@ export default function PreviewView({
 
     const currentCard = activeDeck[0]
 
-    // ─── Card content renderer ───
+    // ─── Card content renderer (neo-brutalist, sama dengan AI Labs / Edit) ───
     const renderCardContent = (card: CardItem) => (
-        <div className="relative w-full h-full rounded-3xl overflow-hidden border border-white/10 shadow-2xl shadow-black/60 select-none isolate transform-gpu bg-neutral-900">
+        <div className="relative w-full h-full rounded-2xl overflow-hidden border-4 border-slate-900 shadow-[4px_4px_0_0_#0f172a] select-none isolate transform-gpu bg-white">
             {/* Background Image / Placeholder */}
             <div className="absolute inset-0">
                 {card.imageUrl ? (
                     <img src={card.imageUrl} alt={card.title} className="h-full w-full object-cover" draggable={false} />
                 ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-neutral-800 to-neutral-900 flex items-center justify-center">
-                        <Users className="w-12 h-12 sm:w-20 sm:h-20 text-white/5" />
+                    <div className="w-full h-full bg-slate-100 flex items-center justify-center">
+                        <Users className="w-12 h-12 sm:w-20 sm:h-20 text-slate-300" />
                     </div>
                 )}
                 <div className="absolute inset-0 bg-transparent" />
             </div>
 
-            {/* Premium Content Overlay - Super Compact */}
+            {/* Content Overlay */}
             <div className="absolute inset-x-0 bottom-0 z-20 pointer-events-none">
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-black via-40% to-transparent h-[140%] -top-[40%]" />
+                <div className="absolute inset-0 bg-gradient-to-t from-white via-white/95 via-45% to-transparent h-[150%] -top-[50%]" />
 
-                <div className="relative px-3 pb-3 sm:px-5 sm:pb-5 flex flex-col gap-1">
+                <div className="relative px-4 pb-4 sm:px-6 sm:pb-6 flex flex-col gap-1.5 pt-12">
 
-                    {/* Title & Info Group */}
                     <div className="flex flex-col">
-                        <h2 className="text-lg sm:text-2xl font-bold text-white leading-none uppercase tracking-tighter drop-shadow-2xl">
+                        <h2 className="text-xl sm:text-3xl font-black text-slate-900 leading-tight tracking-tight uppercase">
                             {card.title}
                         </h2>
 
-                        <div className="flex flex-wrap items-center gap-2 mt-0.5">
-                            {/* Role / Subtitle */}
+                        <div className="flex flex-wrap items-center gap-2 mt-1">
                             {card.subtitle && (
-                                <p className="text-lime-400 font-medium text-[10px] sm:text-xs tracking-wide">
+                                <p className="text-slate-600 font-black text-xs sm:text-sm tracking-wide">
                                     {card.subtitle}
                                 </p>
                             )}
 
-                            {/* Badges moved here for compactness */}
                             {card.badges && card.badges.length > 0 && (
                                 <div className="flex flex-wrap gap-1">
                                     {card.badges.map((b, i) => (
-                                        <span key={i} className={`text-[8px] sm:text-[9px] font-bold px-1.5 py-0.5 rounded backdrop-blur-md uppercase tracking-wide bg-white/10 text-white border border-white/20 shadow-sm`}>
+                                        <span key={i} className="text-[9px] sm:text-[10px] font-black px-2 py-0.5 rounded-lg uppercase tracking-wide bg-white border-2 border-slate-900 text-slate-900 shadow-[2px_2px_0_0_#0f172a]">
                                             {b.label}
                                         </span>
                                     ))}
@@ -434,17 +446,15 @@ export default function PreviewView({
                         </div>
                     </div>
 
-                    {/* Description - Compact */}
                     {card.description && (
-                        <div className="relative pl-2.5 border-l-2 border-lime-400/50 my-0.5 rounded-sm">
-                            <p className="text-[10px] sm:text-xs text-neutral-300 italic line-clamp-2 leading-relaxed opacity-90">
+                        <div className="relative pl-3 border-l-4 border-slate-900 my-1">
+                            <p className="text-xs sm:text-sm text-slate-600 font-bold italic line-clamp-3 leading-relaxed">
                                 "{card.description}"
                             </p>
                         </div>
                     )}
 
-                    {/* Meta & Actions - Flex Layout for Content-Aware Sizing */}
-                    <div className="flex flex-wrap gap-1.5 mt-1 w-full">
+                    <div className="flex flex-wrap gap-2 mt-2 w-full">
                         {card.meta && card.meta.map((m, i) => {
                             const isIg = typeof m.text === 'string' && m.text.startsWith('@');
                             const Wrapper = isIg ? 'a' : 'div';
@@ -453,17 +463,17 @@ export default function PreviewView({
                                 target: '_blank',
                                 rel: 'noopener noreferrer',
                                 onClick: (e: React.MouseEvent) => e.stopPropagation(),
-                                className: "pointer-events-auto group flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 transition-all active:scale-95 cursor-pointer flex-initial w-auto min-w-0 max-w-full"
+                                className: "pointer-events-auto group flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-white hover:bg-amber-200 border-2 border-slate-900 text-slate-900 transition-all active:scale-95 cursor-pointer flex-initial w-auto min-w-0 max-w-full shadow-[2px_2px_0_0_#0f172a]"
                             } : {
-                                className: "flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/5 border border-white/10 text-neutral-300 flex-1 w-auto min-w-[40%] max-w-full"
+                                className: "flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 border-2 border-slate-900 text-slate-700 font-black flex-1 w-auto min-w-[40%] max-w-full"
                             };
 
                             return (
                                 <Wrapper key={i} {...props}>
-                                    <span className={`flex-shrink-0 ${isIg ? "text-lime-400 group-hover:text-lime-300 transition-colors" : "text-neutral-400"}`}>
-                                        {React.cloneElement(m.icon as React.ReactElement, { size: 12 })}
+                                    <span className={`flex-shrink-0 ${isIg ? "text-pink-600 group-hover:text-pink-700" : "text-slate-500"}`}>
+                                        {React.cloneElement(m.icon as React.ReactElement, { size: 14 })}
                                     </span>
-                                    <span className={`text-[9px] sm:text-[10px] font-medium leading-tight break-all ${isIg ? 'text-white group-hover:text-lime-50' : 'text-neutral-300'}`}>
+                                    <span className={`text-[10px] sm:text-[11px] font-black tracking-wide truncate ${isIg ? 'text-slate-900 group-hover:text-slate-800' : 'text-slate-600'}`}>
                                         {m.text}
                                     </span>
                                 </Wrapper>
@@ -471,15 +481,21 @@ export default function PreviewView({
                         })}
                     </div>
 
-                    {/* Primary CTA Button (Video) */}
                     {card.videoUrl && (
-                        <div className="mt-1 w-full">
+                        <div className="mt-2 w-full">
                             <button
                                 type="button"
-                                onClick={(e) => { e.stopPropagation(); onPlayVideo?.(card.videoUrl!) }}
-                                className="pointer-events-auto flex items-center justify-center gap-1.5 w-full px-4 py-2 rounded-lg bg-lime-400 hover:bg-lime-500 text-black text-[10px] sm:text-xs font-bold transition-all active:scale-95 shadow-[0_0_15px_-3px_rgba(163,230,53,0.3)]"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (onPlayVideo) {
+                                        onPlayVideo(card.videoUrl!);
+                                    } else {
+                                        setVideoPopupUrl(card.videoUrl!);
+                                    }
+                                }}
+                                className="pointer-events-auto flex items-center justify-center gap-2 w-full px-4 py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-[11px] sm:text-xs font-black tracking-wider transition-all active:scale-95 border-2 border-slate-900 shadow-[3px_3px_0_0_#0f172a]"
                             >
-                                <Play className="w-3.5 h-3.5 fill-black" />
+                                <Play className="w-4 h-4 fill-white" />
                                 <span>PLAY VIDEO</span>
                             </button>
                         </div>
@@ -489,18 +505,19 @@ export default function PreviewView({
         </div>
     )
 
-    // Section transition animation variants
+    // Section transition: section yang keluar di belakang (zIndex 0) agar gambar lama tidak keliatan
     const sectionVariants = {
         enter: (dir: number) => ({
             x: dir > 0 ? '100%' : '-100%',
             opacity: 0,
             scale: 0.95,
+            zIndex: 10,
         }),
         center: {
             x: 0,
             opacity: 1,
             scale: 1,
-            zIndex: 1,
+            zIndex: 10,
         },
         exit: (dir: number) => ({
             x: dir > 0 ? '-100%' : '100%',
@@ -511,42 +528,39 @@ export default function PreviewView({
     }
 
     return (
-        <div className="fixed inset-0 z-[90] bg-black flex flex-col">
-            {/* Top Bar */}
-            <div className="flex-shrink-0 flex items-center justify-between px-3 py-2 sm:px-4 sm:py-3 bg-black/80 backdrop-blur-md z-20">
-                <div className="flex items-center gap-2 sm:gap-3">
-                    <div className="flex items-center gap-1 px-2 py-0.5 sm:gap-1.5 sm:px-2.5 sm:py-1 rounded-lg bg-lime-500/10 border border-lime-500/20">
-                        {currentSection.icon}
-                        <span className="text-[10px] sm:text-xs font-bold text-lime-400 truncate max-w-[100px] sm:max-w-none">{currentSection.label}</span>
+        <div className="fixed inset-0 z-[90] bg-slate-100 flex flex-col">
+            {/* Header - neo-brutalist, tanpa garis (bg nyatu) */}
+            <div className="flex-shrink-0 flex items-center justify-between px-4 py-3 sm:px-6 sm:py-4 bg-slate-100 z-20">
+                <div className="flex items-center gap-3 sm:gap-4">
+                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white border-2 border-slate-900 text-slate-900 shadow-[2px_2px_0_0_#0f172a]">
+                        {React.cloneElement(currentSection.icon as React.ReactElement, { className: "w-4 h-4" })}
+                        <span className="text-xs sm:text-sm font-black uppercase truncate max-w-[120px] sm:max-w-none">{currentSection.label}</span>
                     </div>
                     {totalItems > 1 && (
-                        <span className="text-[10px] sm:text-xs text-neutral-500 font-mono tabular-nums">
-                            {itemIndex + 1}/{totalItems}
+                        <span className="text-xs sm:text-sm text-slate-600 font-black tabular-nums bg-white border-2 border-slate-900 px-2 py-0.5 rounded-lg shadow-[2px_2px_0_0_#0f172a]">
+                            {itemIndex + 1} / {totalItems}
                         </span>
                     )}
                 </div>
-                <div className="flex items-center gap-1.5 sm:gap-2">
-                    <div className="hidden sm:flex items-center gap-1">
+                <div className="flex items-center gap-2 sm:gap-3">
+                    <div className="hidden sm:flex items-center gap-1.5 px-2">
                         {sections.map((s, i) => (
                             <button
                                 key={i}
                                 onClick={() => { if (i !== sectionIndex) { setSectionDirection(i > sectionIndex ? 1 : -1); setSectionIndex(i) } }}
-                                className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full transition-all duration-300 ${i === sectionIndex ? 'bg-lime-400 w-4 sm:w-5' : 'bg-white/20 hover:bg-white/40'}`}
+                                className={`h-2 rounded-full transition-all duration-300 ${i === sectionIndex ? 'bg-slate-900 w-6 shadow-[2px_0_0_0_#0f172a]' : 'bg-slate-300 w-2 hover:bg-slate-400'}`}
                                 title={s.label}
                             />
                         ))}
                     </div>
-                    <button type="button" onClick={onClose} className="p-1.5 sm:p-2 rounded-lg text-neutral-400 hover:text-white hover:bg-white/10 transition-all">
-                        <X className="w-4 h-4 sm:w-5 sm:h-5" />
+                    <button type="button" onClick={onClose} className="p-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-amber-200 border-2 border-transparent hover:border-slate-900 transition-all">
+                        <X className="w-5 h-5 sm:w-6 sm:h-6" />
                     </button>
                 </div>
             </div>
 
-            {/* Main Card Area */}
-            <div className="flex-1 relative flex items-center justify-center px-5 sm:px-8 py-3 sm:py-6 z-50">
-                {/* Dynamic background blur removed for consistent black background */}
-
-                {/* Animated section container with AnimatePresence for smooth transitions */}
+            {/* Main Card Area - overflow-hidden + bg supaya gambar section lama tidak keliatan saat swipe */}
+            <div className="flex-1 relative flex items-center justify-center px-4 sm:px-8 py-4 sm:py-6 z-50 overflow-hidden bg-slate-100">
                 <AnimatePresence custom={sectionDirection} initial={false}>
                     <motion.div
                         key={sectionIndex}
@@ -557,28 +571,46 @@ export default function PreviewView({
                         exit="exit"
                         transition={{
                             x: { type: 'spring', stiffness: 300, damping: 30 },
-                            opacity: { duration: 0.2 },
-                            scale: { duration: 0.2 },
+                            opacity: { duration: 0.15 },
+                            scale: { duration: 0.15 },
                         }}
-                        className="absolute w-[88%] sm:w-full max-w-[380px] h-[66svh] sm:h-[68svh] select-none z-50"
+                        className="absolute w-[88%] sm:w-full max-w-[380px] h-[66svh] sm:h-[68svh] select-none"
                     >
-                        {/* Render card deck inside animated section */}
+                        {/* Kartu depan selalu terlihat; deck belakang hanya kelihatan saat swipe naik/turun (bukan kiri/kanan) */}
                         {activeDeck.slice(0, 3).reverse().map((card, i, arr) => {
                             const cardIndex = arr.length - 1 - i
+                            const isFrontCard = cardIndex === 0
+                            const isNextCardDuringFlyOff = !!exitingCardId && cardIndex === 1 && exitingDirection === 'up'
+                            const isHorizontalExit = exitingDirection === 'left' || exitingDirection === 'right'
+                            const deckOpacity = isFrontCard ? 1 : (isNextCardDuringFlyOff ? 1 : (isHorizontalExit ? 0 : (showDeckBehind ? 0.85 : 0)))
+                            const isExiting = exitingCardId === card.id
                             return (
                                 <motion.div
                                     key={card.id}
                                     className="absolute inset-0 w-full h-full"
-                                    initial={{ opacity: cardIndex > 0 ? 0 : 1 }}
-                                    animate={{ opacity: isTransitioning && cardIndex > 0 ? 0 : 1 }}
-                                    transition={{ duration: 0.2 }}
-                                    style={{ zIndex: 3 - cardIndex }}
+                                    initial={{ opacity: isFrontCard ? 1 : 0 }}
+                                    animate={{ opacity: deckOpacity }}
+                                    transition={{ duration: (isFrontCard || isNextCardDuringFlyOff) ? 0.2 : 0 }}
+                                    style={{ zIndex: isExiting ? 0 : 3 - cardIndex }}
                                 >
                                     <TinderCard
                                         index={cardIndex}
                                         preventSwipe={preventSwipe}
                                         onSwipe={(dir) => handleSwipe(card.id, dir)}
                                         onCardLeftScreen={(dir) => handleCardLeftScreen(card.id, dir)}
+                                        onDragStart={() => setShowDeckBehind(false)}
+                                        onDrag={({ x, y }) => {
+                                            const absX = Math.abs(x)
+                                            const absY = Math.abs(y)
+                                            const threshold = 20
+                                            setShowDeckBehind(absY > absX && absY > threshold)
+                                        }}
+                                        onDragEnd={() => setShowDeckBehind(false)}
+                                        onFlyOffStart={isFrontCard ? (dir) => {
+                                            setExitingCardId(card.id)
+                                            setExitingDirection(dir)
+                                            if (dir === 'left' || dir === 'right') setShowDeckBehind(false)
+                                        } : undefined}
                                     >
                                         {renderCardContent(card)}
                                     </TinderCard>
@@ -589,11 +621,10 @@ export default function PreviewView({
                 </AnimatePresence>
             </div>
 
-            {/* Bottom Navigation */}
-            <div className="flex-shrink-0 pt-3 pb-2 sm:px-4 sm:py-4 bg-black/80 backdrop-blur-md z-20 w-full overflow-hidden">
-                {/* Section tabs */}
+            {/* Bottom Navigation - bg nyatu dengan halaman */}
+            <div className="flex-shrink-0 pt-3 pb-4 sm:px-6 sm:py-5 bg-slate-100 z-20 w-full overflow-hidden">
                 <div className="flex justify-start sm:justify-center w-full">
-                    <div className="flex items-start sm:gap-4 overflow-x-auto pt-1 pb-2 no-scrollbar snap-x max-w-full w-full sm:w-auto">
+                    <div className="flex items-start sm:gap-6 overflow-x-auto pt-1 pb-2 no-scrollbar snap-x max-w-full w-full sm:w-auto px-2">
                         {sections.map((s, i) => (
                             <button
                                 key={i}
@@ -604,15 +635,15 @@ export default function PreviewView({
                                         setSectionIndex(i)
                                     }
                                 }}
-                                className="flex flex-col items-center gap-1.5 w-[20vw] flex-shrink-0 sm:w-auto sm:min-w-[72px] sm:px-2 snap-center group transition-all"
+                                className="flex flex-col items-center gap-2 w-[22vw] flex-shrink-0 sm:w-auto sm:min-w-[80px] sm:px-2 snap-center group transition-all"
                             >
-                                <div className={`w-12 h-12 sm:w-14 sm:h-14 flex-shrink-0 rounded-full flex items-center justify-center border-2 transition-all duration-300 ${i === sectionIndex
-                                    ? 'border-lime-400 bg-lime-400/10 text-lime-400 scale-105 shadow-[0_0_15px_-3px_rgba(163,230,53,0.4)]'
-                                    : 'border-neutral-800 bg-neutral-900/50 text-neutral-500 lg:group-hover:border-neutral-600 lg:group-hover:text-neutral-300'
+                                <div className={`w-12 h-12 sm:w-16 sm:h-16 flex-shrink-0 rounded-2xl flex items-center justify-center border-2 transition-all duration-300 ${i === sectionIndex
+                                    ? 'border-slate-900 bg-slate-900 text-white scale-105 shadow-[3px_3px_0_0_#0f172a]'
+                                    : 'border-slate-900 bg-white text-slate-600 hover:bg-amber-200'
                                     }`}>
-                                    {React.cloneElement(s.icon as React.ReactElement, { className: 'w-5 h-5 sm:w-6 sm:h-6' })}
+                                    {React.cloneElement(s.icon as React.ReactElement, { className: 'w-5 h-5 sm:w-7 sm:h-7' })}
                                 </div>
-                                <span className={`text-[10px] sm:text-xs text-center truncate w-full px-1 sm:max-w-[72px] transition-colors ${i === sectionIndex ? 'text-lime-400 font-medium' : 'text-neutral-500'}`}>
+                                <span className={`text-[11px] sm:text-xs text-center truncate w-full px-1 sm:max-w-[88px] font-black transition-colors ${i === sectionIndex ? 'text-slate-900' : 'text-slate-600 group-hover:text-slate-900'}`}>
                                     {s.label}
                                 </span>
                             </button>
@@ -620,6 +651,45 @@ export default function PreviewView({
                     </div>
                 </div>
             </div>
+
+            {/* Fullscreen Video Modal - neo-brutalist */}
+            <AnimatePresence>
+                {videoPopupUrl && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[100] bg-slate-900/95 flex flex-col items-center justify-center p-4"
+                    >
+                        <div className="absolute top-4 right-4 z-10">
+                            <button
+                                onClick={() => setVideoPopupUrl(null)}
+                                className="p-3 bg-white hover:bg-amber-200 rounded-xl text-slate-900 border-2 border-slate-900 shadow-[2px_2px_0_0_#0f172a] transition-all"
+                            >
+                                <X className="w-6 h-6" />
+                            </button>
+                        </div>
+
+                        <motion.div
+                            initial={{ scale: 0.95, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.95, opacity: 0 }}
+                            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                            className="w-full max-w-4xl max-h-[85vh] aspect-video rounded-2xl overflow-hidden bg-black border-4 border-slate-900 shadow-[6px_6px_0_0_#0f172a] relative"
+                        >
+                            <video
+                                src={videoPopupUrl}
+                                controls
+                                autoPlay
+                                playsInline
+                                className="w-full h-full object-contain"
+                            >
+                                Maaf, browser Anda tidak mendukung pemutar video.
+                            </video>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             <style>{`
                 .no-scrollbar::-webkit-scrollbar { display: none; }

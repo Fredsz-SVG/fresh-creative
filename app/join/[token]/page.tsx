@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
+import { fetchWithAuth } from '../../../lib/api-client'
 
 export default function JoinAlbumPage() {
   const router = useRouter()
@@ -23,7 +24,7 @@ export default function JoinAlbumPage() {
     const run = async () => {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session?.user) {
-        const res = await fetch(`/api/albums/invite/${encodeURIComponent(token)}`, { credentials: 'include' })
+        const res = await fetchWithAuth(`/api/albums/invite/${encodeURIComponent(token)}`)
         const data = await res.json().catch(() => ({}))
         if (res.ok && data.name) setAlbumName(data.name)
         setStatus('login_required')
@@ -31,7 +32,7 @@ export default function JoinAlbumPage() {
       }
 
       setStatus('joining')
-      const res = await fetch(`/api/albums/invite/${encodeURIComponent(token)}/join`, {
+      const res = await fetchWithAuth(`/api/albums/invite/${encodeURIComponent(token)}/join`, {
         method: 'POST',
         credentials: 'include',
       })

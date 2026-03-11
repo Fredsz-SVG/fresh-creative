@@ -1,9 +1,10 @@
 'use client'
 
-import DashboardTitle from '@/components/dashboard/DashboardTitle'
-import { History, ExternalLink, Loader2, CreditCard, X, Users, User, Search } from 'lucide-react'
+import { History, ExternalLink, Loader2, CreditCard, X, Users, User, Search, RefreshCw, ChevronLeft, ChevronRight, Calendar } from 'lucide-react'
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react'
 import { supabase } from '@/lib/supabase'
+import { fetchWithAuth } from '../../../lib/api-client'
+import Link from 'next/link'
 
 type Transaction = {
   id: string
@@ -49,14 +50,13 @@ export default function AdminRiwayatPage() {
   const currentLoading = loading && transactionsMap[viewMode] === null
 
   const fetchTransactions = useCallback(async (mode: ViewMode, skipLoading = false) => {
-    // Hanya tampilkan loading dari awal jika datanya belum pernah di load atau kosong
     if (!skipLoading) {
       setLoading(true)
     }
     try {
       const ts = Date.now()
       const url = mode === 'all' ? `/api/admin/transactions?scope=all&_t=${ts}` : `/api/admin/transactions?_t=${ts}`
-      const res = await fetch(url, { credentials: 'include', cache: 'no-store' })
+      const res = await fetchWithAuth(url, { credentials: 'include', cache: 'no-store' })
       if (!res.ok) {
         setTransactionsMap(prev => ({ ...prev, [mode]: [] }))
         return
@@ -77,7 +77,6 @@ export default function AdminRiwayatPage() {
     fetchTransactions(viewMode)
   }, [viewMode, fetchTransactions])
 
-  // Saat kembali dari pembayaran (?status=success): sync status + credit dari Xendit (retry), lalu refetch
   useEffect(() => {
     if (typeof window === 'undefined') return
     const params = new URLSearchParams(window.location.search)
@@ -89,7 +88,7 @@ export default function AdminRiwayatPage() {
           const syncWithRetry = async (retries = 2) => {
             for (let i = 0; i <= retries; i++) {
               try {
-                const res = await fetch('/api/credits/sync-invoice', { method: 'POST', credentials: 'include' })
+                const res = await fetchWithAuth('/api/credits/sync-invoice', { method: 'POST' })
                 const data = await res.json().catch(() => ({}))
                 synced = data.synced ?? 0
                 if (synced > 0) break
@@ -110,7 +109,6 @@ export default function AdminRiwayatPage() {
     }
   }, [viewMode, fetchTransactions])
 
-  // Realtime: update daftar saat ada INSERT/UPDATE/DELETE (tanpa filter agar DELETE ikut terkirim)
   useEffect(() => {
     let isActive = true
     let ch: ReturnType<typeof supabase.channel> | null = null
@@ -124,7 +122,6 @@ export default function AdminRiwayatPage() {
           'postgres_changes',
           { event: '*', schema: 'public', table: 'transactions' },
           () => {
-            // Bypass loading screen untuk refresh background
             fetchTransactions(viewMode, true)
           }
         )
@@ -160,13 +157,13 @@ export default function AdminRiwayatPage() {
   return (
     <>
       {invoicePopupUrl && (
-        <div className="fixed inset-0 z-[110] flex flex-col bg-[#0a0a0b]" role="dialog" aria-modal="true" aria-label="Lihat invoice">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 bg-white/5 shrink-0">
-            <h3 className="text-sm font-semibold text-white">Lihat Invoice</h3>
+        <div className="fixed inset-0 z-[110] flex flex-col bg-white" role="dialog" aria-modal="true" aria-label="Lihat invoice">
+          <div className="flex items-center justify-between px-4 py-3 border-b-4 border-slate-900 bg-slate-50 shrink-0">
+            <h3 className="text-base font-black text-slate-900">Invoice Pembayaran</h3>
             <button
               type="button"
               onClick={() => setInvoicePopupUrl(null)}
-              className="flex items-center justify-center w-9 h-9 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
+              className="flex items-center justify-center w-10 h-10 rounded-xl border-2 border-slate-900 bg-white text-slate-600 hover:bg-red-50 hover:text-red-500 shadow-[2px_2px_0_0_#0f172a] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all"
             >
               <X className="w-5 h-5" />
             </button>
@@ -183,167 +180,177 @@ export default function AdminRiwayatPage() {
         </div>
       )}
 
-      <DashboardTitle
-        title="Riwayat Transaksi"
-        subtitle={viewMode === 'mine' ? 'Riwayat transaksi Top Up Anda.' : 'Semua transaksi Top Up dari seluruh user.'}
-      />
+      <div className="flex flex-col gap-2 mb-8">
+        <h1 className="text-3xl font-black text-slate-900 sm:text-4xl tracking-tight">
+          Riwayat Transaksi
+        </h1>
+        <p className="text-slate-600 font-bold text-sm sm:text-base">
+          {viewMode === 'mine' ? 'Daftar riwayat transaksi Top Up Anda.' : 'Monitor semua transaksi Top Up dari seluruh pengguna.'}
+        </p>
+      </div>
 
-      <div className="flex flex-wrap gap-2 mb-4">
+      <div className="flex flex-wrap gap-3 mb-8">
         <button
           type="button"
           onClick={() => { setViewMode('mine'); setCurrentPage(1); }}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-colors ${viewMode === 'mine' ? 'bg-lime-500 text-black' : 'bg-white/10 text-gray-400 hover:bg-white/15 hover:text-white'}`}
+          className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-sm font-black border-4 border-slate-900 transition-all active:scale-95 ${viewMode === 'mine' ? 'bg-violet-400 text-slate-900 shadow-[4px_4px_0_0_#0f172a]' : 'bg-white text-slate-500 hover:bg-slate-50 shadow-none'}`}
         >
-          <User className="w-4 h-4" />
-          Riwayat saya
+          <User className="w-5 h-5" strokeWidth={3} />
+          Riwayat Saya
         </button>
         <button
           type="button"
           onClick={() => { setViewMode('all'); setCurrentPage(1); }}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-colors ${viewMode === 'all' ? 'bg-lime-500 text-black' : 'bg-white/10 text-gray-400 hover:bg-white/15 hover:text-white'}`}
+          className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-sm font-black border-4 border-slate-900 transition-all active:scale-95 ${viewMode === 'all' ? 'bg-sky-400 text-slate-900 shadow-[4px_4px_0_0_#0f172a]' : 'bg-white text-slate-500 hover:bg-slate-50 shadow-none'}`}
         >
-          <Users className="w-4 h-4" />
-          Riwayat semua user
+          <Users className="w-5 h-5" strokeWidth={3} />
+          Riwayat Semua User
         </button>
       </div>
 
       {viewMode === 'all' && (
-        <div className="mb-6 relative max-w-md">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Search className="h-4 w-4 text-gray-400" />
+        <div className="mb-8 relative max-w-2xl">
+          <div className="flex items-center gap-3 p-4 bg-slate-50 border-4 border-slate-900 rounded-3xl shadow-inner group focus-within:bg-white transition-all">
+            <Search className="h-5 w-5 text-slate-400 group-focus-within:text-slate-900 transition-colors" strokeWidth={3} />
+            <input
+              type="text"
+              placeholder="Cari nama, email, atau ID transaksi..."
+              value={searchQuery}
+              onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
+              className="w-full bg-transparent text-base font-bold text-slate-900 placeholder:text-slate-400 focus:outline-none"
+            />
           </div>
-          <input
-            type="text"
-            placeholder="Cari nama, email, atau ID transaksi..."
-            value={searchQuery}
-            onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
-            className="w-full pl-10 pr-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-lime-500/50 text-white placeholder-gray-500 transition-all"
-          />
         </div>
       )}
 
       {currentLoading ? (
-        <div className="space-y-4">
+        <div className="space-y-6">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="rounded-2xl border border-white/5 bg-white/[0.02] p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 animate-pulse">
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 rounded-xl bg-white/5 shrink-0" />
-                <div className="space-y-2 py-1">
-                  <div className="h-4 w-32 bg-white/5 rounded" />
-                  <div className="space-y-1">
-                    <div className="h-3 w-48 bg-white/5 rounded" />
-                    <div className="h-4 w-16 bg-white/5 rounded" />
-                  </div>
+            <div key={i} className="rounded-3xl border-4 border-slate-900 bg-white p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 animate-pulse shadow-[6px_6px_0_0_#0f172a]">
+              <div className="flex items-center gap-5">
+                <div className="w-14 h-14 rounded-2xl bg-slate-100 shrink-0 border-2 border-slate-200" />
+                <div className="space-y-3">
+                  <div className="h-5 bg-slate-100 rounded-lg w-48" />
+                  <div className="h-4 bg-slate-50 rounded-lg w-64" />
                 </div>
               </div>
-              <div className="flex flex-col items-end gap-2">
-                <div className="h-5 w-24 bg-white/5 rounded" />
-                <div className="h-4 w-16 bg-white/5 rounded-full" />
+              <div className="flex flex-col items-end gap-3">
+                <div className="h-6 bg-slate-100 rounded-lg w-32" />
+                <div className="h-5 bg-slate-100 rounded-full w-20" />
               </div>
             </div>
           ))}
         </div>
       ) : transactions.length === 0 ? (
-        <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6 sm:p-8">
-          <div className="flex flex-col items-center justify-center py-12 text-center">
-            <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center mb-4 text-gray-500">
-              <History className="w-8 h-8" />
+        <div className="rounded-[40px] border-4 border-slate-900 bg-white p-12 shadow-[12px_12px_0_0_#0f172a]">
+          <div className="flex flex-col items-center justify-center text-center">
+            <div className="w-24 h-24 rounded-3xl bg-slate-50 border-4 border-slate-100 flex items-center justify-center mb-6 text-slate-300">
+              <History className="w-12 h-12" strokeWidth={1.5} />
             </div>
-            <p className="text-sm font-medium text-white mb-1">Belum ada riwayat</p>
-            <p className="text-xs text-gray-500 max-w-sm">
-              {viewMode === 'mine' ? 'Riwayat transaksi Top Up Anda akan muncul di sini.' : 'Belum ada transaksi dari user.'}
+            <h3 className="text-xl font-black text-slate-900 mb-2">Belum Ada Riwayat</h3>
+            <p className="text-sm font-bold text-slate-400 max-w-sm">
+              {viewMode === 'mine' ? 'Transaksi Top Up atau pemesanan album Anda akan tercatat secara otomatis di sini.' : 'Belum ada transaksi yang tercatat dalam sistem.'}
             </p>
           </div>
         </div>
       ) : filteredTransactions.length === 0 && viewMode === 'all' && searchQuery ? (
-        <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6 sm:p-8">
-          <div className="flex flex-col items-center justify-center py-12 text-center">
-            <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center mb-4 text-gray-500">
-              <Search className="w-8 h-8" />
+        <div className="rounded-[40px] border-4 border-slate-900 bg-white p-12 shadow-[12px_12px_0_0_#0f172a]">
+          <div className="flex flex-col items-center justify-center text-center">
+            <div className="w-24 h-24 rounded-3xl bg-slate-50 border-4 border-slate-100 flex items-center justify-center mb-6 text-slate-300">
+              <Search className="w-12 h-12" strokeWidth={1.5} />
             </div>
-            <p className="text-sm font-medium text-white mb-1">Hasil tidak ditemukan</p>
-            <p className="text-xs text-gray-500 max-w-sm">
-              Tidak ada transaksi yang cocok dengan pencarian "{searchQuery}"
+            <h3 className="text-xl font-black text-slate-900 mb-2">Hasil Tidak Ditemukan</h3>
+            <p className="text-sm font-bold text-slate-400 max-w-sm">
+              Tidak ada transaksi yang cocok dengan pencarian &quot;<span className="text-slate-900">{searchQuery}</span>&quot;
             </p>
           </div>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-6">
           {paginatedTransactions.map((tx) => (
             <div
               key={tx.id}
-              className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 flex flex-col md:flex-row md:items-center justify-between gap-4"
+              className="rounded-3xl border-4 border-slate-900 bg-white p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-[6px_6px_0_0_#0f172a] hover:shadow-[10px_10px_0_0_#0f172a] hover:-translate-x-1 hover:-translate-y-1 transition-all"
             >
-              <div className="flex items-start gap-4">
+              <div className="flex items-center gap-6">
                 <div
-                  className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${tx.status === 'PAID' || tx.status === 'SETTLED'
-                    ? 'bg-lime-500/20 text-lime-400'
+                  className={`w-14 h-14 rounded-2xl border-4 border-slate-900 flex items-center justify-center shrink-0 shadow-[4px_4px_0_0_#0f172a] ${tx.status === 'PAID' || tx.status === 'SETTLED'
+                    ? 'bg-emerald-300'
                     : tx.status === 'PENDING'
-                      ? 'bg-yellow-500/20 text-yellow-400'
-                      : 'bg-red-500/20 text-red-400'
+                      ? 'bg-orange-300'
+                      : 'bg-red-400'
                     }`}
                 >
-                  <CreditCard className="w-6 h-6" />
+                  <CreditCard className="w-6 h-6 text-slate-900" strokeWidth={2.5} />
                 </div>
-                <div>
-                  <h4 className="font-semibold text-white">
-                    {tx.description || (tx.album_name ? `Pembayaran Album: ${tx.album_name}` : (tx.credits != null ? `Top Up ${tx.credits} Credits` : 'Top Up Credit'))}
+                <div className="space-y-1">
+                  <h4 className="text-lg font-black text-slate-900 leading-tight">
+                    {tx.description || (tx.album_name ? tx.album_name : (tx.credits != null ? `Top Up ${tx.credits} Credits` : 'Transaction'))}
                   </h4>
-                  <div className="text-xs text-gray-400 mt-1 space-y-0.5">
+                  <div className="flex flex-col gap-1.5">
                     {viewMode === 'all' && (tx.user_full_name != null || tx.user_email != null) && (
-                      <>
-                        <p className="text-white/90 font-medium">{tx.user_full_name ?? '-'}</p>
-                        <p>{tx.user_email ?? '-'}</p>
-                      </>
+                      <div className="flex items-center gap-2 text-[13px] font-bold text-slate-500 bg-slate-50 px-2 py-1 rounded-lg border border-slate-200 w-fit">
+                        <User className="w-3.5 h-3.5" />
+                        <span>{tx.user_full_name ?? '-'}</span>
+                        <span className="w-1 h-1 rounded-full bg-slate-300" />
+                        <span className="font-medium text-slate-400">{tx.user_email ?? '-'}</span>
+                      </div>
                     )}
-                    <p>
-                      {new Date(tx.created_at).toLocaleDateString('id-ID', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })}
-                    </p>
-                    {tx.external_id && (
-                      <p className="font-mono text-[10px] text-gray-500" title={tx.external_id}>
-                        ID: TR-{tx.external_id.split('_ts_')[1] || tx.external_id.slice(-8)}
-                      </p>
-                    )}
-                    {tx.payment_method && (
-                      <p className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-white/5 border border-white/10 w-fit">
-                        {tx.payment_method.replace(/_/g, ' ').toUpperCase()}
-                      </p>
-                    )}
+                    <div className="flex flex-wrap items-center gap-3 text-[12px] font-bold text-slate-400">
+                      <span className="flex items-center gap-1.5">
+                        <Calendar className="w-3.5 h-3.5" />
+                        {new Date(tx.created_at).toLocaleDateString('id-ID', {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </span>
+                      {tx.external_id && (
+                        <span className="flex items-center gap-1.5 font-mono">
+                          <code className="bg-slate-50 px-1.5 rounded text-slate-400 border border-slate-100">
+                            TR-{tx.external_id.split('_ts_')[1] || tx.external_id.slice(-8)}
+                          </code>
+                        </span>
+                      )}
+                      {tx.payment_method && (
+                        <span className="px-2 py-0.5 rounded border-2 border-slate-900 bg-indigo-50 text-slate-600 font-black text-[10px] uppercase">
+                          {tx.payment_method.replace(/_/g, ' ')}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
 
-              <div className="flex items-center justify-between md:flex-col md:items-end gap-3 md:gap-2">
+              <div className="flex items-center justify-between md:flex-col md:items-end gap-6 md:gap-3 md:pl-6 md:border-l-4 md:border-slate-100">
                 <div className="text-right">
-                  <span className="block font-bold text-white mb-1">
+                  <span className="block text-2xl font-black text-slate-900">
                     Rp {tx.amount.toLocaleString('id-ID')}
                   </span>
-                  <span
-                    className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${tx.status === 'PAID' || tx.status === 'SETTLED'
-                      ? 'bg-lime-500/10 text-lime-400 border border-lime-500/20'
-                      : tx.status === 'PENDING'
-                        ? 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20'
-                        : 'bg-red-500/10 text-red-400 border border-red-500/20'
-                      }`}
-                  >
-                    {tx.status === 'PAID' || tx.status === 'SETTLED' ? 'SUCCESS' : tx.status}
-                  </span>
+                  <div className="mt-1">
+                    <span
+                      className={`text-[10px] font-black px-2.5 py-1 rounded-lg border-2 border-slate-900 shadow-[2px_2px_0_0_#0f172a] uppercase tracking-widest ${tx.status === 'PAID' || tx.status === 'SETTLED'
+                        ? 'bg-emerald-300 text-slate-900'
+                        : tx.status === 'PENDING'
+                          ? 'bg-orange-300 text-slate-900'
+                          : 'bg-red-400 text-white'
+                        }`}
+                    >
+                      {tx.status === 'PAID' || tx.status === 'SETTLED' ? 'SUCCESS' : tx.status}
+                    </span>
+                  </div>
                 </div>
 
                 {tx.invoice_url && tx.status === 'PENDING' && (
                   <button
                     type="button"
                     onClick={() => tx.invoice_url && setInvoicePopupUrl(tx.invoice_url)}
-                    className="flex items-center gap-1.5 text-xs font-medium bg-lime-500 text-black px-3 py-1.5 rounded-lg hover:bg-lime-400 transition-colors"
+                    className="flex items-center gap-2 text-sm font-black bg-orange-400 text-slate-900 px-5 py-2.5 rounded-2xl border-2 border-slate-900 hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none shadow-[3px_3px_0_0_#0f172a] transition-all"
                   >
                     Lanjutkan Bayar
-                    <ExternalLink className="w-3 h-3" />
+                    <ExternalLink className="w-4 h-4" strokeWidth={3} />
                   </button>
                 )}
               </div>
@@ -354,29 +361,29 @@ export default function AdminRiwayatPage() {
 
       {/* Pagination Controls */}
       {!currentLoading && filteredTransactions.length > itemsPerPage && (
-        <div className="flex items-center justify-between mt-6 flex-wrap gap-4">
-          <p className="text-xs text-gray-400">
-            Menampilkan {((currentPage - 1) * itemsPerPage) + 1} hingga {Math.min(currentPage * itemsPerPage, filteredTransactions.length)} dari {filteredTransactions.length} entri
+        <div className="flex items-center justify-between mt-10 flex-wrap gap-4 px-2">
+          <p className="text-sm font-black text-slate-400">
+            Menampilkan <span className="text-slate-900">{((currentPage - 1) * itemsPerPage) + 1} - {Math.min(currentPage * itemsPerPage, filteredTransactions.length)}</span> dari <span className="text-slate-900">{filteredTransactions.length}</span> data
           </p>
-          <div className="flex gap-1.5 shrink-0">
+          <div className="flex gap-2 shrink-0">
             <button
               type="button"
               disabled={currentPage === 1}
               onClick={() => setCurrentPage(p => p - 1)}
-              className="px-3 py-1.5 text-xs font-medium rounded-lg bg-white/5 border border-white/10 text-white hover:bg-white/10 disabled:opacity-50 transition-colors"
+              className="flex items-center justify-center w-10 h-10 rounded-xl bg-white border-2 border-slate-900 text-slate-900 shadow-[3px_3px_0_0_#0f172a] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none disabled:opacity-50 transition-all"
             >
-              Sebelumnya
+              <ChevronLeft className="w-5 h-5" strokeWidth={3} />
             </button>
-            <div className="flex items-center px-3 py-1.5 text-xs font-medium bg-white/5 border border-white/10 rounded-lg text-white">
+            <div className="flex items-center px-4 py-2 text-sm font-black bg-indigo-200 border-2 border-slate-900 shadow-[3px_3px_0_0_#0f172a] rounded-xl text-slate-900">
               {currentPage} / {totalPages}
             </div>
             <button
               type="button"
               disabled={currentPage === totalPages}
               onClick={() => setCurrentPage(p => p + 1)}
-              className="px-3 py-1.5 text-xs font-medium rounded-lg bg-white/5 border border-white/10 text-white hover:bg-white/10 disabled:opacity-50 transition-colors"
+              className="flex items-center justify-center w-10 h-10 rounded-xl bg-white border-2 border-slate-900 text-slate-900 shadow-[3px_3px_0_0_#0f172a] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none disabled:opacity-50 transition-all"
             >
-              Selanjutnya
+              <ChevronRight className="w-5 h-5" strokeWidth={3} />
             </button>
           </div>
         </div>

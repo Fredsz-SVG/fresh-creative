@@ -24,8 +24,8 @@ export default function FlipbookView({
   return (
     <div className="flex flex-col h-full overflow-hidden relative">
       {(flipbookPreviewMode || !canManage) ? (
-        <div className="flex-1 flex items-center justify-center p-4">
-          <ManualFlipbookViewer pages={manualPages} onPlayVideo={onPlayVideo} />
+        <div className="flex-1 min-h-0 flex flex-col p-0">
+          <ManualFlipbookViewer pages={manualPages} onPlayVideo={onPlayVideo} className="w-full h-full" />
         </div>
       ) : (
         <LayoutEditor

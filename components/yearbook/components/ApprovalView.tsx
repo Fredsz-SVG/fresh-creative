@@ -3,6 +3,9 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { Edit3, Plus, Minus, Check, X, Clock, ClipboardList, Copy, Link as LinkIcon, CreditCard, Loader2, Wallet } from 'lucide-react'
 import { toast } from 'sonner'
+import { apiUrl } from '../../../lib/api-url'
+import { fetchWithAuth } from '../../../lib/api-client'
+import TeamView from './TeamView'
 
 type AlbumClass = { id: string; name: string; sort_order?: number; student_count?: number }
 type JoinRequest = {
@@ -31,9 +34,9 @@ type PricingPackage = {
 interface ApprovalViewProps {
   joinStats: JoinStats | null
   canManage: boolean
-  approvalTab: 'pending' | 'approved'
-  setApprovalTab: (tab: 'pending' | 'approved') => void
-  joinRequests: JoinRequest[]
+  approvalTab: 'pending' | 'approved' | 'team'
+  setApprovalTab: (tab: 'pending' | 'approved' | 'team') => void
+  joinRequests: JoinRequest[] // already filtered by parent (pending or approved list for current tab)
   classes: AlbumClass[]
   inviteToken: string | null
   inviteExpiresAt: string | null
@@ -45,6 +48,12 @@ interface ApprovalViewProps {
   onRejectRequest: (requestId: string) => void | Promise<void>
   albumId?: string
   paymentStatus?: string
+  members: any[]
+  isOwner: boolean
+  isGlobalAdmin?: boolean
+  currentUserId?: string | null
+  onUpdateRole: (userId: string, newRole: 'admin' | 'member') => void | Promise<void>
+  onRemoveMember: (userId: string) => void | Promise<void>
 }
 
 export default function ApprovalView({
@@ -64,11 +73,22 @@ export default function ApprovalView({
   onRejectRequest,
   albumId,
   paymentStatus,
+  members,
+  isOwner,
+  isGlobalAdmin = false,
+  currentUserId,
+  onUpdateRole,
+  onRemoveMember,
 }: ApprovalViewProps) {
   const [editingLimit, setEditingLimit] = useState(false)
   const [editLimitValue, setEditLimitValue] = useState('')
   const [originalLimitValue, setOriginalLimitValue] = useState(0)
   const [approvalClassIndex, setApprovalClassIndex] = useState(0)
+
+  // Reset class index when switching tab so each tab starts from awal
+  useEffect(() => {
+    setApprovalClassIndex(0)
+  }, [approvalTab])
   const [assigningRequest, setAssigningRequest] = useState<string | null>(null)
   const [selectedClassForAssign, setSelectedClassForAssign] = useState('')
   const [pricingPackages, setPricingPackages] = useState<PricingPackage[]>([])
@@ -80,7 +100,7 @@ export default function ApprovalView({
   useEffect(() => {
     if (!editingLimit) return
     setLoadingPricing(true)
-    fetch('/api/pricing')
+    fetchWithAuth('/api/pricing')
       .then(res => res.ok ? res.json() : [])
       .then((data: unknown[]) => {
         if (Array.isArray(data) && data.length > 0) {
@@ -133,9 +153,8 @@ export default function ApprovalView({
 
       // DO NOT update students_count here — it will be updated by webhook after payment succeeds
       // Only create the invoice with the new limit info
-      const res = await fetch(`/api/albums/${albumId}/checkout`, {
+      const res = await fetchWithAuth(`/api/albums/${albumId}/checkout`, {
         method: 'POST',
-        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           upgrade: isUpgrade,
@@ -221,13 +240,13 @@ export default function ApprovalView({
     <div className="max-w-5xl mx-auto px-3 py-3 sm:px-3 sm:py-4">
       {/* Checkout Invoice Popup */}
       {checkoutInvoiceUrl && (
-        <div className="fixed inset-0 z-[110] flex flex-col bg-[#0a0a0b]" role="dialog" aria-modal="true" aria-label="Pembayaran">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 bg-white/5 shrink-0">
-            <h3 className="text-sm font-semibold text-white">Selesaikan Pembayaran</h3>
+        <div className="fixed inset-0 z-[110] flex flex-col bg-white" role="dialog" aria-modal="true" aria-label="Pembayaran">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-gray-100 shrink-0">
+            <h3 className="text-sm font-semibold text-gray-800">Selesaikan Pembayaran</h3>
             <button
               type="button"
               onClick={() => setCheckoutInvoiceUrl(null)}
-              className="flex items-center justify-center w-9 h-9 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
+              className="flex items-center justify-center w-9 h-9 rounded-lg text-gray-400 hover:text-gray-800 hover:bg-gray-100 transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
@@ -246,56 +265,49 @@ export default function ApprovalView({
 
       <div className="mb-4 sm:mb-5">
         {joinStats && (
-          <div className="flex flex-wrap items-center justify-center sm:justify-start gap-x-3 gap-y-2 mt-1.5 sm:mt-2">
-            <div className="flex items-center gap-1">
-              <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-lime-500 flex-shrink-0" />
-              <span className="text-[10px] sm:text-xs text-gray-400">
-                Terisi <span className="text-lime-400 font-semibold">{joinStats.approved_count}</span>/
-                {joinStats.limit_count || '∞'}
-              </span>
-              {canManage && !editingLimit && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    const currentLimit = joinStats.limit_count || 0
-                    setEditLimitValue(String(currentLimit))
-                    setOriginalLimitValue(Number(currentLimit))
-                    setEditingLimit(true)
-                  }}
-                  className="w-[14px] h-[14px] sm:w-4 sm:h-4 rounded-full bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white flex items-center justify-center transition-colors flex-shrink-0 touch-manipulation"
-                  title="Ubah batas"
-                >
-                  <Edit3 className="w-[7px] h-[7px] sm:w-2.5 sm:h-2.5" />
-                </button>
-              )}
+          <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4 mb-8 p-6 bg-white border-4 border-slate-900 rounded-[32px] shadow-[10px_10px_0_0_#0f172a]">
+            <div className="flex flex-col items-center px-4 border-r-2 border-slate-100">
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Terisi</span>
+              <div className="flex items-center gap-2">
+                <span className="text-2xl font-black text-slate-900">{joinStats.approved_count}</span>
+                <span className="text-slate-400 font-bold text-sm">/ {joinStats.limit_count || '∞'}</span>
+                {canManage && !editingLimit && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const currentLimit = joinStats.limit_count || 0
+                      setEditLimitValue(String(currentLimit))
+                      setOriginalLimitValue(Number(currentLimit))
+                      setEditingLimit(true)
+                    }}
+                    className="w-6 h-6 rounded-lg bg-slate-100 border-2 border-slate-900 text-slate-900 flex items-center justify-center hover:bg-amber-300 transition-all"
+                  >
+                    <Edit3 className="w-3 h-3" strokeWidth={3} />
+                  </button>
+                )}
+              </div>
             </div>
-            <span className="text-gray-600 text-[10px] sm:text-xs hidden sm:inline">•</span>
-            <div className="flex items-center gap-1">
-              <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-amber-500 flex-shrink-0" />
-              <span className="text-[10px] sm:text-xs text-gray-400">
-                <span className="text-amber-400 font-semibold">{joinStats.pending_count}</span> Menunggu
-              </span>
+
+            <div className="flex flex-col items-center px-4 border-r-2 border-slate-100">
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Menunggu</span>
+              <span className="text-2xl font-black text-amber-500">{joinStats.pending_count}</span>
             </div>
+
             {joinStats.available_slots !== 999999 && (
-              <>
-                <span className="text-gray-600 text-[10px] sm:text-xs hidden sm:inline">•</span>
-                <div className="flex items-center gap-1">
-                  <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-blue-500 flex-shrink-0" />
-                  <span className="text-[10px] sm:text-xs text-gray-400">
-                    <span className="text-blue-400 font-semibold">{joinStats.available_slots}</span> Sisa
-                  </span>
-                </div>
-              </>
+              <div className="flex flex-col items-center px-4">
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Sisa Slot</span>
+                <span className="text-2xl font-black text-indigo-500">{joinStats.available_slots}</span>
+              </div>
             )}
           </div>
         )}
 
         {editingLimit && (
-          <div className="mt-3 p-3 rounded-xl bg-white/[0.03] border border-white/10">
-            <div className="flex flex-col gap-2.5">
+          <div className="mt-4 p-6 rounded-[24px] bg-white border-4 border-slate-900 shadow-[6px_6px_0_0_#0f172a] animate-in zoom-in-95 duration-200">
+            <div className="flex flex-col gap-4">
               <div className="flex items-center justify-between">
-                <span className="text-xs text-gray-400 font-medium">Ubah Batas Siswa</span>
-                <span className="text-[10px] text-gray-500">Terisi: {joinStats?.approved_count || 0}</span>
+                <span className="text-xs text-slate-900 font-black uppercase tracking-widest">Ubah Batas Siswa</span>
+                <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Terisi: {joinStats?.approved_count || 0}</span>
               </div>
               <div className="flex items-center justify-center gap-2">
                 <button
@@ -308,9 +320,9 @@ export default function ApprovalView({
                   disabled={
                     parseInt(editLimitValue) <= Math.max(originalLimitValue, joinStats?.approved_count || 0)
                   }
-                  className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 text-gray-400 hover:text-red-400 hover:bg-red-500/10 disabled:opacity-20 disabled:cursor-not-allowed flex items-center justify-center transition-colors"
+                  className="w-12 h-12 rounded-xl bg-slate-100 border-2 border-slate-900 text-slate-900 hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition-all shadow-[2px_2px_0_0_#0f172a] active:shadow-none active:translate-x-0.5 active:translate-y-0.5"
                 >
-                  <Minus className="w-3.5 h-3.5" />
+                  <Minus className="w-5 h-5" strokeWidth={3} />
                 </button>
                 <input
                   type="number"
@@ -321,23 +333,23 @@ export default function ApprovalView({
                     if (!isNaN(v) && v < (joinStats?.approved_count || 1)) return
                     setEditLimitValue(e.target.value)
                   }}
-                  className="w-16 px-2 py-1.5 rounded-lg bg-white/5 border border-white/10 text-app text-center text-base font-bold focus:outline-none focus:border-lime-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  className="flex-1 w-full max-w-[120px] px-2 py-3 rounded-xl bg-white border-2 border-slate-900 text-slate-900 text-center text-xl font-black focus:outline-none focus:ring-2 focus:ring-indigo-500/20 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none shadow-[inset_2px_2px_0_0_rgba(15,23,42,0.1)] transition-all"
                 />
                 <button
                   type="button"
                   onClick={() => setEditLimitValue(String((parseInt(editLimitValue) || 0) + 1))}
-                  className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 text-gray-400 hover:text-lime-400 hover:bg-lime-500/10 flex items-center justify-center transition-colors"
+                  className="w-12 h-12 rounded-xl bg-indigo-50 border-2 border-indigo-200 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-100 flex items-center justify-center transition-all shadow-[2px_2px_0_0_#c7d2fe] active:shadow-none active:translate-x-0.5 active:translate-y-0.5"
                 >
-                  <Plus className="w-3.5 h-3.5" />
+                  <Plus className="w-5 h-5" strokeWidth={3} />
                 </button>
               </div>
-              <div className="flex items-center justify-center gap-1.5">
+              <div className="flex items-center justify-center gap-2 mt-2">
                 {[10, 50, 100].map((n) => (
                   <button
                     key={n}
                     type="button"
                     onClick={() => setEditLimitValue(String((parseInt(editLimitValue) || 0) + n))}
-                    className="px-2.5 py-1 rounded bg-white/5 text-gray-500 hover:text-white hover:bg-white/10 transition-colors text-[11px] font-medium"
+                    className="flex-1 py-2 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border-2 border-emerald-200 transition-all text-xs font-black shadow-[2px_2px_0_0_#a7f3d0] active:shadow-none active:translate-x-0.5 active:translate-y-0.5"
                   >
                     +{n}
                   </button>
@@ -346,26 +358,26 @@ export default function ApprovalView({
 
               {/* Pricing Info - shown when increasing limit */}
               {isIncreasingLimit && cheapestPackage && (
-                <div className="p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/20">
-                  <div className="flex items-center gap-1.5 mb-1.5">
-                    <Wallet className="w-3 h-3 text-amber-400 flex-shrink-0" />
-                    <span className="text-[11px] font-semibold text-amber-400">Biaya Tambahan Anggota</span>
+                <div className="p-4 rounded-xl bg-amber-50 border-2 border-amber-500 shadow-[2px_2px_0_0_#f59e0b]">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Wallet className="w-4 h-4 text-amber-500 flex-shrink-0" strokeWidth={3} />
+                    <span className="text-xs font-black text-amber-600 uppercase tracking-widest">Biaya Tambahan Anggota</span>
                   </div>
-                  <div className="space-y-1">
-                    <div className="flex items-center justify-between text-[10px]">
-                      <span className="text-gray-400">Tambahan anggota</span>
-                      <span className="text-white font-medium">+{addedStudents} siswa</span>
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-center justify-between text-xs font-bold text-slate-700">
+                      <span>Tambahan anggota</span>
+                      <span>+{addedStudents} siswa</span>
                     </div>
-                    <div className="flex items-center justify-between text-[10px]">
-                      <span className="text-gray-400">Harga per siswa</span>
-                      <span className="text-white font-medium">Rp {cheapestPackage.pricePerStudent.toLocaleString('id-ID')}</span>
+                    <div className="flex items-center justify-between text-xs font-bold text-slate-700">
+                      <span>Harga per siswa</span>
+                      <span>Rp {cheapestPackage.pricePerStudent.toLocaleString('id-ID')}</span>
                     </div>
-                    <div className="border-t border-amber-500/20 pt-1 mt-1">
+                    <div className="border-t-2 border-amber-500/20 pt-2 mt-1">
                       <div className="flex items-center justify-between">
-                        <span className="text-[11px] text-amber-400 font-semibold">
+                        <span className="text-[10px] text-amber-600 font-black uppercase tracking-widest">
                           {paymentStatus === 'paid' ? 'Biaya Tambahan' : 'Total Baru'}
                         </span>
-                        <span className="text-sm text-amber-400 font-bold">
+                        <span className="text-sm text-amber-600 font-black">
                           Rp {(paymentStatus === 'paid' ? additionalPrice : estimatedPrice).toLocaleString('id-ID')}
                         </span>
                       </div>
@@ -376,16 +388,16 @@ export default function ApprovalView({
 
               {loadingPricing && isIncreasingLimit && (
                 <div className="flex items-center justify-center py-2">
-                  <Loader2 className="w-4 h-4 text-lime-500 animate-spin" />
-                  <span className="text-[10px] text-gray-500 ml-1.5">Memuat harga...</span>
+                  <Loader2 className="w-5 h-5 text-indigo-500 animate-spin" strokeWidth={3} />
+                  <span className="text-[10px] text-slate-500 font-bold ml-2 uppercase tracking-widest">Memuat harga...</span>
                 </div>
               )}
 
-              <div className="flex gap-2">
+              <div className="flex gap-2 w-full">
                 <button
                   type="button"
                   onClick={() => setEditingLimit(false)}
-                  className="flex-1 px-2.5 py-1.5 rounded-lg bg-white/5 text-gray-400 hover:text-white hover:bg-white/10 transition-colors text-xs font-medium"
+                  className="flex-1 py-3 px-4 rounded-xl bg-white border-2 border-slate-900 text-slate-900 hover:bg-slate-50 transition-all font-black text-xs uppercase tracking-widest shadow-[2px_2px_0_0_#0f172a] active:shadow-none active:translate-x-0.5 active:translate-y-0.5"
                 >
                   Batal
                 </button>
@@ -394,12 +406,12 @@ export default function ApprovalView({
                     type="button"
                     disabled={savingLimit || loadingCheckout || !cheapestPackage}
                     onClick={handleSaveLimit}
-                    className="flex-1 px-2.5 py-1.5 rounded-lg bg-amber-600 text-white hover:bg-amber-500 transition-colors text-xs font-medium disabled:opacity-50 flex items-center justify-center gap-1.5"
+                    className="flex-[2] py-3 px-4 rounded-xl bg-amber-400 border-2 border-slate-900 text-slate-900 hover:bg-amber-500 transition-all font-black text-xs uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-[2px_2px_0_0_#0f172a] active:shadow-none active:translate-x-0.5 active:translate-y-0.5"
                   >
                     {loadingCheckout ? (
-                      <Loader2 className="w-3 h-3 animate-spin" />
+                      <Loader2 className="w-4 h-4 animate-spin" strokeWidth={3} />
                     ) : (
-                      <CreditCard className="w-3 h-3" />
+                      <CreditCard className="w-4 h-4" strokeWidth={3} />
                     )}
                     {loadingCheckout ? 'Memproses...' : 'Bayar & Tambah'}
                   </button>
@@ -408,9 +420,13 @@ export default function ApprovalView({
                     type="button"
                     disabled={savingLimit}
                     onClick={handleSaveLimit}
-                    className="flex-1 px-2.5 py-1.5 rounded-lg bg-lime-600 text-white hover:bg-lime-500 transition-colors text-xs font-medium disabled:opacity-50 flex items-center justify-center gap-1.5"
+                    className="flex-[2] py-3 px-4 rounded-xl bg-indigo-500 border-2 border-slate-900 text-white hover:bg-indigo-600 transition-all font-black text-xs uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-[2px_2px_0_0_#0f172a] active:shadow-none active:translate-x-0.5 active:translate-y-0.5"
                   >
-                    <Check className="w-3 h-3" />
+                    {savingLimit ? (
+                      <Loader2 className="w-4 h-4 animate-spin" strokeWidth={3} />
+                    ) : (
+                      <Check className="w-4 h-4" strokeWidth={3} />
+                    )}
                     {savingLimit ? 'Menyimpan...' : 'Simpan'}
                   </button>
                 )}
@@ -419,51 +435,44 @@ export default function ApprovalView({
           </div>
         )}
 
-        <div className="mt-2 sm:mt-3 p-2.5 sm:p-3 rounded-lg sm:rounded-xl bg-white/[0.03] border border-white/10">
-          <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2">
-            <LinkIcon className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-gray-500 flex-shrink-0" />
-            <span className="text-[10px] sm:text-xs text-gray-400 font-medium">Kode Undangan</span>
+        <div className="mt-4 p-6 rounded-[32px] bg-indigo-50 border-4 border-slate-900 shadow-[8px_8px_0_0_#0f172a]">
+          <div className="flex items-center gap-2 mb-4">
+            <LinkIcon className="w-4 h-4 text-slate-900" strokeWidth={3} />
+            <span className="text-xs font-black text-slate-900 uppercase tracking-widest">Akses Registrasi Siswa</span>
             {inviteToken && inviteExpiresAt && (
-              <span className="ml-auto text-[10px] text-gray-600">
+              <span className="ml-auto text-[10px] font-black uppercase tracking-widest">
                 {new Date(inviteExpiresAt) > new Date() ? (
-                  <>
-                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-green-500 mr-0.5 align-middle" />
-                    Aktif
-                  </>
+                  <span className="text-emerald-500">Active</span>
                 ) : (
-                  <>
-                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 mr-0.5 align-middle" />
-                    Kadaluarsa
-                  </>
+                  <span className="text-red-500">Expired</span>
                 )}
               </span>
             )}
           </div>
           {inviteToken ? (
-            <div className="flex flex-col gap-1.5">
-              <div className="flex items-center gap-1.5">
-                <span className="font-mono font-semibold text-app text-sm px-2 py-1.5 rounded-lg bg-white/5 border border-white/10">
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center gap-3">
+                <div className="flex-1 font-mono font-black text-slate-900 text-lg px-4 py-3 rounded-xl bg-white border-2 border-slate-900">
                   {inviteToken}
-                </span>
+                </div>
                 <button
                   type="button"
                   onClick={() => {
                     navigator.clipboard.writeText(inviteToken)
                     toast.success('Kode disalin!')
                   }}
-                  className="px-3 py-1.5 rounded-lg bg-lime-600 text-white hover:bg-lime-500 transition-colors text-[11px] font-medium flex items-center gap-1 whitespace-nowrap"
+                  className="px-6 py-4 rounded-xl bg-slate-900 text-white hover:bg-slate-800 transition-all text-xs font-black uppercase shadow-[4px_4px_0_0_#4f46e5] active:shadow-none translate-y-[-2px] active:translate-y-0"
                 >
-                  <Copy className="w-3 h-3" />
-                  Salin kode
+                  <Copy className="w-4 h-4 inline mr-2" /> Salin
                 </button>
               </div>
               <button
                 type="button"
                 onClick={onGenerateInvite}
                 disabled={generatingInvite}
-                className="w-full px-2 py-1.5 rounded-lg bg-white/5 text-gray-500 hover:text-white hover:bg-white/10 transition-colors text-[11px] font-medium disabled:opacity-50"
+                className="w-full py-2 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] hover:text-slate-900 transition-colors"
               >
-                {generatingInvite ? 'Membuat...' : 'Buat Ulang Kode'}
+                {generatingInvite ? 'Memproses...' : 'Generate Ulang Kode Baru'}
               </button>
             </div>
           ) : (
@@ -471,177 +480,186 @@ export default function ApprovalView({
               type="button"
               onClick={onGenerateInvite}
               disabled={generatingInvite}
-              className="w-full px-3 py-2 rounded-lg bg-lime-600 text-white hover:bg-lime-500 transition-colors text-xs font-medium flex items-center justify-center gap-1.5 disabled:opacity-50"
+              className="w-full flex items-center justify-center gap-3 px-6 py-4 rounded-xl bg-indigo-500 text-white border-4 border-slate-900 font-black text-sm uppercase shadow-[8px_8px_0_0_#0f172a] hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all disabled:opacity-50"
             >
-              <LinkIcon className="w-3.5 h-3.5" />
-              {generatingInvite ? 'Membuat...' : 'Buat Kode Undangan'}
+              <LinkIcon className="w-5 h-5" strokeWidth={3} />
+              {generatingInvite ? 'Membuat...' : 'Buat Link Undangan'}
             </button>
           )}
         </div>
       </div>
 
-      <div className="flex gap-1 sm:gap-2 mb-3 sm:mb-4 bg-white/[0.03] p-0.5 sm:p-1 rounded-lg sm:rounded-xl">
+      <div className="flex gap-2 mb-8 bg-slate-100 p-2 rounded-[24px] border-4 border-slate-900 shadow-[6px_6px_0_0_#0f172a] overflow-x-auto no-scrollbar">
         <button
           type="button"
           onClick={() => setApprovalTab('pending')}
-          className={`flex-1 px-2 sm:px-3 py-1.5 sm:py-2 rounded-md sm:rounded-lg text-xs sm:text-sm font-medium transition-all flex items-center justify-center gap-1 sm:gap-1.5 ${
-            approvalTab === 'pending'
-              ? 'bg-amber-500/20 text-amber-400 shadow-sm'
-              : 'text-gray-500 hover:text-white hover:bg-white/5'
-          }`}
+          className={`flex-shrink-0 flex items-center justify-center gap-2 px-6 py-4 rounded-xl transition-all font-black text-xs sm:text-sm uppercase border-2 ${approvalTab === 'pending'
+            ? 'bg-amber-400 border-slate-900 text-slate-900 shadow-[4px_4px_0_0_#0f172a]'
+            : 'bg-white border-transparent text-slate-400 opacity-60'
+            }`}
         >
-          <Clock className="w-3 h-3 sm:w-3.5 sm:h-3.5 flex-shrink-0" />
-          <span className="truncate">Menunggu</span>
-          {joinStats && joinStats.pending_count > 0 && (
-            <span
-              className={`px-1 sm:px-1.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold flex-shrink-0 ${
-                approvalTab === 'pending' ? 'bg-amber-500/30 text-amber-300' : 'bg-white/10 text-gray-500'
-              }`}
-            >
-              {joinStats.pending_count}
-            </span>
-          )}
+          <Clock className="w-5 h-5" strokeWidth={3} />
+          <span>Menunggu</span>
+          <span className={`px-2 py-0.5 rounded-lg text-[10px] ${approvalTab === 'pending' ? 'bg-slate-900 text-amber-400' : 'bg-slate-200 text-slate-400'}`}>
+            {joinStats?.pending_count || 0}
+          </span>
         </button>
         <button
           type="button"
           onClick={() => setApprovalTab('approved')}
-          className={`flex-1 px-2 sm:px-3 py-1.5 sm:py-2 rounded-md sm:rounded-lg text-xs sm:text-sm font-medium transition-all flex items-center justify-center gap-1 sm:gap-1.5 ${
-            approvalTab === 'approved'
-              ? 'bg-lime-500/20 text-lime-400 shadow-sm'
-              : 'text-gray-500 hover:text-white hover:bg-white/5'
-          }`}
+          className={`flex-shrink-0 flex items-center justify-center gap-2 px-6 py-4 rounded-xl transition-all font-black text-xs sm:text-sm uppercase border-2 ${approvalTab === 'approved'
+            ? 'bg-indigo-500 border-slate-900 text-white shadow-[4px_4px_0_0_#0f172a]'
+            : 'bg-white border-transparent text-slate-400 opacity-60'
+            }`}
         >
-          <Check className="w-3 h-3 sm:w-3.5 sm:h-3.5 flex-shrink-0" />
-          <span className="truncate">Disetujui</span>
-          {joinStats && joinStats.approved_count > 0 && (
-            <span
-              className={`px-1 sm:px-1.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold flex-shrink-0 ${
-                approvalTab === 'approved' ? 'bg-lime-500/30 text-lime-300' : 'bg-white/10 text-gray-500'
-              }`}
-            >
-              {joinStats.approved_count}
-            </span>
-          )}
+          <Check className="w-5 h-5" strokeWidth={3} />
+          <span>Disetujui</span>
+          <span className={`px-2 py-0.5 rounded-lg text-[10px] ${approvalTab === 'approved' ? 'bg-white text-indigo-500' : 'bg-slate-200 text-slate-400'}`}>
+            {joinStats?.approved_count || 0}
+          </span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setApprovalTab('team')}
+          className={`flex-shrink-0 flex items-center justify-center gap-2 px-6 py-4 rounded-xl transition-all font-black text-xs sm:text-sm uppercase border-2 ${approvalTab === 'team'
+            ? 'bg-emerald-400 border-slate-900 text-slate-900 shadow-[4px_4px_0_0_#0f172a]'
+            : 'bg-white border-transparent text-slate-400 opacity-60'
+            }`}
+        >
+          <ClipboardList className="w-5 h-5" strokeWidth={3} />
+          <span>Tim</span>
+          <span className={`px-2 py-0.5 rounded-lg text-[10px] ${approvalTab === 'team' ? 'bg-slate-900 text-emerald-400' : 'bg-slate-200 text-slate-400'}`}>
+            {members.length || 0}
+          </span>
         </button>
       </div>
 
-      {sortedGroupKeys.length === 0 ? (
-        <div className="text-center py-10 sm:py-14">
-          <div className="w-14 h-14 mx-auto mb-3 rounded-2xl bg-white/[0.04] flex items-center justify-center">
-            <ClipboardList className="w-7 h-7 text-gray-600" />
-          </div>
-          <p className="text-sm text-app font-medium mb-0.5">
-            {approvalTab === 'pending' ? 'Semua sudah diproses' : 'Belum ada yang disetujui'}
-          </p>
-          <p className="text-xs text-gray-600">
-            {approvalTab === 'pending' ? 'Tidak ada permintaan menunggu' : 'Setujui permintaan untuk menampilkan'}
-          </p>
+      {approvalTab === 'team' ? (
+        <div className="-mx-3 sm:mx-0">
+          <TeamView
+            members={members}
+            isOwner={isOwner}
+            isGlobalAdmin={isGlobalAdmin}
+            canManage={canManage}
+            currentUserId={currentUserId}
+            onUpdateRole={onUpdateRole}
+            onRemoveMember={onRemoveMember}
+          />
         </div>
       ) : (
-        <div className="flex flex-col gap-3">
-          <div className="flex gap-1.5 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
-            {sortedGroupKeys.map((groupKey, idx) => {
-              const tabLabel =
-                groupKey === 'unassigned'
-                  ? 'Belum Ditentukan'
-                  : groupKey.startsWith('id:')
-                    ? classes.find((c) => c.id === groupKey.slice(3))?.name || '?'
-                    : groupKey.slice(5)
-              const tabCount = requestsByGroup[groupKey].length
-              return (
-                <button
-                  key={groupKey}
-                  type="button"
-                  onClick={() => setApprovalClassIndex(idx)}
-                  className={`flex-shrink-0 px-2.5 py-1.5 rounded-full text-xs font-medium transition-all flex items-center gap-1.5 ${
-                    idx === safeIndex
-                      ? 'bg-lime-500/20 text-lime-400 ring-1 ring-lime-500/40'
-                      : 'bg-white/[0.04] text-gray-500 hover:text-white hover:bg-white/10'
-                  }`}
-                >
-                  {tabLabel}
-                  <span
-                    className={`min-w-[18px] h-[18px] flex items-center justify-center rounded-full text-[10px] font-bold ${
-                      idx === safeIndex ? 'bg-lime-500/30 text-lime-300' : 'bg-white/10 text-gray-500'
-                    }`}
-                  >
-                    {tabCount}
-                  </span>
-                </button>
-              )
-            })}
+        sortedGroupKeys.length === 0 ? (
+          <div className="text-center py-12 sm:py-20 px-4 bg-white border-4 border-slate-900 rounded-[32px] shadow-[8px_8px_0_0_#0f172a]">
+            <div className="w-20 h-20 mx-auto mb-6 rounded-3xl bg-amber-300 border-4 border-slate-900 flex items-center justify-center shadow-[inset_-4px_-4px_0_0_rgba(15,23,42,0.2)]">
+              <ClipboardList className="w-10 h-10 text-slate-900" strokeWidth={3} />
+            </div>
+            <p className="text-xl sm:text-2xl font-black text-slate-900 uppercase tracking-tight mb-2">
+              {approvalTab === 'pending' ? 'Semua sudah diproses' : 'Belum ada tanggapan'}
+            </p>
+            <p className="text-sm font-bold text-slate-500 uppercase tracking-widest">
+              {approvalTab === 'pending' ? 'Tidak ada permintaan menunggu' : 'Setujui permintaan untuk menampilkan'}
+            </p>
           </div>
-          <div className="flex flex-col gap-1.5">
-            {classRequests.map((request) => {
-              const isAssigning = assigningRequest === request.id
-              return (
-                <div
-                  key={request.id}
-                  className="group relative rounded-xl bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.06] transition-all"
-                >
-                  <div className="p-3">
-                    <div className="flex items-center gap-3">
+        ) : (
+          <div className="flex flex-col gap-6">
+            <div className="flex gap-3 overflow-x-auto pb-4 pt-2 px-1" style={{ scrollbarWidth: 'none' }}>
+              {sortedGroupKeys.map((groupKey, idx) => {
+                const tabLabel =
+                  groupKey === 'unassigned'
+                    ? 'Belum Ditentukan'
+                    : groupKey.startsWith('id:')
+                      ? classes.find((c) => c.id === groupKey.slice(3))?.name || '?'
+                      : groupKey.slice(5)
+                const tabCount = requestsByGroup[groupKey].length
+                return (
+                  <button
+                    key={groupKey}
+                    type="button"
+                    onClick={() => setApprovalClassIndex(idx)}
+                    className={`flex-shrink-0 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-black uppercase tracking-widest transition-all flex items-center gap-3 border-4 shadow-[4px_4px_0_0_#0f172a] active:shadow-none active:translate-x-1 active:translate-y-1 ${idx === safeIndex
+                      ? 'bg-indigo-400 border-slate-900 text-slate-900'
+                      : 'bg-white border-slate-900 text-slate-400 hover:bg-slate-50'
+                      }`}
+                  >
+                    {tabLabel}
+                    <span
+                      className={`px-2 py-0.5 rounded-lg text-[10px] sm:text-xs font-black border-2 border-slate-900 ${idx === safeIndex ? 'bg-slate-900 text-indigo-400' : 'bg-slate-200 text-slate-500'}`}
+                    >
+                      {tabCount}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+            <div className="flex flex-col gap-4">
+              {classRequests.map((request) => {
+                const isAssigning = assigningRequest === request.id
+                return (
+                  <div
+                    key={request.id}
+                    className="group relative flex flex-col sm:flex-row sm:items-center rounded-2xl bg-white border-4 border-slate-900 shadow-[6px_6px_0_0_#0f172a] p-5 gap-4"
+                  >
+                    <div className="flex items-center gap-4 flex-1">
                       <div
-                        className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 ${
-                          request.status === 'approved' ? 'bg-lime-500/20 text-lime-400' : 'bg-amber-500/20 text-amber-400'
-                        }`}
+                        className={`w-14 h-14 rounded-2xl flex items-center justify-center text-2xl font-black border-4 border-slate-900 shrink-0 ${request.status === 'approved' ? 'bg-indigo-300 text-slate-900 shadow-[inset_-2px_-2px_0_0_rgba(15,23,42,0.2)]' : 'bg-amber-300 text-slate-900 shadow-[inset_-2px_-2px_0_0_rgba(15,23,42,0.2)]'
+                          }`}
                       >
                         {request.student_name?.charAt(0)?.toUpperCase() || '?'}
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1.5">
-                          <p className="text-sm text-app font-medium truncate">{request.student_name}</p>
+                      <div className="flex-1 min-w-0 flex flex-col gap-1.5">
+                        <p className="text-base sm:text-lg font-black text-slate-900 uppercase tracking-tight truncate">{request.student_name}</p>
+
+                        <div className="flex flex-col gap-2">
                           {request.status === 'approved' && classObj && (
-                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-lime-500/15 text-lime-500 font-medium flex-shrink-0">
+                            <span className="w-fit text-[10px] px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-700 font-black uppercase tracking-widest border-2 border-slate-900 shrink-0">
                               {classObj.name}
                             </span>
                           )}
-                        </div>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          {request.email && (
-                            <p className="text-[11px] text-gray-500 truncate">{request.email}</p>
-                          )}
-                          {request.phone && (
-                            <p className="text-[11px] text-gray-500 truncate">• {request.phone}</p>
-                          )}
+                          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                            {request.email && (
+                              <p className="text-xs font-bold text-slate-500">{request.email}</p>
+                            )}
+                            {request.phone && (
+                              <p className="text-xs font-bold text-slate-500">• {request.phone}</p>
+                            )}
+                          </div>
                         </div>
                       </div>
-                      {request.status === 'pending' && !isAssigning && (
-                        <div className="flex gap-1 flex-shrink-0">
-                          <button
-                            type="button"
-                            onClick={() => setAssigningRequest(request.id)}
-                            className="w-8 h-8 rounded-lg bg-lime-500/15 text-lime-400 hover:bg-lime-500/30 flex items-center justify-center transition-colors"
-                            title="Setujui"
-                          >
-                            <Check className="w-4 h-4" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => onRejectRequest(request.id)}
-                            className="w-8 h-8 rounded-lg bg-white/5 text-gray-500 hover:bg-red-500/20 hover:text-red-400 flex items-center justify-center transition-colors"
-                            title="Tolak"
-                          >
-                            <X className="w-4 h-4" />
-                          </button>
-                        </div>
-                      )}
                     </div>
+                    {request.status === 'pending' && !isAssigning && (
+                      <div className="flex gap-2 shrink-0 sm:ml-auto w-full sm:w-auto mt-2 sm:mt-0 pt-3 sm:pt-0 border-t-2 sm:border-t-0 border-slate-100">
+                        <button
+                          type="button"
+                          onClick={() => setAssigningRequest(request.id)}
+                          className="flex-1 sm:flex-none sm:w-12 h-12 rounded-xl bg-emerald-400 border-4 border-slate-900 text-slate-900 flex items-center justify-center shadow-[4px_4px_0_0_#0f172a] hover:shadow-none hover:translate-x-1 hover:translate-y-1 active:shadow-none active:translate-x-1 active:translate-y-1 transition-all"
+                          title="Setujui"
+                        >
+                          <Check className="w-6 h-6" strokeWidth={4} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => onRejectRequest(request.id)}
+                          className="flex-1 sm:flex-none sm:w-12 h-12 rounded-xl bg-red-100 border-4 border-slate-900 text-red-500 hover:bg-red-200 flex items-center justify-center shadow-[4px_4px_0_0_#0f172a] hover:shadow-none hover:translate-x-1 hover:translate-y-1 active:shadow-none active:translate-x-1 active:translate-y-1 transition-all"
+                          title="Tolak"
+                        >
+                          <X className="w-6 h-6" strokeWidth={4} />
+                        </button>
+                      </div>
+                    )}
                     {isAssigning && (
-                      <div className="mt-2.5 pt-2.5 border-t border-white/[0.06]">
-                        <div className="flex gap-1.5">
-                          <select
-                            value={selectedClassForAssign}
-                            onChange={(e) => setSelectedClassForAssign(e.target.value)}
-                            className="flex-1 px-2.5 py-1.5 text-xs rounded-lg bg-white/5 border border-white/10 text-white focus:outline-none focus:border-lime-500 [&>option]:bg-gray-800 [&>option]:text-white"
-                          >
-                            <option value="">Pilih Kelas...</option>
-                            {classes.map((cls) => (
-                              <option key={cls.id} value={cls.id}>
-                                {cls.name}
-                              </option>
-                            ))}
-                          </select>
+                      <div className="w-full sm:w-auto flex flex-col sm:flex-row gap-3 mt-3 sm:mt-0 pt-4 sm:pt-0 border-t-4 sm:border-t-0 border-slate-900/10 sm:ml-auto">
+                        <select
+                          value={selectedClassForAssign}
+                          onChange={(e) => setSelectedClassForAssign(e.target.value)}
+                          className="w-full sm:w-[150px] px-4 py-3 text-xs sm:text-sm rounded-xl bg-slate-50 border-4 border-slate-900 text-slate-900 font-black focus:outline-none focus:ring-0 shadow-[4px_4px_0_0_#0f172a]"
+                        >
+                          <option value="">Pilih Kelas...</option>
+                          {classes.map((cls) => (
+                            <option key={cls.id} value={cls.id}>
+                              {cls.name}
+                            </option>
+                          ))}
+                        </select>
+                        <div className="flex gap-2">
                           <button
                             type="button"
                             onClick={async () => {
@@ -650,7 +668,7 @@ export default function ApprovalView({
                               setSelectedClassForAssign('')
                             }}
                             disabled={!selectedClassForAssign}
-                            className="px-3 py-1.5 rounded-lg bg-lime-600 text-white hover:bg-lime-500 disabled:opacity-30 disabled:cursor-not-allowed text-xs font-medium transition-colors"
+                            className="flex-1 sm:flex-none px-6 py-3 rounded-xl bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-black uppercase tracking-widest transition-all shadow-[4px_4px_0_0_#6366f1] active:shadow-none active:translate-x-1 active:translate-y-1"
                           >
                             OK
                           </button>
@@ -660,19 +678,19 @@ export default function ApprovalView({
                               setAssigningRequest(null)
                               setSelectedClassForAssign('')
                             }}
-                            className="px-2 py-1.5 rounded-lg bg-white/5 text-gray-400 hover:text-white hover:bg-white/10 text-xs transition-colors"
+                            className="w-12 h-12 flex items-center justify-center rounded-xl bg-slate-100 border-4 border-slate-900 text-slate-900 transition-all shadow-[4px_4px_0_0_#0f172a] active:shadow-none active:translate-x-1 active:translate-y-1"
                           >
-                            <X className="w-3.5 h-3.5" />
+                            <X className="w-5 h-5" strokeWidth={4} />
                           </button>
                         </div>
                       </div>
                     )}
                   </div>
-                </div>
-              )
-            })}
+                )
+              })}
+            </div>
           </div>
-        </div>
+        )
       )}
     </div>
   )

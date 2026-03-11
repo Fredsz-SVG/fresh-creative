@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Check, Book, Sparkles } from "lucide-react";
+import { ArrowLeft, Check, Book, Sparkles, Star } from "lucide-react";
 import DashboardTitle from "@/components/dashboard/DashboardTitle";
+import { apiUrl } from '../../lib/api-url'
+import { fetchWithAuth } from '../../lib/api-client'
 
 export type Draft = {
   school_name: string;
@@ -77,6 +79,16 @@ export default function PricingView({
   const [selectedPackageId, setSelectedPackageId] = useState<string | null>(null);
   const [packages, setPackages] = useState<PricingPackage[]>(DEFAULT_PACKAGES);
   const [loadingPackages, setLoadingPackages] = useState(true);
+  const [activeIdx, setActiveIdx] = useState(0);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const handleScroll = useCallback(() => {
+    if (!scrollRef.current) return;
+    const { scrollLeft, offsetWidth } = scrollRef.current;
+    if (offsetWidth === 0) return;
+    const index = Math.round(scrollLeft / (offsetWidth * 0.85 + 24));
+    setActiveIdx(index);
+  }, []);
 
   useEffect(() => {
     setMounted(true);
@@ -98,7 +110,7 @@ export default function PricingView({
 
   useEffect(() => {
     let cancelled = false;
-    fetch("/api/pricing")
+    fetchWithAuth("/api/pricing")
       .then((res) => res.ok ? res.json() : [])
       .then((data: unknown[]) => {
         if (cancelled) return;
@@ -171,7 +183,7 @@ export default function PricingView({
       }
 
       // DIRECTLY call /api/albums instead of /api/leads
-      const res = await fetch("/api/albums", {
+      const res = await fetchWithAuth("/api/albums", {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
@@ -225,33 +237,27 @@ export default function PricingView({
   }
 
   return (
-    <div className="min-h-screen p-6">
+    <div className="min-h-screen p-6 sm:p-8">
       <div className="max-w-2xl mx-auto">
         <Link
           href={leadId ? backHrefSaved : backHrefNoDraft}
-          className="inline-flex items-center gap-2 text-sm text-muted hover:text-app mb-4"
+          className="inline-flex items-center gap-2 text-[14px] font-bold text-slate-500 hover:text-slate-900 mb-6 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
           Kembali
         </Link>
         <DashboardTitle
-          title="Estimator — Harga Paket"
-          subtitle={leadId ? "Data sudah tersimpan. Lihat harga paket di bawah." : "Pilih paket dan simpan data ke database."}
+          title="Pilih Paket"
+          subtitle="Tentukan paket terbaik untuk project-mu sekarang."
         />
 
-        {draft && (
-          <div className="mt-6 rounded-xl border border-white/10 bg-white/[0.03] p-4 space-y-2">
-            <p className="text-sm font-medium text-app">Ringkasan data</p>
-            <p className="text-xs text-muted">
-              {draft.school_name} · {draft.province_name ?? ""} · {draft.school_city} · {draft.pic_name} · {draft.wa_e164}
-              {draft.students_count != null ? ` · ${draft.students_count} siswa` : ""}
-            </p>
-          </div>
-        )}
-
-        <div className="mt-6">
-          <p className="text-sm font-medium text-app mb-3">Pilih paket</p>
-          <div className="space-y-3">
+        <div className="mt-8">
+          {/* Horizontal scroll on mobile, vertical list on desktop */}
+          <div
+            ref={scrollRef}
+            onScroll={handleScroll}
+            className="flex overflow-x-auto pt-6 pb-10 -mx-4 px-4 gap-6 snap-x snap-mandatory sm:flex-col sm:space-y-6 sm:overflow-visible sm:pt-0 sm:pb-0 sm:mx-0 sm:px-0 no-scrollbar select-none"
+          >
             {packages.map((pkg) => {
               const n = Math.max(pkg.minStudents, studentsCount || pkg.minStudents);
               let addonsTotal = 0;
@@ -268,41 +274,41 @@ export default function PricingView({
                   key={pkg.id}
                   type="button"
                   onClick={() => setSelectedPackageId(isSelected ? null : pkg.id)}
-                  className={`relative w-full text-left rounded-2xl border p-5 transition-all duration-200 ${isSelected
-                    ? "border-lime-500 bg-lime-500/10 shadow-lg shadow-lime-500/10 scale-[1.01]"
-                    : "border-white/10 bg-white/[0.03] hover:border-white/25 hover:bg-white/[0.06]"
+                  className={`relative w-[85vw] sm:w-full shrink-0 snap-center text-left rounded-3xl border-4 p-6 transition-all duration-200 ${isSelected
+                    ? "border-slate-900 bg-emerald-200 shadow-[8px_8px_0_0_#0f172a] scale-100 sm:scale-[1.02] translate-x-1 translate-y-1 sm:translate-x-0 sm:translate-y-0"
+                    : "border-slate-900 bg-white shadow-[6px_6px_0_0_#0f172a] hover:translate-x-1 hover:translate-y-1 hover:shadow-none"
                     }`}
                 >
                   {pkg.is_popular && !isSelected && (
-                    <span className="absolute -top-2.5 right-4 px-2.5 py-0.5 rounded-full bg-amber-500 text-[10px] font-bold text-black uppercase tracking-wide">
-                      Popular
+                    <span className="absolute -top-3.5 right-6 px-3 py-1 rounded-full bg-orange-400 border-2 border-slate-900 text-[11px] font-black text-slate-900 uppercase tracking-widest shadow-[3px_3px_0_0_#0f172a] rotate-2 flex items-center gap-1.5">
+                      Popular <Star className="w-3 h-3 fill-slate-900" />
                     </span>
                   )}
 
                   {/* Header: checkbox + name + price */}
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-colors ${isSelected ? "border-lime-500 bg-lime-500 text-white" : "border-white/30"}`}>
-                        {isSelected ? <Check className="h-3 w-3" /> : null}
+                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                    <div className="flex items-start sm:items-center gap-4">
+                      <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border-2 transition-all mt-1 sm:mt-0 ${isSelected ? "border-slate-900 bg-slate-900 text-emerald-300 shadow-inner" : "border-slate-300 bg-slate-50"}`}>
+                        {isSelected ? <Check className="h-5 w-5" strokeWidth={3} /> : null}
                       </span>
                       <div>
-                        <span className="font-semibold text-app text-[15px]">{pkg.name}</span>
-                        <p className="text-[11px] text-muted mt-0.5">min. {pkg.minStudents} siswa</p>
+                        <span className="font-black text-slate-900 text-[18px] tracking-tight">{pkg.name}</span>
+                        <p className="text-[13px] font-bold text-slate-600 mt-1">min. {pkg.minStudents} siswa</p>
                       </div>
                     </div>
-                    <div className="text-right shrink-0">
-                      <p className="text-lg font-bold text-app leading-tight">
+                    <div className="text-left sm:text-right shrink-0 mt-2 sm:mt-0 pl-12 sm:pl-0">
+                      <p className="text-[20px] font-black text-slate-900 leading-tight">
                         Rp {(pkg.pricePerStudent + addonsTotal).toLocaleString("id-ID")}
                       </p>
-                      <p className="text-[11px] text-muted">/siswa</p>
+                      <p className="text-[12px] font-bold text-slate-500 mt-0.5">/ siswa</p>
                     </div>
                   </div>
 
                   {/* Divider */}
-                  <div className="my-3 border-t border-white/[0.06]" />
+                  <div className={`my-5 border-t-2 ${isSelected ? 'border-emerald-300' : 'border-slate-100'}`} />
 
                   {/* Features list */}
-                  <ul className="space-y-1.5 ml-0.5">
+                  <ul className="space-y-2 ml-1/2 px-1">
                     {pkg.features.map((f, i) => {
                       let parsed = { name: f, price: 0 }
                       try {
@@ -310,8 +316,8 @@ export default function PricingView({
                         if (j.name) parsed = j
                       } catch { }
                       return (
-                        <li key={i} className="flex items-center gap-2 text-xs text-muted">
-                          <Check className="w-3 h-3 text-lime-500 shrink-0" />
+                        <li key={i} className={`flex items-start gap-2 text-[14px] font-bold ${isSelected ? 'text-slate-800' : 'text-slate-600'}`}>
+                          <Check className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" strokeWidth={3} />
                           <span>{parsed.name}</span>
                         </li>
                       )
@@ -320,19 +326,19 @@ export default function PricingView({
 
                   {/* Flipbook & AI Labs badges */}
                   {(pkg.flipbook_enabled || pkg.ai_labs_features.length > 0) && (
-                    <div className="mt-3 flex flex-wrap gap-1.5">
+                    <div className="mt-5 flex flex-wrap gap-2 px-1">
                       {pkg.flipbook_enabled && !pkg.ai_labs_features.includes('flipbook_unlock') && (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-lime-500/15 text-lime-400 text-[11px] font-medium border border-lime-500/20">
-                          <Book className="w-3 h-3" /> Flipbook
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-orange-200 text-slate-900 text-[12px] font-black uppercase tracking-wider border-2 border-slate-900 shadow-[2px_2px_0_0_#0f172a]">
+                          <Book className="w-3.5 h-3.5" /> Flipbook
                         </span>
                       )}
                       {pkg.ai_labs_features.map((slug) => (
                         <span
                           key={slug}
-                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium border ${slug === 'flipbook_unlock' ? 'bg-lime-500/15 text-lime-400 border-lime-500/20' : 'bg-purple-500/15 text-purple-400 border-purple-500/20'
+                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[12px] font-black uppercase tracking-wider border-2 border-slate-900 shadow-[2px_2px_0_0_#0f172a] ${slug === 'flipbook_unlock' ? 'bg-orange-200 text-slate-900' : 'bg-indigo-300 text-slate-900'
                             }`}
                         >
-                          {slug === 'flipbook_unlock' ? <Book className="w-2.5 h-2.5" /> : <Sparkles className="w-2.5 h-2.5" />}
+                          {slug === 'flipbook_unlock' ? <Book className="w-3.5 h-3.5" /> : <Sparkles className="w-3.5 h-3.5" />}
                           {AI_FEATURE_LABELS[slug] ?? slug}
                         </span>
                       ))}
@@ -340,9 +346,9 @@ export default function PricingView({
                   )}
 
                   {/* Estimasi total */}
-                  <div className={`mt-3 pt-3 border-t border-white/[0.06] flex items-center justify-between`}>
-                    <span className="text-[11px] text-muted">Estimasi {n} siswa</span>
-                    <span className={`text-sm font-bold ${isSelected ? "text-lime-400" : "text-app"}`}>
+                  <div className={`mt-5 pt-4 border-t-2 ${isSelected ? 'border-emerald-300' : 'border-slate-100'} flex items-center justify-between px-1`}>
+                    <span className="text-[13px] font-black text-slate-600 uppercase tracking-widest">Estimasi {n} siswa</span>
+                    <span className={`text-[17px] font-black ${isSelected ? "text-slate-900" : "text-slate-900"}`}>
                       Rp {total.toLocaleString("id-ID")}
                     </span>
                   </div>
@@ -350,26 +356,36 @@ export default function PricingView({
               );
             })}
           </div>
+
+          {/* Mobile Swiping Indicator Dots - Hidden on desktop */}
+          <div className="flex justify-center gap-2 mt-2 mb-8 sm:hidden">
+            {packages.map((_, i) => (
+              <div
+                key={i}
+                className={`h-2.5 rounded-full border-2 border-slate-900 transition-all duration-300 ${i === activeIdx ? 'w-8 bg-emerald-400' : 'w-2.5 bg-slate-200'}`}
+              />
+            ))}
+          </div>
         </div>
 
         {draft && (
-          <div className="mt-6">
-            {saveError ? <p className="text-sm text-red-400 mb-2">{saveError}</p> : null}
+          <div className="mt-8 border-t-4 border-slate-900 pt-8">
+            {saveError ? <p className="text-[14px] font-bold text-red-500 mb-4">{saveError}</p> : null}
             <button
               type="button"
               onClick={handleSaveToDb}
               disabled={saving || !selectedPackageId}
-              className="w-full px-4 py-3 bg-lime-600 text-white rounded-lg hover:bg-lime-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full px-6 py-4 bg-indigo-400 text-slate-900 border-4 border-slate-900 rounded-2xl text-[18px] font-black uppercase tracking-widest shadow-[6px_6px_0_0_#0f172a] hover:translate-x-1 hover:translate-y-1 hover:shadow-[2px_2px_0_0_#0f172a] disabled:opacity-50 transition-all"
             >
-              {saving ? "Menyimpan..." : afterSaveRedirect ? "Simpan data ke database" : "Simpan dan lihat album"}
+              {saving ? "Menyimpan..." : afterSaveRedirect ? "Simpan Data ke Database" : "Simpan dan Lihat Album"}
             </button>
-            <p className="text-xs text-muted mt-2">Pilih paket di atas lalu klik simpan.</p>
+            <p className="text-[13px] font-bold text-slate-500 mt-4 text-center">Pilih paket di atas lalu klik simpan.</p>
           </div>
         )}
 
         {leadId && !draft && (
-          <p className="mt-4 text-xs text-muted">
-            Lead ID: <span className="text-app font-mono">{leadId}</span>
+          <p className="mt-8 text-[13px] font-bold text-slate-500 text-center">
+            Lead ID: <span className="text-slate-900 font-mono px-2 py-1 bg-slate-100 rounded border-2 border-slate-300">{leadId}</span>
           </p>
         )}
       </div>

@@ -46,7 +46,7 @@ export default function SambutanView({
     const currentPhoto = photos[photoIndex]
     return (
       <div className="fixed inset-0 z-[100] bg-black flex flex-col">
-        <div className="flex items-center justify-between gap-2 p-3 border-b border-white/10 bg-black/80">
+        <div className="flex items-center justify-between gap-2 p-3 border-b border-gray-700 bg-black/80">
           <button type="button" onClick={() => setTeacherPhotoViewer(null)} className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-white hover:bg-white/10">
             <X className="w-5 h-5" /> Tutup
           </button>
@@ -86,68 +86,102 @@ export default function SambutanView({
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-3 py-3 sm:px-3 sm:py-4">
-      <div className="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        {canManage && (
-          !addingTeacher ? (
+    <div className="max-w-5xl mx-auto px-3 pt-0 pb-4 sm:px-3 sm:py-4">
+      {canManage && (
+        <>
+          {/* Add Teacher Modal/Overlay */}
+          {addingTeacher && (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+              <div
+                className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+                onClick={() => { setAddingTeacher(false); setNewTeacherName('') }}
+              />
+              <div className="relative w-full max-w-md bg-white border-4 border-slate-900 rounded-[32px] shadow-[12px_12px_0_0_#0f172a] overflow-hidden animate-in zoom-in-95 duration-200 z-[101]">
+                <div className="p-6">
+                  <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Tambah Guru</h3>
+                    <button
+                      onClick={() => { setAddingTeacher(false); setNewTeacherName('') }}
+                      className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center hover:bg-slate-200 transition-all"
+                    >
+                      <X className="w-5 h-5 text-slate-500" />
+                    </button>
+                  </div>
+
+                  <div className="flex flex-col gap-6">
+                    <div>
+                      <label className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2 block">Nama Lengkap Guru</label>
+                      <input
+                        type="text"
+                        value={newTeacherName}
+                        onChange={(e) => setNewTeacherName(e.target.value)}
+                        placeholder="Contoh: Bpk. Budi Santoso"
+                        className="w-full px-5 py-4 rounded-xl bg-slate-50 border-4 border-slate-900 text-base font-black text-slate-900 placeholder:text-slate-300 focus:outline-none focus:bg-white transition-all shadow-[4px_4px_0_0_#f1f5f9]"
+                        autoFocus
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && newTeacherName.trim()) {
+                            onAddTeacher(newTeacherName.trim(), '')
+                            setAddingTeacher(false)
+                            setNewTeacherName('')
+                          }
+                          if (e.key === 'Escape') {
+                            setAddingTeacher(false)
+                            setNewTeacherName('')
+                          }
+                        }}
+                      />
+                    </div>
+
+                    <div className="flex gap-3">
+                      <button
+                        type="button"
+                        onClick={() => { setAddingTeacher(false); setNewTeacherName('') }}
+                        className="flex-1 py-4 rounded-2xl bg-slate-100 text-slate-500 text-xs font-black uppercase tracking-widest border-2 border-slate-200 hover:bg-slate-200 transition-all"
+                      >
+                        Batal
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (newTeacherName.trim()) {
+                            onAddTeacher(newTeacherName.trim(), '')
+                            setAddingTeacher(false)
+                            setNewTeacherName('')
+                          }
+                        }}
+                        disabled={!newTeacherName.trim()}
+                        className="flex-[2] py-4 rounded-2xl bg-emerald-400 text-slate-900 text-xs font-black uppercase tracking-widest border-4 border-slate-900 shadow-[6px_6px_0_0_#0f172a] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all disabled:opacity-50"
+                      >
+                        Tambah Sekarang
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Floating Action Button for Adding Teacher */}
+          {!addingTeacher && (
             <button
               type="button"
               onClick={() => setAddingTeacher(true)}
-              className="px-4 py-2 rounded-xl bg-lime-600 text-white hover:bg-lime-500 transition-colors flex items-center justify-center gap-2 text-sm font-medium flex-shrink-0"
+              className="fixed bottom-24 right-6 lg:bottom-10 lg:right-10 z-[60] flex items-center justify-center w-14 h-14 lg:w-16 lg:h-16 rounded-full bg-amber-400 border-2 border-slate-900 shadow-[3px_3px_0_0_#0f172a] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all active:scale-90 group"
+              title="Tambah Guru"
             >
-              <Plus className="w-4 h-4" />
-              Tambah
+              <Plus className="w-8 h-8 text-slate-900 transition-transform group-hover:rotate-90" strokeWidth={2.5} />
             </button>
-          ) : (
-            <div className="flex flex-wrap items-center gap-2">
-              <input
-                type="text"
-                value={newTeacherName}
-                onChange={(e) => setNewTeacherName(e.target.value)}
-                placeholder="Nama"
-                className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-app text-sm placeholder:text-gray-500 w-48 min-w-0 focus:outline-none focus:border-lime-500/50"
-                autoFocus
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    if (newTeacherName.trim()) {
-                      onAddTeacher(newTeacherName.trim(), '')
-                      setAddingTeacher(false)
-                      setNewTeacherName('')
-                    }
-                  }
-                  if (e.key === 'Escape') {
-                    setAddingTeacher(false)
-                    setNewTeacherName('')
-                  }
-                }}
-              />
-              <button
-                type="button"
-                onClick={() => {
-                  if (newTeacherName.trim()) onAddTeacher(newTeacherName.trim(), '')
-                  setAddingTeacher(false)
-                  setNewTeacherName('')
-                }}
-                className="px-4 py-2 rounded-lg bg-lime-600 text-white text-sm font-medium hover:bg-lime-500 transition-colors"
-              >
-                Tambah
-              </button>
-              <button
-                type="button"
-                onClick={() => { setAddingTeacher(false); setNewTeacherName('') }}
-                className="px-4 py-2 rounded-lg border border-white/10 text-gray-400 hover:text-white text-sm transition-colors"
-              >
-                Batal
-              </button>
-            </div>
-          )
-        )}
-      </div>
+          )}
+        </>
+      )}
 
       {teachers.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 opacity-60 min-h-[70vh] w-full">
-          <Users className="w-12 h-12 mb-3 opacity-50" />
-          <p className="text-center text-sm lg:text-base">Belum ada guru ditambahkan.</p>
+        <div className="flex flex-col items-center justify-center py-20 min-h-[50vh] w-full bg-slate-50/50 rounded-[40px] border-4 border-dashed border-slate-200">
+          <div className="w-20 h-20 rounded-3xl bg-white border-4 border-slate-900 shadow-[8px_8px_0_0_#e2e8f0] flex items-center justify-center mb-6">
+            <Users className="w-10 h-10 text-slate-300" strokeWidth={1.5} />
+          </div>
+          <h3 className="text-lg font-black text-slate-900 uppercase tracking-widest mb-2">Belum Ada Guru</h3>
+          <p className="text-slate-400 text-sm font-bold uppercase tracking-tight">Klik tombol tambah untuk memulai daftar sambutan</p>
         </div>
       ) : (
         <div className="grid gap-2 sm:grid-cols-2 lg:gap-3 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">

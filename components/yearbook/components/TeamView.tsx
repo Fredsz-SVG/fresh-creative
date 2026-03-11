@@ -59,7 +59,7 @@ export default function TeamView({
     <>
       {roleChangeConfirm && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
-          <div className="bg-gray-900 border border-white/10 rounded-xl p-4 sm:p-6 max-w-md w-full shadow-2xl">
+          <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-6 max-w-md w-full shadow-2xl">
             <h3 className="text-lg font-bold text-app mb-2">Konfirmasi Perubahan</h3>
             <p className="text-sm text-muted mb-4">
               {roleChangeConfirm.newRole === 'admin'
@@ -69,13 +69,13 @@ export default function TeamView({
             <div className="flex gap-2 justify-end">
               <button
                 onClick={() => setRoleChangeConfirm(null)}
-                className="px-4 py-2 rounded-lg bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white transition-colors text-sm font-medium"
+                className="px-4 py-2 rounded-lg bg-gray-100 text-gray-400 hover:bg-gray-100 hover:text-gray-800 transition-colors text-sm font-medium"
               >
                 Tidak
               </button>
               <button
                 onClick={handleConfirmRole}
-                className="px-4 py-2 rounded-lg bg-lime-600 text-white hover:bg-lime-500 transition-colors text-sm font-medium"
+                className="px-4 py-2 rounded-lg bg-violet-500 text-white hover:bg-violet-500 transition-colors text-sm font-medium"
               >
                 Ya, Lanjutkan
               </button>
@@ -86,21 +86,21 @@ export default function TeamView({
 
       {removeConfirm && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
-          <div className="bg-gray-900 border border-red-500/20 rounded-xl p-4 sm:p-6 max-w-md w-full shadow-2xl">
+          <div className="bg-white border border-red-200 rounded-xl p-4 sm:p-6 max-w-md w-full shadow-2xl">
             <h3 className="text-lg font-bold text-red-400 mb-2">Hapus Anggota</h3>
             <p className="text-sm text-muted mb-4">
-              Hapus akses &quot;<span className="text-white font-medium">{removeConfirm.memberName}</span>&quot; dari album ini?
+              Hapus akses &quot;<span className="text-gray-800 font-medium">{removeConfirm.memberName}</span>&quot; dari album ini?
             </p>
             <div className="flex gap-2 justify-end">
               <button
                 onClick={() => setRemoveConfirm(null)}
-                className="px-4 py-2 rounded-lg bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white transition-colors text-sm font-medium"
+                className="px-4 py-2 rounded-lg bg-gray-100 text-gray-400 hover:bg-gray-100 hover:text-gray-800 transition-colors text-sm font-medium"
               >
                 Batal
               </button>
               <button
                 onClick={handleConfirmRemove}
-                className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-500 transition-colors text-sm font-medium"
+                className="px-4 py-2 rounded-lg bg-red-500 text-white hover:bg-red-500 transition-colors text-sm font-medium"
               >
                 Ya, Hapus
               </button>
@@ -110,19 +110,19 @@ export default function TeamView({
       )}
 
       <div className="max-w-5xl mx-auto px-3 py-3 sm:px-3 sm:py-4">
-        <div className="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div className="text-center sm:text-left max-sm:hidden lg:hidden">
-            <h2 className="text-lg sm:text-xl font-bold text-app">Kelola anggota</h2>
-            <p className="text-xs text-muted mt-1">{members.length} orang • Kelola akses dan peran</p>
+        <div className="mb-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
+          <div className="text-center sm:text-left">
+            <h2 className="text-3xl sm:text-4xl font-black text-slate-900 uppercase tracking-tight">Tim Album</h2>
+            <p className="text-xs font-bold text-slate-400 mt-2 uppercase tracking-[0.2em]">{members.length} Orang Terdaftar</p>
           </div>
-          <div className="relative sm:w-64">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+          <div className="relative sm:w-80 group">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-indigo-500 transition-colors" strokeWidth={3} />
             <input
               type="text"
-              placeholder="Cari..."
+              placeholder="Cari anggota..."
               value={memberSearch}
               onChange={(e) => setMemberSearch(e.target.value)}
-              className="w-full pl-8 pr-3 py-1.5 text-sm rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-lime-500 transition-colors"
+              className="w-full pl-12 pr-4 py-4 text-sm font-bold rounded-2xl bg-white border-4 border-slate-900 shadow-[6px_6px_0_0_#0f172a] focus:shadow-none focus:translate-x-1 focus:translate-y-1 transition-all focus:outline-none"
             />
           </div>
         </div>
@@ -131,49 +131,57 @@ export default function TeamView({
           {filtered.map((member, idx) => (
             <div
               key={member.user_id || `member-${idx}`}
-              className="p-2.5 sm:p-3 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 transition-colors"
+              className="group relative flex flex-col sm:flex-row sm:items-center rounded-2xl bg-white border-4 border-slate-900 shadow-[6px_6px_0_0_#0f172a] p-5 gap-4 hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all"
             >
-              <div className="flex items-center gap-2 sm:gap-3">
-                <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-4 flex-1">
+                <div
+                  className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl font-black border-4 border-slate-900 shrink-0 bg-emerald-300 text-slate-900 shadow-[inset_-2px_-2px_0_0_rgba(15,23,42,0.2)]"
+                >
+                  {(member.name || member.email || '?').charAt(0).toUpperCase()}
+                </div>
+                <div className="flex-1 min-w-0 flex flex-col gap-1.5">
                   <div className="flex items-center gap-2">
-                    <p className="text-sm font-medium text-app truncate">{member.name || member.email}</p>
+                    <p className="text-base sm:text-lg font-black text-slate-900 uppercase tracking-tight truncate">
+                      {member.name || member.email}
+                    </p>
                     {currentUserId && member.user_id === currentUserId && (
-                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-lime-600/20 text-lime-400 font-semibold flex-shrink-0">
+                      <span className="w-fit text-[10px] px-2 py-0.5 rounded-md bg-indigo-500 text-white font-black uppercase tracking-widest border-2 border-slate-900 shrink-0">
                         Anda
                       </span>
                     )}
-                    {member.role === 'owner' && (
-                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-400 border border-purple-500/30 flex-shrink-0">
-                        Pemilik
-                      </span>
-                    )}
-                    {member.role === 'admin' && (
-                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-lime-500/20 text-lime-400 border border-lime-500/30 flex-shrink-0">
-                        Admin
-                      </span>
-                    )}
-                    {member.role === 'member' && (
-                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-400 border border-blue-500/30 flex-shrink-0">
-                        Anggota
-                      </span>
-                    )}
-                    {member.role === 'student' && (
-                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-500/20 text-gray-400 border border-gray-500/30 flex-shrink-0">
-                        Anggota
-                      </span>
-                    )}
-                    {member.role === 'no-account' && (
-                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-orange-500/20 text-orange-400 border border-orange-500/30 flex-shrink-0">
-                        Belum Login
-                      </span>
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                      {member.role === 'owner' && (
+                        <span className="w-fit text-[10px] px-2 py-0.5 rounded-md bg-amber-400 text-slate-900 font-black uppercase tracking-widest border-2 border-slate-900 shrink-0">
+                          Pemilik
+                        </span>
+                      )}
+                      {member.role === 'admin' && (
+                        <span className="w-fit text-[10px] px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-700 font-black uppercase tracking-widest border-2 border-slate-900 shrink-0">
+                          Admin
+                        </span>
+                      )}
+                      {member.role === 'member' && (
+                        <span className="w-fit text-[10px] px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 font-black uppercase tracking-widest border-2 border-slate-900 shrink-0">
+                          Anggota
+                        </span>
+                      )}
+                      {member.role === 'no-account' && (
+                        <span className="w-fit text-[10px] px-2 py-0.5 rounded-md bg-rose-100 text-rose-600 font-black uppercase tracking-widest border-2 border-slate-900 shrink-0">
+                          Belum Login
+                        </span>
+                      )}
+                    </div>
+                    {member.name && (
+                      <p className="text-xs font-bold text-slate-500">{member.email}</p>
                     )}
                   </div>
-                  {member.name && <p className="text-[11px] text-muted mt-0.5 truncate">{member.email}</p>}
                 </div>
                 {(isOwner || canManage) && member.user_id && member.role !== 'owner' && (
                   <div className="flex gap-1.5 flex-shrink-0">
                     {(isOwner || isGlobalAdmin) && (
-                      <>
+                      <div className="flex gap-2">
                         {member.role !== 'admin' ? (
                           <button
                             onClick={() =>
@@ -183,10 +191,9 @@ export default function TeamView({
                                 memberName: member.name || member.email,
                               })
                             }
-                            className="px-2 py-1 rounded text-[11px] bg-lime-600/20 text-lime-400 hover:bg-lime-600 hover:text-white transition-colors border border-lime-500/20 whitespace-nowrap"
-                            title="Jadikan Admin"
+                            className="px-4 py-2 rounded-xl text-[10px] font-black uppercase bg-indigo-500 text-white border-2 border-slate-900 shadow-[3px_3px_0_0_#0f172a] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
                           >
-                            ↑ Admin
+                            Set Admin
                           </button>
                         ) : (
                           <button
@@ -197,22 +204,21 @@ export default function TeamView({
                                 memberName: member.name || member.email,
                               })
                             }
-                            className="px-2 py-1 rounded text-[11px] bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white transition-colors border border-white/10 whitespace-nowrap"
-                            title="Hapus Admin"
+                            className="px-4 py-2 rounded-xl text-[10px] font-black uppercase bg-slate-100 text-slate-500 border-2 border-slate-900 hover:bg-slate-200 transition-all"
                           >
-                            ↓ Anggota
+                            Jadi Anggota
                           </button>
                         )}
-                      </>
+                      </div>
                     )}
                     {canManage && (
                       <button
                         onClick={() =>
                           setRemoveConfirm({ userId: member.user_id, memberName: member.name || member.email })}
-                        className="p-1.5 rounded text-red-400 hover:bg-red-500/20 hover:text-red-300 transition-colors"
+                        className="w-10 h-10 rounded-xl bg-white border-2 border-slate-900 text-red-500 hover:bg-red-500 hover:text-white shadow-[3px_3px_0_0_#0f172a] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all flex items-center justify-center"
                         title="Hapus akses"
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
+                        <Trash2 className="w-4 h-4" strokeWidth={3} />
                       </button>
                     )}
                   </div>
@@ -224,10 +230,16 @@ export default function TeamView({
             </div>
           ))}
           {members.length === 0 && (
-            <div className="text-center py-12 border-2 border-dashed border-white/10 rounded-xl">
-              <UserCog className="w-16 h-16 mx-auto mb-4 text-gray-600" />
-              <p className="text-app font-medium mb-1">Belum ada anggota</p>
-              <p className="text-sm text-muted">Siswa yang bergabung ke group akan muncul di sini</p>
+            <div className="text-center py-12 sm:py-20 px-4 bg-white border-4 border-slate-900 rounded-[32px] shadow-[8px_8px_0_0_#0f172a]">
+              <div className="w-20 h-20 mx-auto mb-6 rounded-3xl bg-amber-300 border-4 border-slate-900 flex items-center justify-center shadow-[inset_-4px_-4px_0_0_rgba(15,23,42,0.2)]">
+                <UserCog className="w-10 h-10 text-slate-900" strokeWidth={3} />
+              </div>
+              <p className="text-xl sm:text-2xl font-black text-slate-900 uppercase tracking-tight mb-2">
+                Belum ada anggota tim
+              </p>
+              <p className="text-sm font-bold text-slate-500 uppercase tracking-widest">
+                Siswa yang tergabung akan muncul di sini
+              </p>
             </div>
           )}
         </div>

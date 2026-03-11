@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import { Edit3, Trash2, ImagePlus, Video, Play, X, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Edit3, Trash2, ImagePlus, Video, Play, X, ChevronLeft, ChevronRight, Mail, Calendar, Instagram, Quote } from 'lucide-react'
 
 /** Strip surrounding quote characters (straight & curly) so the UI can add its own consistently */
 function stripQuotes(s: string): string {
@@ -70,7 +70,7 @@ export default function MemberCard({
   const [viewerIndex, setViewerIndex] = useState(0)
 
   // Edit form state
-  const [editName, setEditName] = useState(member.student_name)
+  const [editName, setEditName] = useState(member.student_name || '')
   const [editEmail, setEditEmail] = useState(member.email || '')
   const [editTtl, setEditTtl] = useState(member.date_of_birth || '')
   const [editInstagram, setEditInstagram] = useState(member.instagram || '')
@@ -85,7 +85,7 @@ export default function MemberCard({
 
   // Reset form when member data changes
   useEffect(() => {
-    setEditName(member.student_name)
+    setEditName(member.student_name || '')
     setEditEmail(member.email || '')
     setEditTtl(member.date_of_birth || '')
     setEditInstagram(member.instagram || '')
@@ -191,39 +191,52 @@ export default function MemberCard({
 
   return (
     <>
+      {/* Moderation / Delete Confirmation Modal */}
       {typeof document !== 'undefined' && localConfirm && createPortal(
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4" onClick={() => setLocalConfirm(null)}>
-          <div className="bg-gray-900 border border-red-500/20 rounded-xl p-4 sm:p-6 max-w-md w-full shadow-2xl" onClick={e => e.stopPropagation()}>
-            <h3 className="text-lg font-bold text-red-400 mb-2">{localConfirm.title}</h3>
-            <p className="text-sm text-gray-400 mb-4">{localConfirm.message}</p>
-            <div className="flex gap-2 justify-end">
-              <button onClick={() => setLocalConfirm(null)} className="px-4 py-2 rounded-lg bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white transition-colors text-sm font-medium">Batal</button>
-              <button onClick={() => { localConfirm.onConfirm(); setLocalConfirm(null) }} className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-500 transition-colors text-sm font-medium">Ya, Hapus</button>
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4" onClick={() => setLocalConfirm(null)}>
+          <div className="bg-white border-4 border-slate-900 rounded-[32px] p-6 sm:p-8 max-w-md w-full shadow-[12px_12px_0_0_#0f172a] transform transition-all animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+            <h3 className="text-2xl font-black text-slate-900 mb-2 uppercase tracking-tight">{localConfirm.title}</h3>
+            <p className="text-sm font-bold text-slate-500 mb-8 uppercase tracking-wide">{localConfirm.message}</p>
+            <div className="flex gap-4">
+              <button
+                onClick={() => setLocalConfirm(null)}
+                className="flex-1 px-6 py-3.5 rounded-2xl bg-slate-100 text-slate-900 border-4 border-slate-900 hover:bg-slate-200 transition-all text-sm font-black uppercase tracking-widest shadow-[4px_4px_0_0_#0f172a] active:shadow-none active:translate-x-1 active:translate-y-1"
+              >
+                Batal
+              </button>
+              <button
+                onClick={() => { localConfirm.onConfirm(); setLocalConfirm(null) }}
+                className="flex-1 px-6 py-3.5 rounded-2xl bg-red-500 text-white border-4 border-slate-900 hover:bg-red-600 transition-all text-sm font-black uppercase tracking-widest shadow-[4px_4px_0_0_#0f172a] active:shadow-none active:translate-x-1 active:translate-y-1"
+              >
+                Hapus
+              </button>
             </div>
           </div>
         </div>,
         document.body
       )}
 
+      {/* Photo Viewer Modal */}
       {typeof document !== 'undefined' && viewerOpen && createPortal(
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[110] p-4" onClick={() => setViewerOpen(false)}>
-          <div className="bg-gray-900 rounded-lg p-3 max-w-[520px] w-full shadow-xl" onClick={e => e.stopPropagation()}>
-            <div className="flex items-start justify-between mb-2">
-              <div className="flex gap-2 items-center">
-                <button type="button" onClick={() => setViewerIndex(i => Math.max(0, i - 1))} className="p-1 rounded bg-white/5 text-gray-300 hover:bg-white/10" title="Prev"><ChevronLeft className="w-4 h-4" /></button>
-                <button type="button" onClick={() => setViewerIndex(i => Math.min(i + 1, displayPreviewPhotos.length - 1))} className="p-1 rounded bg-white/5 text-gray-300 hover:bg-white/10" title="Next"><ChevronRight className="w-4 h-4" /></button>
+        <div className="fixed inset-0 bg-slate-900/90 backdrop-blur-md flex items-center justify-center z-[110] p-4" onClick={() => setViewerOpen(false)}>
+          <div className="bg-white border-4 border-slate-900 rounded-[32px] p-6 max-w-[560px] w-full shadow-[16px_16px_0_0_#0f172a] transform transition-all animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+            <div className="flex items-start justify-between mb-5 border-b-4 border-slate-100 pb-5">
+              <div className="flex gap-3 items-center">
+                <button type="button" onClick={() => setViewerIndex(i => Math.max(0, i - 1))} className="p-3 rounded-xl bg-slate-100 text-slate-900 border-2 border-slate-900 hover:bg-slate-200 transition-all shadow-[3px_3px_0_0_#0f172a] active:shadow-none active:translate-x-0.5 active:translate-y-0.5" title="Prev"><ChevronLeft className="w-6 h-6" /></button>
+                <div className="px-5 py-2.5 bg-indigo-100 text-indigo-700 font-black text-sm rounded-xl border-2 border-indigo-700 shadow-[3px_3px_0_0_#4338ca]">{viewerIndex + 1} / {displayPreviewPhotos.length}</div>
+                <button type="button" onClick={() => setViewerIndex(i => Math.min(i + 1, displayPreviewPhotos.length - 1))} className="p-3 rounded-xl bg-slate-100 text-slate-900 border-2 border-slate-900 hover:bg-slate-200 transition-all shadow-[3px_3px_0_0_#0f172a] active:shadow-none active:translate-x-0.5 active:translate-y-0.5" title="Next"><ChevronRight className="w-6 h-6" /></button>
               </div>
-              <button type="button" onClick={() => setViewerOpen(false)} className="p-1 rounded bg-white/5 text-gray-300 hover:bg-white/10"><X className="w-4 h-4" /></button>
+              <button type="button" onClick={() => setViewerOpen(false)} className="p-3 rounded-xl bg-slate-100 text-slate-900 border-2 border-slate-900 hover:bg-red-500 hover:text-white transition-all shadow-[3px_3px_0_0_#0f172a] active:shadow-none active:translate-x-0.5 active:translate-y-0.5"><X className="w-6 h-6" /></button>
             </div>
 
-            <div className="w-full flex items-center justify-center mb-2">
-              <img src={(displayPreviewPhotos[viewerIndex] && displayPreviewPhotos[viewerIndex].file_url) || firstPhoto || ''} alt={`${member.student_name} ${viewerIndex + 1}`} className="max-h-[60vh] object-contain w-full rounded bg-black/5" />
+            <div className="w-full flex items-center justify-center mb-6 bg-slate-50 rounded-[24px] overflow-hidden border-4 border-slate-900 shadow-inner" style={{ minHeight: '320px' }}>
+              <img src={(displayPreviewPhotos[viewerIndex] && displayPreviewPhotos[viewerIndex].file_url) || firstPhoto || ''} alt={`${member.student_name} ${viewerIndex + 1}`} className="max-h-[60vh] object-contain w-full" />
             </div>
 
             {displayPreviewPhotos.length > 1 && (
-              <div className="flex gap-2 overflow-x-auto mt-1">
+              <div className="flex gap-3 mx-auto justify-center overflow-x-auto p-1 pb-2">
                 {displayPreviewPhotos.map((p, i) => (
-                  <button key={p.id} onClick={() => setViewerIndex(i)} className={`w-12 h-12 rounded overflow-hidden border ${i === viewerIndex ? 'ring-2 ring-lime-500' : 'border-white/10'}`}>
+                  <button key={p.id} onClick={() => setViewerIndex(i)} className={`w-16 h-16 rounded-xl overflow-hidden border-4 transition-all flex-shrink-0 ${i === viewerIndex ? 'border-indigo-500 shadow-[4px_4px_0_0_#4338ca] -translate-y-1' : 'border-slate-200 hover:border-slate-400 opacity-60 hover:opacity-100 shadow-[2px_2px_0_0_#cbd5e1]'}`}>
                     <img src={p.file_url} alt={`thumb-${i}`} className="w-full h-full object-cover" />
                   </button>
                 ))}
@@ -234,218 +247,287 @@ export default function MemberCard({
         document.body
       )}
 
-      <div className="relative h-full min-h-[320px]" style={{ perspective: '1000px' }}>
+      {/* Card Container Layout - Height adapts to content to prevent truncation */}
+      <div className="relative h-full w-full group" style={{ perspective: '1200px' }}>
         <div
           style={{
             transformStyle: 'preserve-3d',
-            transition: 'transform 0.6s',
+            transition: 'transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1)',
             transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)'
           }}
           className="relative w-full h-full"
         >
-          {/* Front Side */}
-          <div className="relative w-full h-full min-h-[280px] backface-hidden rounded-xl border border-white/10 bg-[#0a0a0b] flex flex-col items-stretch text-left shadow-xl overflow-hidden" style={{ backfaceVisibility: 'hidden' }}>
-            {(photos.length > 0 || firstPhoto) && (
-              <div className="relative aspect-[4/5] overflow-hidden bg-white/5 flex-shrink-0">
-                <img src={photos.length > 0 ? photos[0].file_url : firstPhoto || ''} alt={member.student_name} className="w-full h-full object-cover cursor-pointer" onClick={() => {
-                  if (photos.length > 0) { setViewerIndex(0); setViewerOpen(true) }
-                  else if (onOpenGallery) onOpenGallery(classId, member.student_name)
-                }} />
+          {/* ================= FRONT SIDE ================= */}
+          <div
+            className="relative w-full h-full backface-hidden rounded-2xl border-4 border-slate-900 bg-white shadow-[6px_6px_0_0_#0f172a] group-hover:shadow-none group-hover:translate-x-1 group-hover:translate-y-1 transition-all duration-300 flex flex-col overflow-hidden"
+            style={{ backfaceVisibility: 'hidden' }}
+          >
+            {/* Photo Section */}
+            <div className="relative aspect-[4/5] overflow-hidden bg-slate-50 flex-shrink-0 border-b-4 border-slate-900">
+              {photos.length > 0 || firstPhoto ? (
+                <img
+                  src={photos.length > 0 ? photos[0].file_url : firstPhoto || ''}
+                  alt={member.student_name}
+                  className="w-full h-full object-cover cursor-pointer hover:scale-110 transition-transform duration-700"
+                  onClick={() => {
+                    if (photos.length > 0) { setViewerIndex(0); setViewerOpen(true) }
+                    else if (onOpenGallery) onOpenGallery(classId, member.student_name)
+                  }}
+                />
+              ) : (
+                <div
+                  className="w-full h-full flex flex-col items-center justify-center text-slate-300 cursor-pointer hover:bg-slate-100 transition-colors"
+                  onClick={() => onOpenGallery && onOpenGallery(classId, member.student_name)}
+                >
+                  <ImagePlus className="w-10 h-10 mb-2 opacity-40" />
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Belum ada foto</span>
+                </div>
+              )}
 
-                {member.video_url && (
-                  <button type="button" onClick={(e) => { e.stopPropagation(); if (onPlayVideo) onPlayVideo(member.video_url!) }} className="absolute bottom-2 right-2 w-10 h-10 rounded-full bg-black/70 hover:bg-black/90 flex items-center justify-center group transition-all hover:scale-110" title="Putar Video">
-                    <Play className="w-4 h-4 text-white ml-0.5" fill="currentColor" />
-                  </button>
-                )}
-              </div>
-            )}
-
-            <div className="flex flex-col flex-1 p-2 min-h-0">
-              <div className="mb-0.5">
-                <h3 className="font-bold text-white text-sm leading-snug line-clamp-1">
-                  {member.student_name}
-                  {member.is_me ? <span className="font-normal text-lime-400 ml-1 text-xs"> (Anda)</span> : ''}
-                </h3>
-                {member.email && <p className="text-gray-400 text-xs line-clamp-1">{member.email}</p>}
-              </div>
-
-              <div className="space-y-0 text-xs text-gray-300 leading-tight">
-                {member.date_of_birth && <p className="line-clamp-1 flex items-center gap-1.5"><span className="truncate">{member.date_of_birth}</span></p>}
-                {member.instagram && (
-                  <a href={member.instagram.startsWith('http') ? member.instagram : `https://instagram.com/${member.instagram.replace('@', '')}`} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 hover:text-white transition-colors line-clamp-1" onClick={(e) => e.stopPropagation()}>
-                    <span className="truncate">{member.instagram.startsWith('@') ? member.instagram : '@' + member.instagram}</span>
-                  </a>
-                )}
-                {member.message && <p className="italic text-gray-400 overflow-hidden leading-tight" style={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical' }}>"{stripQuotes(member.message)}"</p>}
-              </div>
+              {/* Video Badge Overlay */}
+              {member.video_url && (
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); if (onPlayVideo) onPlayVideo(member.video_url!) }}
+                  className="absolute bottom-3 right-3 w-10 h-10 rounded-full bg-indigo-400 text-white border-2 border-slate-900 flex items-center justify-center transition-all hover:scale-110 shadow-[3px_3px_0_0_#0f172a] active:shadow-none active:translate-x-0.5 active:translate-y-0.5"
+                  title="Putar Video"
+                >
+                  <Play className="w-5 h-5 ml-1" fill="currentColor" />
+                </button>
+              )}
             </div>
 
-            <div className="px-2 pt-0 pb-2 mt-auto">
-              <div className="flex gap-1.5 h-7">
+            {/* Content Section - Increased padding for a slightly larger card */}
+            <div className="flex flex-col flex-1 p-4 bg-white">
+              {/* Header */}
+              <div className="mb-2.5 flex flex-col">
+                <h3 className="font-black text-slate-900 text-base leading-tight line-clamp-1 break-words pb-0.5 uppercase tracking-tight">
+                  {member.student_name}
+                  {member.is_me && <span className="inline-flex items-center ml-2 px-2 py-0.5 rounded-lg text-[9px] font-black bg-emerald-400 text-slate-900 border-2 border-slate-900 shadow-[1px_1px_0_0_#0f172a] align-middle">ANDA</span>}
+                </h3>
+              </div>
+
+              {/* Profile Details List */}
+              <div className="flex flex-col gap-1.5 text-[10px] font-bold text-slate-500 uppercase tracking-wide">
+                {member.email && (
+                  <div className="flex items-center gap-2 group/link">
+                    <Mail className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" strokeWidth={2.5} />
+                    <span className="line-clamp-1 lowercase">{member.email}</span>
+                  </div>
+                )}
+                {member.date_of_birth && (
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" strokeWidth={2.5} />
+                    <span className="line-clamp-1">{member.date_of_birth}</span>
+                  </div>
+                )}
+                {member.instagram && (
+                  <a
+                    href={member.instagram.startsWith('http') ? member.instagram : `https://instagram.com/${member.instagram.replace('@', '')}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center gap-2 text-pink-500 hover:text-pink-600 transition-colors"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <Instagram className="w-3.5 h-3.5 text-pink-500 flex-shrink-0" strokeWidth={2.5} />
+                    <span className="line-clamp-1 font-black">{member.instagram.startsWith('@') ? member.instagram : '@' + member.instagram}</span>
+                  </a>
+                )}
+              </div>
+
+              {/* Message Block */}
+              {member.message && (
+                <div className="mt-3.5 p-3 rounded-xl bg-slate-50 border-2 border-slate-900 relative flex-1 flex flex-col min-h-0 shadow-[4px_4px_0_0_#0f172a]">
+                  <Quote className="absolute -top-2 -left-2 w-5 h-5 text-slate-900 bg-white rounded-full p-1 border-2 border-slate-900" />
+                  <p className="italic font-bold text-slate-600 leading-snug text-xs line-clamp-3 pl-1 pt-0.5">
+                    "{stripQuotes(member.message)}"
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Action Buttons (Bottom) */}
+            <div className="px-3 pb-3 mt-auto bg-white flex-shrink-0">
+              <div className="flex gap-2.5">
                 {(canManage || member.is_me || hasApprovedAccess) && (
-                  <button type="button" onClick={(e) => { e.stopPropagation(); onStartEdit?.(member) }} className="flex-1 text-xs font-medium rounded-lg bg-lime-900/40 text-lime-400 hover:bg-lime-900/60 border border-lime-500/20 transition-colors flex items-center justify-center gap-1.5"><Edit3 className="w-3.5 h-3.5" /> Edit</button>
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); onStartEdit?.(member) }}
+                    className="flex-1 text-[10px] font-black uppercase tracking-widest rounded-xl bg-indigo-100 text-indigo-700 border-2 border-indigo-700 hover:bg-indigo-700 hover:text-white transition-all flex items-center justify-center gap-2 py-2 shadow-[3px_3px_0_0_#4338ca] active:shadow-none active:translate-x-0.5 active:translate-y-0.5"
+                  >
+                    <Edit3 className="w-3.5 h-3.5" /> Edit
+                  </button>
                 )}
                 {canManage && (
-                  <button type="button" onClick={() => onDeleteClick?.()} className="flex-1 text-xs font-medium rounded-lg bg-red-900/40 text-red-400 hover:bg-red-900/60 border border-red-500/20 transition-colors flex items-center justify-center gap-1.5" title="Hapus anggota"><Trash2 className="w-3.5 h-3.5" /> Hapus</button>
+                  <button
+                    type="button"
+                    onClick={() => onDeleteClick?.()}
+                    className="flex-1 text-[10px] font-black uppercase tracking-widest rounded-xl bg-red-100 text-red-600 border-2 border-red-600 hover:bg-red-600 hover:text-white transition-all flex items-center justify-center gap-2 py-2 shadow-[3px_3px_0_0_#dc2626] active:shadow-none active:translate-x-0.5 active:translate-y-0.5"
+                    title="Hapus anggota"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" /> Hapus
+                  </button>
                 )}
               </div>
             </div>
           </div>
 
-          {/* Back Side - Edit Form */}
+          {/* ================= BACK SIDE (EDIT FORM) ================= */}
           <div
             style={{
               backfaceVisibility: 'hidden',
               WebkitBackfaceVisibility: 'hidden',
-              transform: 'rotateY(180deg)',
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              width: '100%',
-              height: '100%',
+              transform: 'rotateY(180deg)'
             }}
-            className="flex flex-col rounded-xl border border-white/10 bg-[#0a0a0b] overflow-hidden p-3"
+            className="absolute inset-0 w-full h-full flex flex-col rounded-2xl border-4 border-slate-900 bg-white shadow-[12px_12px_0_0_#0f172a] overflow-hidden"
           >
-            <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:[display:none]" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-              <h3 className="text-app font-medium text-[10px] mb-2 flex items-center gap-1">
-                <Edit3 className="w-3 h-3" />
-                Edit Profil
-              </h3>
-              <div className="space-y-1.5">
-                <input
-                  type="text"
-                  value={editName}
-                  onChange={(e) => setEditName(e.target.value)}
-                  placeholder="Nama"
-                  className="w-full px-2 py-1 rounded text-[10px] bg-white/5 border border-white/10 text-app"
-                />
-                <input
-                  type="email"
-                  value={editEmail}
-                  onChange={(e) => setEditEmail(e.target.value)}
-                  placeholder="Email"
-                  className="w-full px-2 py-1 rounded text-[10px] bg-white/5 border border-white/10 text-app"
-                />
-                <input
-                  type="text"
-                  value={editTtl}
-                  onChange={(e) => setEditTtl(e.target.value)}
-                  placeholder="Tempat, Tanggal Lahir"
-                  className="w-full px-2 py-1 rounded text-[10px] bg-white/5 border border-white/10 text-app"
-                />
-                <input
-                  type="text"
-                  value={editInstagram}
-                  onChange={(e) => setEditInstagram(e.target.value)}
-                  placeholder="Instagram"
-                  className="w-full px-2 py-1 rounded text-[10px] bg-white/5 border border-white/10 text-app"
-                />
+            {/* Header */}
+            <div className="px-4 py-3 border-b-4 border-slate-900 bg-amber-300 flex items-center gap-3 flex-shrink-0">
+              <button type="button" className="w-8 h-8 rounded-lg border-2 border-slate-900 hover:bg-white/20 flex items-center justify-center bg-white shadow-[2px_2px_0_0_#0f172a] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all" onClick={onCancelEdit}>
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              <h3 className="text-slate-900 font-black text-xs uppercase tracking-widest">Edit Profil</h3>
+            </div>
 
-                {/* Photo Preview List */}
+            {/* Form Scrollable Area - Ultra compact layout */}
+            <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2.5" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+              <div>
+                <label className="text-[10px] font-black text-slate-900 uppercase tracking-widest mb-1 block">Nama Lengkap</label>
+                <input
+                  type="text"
+                  value={editName || ''}
+                  onChange={(e) => setEditName(e.target.value)}
+                  placeholder="Nama Lengkap"
+                  className="w-full px-3 py-2 rounded-xl text-xs bg-slate-50 border-2 border-slate-900 text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-bold placeholder:text-slate-400"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2.5">
+                <div>
+                  <label className="text-[10px] font-black text-slate-900 uppercase tracking-widest mb-1 block">Email</label>
+                  <input
+                    type="email"
+                    value={editEmail || ''}
+                    onChange={(e) => setEditEmail(e.target.value)}
+                    placeholder="Email"
+                    className="w-full px-3 py-2 rounded-xl text-xs bg-slate-50 border-2 border-slate-900 text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-bold placeholder:text-slate-400"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-black text-slate-900 uppercase tracking-widest mb-1 block">Instagram</label>
+                  <input
+                    type="text"
+                    value={editInstagram || ''}
+                    onChange={(e) => setEditInstagram(e.target.value)}
+                    placeholder="@ig"
+                    className="w-full px-3 py-2 rounded-xl text-xs bg-slate-50 border-2 border-slate-900 text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-bold placeholder:text-slate-400"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[10px] font-black text-slate-900 uppercase tracking-widest mb-1 block">Tempat, Tanggal Lahir</label>
+                <input
+                  type="text"
+                  value={editTtl || ''}
+                  onChange={(e) => setEditTtl(e.target.value)}
+                  placeholder="Ttl (Sby, 1 Jan 2005)"
+                  className="w-full px-3 py-2 rounded-xl text-xs bg-slate-50 border-2 border-slate-900 text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-bold placeholder:text-slate-400"
+                />
+              </div>
+
+              {/* Photo Preview List */}
+              <div className="pt-1">
+                <label className="text-[10px] font-black text-slate-900 uppercase tracking-widest mb-2 block">Foto Galeri (Maks 4)</label>
                 {displayPreviewPhotos.length > 0 && (
-                  <div className="flex gap-1 flex-wrap mt-1">
+                  <div className="flex gap-3 flex-wrap mb-3">
                     {displayPreviewPhotos.map((photo, idx) => (
-                      <div key={photo.id} className="relative w-12 h-12 rounded overflow-hidden bg-white/5 border border-white/10 group">
+                      <div key={photo.id} className="relative w-14 h-14 bg-slate-100 rounded-xl flex-shrink-0 border-2 border-slate-900 shadow-[3px_3px_0_0_#0f172a]">
                         {photo.isPending && (
-                          <div className="absolute top-0 left-0 bg-yellow-500 text-[6px] text-black px-0.5 rounded-br z-10">Baru</div>
+                          <div className="absolute -top-2 -left-2 bg-emerald-400 text-slate-900 text-[8px] font-black px-1.5 py-0.5 rounded-lg border-2 border-slate-900 z-10 shadow-[2px_2px_0_0_#0f172a] uppercase">BARU</div>
                         )}
                         <img
                           src={photo.file_url}
                           alt={`preview-${idx}`}
-                          className="w-full h-full object-cover cursor-pointer"
-                          onClick={() => {
-                            setViewerIndex(idx)
-                            setViewerOpen(true)
-                          }}
+                          className="w-full h-full object-cover rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
+                          onClick={() => { setViewerIndex(idx); setViewerOpen(true) }}
                         />
                         <button
                           type="button"
-                          onClick={() => {
+                          onClick={(e) => {
+                            e.stopPropagation()
                             if (photo.isPending) {
-                              const pendingIdx = idx - basePhotos.length
-                              removePendingPhoto(pendingIdx)
+                              removePendingPhoto(idx - basePhotos.length)
                             } else {
-                              setLocalConfirm({
-                                title: 'Hapus Foto',
-                                message: `Yakin ingin menghapus foto ${idx + 1}?`,
-                                onConfirm: () => onDeletePhoto?.(photo.id, classId, member.student_name)
-                              })
+                              setLocalConfirm({ title: 'Hapus Foto', message: `Hapus foto ini?`, onConfirm: () => onDeletePhoto?.(photo.id, classId, member.student_name) })
                             }
                           }}
-                          className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                          className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center shadow-[2px_2px_0_0_#0f172a] hover:bg-red-600 transition-all z-20 border-2 border-slate-900 active:shadow-none active:translate-x-0.5 active:translate-y-0.5"
                         >
-                          <Trash2 className="w-3.5 h-3.5 text-red-500" />
+                          <X className="w-3.5 h-3.5" />
                         </button>
                       </div>
                     ))}
                   </div>
                 )}
 
-                {/* Pending video preview */}
-                {pendingVideo && (
-                  <div className="flex items-center gap-2 mt-1 p-1.5 rounded bg-blue-600/10 border border-blue-500/20">
-                    <Video className="w-3 h-3 text-blue-400 flex-shrink-0" />
-                    <span className="text-[9px] text-blue-300 truncate flex-1">{pendingVideo.file.name}</span>
-                    <button type="button" onClick={removePendingVideo} className="text-red-400 hover:text-red-300">
-                      <X className="w-3 h-3" />
-                    </button>
-                  </div>
-                )}
-
-                {/* Hidden file inputs */}
-                <input ref={photoInputRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoSelected} />
-                <input ref={videoInputRef} type="file" accept="video/*" className="hidden" onChange={handleVideoSelected} />
-
-                {/* Media management */}
-                <div className="flex gap-1">
+                {/* Media Upload Buttons */}
+                <div className="flex gap-2.5">
                   <button
                     type="button"
                     onClick={() => photoInputRef.current?.click()}
                     disabled={displayPreviewPhotos.length >= 4}
-                    className="flex-1 px-1.5 py-1 rounded text-[9px] bg-green-600/20 text-green-400 hover:bg-green-600/30 transition-colors flex items-center justify-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex-1 px-3 py-2.5 rounded-xl text-[10px] font-black uppercase bg-emerald-100 text-emerald-700 border-2 border-emerald-700 hover:bg-emerald-700 hover:text-white transition-all flex items-center justify-center gap-2 disabled:opacity-50 shadow-[3px_3px_0_0_#047857] active:shadow-none active:translate-x-0.5 active:translate-y-0.5"
                   >
-                    <ImagePlus className="w-2.5 h-2.5" /> Foto (maks. 10MB)
+                    <ImagePlus className="w-4 h-4" /> Foto ({displayPreviewPhotos.length}/4)
                   </button>
                   <button
                     type="button"
                     onClick={() => videoInputRef.current?.click()}
-                    className="flex-1 px-1.5 py-1 rounded text-[9px] bg-blue-600/20 text-blue-400 hover:bg-blue-600/30 transition-colors flex items-center justify-center gap-1"
+                    className="flex-1 px-3 py-2.5 rounded-xl text-[10px] font-black uppercase bg-sky-100 text-sky-700 border-2 border-sky-700 hover:bg-sky-700 hover:text-white transition-all flex items-center justify-center gap-2 shadow-[3px_3px_0_0_#0369a1] active:shadow-none active:translate-x-0.5 active:translate-y-0.5"
                   >
-                    <Video className="w-2.5 h-2.5" /> Video (maks. 20MB)
+                    <Video className="w-4 h-4" /> Video
                   </button>
                 </div>
+              </div>
 
+              <div>
+                <label className="text-[10px] font-black text-slate-900 uppercase tracking-widest mb-1 block">Link YouTube</label>
                 <input
                   type="url"
-                  value={editVideoUrl}
+                  value={editVideoUrl || ''}
                   onChange={(e) => setEditVideoUrl(e.target.value)}
-                  placeholder="Link Video (YouTube)"
-                  className="w-full px-2 py-1 rounded text-[10px] bg-white/5 border border-white/10 text-app"
+                  placeholder="Link YouTube"
+                  className="w-full px-3 py-2 rounded-xl text-xs bg-slate-50 border-2 border-slate-900 text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-bold placeholder:text-slate-400"
                 />
+              </div>
 
+              <div>
+                <label className="text-[10px] font-black text-slate-900 uppercase tracking-widest mb-1 block">Pesan / Kesan</label>
                 <textarea
-                  value={editMessage}
+                  value={editMessage || ''}
                   onChange={(e) => setEditMessage(e.target.value)}
                   placeholder="Pesan / Kesan"
                   rows={2}
-                  className="w-full px-2 py-1 rounded text-[10px] bg-white/5 border border-white/10 text-app resize-none"
+                  className="w-full px-3 py-2 rounded-xl text-xs bg-slate-50 border-2 border-slate-900 text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-bold placeholder:text-slate-400 resize-none"
                 />
               </div>
             </div>
 
-            <div className="flex gap-1 mt-2">
+            {/* Editing Action Buttons */}
+            <div className="px-4 py-3 bg-white border-t-4 border-slate-900 flex gap-3 flex-shrink-0">
               <button
                 type="button"
                 onClick={handleSave}
                 disabled={saving}
-                className="flex-[2] px-2 py-1 rounded text-[10px] bg-lime-600 text-white font-medium hover:bg-lime-500 disabled:opacity-50"
+                className="flex-[2] px-4 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest bg-indigo-500 text-white hover:bg-indigo-600 transition-all border-2 border-slate-900 shadow-[4px_4px_0_0_#0f172a] active:shadow-none active:translate-x-1 active:translate-y-1 disabled:opacity-50 flex items-center justify-center"
               >
-                {saving ? 'Simpan...' : 'Simpan'}
+                {saving ? 'Loading...' : 'Simpan'}
               </button>
               <button
                 type="button"
                 onClick={onCancelEdit}
-                className="flex-1 px-2 py-1 rounded text-[10px] border border-white/10 text-app font-medium hover:bg-white/5"
+                className="flex-1 px-4 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest bg-slate-100 text-slate-900 hover:bg-slate-200 transition-all border-2 border-slate-900 shadow-[4px_4px_0_0_#0f172a] active:shadow-none active:translate-x-1 active:translate-y-1"
               >
                 Batal
               </button>

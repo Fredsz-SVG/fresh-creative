@@ -1,8 +1,10 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import DashboardTitle from '@/components/dashboard/DashboardTitle'
+import { Pencil, X, Sparkles, Trash2, ShieldCheck, UserCheck, LayoutDashboard } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
+import { apiUrl } from '../../lib/api-url'
+import { fetchWithAuth } from '../../lib/api-client'
 
 type OverviewStats = {
   totalUsers: number
@@ -65,7 +67,7 @@ export default function AdminPage() {
       const ts = Date.now()
       params.set('_t', String(ts))
 
-      const res = await fetch(`/api/admin/users/overview?${params.toString()}`)
+      const res = await fetchWithAuth(`/api/admin/users/overview?${params.toString()}`)
       const data = await res.json().catch(() => null)
       if (!res.ok) {
         if (mountedRef.current && !silent) setError(data?.error || 'Gagal memuat overview')
@@ -125,7 +127,7 @@ export default function AdminPage() {
   const updateCredits = async (id: string, value: number) => {
     setSavingId(id)
     try {
-      const res = await fetch('/api/admin/users/overview', {
+      const res = await fetchWithAuth('/api/admin/users/overview', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, credits: value }),
@@ -155,7 +157,7 @@ export default function AdminPage() {
   const updateUser = async (id: string, payload: { isSuspended?: boolean }) => {
     setSavingId(id)
     try {
-      const res = await fetch('/api/admin/users/overview', {
+      const res = await fetchWithAuth('/api/admin/users/overview', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, isSuspended: payload.isSuspended }),
@@ -245,7 +247,7 @@ export default function AdminPage() {
       onConfirm: async () => {
         setDeletingId(userId)
         try {
-          const res = await fetch('/api/admin/users/overview', {
+          const res = await fetchWithAuth('/api/admin/users/overview', {
             method: 'DELETE',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ id: userId }),
@@ -299,7 +301,7 @@ export default function AdminPage() {
       onConfirm: async () => {
         setSavingId(userId)
         try {
-          const res = await fetch('/api/admin/users/overview', {
+          const res = await fetchWithAuth('/api/admin/users/overview', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ id: userId, role: nextRole }),
@@ -329,63 +331,63 @@ export default function AdminPage() {
   const currentPage = stats?.page ?? page
   const totalPages = totalRows > 0 ? Math.ceil(totalRows / perPage) : 1
 
+  const statCards = [
+    { label: 'Total User', value: stats?.totalUsers.toLocaleString() ?? '0', color: 'from-violet-100 to-violet-50 border-violet-200', valueColor: 'text-violet-700' },
+    { label: 'Admin', value: stats?.totalAdmins.toLocaleString() ?? '0', color: 'from-pink-100 to-pink-50 border-pink-200', valueColor: 'text-pink-700' },
+    { label: 'Total Credit', value: stats?.totalCredits.toLocaleString() ?? '0', color: 'from-amber-100 to-amber-50 border-amber-200', valueColor: 'text-amber-700' },
+    { label: 'User Baru 7 Hari', value: stats?.newUsers7d.toLocaleString() ?? '0', color: 'from-emerald-100 to-emerald-50 border-emerald-200', valueColor: 'text-emerald-700' },
+  ]
+
   return (
-    <>
-      <DashboardTitle
-        title="Admin Dashboard"
-        subtitle="Kelola pengguna"
-      />
+    <div className="max-w-7xl mx-auto">
+      <div className="flex flex-col gap-2 mb-10 px-4 md:px-0">
+        <h1 className="text-3xl font-black text-slate-900 sm:text-4xl tracking-tight">
+          Admin Dashboard
+        </h1>
+        <p className="text-slate-600 font-bold text-sm sm:text-base max-w-2xl">
+          Overview of user distribution, credits, and registration activity.
+        </p>
+      </div>
 
       {error && (
-        <div className="mb-4 rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2 text-xs text-red-300">
+        <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600 font-semibold">
           {error}
         </div>
       )}
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6 mb-8 px-4 md:px-0">
         {loading && !stats ? (
           [1, 2, 3, 4].map((i) => (
-            <div key={`stat-skeleton-${i}`} className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 animate-pulse">
-              <div className="h-3 w-20 bg-white/10 rounded mb-2" />
-              <div className="h-7 w-16 bg-white/10 rounded" />
+            <div key={`stat-skeleton-${i}`} className="bg-white border-4 border-slate-900 rounded-[24px] p-5 md:p-6 animate-pulse shadow-[4px_4px_0_0_#0f172a]">
+              <div className="h-3 w-16 bg-slate-100 rounded mb-3" />
+              <div className="h-8 w-24 bg-slate-50 rounded" />
             </div>
           ))
         ) : (
           <>
-            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-              <p className="text-[11px] text-gray-400 mb-1">Total User</p>
-              <p className="text-2xl font-bold text-white">
-                {stats?.totalUsers.toLocaleString() ?? '0'}
-              </p>
-            </div>
-            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-              <p className="text-[11px] text-gray-400 mb-1">Admin</p>
-              <p className="text-2xl font-bold text-white">
-                {stats?.totalAdmins.toLocaleString() ?? '0'}
-              </p>
-            </div>
-            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-              <p className="text-[11px] text-gray-400 mb-1">Total Credit</p>
-              <p className="text-2xl font-bold text-lime-400">
-                {stats?.totalCredits.toLocaleString() ?? '0'}
-              </p>
-            </div>
-            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-              <p className="text-[11px] text-gray-400 mb-1">User Baru 7 Hari</p>
-              <p className="text-2xl font-bold text-white">
-                {stats?.newUsers7d.toLocaleString() ?? '0'}
-              </p>
-            </div>
+            {[
+              { label: 'Total User', value: stats?.totalUsers.toLocaleString() ?? '0', color: 'bg-indigo-300', shadow: '#0f172a' },
+              { label: 'Admin', value: stats?.totalAdmins.toLocaleString() ?? '0', color: 'bg-purple-300', shadow: '#0f172a' },
+              { label: 'Total Credit', value: stats?.totalCredits.toLocaleString() ?? '0', color: 'bg-amber-300', shadow: '#0f172a' },
+              { label: 'New User (7d)', value: stats?.newUsers7d.toLocaleString() ?? '0', color: 'bg-emerald-300', shadow: '#0f172a' }
+            ].map((sc) => (
+              <div key={sc.label} className={`${sc.color} border-4 border-slate-900 rounded-[24px] p-5 md:p-6 shadow-[4px_4px_0_0_#0f172a] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all`}>
+                <p className="text-[10px] md:text-xs font-black text-slate-900 uppercase tracking-widest mb-1.5 md:mb-2">{sc.label}</p>
+                <p className="text-2xl md:text-4xl font-black text-slate-900">
+                  {sc.value}
+                </p>
+              </div>
+            ))}
           </>
         )}
       </div>
 
-      <div className="rounded-2xl border border-white/10 bg-white/[0.02] overflow-hidden">
-        <div className="px-4 py-3 border-b border-white/10 flex items-center justify-between gap-3 flex-wrap">
-          <div className="flex items-center gap-2">
-            <h2 className="text-sm font-semibold text-white">Daftar User</h2>
-            <span className="text-[11px] text-gray-500">
-              {totalRows} user
+      <div className="bg-white border-4 border-slate-900 rounded-[24px] md:rounded-[32px] overflow-hidden shadow-[6px_6px_0_0_#0f172a] md:shadow-[12px_12px_0_0_#0f172a] mx-4 md:mx-0">
+        <div className="px-5 py-4 md:px-8 md:py-6 border-b-4 border-slate-900 flex items-center justify-between gap-4 flex-wrap bg-violet-300">
+          <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-3">
+            <h2 className="text-xl md:text-2xl font-black text-slate-900 leading-none">Users</h2>
+            <span className="text-slate-900 text-sm md:text-base font-black uppercase tracking-widest ml-2">
+              {totalRows} Total
             </span>
           </div>
           <div className="flex items-center gap-2 w-full sm:w-auto">
@@ -396,282 +398,220 @@ export default function AdminPage() {
                 setPage(1)
                 setSearch(e.target.value)
               }}
-              placeholder="Cari nama atau email..."
-              className="px-2 py-1 rounded bg-black/40 border border-white/10 text-xs text-white w-full sm:w-56"
+              placeholder="Cari user..."
+              className="w-full sm:w-64 px-4 py-2.5 text-sm font-bold bg-white border-4 border-slate-900 rounded-xl text-slate-900 placeholder:text-slate-400 focus:outline-none shadow-[3px_3px_0_0_#0f172a] focus:shadow-none transition-all"
             />
           </div>
         </div>
-        <div className="md:hidden p-3 space-y-3">
+        <div className="md:hidden p-4 space-y-4">
           {loading && (
             <>
               {[1, 2, 3].map((i) => (
-                <div key={`mobile-skeleton-${i}`} className="rounded-2xl border border-white/10 bg-white/[0.02] p-3 space-y-3 animate-pulse">
-                  <div className="h-4 w-40 bg-white/10 rounded" />
-                  <div className="h-3 w-32 bg-white/10 rounded" />
-                  <div className="h-3 w-24 bg-white/10 rounded" />
-                  <div className="h-8 w-full bg-white/10 rounded" />
-                  <div className="h-9 w-full bg-white/10 rounded" />
+                <div key={`mobile-skeleton-${i}`} className="bg-slate-50 border-4 border-slate-900 rounded-2xl p-4 space-y-3 animate-pulse">
+                  <div className="h-5 w-40 bg-slate-200 rounded-lg" />
+                  <div className="h-3 w-32 bg-slate-100 rounded-lg" />
+                  <div className="h-10 w-full bg-slate-200 rounded-xl" />
                 </div>
               ))}
             </>
           )}
           {!loading && stats && stats.latestUsers.length === 0 && (
-            <div className="rounded-xl border border-white/10 bg-white/[0.02] px-3 py-4 text-center text-xs text-gray-500">
-              Belum ada user terdaftar.
+            <div className="py-12 text-center text-slate-400 bg-slate-50 rounded-2xl border-4 border-slate-200 border-dashed">
+              <p className="font-black">Belum ada user terdaftar.</p>
             </div>
           )}
           {!loading && stats && stats.latestUsers.length > 0 && stats.latestUsers.map((u) => (
-            <div key={u.id} className="rounded-2xl border border-white/10 bg-white/[0.02] p-3 space-y-3">
-              <div>
-                <p className="text-sm text-white font-semibold">{u.full_name || '-'}</p>
-                <p className="text-[11px] text-gray-400">{u.email || '-'}</p>
-              </div>
-              <div className="flex items-center justify-between text-[11px]">
-                <div className="flex items-center gap-2 text-gray-300">
-                  <span>{u.role || 'user'}</span>
-                  <button
-                    type="button"
-                    disabled={savingId === u.id}
-                    onClick={() => handleChangeRole(u.id, u.role === 'admin' ? 'user' : 'admin')}
-                    className="px-2 py-0.5 rounded border border-white/10 text-[10px] text-gray-300 hover:bg-white/10 disabled:opacity-50"
-                  >
-                    {u.role === 'admin' ? 'Jadikan User' : 'Jadikan Admin'}
-                  </button>
+            <div key={u.id} className="bg-white border-4 border-slate-900 rounded-2xl p-4 space-y-4 shadow-[4px_4px_0_0_#0f172a] hover:-translate-x-0.5 hover:-translate-y-0.5 transition-all">
+              <div className="flex justify-between items-start gap-2">
+                <div className="min-w-0">
+                  <p className="text-sm font-black text-slate-900 truncate">{u.full_name || 'No Name'}</p>
+                  <p className="text-[10px] font-bold text-slate-400 truncate">{u.email || '-'}</p>
                 </div>
-                {u.is_suspended ? (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-red-500/10 text-red-300 text-[10px]">
-                    Suspended
+                <div className="flex flex-col items-end gap-1.5 shrink-0">
+                  <span className={`px-2 py-0.5 rounded-full border-2 border-slate-900 text-[9px] font-black uppercase shadow-[2px_2px_0_0_#0f172a] ${u.is_suspended ? 'bg-red-400 text-white' : 'bg-emerald-300 text-slate-900'}`}>
+                    {u.is_suspended ? 'Suspended' : 'Aktif'}
                   </span>
-                ) : (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-lime-500/10 text-lime-300 text-[10px]">
-                    Aktif
+                  <span className="px-2 py-0.5 bg-slate-100 border-2 border-slate-900 rounded-full text-[9px] font-black uppercase shadow-[2px_2px_0_0_#0f172a]">
+                    {u.role || 'user'}
                   </span>
-                )}
+                </div>
               </div>
-              <div className="text-[11px] text-gray-400">
-                {u.created_at
-                  ? new Date(u.created_at).toLocaleString('id-ID', {
-                      day: '2-digit',
-                      month: 'short',
-                      year: '2-digit',
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })
-                  : '-'}
+
+              <div className="bg-slate-50 border-2 border-slate-900 rounded-xl p-3 flex items-center justify-between">
+                <div>
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Credits</p>
+                  {editUserId === u.id ? (
+                    <div className="flex items-center gap-1.5">
+                      <input
+                        type="number"
+                        min={0}
+                        value={editCredits}
+                        onChange={(e) => setEditCredits(e.target.value)}
+                        className="w-20 px-2 py-1 bg-white border-2 border-slate-900 rounded-lg text-xs font-black text-slate-900 focus:outline-none"
+                        autoFocus
+                      />
+                      <button
+                        onClick={() => handleSaveCredits(u.id)}
+                        className="p-1 px-2.5 bg-indigo-400 border-2 border-slate-900 rounded-lg text-[10px] font-black"
+                      >
+                        OK
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <p className="text-xl font-black text-slate-900">{u.credits?.toLocaleString() ?? 0}</p>
+                      <button onClick={() => handleStartEditCredits(u.id, u.credits ?? 0)} className="text-[10px] font-bold text-indigo-500 underline flex items-center gap-0.5">
+                        <Pencil size={10} strokeWidth={3} /> edit
+                      </button>
+                    </div>
+                  )}
+                </div>
+                <div className="text-right">
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Joined</p>
+                  <p className="text-[10px] font-bold text-slate-900">{u.created_at ? new Date(u.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: '2-digit' }) : '-'}</p>
+                </div>
               </div>
-              <div className="rounded-xl border border-white/10 bg-black/30 p-2">
-                {editUserId === u.id ? (
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="number"
-                      min={0}
-                      value={editCredits}
-                      onChange={(e) => setEditCredits(e.target.value)}
-                      className="flex-1 px-2 py-1 rounded bg-black/40 border border-white/10 text-right text-xs text-white"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => handleSaveCredits(u.id)}
-                      disabled={savingId === u.id}
-                      className="px-2 py-1 rounded bg-lime-600 text-white text-[11px] disabled:opacity-50"
-                    >
-                      {savingId === u.id ? 'Simpan...' : 'Simpan'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setEditUserId(null)}
-                      className="px-2 py-1 rounded bg-white/5 text-gray-300 text-[11px]"
-                    >
-                      Batal
-                    </button>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-between">
-                    <span className="text-lime-400 text-sm font-semibold">
-                      {typeof u.credits === 'number' ? u.credits.toLocaleString() : '0'}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => handleStartEditCredits(u.id, u.credits ?? 0)}
-                      className="px-2 py-1 rounded border border-white/10 text-[11px] text-gray-300 hover:bg-white/10"
-                    >
-                      Edit
-                    </button>
-                  </div>
-                )}
-              </div>
-              <div className="flex items-center gap-2">
+
+              <div className="grid grid-cols-2 gap-2">
                 <button
-                  type="button"
+                  onClick={() => handleChangeRole(u.id, u.role === 'admin' ? 'user' : 'admin')}
+                  disabled={savingId === u.id}
+                  className="px-3 py-2 bg-slate-100 border-2 border-slate-900 rounded-xl text-[10px] font-black uppercase hover:bg-slate-200 transition-colors disabled:opacity-50"
+                >
+                  {u.role === 'admin' ? 'Remove Admin' : 'Make Admin'}
+                </button>
+                <button
                   onClick={() => handleSuspendUser(u.id, !!u.is_suspended)}
                   disabled={savingId === u.id}
-                  className="flex-1 px-2 py-2 rounded border border-amber-500/50 text-[11px] text-amber-300 hover:bg-amber-500/10 disabled:opacity-50"
+                  className={`px-3 py-2 border-2 border-slate-900 rounded-xl text-[10px] font-black uppercase transition-colors disabled:opacity-50 ${u.is_suspended ? 'bg-emerald-300 text-slate-900' : 'bg-amber-300 text-slate-900'}`}
                 >
                   {u.is_suspended ? 'Unsuspend' : 'Suspend'}
                 </button>
                 <button
-                  type="button"
                   onClick={() => handleDeleteUser(u.id)}
                   disabled={deletingId === u.id}
-                  className="flex-1 px-2 py-2 rounded border border-red-500/50 text-[11px] text-red-300 hover:bg-red-500/10 disabled:opacity-50"
+                  className="col-span-2 px-3 py-2 bg-red-400 border-2 border-slate-900 text-white rounded-xl text-[10px] font-black uppercase hover:bg-red-500 transition-colors disabled:opacity-50"
                 >
-                  {deletingId === u.id ? 'Hapus...' : 'Hapus'}
+                  {deletingId === u.id ? 'Deleting...' : 'Delete User'}
                 </button>
               </div>
             </div>
           ))}
         </div>
         <div className="overflow-x-auto hidden md:block">
-          <table className="min-w-full text-xs">
-            <thead className="bg-white/[0.02] text-gray-400">
+          <table className="min-w-full">
+            <thead className="bg-slate-50 text-slate-500 border-b-4 border-slate-900">
               <tr>
-                <th className="px-4 py-2 text-left font-medium">Nama</th>
-                <th className="px-4 py-2 text-left font-medium">Email</th>
-                <th className="px-4 py-2 text-left font-medium">Role</th>
-                <th className="px-4 py-2 text-left font-medium">Status</th>
-                <th className="px-4 py-2 text-right font-medium">Credits</th>
-                <th className="px-4 py-2 text-left font-medium">Dibuat</th>
-                <th className="px-4 py-2 text-right font-medium">Aksi</th>
+                <th className="px-5 py-4 text-left text-xs font-black uppercase tracking-widest text-slate-900">Full Name</th>
+                <th className="px-5 py-4 text-left text-xs font-black uppercase tracking-widest text-slate-900">Email</th>
+                <th className="px-5 py-4 text-left text-xs font-black uppercase tracking-widest text-slate-900">Role</th>
+                <th className="px-5 py-4 text-left text-xs font-black uppercase tracking-widest text-slate-900">Status</th>
+                <th className="px-5 py-4 text-right text-xs font-black uppercase tracking-widest text-slate-900">Credits</th>
+                <th className="px-5 py-4 text-left text-xs font-black uppercase tracking-widest text-slate-900">Joined</th>
+                <th className="px-5 py-4 text-right text-xs font-black uppercase tracking-widest text-slate-900">Actions</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y-2 divide-slate-100">
               {loading && (
                 <>
                   {[1, 2, 3, 4, 5].map((i) => (
-                    <tr key={`table-skeleton-${i}`} className="border-t border-white/5 animate-pulse">
-                      <td className="px-4 py-2">
-                        <div className="h-3 w-28 bg-white/10 rounded" />
-                      </td>
-                      <td className="px-4 py-2">
-                        <div className="h-3 w-40 bg-white/10 rounded" />
-                      </td>
-                      <td className="px-4 py-2">
-                        <div className="h-3 w-20 bg-white/10 rounded" />
-                      </td>
-                      <td className="px-4 py-2">
-                        <div className="h-3 w-16 bg-white/10 rounded" />
-                      </td>
-                      <td className="px-4 py-2 text-right">
-                        <div className="h-3 w-14 bg-white/10 rounded ml-auto" />
-                      </td>
-                      <td className="px-4 py-2">
-                        <div className="h-3 w-20 bg-white/10 rounded" />
-                      </td>
-                      <td className="px-4 py-2 text-right">
-                        <div className="h-7 w-24 bg-white/10 rounded ml-auto" />
-                      </td>
+                    <tr key={`table-skeleton-${i}`} className="animate-pulse">
+                      <td className="px-5 py-4"><div className="h-4 bg-slate-100 rounded w-32" /></td>
+                      <td className="px-5 py-4"><div className="h-4 bg-slate-50 rounded w-48" /></td>
+                      <td className="px-5 py-4"><div className="h-4 bg-slate-100 rounded w-16" /></td>
+                      <td className="px-5 py-4"><div className="h-4 bg-slate-50 rounded w-12" /></td>
+                      <td className="px-5 py-4"><div className="h-4 bg-slate-100 rounded w-12 ml-auto" /></td>
+                      <td className="px-5 py-4"><div className="h-4 bg-slate-50 rounded w-20" /></td>
+                      <td className="px-5 py-4 text-right"><div className="h-8 bg-slate-100 rounded w-24 ml-auto" /></td>
                     </tr>
                   ))}
                 </>
               )}
               {!loading && stats && stats.latestUsers.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-4 py-6 text-center text-gray-500">
+                  <td colSpan={7} className="px-5 py-12 text-center text-slate-400 font-black italic">
                     Belum ada user terdaftar.
                   </td>
                 </tr>
               )}
               {!loading && stats && stats.latestUsers.length > 0 && stats.latestUsers.map((u) => (
-                <tr key={u.id} className="border-t border-white/5 hover:bg-white/[0.03]">
-                  <td className="px-4 py-2 text-white text-xs">
-                    {u.full_name || '-'}
+                <tr key={u.id} className="hover:bg-slate-50 transition-colors group">
+                  <td className="px-5 py-4">
+                    <p className="text-sm font-black text-slate-900">{u.full_name || '-'}</p>
                   </td>
-                  <td className="px-4 py-2 text-gray-300 text-xs">
-                    {u.email || '-'}
+                  <td className="px-5 py-4">
+                    <p className="text-sm font-bold text-slate-400">{u.email || '-'}</p>
                   </td>
-                  <td className="px-4 py-2 text-gray-300 text-xs">
+                  <td className="px-5 py-4">
                     <div className="flex items-center gap-2">
-                      <span>{u.role || 'user'}</span>
+                      <span className="px-3 py-1 bg-slate-100 border-2 border-slate-900 rounded-lg text-[10px] font-black uppercase">
+                        {u.role || 'user'}
+                      </span>
                       <button
-                        type="button"
-                        disabled={savingId === u.id}
                         onClick={() => handleChangeRole(u.id, u.role === 'admin' ? 'user' : 'admin')}
-                        className="px-2 py-0.5 rounded border border-white/10 text-[10px] text-gray-300 hover:bg-white/10 disabled:opacity-50"
+                        disabled={savingId === u.id}
+                        className="opacity-0 group-hover:opacity-100 text-[10px] font-black text-indigo-500 underline uppercase transition-all"
                       >
-                        {u.role === 'admin' ? 'Jadikan User' : 'Jadikan Admin'}
+                        Change
                       </button>
                     </div>
                   </td>
-                  <td className="px-4 py-2 text-xs">
-                    {u.is_suspended ? (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-red-500/10 text-red-300 text-[10px]">
-                        Suspended
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-lime-500/10 text-lime-300 text-[10px]">
-                        Aktif
-                      </span>
-                    )}
+                  <td className="px-5 py-4">
+                    <span className={`inline-flex px-3 py-1 rounded-full border-2 border-slate-900 text-[9px] font-black uppercase shadow-[2px_2px_0_0_#0f172a] ${u.is_suspended ? 'bg-red-400 text-white' : 'bg-emerald-300 text-slate-900'}`}>
+                      {u.is_suspended ? 'Suspended' : 'Aktif'}
+                    </span>
                   </td>
-                  <td className="px-4 py-2 text-right text-xs">
+                  <td className="px-5 py-4 text-right">
                     {editUserId === u.id ? (
-                      <div className="flex items-center justify-end gap-1">
+                      <div className="flex items-center justify-end gap-1.5">
                         <input
                           type="number"
                           min={0}
                           value={editCredits}
                           onChange={(e) => setEditCredits(e.target.value)}
-                          className="w-20 px-2 py-1 rounded bg-black/40 border border-white/10 text-right text-xs text-white"
+                          className="w-20 px-2 py-1 bg-white border-2 border-slate-900 rounded-lg text-right text-xs font-black text-slate-900 focus:outline-none"
                         />
                         <button
-                          type="button"
                           onClick={() => handleSaveCredits(u.id)}
-                          disabled={savingId === u.id}
-                          className="px-2 py-1 rounded bg-lime-600 text-white text-[11px] disabled:opacity-50"
+                          className="p-1 px-3 bg-indigo-400 border-2 border-slate-900 rounded-lg text-[10px] font-black shadow-[2px_2px_0_0_#0f172a] hover:shadow-none transition-all"
                         >
-                          {savingId === u.id ? 'Simpan...' : 'Simpan'}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setEditUserId(null)}
-                          className="px-2 py-1 rounded bg-white/5 text-gray-300 text-[11px]"
-                        >
-                          Batal
+                          Save
                         </button>
                       </div>
                     ) : (
-                      <div className="flex items-center justify-end gap-2">
-                        <span className="text-lime-400">
-                          {typeof u.credits === 'number' ? u.credits.toLocaleString() : '0'}
+                      <div className="flex items-center justify-end gap-3 group/credit">
+                        <span className="text-sm font-black text-slate-900">
+                          {u.credits?.toLocaleString() ?? 0}
                         </span>
                         <button
-                          type="button"
                           onClick={() => handleStartEditCredits(u.id, u.credits ?? 0)}
-                          className="px-2 py-1 rounded border border-white/10 text-[11px] text-gray-300 hover:bg-white/10"
+                          className="p-1.5 bg-slate-50 border-2 border-slate-900 rounded-lg text-slate-400 hover:text-slate-900 hover:bg-white shadow-[2px_2px_0_0_#0f172a] hover:shadow-none transition-all"
                         >
-                          Edit
+                          <Pencil size={12} strokeWidth={3} />
                         </button>
                       </div>
                     )}
                   </td>
-                  <td className="px-4 py-2 text-gray-400 text-[11px]">
-                    {u.created_at
-                      ? new Date(u.created_at).toLocaleString('id-ID', {
-                          day: '2-digit',
-                          month: 'short',
-                          year: '2-digit',
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })
-                      : '-'}
+                  <td className="px-5 py-4">
+                    <p className="text-[11px] font-bold text-slate-400 uppercase">
+                      {u.created_at ? new Date(u.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '-'}
+                    </p>
                   </td>
-                  <td className="px-4 py-2 text-right text-xs">
+                  <td className="px-5 py-4 text-right">
                     <div className="flex items-center justify-end gap-2">
                       <button
-                        type="button"
                         onClick={() => handleSuspendUser(u.id, !!u.is_suspended)}
-                        disabled={savingId === u.id}
-                        className="px-2 py-1 rounded border border-amber-500/50 text-[11px] text-amber-300 hover:bg-amber-500/10 disabled:opacity-50"
+                        className={`p-2 rounded-xl border-2 border-slate-900 shadow-[2px_2px_0_0_#0f172a] hover:shadow-none transition-all ${u.is_suspended ? 'bg-emerald-300 text-slate-900' : 'bg-amber-300 text-slate-900'}`}
+                        title={u.is_suspended ? 'Unsuspend User' : 'Suspend User'}
                       >
-                        {u.is_suspended ? 'Unsuspend' : 'Suspend'}
+                        {u.is_suspended ? <Sparkles size={16} strokeWidth={3} /> : <X size={16} strokeWidth={3} />}
                       </button>
                       <button
-                        type="button"
                         onClick={() => handleDeleteUser(u.id)}
-                        disabled={deletingId === u.id}
-                        className="px-2 py-1 rounded border border-red-500/50 text-[11px] text-red-300 hover:bg-red-500/10 disabled:opacity-50"
+                        className="p-2 bg-red-400 text-white rounded-xl border-2 border-slate-900 shadow-[2px_2px_0_0_#0f172a] hover:shadow-none transition-all"
+                        title="Delete Account"
                       >
-                        {deletingId === u.id ? 'Hapus...' : 'Hapus'}
+                        <Trash2 size={16} strokeWidth={3} />
                       </button>
                     </div>
                   </td>
@@ -682,60 +622,56 @@ export default function AdminPage() {
         </div>
       </div>
       {stats && totalPages > 1 && (
-        <div className="mt-3 flex items-center justify-between text-[11px] text-gray-400">
-          <span>
-            Halaman {currentPage} dari {totalPages}
+        <div className="mt-8 flex items-center justify-between px-4 md:px-0 pb-12">
+          <span className="text-xs font-black text-slate-400 uppercase tracking-widest">
+            Page {currentPage} of {totalPages}
           </span>
           <div className="flex gap-2">
             <button
-              type="button"
               disabled={currentPage <= 1 || loading}
               onClick={() => setPage((p) => Math.max(1, p - 1))}
-              className="px-2 py-1 rounded border border-white/10 disabled:opacity-40"
+              className="px-4 py-2 bg-white border-2 border-slate-900 rounded-xl text-xs font-black uppercase hover:bg-slate-50 disabled:opacity-40 shadow-[3px_3px_0_0_#0f172a] hover:shadow-none transition-all"
             >
-              Sebelumnya
+              Prev
             </button>
             <button
-              type="button"
               disabled={currentPage >= totalPages || loading}
               onClick={() => setPage((p) => p + 1)}
-              className="px-2 py-1 rounded border border-white/10 disabled:opacity-40"
+              className="px-4 py-2 bg-white border-2 border-slate-900 rounded-xl text-xs font-black uppercase hover:bg-slate-50 disabled:opacity-40 shadow-[3px_3px_0_0_#0f172a] hover:shadow-none transition-all"
             >
-              Berikutnya
+              Next
             </button>
           </div>
         </div>
       )}
+
       {confirmOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
-          <div className="bg-[#0b0b0f] border border-white/10 rounded-2xl w-full max-w-sm p-5 text-center">
-            <h3 className="text-base font-semibold text-white mb-2">{confirmTitle}</h3>
-            <p className="text-xs text-gray-400 mb-5">{confirmDescription}</p>
-            <div className="flex items-center justify-center gap-2">
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/60 backdrop-blur-md px-4">
+          <div className="bg-white border-4 border-slate-900 rounded-[24px] md:rounded-[32px] w-full max-w-sm p-6 md:p-8 text-center shadow-[12px_12px_0_0_#0f172a]">
+            <h3 className="text-xl font-black text-slate-900 mb-2">{confirmTitle}</h3>
+            <p className="text-sm font-bold text-slate-500 mb-6">{confirmDescription}</p>
+            <div className="flex items-center justify-center gap-3">
               <button
-                type="button"
                 onClick={() => setConfirmOpen(false)}
                 disabled={confirmLoading}
-                className="px-4 py-2 rounded-lg border border-white/10 text-xs text-gray-300 hover:bg-white/10 disabled:opacity-50"
+                className="flex-1 px-4 py-3 bg-slate-50 border-4 border-slate-900 rounded-xl text-xs font-black uppercase hover:bg-slate-100 disabled:opacity-50 transition-all shadow-[4px_4px_0_0_#0f172a] active:shadow-none"
               >
                 {confirmCancelText}
               </button>
               <button
-                type="button"
                 onClick={handleConfirm}
                 disabled={confirmLoading}
-                className={`px-4 py-2 rounded-lg text-xs font-semibold text-white disabled:opacity-50 ${
-                  confirmVariant === 'danger'
-                    ? 'bg-red-600 hover:bg-red-500'
-                    : 'bg-amber-500 hover:bg-amber-400'
-                }`}
+                className={`flex-1 px-4 py-3 border-4 border-slate-900 rounded-xl text-xs font-black uppercase shadow-[4px_4px_0_0_#0f172a] hover:shadow-none transition-all disabled:opacity-50 ${confirmVariant === 'danger'
+                  ? 'bg-red-400 text-white'
+                  : 'bg-amber-400 text-slate-900'
+                  }`}
               >
-                {confirmLoading ? 'Memproses...' : confirmConfirmText}
+                {confirmLoading ? 'Wait...' : confirmConfirmText}
               </button>
             </div>
           </div>
         </div>
       )}
-    </>
+    </div>
   )
 }

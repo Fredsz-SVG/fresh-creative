@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase'
 import { getRole } from '@/lib/auth'
 import { Eye, EyeOff } from 'lucide-react'
 import { toast } from 'sonner'
+import { fetchWithAuth } from '../../lib/api-client'
 
 function LoginContent() {
   const [email, setEmail] = useState('')
@@ -96,13 +97,13 @@ function LoginContent() {
         .maybeSingle()
 
       if (!profileError && profile?.is_suspended) {
-        await fetch('/api/auth/logout', { credentials: 'include' })
+        await fetchWithAuth('/api/auth/logout')
         await supabase.auth.signOut()
         setSuspended(true)
         setSuspendedMessage('Akun Anda sedang disuspend. Silakan hubungi admin.')
         return
       }
-      const res = await fetch('/api/auth/otp-status', { credentials: 'include' })
+      const res = await fetchWithAuth('/api/auth/otp-status')
       const data = await res.json().catch(() => ({}))
       if (data.verified) {
         const safeNext = nextPath.startsWith('/') && !nextPath.startsWith('//') ? nextPath : ''
@@ -171,7 +172,7 @@ function LoginContent() {
           return
         }
 
-        const statusRes = await fetch('/api/auth/otp-status', { credentials: 'include' })
+        const statusRes = await fetchWithAuth('/api/auth/otp-status')
         const statusData = await statusRes.json().catch(() => ({}))
         if (statusData.suspended) {
           await supabase.auth.signOut()

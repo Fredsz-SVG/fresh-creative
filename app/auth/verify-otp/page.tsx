@@ -3,6 +3,7 @@
 import { Suspense, useState, useEffect, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { fetchWithAuth } from '../../../lib/api-client'
 
 const OTP_COOLDOWN_KEY = 'otp_cooldown_by_email'
 /** Debounce: jangan kirim OTP otomatis lagi ke email yang sama dalam jangka waktu ini (Strict Mode / remount) */
@@ -110,10 +111,10 @@ function VerifyOtpContent() {
         router.replace('/login')
         return
       }
-      const res = await fetch('/api/auth/otp-status', { credentials: 'include' })
+      const res = await fetchWithAuth('/api/auth/otp-status')
       const data = await res.json().catch(() => ({}))
       if (data.suspended) {
-        await fetch('/api/auth/logout', { credentials: 'include' })
+        await fetchWithAuth('/api/auth/logout')
         await supabase.auth.signOut()
         router.replace('/login?error=account_suspended')
         return
@@ -155,9 +156,8 @@ function VerifyOtpContent() {
       if (mountedRef.current) setSendLoading(true)
 
       try {
-        const sendRes = await fetch('/api/auth/send-login-otp', {
+        const sendRes = await fetchWithAuth('/api/auth/send-login-otp', {
           method: 'POST',
-          credentials: 'include',
           signal,
         })
         const sendData = await sendRes.json().catch(() => ({}))
@@ -204,10 +204,9 @@ function VerifyOtpContent() {
     setLoading(true)
     setError('')
     try {
-      const res = await fetch('/api/auth/verify-login-otp', {
+      const res = await fetchWithAuth('/api/auth/verify-login-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
         body: JSON.stringify({ code, next: nextPath || undefined }),
       })
       const data = await res.json().catch(() => ({}))
@@ -229,7 +228,7 @@ function VerifyOtpContent() {
   const handleBackToLogin = async () => {
     setBackLoading(true)
     try {
-      await fetch('/api/auth/logout', { credentials: 'include' })
+      await fetchWithAuth('/api/auth/logout')
       await supabase.auth.signOut()
       window.location.href = '/login'
     } catch {
@@ -244,9 +243,8 @@ function VerifyOtpContent() {
     setSendLoading(true)
     setError('')
     try {
-      const res = await fetch('/api/auth/send-login-otp', {
+      const res = await fetchWithAuth('/api/auth/send-login-otp', {
         method: 'POST',
-        credentials: 'include',
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) {

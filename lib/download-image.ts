@@ -1,8 +1,10 @@
+import { apiUrl } from './api-url'
+
 /** Jika URL eksternal, pakai proxy agar canvas tidak kena CORS. */
 export function getImageSrcForCanvas(imageSrc: string): string {
   if (imageSrc.startsWith("data:")) return imageSrc;
   if (imageSrc.startsWith("http://") || imageSrc.startsWith("https://")) {
-    return `/api/proxy-image?url=${encodeURIComponent(imageSrc)}`;
+    return apiUrl(`/api/proxy-image?url=${encodeURIComponent(imageSrc)}`);
   }
   return imageSrc;
 }

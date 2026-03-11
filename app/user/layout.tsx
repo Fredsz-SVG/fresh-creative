@@ -8,8 +8,8 @@ export default function UserLayout({
 }) {
   return (
     <Suspense fallback={
-      <div className="min-h-[100dvh] bg-[#0a0a0b] flex flex-col items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-lime-500" />
+      <div className="min-h-[100dvh] bg-white flex flex-col items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-200 border-t-lime-500" />
       </div>
     }>
       <UserLayoutClient>{children}</UserLayoutClient>

@@ -1,4 +1,4 @@
-import { Sparkles, type LucideIcon, DollarSign, Library, ShoppingBag, Pencil, Folder } from 'lucide-react'
+import { Sparkles, type LucideIcon, DollarSign, Library, ShoppingBag, Pencil, Folder, ImageIcon } from 'lucide-react'
 import type { NavSection } from '@/components/dashboard/DashboardShell'
 
 /** AI Labs: satu item di sidebar, isi fitur di halaman hub (grid kartu seperti Gojek). */
@@ -29,6 +29,11 @@ export const PRICING_SECTION_ADMIN: NavSection = {
 export const ALBUMS_SECTION_ADMIN: NavSection = {
   title: 'Manajemen Album',
   items: [{ href: '/admin/albums', label: 'Album', icon: Library }],
+}
+
+export const SHOWCASE_SECTION_ADMIN: NavSection = {
+  title: 'Tampilan User',
+  items: [{ href: '/admin/showcase', label: 'Link preview', icon: ImageIcon }],
 }
 
 export const FILES_SECTION_USER: NavSection = {

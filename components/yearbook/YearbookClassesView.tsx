@@ -42,6 +42,7 @@ export type YearbookClassesViewProps = {
   setSelectedRequestId: (v: string | null) => void
   sidebarMode: 'classes' | 'approval' | 'team' | 'sambutan' | 'ai-labs' | 'flipbook' | 'preview'
   setSidebarMode: (v: 'classes' | 'approval' | 'team' | 'sambutan' | 'ai-labs' | 'flipbook' | 'preview') => void
+  onSectionChange?: (section: 'cover' | 'classes' | 'approval' | 'team' | 'sambutan' | 'ai-labs' | 'flipbook' | 'preview') => void
   aiLabsTool?: string | null
   requestForm: { student_name: string; email: string }
   setRequestForm: React.Dispatch<React.SetStateAction<{ student_name: string; email: string }>>
@@ -119,6 +120,9 @@ export type YearbookClassesViewProps = {
   aiLabsFeaturesByPackage?: string[]
   featureCreditCosts?: Record<string, number>
   onFeatureUnlocked?: () => void
+  effectiveBackHref?: string
+  teacherSearchQuery?: string
+  classMemberSearchQuery?: string
 }
 
 export default function YearbookClassesView(props: YearbookClassesViewProps) {

@@ -12,9 +12,9 @@ export default function BackLink({ href, label = 'Kembali' }: BackLinkProps) {
   return (
     <Link
       href={href}
-      className="inline-flex items-center gap-1.5 min-h-[36px] px-2.5 py-1.5 -ml-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 active:bg-white/10 transition-colors touch-manipulation text-xs font-medium mb-2"
+      className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-slate-900 bg-white border-2 border-slate-900 hover:bg-slate-50 active:translate-x-0.5 active:translate-y-0.5 shadow-[3px_3px_0_0_#0f172a] active:shadow-none transition-all touch-manipulation text-[11px] font-black uppercase tracking-widest mb-4 w-fit"
     >
-      <ChevronLeft className="w-4 h-4 shrink-0" />
+      <ChevronLeft className="w-4 h-4 shrink-0" strokeWidth={3} />
       <span>{label}</span>
     </Link>
   )
