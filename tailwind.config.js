@@ -26,6 +26,11 @@ module.exports = {
     extend: {
       fontFamily: {
         sans: ['Nunito', 'Segoe UI', 'system-ui', '-apple-system', 'sans-serif'],
+        zentry: ["zentry", "sans-serif"],
+        general: ["general", "sans-serif"],
+        "circular-web": ["circular-web", "sans-serif"],
+        "robert-medium": ["robert-medium", "sans-serif"],
+        "robert-regular": ["robert-regular", "sans-serif"],
       },
       colors: {
         /* Pastel palette */
@@ -46,6 +51,21 @@ module.exports = {
           peach: '#fb923c',
           sky: '#38bdf8',
         },
+        /* New Landing Page Colors */
+        blue: {
+          50: "#DFDFF0",
+          75: "#DFDFF2",
+          100: "#F0F2FA",
+          200: "#101010",
+          300: "#4FB7DD",
+        },
+        violet: {
+          300: "#5724FF",
+        },
+        yellow: {
+          100: "#8E983F",
+          300: "#EDFF66",
+        },
         /* Dashboard background */
         'fresh-bg': '#fafaff',
         'fresh-card': '#fafaff',
@@ -63,6 +83,9 @@ module.exports = {
         'card': '0 2px 12px rgba(0,0,0,0.04)',
         'card-hover': '0 8px 30px rgba(139, 92, 246, 0.08), 0 2px 8px rgba(0,0,0,0.04)',
       },
+      maxWidth: {
+        '136': '34rem',
+      }
     },
   },
   plugins: [],

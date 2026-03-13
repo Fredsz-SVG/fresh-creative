@@ -11,19 +11,19 @@ export type ThemeContextType = {
 export const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
 
 export default function ThemeProvider({ children }: { children: ReactNode }) {
-  const initialIsDark = (() => {
-    try {
-      const saved = typeof window !== 'undefined' ? localStorage.getItem('theme') : null
-      if (saved) return saved === 'dark'
-      if (typeof window !== 'undefined') return window.matchMedia('(prefers-color-scheme: dark)').matches
-    } catch {}
-    return true
-  })()
+  const [isDark, setIsDark] = useState<boolean>(false)
 
-  const [isDark, setIsDark] = useState<boolean>(initialIsDark)
-
-  // Ensure DOM reflects initial theme synchronously for consumers that mount immediately
-  try { applyTheme(initialIsDark) } catch {}
+  useEffect(() => {
+    const saved = typeof window !== 'undefined' ? localStorage.getItem('theme') : null
+    if (saved) {
+      const dark = saved === 'dark'
+      setIsDark(dark)
+      applyTheme(dark)
+    } else if (typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      setIsDark(true)
+      applyTheme(true)
+    }
+  }, [])
 
   const toggleTheme = () => {
     const next = !isDark

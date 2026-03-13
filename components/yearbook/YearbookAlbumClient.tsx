@@ -1692,19 +1692,6 @@ export default function YearbookAlbumClient({
                   >
                     <Eye className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Preview</span>
                   </button>
-                  {flipbookPreviewMode && (
-                    <button
-                      onClick={() => {
-                        const url = `${window.location.origin}/album/${album?.id}/flipbook`;
-                        navigator.clipboard.writeText(url);
-                        toast.success('Link Flipbook berhasil disalin');
-                      }}
-                      className="flex items-center justify-center px-3 py-1.5 rounded-lg text-xs font-black uppercase transition-all bg-emerald-400 text-slate-900 border-2 border-slate-900 shadow-[2px_2px_0_0_#0f172a] hover:bg-emerald-300 active:translate-x-0.5 active:translate-y-0.5 active:shadow-none ml-1"
-                      title="Salin Link Publik Flipbook"
-                    >
-                      <LinkIcon className="w-3.5 h-3.5" /> <span className="hidden sm:inline ml-1.5">Salin Link</span>
-                    </button>
-                  )}
                 </div>
               )}
               {/* Flipbook Locked: Credit di pojok kanan */}

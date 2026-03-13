@@ -120,6 +120,7 @@ export default function PublicFlipbookPage() {
           pages={pages}
           onPlayVideo={handlePlayVideo}
           className="h-full w-full"
+          albumId={id}
         />
       </main>
     </div>

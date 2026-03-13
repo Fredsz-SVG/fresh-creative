@@ -1,166 +1,153 @@
-'use client'
+'use client';
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { Menu, X, Sun, Moon } from 'lucide-react'
-import { supabase } from '@/lib/supabase'
-import { getRole } from '@/lib/auth'
+import { useEffect, useRef, useState, useContext } from "react";
+import { FaGithub } from "react-icons/fa";
+import { Sun, Moon } from "lucide-react";
+import { LINKS, NAV_ITEMS, AUDIO_LINKS } from "./constants";
+import { cn } from "@/lib/utils";
+import { ThemeContext } from "@/app/providers/ThemeProvider";
 
-export default function Navbar() {
-  const router = useRouter()
-  /* 
-    Fixing hydration mismatch:
-    Initialize state with a deterministic value (true to match server fallback).
-    Use useEffect to detect actual preference on client side.
-  */
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-  const [isDark, setIsDark] = useState<boolean>(true)
-  const [mounted, setMounted] = useState(false)
+export function Navbar() {
+  const navContainerRef = useRef<HTMLDivElement>(null);
+  const audioElementRef = useRef<HTMLAudioElement>(null);
+  const theme = useContext(ThemeContext);
+  const [isAudioPlaying, setIsAudioPlaying] = useState(false);
+  const [isIndicatorActive, setIsIndicatorActive] = useState(false);
+  const [lastScrollY, setLastScrollY] = useState(0);
+  const [isNavVisible, setIsNavVisible] = useState(true);
+  const [mounted, setMounted] = useState(false);
+
+  const toggleAudioIndicator = () => {
+    setIsAudioPlaying((p) => !p);
+    setIsIndicatorActive((p) => !p);
+  };
 
   useEffect(() => {
-    setMounted(true)
-    try {
-      const saved = localStorage.getItem('theme')
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-      const shouldBeDark = saved ? saved === 'dark' : prefersDark
+    setMounted(true);
+  }, []);
 
-      setIsDark(shouldBeDark)
-      applyTheme(shouldBeDark)
-    } catch (e) {
-      console.error(e)
-    }
-  }, [])
+  useEffect(() => {
+    if (isAudioPlaying) void audioElementRef.current?.play();
+    else audioElementRef.current?.pause();
+  }, [isAudioPlaying]);
 
-  function applyTheme(isDark: boolean) {
-    const root = document.documentElement
-
-    if (isDark) {
-      root.classList.add('dark')
-      root.setAttribute('data-theme', 'dark')
-    } else {
-      root.classList.remove('dark')
-      root.setAttribute('data-theme', 'light')
-    }
-  }
-
-  const toggleTheme = () => {
-    const next = !isDark
-    setIsDark(next)
-    localStorage.setItem('theme', next ? 'dark' : 'light')
-    applyTheme(next)
-  }
-
-  const scrollTo = (id: string) => {
-    document.getElementById(id)?.scrollIntoView({
-      behavior: 'smooth',
-    })
-    setIsMobileMenuOpen(false) // Close mobile menu after clicking
-  }
-
-  const handleGetStarted = async () => {
-    setIsMobileMenuOpen(false)
-    const { data: { session } } = await supabase.auth.getSession()
-    if (session?.user) {
-      const role = await getRole(supabase, session.user)
-      router.push(role === 'admin' ? '/admin' : '/user')
-    } else {
-      router.push('/login')
-    }
-  }
+  useEffect(() => {
+    const handleScroll = () => {
+      const y = window.scrollY;
+      if (y === 0) {
+        setIsNavVisible(true);
+        navContainerRef.current?.classList.remove("floating-nav");
+      } else if (y > lastScrollY) {
+        setIsNavVisible(false);
+        navContainerRef.current?.classList.add("floating-nav");
+      } else {
+        setIsNavVisible(true);
+        navContainerRef.current?.classList.add("floating-nav");
+      }
+      setLastScrollY(y);
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [lastScrollY]);
 
   return (
-    <header className="landing-header">
-      <div className="landing-header__container">
-        {/* Logo */}
-        <div
-          className="landing-header__logo"
-          onClick={() => scrollTo('hero')}
-        >
-          Fresh Creative
-        </div>
-
-        {/* Desktop Menu — AI Labs hanya di dashboard user/admin */}
-        <nav className="landing-header__nav">
-          <button onClick={() => scrollTo('features')}>Features</button>
-          <button onClick={() => scrollTo('about')}>About</button>
-          <button onClick={() => scrollTo('cta')}>Contact</button>
-        </nav>
-
-        {/* Right Side: Desktop Actions + Theme Toggle + Mobile Hamburger */}
-        <div className="flex items-center gap-2">
-          {/* Desktop Actions */}
-          <div className="landing-header__actions hidden md:flex">
-            <button
-              onClick={handleGetStarted}
-              className="landing-header__cta"
+    <header
+      ref={navContainerRef}
+      className={cn(
+        "fixed inset-x-0 top-4 z-50 h-16 border-none transition-transform duration-200 ease-out sm:inset-x-6",
+        !isNavVisible && "-translate-y-full opacity-0"
+      )}
+    >
+      <div className="absolute top-1/2 w-full -translate-y-1/2">
+        <nav className="flex size-full items-center justify-between p-4">
+          <div className="flex items-center gap-7">
+            <a
+              href="#hero"
+              className={cn(
+                "transition hover:opacity-100",
+                theme?.isDark
+                  ? "drop-shadow-[0_0_8px_rgba(0,0,0,0.8)]"
+                  : "drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]"
+              )}
             >
-              Get Started
-            </button>
+              <img src="/img/logo.png" alt="Logo" className="w-10" loading="lazy" />
+            </a>
           </div>
 
-          {/* Theme Toggle Button (render immediately) */}
-          <button
-            onClick={toggleTheme}
-            aria-label="Toggle theme"
-            type="button"
-            className="p-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex items-center justify-center w-10 h-10"
-          >
-            {mounted && (isDark ? (
-              <Sun className="w-5 h-5" />
-            ) : (
-              <Moon className="w-5 h-5" />
-            ))}
-            {!mounted && <Sun className="w-5 h-5 opacity-0" />}
-          </button>
+          <div className="flex h-full items-center">
+            <div className="hidden md:block">
+              {NAV_ITEMS.map(({ label, href }) => (
+                <a key={href} href={href} className="nav-hover-btn">
+                  {label}
+                </a>
+              ))}
+            </div>
 
-          {/* Mobile Menu Button - Hamburger (3 strips) */}
-          <button
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="md:hidden p-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex items-center justify-center w-10 h-10"
-            aria-label="Toggle menu"
-            aria-expanded={isMobileMenuOpen}
-            type="button"
-          >
-            {isMobileMenuOpen ? (
-              <X className="w-6 h-6" />
-            ) : (
-              <Menu className="w-6 h-6" />
-            )}
-          </button>
-        </div>
+            <div className="flex items-center gap-4">
+              <button
+                onClick={theme?.toggleTheme}
+                className={cn(
+                  "ml-10 flex items-center p-2 transition hover:opacity-100",
+                  theme?.isDark ? "text-white" : "text-black"
+                )}
+                title="Toggle Theme"
+              >
+                {mounted &&
+                  (theme?.isDark ? (
+                    <Sun size={20} aria-hidden />
+                  ) : (
+                    <Moon size={20} aria-hidden />
+                  ))}
+              </button>
+
+              <button
+                onClick={toggleAudioIndicator}
+                className={cn(
+                  "flex items-center space-x-1 p-2 transition hover:opacity-100",
+                  theme?.isDark ? "text-white" : "text-black"
+                )}
+                title="Play Audio"
+              >
+                <audio
+                  ref={audioElementRef}
+                  src={AUDIO_LINKS.default}
+                  className="hidden"
+                  loop
+                  preload="none"
+                />
+                {Array(4)
+                  .fill("")
+                  .map((_, i) => (
+                    <div
+                      key={i}
+                      className={cn(
+                        "indicator-line",
+                        isIndicatorActive && "active",
+                        theme?.isDark ? "bg-white" : "bg-black"
+                      )}
+                      style={{ animationDelay: `${(i + 1) * 0.1}s` }}
+                    />
+                  ))}
+              </button>
+
+              <a
+                href={LINKS.sourceCode}
+                target="_blank"
+                rel="noreferrer noopener"
+                className="transition hover:opacity-100"
+                title="Source Code"
+              >
+                <FaGithub
+                  className={cn(
+                    "size-5 transition-all duration-300",
+                    theme?.isDark ? "text-white" : "text-black"
+                  )}
+                />
+              </a>
+            </div>
+          </div>
+        </nav>
       </div>
-
-      {/* Mobile Menu */}
-      {isMobileMenuOpen && (
-        <div className="md:hidden border-t border-gray-200 dark:border-neutral-800 bg-white/95 dark:bg-neutral-900/95 backdrop-blur animate-in slide-in-from-top duration-200">
-          <nav className="flex flex-col p-4 space-y-2">
-            <button
-              onClick={() => scrollTo('features')}
-              className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
-            >
-              Features
-            </button>
-            <button
-              onClick={() => scrollTo('about')}
-              className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
-            >
-              About
-            </button>
-            <button
-              onClick={() => scrollTo('cta')}
-              className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
-            >
-              Contact
-            </button>
-            <button
-              onClick={handleGetStarted}
-              className="mt-2 px-4 py-3 text-sm font-medium rounded-lg transition-colors bg-black text-white hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200"
-            >
-              Get Started
-            </button>
-          </nav>
-        </div>
-      )}
     </header>
-  )
+  );
 }

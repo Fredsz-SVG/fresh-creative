@@ -1079,9 +1079,9 @@ export default function YearbookClassesViewUI(props: any) {
 
 
 
-        <div className="flex flex-col lg:flex-row gap-0 flex-1 lg:pl-16 lg:px-0 lg:py-0">
-          {/* Icon Sidebar untuk desktop - Fixed di kiri (disembunyikan saat fitur AI Labs aktif) */}
-          {!isAiLabsToolActive && (
+        <div className={`flex flex-col lg:flex-row gap-0 flex-1 ${(sidebarMode === 'flipbook' && flipbookPreviewMode) ? 'lg:pl-0' : 'lg:pl-16'} lg:px-0 lg:py-0`}>
+          {/* Icon Sidebar untuk desktop - Fixed di kiri (disembunyikan saat fitur AI Labs aktif atau flipbook preview aktif) */}
+          {!isAiLabsToolActive && !flipbookPreviewMode && (
             <IconSidebar
               pathname={pathname}
               albumId={effectiveAlbumId}
@@ -1324,7 +1324,7 @@ export default function YearbookClassesViewUI(props: any) {
 
             {/* Main content - scrollable container */}
             <main className={`flex-1 ${sidebarMode === 'flipbook' ? 'overflow-hidden pb-0' : 'overflow-y-auto pb-40 lg:pb-0'} rounded-t-none transition-all duration-300 relative
-              ${(['classes', 'sambutan'].includes(sidebarMode) || isCoverView) ? 'lg:ml-[20rem]' : sidebarMode === 'flipbook' ? 'lg:ml-16' : 'lg:ml-0'}
+              ${(['classes', 'sambutan'].includes(sidebarMode) || isCoverView) ? 'lg:ml-[20rem]' : sidebarMode === 'flipbook' ? (flipbookPreviewMode ? 'lg:ml-0' : 'lg:ml-16') : 'lg:ml-0'}
               ${sidebarMode === 'preview' ? 'bg-slate-900' : 'bg-white'}
             `}>
               {/* Show different content based on sidebarMode */}

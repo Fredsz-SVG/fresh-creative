@@ -1,7 +1,8 @@
 import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react'
 import { flushSync } from 'react-dom'
 import HTMLFlipBook from 'react-pageflip'
-import { Play, ChevronLeft, ChevronRight, Volume2, VolumeX, Maximize2, Minimize2, FlipHorizontal2 } from 'lucide-react'
+import { Play, ChevronLeft, ChevronRight, Volume2, VolumeX, Maximize2, Minimize2, FlipHorizontal2, Share2, Copy, X } from 'lucide-react'
+import { toast } from 'sonner'
 
 const RESIZE_THROTTLE_MS = 150
 const FLIP_UPDATE_DELAY_MS = 1200
@@ -31,22 +32,41 @@ type ManualFlipbookViewerProps = {
   pages: ManualFlipbookPage[]
   onPlayVideo?: (url: string) => void
   className?: string
+  albumId?: string
+  /** true = dipakai di halaman editor user (navbar lebih kecil & jarak longgar agar tidak mepet) */
+  isEditorView?: boolean
 }
 
 /* Efek tekukan buku (spine): garis vertikal + lekukan 3D di tepi jilid */
 const SpineFoldEffect = ({ side }: { side: 'left' | 'right' }) => (
   <div
-    className={`absolute inset-y-0 w-[3%] max-w-[14px] z-10 pointer-events-none page-spine-fold page-spine-fold--${side} ${side === 'right' ? 'right-0 left-auto' : 'left-0 right-auto'}`}
+    className={`absolute inset-y-0 w-[5%] max-w-[24px] z-10 pointer-events-none page-spine-fold page-spine-fold--${side} ${side === 'right' ? 'right-0 left-auto' : 'left-0 right-auto'}`}
+    aria-hidden
+  />
+)
+
+/* Garis tekukan (hinge crease) lurus khas buku hardcover tebal */
+const HardcoverHinge = ({ side }: { side: 'left' | 'right' }) => (
+  <div
+    className={`absolute inset-y-0 w-[3px] z-30 pointer-events-none bg-black/40 ${side === 'left' ? 'left-[1%] sm:left-[12px]' : 'right-[1%] sm:right-[12px]'} shadow-[0.5px_0_0_rgba(255,255,255,0.4),0_0_5px_rgba(0,0,0,0.3)]`}
     aria-hidden
   />
 )
 
 /* Tepi ketebalan cover/back cover (seperti buku asli dilihat dari samping) */
 const BookEdgeEffect = ({ side }: { side: 'left' | 'right' }) => (
-  <div
-    className={`absolute inset-y-0 w-[1.2%] max-w-[6px] z-20 pointer-events-none book-edge book-edge--${side} ${side === 'right' ? 'right-0 left-auto' : 'left-0 right-auto'}`}
-    aria-hidden
-  />
+  <>
+    {/* Main thickness edge */}
+    <div
+      className={`absolute inset-y-0 w-[2.2%] max-w-[12px] z-20 pointer-events-none book-edge book-edge--${side} ${side === 'right' ? 'right-0' : 'left-0'}`}
+      aria-hidden
+    />
+    {/* Highlights for the very edge to give it a sharp corner look */}
+    <div
+      className={`absolute inset-y-0 w-[0.5%] max-w-[2px] z-30 pointer-events-none bg-white/20 ${side === 'right' ? 'right-0' : 'left-0'}`}
+      aria-hidden
+    />
+  </>
 )
 
 const Page = React.memo(React.forwardRef<HTMLDivElement, {
@@ -55,7 +75,11 @@ const Page = React.memo(React.forwardRef<HTMLDivElement, {
   isCover?: boolean
   isBackCover?: boolean
 }>((props, ref) => (
-  <div className={`page-content bg-white h-full w-full relative overflow-hidden shadow-none ${props.isCover ? 'page-content--cover' : ''} ${props.isBackCover ? 'page-content--back-cover' : ''}`} ref={ref}>
+  <div
+    className={`page-content bg-white h-full w-full relative overflow-hidden transition-shadow duration-300 ${props.isCover ? 'page-content--cover ring-2 ring-black/10' : ''} ${props.isBackCover ? 'page-content--back-cover ring-2 ring-black/10' : ''}`}
+    style={{ backfaceVisibility: 'hidden', backgroundColor: 'white' }}
+    ref={ref}
+  >
     <div className="w-full h-full relative">
       <img
         src={props.page.image_url}
@@ -72,13 +96,15 @@ const Page = React.memo(React.forwardRef<HTMLDivElement, {
       )}
       {props.isCover && (
         <>
-          <SpineFoldEffect side="right" />
+          <SpineFoldEffect side="left" />
+          <HardcoverHinge side="left" />
           <BookEdgeEffect side="right" />
         </>
       )}
       {props.isBackCover && (
         <>
-          <SpineFoldEffect side="left" />
+          <SpineFoldEffect side="right" />
+          <HardcoverHinge side="right" />
           <BookEdgeEffect side="left" />
         </>
       )}
@@ -87,23 +113,28 @@ const Page = React.memo(React.forwardRef<HTMLDivElement, {
 )))
 Page.displayName = 'Page'
 
-// Decorative blank page (forwardRef required by react-pageflip) — putih ke abu-abuan
-const BLANK_PAGE_STYLE = { background: 'linear-gradient(145deg, #ffffff 0%, #f8fafc 40%, #f1f5f9 70%, #e2e8f0 100%)', boxShadow: 'inset 0 0 30px rgba(0,0,0,0.04), inset 0 0 8px rgba(0,0,0,0.02)' }
+// Decorative blank page (forwardRef required by react-pageflip) — putih ke abu-abuan tebal
+const BLANK_PAGE_STYLE = {
+  background: 'linear-gradient(135deg, #ffffff 0%, #f1f5f9 50%, #e2e8f0 100%)',
+  boxShadow: 'inset 0 0 40px rgba(0,0,0,0.08), inset 0 0 10px rgba(0,0,0,0.05)'
+}
 const BlankPage = React.memo(React.forwardRef<HTMLDivElement>(function BlankPage(_, ref) {
   return (
-  <div ref={ref} data-blank-page className="page-content blank-page-content h-full w-full relative overflow-hidden border border-slate-200" style={BLANK_PAGE_STYLE}>
-    <div className="absolute top-4 left-4 w-8 h-8 border-t-2 border-l-2 border-slate-300/50 rounded-tl-sm" />
-    <div className="absolute top-4 right-4 w-8 h-8 border-t-2 border-r-2 border-slate-300/50 rounded-tr-sm" />
-    <div className="absolute bottom-4 left-4 w-8 h-8 border-b-2 border-l-2 border-slate-300/50 rounded-bl-sm" />
-    <div className="absolute bottom-4 right-4 w-8 h-8 border-b-2 border-r-2 border-slate-300/50 rounded-br-sm" />
-    <div className="absolute inset-0 flex items-center justify-center">
-      <div className="flex items-center gap-3 opacity-20">
-        <div className="w-12 h-px bg-slate-400" />
-        <div className="w-1.5 h-1.5 rounded-full bg-slate-400" />
-        <div className="w-12 h-px bg-slate-400" />
+    <div ref={ref} data-blank-page className="page-content blank-page-content h-full w-full relative overflow-hidden border-2 border-slate-300" style={BLANK_PAGE_STYLE}>
+      <div className="absolute top-6 left-6 w-12 h-12 border-t-4 border-l-4 border-slate-400/40 rounded-tl-md" />
+      <div className="absolute top-6 right-6 w-12 h-12 border-t-4 border-r-4 border-slate-400/40 rounded-tr-md" />
+      <div className="absolute bottom-6 left-6 w-12 h-12 border-b-4 border-l-4 border-slate-400/40 rounded-bl-md" />
+      <div className="absolute bottom-6 right-6 w-12 h-12 border-b-4 border-r-4 border-slate-400/40 rounded-br-md" />
+      <div className="absolute inset-0 flex items-center justify-center">
+        <div className="flex items-center gap-4 opacity-40">
+          <div className="w-16 h-px bg-slate-600" />
+          <div className="w-2.5 h-2.5 rounded-full bg-slate-600" />
+          <div className="w-16 h-px bg-slate-600" />
+        </div>
       </div>
+      {/* Subtle paper texture overlay */}
+      <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/paper.png')]" />
     </div>
-  </div>
   )
 }))
 BlankPage.displayName = 'BlankPage'
@@ -111,17 +142,44 @@ BlankPage.displayName = 'BlankPage'
 // Ukuran "stage" buku (library render di sini, lalu di-scale ke layar)
 const BOOK_STAGE_WIDTH = 1400
 const BOOK_STAGE_HEIGHT = 900
+// Mobile: satu halaman portrait agar usePortrait aktif (blockWidth < pageWidth*2)
+const MOBILE_STAGE_WIDTH = 400
+const MOBILE_STAGE_HEIGHT = 600
 
-const FlipBookInner = React.memo(({ flipbookKey, pageElements, isMobileScreen, bookRef, onFlip, stageWidth, stageHeight }: {
+const FlipBookInner = React.memo(({ flipbookKey, pageElements, isMobileScreen, bookRef, onFlip, triggerPrevWithAnimationRef, stageWidth, stageHeight, isCoverOnly, isBackCoverOnly, startPage }: {
   flipbookKey: string
   pageElements: React.ReactNode[]
   isMobileScreen: boolean
   bookRef: React.RefObject<any>
   onFlip: (pageNum: number) => void
+  triggerPrevWithAnimationRef?: React.MutableRefObject<(() => void) | null>
   stageWidth: number
   stageHeight: number
+  isCoverOnly: boolean
+  isBackCoverOnly: boolean
+  startPage: number
 }) => {
   const containerRef = useRef<HTMLDivElement>(null)
+
+  // Di mobile, prev dengan animasi flip: panggil flip(pos) dengan posisi sudut kiri buku (block-relative).
+  // Library pakai disableFlipByClick=true jadi flip() hanya jalan kalau isPointOnCorners(pos) true.
+  useEffect(() => {
+    if (!triggerPrevWithAnimationRef || !isMobileScreen) return
+    triggerPrevWithAnimationRef.current = () => {
+      const api = bookRef.current?.pageFlip()
+      const controller = api?.getFlipController?.()
+      if (!api || !controller?.flip) return
+      const rect = api.getBoundsRect?.() ?? api.getRender?.()?.getRect?.()
+      if (!rect) return
+      // Posisi block-relative agar convertToBook jadi kiri buku; operatingDistance ~ width/5
+      const margin = Math.min(rect.pageWidth, rect.height) / 5
+      const leftX = rect.left + margin
+      const topY = rect.top + margin
+      controller.flip({ x: leftX, y: topY })
+    }
+    return () => { triggerPrevWithAnimationRef.current = null }
+  }, [triggerPrevWithAnimationRef, isMobileScreen, flipbookKey])
+
   useEffect(() => {
     const el = containerRef.current
     if (!el) return
@@ -149,38 +207,101 @@ const FlipBookInner = React.memo(({ flipbookKey, pageElements, isMobileScreen, b
     return () => obs.disconnect()
   }, [flipbookKey])
 
+  // Track pointer movement to distinguish between click and swipe
+  const startPos = useRef<{ x: number, y: number, side: 'left' | 'right' | null } | null>(null)
+  const hasMoved = useRef(false)
+
+  const handlePointerDown = (e: React.PointerEvent) => {
+    const rect = containerRef.current?.getBoundingClientRect()
+    if (!rect) return
+    const x = e.clientX - rect.left
+    const relX = x / rect.width
+
+    // Penentuan sisi secara absolut terhadap panggung 1400px
+    const side = relX < 0.5 ? 'left' : 'right'
+
+    startPos.current = { x: e.clientX, y: e.clientY, side }
+    hasMoved.current = false
+  }
+
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (!startPos.current) return
+    const dx = Math.abs(e.clientX - startPos.current.x)
+    const dy = Math.abs(e.clientY - startPos.current.y)
+    if (dx > 10 || dy > 10) {
+      hasMoved.current = true
+    }
+  }
+
+  const handlePointerUp = (e: React.PointerEvent) => {
+    if (!startPos.current) return
+    const dx = e.clientX - startPos.current.x
+    const dy = e.clientY - startPos.current.y
+
+    // Swipe detection: Minimal movement for responsiveness
+    if (Math.abs(dx) > 30 && Math.abs(dx) > Math.abs(dy)) {
+      const flip = bookRef.current?.pageFlip()
+      if (flip) {
+        // Logika Sisi: 
+        // - Jika mulai di sisi kanan panggung dan swipe ke kiri -> Next
+        // - Jika mulai di sisi kiri panggung dan swipe ke kanan -> Prev
+        if (startPos.current.side === 'right' && dx < -20) {
+          flip.flipNext()
+        } else if (startPos.current.side === 'left' && dx > 20) {
+          if (isMobileScreen && triggerPrevWithAnimationRef?.current) triggerPrevWithAnimationRef.current()
+          else flip.flipPrev()
+        }
+      }
+    }
+    startPos.current = null
+  }
+
+  const handleClickCapture = (e: React.MouseEvent) => {
+    // Jika ada pergerakan (swipe), blokir klik agar tidak mengganggu navigasi manual
+    if (hasMoved.current) {
+      e.stopPropagation()
+      e.preventDefault()
+    }
+    startPos.current = null
+  }
+
   return (
     <div
       ref={containerRef}
-      className="flex-shrink-0"
+      className="flex-shrink-0 flex justify-center"
       style={{ width: stageWidth, height: stageHeight }}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={() => { startPos.current = null }}
+      onClickCapture={handleClickCapture}
     >
-      {/* @ts-ignore */}
+      {/* @ts-ignore - key dengan isMobileScreen agar remount saat Inspect ganti device (library dapat ukuran baru) */}
       <HTMLFlipBook
-        key={flipbookKey}
-        width={stageWidth / 2}
+        key={`${flipbookKey}-${isMobileScreen ? 'm' : 'd'}`}
+        width={isMobileScreen ? stageWidth : stageWidth / 2}
         height={stageHeight}
         size="fixed"
-        minWidth={stageWidth / 2}
-        maxWidth={stageWidth / 2}
+        minWidth={isMobileScreen ? stageWidth : stageWidth / 2}
+        maxWidth={isMobileScreen ? stageWidth : stageWidth / 2}
         minHeight={stageHeight}
         maxHeight={stageHeight}
-        maxShadowOpacity={0.5}
+        maxShadowOpacity={0.4}
         showCover={true}
         mobileScrollSupport={false}
         className="demo-book"
         ref={bookRef}
-        startPage={0}
+        startPage={startPage}
         drawShadow={true}
         flippingTime={600}
         usePortrait={isMobileScreen}
         startZIndex={0}
         autoSize={true}
         clickEventForward={true}
-        useMouseEvents={true}
-        swipeDistance={0}
+        useMouseEvents={false}
+        swipeDistance={9999}
         showPageCorners={false}
-        disableFlipByClick={false}
+        disableFlipByClick={!isMobileScreen}
         onFlip={(e: any) => onFlip(e.data)}
       >
         {pageElements}
@@ -190,7 +311,7 @@ const FlipBookInner = React.memo(({ flipbookKey, pageElements, isMobileScreen, b
 })
 FlipBookInner.displayName = 'FlipBookInner'
 
-export default function ManualFlipbookViewer({ pages, onPlayVideo, className = '' }: ManualFlipbookViewerProps) {
+export default function ManualFlipbookViewer({ pages, onPlayVideo, className = '', albumId, isEditorView = false }: ManualFlipbookViewerProps) {
   const book = useRef<any>(null)
   const stageContainerRef = useRef<HTMLDivElement>(null)
   const wrapperRef = useRef<HTMLDivElement>(null)
@@ -209,6 +330,13 @@ export default function ManualFlipbookViewer({ pages, onPlayVideo, className = '
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [showPageInput, setShowPageInput] = useState(false)
   const [pageInputValue, setPageInputValue] = useState('')
+  const [sectionFlipDir, setSectionFlipDir] = useState<'next' | 'prev' | null>(null)
+  const [showSharePopup, setShowSharePopup] = useState(false)
+
+  const isMobileScreenRef = useRef(isMobileScreen)
+  isMobileScreenRef.current = isMobileScreen
+  const stageWidth = isMobileScreen ? MOBILE_STAGE_WIDTH : BOOK_STAGE_WIDTH
+  const stageHeight = isMobileScreen ? MOBILE_STAGE_HEIGHT : BOOK_STAGE_HEIGHT
 
   const flipbookKey = useMemo(() => pages.map(p => p.id).join('-'), [pages])
 
@@ -279,39 +407,19 @@ export default function ManualFlipbookViewer({ pages, onPlayVideo, className = '
         if (flipSoundRef.current) {
           flipSoundRef.current.volume = 0.5
           flipSoundRef.current.currentTime = 0
-          flipSoundRef.current.play().catch(() => {})
+          flipSoundRef.current.play().catch(() => { })
         }
-      } catch {}
+      } catch { }
     }
   }, [])
 
-  // Geser sekalian dengan buka cover (hanya sinkron visual; navigasi hanya lewat tombol)
-  const handleStagePointerDown = useCallback((e: React.PointerEvent) => {
-    if (currentPage === 0) {
-      if (revertShiftTimeoutRef.current) {
-        clearTimeout(revertShiftTimeoutRef.current)
-        revertShiftTimeoutRef.current = null
-      }
-      flushSync(() => {
-        setCoverFlipStarted(true)
-        setCoverJustClosed(false)
-      })
-      pointerDownRef.current = { x: e.clientX, y: e.clientY, mode: 'open' }
-    }
-    const onUp = () => {
-      if (pointerDownRef.current?.mode === 'open') {
-        revertShiftTimeoutRef.current = setTimeout(() => setCoverFlipStarted(false), 1100)
-      }
-      pointerDownRef.current = null
-      window.removeEventListener('pointerup', onUp)
-      window.removeEventListener('pointercancel', onUp)
-    }
-    window.addEventListener('pointerup', onUp)
-    window.addEventListener('pointercancel', onUp)
-  }, [currentPage])
+  // Interaction controlled by swipe only, removing background click listeners
+  const handleStagePointerDown = useCallback(() => { }, [])
+
+  const MOBILE_BREAKPOINT = 768
+  const checkMobile = useCallback(() => setIsMobileScreen(window.innerWidth < MOBILE_BREAKPOINT), [])
 
   useEffect(() => {
-    const checkMobile = () => setIsMobileScreen(window.innerWidth < 768)
     checkMobile()
     window.addEventListener('resize', checkMobile)
     const readyTimer = setTimeout(() => setIsReady(true), READY_DELAY_MS)
@@ -319,14 +427,83 @@ export default function ManualFlipbookViewer({ pages, onPlayVideo, className = '
       clearTimeout(readyTimer)
       window.removeEventListener('resize', checkMobile)
     }
-  }, [pages])
+  }, [pages, checkMobile])
+
+  // Saat Inspect → toggle device: matchMedia, visualViewport, ResizeObserver, + poll fallback
+  useEffect(() => {
+    const mq = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`)
+    const onMediaChange = (e: MediaQueryListEvent) => setIsMobileScreen(e.matches)
+    mq.addEventListener('change', onMediaChange)
+    return () => mq.removeEventListener('change', onMediaChange)
+  }, [])
+
+  useEffect(() => {
+    const vv = window.visualViewport
+    if (!vv) return
+    const onViewportResize = () => {
+      const w = vv.width
+      setIsMobileScreen((prev) => {
+        const next = w < MOBILE_BREAKPOINT
+        return prev !== next ? next : prev
+      })
+    }
+    vv.addEventListener('resize', onViewportResize)
+    vv.addEventListener('scroll', onViewportResize)
+    return () => {
+      vv.removeEventListener('resize', onViewportResize)
+      vv.removeEventListener('scroll', onViewportResize)
+    }
+  }, [])
+
+  useEffect(() => {
+    const el = stageContainerRef.current
+    if (!el) return
+    const ro = new ResizeObserver(() => {
+      const mobile = window.innerWidth < MOBILE_BREAKPOINT
+      setIsMobileScreen((prev) => (prev !== mobile ? mobile : prev))
+    })
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [isReady])
+
+  // Fallback: poll innerWidth saat tab visible (tangkap saat Inspect ganti device yang tidak emit event)
+  useEffect(() => {
+    let lastWidth = typeof window !== 'undefined' ? window.innerWidth : 0
+    const id = setInterval(() => {
+      if (typeof document === 'undefined' || document.visibilityState !== 'visible') return
+      const w = window.innerWidth
+      if (w === lastWidth) return
+      lastWidth = w
+      setIsMobileScreen((prev) => {
+        const next = w < MOBILE_BREAKPOINT
+        return prev !== next ? next : prev
+      })
+    }, 400)
+    return () => clearInterval(id)
+  }, [])
+
+  // Setelah ukuran/orientasi berubah (mobile ↔ desktop), paksa library recalc portrait/landscape
+  useEffect(() => {
+    if (!isReady || !pages?.length) return
+    const t = setTimeout(() => {
+      book.current?.pageFlip()?.update()
+    }, RESIZE_THROTTLE_MS + 50)
+    return () => clearTimeout(t)
+  }, [isMobileScreen, isReady, pages?.length])
 
   const updateScale = useCallback(() => {
     const container = stageContainerRef.current
     if (!container) return
     const { width: w, height: h } = container.getBoundingClientRect()
     if (w <= 0 || h <= 0) return
-    setScale(Math.min(w / BOOK_STAGE_WIDTH, h / BOOK_STAGE_HEIGHT))
+
+    const mobile = isMobileScreenRef.current
+    const stageW = mobile ? MOBILE_STAGE_WIDTH : BOOK_STAGE_WIDTH
+    const stageH = mobile ? MOBILE_STAGE_HEIGHT : BOOK_STAGE_HEIGHT
+    const paddingX = mobile ? 16 : 32
+    const paddingY = mobile ? 24 : 48
+
+    setScale(Math.min(Math.max((w - paddingX) / stageW, 0), Math.max((h - paddingY) / stageH, 0)))
   }, [])
 
   useEffect(() => {
@@ -345,27 +522,44 @@ export default function ManualFlipbookViewer({ pages, onPlayVideo, className = '
       if (throttleId) clearTimeout(throttleId)
       window.removeEventListener('resize', throttledUpdate)
     }
-  }, [isReady, pages?.length, updateScale])
+  }, [isReady, pages?.length, updateScale, isMobileScreen])
 
-  const isAtBackCover = currentPage >= totalPageCount - (isMobileScreen ? 1 : 2)
+  // Refined Logic: isCoverOnly and isBackCoverOnly for Layout Centering
+  const isCoverOnly = (currentPage === 0 && !coverFlipStarted) || (currentPage === 1 && coverCloseStarted) || coverJustClosed
+  const isBackCoverOnly = currentPage >= totalPageCount - 2
+
   const handleToggleCover = useCallback(() => {
+    if (sectionFlipDir) return // Guard terhadap klik berkali-kali
+
     const lastPage = Math.max(0, totalPageCount - 1)
-    const target = isAtBackCover ? 0 : lastPage
+    const target = isBackCoverOnly ? 0 : lastPage
     const flip = book.current?.pageFlip()
     if (!flip) return
     if (flip.getCurrentPageIndex?.() === target) return
-    /* Instant jump seperti tombol First/Last di referensi (abankirenk) — tanpa animasi berantai */
-    flip.turnToPage(target)
-    setCurrentPage(target)
-    setCoverFlipStarted(false)
-    setCoverCloseStarted(false)
-    if (target === 0) setCoverJustClosed(true)
-    else setCoverJustClosed(false)
-    if (target === 0 || target === 1) {
-      requestAnimationFrame(() => requestAnimationFrame(() => flip.update()))
-      flipUpdateTimeoutRef.current = setTimeout(() => flip.update(), FLIP_UPDATE_DELAY_MS)
-    }
-  }, [totalPageCount, isAtBackCover])
+
+    // Mulai animasi putar 180 (single flip)
+    const dir = isBackCoverOnly ? 'prev' : 'next'
+    setSectionFlipDir(dir)
+
+    // Tepat di tengah animasi (saat buku 90-derajat / tak terlihat)
+    setTimeout(() => {
+      // Ganti state halaman tanpa re-render berlebihan
+      flip.turnToPage(target)
+      setCurrentPage(target)
+      setCoverFlipStarted(false)
+      setCoverCloseStarted(false)
+      setCoverJustClosed(target === 0)
+
+      if (target === 0 || target === 1) {
+        requestAnimationFrame(() => requestAnimationFrame(() => flip.update()))
+      }
+    }, 400) // Tepat di 50% dari 0.8s CSS animation
+
+    // Selesai animasi
+    setTimeout(() => {
+      setSectionFlipDir(null)
+    }, 800)
+  }, [totalPageCount, isBackCoverOnly, sectionFlipDir])
   const handleToggleCoverRef = useRef(handleToggleCover)
   handleToggleCoverRef.current = handleToggleCover
 
@@ -385,6 +579,20 @@ export default function ManualFlipbookViewer({ pages, onPlayVideo, className = '
     setShowPageInput(false)
   }, [totalPageCount])
 
+  // Ref untuk trigger prev dengan animasi flip (mobile: flip di posisi kiri buku)
+  const triggerPrevWithAnimationRef = useRef<(() => void) | null>(null)
+
+  const handlePrev = useCallback(() => {
+    if (currentPage === 0) return
+    const flip = book.current?.pageFlip()
+    if (!flip) return
+    if (isMobileScreen) {
+      triggerPrevWithAnimationRef.current?.()
+    } else {
+      flip.flipPrev()
+    }
+  }, [currentPage, isMobileScreen])
+
   const handlePageInputSubmit = useCallback(() => {
     const num = parseInt(pageInputValue.trim(), 10)
     if (!Number.isNaN(num)) goToPage(num)
@@ -395,9 +603,9 @@ export default function ManualFlipbookViewer({ pages, onPlayVideo, className = '
     const el = wrapperRef.current
     if (!el) return
     if (!document.fullscreenElement) {
-      el.requestFullscreen().then(() => setIsFullscreen(true)).catch(() => {})
+      el.requestFullscreen().then(() => setIsFullscreen(true)).catch(() => { })
     } else {
-      document.exitFullscreen().then(() => setIsFullscreen(false)).catch(() => {})
+      document.exitFullscreen().then(() => setIsFullscreen(false)).catch(() => { })
     }
   }, [])
 
@@ -434,29 +642,39 @@ export default function ManualFlipbookViewer({ pages, onPlayVideo, className = '
     )
   }
 
-  // Nomor halaman buku: cover = 1, halaman kosong setelah cover = 2, lalu 3, 4, ... (index + 1)
-  let displayPages: number[] = []
-  if (isMobileScreen) {
-    displayPages.push(currentPage + 1)
-  } else {
+  // Nomor halaman urut 1..N: HAL 1 = cover, 2 = kosong, 3..95 = isi, 96 = back. 94 page + 2 kosong = 96.
+  // Library kirim indeks halaman kiri (0..N-1). Spread kiri=i → buku [i+1, i+2]. Jadi [currentPage+1, currentPage+2].
+  const displayPages: number[] = (() => {
+    const N = totalPageCount
+    if (N <= 0) return []
+    const clamp = (p: number) => Math.max(1, Math.min(N, p))
+
     if (currentPage === 0) {
-      displayPages.push(1)
-    } else {
-      displayPages.push(currentPage + 1, currentPage + 2)
+      return isCoverOnly || isMobileScreen ? [1] : [2]
     }
-  }
-  const pageText = displayPages.length > 0 ? `HAL ${displayPages.join(' - ')}` : 'HAL -'
-  const isCoverOnly = (currentPage === 0 && !coverFlipStarted) || (currentPage === 1 && coverCloseStarted) || coverJustClosed
-  const isBackCoverOnly = isAtBackCover
+    // Spread terakhir (blank + back cover): tampilkan hanya HAL N (sama seperti cover hanya HAL 1)
+    if (currentPage === N - 1 || currentPage === N - 2) return [N]
+
+    let raw: number[]
+    if (isMobileScreen) {
+      raw = [currentPage + 1]
+    } else {
+      raw = [currentPage + 1, currentPage + 2]
+    }
+    if (raw.some(p => p > N)) return [N]
+    return raw.map(clamp)
+  })()
+  const pageText = displayPages.length > 0 ? displayPages.join(' - ') : '-'
+
 
   return (
     <div
       ref={wrapperRef}
-      className={`flip-book-wrapper flex flex-col w-full h-full pt-[5mm] ${className} transition-opacity duration-700 ${isReady ? 'opacity-100' : 'opacity-0'} ${isCoverOnly ? 'flip-book-wrapper--cover-only' : ''} ${isBackCoverOnly ? 'flip-book-wrapper--back-cover-only' : ''} ${isFullscreen ? 'flip-book-wrapper--fullscreen' : ''}`}
+      className={`flip-book-wrapper flex flex-col w-full h-full ${className} transition-opacity duration-700 ${isReady ? 'opacity-100' : 'opacity-0'} ${isCoverOnly ? 'flip-book-wrapper--cover-only' : ''} ${isBackCoverOnly ? 'flip-book-wrapper--back-cover-only' : ''} ${isFullscreen ? 'flip-book-wrapper--fullscreen' : ''} ${sectionFlipDir ? `is-flipping-${sectionFlipDir}` : ''}`}
     >
       <div
         ref={stageContainerRef}
-        className="relative flex-1 min-h-0 w-full flex items-center justify-center p-0 pb-[5mm] overflow-hidden"
+        className={`relative flex-1 min-h-0 w-full flex items-center justify-center overflow-visible ${isMobileScreen ? 'p-2' : 'p-4'}`}
         onPointerDown={handleStagePointerDown}
       >
         <div
@@ -465,60 +683,106 @@ export default function ManualFlipbookViewer({ pages, onPlayVideo, className = '
             position: 'absolute',
             left: '50%',
             top: '50%',
-            width: BOOK_STAGE_WIDTH,
-            height: BOOK_STAGE_HEIGHT,
+            width: stageWidth,
+            height: stageHeight,
             transform: `translate(-50%, -50%) scale(${scale})`,
             transformOrigin: 'center center',
             transition: 'transform 0.2s ease-out',
+            perspective: '1500px',
           }}
         >
-          <FlipBookInner
-            flipbookKey={flipbookKey}
-            pageElements={pageElements}
-            isMobileScreen={isMobileScreen}
-            bookRef={book}
-            onFlip={handleFlip}
-            stageWidth={BOOK_STAGE_WIDTH}
-            stageHeight={BOOK_STAGE_HEIGHT}
-          />
+          <div
+            className={`flip-book-3d-rotator ${sectionFlipDir ? `is-flipping-${sectionFlipDir}` : ''}`}
+            style={{
+              willChange: sectionFlipDir ? 'transform' : 'auto',
+              transformStyle: 'preserve-3d'
+            }}
+          >
+
+
+            {/* Shifter: mobile satu halaman selalu tengah; desktop geser untuk cover/back cover */}
+            <div
+              style={{
+                width: '100%',
+                height: '100%',
+                transformStyle: 'preserve-3d',
+                transform: isMobileScreen ? 'translateX(0)' : (isCoverOnly ? 'translateX(-25%)' : (isBackCoverOnly ? 'translateX(25%)' : 'translateX(0)')),
+                transition: sectionFlipDir ? 'none' : 'transform 0.4s cubic-bezier(0.25, 0.1, 0.25, 1)'
+              }}
+            >
+              {/* Thickness Layers: Berada di dalam shifter agar lebarnya selaras dengan buku */}
+              {sectionFlipDir && (
+                <div
+                  className="absolute pointer-events-none"
+                  style={{
+                    inset: 0,
+                    width: (isCoverOnly || isBackCoverOnly) ? '50.1%' : '100.1%',
+                    left: isCoverOnly ? '49.9%' : '0',
+                    transformStyle: 'preserve-3d'
+                  }}
+                >
+                  <div className="absolute inset-0 bg-paper-stack rounded-[2px]" style={{ transform: 'translateZ(-8px)' }} />
+                  <div className="absolute inset-0 bg-paper-stack rounded-[2px]" style={{ transform: 'translateZ(-16px)' }} />
+                  <div className="absolute inset-0 bg-slate-300 rounded-[2px]" style={{ transform: 'translateZ(-24px)', border: '1px solid rgba(0,0,0,0.1)' }} />
+                </div>
+              )}
+
+              <FlipBookInner
+                flipbookKey={flipbookKey}
+                pageElements={pageElements}
+                isMobileScreen={isMobileScreen}
+                bookRef={book}
+                onFlip={handleFlip}
+                triggerPrevWithAnimationRef={triggerPrevWithAnimationRef}
+                stageWidth={stageWidth}
+                stageHeight={stageHeight}
+                isCoverOnly={isCoverOnly}
+                isBackCoverOnly={isBackCoverOnly}
+                startPage={currentPage}
+              />
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Bottom Navigation Bar — tombol pindah halaman (Prev + HAL + Next) di tengah */}
-      <div className="shrink-0 w-full mt-[5mm] flex items-center px-3 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] bg-white border-t-2 border-slate-900 shadow-[0_-2px_0_0_rgba(15,23,42,0.1)] z-50">
+      {/* Bottom Navigation Bar — editor: tombol lebih kecil + jarak longgar; public: tetap */}
+      <div className={`shrink-0 w-full flex items-center bg-white border-t border-slate-900 shadow-[0_-1px_0_0_rgba(15,23,42,0.06)] z-50 ${isEditorView ? 'px-2 py-1' : 'px-1.5 py-0.5'}`}>
         {/* Kiri: sound + flip */}
-        <div className="flex-1 flex items-center justify-start gap-2">
+        <div className={`flex-1 flex items-center justify-start ${isEditorView ? 'gap-1.5' : 'gap-0.5'}`}>
           <button
             onClick={(e) => { e.stopPropagation(); setSoundEnabled(!soundEnabled); }}
-            className="w-8 h-8 flex items-center justify-center rounded-lg bg-white hover:bg-slate-100 border-2 border-slate-900 transition-all text-slate-900 active:scale-95 shadow-[1.5px_1.5px_0_0_#0f172a]"
+            className={`p-0 flex items-center justify-center rounded-sm bg-white hover:bg-slate-100 border border-slate-900 transition-all text-slate-900 active:scale-95 shadow-[1px_1px_0_0_#0f172a] ${isEditorView ? '!size-[28px] !min-w-[28px] !min-h-[28px]' : 'size-[28px] min-w-[28px] min-h-[28px]'}`}
+            style={isEditorView ? { width: 28, height: 28, minWidth: 28, minHeight: 28 } : undefined}
             title={soundEnabled ? 'Matikan suara' : 'Nyalakan suara'}
           >
-            {soundEnabled ? <Volume2 className="w-4 h-4" strokeWidth={2.5} /> : <VolumeX className="w-4 h-4" strokeWidth={2.5} />}
+            {soundEnabled ? <Volume2 className={`shrink-0 ${isEditorView ? 'w-3.5 h-3.5' : 'w-4 h-4'}`} strokeWidth={2.5} /> : <VolumeX className={`shrink-0 ${isEditorView ? 'w-3.5 h-3.5' : 'w-4 h-4'}`} strokeWidth={2.5} />}
           </button>
           <button
             onClick={(e) => { e.stopPropagation(); handleToggleCover(); }}
-            className="w-8 h-8 flex items-center justify-center rounded-lg bg-white hover:bg-slate-100 border-2 border-slate-900 transition-all text-slate-900 active:scale-95 shadow-[1.5px_1.5px_0_0_#0f172a]"
-            title={isAtBackCover ? 'Ke cover depan' : 'Ke back cover'}
+            className={`p-0 flex items-center justify-center rounded-sm bg-white hover:bg-slate-100 border border-slate-900 transition-all text-slate-900 active:scale-95 shadow-[1px_1px_0_0_#0f172a] ${isEditorView ? '!size-[28px] !min-w-[28px] !min-h-[28px]' : 'size-[28px] min-w-[28px] min-h-[28px]'}`}
+            style={isEditorView ? { width: 28, height: 28, minWidth: 28, minHeight: 28 } : undefined}
+            title={isBackCoverOnly ? 'Ke cover depan' : 'Ke back cover'}
           >
-            <FlipHorizontal2 className="w-4 h-4" strokeWidth={2.5} />
+            <FlipHorizontal2 className={`shrink-0 ${isEditorView ? 'w-3.5 h-3.5' : 'w-4 h-4'}`} strokeWidth={2.5} />
           </button>
         </div>
 
-        {/* Tengah: Prev + HAL + Next — lebar area halaman tetap agar panah tidak geser */}
-        <div className="flex items-center justify-center gap-3 shrink-0">
+        {/* Tengah: Prev + nomor halaman + Next */}
+        <div className={`flex items-center justify-center shrink-0 ${isEditorView ? 'gap-2' : 'gap-1'}`}>
           <button
+            type="button"
             onClick={(e) => {
               e.stopPropagation()
-              if (currentPage === 1) flushSync(() => setCoverCloseStarted(true))
-              book.current?.pageFlip()?.flipPrev()
+              handlePrev()
             }}
             disabled={currentPage === 0}
-            className="w-8 h-8 flex items-center justify-center rounded-lg bg-white hover:bg-slate-100 disabled:bg-slate-200 border-2 border-slate-900 disabled:opacity-50 transition-all text-slate-900 active:scale-95 shadow-[1.5px_1.5px_0_0_#0f172a] disabled:shadow-none disabled:translate-x-0.5 disabled:translate-y-0.5"
+            className={`p-0 flex items-center justify-center rounded-sm bg-white hover:bg-slate-100 disabled:bg-slate-200 border border-slate-900 disabled:opacity-50 transition-all text-slate-900 active:scale-95 shadow-[1px_1px_0_0_#0f172a] disabled:shadow-none disabled:translate-x-0.5 disabled:translate-y-0.5 touch-manipulation ${isEditorView ? '!size-[28px] !min-w-[28px] !min-h-[28px]' : 'size-[28px] min-w-[28px] min-h-[28px]'}`}
+            style={isEditorView ? { width: 28, height: 28, minWidth: 28, minHeight: 28 } : undefined}
           >
-            <ChevronLeft className="w-5 h-5" strokeWidth={3} />
+            <ChevronLeft className={`shrink-0 ${isEditorView ? 'w-3.5 h-3.5' : 'w-4 h-4'}`} strokeWidth={3} />
           </button>
           <div
-            className="flex flex-col items-center justify-center w-[7.5rem] min-w-[7.5rem] h-8 cursor-pointer rounded-lg border-2 border-transparent hover:border-slate-300 hover:bg-slate-50 transition-colors"
+            className={`flex flex-col items-center justify-center cursor-pointer rounded-sm border border-transparent hover:border-slate-300 hover:bg-slate-50 transition-colors ${isEditorView ? 'w-16 min-w-16 h-[28px]' : 'w-16 min-w-16 h-[28px]'}`}
             onClick={(e) => {
               e.stopPropagation()
               setPageInputValue(String(currentPage + 1))
@@ -540,11 +804,11 @@ export default function ManualFlipbookViewer({ pages, onPlayVideo, className = '
                 }}
                 onBlur={handlePageInputSubmit}
                 onClick={(e) => e.stopPropagation()}
-                className="w-full text-center font-black text-slate-900 text-xs sm:text-sm tracking-widest bg-transparent border-none outline-none focus:ring-0 p-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                className={`w-full text-center font-bold text-slate-900 tracking-widest bg-transparent border-none outline-none focus:ring-0 p-0 min-h-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${isEditorView ? 'text-[9px] sm:text-[10px]' : 'text-[10px] sm:text-xs'}`}
                 autoFocus
               />
             ) : (
-              <span className="font-black text-slate-900 text-xs sm:text-sm tracking-widest uppercase">{pageText}</span>
+              <span className={`font-bold text-slate-900 tracking-widest uppercase leading-none ${isEditorView ? 'text-[9px] sm:text-[10px]' : 'text-[10px] sm:text-xs'}`}>{pageText}</span>
             )}
           </div>
           <button
@@ -554,20 +818,95 @@ export default function ManualFlipbookViewer({ pages, onPlayVideo, className = '
               book.current?.pageFlip()?.flipNext()
             }}
             disabled={currentPage >= totalPageCount - (isMobileScreen ? 1 : 2)}
-            className="w-8 h-8 flex items-center justify-center rounded-lg bg-white hover:bg-slate-100 disabled:bg-slate-200 border-2 border-slate-900 disabled:opacity-50 transition-all text-slate-900 active:scale-95 shadow-[1.5px_1.5px_0_0_#0f172a] disabled:shadow-none disabled:translate-x-0.5 disabled:translate-y-0.5"
+            className={`p-0 flex items-center justify-center rounded-sm bg-white hover:bg-slate-100 disabled:bg-slate-200 border border-slate-900 disabled:opacity-50 transition-all text-slate-900 active:scale-95 shadow-[1px_1px_0_0_#0f172a] disabled:shadow-none disabled:translate-x-0.5 disabled:translate-y-0.5 ${isEditorView ? '!size-[28px] !min-w-[28px] !min-h-[28px]' : 'size-[28px] min-w-[28px] min-h-[28px]'}`}
+            style={isEditorView ? { width: 28, height: 28, minWidth: 28, minHeight: 28 } : undefined}
           >
-            <ChevronRight className="w-5 h-5" strokeWidth={3} />
+            <ChevronRight className={`shrink-0 ${isEditorView ? 'w-3.5 h-3.5' : 'w-4 h-4'}`} strokeWidth={3} />
           </button>
         </div>
 
-        {/* Kanan: fullscreen */}
-        <div className="flex-1 flex items-center justify-end">
+        {/* Kanan: share + fullscreen */}
+        <div className={`flex-1 flex items-center justify-end ${isEditorView ? 'gap-1.5' : 'gap-1'}`}>
+{albumId && (
+            <>
+              <button
+                onClick={(e) => { e.stopPropagation(); setShowSharePopup(true); }}
+                className={`p-0 flex items-center justify-center rounded-sm bg-emerald-400 hover:bg-emerald-300 border border-slate-900 transition-all text-slate-900 active:scale-95 shadow-[1px_1px_0_0_#0f172a] ${isEditorView ? '!size-[28px] !min-w-[28px] !min-h-[28px]' : 'size-[28px] min-w-[28px] min-h-[28px]'}`}
+                style={isEditorView ? { width: 28, height: 28, minWidth: 28, minHeight: 28 } : undefined}
+                title="Bagikan"
+              >
+                <Share2 className={`shrink-0 ${isEditorView ? 'w-3.5 h-3.5' : 'w-4 h-4'}`} strokeWidth={2.5} />
+              </button>
+              {showSharePopup && (
+                <div
+                  className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50"
+                  onClick={(e) => { e.stopPropagation(); setShowSharePopup(false); }}
+                  role="dialog"
+                  aria-modal="true"
+                  aria-labelledby="share-popup-title"
+                >
+                  <div
+                    className="bg-white border-2 border-slate-900 rounded-xl shadow-[6px_6px_0_0_#0f172a] max-w-sm w-full p-4"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 id="share-popup-title" className="font-black text-slate-900 uppercase tracking-tight text-sm">Bagikan flipbook</h3>
+                      <button
+                        type="button"
+                        onClick={() => setShowSharePopup(false)}
+                        className="p-1 rounded hover:bg-slate-100 text-slate-600 transition-colors"
+                        aria-label="Tutup"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                    <p className="text-xs text-slate-600 mb-3 break-all">
+                      {typeof window !== 'undefined' && `${window.location.origin}/album/${albumId}/flipbook`}
+                    </p>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const url = `${window.location.origin}/album/${albumId}/flipbook`;
+                          navigator.clipboard.writeText(url);
+                          toast.success('Link disalin ke clipboard');
+                          setShowSharePopup(false);
+                        }}
+                        className="flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg bg-white border-2 border-slate-900 text-slate-900 font-bold text-sm uppercase tracking-wide hover:bg-slate-50 active:scale-[0.98] shadow-[2px_2px_0_0_#0f172a] transition-all"
+                      >
+                        <Copy className="w-4 h-4 shrink-0" />
+                        Salin link
+                      </button>
+                      {typeof navigator !== 'undefined' && navigator.share && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const url = `${window.location.origin}/album/${albumId}/flipbook`;
+                            navigator.share({
+                              title: 'Flipbook Yearbook',
+                              text: 'Check out my yearbook flipbook!',
+                              url,
+                            }).then(() => setShowSharePopup(false)).catch(() => {})
+                          }}
+                          className="flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg bg-emerald-400 hover:bg-emerald-300 border-2 border-slate-900 text-slate-900 font-bold text-sm uppercase tracking-wide active:scale-[0.98] shadow-[2px_2px_0_0_#0f172a] transition-all"
+                        >
+                          <Share2 className="w-4 h-4 shrink-0" />
+                          Bagikan
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
           <button
             onClick={(e) => { e.stopPropagation(); toggleFullscreen(); }}
-            className="w-8 h-8 flex items-center justify-center rounded-lg bg-white hover:bg-slate-100 border-2 border-slate-900 transition-all text-slate-900 active:scale-95 shadow-[1.5px_1.5px_0_0_#0f172a]"
+            className={`p-0 flex items-center justify-center rounded-sm bg-white hover:bg-slate-100 border border-slate-900 transition-all text-slate-900 active:scale-95 shadow-[1px_1px_0_0_#0f172a] ${isEditorView ? '!size-[28px] !min-w-[28px] !min-h-[28px]' : 'size-[28px] min-w-[28px] min-h-[28px]'}`}
+            style={isEditorView ? { width: 28, height: 28, minWidth: 28, minHeight: 28 } : undefined}
             title={isFullscreen ? 'Keluar fullscreen' : 'Fullscreen'}
           >
-            {isFullscreen ? <Minimize2 className="w-4 h-4" strokeWidth={2.5} /> : <Maximize2 className="w-4 h-4" strokeWidth={2.5} />}
+            {isFullscreen ? <Minimize2 className={`shrink-0 ${isEditorView ? 'w-3.5 h-3.5' : 'w-4 h-4'}`} strokeWidth={2.5} /> : <Maximize2 className={`shrink-0 ${isEditorView ? 'w-3.5 h-3.5' : 'w-4 h-4'}`} strokeWidth={2.5} />}
           </button>
         </div>
       </div>
