@@ -5,7 +5,8 @@ import { Hero } from "./Hero";
 import { About } from "./About";
 import { Features } from "./Features";
 import { Pricing } from "./Pricing";
-import { Story } from "./Story";
+import { FAQ } from "./FAQ";
+import { DemoLivePhoto } from "./DemoLivePhoto";
 import { Contact } from "./Contact";
 import { Footer } from "./Footer";
 
@@ -17,7 +18,8 @@ export default function LandingPage() {
       <About />
       <Features />
       <Pricing />
-      <Story />
+      <DemoLivePhoto />
+      <FAQ />
       <Contact />
       <Footer />
     </main>

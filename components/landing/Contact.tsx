@@ -1,7 +1,5 @@
 'use client';
 
-import { Button } from "./Button";
-
 interface ImageClipBoxProps {
   src: string;
   alt: string;
@@ -52,7 +50,12 @@ export function Contact() {
             Ud<b>a</b>h Si<b>a</b>p <br /> Bikin Sej<b>a</b>rah <br /> Angk
             <b>a</b>tanmu?
           </p>
-          <Button containerClass="mt-10 cursor-pointer">Buat Project</Button>
+          <a
+            href="#pricing"
+            className="font-general group relative z-10 mt-10 w-fit cursor-pointer overflow-hidden rounded-full bg-violet-50 px-7 py-3 text-center text-xs font-bold uppercase text-black transition hover:opacity-75"
+          >
+            Buat Project
+          </a>
         </div>
       </div>
     </section>

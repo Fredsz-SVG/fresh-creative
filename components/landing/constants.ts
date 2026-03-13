@@ -4,7 +4,6 @@ import { FaTiktok } from "react-icons/fa6";
 export const NAV_ITEMS = [
   { label: "Fitur", href: "#features" },
   { label: "Demo AR", href: "#demo-ar" },
-  { label: "Otomasi", href: "#automation" },
   { label: "Harga", href: "#pricing" },
 ] as const;
 
@@ -27,6 +26,4 @@ export const VIDEO_LINKS = {
   hero2: "/videos/hero-night.mp4",
 } as const;
 
-export const AUDIO_LINKS = {
-  default: "/audio/lofi-campfire.mp3",
-} as const;
+// Musik landing diambil dari folder public/audio via GET /api/audio (tanpa ubah code)

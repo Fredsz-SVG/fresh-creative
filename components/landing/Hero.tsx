@@ -97,24 +97,67 @@ export function Hero() {
           CRE<b>A</b>TIVE
         </h1>
 
-        <div className="absolute top-0 left-0 z-40 size-full">
+        <div className="absolute top-0 left-0 z-40 flex size-full flex-col justify-between py-10">
           <div className="mt-24 px-5 sm:px-10">
             <h1 className="special-font hero-heading text-white drop-shadow-2xl">
               FR<b>E</b>SH
             </h1>
+          </div>
 
-            <p className="font-robert-regular mb-5 max-w-64 text-white drop-shadow-md">
-              Smart Digital Yearbook <br />
-              Scan, Play, Nostalgia.
+          <div className="px-5 sm:px-10">
+            <p className="mb-5 max-w-lg text-lg font-bold leading-[1.5] text-white drop-shadow-md md:text-2xl" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+              Simpan cerita sekolahmu dalam buku fisik maupun digital. <br />
+              Hidupkan setiap momen dengan "Living Archive" yang nyata dan anti ribet.
             </p>
 
-            <Button
-              id="watch-trailer"
-              leftIcon={TiLocationArrow}
-              containerClass="bg-yellow-300 flex-center gap-1"
-            >
-              Coba Demo
-            </Button>
+            <a href="#pricing">
+              <Button
+                id="watch-trailer"
+                leftIcon={TiLocationArrow}
+                containerClass="bg-yellow-300 flex-center gap-1"
+              >
+                Buat Project
+              </Button>
+            </a>
+
+            <div className="mt-10 flex flex-wrap gap-10 md:gap-14">
+              <div className="flex flex-col">
+                <span className="special-font text-4xl font-bold text-white md:text-5xl">5+</span>
+                <span className="font-general text-[10px] uppercase tracking-widest text-white/60">
+                  Sekolah
+                </span>
+              </div>
+              <div className="flex flex-col">
+                <span className="special-font text-4xl font-bold text-white md:text-5xl">1.5k</span>
+                <span className="font-general text-[10px] uppercase tracking-widest text-white/60">
+                  Siswa
+                </span>
+              </div>
+              <div className="flex flex-col">
+                <span className="special-font text-4xl font-bold text-white md:text-5xl">0%</span>
+                <span className="font-general text-[10px] uppercase tracking-widest text-white/60">
+                  Pungli
+                </span>
+              </div>
+            </div>
+
+            <div className="mt-8 flex items-center gap-2 text-white/90 drop-shadow-md">
+              <span className="font-general text-sm uppercase tracking-wide">
+                Tech Partner
+              </span>
+              <a
+                href="https://livephoto.id/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="transition-opacity hover:opacity-80"
+              >
+                <img
+                  src="/img/livephotos.svg"
+                  alt="LivePhotos"
+                  className="h-8 w-auto"
+                />
+              </a>
+            </div>
           </div>
         </div>
       </div>

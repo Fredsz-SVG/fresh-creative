@@ -29,7 +29,7 @@ export function About() {
   return (
     <div id="about" className="min-h-screen w-full">
       <div className="relative mt-36 mb-8 flex flex-col items-center gap-5">
-        <p className="font-general text-sm uppercase md:text-[10px]">
+        <p className="font-general text-sm uppercase md:text-base">
           Welcome to Fresh Creative
         </p>
 
@@ -37,9 +37,13 @@ export function About() {
           {"Beyond Tr<b>a</b>ditional <br /> Yearbook"}
         </AnimatedTitle>
 
-        <div className="about-subtext">
-          <p>Abadikan kenangan angkatanmu dengan teknologi WebAR tercanggih.</p>
-          <p>Rasakan sensasi buku yang bisa bicara. Scan, Play, Nostalgia.</p>
+        <div className="about-subtext !text-black/80 font-bold leading-relaxed">
+          <p>
+            Ekosistem <span className="text-black font-black">Buku Fisik & Digital</span> yang hidup lewat keajaiban <span className="text-lime-600">WebAR</span>,
+            didukung sesi <span className="text-black font-black">foto dan video</span> kreatif hingga layanan <span className="text-black font-black">Event Organizer</span> yang lengkap.
+            <br />
+            <span className="special-font text-xl mt-4 block text-black">"Kenangan Jadi Nyata."</span>
+          </p>
         </div>
       </div>
 

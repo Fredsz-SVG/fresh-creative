@@ -910,7 +910,7 @@ html[data-theme="light"] body {
     letter-spacing: 0.08em;
     transition: all 0.3s ease;
     color: #ffffff;
-    -webkit-text-stroke: 2px #000000;
+    -webkit-text-stroke: 2.5px #000000;
     paint-order: stroke fill;
   }
 
@@ -1030,18 +1030,21 @@ html[data-theme="light"] body {
   }
 
   .story-img-container {
-    @apply relative h-[90vh] w-full md:h-dvh;
+    @apply relative z-0 h-[90vh] w-full md:h-dvh;
     filter: url("#flt_tag");
   }
 
   .story-img-mask {
-    @apply absolute top-0 left-0 size-full overflow-hidden md:top-[-10%] md:left-[20%] md:size-4/5;
-    clip-path: polygon(4% 0, 83% 21%, 100% 73%, 0% 100%);
+    @apply absolute top-0 left-0 size-full overflow-hidden md:left-1/2 md:top-1/2 md:h-4/5 md:w-4/5 md:-translate-x-1/2 md:-translate-y-1/2;
+    clip-path: inset(0 round 1.5rem);
   }
 
   .story-img-content {
-    @apply absolute top-16 left-10 h-[50dvh] w-full opacity-100 md:top-10 md:left-0 md:h-dvh lg:top-[-100px] lg:left-[-300px];
+    @apply absolute inset-0 flex items-center justify-center opacity-100;
     transform: translate3d(0, 0, 0) rotateX(0) rotateY(0) rotateZ(0) scale(1);
+  }
+  .story-img-content video {
+    @apply max-h-full max-w-full;
   }
 
   .sword-man-clip-path {
@@ -1069,6 +1072,11 @@ html[data-theme="light"] body {
   }
 }
 
+/* Stroke hitam pada ikon header, ketebalan sama proporsi dengan menu (nav-hover-btn 2px) */
+.nav-icon-stroke {
+  filter: drop-shadow(1px 0 0 black) drop-shadow(-1px 0 0 black) drop-shadow(0 1px 0 black) drop-shadow(0 -1px 0 black);
+}
+
 .indicator-line {
   @apply h-[4px] w-px rounded-full transition-all duration-200 ease-in-out;
 }
@@ -1082,7 +1090,7 @@ html[data-theme="light"] body {
 }
 
 .indicator-line.active {
-  animation: indicator-line 0.5s ease infinite;
+  animation: indicator-line 1.5s ease infinite;
   animation-delay: calc(var(--animation-order) * 0.1s);
 }
 

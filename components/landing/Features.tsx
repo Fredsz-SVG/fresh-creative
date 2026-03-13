@@ -2,131 +2,200 @@
 
 import { VIDEO_LINKS } from "./constants";
 import { type PropsWithChildren } from "react";
-import { TiLocationArrow } from "react-icons/ti";
 
-function BentoCardWrap({
-  children,
-  className = "",
-}: PropsWithChildren<{ className?: string }>) {
+// ─── Font import (paste di <head> atau globals.css) ───────────────────────
+// @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&family=Syne:wght@700;800&display=swap');
+
+function BentoCardWrap({ children, className = "" }: PropsWithChildren<{ className?: string }>) {
   return <div className={`bento-hover ${className}`}>{children}</div>;
 }
 
 interface BentoCardProps {
+  media: "video" | "image";
   src: string;
   title: React.ReactNode;
   description?: string;
 }
 
-function BentoCard({ src, title, description }: BentoCardProps) {
+function BentoCard({ media, src, title, description }: BentoCardProps) {
   return (
-    <article className="relative size-full">
-      <video
-        src={src}
-        loop
-        muted
-        autoPlay
-        playsInline
-        className="absolute top-0 left-0 size-full object-cover object-center"
+    <article className="relative size-full group">
+      {/* Media layer */}
+      {media === "video" ? (
+        <video
+          src={src}
+          loop
+          muted
+          autoPlay
+          playsInline
+          className="absolute inset-0 size-full object-cover object-center transition-transform duration-700 group-hover:scale-105"
+        />
+      ) : (
+        <div className="absolute inset-0 size-full overflow-hidden">
+          <img
+            src={src}
+            alt=""
+            className="size-full object-cover object-center transition-transform duration-700 group-hover:scale-105"
+            onError={(e) => {
+              e.currentTarget.style.display = "none";
+              const next = e.currentTarget.nextElementSibling as HTMLElement;
+              if (next) next.classList.remove("hidden");
+            }}
+          />
+          {/* gradient fallback */}
+          <div
+            className="hidden size-full"
+            aria-hidden
+            style={{ background: "linear-gradient(135deg, #1a0a2e 0%, #0d1b2a 100%)" }}
+          />
+        </div>
+      )}
+
+      {/* Gradient overlay — richer, lebih gelap di bawah */}
+      <div
+        className="absolute inset-0 z-10"
+        style={{
+          background:
+            "linear-gradient(to top, rgba(5,4,15,0.92) 0%, rgba(5,4,15,0.45) 45%, rgba(5,4,15,0.05) 100%)",
+        }}
       />
-      <div className="relative z-10 flex size-full flex-col justify-between p-5 text-blue-50">
+
+      {/* Noise texture overlay */}
+      <div
+        className="absolute inset-0 z-10 opacity-[0.03] mix-blend-overlay"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
+        }}
+      />
+
+      {/* Content */}
+      <div className="relative z-20 flex size-full flex-col justify-end p-6 md:p-7">
+        {/* Title + description di bawah */}
         <div>
-          <h2 className="bento-title special-font">{title}</h2>
+          <h2
+            className="bento-title special-font card-title-font"
+            style={{
+              fontFamily: "'Bebas Neue', sans-serif",
+              fontWeight: 400,
+              fontSize: "clamp(2.2rem, 4.5vw, 3.8rem)",
+              lineHeight: 1.1,
+              letterSpacing: "0.06em",
+              color: "#fff",
+              textShadow: "0 4px 32px rgba(0,0,0,0.7)",
+            }}
+          >
+            {title}
+          </h2>
           {description && (
-            <p className="tetx-xl mt-3 max-w-64 md:text-base">{description}</p>
+            <p
+              className="mt-4 max-w-xs"
+              style={{
+                fontFamily: "'DM Sans', sans-serif",
+                fontWeight: 400,
+                fontSize: "clamp(0.85rem, 1.2vw, 1rem)",
+                lineHeight: 1.75,
+                color: "rgba(220,230,255,0.75)",
+                letterSpacing: "0.015em",
+              }}
+            >
+              {description}
+            </p>
           )}
         </div>
       </div>
+
+      {/* Subtle border glow on hover */}
+      <div
+        className="absolute inset-0 z-20 rounded-[inherit] opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+        style={{ boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.12)" }}
+      />
     </article>
   );
 }
 
 export function Features() {
   return (
-    <section className="bg-black pb-52">
+    <section
+      className="pb-10"
+      style={{ background: "linear-gradient(180deg, #05040f 0%, #080613 100%)" }}
+    >
       <div className="container mx-auto px-3 md:px-10">
-        <div className="px-5 py-32" id="features">
-          <p className="font-circular-web text-lg text-blue-50">
-            Otomasi Pintar. Zero Coding.
-          </p>
-          <p className="font-circular-web max-w-md text-lg text-blue-50 opacity-50">
-            Workflow otomatis dari pendaftaran, pembayaran, sampai cetak. Panitia
-            tinggal duduk manis pantau dashboard.
-          </p>
+
+        {/* Section header — hanya headline, tanpa eyebrow & subtext */}
+        <div className="px-5 py-16" id="features">
+          <h1
+            style={{
+              fontFamily: "'Cormorant Garamond', serif",
+              fontWeight: 300,
+              fontStyle: "italic",
+              fontSize: "clamp(2.8rem, 6vw, 5rem)",
+              lineHeight: 1.05,
+              color: "#fff",
+              letterSpacing: "-0.01em",
+              maxWidth: "22ch",
+            }}
+          >
+            Satu ekosistem,
+            <br />
+            <span style={{ color: "rgba(167,139,250,0.85)" }}>semua kenangan.</span>
+          </h1>
         </div>
 
-        <BentoCardWrap className="border-hsla relative mb-7 h-96 w-full overflow-hidden rounded-md md:h-[65vh]">
+        {/* ── Hero card: Yearbook ── */}
+        <BentoCardWrap className="border-hsla relative mb-7 h-96 w-full overflow-hidden rounded-2xl md:h-[65vh]">
           <BentoCard
-            src={VIDEO_LINKS.feature1}
-            title={
-              <>
-                Inp<b>u</b>t Data
-              </>
-            }
-            description="Siswa isi form pendaftaran. Webhook otomatis trigger n8n workflow."
+            media="image"
+            src="/img/yearbooks.png"
+            title={<>YEARBOOK</>}
+            description="Digital Swipe Carousel, Digital Flipbook, serta Cetak Buku Fisik."
           />
         </BentoCardWrap>
 
-        <div
-          id="nexus"
-          className="grid h-[135vh] grid-cols-2 grid-rows-3 gap-7"
-        >
-          <BentoCardWrap className="bento-tilt_1 row-span-1 md:col-span-1 md:row-span-2">
+        {/* ── Bento grid ── */}
+        <div id="nexus" className="grid h-auto md:h-[90vh] grid-cols-2 grid-rows-3 md:grid-rows-2 gap-5 md:gap-7">
+
+          {/* Web AR LivePhoto — tall left */}
+          <BentoCardWrap className="bento-tilt_1 row-span-1 md:col-span-1 md:row-span-2 overflow-hidden rounded-2xl">
             <BentoCard
-              src={VIDEO_LINKS.feature2}
-              title={
-                <>
-                  AI Pr<b>o</b>cess
-                </>
-              }
-              description="Sistem AI memproses foto siswa: Auto-enhance dan remove background dalam hitungan detik."
+              media="image"
+              src="/img/livehand.png"
+              title={<>Web AR LivePhoto</>}
+              description="Scan QR, arahkan ke foto—video kenangan muncul melayang di atas buku."
             />
           </BentoCardWrap>
 
-          <BentoCardWrap className="bento-tilt_1 row-span-1 ms-32 md:col-span-1 md:ms-0">
+          {/* Video & Foto — top right */}
+          <BentoCardWrap className="bento-tilt_1 row-span-1 md:col-span-1 overflow-hidden rounded-2xl">
             <BentoCard
-              src={VIDEO_LINKS.feature3}
-              title={
-                <>
-                  D<b>a</b>tabase
-                </>
-              }
-              description="Data tersimpan rapi di Airtable secara realtime. Pantau progress kapanpun dimanapun."
+              media="image"
+              src="/img/sesifoto.jpg"
+              title={<>Video &amp; Fotografi</>}
+              description="Sesi pemotretan dan video dengan tim kreatif berpengalaman."
             />
           </BentoCardWrap>
 
-          <BentoCardWrap className="bento-tilt_1 me-14 md:col-span-1 md:me-0">
+          {/* Event Organizer — bottom right */}
+          <BentoCardWrap className="bento-tilt_1 md:col-span-1 overflow-hidden rounded-2xl">
             <BentoCard
-              src={VIDEO_LINKS.feature4}
-              title={
-                <>
-                  Inv<b>o</b>ice
-                </>
-              }
-              description="Sistem otomatis mengirimkan tagihan via WhatsApp. Support auto-billing & upsell product."
+              media="image"
+              src="/img/features/event-organizer.webp"
+              title={<>Event Organizer</>}
+              description="Kami urus semua acara yearbook-mu, dari konsep sampai eksekusi."
             />
           </BentoCardWrap>
 
-          <BentoCardWrap className="bento-tilt_2">
-            <div className="flex size-full flex-col justify-between bg-violet-300 p-5">
-              <h2 className="bento-title special-font max-w-64 text-black">
-                M<b>o</b>re co<b>m</b>ing so<b>o</b>n!
-              </h2>
-              <TiLocationArrow className="m-5 scale-[5] self-end" aria-hidden />
-            </div>
-          </BentoCardWrap>
-
-          <BentoCardWrap className="bento-tilt_2">
-            <video
-              src={VIDEO_LINKS.feature5}
-              loop
-              muted
-              autoPlay
-              playsInline
-              className="size-full object-cover object-center"
-            />
-          </BentoCardWrap>
         </div>
       </div>
+
+      {/* Global style (inject ke globals.css atau <style jsx global>) */}
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&family=Bebas+Neue&display=swap');
+
+        .card-title-font {
+          font-family: 'Bebas Neue', sans-serif !important;
+          letter-spacing: 0.06em !important;
+        }
+      `}</style>
     </section>
   );
 }
