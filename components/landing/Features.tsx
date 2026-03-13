@@ -178,7 +178,7 @@ export function Features() {
           <BentoCardWrap className="bento-tilt_1 md:col-span-1 overflow-hidden rounded-2xl">
             <BentoCard
               media="image"
-              src="/img/features/event-organizer.webp"
+              src="/img/organizer.jpg"
               title={<>Event Organizer</>}
               description="Kami urus semua acara yearbook-mu, dari konsep sampai eksekusi."
             />
