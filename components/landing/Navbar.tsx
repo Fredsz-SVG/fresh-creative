@@ -76,7 +76,7 @@ export function Navbar() {
                 theme?.isDark && "drop-shadow-[0_0_8px_rgba(0,0,0,0.8)]"
               )}
             >
-              <img src="/img/logo.png" alt="Logo" className="w-10" loading="lazy" />
+              <img src="/img/logo.png" alt="Logo" className="w-10 animate-logo-pulse" loading="lazy" />
             </a>
           </div>
 

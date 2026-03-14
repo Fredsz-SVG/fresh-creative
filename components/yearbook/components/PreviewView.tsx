@@ -471,7 +471,7 @@ export default function PreviewView({
                             return (
                                 <Wrapper key={i} {...props}>
                                     <span className={`flex-shrink-0 ${isIg ? "text-pink-600 group-hover:text-pink-700" : "text-slate-500"}`}>
-                                        {React.cloneElement(m.icon as React.ReactElement, { size: 14 })}
+                                        {React.cloneElement(m.icon as React.ReactElement<{ size?: number }>, { size: 14 })}
                                     </span>
                                     <span className={`text-[10px] sm:text-[11px] font-black tracking-wide truncate ${isIg ? 'text-slate-900 group-hover:text-slate-800' : 'text-slate-600'}`}>
                                         {m.text}
@@ -533,7 +533,7 @@ export default function PreviewView({
             <div className="flex-shrink-0 flex items-center justify-between px-4 py-3 sm:px-6 sm:py-4 bg-slate-100 z-20">
                 <div className="flex items-center gap-3 sm:gap-4">
                     <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white border-2 border-slate-900 text-slate-900 shadow-[2px_2px_0_0_#0f172a]">
-                        {React.cloneElement(currentSection.icon as React.ReactElement, { className: "w-4 h-4" })}
+                        {React.cloneElement(currentSection.icon as React.ReactElement<{ className?: string }>, { className: "w-4 h-4" })}
                         <span className="text-xs sm:text-sm font-black uppercase truncate max-w-[120px] sm:max-w-none">{currentSection.label}</span>
                     </div>
                     {totalItems > 1 && (
@@ -641,7 +641,7 @@ export default function PreviewView({
                                     ? 'border-slate-900 bg-slate-900 text-white scale-105 shadow-[3px_3px_0_0_#0f172a]'
                                     : 'border-slate-900 bg-white text-slate-600 hover:bg-amber-200'
                                     }`}>
-                                    {React.cloneElement(s.icon as React.ReactElement, { className: 'w-5 h-5 sm:w-7 sm:h-7' })}
+                                    {React.cloneElement(s.icon as React.ReactElement<{ className?: string }>, { className: 'w-5 h-5 sm:w-7 sm:h-7' })}
                                 </div>
                                 <span className={`text-[11px] sm:text-xs text-center truncate w-full px-1 sm:max-w-[88px] font-black transition-colors ${i === sectionIndex ? 'text-slate-900' : 'text-slate-600 group-hover:text-slate-900'}`}>
                                     {s.label}

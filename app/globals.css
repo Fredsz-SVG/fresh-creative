@@ -649,8 +649,21 @@ html[data-theme="light"] body {
   }
 }
 
+@keyframes logo-pulse {
+  0%, 100% {
+    transform: scale(1) translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: scale(1.1) translateY(-2px) rotate(3deg);
+  }
+}
+
 .animate-float {
   animation: float-gentle 3s ease-in-out infinite;
+}
+
+.animate-logo-pulse {
+  animation: logo-pulse 3s ease-in-out infinite;
 }
 
 /* Flipbook: full layar + cover/spread di tengah */
