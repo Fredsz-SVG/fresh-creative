@@ -72,11 +72,15 @@ import usernotificationsidRoute from './routes/user/notifications/[id]'
 import usertransactionsRoute from './routes/user/transactions'
 import webhooksxenditRoute from './routes/webhooks/xendit'
 
-dotenv.config()
+if (!process.env.VERCEL) {
+    dotenv.config()
+}
 
 export async function buildApp() {
-    const envToLogger = {
-        development: {
+    const isProduction = process.env.NODE_ENV === 'production'
+
+    const server = Fastify({
+        logger: isProduction ? false : {
             transport: {
                 target: 'pino-pretty',
                 options: {
@@ -84,13 +88,7 @@ export async function buildApp() {
                     ignore: 'pid,hostname',
                 },
             },
-        },
-        production: true,
-        test: false,
-    }
-
-    const server = Fastify({
-        logger: envToLogger[process.env.NODE_ENV as keyof typeof envToLogger] ?? true
+        }
     })
 
     // Register Plugins
