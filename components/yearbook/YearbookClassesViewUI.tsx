@@ -1073,6 +1073,7 @@ export default function YearbookClassesViewUI(props: any) {
         flipbookAccessible={flipbookAccessible}
         aiLabsAccessible={aiLabsAccessible}
         flipbookPreviewMode={flipbookPreviewMode}
+        onSectionChange={props.onSectionChange}
       />
       {/* Main Content - Header already sticky in parent (page.tsx) */}
       <div className={`flex-1 flex flex-col ${sidebarMode === 'flipbook' && flipbookPreviewMode ? 'p-0' : 'p-4 pb-8'}`}>

@@ -52,6 +52,7 @@ export interface YearbookMobileNavProps {
   flipbookAccessible?: boolean
   aiLabsAccessible?: boolean
   flipbookPreviewMode?: boolean
+  onSectionChange?: (section: 'cover' | 'classes' | 'approval' | 'team' | 'sambutan' | 'ai-labs' | 'flipbook' | 'preview') => void
 }
 
 export default function YearbookMobileNav({
@@ -82,6 +83,7 @@ export default function YearbookMobileNav({
   flipbookAccessible = true,
   aiLabsAccessible = true,
   flipbookPreviewMode = false,
+  onSectionChange,
 }: YearbookMobileNavProps) {
   const router = useRouter()
   const [mobileEditingClassId, setMobileEditingClassId] = useState<string | null>(null)
@@ -94,15 +96,22 @@ export default function YearbookMobileNav({
   const isAiLabsToolActive = sidebarMode === 'ai-labs' && !!aiLabsTool
   const hideBottomNav = isAiLabsToolActive || (sidebarMode === 'flipbook' && flipbookPreviewMode)
 
+  const handleNavClick = (mode: any) => {
+    if (!effectiveAlbumId) return
+    if (onSectionChange) {
+      onSectionChange(mode)
+    } else {
+      router.push(getYearbookSectionQueryUrl(effectiveAlbumId, mode, pathname), { scroll: false })
+    }
+  }
+
   return (
     <>
       {/* Mobile Bottom Navigation - Preview & Approval langsung di bar, tidak dibungkus Menu Lainnya */}
       {!hideBottomNav && (
         <div className="fixed bottom-0 left-0 right-0 z-[60] bg-white border-t-4 border-slate-900 flex lg:hidden items-center justify-around h-16 pb-safe safe-area-bottom shadow-[0_-4px_10px_0_rgba(0,0,0,0.1)]">
           <button
-            onClick={() => {
-              router.push(getYearbookSectionQueryUrl(effectiveAlbumId!, 'classes', pathname), { scroll: false })
-            }}
+            onClick={() => handleNavClick('classes')}
             className={`flex flex-col items-center justify-center flex-1 h-full gap-0.5 active:scale-95 transition-all min-w-0 ${(['classes', 'sambutan'].includes(sidebarMode) || isCoverView) ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-900'}`}
           >
             <Edit3 className="w-5 h-5 flex-shrink-0" strokeWidth={2.5} />
@@ -110,7 +119,7 @@ export default function YearbookMobileNav({
           </button>
 
           <button
-            onClick={() => effectiveAlbumId && router.push(url('preview'), { scroll: false })}
+            onClick={() => handleNavClick('preview')}
             className={`flex flex-col items-center justify-center flex-1 h-full gap-0.5 active:scale-95 transition-all min-w-0 ${sidebarMode === 'preview' ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-900'}`}
           >
             <Eye className="w-5 h-5 flex-shrink-0" strokeWidth={2.5} />
@@ -119,7 +128,7 @@ export default function YearbookMobileNav({
 
           <div className="flex-1 flex items-center justify-center relative min-w-0">
             <button
-              onClick={() => effectiveAlbumId && router.push(url('ai-labs'), { scroll: false })}
+              onClick={() => handleNavClick('ai-labs')}
               className={`absolute -top-7 w-14 h-14 rounded-full flex items-center justify-center shadow-[0_6px_0_0_#0f172a] active:shadow-none active:translate-y-1 transition-all border-4 border-slate-900 ${sidebarMode === 'ai-labs'
                 ? 'bg-amber-300 text-slate-900'
                 : 'bg-indigo-500 text-white'
@@ -138,7 +147,7 @@ export default function YearbookMobileNav({
           </div>
 
           <button
-            onClick={() => effectiveAlbumId && router.push(url('flipbook'), { scroll: false })}
+            onClick={() => handleNavClick('flipbook')}
             className={`flex flex-col items-center justify-center flex-1 h-full gap-0.5 active:scale-95 transition-all min-w-0 relative ${sidebarMode === 'flipbook' ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-900'}`}
           >
             <div className="relative">
@@ -152,7 +161,7 @@ export default function YearbookMobileNav({
 
           {canManage ? (
             <button
-              onClick={() => effectiveAlbumId && router.push(url('approval'), { scroll: false })}
+              onClick={() => handleNavClick('approval')}
               className={`flex flex-col items-center justify-center flex-1 h-full gap-0.5 active:scale-95 transition-all relative min-w-0 ${sidebarMode === 'approval' || sidebarMode === 'team' ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-900'}`}
             >
               <div className="relative">
