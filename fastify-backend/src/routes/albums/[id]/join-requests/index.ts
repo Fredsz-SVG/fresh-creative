@@ -23,37 +23,46 @@ const route: FastifyPluginAsync = async (server) => {
         try {
           adminClient = getAdminSupabaseClient()
         } catch (e) {
-          console.error('Admin client failed:', e)
+          console.error('[JOIN-REQUESTS] Admin client init failed:', e.message)
         }
         
         const client = adminClient || supabase
+        console.log(`[JOIN-REQUESTS] Fetching approved for album: ${albumId} using ${adminClient ? 'ADMIN' : 'USER'} client`)
   
         const { data: approvedData, error: approvedError } = await client
           .from('album_class_access')
-          .select('id, album_id, user_id, student_name, email, class_id, status, created_at, album_classes(name)')
+          .select('id, user_id, student_name, email, class_id, status, created_at')
           .eq('album_id', albumId)
           .eq('status', 'approved')
           .order('created_at', { ascending: false })
   
         if (approvedError) {
-          console.error('Database error fetching approved requests:', approvedError)
-          return reply.send([]) // Return empty array instead of error object to prevent frontend crash
+          console.error('[JOIN-REQUESTS] Database error:', approvedError)
+          return reply.send([])
         }
+  
+        console.log(`[JOIN-REQUESTS] Found ${approvedData?.length || 0} approved records`)
   
         const transformed = approvedData?.map((access: any) => ({
           id: access.id,
-          album_id: access.album_id,
+          album_id: albumId,
           user_id: access.user_id,
           student_name: access.student_name,
           email: access.email,
           phone: null,
-          class_name: access.album_classes?.name || 'Umum',
+          class_name: null, // Frontend will look up name by assigned_class_id
           assigned_class_id: access.class_id,
           status: 'approved',
           requested_at: access.created_at,
           approved_at: access.created_at,
           approved_by: null
         })) || []
+
+        // DEBUG: Add a fake entry if the list is empty and we expect data (count > 0 from RPC)
+        // This helps us see if the issue is the query or the UI
+        if (transformed.length === 0) {
+          console.log('[JOIN-REQUESTS] Returning empty list for approved status')
+        }
   
         return reply.send(transformed)
       }
