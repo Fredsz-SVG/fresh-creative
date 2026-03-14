@@ -4,12 +4,16 @@
  * In development, it points to 127.0.0.1:8000.
  */
 export function getApiUrl(): string {
+    let url = '';
     if (typeof window !== 'undefined') {
         // Client-side: use localhost so cookies are sent correctly
-        return process.env.NEXT_PUBLIC_API_URL?.replace('127.0.0.1', 'localhost') || 'http://localhost:8000'
+        url = process.env.NEXT_PUBLIC_API_URL?.replace('127.0.0.1', 'localhost') || 'http://localhost:8000'
+    } else {
+        // Server-side: use 127.0.0.1 to avoid Node.js IPv6 resolution issues
+        url = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000'
     }
-    // Server-side: use 127.0.0.1 to avoid Node.js IPv6 resolution issues
-    return process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000'
+    // Remove trailing slash if present to avoid double slashes in concatenated paths
+    return url.endsWith('/') ? url.slice(0, -1) : url
 }
 
 /**
