@@ -18,29 +18,36 @@ const route: FastifyPluginAsync = async (server) => {
       }
   
       // Special handling for approved status
-      // Approved requests are moved to album_class_access and deleted from album_join_requests
       if (status === 'approved') {
-        const adminClient = getAdminSupabaseClient()
+        let adminClient;
+        try {
+          adminClient = getAdminSupabaseClient()
+        } catch (e) {
+          console.error('Admin client failed:', e)
+        }
+        
         const client = adminClient || supabase
   
         const { data: approvedData, error: approvedError } = await client
           .from('album_class_access')
-          .select('id, album_id, user_id, student_name, email, class_id, status, created_at, album_classes!inner(name)')
+          .select('id, album_id, user_id, student_name, email, class_id, status, created_at, album_classes(name)')
           .eq('album_id', albumId)
           .eq('status', 'approved')
           .order('created_at', { ascending: false })
   
-        if (approvedError) throw approvedError
+        if (approvedError) {
+          console.error('Database error fetching approved requests:', approvedError)
+          return reply.send([]) // Return empty array instead of error object to prevent frontend crash
+        }
   
-        // Transform data to match join_requests format
         const transformed = approvedData?.map((access: any) => ({
           id: access.id,
           album_id: access.album_id,
           user_id: access.user_id,
           student_name: access.student_name,
           email: access.email,
-          phone: null, // Not stored in album_class_access
-          class_name: access.album_classes?.name || 'Unknown',
+          phone: null,
+          class_name: access.album_classes?.name || 'Umum',
           assigned_class_id: access.class_id,
           status: 'approved',
           requested_at: access.created_at,
