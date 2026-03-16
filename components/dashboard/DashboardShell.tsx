@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useEffect, useRef } from 'react'
+import { useState, useMemo, useEffect, useRef, useContext } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
@@ -13,12 +13,15 @@ import {
   History,
   Coins,
   Trash2,
+  Sun,
+  Moon,
   type LucideIcon,
 } from 'lucide-react'
 import TopUpModal from './TopUpModal'
 import { supabase } from '@/lib/supabase'
 import { apiUrl } from '../../lib/api-url'
 import { fetchWithAuth } from '../../lib/api-client'
+import { ThemeContext } from '@/app/providers/ThemeProvider'
 
 export type NavSection = {
   title: string
@@ -47,6 +50,7 @@ export default function DashboardShell({
   children,
 }: DashboardShellProps) {
   const pathname = usePathname()
+  const theme = useContext(ThemeContext)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [isOnline, setIsOnline] = useState(true)
   const [showTopUp, setShowTopUp] = useState(false)
@@ -258,12 +262,9 @@ export default function DashboardShell({
   }, [showNotifications])
 
 
-  useEffect(() => {
-    document.documentElement.setAttribute('data-theme', 'light')
-    return () => {
-      document.documentElement.removeAttribute('data-theme')
-    }
-  }, [])
+  // Theme is now managed by ThemeProvider (supports dark/light toggle)
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => { setMounted(true) }, [])
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -315,8 +316,8 @@ export default function DashboardShell({
 
   const navLinkClass = (isActive: boolean) =>
     `group flex items-center gap-2.5 min-h-[36px] px-3 py-2 rounded-xl text-[13px] font-black transition-all duration-200 touch-manipulation border-2 border-transparent ${isActive
-      ? 'bg-indigo-300 border-slate-900 text-slate-900 shadow-[3px_3px_0_0_#0f172a] -translate-y-0.5'
-      : 'text-slate-600 hover:border-slate-900 hover:bg-emerald-300 hover:text-slate-900 hover:shadow-[3px_3px_0_0_#0f172a] hover:-translate-y-0.5 active:translate-y-0 active:shadow-none'
+      ? 'bg-indigo-300 dark:bg-indigo-500/30 border-slate-900 dark:border-white/30 text-slate-900 dark:text-white shadow-[3px_3px_0_0_#0f172a] dark:shadow-[3px_3px_0_0_rgba(255,255,255,0.2)] -translate-y-0.5'
+      : 'text-slate-600 dark:text-slate-400 hover:border-slate-900 dark:hover:border-white/30 hover:bg-emerald-300 dark:hover:bg-emerald-500/20 hover:text-slate-900 dark:hover:text-white hover:shadow-[3px_3px_0_0_#0f172a] dark:hover:shadow-[3px_3px_0_0_rgba(255,255,255,0.2)] hover:-translate-y-0.5 active:translate-y-0 active:shadow-none'
     }`
 
   const NavSections = () => (
@@ -325,7 +326,7 @@ export default function DashboardShell({
         if (!section?.items?.length) return null
         return (
           <div key={section.title} className="space-y-0.5">
-            <p className="px-3 pt-3 pb-1 text-[10px] font-bold uppercase tracking-widest text-gray-400">
+            <p className="px-3 pt-3 pb-1 text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500">
               {section.title}
             </p>
             <ul className="space-y-0.5">
@@ -339,10 +340,10 @@ export default function DashboardShell({
                       onClick={() => setDrawerOpen(false)}
                       className={navLinkClass(isActive)}
                     >
-                      <Icon className={`w-4 h-4 shrink-0 transition-colors ${isActive ? 'text-slate-900' : 'text-slate-500 group-hover:text-slate-900'}`} />
+                      <Icon className={`w-4 h-4 shrink-0 transition-colors ${isActive ? 'text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white'}`} />
                       <span className="truncate">{item.label}</span>
                       {item.badge && (
-                        <span className="ml-auto text-[9px] text-slate-800 bg-white border border-slate-900 px-1.5 py-0.5 flex items-center rounded-full shadow-[1px_1px_0_0_#0f172a] font-black leading-none pt-1">({item.badge})</span>
+                        <span className="ml-auto text-[9px] text-slate-800 dark:text-white bg-white dark:bg-slate-700 border border-slate-900 dark:border-white/30 px-1.5 py-0.5 flex items-center rounded-full shadow-[1px_1px_0_0_#0f172a] dark:shadow-none font-black leading-none pt-1">({item.badge})</span>
                       )}
                     </Link>
                   </li>
@@ -356,14 +357,14 @@ export default function DashboardShell({
   )
 
   const NavFooter = () => (
-    <div className="p-3 border-t-2 border-slate-900 bg-white">
-      <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-orange-200 border-2 border-slate-900 shadow-[4px_4px_0_0_#0f172a] min-h-[36px]">
-        <div className="w-8 h-8 rounded-full bg-emerald-400 border-2 border-slate-900 flex items-center justify-center text-slate-900 font-black text-[13px] shrink-0 shadow-[2px_2px_0_0_#0f172a]">
+    <div className="p-3 border-t-2 border-slate-900 dark:border-white/20 bg-white dark:bg-slate-900">
+      <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-orange-200 dark:bg-orange-500/20 border-2 border-slate-900 dark:border-white/30 shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_rgba(255,255,255,0.1)] min-h-[36px]">
+        <div className="w-8 h-8 rounded-full bg-emerald-400 dark:bg-emerald-500/40 border-2 border-slate-900 dark:border-white/30 flex items-center justify-center text-slate-900 dark:text-white font-black text-[13px] shrink-0 shadow-[2px_2px_0_0_#0f172a] dark:shadow-none">
           {(userDisplayName || userEmail || 'U').charAt(0).toUpperCase()}
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-xs font-black text-slate-900 truncate tracking-tight">{userDisplayName || 'User'}</p>
-          {userBadge && <p className="text-[10px] text-indigo-700 font-black truncate">{userBadge}</p>}
+          <p className="text-xs font-black text-slate-900 dark:text-white truncate tracking-tight">{userDisplayName || 'User'}</p>
+          {userBadge && <p className="text-[10px] text-indigo-700 dark:text-indigo-400 font-black truncate">{userBadge}</p>}
         </div>
       </div>
       {onLogout && (
@@ -372,7 +373,7 @@ export default function DashboardShell({
           onClick={() => {
             setLogoutConfirmOpen(true)
           }}
-          className="mt-3 w-full min-h-[36px] px-3 py-2 rounded-xl text-center text-xs font-black text-white bg-red-500 border-2 border-slate-900 shadow-[3px_3px_0_0_#0f172a] hover:translate-y-1 hover:translate-x-1 hover:shadow-none hover:bg-red-400 touch-manipulation transition-all"
+          className="mt-3 w-full min-h-[36px] px-3 py-2 rounded-xl text-center text-xs font-black text-white bg-red-500 border-2 border-slate-900 dark:border-red-400/50 shadow-[3px_3px_0_0_#0f172a] dark:shadow-[3px_3px_0_0_rgba(255,255,255,0.1)] hover:translate-y-1 hover:translate-x-1 hover:shadow-none hover:bg-red-400 touch-manipulation transition-all"
         >
           LOGOUT
         </button>
@@ -382,32 +383,32 @@ export default function DashboardShell({
 
   if (isYearbookAlbumPage) {
     return (
-      <div className="dashboard-shell min-h-[100dvh] bg-white text-gray-900">
+      <div className="dashboard-shell min-h-[100dvh] bg-white dark:bg-slate-950 text-gray-900 dark:text-white transition-colors duration-300">
         {children}
       </div>
     )
   }
 
   return (
-    <div className="dashboard-shell min-h-[100dvh] bg-white text-gray-800 flex flex-col">
+    <div className="dashboard-shell min-h-[100dvh] bg-white dark:bg-slate-950 text-gray-800 dark:text-white flex flex-col transition-colors duration-300">
       {logoutConfirmOpen && (
         <div
           className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[120] p-4"
           onClick={() => setLogoutConfirmOpen(false)}
         >
           <div
-            className="bg-white border border-gray-100 rounded-2xl p-5 sm:p-6 max-w-md w-full shadow-2xl"
+            className="bg-white dark:bg-slate-800 border border-gray-100 dark:border-white/10 rounded-2xl p-5 sm:p-6 max-w-md w-full shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <h3 className="text-lg font-bold text-red-500 mb-2">Logout</h3>
-            <p className="text-sm text-gray-500 mb-5">
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-5">
               Yakin ingin logout dari akun ini?
             </p>
             <div className="flex gap-2 justify-end">
               <button
                 type="button"
                 onClick={() => setLogoutConfirmOpen(false)}
-                className="px-4 py-2 rounded-xl bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors text-sm font-semibold"
+                className="px-4 py-2 rounded-xl bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors text-sm font-semibold"
               >
                 Batal
               </button>
@@ -428,19 +429,19 @@ export default function DashboardShell({
       )}
       {/* Top header */}
       <header
-        className={`fixed top-0 left-0 right-0 z-40 h-14 min-h-[44px] border-b-2 border-slate-900 bg-white flex items-center justify-between px-4 pt-[env(safe-area-inset-top)] shadow-[0_4px_0_0_#0f172a] ${isAiLabsFeaturePage ? 'max-md:hidden' : ''}`}
+        className={`fixed top-0 left-0 right-0 z-40 h-14 min-h-[44px] border-b-2 border-slate-900 dark:border-white/20 bg-white dark:bg-slate-900 flex items-center justify-between px-4 pt-[env(safe-area-inset-top)] shadow-[0_4px_0_0_#0f172a] dark:shadow-[0_4px_0_0_rgba(255,255,255,0.05)] transition-colors duration-300 ${isAiLabsFeaturePage ? 'max-md:hidden' : ''}`}
       >
         <div className="flex items-center gap-3 min-w-0">
           <Link
             href={logoHref}
-            className="flex items-center gap-1 md:gap-2 text-slate-900 font-black uppercase tracking-wider text-[10px] md:text-[15px] shrink-0 min-h-[44px]"
+            className="flex items-center gap-1 md:gap-2 text-slate-900 dark:text-white font-black uppercase tracking-wider text-[10px] md:text-[15px] shrink-0 min-h-[44px]"
           >
-            <div className="w-5 h-5 md:w-7 md:h-7 bg-orange-300 border-2 border-slate-900 rounded shadow-[1.5px_1.5px_0_0_#0f172a] md:shadow-[2px_2px_0_0_#0f172a] flex items-center justify-center -mt-0.5 shrink-0">
-              <Zap className="w-2.5 h-2.5 md:w-3.5 md:h-3.5 shrink-0 text-slate-900 fill-slate-900" />
+            <div className="w-5 h-5 md:w-7 md:h-7 bg-orange-300 dark:bg-orange-500/30 border-2 border-slate-900 dark:border-white/30 rounded shadow-[1.5px_1.5px_0_0_#0f172a] dark:shadow-none md:shadow-[2px_2px_0_0_#0f172a] flex items-center justify-center -mt-0.5 shrink-0">
+              <Zap className="w-2.5 h-2.5 md:w-3.5 md:h-3.5 shrink-0 text-slate-900 dark:text-orange-400 fill-slate-900 dark:fill-orange-400" />
             </div>
             <span className="inline">FRESHCREATIVE.ID</span>
           </Link>
-          <span className="hidden sm:inline-flex items-center gap-2 text-slate-400 text-sm font-black uppercase tracking-widest truncate ml-1">
+          <span className="hidden sm:inline-flex items-center gap-2 text-slate-400 dark:text-slate-500 text-sm font-black uppercase tracking-widest truncate ml-1">
             {sectionTitle}
           </span>
         </div>
@@ -451,44 +452,54 @@ export default function DashboardShell({
             onClick={() => setShowTopUp(true)}
             className="flex flex-col items-end mr-3 sm:mr-4 group cursor-pointer"
           >
-            <p className="text-[10px] uppercase tracking-wider text-slate-900 group-hover:text-indigo-600 transition-colors font-black">Credit</p>
-            <div className="flex items-center gap-1.5 text-xs font-black text-slate-900 group-hover:text-indigo-600 transition-colors">
+            <p className="text-[10px] uppercase tracking-wider text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors font-black">Credit</p>
+            <div className="flex items-center gap-1.5 text-xs font-black text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
               <Coins className="w-3.5 h-3.5 text-amber-500" />
               <span className="text-[15px]">{credits}</span>
             </div>
           </button>
 
           <div className="hidden md:flex flex-col items-end mr-4">
-            <p className="text-[10px] uppercase tracking-wider text-slate-900 font-black">Status</p>
-            <p className={`text-[12px] font-black uppercase tracking-tight py-0.5 px-2 rounded-lg border-2 border-slate-900 shadow-[2px_2px_0_0_#0f172a] -rotate-1 ${isOnline ? 'bg-emerald-300 text-slate-900' : 'bg-red-400 text-white'}`}>
+            <p className="text-[10px] uppercase tracking-wider text-slate-900 dark:text-white font-black">Status</p>
+            <p className={`text-[12px] font-black uppercase tracking-tight py-0.5 px-2 rounded-lg border-2 border-slate-900 dark:border-white/30 shadow-[2px_2px_0_0_#0f172a] dark:shadow-none -rotate-1 ${isOnline ? 'bg-emerald-300 dark:bg-emerald-500/30 text-slate-900 dark:text-emerald-400' : 'bg-red-400 text-white'}`}>
               {isOnline ? 'Connected' : 'Offline'}
             </p>
           </div>
+
+          {/* Theme Toggle */}
+          <button
+            type="button"
+            onClick={theme?.toggleTheme}
+            className="hidden md:flex items-center justify-center w-10 h-10 rounded-xl bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-white/30 text-slate-900 dark:text-white shadow-[3px_3px_0_0_#0f172a] dark:shadow-[3px_3px_0_0_rgba(255,255,255,0.1)] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all touch-manipulation mr-2"
+            title="Toggle Theme"
+          >
+            {mounted && (theme?.isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />)}
+          </button>
           {/* Notification */}
           <div className="relative" ref={notificationRef}>
             <button
               type="button"
               onClick={() => setShowNotifications(!showNotifications)}
-              className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-white border-2 border-slate-900 text-slate-900 shadow-[3px_3px_0_0_#0f172a] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all touch-manipulation"
+              className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-white/30 text-slate-900 dark:text-white shadow-[3px_3px_0_0_#0f172a] dark:shadow-[3px_3px_0_0_rgba(255,255,255,0.1)] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all touch-manipulation"
             >
               <Bell className="w-5 h-5" strokeWidth={3} />
               {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-pink-500 border-2 border-slate-900 animate-pulse flex items-center justify-center text-[9px] font-black text-white">
+                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-pink-500 border-2 border-slate-900 dark:border-pink-400/50 animate-pulse flex items-center justify-center text-[9px] font-black text-white">
                   {unreadCount}
                 </span>
               )}
             </button>
 
             {showNotifications && (
-              <div className="fixed left-1/2 -translate-x-1/2 top-[calc(4rem+env(safe-area-inset-top))] w-[calc(100vw-2rem)] max-w-sm md:left-auto md:right-0 md:top-full md:mt-4 md:w-80 md:translate-x-0 md:absolute bg-white border-4 border-slate-900 rounded-3xl shadow-[8px_8px_0_0_#0f172a] overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-200">
-                <div className="p-4 border-b-2 border-slate-900 flex items-center justify-between bg-indigo-50">
-                  <h3 className="text-[13px] font-black text-slate-900 uppercase tracking-widest">Notifikasi</h3>
+              <div className="fixed left-1/2 -translate-x-1/2 top-[calc(4rem+env(safe-area-inset-top))] w-[calc(100vw-2rem)] max-w-sm md:left-auto md:right-0 md:top-full md:mt-4 md:w-80 md:translate-x-0 md:absolute bg-white dark:bg-slate-800 border-4 border-slate-900 dark:border-white/20 rounded-3xl shadow-[8px_8px_0_0_#0f172a] dark:shadow-[8px_8px_0_0_rgba(255,255,255,0.05)] overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-200">
+                <div className="p-4 border-b-2 border-slate-900 dark:border-white/20 flex items-center justify-between bg-indigo-50 dark:bg-indigo-500/10">
+                  <h3 className="text-[13px] font-black text-slate-900 dark:text-white uppercase tracking-widest">Notifikasi</h3>
                   <div className="flex items-center gap-2 flex-wrap justify-end">
                     {unreadCount > 0 && (
                       <button
                         type="button"
                         onClick={handleMarkAllRead}
-                        className="text-[10px] text-indigo-600 hover:text-indigo-800 transition-colors font-black uppercase tracking-tight underline decoration-2 underline-offset-2"
+                        className="text-[10px] text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 transition-colors font-black uppercase tracking-tight underline decoration-2 underline-offset-2"
                       >
                         Baca Semua
                       </button>
@@ -507,46 +518,46 @@ export default function DashboardShell({
                 <div className="max-h-[350px] overflow-y-auto no-scrollbar">
                   {notifications.length === 0 ? (
                     <div className="p-10 text-center">
-                      <div className="w-16 h-16 rounded-2xl bg-slate-50 border-2 border-slate-900 flex items-center justify-center mx-auto mb-4 text-slate-300">
+                      <div className="w-16 h-16 rounded-2xl bg-slate-50 dark:bg-slate-700 border-2 border-slate-900 dark:border-white/20 flex items-center justify-center mx-auto mb-4 text-slate-300 dark:text-slate-500">
                         <Bell className="w-8 h-8 opacity-20" />
                       </div>
-                      <p className="text-[14px] font-black text-slate-400">Kosong melompong</p>
+                      <p className="text-[14px] font-black text-slate-400 dark:text-slate-500">Kosong melompong</p>
                     </div>
                   ) : (
                     notifications.map((n) => (
                       <div
                         key={n.id}
                         onClick={() => !n.is_read && handleMarkRead(n.id)}
-                        className={`p-4 hover:bg-emerald-50 transition-colors cursor-pointer border-b-2 border-slate-100 last:border-0 relative group/item ${n.is_read ? 'opacity-60 grayscale-[0.5]' : 'bg-white'}`}
+                        className={`p-4 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 transition-colors cursor-pointer border-b-2 border-slate-100 dark:border-white/10 last:border-0 relative group/item ${n.is_read ? 'opacity-60 grayscale-[0.5]' : 'bg-white dark:bg-slate-800'}`}
                       >
                         {!n.is_read && <div className="absolute left-0 top-0 bottom-0 w-1 bg-indigo-500" />}
                         <div className="flex items-start gap-3 sm:gap-4">
-                          <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl border-2 border-slate-900 flex items-center justify-center shrink-0 shadow-[2px_2px_0_0_#0f172a] ${n.type === 'error' ? 'bg-red-400 text-white' : 'bg-indigo-300 text-slate-900'}`}>
+                          <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl border-2 border-slate-900 dark:border-white/30 flex items-center justify-center shrink-0 shadow-[2px_2px_0_0_#0f172a] dark:shadow-none ${n.type === 'error' ? 'bg-red-400 text-white' : 'bg-indigo-300 dark:bg-indigo-500/30 text-slate-900 dark:text-white'}`}>
                             <Bell className="w-4 h-4 sm:w-5 sm:h-5" />
                           </div>
                           <div className="space-y-1 min-w-0 flex-1">
                             <div className="flex justify-between items-start gap-2">
-                              <p className="text-[13px] font-black text-slate-900 leading-tight pr-6">{n.title}</p>
+                              <p className="text-[13px] font-black text-slate-900 dark:text-white leading-tight pr-6">{n.title}</p>
                               <div className="flex items-center gap-2">
-                                {!n.is_read && <span className="w-2 h-2 rounded-full bg-pink-500 border border-slate-900 shrink-0 mt-1 animate-pulse" />}
+                                {!n.is_read && <span className="w-2 h-2 rounded-full bg-pink-500 border border-slate-900 dark:border-pink-400/50 shrink-0 mt-1 animate-pulse" />}
                                 <button
                                   type="button"
                                   onClick={(e) => handleDeleteNotification(e, n.id)}
-                                  className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all absolute right-3 top-3"
+                                  className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-all absolute right-3 top-3"
                                 >
                                   <Trash2 className="w-4 h-4" />
                                 </button>
                               </div>
                             </div>
-                            <p className="text-[12px] font-bold text-slate-600 leading-snug">
+                            <p className="text-[12px] font-bold text-slate-600 dark:text-slate-400 leading-snug">
                               {n.message}
                             </p>
                             <div className="flex items-center justify-between pt-2">
-                              <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider">
+                              <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">
                                 {new Date(n.created_at).toLocaleDateString()} {new Date(n.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                               </p>
                               {n.metadata?.status && (
-                                <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-slate-100 border border-slate-900 text-slate-900 uppercase">
+                                <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-700 border border-slate-900 dark:border-white/20 text-slate-900 dark:text-white uppercase">
                                   {n.metadata.status}
                                 </span>
                               )}
@@ -570,7 +581,7 @@ export default function DashboardShell({
                   onLogout()
                 }
               }}
-              className="md:hidden flex items-center justify-center w-10 h-10 rounded-xl bg-white border-2 border-slate-900 text-slate-900 shadow-[3px_3px_0_0_#0f172a] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all touch-manipulation"
+              className="md:hidden flex items-center justify-center w-10 h-10 rounded-xl bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-white/30 text-slate-900 dark:text-white shadow-[3px_3px_0_0_#0f172a] dark:shadow-[3px_3px_0_0_rgba(255,255,255,0.1)] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all touch-manipulation"
               aria-label="Profile / Menu"
             >
               <User className="w-5 h-5" />
@@ -594,7 +605,7 @@ export default function DashboardShell({
       <aside
         className={`
           fixed top-0 left-0 bottom-0 z-[60] w-[min(260px,88vw)] max-w-full
-          bg-white border-r border-gray-100
+          bg-white dark:bg-slate-900 border-r border-gray-100 dark:border-white/10
           flex flex-col overflow-hidden
           transform transition-transform duration-300 ease-out
           md:hidden shadow-2xl
@@ -602,16 +613,26 @@ export default function DashboardShell({
         `}
         style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
-        <div className="flex items-center justify-between p-4 border-b border-gray-100 shrink-0">
-          <span className="text-sm font-bold text-gray-800 uppercase tracking-wide">Menu</span>
-          <button
-            type="button"
-            onClick={() => setDrawerOpen(false)}
-            className="flex items-center justify-center w-10 h-10 rounded-xl text-gray-400 hover:bg-gray-100 hover:text-gray-700 touch-manipulation"
-            aria-label="Close menu"
-          >
-            <X className="w-5 h-5" />
-          </button>
+        <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-white/10 shrink-0">
+          <span className="text-sm font-bold text-gray-800 dark:text-white uppercase tracking-wide">Menu</span>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={theme?.toggleTheme}
+              className="flex items-center justify-center w-10 h-10 rounded-xl text-gray-400 dark:text-white hover:bg-gray-100 dark:hover:bg-white/10 touch-manipulation"
+              title="Toggle Theme"
+            >
+              {mounted && (theme?.isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />)}
+            </button>
+            <button
+              type="button"
+              onClick={() => setDrawerOpen(false)}
+              className="flex items-center justify-center w-10 h-10 rounded-xl text-gray-400 dark:text-white hover:bg-gray-100 dark:hover:bg-white/10 hover:text-gray-700 touch-manipulation"
+              aria-label="Close menu"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
         <nav className="flex flex-col flex-1 min-h-0">
           <div className="flex-1 min-h-0 overflow-y-auto py-3 px-2">
@@ -624,7 +645,7 @@ export default function DashboardShell({
       </aside>
 
       {/* Desktop sidebar */}
-      <aside className="hidden md:flex fixed left-0 top-14 bottom-0 z-30 w-56 lg:w-64 border-r-4 border-slate-900 bg-white flex-col">
+      <aside className="hidden md:flex fixed left-0 top-14 bottom-0 z-30 w-56 lg:w-64 border-r-4 border-slate-900 dark:border-white/20 bg-white dark:bg-slate-900 flex-col transition-colors duration-300">
         <nav className="flex-1 min-h-0 overflow-y-auto py-4 px-3 space-y-1">
           <NavSections />
         </nav>
@@ -647,7 +668,7 @@ export default function DashboardShell({
       {
         bottomNavItems.length > 0 && (
           <nav
-            className={`fixed bottom-0 left-0 right-0 z-40 md:hidden min-h-[4.5rem] pt-2 border-t-[3px] border-slate-900 bg-white flex items-center justify-around px-2 shadow-[0_-4px_0_0_#0f172a] ${isAiLabsFeaturePage ? 'max-md:hidden' : ''}`}
+            className={`fixed bottom-0 left-0 right-0 z-40 md:hidden min-h-[4.5rem] pt-2 border-t-[3px] border-slate-900 dark:border-white/20 bg-white dark:bg-slate-900 flex items-center justify-around px-2 shadow-[0_-4px_0_0_#0f172a] dark:shadow-[0_-4px_0_0_rgba(255,255,255,0.05)] transition-colors duration-300 ${isAiLabsFeaturePage ? 'max-md:hidden' : ''}`}
             style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}
           >
             {bottomNavItems.map((item) => {
@@ -660,10 +681,10 @@ export default function DashboardShell({
                   className={`
                   flex flex-col items-center justify-center gap-1 flex-1 min-h-[3.25rem] py-2 rounded-xl border-2 border-transparent
                   transition-all duration-200 touch-manipulation active:scale-95 mx-1
-                  ${isActive ? 'text-slate-900 bg-emerald-300 border-slate-900 shadow-[2px_2px_0_0_#0f172a] -translate-y-1' : 'text-slate-500 hover:text-slate-900'}
+                  ${isActive ? 'text-slate-900 dark:text-white bg-emerald-300 dark:bg-emerald-500/30 border-slate-900 dark:border-white/30 shadow-[2px_2px_0_0_#0f172a] dark:shadow-none -translate-y-1' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}
                 `}
                 >
-                  <Icon className={`w-5 h-5 shrink-0 ${isActive ? 'fill-emerald-300' : ''}`} />
+                  <Icon className={`w-5 h-5 shrink-0 ${isActive ? 'fill-emerald-300 dark:fill-emerald-500/30' : ''}`} />
                   <span className="text-[10px] font-bold uppercase tracking-wide">{item.label}</span>
                 </Link>
               )

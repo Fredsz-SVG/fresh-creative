@@ -35,10 +35,7 @@ export default function UserLayoutClient({
     const searchParams = useSearchParams()
     const [ok, setOk] = useState(false)
 
-    useEffect(() => {
-        document.documentElement.setAttribute('data-theme', 'light')
-        return () => { document.documentElement.removeAttribute('data-theme') }
-    }, [])
+    // Theme is now managed by ThemeProvider (supports dark/light toggle)
     const [userName, setUserName] = useState<string>('')
     const [userEmail, setUserEmail] = useState<string>('')
 
