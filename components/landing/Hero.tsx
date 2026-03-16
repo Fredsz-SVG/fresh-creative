@@ -52,11 +52,7 @@ export function Hero() {
     <section id="hero" className="relative h-dvh w-full overflow-x-hidden bg-slate-100 dark:bg-slate-950 transition-colors duration-500">
       {isLoading && (
         <div className="flex-center absolute z-[100] h-dvh w-full overflow-hidden bg-white dark:bg-slate-950 transition-colors duration-500">
-          <div className="three-body" aria-hidden>
-            <div className="three-body__dot bg-violet-600" />
-            <div className="three-body__dot bg-violet-600" />
-            <div className="three-body__dot bg-violet-600" />
-          </div>
+          <img src="/img/logo.png" alt="Loading..." className="w-24 sm:w-32 animate-logo-pulse !opacity-100" />
         </div>
       )}
 
