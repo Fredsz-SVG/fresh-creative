@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, useContext } from "react";
-import { Sun, Moon } from "lucide-react";
+import { Sun, Moon, Menu, X } from "lucide-react";
 import { NAV_ITEMS } from "./constants";
 import { cn } from "@/lib/utils";
 import { ThemeContext } from "@/app/providers/ThemeProvider";
@@ -12,6 +12,7 @@ export function Navbar() {
   const theme = useContext(ThemeContext);
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
   const [isIndicatorActive, setIsIndicatorActive] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [audioSrc, setAudioSrc] = useState<string | null>(null);
 
@@ -131,8 +132,36 @@ export function Navbar() {
                   ))}
               </button>
             </div>
+            
+            {/* Mobile Menu Toggle Button */}
+            <button
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              className="md:hidden ml-2 flex items-center p-2 text-slate-800 dark:text-white transition hover:opacity-100 rounded-none nav-icon-stroke"
+              aria-label="Toggle Menu"
+            >
+              {isMenuOpen ? <X size={24} strokeWidth={2.5} /> : <Menu size={24} strokeWidth={2.5} />}
+            </button>
           </div>
         </nav>
+      </div>
+
+      {/* Mobile Menu Overlay */}
+      <div 
+        className={cn(
+          "fixed inset-x-0 top-[56px] sm:top-[64px] bg-white dark:bg-slate-950 border-b-2 border-slate-900 dark:border-white/20 shadow-lg transition-all duration-300 ease-in-out md:hidden flex flex-col items-center gap-6 pt-12 pb-8 z-[40]",
+          isMenuOpen ? "translate-y-0 opacity-100 visible" : "-translate-y-full opacity-0 invisible pointer-events-none"
+        )}
+      >
+        {NAV_ITEMS.map(({ label, href }) => (
+          <a 
+            key={href} 
+            href={href} 
+            className="text-lg font-bold text-slate-900 dark:text-white hover:text-lime-500 transition-colors py-2 uppercase tracking-wide w-full text-center"
+            onClick={() => setIsMenuOpen(false)}
+          >
+            {label}
+          </a>
+        ))}
       </div>
     </header>
   );

@@ -8,7 +8,7 @@ import { type PropsWithChildren } from "react";
 
 function BentoCardWrap({ children, className = "" }: PropsWithChildren<{ className?: string }>) {
   return (
-    <div className={`transition-all duration-300 border-2 border-slate-900 dark:border-white shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#fff] hover:-translate-y-0.5 hover:-translate-x-0.5 hover:shadow-[6px_6px_0_0_#0f172a] dark:hover:shadow-[6px_6px_0_0_#fff] overflow-hidden rounded-[2rem] ${className}`}>
+    <div className={`transition-all duration-300 border border-slate-900 dark:border-white shadow-[2px_2px_0_0_#0f172a] md:shadow-[3px_3px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#fff] md:dark:shadow-[3px_3px_0_0_#fff] hover:-translate-y-0.5 hover:-translate-x-0.5 hover:shadow-[3px_3px_0_0_#0f172a] md:hover:shadow-[4px_4px_0_0_#0f172a] dark:hover:shadow-[3px_3px_0_0_#fff] md:dark:hover:shadow-[4px_4px_0_0_#fff] overflow-hidden rounded-[1.5rem] md:rounded-[2rem] ${className}`}>
       {children}
     </div>
   );
@@ -125,14 +125,14 @@ export function Features() {
       <div className="container mx-auto px-3 md:px-10">
 
         {/* Section header — hanya headline, tanpa eyebrow & subtext */}
-        <div className="px-5 py-16" id="features">
+        <div className="px-3 md:px-5 py-10 md:py-16" id="features">
           <h1
             className="text-slate-900 dark:text-white"
             style={{
               fontFamily: "'Cormorant Garamond', serif",
               fontWeight: 300,
               fontStyle: "italic",
-              fontSize: "clamp(2.8rem, 6vw, 5rem)",
+              fontSize: "clamp(2.4rem, 6vw, 5rem)",
               lineHeight: 1.05,
               letterSpacing: "-0.01em",
               maxWidth: "22ch",
@@ -145,7 +145,7 @@ export function Features() {
         </div>
 
         {/* ── Hero card: Yearbook ── */}
-        <BentoCardWrap className="relative mb-7 h-96 w-full md:h-[65vh]">
+        <BentoCardWrap className="relative mb-5 md:mb-7 h-80 md:h-[65vh] w-full">
           <BentoCard
             media="image"
             src="/img/yearbooks.png"
@@ -155,10 +155,10 @@ export function Features() {
         </BentoCardWrap>
 
         {/* ── Bento grid ── */}
-        <div id="nexus" className="grid h-auto md:h-[90vh] grid-cols-2 grid-rows-3 md:grid-rows-2 gap-5 md:gap-7">
+        <div id="nexus" className="grid h-auto md:h-[90vh] grid-cols-1 md:grid-cols-2 grid-rows-3 md:grid-rows-2 gap-5 md:gap-7">
 
           {/* Web AR LivePhoto — tall left */}
-          <BentoCardWrap className="row-span-1 md:col-span-1 md:row-span-2">
+          <BentoCardWrap className="min-h-[300px] md:min-h-0 md:row-span-2">
             <BentoCard
               media="image"
               src="/img/livehand.png"
@@ -168,7 +168,7 @@ export function Features() {
           </BentoCardWrap>
 
           {/* Video & Foto — top right */}
-          <BentoCardWrap className="row-span-1 md:col-span-1">
+          <BentoCardWrap className="min-h-[250px] md:min-h-0">
             <BentoCard
               media="image"
               src="/img/sesifoto.jpg"
@@ -178,7 +178,7 @@ export function Features() {
           </BentoCardWrap>
 
           {/* Event Organizer — bottom right */}
-          <BentoCardWrap className="md:col-span-1">
+          <BentoCardWrap className="min-h-[250px] md:min-h-0">
             <BentoCard
               media="image"
               src="/img/organizer.jpg"

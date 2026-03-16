@@ -28,7 +28,7 @@ export function About() {
 
   return (
     <div id="about" className="min-h-screen w-full bg-slate-100 dark:bg-slate-950 transition-colors duration-500 pt-36 pb-8">
-      <div className="relative flex flex-col items-center gap-5">
+      <div className="relative flex flex-col items-center gap-5 mb-10">
         <p className="font-general text-base uppercase md:text-lg text-slate-500 dark:text-slate-400">
           Welcome to Fresh Creative
         </p>

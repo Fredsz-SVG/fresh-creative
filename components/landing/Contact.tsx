@@ -22,25 +22,25 @@ export function Contact() {
           <ImageClipBox
             src="/img/contact-1.webp"
             alt="Contact bg 1"
-            clipClass="contact-clip-path-1"
+            clipClass="abstract-shape-1 shadow-xl overflow-hidden mb-4"
           />
           <ImageClipBox
             src="/img/contact-2.webp"
             alt="Contact bg 2"
-            clipClass="contact-clip-path-2 lg:translate-y-40 translate-y-60"
+            clipClass="abstract-shape-2 shadow-xl overflow-hidden lg:translate-y-20 translate-y-32"
           />
         </div>
 
-        <div className="absolute -top-40 left-20 w-60 sm:top-1/2 md:right-10 md:left-auto lg:top-20 lg:w-80">
+        <div className="absolute -top-40 left-20 hidden sm:block w-60 sm:top-1/2 md:right-10 md:left-auto lg:top-20 lg:w-80">
           <ImageClipBox
-            src="/img/swordman-partial.webp"
-            alt="Swordman partial"
-            clipClass="absolute md:scale-125"
+            src="/img/about.webp"
+            alt="About partial"
+            clipClass="absolute -z-10 opacity-50 md:scale-125 blur-sm abstract-shape-3"
           />
           <ImageClipBox
-            src="/img/swordman.webp"
-            alt="Swordman"
-            clipClass="sword-man-clip-path md:scale-125"
+            src="/img/entrance.webp"
+            alt="Entrance"
+            clipClass="abstract-shape-4 shadow-xl overflow-hidden md:scale-110"
           />
         </div>
 
@@ -58,6 +58,13 @@ export function Contact() {
           </a>
         </div>
       </div>
+      
+      <style>{`
+        .abstract-shape-1 { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; }
+        .abstract-shape-2 { border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%; }
+        .abstract-shape-3 { border-radius: 73% 27% 51% 49% / 31% 54% 46% 69%; }
+        .abstract-shape-4 { border-radius: 35% 65% 31% 69% / 57% 59% 41% 43%; }
+      `}</style>
     </section>
   );
 }
