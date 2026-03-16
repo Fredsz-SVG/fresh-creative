@@ -64,11 +64,11 @@ export function Navbar() {
   return (
     <header
       ref={navContainerRef}
-      className="fixed inset-x-0 top-4 z-50 h-16 border-none transition-transform duration-200 ease-out sm:inset-x-6"
+      className="fixed inset-x-0 top-2 z-50 h-14 border-none transition-transform duration-200 ease-out sm:top-4 sm:h-16 sm:inset-x-6"
     >
       <div className="absolute top-1/2 w-full -translate-y-1/2">
-        <nav className="flex size-full items-center justify-between p-4">
-          <div className="flex items-center gap-7">
+        <nav className="flex size-full items-center justify-between px-4 sm:p-4">
+          <div className="flex items-center gap-4 sm:gap-7">
             <a
               href="#hero"
               className={cn(
@@ -76,7 +76,7 @@ export function Navbar() {
                 theme?.isDark && "drop-shadow-[0_0_8px_rgba(0,0,0,0.8)]"
               )}
             >
-              <img src="/img/logo.png" alt="Logo" className="w-10 animate-logo-pulse" loading="lazy" />
+              <img src="/img/logo.png" alt="Logo" className="w-8 sm:w-10 animate-logo-pulse" loading="lazy" />
             </a>
           </div>
 
@@ -89,23 +89,23 @@ export function Navbar() {
               ))}
             </div>
 
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-1 sm:gap-4">
               <button
                 onClick={theme?.toggleTheme}
-                className="nav-icon-stroke ml-10 flex items-center p-2 text-white transition hover:opacity-100"
+                className="nav-icon-stroke md:ml-10 flex items-center p-2 text-white transition hover:opacity-100 active:scale-90"
                 title="Toggle Theme"
               >
                 {mounted &&
                   (theme?.isDark ? (
-                    <Sun size={20} aria-hidden strokeWidth={2.5} />
+                    <Sun size={18} className="sm:size-[20px]" aria-hidden strokeWidth={2.5} />
                   ) : (
-                    <Moon size={20} aria-hidden strokeWidth={2.5} />
+                    <Moon size={18} className="sm:size-[20px]" aria-hidden strokeWidth={2.5} />
                   ))}
               </button>
 
               <button
                 onClick={toggleAudioIndicator}
-                className="nav-icon-stroke flex items-center space-x-1 p-2 text-white transition hover:opacity-100"
+                className="nav-icon-stroke flex items-center space-x-1 p-2 text-white transition hover:opacity-100 active:scale-90"
                 title="Play Audio"
               >
                 {audioSrc && (
