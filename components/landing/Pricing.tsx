@@ -2,7 +2,9 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { Check, Book, Sparkles, Star } from "lucide-react";
+import { TiLocationArrow } from "react-icons/ti";
 import { apiUrl } from "@/lib/api-url";
+import { AnimatedTitle } from "./AnimatedTitle";
 
 type TabType = "digital" | "fisik";
 
@@ -110,27 +112,27 @@ export function Pricing() {
   }, [cover, packaging, videoCinematic, arLivePhoto, jumlahSiswa]);
 
   return (
-    <section id="pricing" className="w-full bg-[#0d0d0d] py-16 md:py-24">
+    <section id="pricing" className="w-full bg-slate-100 dark:bg-slate-950 py-16 md:py-24 transition-colors duration-500">
       <div className="container mx-auto px-4 md:px-8">
         <div className="text-center mb-12">
-          <h2 className="special-font text-4xl font-bold uppercase md:text-5xl text-white">
-            Harga <span className="text-lime-400">Jujur</span> sejak Awal.
-          </h2>
-          <p className="mt-4 text-white/60 font-general uppercase tracking-widest text-xs md:text-sm">
+          <AnimatedTitle containerClass="!text-black dark:!text-white text-center font-zentry">
+            {"Harga Jujur <br /> Sejak Awal."}
+          </AnimatedTitle>
+          <p className="mt-6 text-slate-500 dark:text-white/60 font-general uppercase tracking-widest text-xs md:text-sm">
             Investasi transparan untuk kenangan abadi, tanpa biaya siluman.
           </p>
         </div>
 
         {/* Tab: Digital | Fisik */}
         <div className="flex justify-center mb-10">
-          <div className="inline-flex rounded-xl border border-white/20 bg-white/5 p-1">
+          <div className="inline-flex rounded-xl border-2 border-slate-900 dark:border-white bg-white dark:bg-slate-900 p-1 shadow-[3px_3px_0_0_#0f172a] dark:shadow-[3px_3px_0_0_#fff]">
             <button
               type="button"
               onClick={() => setTab("digital")}
-              className={`px-6 py-2.5 rounded-lg text-sm font-bold uppercase tracking-wide transition-all ${
+              className={`px-8 py-3 rounded-lg text-sm font-black uppercase tracking-wider transition-all ${
                 tab === "digital"
-                  ? "bg-lime-400 text-black"
-                  : "text-white/80 hover:text-white"
+                  ? "bg-lime-500 text-white dark:text-black border border-slate-900 dark:border-white translate-x-[1px] translate-y-[1px] shadow-none"
+                  : "text-slate-600 dark:text-white/70 hover:bg-slate-100 dark:hover:bg-white/10"
               }`}
             >
               Digital
@@ -138,10 +140,10 @@ export function Pricing() {
             <button
               type="button"
               onClick={() => setTab("fisik")}
-              className={`px-6 py-2.5 rounded-lg text-sm font-bold uppercase tracking-wide transition-all ${
+              className={`px-8 py-3 rounded-lg text-sm font-black uppercase tracking-wider transition-all ${
                 tab === "fisik"
-                  ? "bg-lime-400 text-black"
-                  : "text-white/80 hover:text-white"
+                  ? "bg-lime-500 text-white dark:text-black border border-slate-900 dark:border-white translate-x-[1px] translate-y-[1px] shadow-none"
+                  : "text-slate-600 dark:text-white/70 hover:bg-slate-100 dark:hover:bg-white/10"
               }`}
             >
               Fisik
@@ -180,12 +182,10 @@ export function Pricing() {
                       key={pkg.id}
                       type="button"
                       onClick={() => setSelectedDigitalId(isSelected ? null : pkg.id)}
-                      className={`relative w-full rounded-2xl border p-6 text-left transition-all focus:outline-none focus:ring-2 focus:ring-lime-400 focus:ring-offset-2 focus:ring-offset-[#0d0d0d] ${
+                      className={`relative w-full rounded-[2rem] border-2 p-8 text-left transition-all duration-300 focus:outline-none ${
                         isSelected
-                          ? "border-lime-400 bg-lime-400/10 shadow-[0_0_0_2px_rgba(163,230,53,0.5)]"
-                          : pkg.is_popular
-                            ? "border-lime-400/60 bg-[#141414] shadow-[0_0_0_1px_rgba(163,230,53,0.3)] hover:border-lime-400/80"
-                            : "border-white/10 bg-[#141414] hover:border-white/20"
+                          ? "border-slate-900 dark:border-white bg-lime-400/10 shadow-none translate-x-[4px] translate-y-[4px]"
+                          : "border-slate-900 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#fff] hover:-translate-y-1 hover:-translate-x-1 hover:shadow-[6px_6px_0_0_#0f172a] dark:hover:shadow-[6px_6px_0_0_#fff]"
                       }`}
                     >
                       {isSelected && (
@@ -194,26 +194,26 @@ export function Pricing() {
                         </span>
                       )}
                       {pkg.is_popular && !isSelected && (
-                        <span className="absolute -top-3 right-4 flex items-center gap-1 rounded-full border border-lime-400/60 bg-[#0d0d0d] px-3 py-1 text-xs font-bold uppercase text-lime-400">
+                        <span className="absolute -top-3 right-4 flex items-center gap-1 rounded-full border border-lime-400/60 bg-slate-950 px-3 py-1 text-xs font-bold uppercase text-lime-400">
                           <Star className="h-3.5 w-3.5 fill-lime-400" />
                           Popular
                         </span>
                       )}
                       <div className="mb-4 pr-10">
-                        <h4 className="font-general text-lg font-bold text-white">
+                        <h4 className="font-general text-lg font-bold text-slate-900 dark:text-white">
                           {pkg.name}
                         </h4>
-                        <p className="mt-1 text-xs text-white/50">
+                        <p className="mt-1 text-xs text-slate-500 dark:text-white/50">
                           min. {pkg.minStudents} siswa
                         </p>
                       </div>
-                      <p className="text-2xl font-bold text-lime-400">
+                      <p className="text-3xl font-black text-slate-900 dark:text-white">
                         {formatRupiah(pricePerStudent)}
-                        <span className="text-sm font-normal text-white/60">
+                        <span className="text-sm font-bold text-slate-500 dark:text-white/60">
                           /siswa
                         </span>
                       </p>
-                      <ul className="mt-4 space-y-2 border-t border-white/10 pt-4">
+                      <ul className="mt-4 space-y-2 border-t border-slate-100 dark:border-white/10 pt-4">
                         {pkg.features.map((f, i) => {
                           let parsed = { name: f, price: 0 };
                           try {
@@ -223,12 +223,14 @@ export function Pricing() {
                           return (
                             <li
                               key={i}
-                              className="flex items-start gap-2 text-sm text-white/80"
+                              className="flex items-center gap-3 text-sm font-bold text-slate-700 dark:text-white/80"
                             >
-                              <Check
-                                className="h-4 w-4 shrink-0 text-lime-400"
-                                strokeWidth={3}
-                              />
+                              <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md border border-slate-900 dark:border-white bg-lime-400 shadow-[1px_1px_0_0_#0f172a] dark:shadow-[1px_1px_0_0_#fff]">
+                                <Check
+                                  className="h-3 w-3 text-slate-900"
+                                  strokeWidth={4}
+                                />
+                              </div>
                               <span>{parsed.name}</span>
                             </li>
                           );
@@ -238,41 +240,41 @@ export function Pricing() {
                         <div className="mt-4 flex flex-wrap gap-2">
                           {pkg.flipbook_enabled &&
                             !pkg.ai_labs_features.includes("flipbook_unlock") && (
-                              <span className="inline-flex items-center gap-1 rounded-lg border border-white/20 bg-white/5 px-2.5 py-1 text-xs font-medium text-lime-400/90">
-                                <Book className="h-3.5 w-3.5" /> Flipbook
+                              <span className="inline-flex items-center gap-1.5 rounded-md border border-slate-900 dark:border-white bg-lime-400 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-slate-900 shadow-[1px_1px_0_0_#0f172a] dark:shadow-[1px_1px_0_0_#fff]">
+                                <Book className="h-3 w-3" /> Flipbook
                               </span>
                             )}
                           {pkg.ai_labs_features.map((slug) => (
                             <span
                               key={slug}
-                              className="inline-flex items-center gap-1 rounded-lg border border-white/20 bg-white/5 px-2.5 py-1 text-xs font-medium text-cyan-400/90"
+                              className="inline-flex items-center gap-1.5 rounded-md border border-slate-900 dark:border-white bg-cyan-400 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-slate-900 shadow-[1px_1px_0_0_#0f172a] dark:shadow-[1px_1px_0_0_#fff]"
                             >
                               {slug === "flipbook_unlock" ? (
-                                <Book className="h-3.5 w-3.5" />
+                                <Book className="h-3 w-3" />
                               ) : (
-                                <Sparkles className="h-3.5 w-3.5" />
+                                <Sparkles className="h-3 w-3" />
                               )}
                               {AI_FEATURE_LABELS[slug] ?? slug}
                             </span>
                           ))}
                         </div>
                       )}
-                      <div className="mt-4 flex items-center justify-between border-t border-white/10 pt-4 text-sm">
-                        <span className="text-white/60">
+                      <div className="mt-4 flex items-center justify-between border-t border-slate-100 dark:border-white/10 pt-4 text-sm">
+                        <span className="text-slate-500 dark:text-white/60">
                           Estimasi {n} siswa
                         </span>
-                        <span className="font-semibold text-white">
+                        <span className="font-semibold text-slate-900 dark:text-white">
                           {formatRupiah(total)}
                         </span>
                       </div>
                       <span
-                        className={`mt-4 block w-full rounded-xl py-3 text-center text-sm font-bold transition ${
+                        className={`mt-6 block w-full rounded-xl py-3 border border-slate-900 dark:border-white text-center text-sm font-black uppercase transition-all duration-300 ${
                           isSelected
-                            ? "bg-lime-400 text-black"
-                            : "bg-white/10 text-white/70"
+                            ? "bg-lime-500 text-white dark:text-black shadow-none"
+                            : "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#fff] group-hover:bg-lime-400"
                         }`}
                       >
-                        {isSelected ? "Paket dipilih" : "Klik untuk pilih"}
+                        {isSelected ? "Paket dipilih" : "Pilih Paket"}
                       </span>
                     </button>
                   );
@@ -280,15 +282,15 @@ export function Pricing() {
               </div>
 
               {selectedDigitalId && (
-                <div className="mt-8 flex flex-col items-center gap-4 rounded-2xl border border-lime-400/30 bg-[#141414] p-6 text-center">
-                  <p className="text-sm text-white/80">
-                    Paket <span className="font-bold text-lime-400">{digitalPackages.find((p) => p.id === selectedDigitalId)?.name}</span> dipilih.
+                <div className="mt-16 flex flex-col items-center gap-6 rounded-[2rem] border border-slate-900 dark:border-white bg-lime-400 p-8 text-center shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#fff]">
+                  <p className="text-lg font-black text-slate-900 tracking-tight">
+                    🔥 Mantap! Paket <span className="underline decoration-2">{digitalPackages.find((p) => p.id === selectedDigitalId)?.name}</span> siap diproses.
                   </p>
                   <a
                     href="/login?next=/admin/showroom"
-                    className="inline-block rounded-xl bg-lime-400 px-8 py-3 text-sm font-bold text-black transition hover:bg-lime-300"
+                    className="group inline-flex items-center gap-2 rounded-2xl border border-slate-900 bg-white px-10 py-4 text-base font-black text-slate-900 transition-all hover:-translate-y-0.5 hover:-translate-x-0.5 hover:shadow-[3px_3px_0_0_#0f172a] active:translate-x-0 active:translate-y-0 active:shadow-none"
                   >
-                    Lanjutkan
+                    Lanjutkan Sekarang <TiLocationArrow className="h-5 w-5 transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />
                   </a>
                 </div>
               )}
@@ -299,9 +301,9 @@ export function Pricing() {
 
         {/* Fisik: estimasi budget angkatan (kodingan yang sudah ada) */}
         {tab === "fisik" && (
-        <div className="mx-auto max-w-6xl rounded-2xl border border-white/10 bg-[#141414] p-6 md:p-8">
-          <h3 className="font-general text-sm uppercase tracking-wide text-white/70 mb-8">
-            Estimasi Budget Angkatan
+        <div className="mx-auto max-w-6xl rounded-[2.5rem] border-2 border-slate-900 dark:border-white bg-white dark:bg-slate-900 shadow-[6px_6px_0_0_#0f172a] dark:shadow-[6px_6px_0_0_#fff] p-8 md:p-12">
+          <h3 className="font-zentry text-2xl uppercase tracking-tighter text-slate-900 dark:text-white mb-10 flex items-center gap-3">
+            <span className="h-8 w-2 bg-lime-500" /> Estimasi Budget Angkatan
           </h3>
 
           <div className="grid gap-8 lg:grid-cols-[1fr,340px]">
@@ -310,10 +312,10 @@ export function Pricing() {
               <div className="grid gap-6 sm:grid-cols-2">
                 <div>
                   <div className="flex justify-between items-center mb-2">
-                    <label className="text-sm font-medium text-white/90">
+                    <label className="text-sm font-medium text-slate-700 dark:text-white/90">
                       Jumlah Pasukan (Siswa)
                     </label>
-                    <span className="text-sm font-semibold text-lime-400">
+                    <span className="text-sm font-semibold text-lime-600 dark:text-lime-400">
                       {jumlahSiswa} Siswa
                     </span>
                   </div>
@@ -323,13 +325,13 @@ export function Pricing() {
                     max={500}
                     value={jumlahSiswa}
                     onChange={(e) => setJumlahSiswa(Number(e.target.value))}
-                    className="pricing-slider w-full h-2 rounded-full appearance-none cursor-pointer bg-white/20 accent-lime-400"
+                    className="pricing-slider-brutalist w-full h-4 rounded-none appearance-none cursor-pointer bg-slate-200 dark:bg-white/20 border border-slate-900 dark:border-white"
                   />
                 </div>
                 <div>
                   <div className="flex justify-between items-center mb-2">
-                    <label className="text-sm font-medium text-white/90">Jumlah Kelas</label>
-                    <span className="text-sm font-semibold text-lime-400">
+                    <label className="text-sm font-medium text-slate-700 dark:text-white/90">Jumlah Kelas</label>
+                    <span className="text-sm font-semibold text-lime-600 dark:text-lime-400">
                       {jumlahKelas} Kelas
                     </span>
                   </div>
@@ -339,17 +341,17 @@ export function Pricing() {
                     max={20}
                     value={jumlahKelas}
                     onChange={(e) => setJumlahKelas(Number(e.target.value))}
-                    className="pricing-slider w-full h-2 rounded-full appearance-none cursor-pointer bg-white/20 accent-lime-400"
+                    className="pricing-slider-brutalist w-full h-4 rounded-none appearance-none cursor-pointer bg-slate-200 dark:bg-white/20 border border-slate-900 dark:border-white"
                   />
                 </div>
               </div>
 
               <div>
                 <div className="flex justify-between items-center mb-2">
-                  <label className="text-sm font-medium text-white/90">
+                  <label className="text-sm font-medium text-slate-700 dark:text-white/90">
                     Tebal Buku (Halaman)
                   </label>
-                  <span className="text-sm font-semibold text-lime-400">
+                  <span className="text-sm font-semibold text-lime-600 dark:text-lime-400">
                     {tebalBuku} Halaman
                   </span>
                 </div>
@@ -360,39 +362,39 @@ export function Pricing() {
                   step={4}
                   value={tebalBuku}
                   onChange={(e) => setTebalBuku(Number(e.target.value))}
-                  className="pricing-slider w-full h-2 rounded-full appearance-none cursor-pointer bg-white/20 accent-lime-400"
+                  className="pricing-slider-brutalist w-full h-4 rounded-none appearance-none cursor-pointer bg-slate-200 dark:bg-white/20 border border-slate-900 dark:border-white"
                 />
-                <p className="mt-1 text-xs text-white/50">*Kelipatan 4 halaman</p>
+                <p className="mt-1 text-xs text-slate-400 dark:text-white/50">*Kelipatan 4 halaman</p>
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="block text-sm font-medium text-white/90 mb-2">
+                  <label className="block text-sm font-medium text-slate-700 dark:text-white/90 mb-2">
                     Tipe Cover
                   </label>
                   <select
                     value={cover}
                     onChange={(e) => setCover(e.target.value as typeof cover)}
-                    className="w-full rounded-lg border border-white/20 bg-white/5 px-4 py-2.5 text-white text-sm focus:border-lime-400 focus:outline-none focus:ring-1 focus:ring-lime-400"
+                    className="w-full rounded-xl border border-slate-900 dark:border-white bg-slate-50 dark:bg-slate-800 px-4 py-2.5 text-slate-900 dark:text-white text-sm font-bold focus:shadow-[2px_2px_0_0_#0f172a] dark:focus:shadow-[2px_2px_0_0_#fff] focus:outline-none transition-all shadow-[1px_1px_0_0_#0f172a] dark:shadow-[1px_1px_0_0_#fff]"
                   >
                     {COVER_OPTIONS.map((opt) => (
-                      <option key={opt.id} value={opt.id} className="bg-gray-900">
+                      <option key={opt.id} value={opt.id} className="bg-white dark:bg-gray-900 text-slate-900 dark:text-white">
                         {opt.label}
                       </option>
                     ))}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-white/90 mb-2">
+                  <label className="block text-sm font-medium text-slate-700 dark:text-white/90 mb-2">
                     Packaging
                   </label>
                   <select
                     value={packaging}
                     onChange={(e) => setPackaging(e.target.value as typeof packaging)}
-                    className="w-full rounded-lg border border-white/20 bg-white/5 px-4 py-2.5 text-white text-sm focus:border-lime-400 focus:outline-none focus:ring-1 focus:ring-lime-400"
+                    className="w-full rounded-xl border border-slate-900 dark:border-white bg-slate-50 dark:bg-slate-800 px-4 py-2.5 text-slate-900 dark:text-white text-sm font-bold focus:shadow-[2px_2px_0_0_#0f172a] dark:focus:shadow-[2px_2px_0_0_#fff] focus:outline-none transition-all shadow-[1px_1px_0_0_#0f172a] dark:shadow-[1px_1px_0_0_#fff]"
                   >
                     {PACKAGING_OPTIONS.map((opt) => (
-                      <option key={opt.id} value={opt.id} className="bg-gray-900">
+                      <option key={opt.id} value={opt.id} className="bg-white dark:bg-gray-900 text-slate-900 dark:text-white">
                         {opt.label}
                       </option>
                     ))}
@@ -401,7 +403,7 @@ export function Pricing() {
               </div>
 
               <div>
-                <p className="text-sm font-medium text-white/90 mb-3">Add-ons &amp; Services</p>
+                <p className="text-sm font-medium text-slate-700 dark:text-white/90 mb-3">Add-ons &amp; Services</p>
                 <div className="space-y-3">
                   <label className="flex items-center justify-between gap-4 cursor-pointer py-1">
                     <span className="flex items-center gap-3">
@@ -409,13 +411,13 @@ export function Pricing() {
                         type="checkbox"
                         checked={videoCinematic}
                         onChange={(e) => setVideoCinematic(e.target.checked)}
-                        className="h-4 w-4 rounded border-white/30 bg-white/5 text-lime-400 focus:ring-lime-400"
+                        className="h-6 w-6 rounded-none border border-slate-900 dark:border-white bg-white dark:bg-slate-800 text-lime-500 focus:ring-0 shadow-[1px_1px_0_0_#0f172a] dark:shadow-[1px_1px_0_0_#fff] checked:bg-lime-500"
                       />
-                      <span className="text-sm text-white/90">
+                      <span className="text-sm text-slate-700 dark:text-white/90">
                         Jasa Video Cinematic Angkatan
                       </span>
                     </span>
-                    <span className="text-sm text-cyan-400">+Rp 3jt</span>
+                    <span className="text-sm text-cyan-600 dark:text-cyan-400 font-bold">+Rp 3jt</span>
                   </label>
                   <label className="flex items-center justify-between gap-4 cursor-pointer py-1">
                     <span className="flex items-center gap-3">
@@ -423,26 +425,26 @@ export function Pricing() {
                         type="checkbox"
                         checked={arLivePhoto}
                         onChange={(e) => setArLivePhoto(e.target.checked)}
-                        className="h-4 w-4 rounded border-white/30 bg-white/5 text-lime-400 focus:ring-lime-400"
+                        className="h-6 w-6 rounded-none border border-slate-900 dark:border-white bg-white dark:bg-slate-800 text-lime-500 focus:ring-0 shadow-[1px_1px_0_0_#0f172a] dark:shadow-[1px_1px_0_0_#fff] checked:bg-lime-500"
                       />
-                      <span className="text-sm text-white/90">AR LivePhoto (Scan App)</span>
+                      <span className="text-sm text-slate-700 dark:text-white/90">AR LivePhoto (Scan App)</span>
                     </span>
-                    <span className="text-sm text-cyan-400">+Rp 32rb/buku</span>
+                    <span className="text-sm text-cyan-600 dark:text-cyan-400 font-bold">+Rp 32rb/buku</span>
                   </label>
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-white/90 mb-2">
+                <label className="block text-sm font-medium text-slate-700 dark:text-white/90 mb-2">
                   Fotografer
                 </label>
                 <select
                   value={fotografer}
                   onChange={(e) => setFotografer(e.target.value as typeof fotografer)}
-                  className="w-full rounded-lg border border-white/20 bg-white/5 px-4 py-2.5 text-white text-sm focus:border-lime-400 focus:outline-none focus:ring-1 focus:ring-lime-400"
+                  className="w-full rounded-xl border border-slate-900 dark:border-white bg-slate-50 dark:bg-slate-800 px-4 py-2.5 text-slate-900 dark:text-white text-sm font-bold focus:shadow-[2px_2px_0_0_#0f172a] dark:focus:shadow-[2px_2px_0_0_#fff] focus:outline-none transition-all shadow-[1px_1px_0_0_#0f172a] dark:shadow-[1px_1px_0_0_#fff]"
                 >
                   {FOTOGRAFER_OPTIONS.map((opt) => (
-                    <option key={opt.id} value={opt.id} className="bg-gray-900">
+                    <option key={opt.id} value={opt.id} className="bg-white dark:bg-gray-900 text-slate-900 dark:text-white">
                       {opt.label}
                     </option>
                   ))}
@@ -451,51 +453,49 @@ export function Pricing() {
             </div>
 
             {/* Right: Cost summary */}
-            <div className="lg:border-l border-white/10 lg:pl-8 space-y-6">
+            <div className="lg:border-l border-slate-100 dark:border-white/10 lg:pl-8 space-y-6">
               <div className="flex items-center gap-2 flex-wrap">
-                <h4 className="text-sm font-semibold uppercase tracking-wide text-white/90">
+                <h4 className="text-sm font-semibold uppercase tracking-wide text-slate-900 dark:text-white/90">
                   Estimasi Per Siswa
                 </h4>
-                <span className="rounded-md border border-white/30 bg-transparent px-2 py-0.5 text-xs font-medium text-white">
+                <span className="rounded-md border border-slate-200 dark:border-white/30 bg-transparent px-2 py-0.5 text-xs font-medium text-slate-600 dark:text-white">
                   Real-time
                 </span>
               </div>
 
-              <p className="text-3xl md:text-4xl font-bold text-lime-400">
+              <p className="text-3xl md:text-4xl font-bold text-lime-600 dark:text-lime-400">
                 {formatRupiah(estimasi.perSiswa)}
               </p>
-              <p className="text-xs text-white/50">
+              <p className="text-xs text-slate-500 dark:text-white/50">
                 *Harga final bisa berubah sesuai negosiasi.
               </p>
 
               <div className="space-y-2 text-sm">
-                <div className="flex justify-between text-white/80">
+                <div className="flex justify-between text-slate-600 dark:text-white/80">
                   <span>Print &amp; Binding:</span>
                   <span>{formatRupiah(estimasi.printBinding)}</span>
                 </div>
-                <div className="flex justify-between text-white/80">
+                <div className="flex justify-between text-slate-600 dark:text-white/80">
                   <span>Cover &amp; Pack:</span>
                   <span>{formatRupiah(estimasi.coverPack)}</span>
                 </div>
-                <div className="flex justify-between text-cyan-400/90">
+                <div className="flex justify-between text-cyan-600 dark:text-cyan-400/90 font-medium">
                   <span>Shared Cost (Foto/Video):</span>
                   <span>{formatRupiah(estimasi.sharedCost)}</span>
                 </div>
-                <div className="flex justify-between text-lime-400">
+                <div className="flex justify-between text-lime-600 dark:text-lime-400 font-bold">
                   <span>Cashback Panitia:</span>
                   <span>{formatRupiah(estimasi.cashback)}</span>
                 </div>
               </div>
 
               {!arLivePhoto && (
-                <div className="rounded-lg border border-white/20 bg-white/5 p-4">
-                  <p className="text-sm text-white/90 flex items-start gap-2">
-                    <span className="text-lime-400 shrink-0" aria-hidden>
-                      ✦
-                    </span>
+                <div className="rounded-2xl border border-slate-900 dark:border-white bg-cyan-400 p-5 shadow-[3px_3px_0_0_#0f172a] dark:shadow-[3px_3px_0_0_#fff]">
+                  <p className="text-sm text-slate-900 font-bold flex items-start gap-3">
+                    <Sparkles className="h-5 w-5 shrink-0" />
                     <span>
-                      <strong className="text-lime-400">Recommended Upgrade:</strong> Tambah AR
-                      LivePhoto cuma +Rp 32rb/siswa biar yearbook makin gokil!
+                      <strong className="uppercase underline">Recommended:</strong> Tambah AR
+                      LivePhoto biar yearbook makin gokil!
                     </span>
                   </p>
                 </div>
@@ -503,9 +503,9 @@ export function Pricing() {
 
               <button
                 type="button"
-                className="w-full rounded-xl bg-lime-400 px-6 py-4 text-base font-bold text-black transition hover:bg-lime-300 focus:outline-none focus:ring-2 focus:ring-lime-400 focus:ring-offset-2 focus:ring-offset-[#141414]"
+                className="group w-full rounded-[1.5rem] border border-slate-900 bg-lime-400 px-8 py-5 text-xl font-black text-slate-900 transition-all hover:-translate-y-0.5 hover:-translate-x-0.5 hover:shadow-[4px_4px_0_0_#0f172a] active:translate-x-0 active:translate-y-0 active:shadow-none"
               >
-                Ambil Penawaran Ini
+                Ambil Penawaran <TiLocationArrow className="inline-block ml-2 group-hover:translate-x-1" />
               </button>
             </div>
           </div>

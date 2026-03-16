@@ -16,8 +16,8 @@ function ImageClipBox({ src, alt, clipClass }: ImageClipBoxProps) {
 
 export function Contact() {
   return (
-    <section id="contact" className="my-20 min-h-96 w-full px-10">
-      <div className="relative rounded-lg bg-black py-24 text-blue-50 sm:overflow-hidden">
+    <section id="contact" className="py-20 min-h-96 w-full px-10 bg-slate-100 dark:bg-slate-950 transition-colors duration-500">
+      <div className="relative rounded-[2rem] bg-slate-950 dark:bg-slate-900/50 border border-white/5 py-24 text-blue-50 sm:overflow-hidden transition-colors duration-500">
         <div className="absolute top-0 -left-20 hidden h-full w-72 overflow-hidden sm:block lg:left-20 lg:w-96">
           <ImageClipBox
             src="/img/contact-1.webp"
@@ -45,14 +45,14 @@ export function Contact() {
         </div>
 
         <div className="flex flex-col items-center text-center">
-          <p className="font-general text-[10px] uppercase">Ayo Bikin Sejarah</p>
-          <p className="special-font font-zentry mt-10 w-full text-5xl leading-[0.9] md:text-[6rem]">
+          <p className="font-general text-base uppercase md:text-lg mb-4 text-white/60">Ayo Bikin Sejarah</p>
+          <p className="special-font font-zentry mt-10 w-full text-5xl leading-[0.9] md:text-[6rem] text-white">
             Ud<b>a</b>h Si<b>a</b>p <br /> Bikin Sej<b>a</b>rah <br /> Angk
             <b>a</b>tanmu?
           </p>
           <a
             href="#pricing"
-            className="font-general group relative z-10 mt-10 w-fit cursor-pointer overflow-hidden rounded-full bg-violet-50 px-7 py-3 text-center text-xs font-bold uppercase text-black transition hover:opacity-75"
+            className="font-general group relative z-10 mt-10 w-fit cursor-pointer overflow-hidden rounded-full bg-lime-400 px-10 py-4 text-center text-sm font-black uppercase text-black transition-all hover:scale-105 active:scale-95 shadow-lg shadow-lime-400/20"
           >
             Buat Project
           </a>

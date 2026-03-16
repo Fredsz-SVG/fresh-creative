@@ -7,7 +7,11 @@ import { type PropsWithChildren } from "react";
 // @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&family=Syne:wght@700;800&display=swap');
 
 function BentoCardWrap({ children, className = "" }: PropsWithChildren<{ className?: string }>) {
-  return <div className={`bento-hover ${className}`}>{children}</div>;
+  return (
+    <div className={`transition-all duration-300 border-2 border-slate-900 dark:border-white shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#fff] hover:-translate-y-0.5 hover:-translate-x-0.5 hover:shadow-[6px_6px_0_0_#0f172a] dark:hover:shadow-[6px_6px_0_0_#fff] overflow-hidden rounded-[2rem] ${className}`}>
+      {children}
+    </div>
+  );
 }
 
 interface BentoCardProps {
@@ -116,33 +120,32 @@ function BentoCard({ media, src, title, description }: BentoCardProps) {
 export function Features() {
   return (
     <section
-      className="pb-10"
-      style={{ background: "linear-gradient(180deg, #05040f 0%, #080613 100%)" }}
+      className="pb-10 bg-slate-100 dark:bg-slate-950 transition-colors duration-500"
     >
       <div className="container mx-auto px-3 md:px-10">
 
         {/* Section header — hanya headline, tanpa eyebrow & subtext */}
         <div className="px-5 py-16" id="features">
           <h1
+            className="text-slate-900 dark:text-white"
             style={{
               fontFamily: "'Cormorant Garamond', serif",
               fontWeight: 300,
               fontStyle: "italic",
               fontSize: "clamp(2.8rem, 6vw, 5rem)",
               lineHeight: 1.05,
-              color: "#fff",
               letterSpacing: "-0.01em",
               maxWidth: "22ch",
             }}
           >
             Satu ekosistem,
             <br />
-            <span style={{ color: "rgba(167,139,250,0.85)" }}>semua kenangan.</span>
+            <span className="text-violet-600 dark:text-violet-400 opacity-85">semua kenangan.</span>
           </h1>
         </div>
 
         {/* ── Hero card: Yearbook ── */}
-        <BentoCardWrap className="border-hsla relative mb-7 h-96 w-full overflow-hidden rounded-2xl md:h-[65vh]">
+        <BentoCardWrap className="relative mb-7 h-96 w-full md:h-[65vh]">
           <BentoCard
             media="image"
             src="/img/yearbooks.png"
@@ -155,7 +158,7 @@ export function Features() {
         <div id="nexus" className="grid h-auto md:h-[90vh] grid-cols-2 grid-rows-3 md:grid-rows-2 gap-5 md:gap-7">
 
           {/* Web AR LivePhoto — tall left */}
-          <BentoCardWrap className="bento-tilt_1 row-span-1 md:col-span-1 md:row-span-2 overflow-hidden rounded-2xl">
+          <BentoCardWrap className="row-span-1 md:col-span-1 md:row-span-2">
             <BentoCard
               media="image"
               src="/img/livehand.png"
@@ -165,7 +168,7 @@ export function Features() {
           </BentoCardWrap>
 
           {/* Video & Foto — top right */}
-          <BentoCardWrap className="bento-tilt_1 row-span-1 md:col-span-1 overflow-hidden rounded-2xl">
+          <BentoCardWrap className="row-span-1 md:col-span-1">
             <BentoCard
               media="image"
               src="/img/sesifoto.jpg"
@@ -175,7 +178,7 @@ export function Features() {
           </BentoCardWrap>
 
           {/* Event Organizer — bottom right */}
-          <BentoCardWrap className="bento-tilt_1 md:col-span-1 overflow-hidden rounded-2xl">
+          <BentoCardWrap className="md:col-span-1">
             <BentoCard
               media="image"
               src="/img/organizer.jpg"

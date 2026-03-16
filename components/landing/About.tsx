@@ -27,22 +27,22 @@ export function About() {
   }, []);
 
   return (
-    <div id="about" className="min-h-screen w-full">
-      <div className="relative mt-36 mb-8 flex flex-col items-center gap-5">
-        <p className="font-general text-sm uppercase md:text-base">
+    <div id="about" className="min-h-screen w-full bg-slate-100 dark:bg-slate-950 transition-colors duration-500 pt-36 pb-8">
+      <div className="relative flex flex-col items-center gap-5">
+        <p className="font-general text-base uppercase md:text-lg text-slate-500 dark:text-slate-400">
           Welcome to Fresh Creative
         </p>
 
-        <AnimatedTitle containerClass="mt-5 !text-black text-center">
-          {"Beyond Tr<b>a</b>ditional <br /> Yearbook"}
+        <AnimatedTitle containerClass="mt-5 text-center font-zentry !text-black dark:!text-white">
+          {"Beyond Traditional <br /> Yearbook"}
         </AnimatedTitle>
 
-        <div className="about-subtext !text-black/80 font-bold leading-relaxed">
+        <div className="about-subtext text-slate-700 dark:text-slate-300 font-bold leading-relaxed px-6">
           <p>
-            Ekosistem <span className="text-black font-black">Buku Fisik & Digital</span> yang hidup lewat keajaiban <span className="text-lime-600">WebAR</span>,
-            didukung sesi <span className="text-black font-black">foto dan video</span> kreatif hingga layanan <span className="text-black font-black">Event Organizer</span> yang lengkap.
+            Ekosistem <span className="text-black dark:text-white font-black">Buku Fisik & Digital</span> yang hidup lewat keajaiban <span className="text-lime-600 dark:text-lime-400">WebAR</span>,
+            didukung sesi <span className="text-black dark:text-white font-black">foto dan video</span> kreatif hingga layanan <span className="text-black dark:text-white font-black">Event Organizer</span> yang lengkap.
             <br />
-            <span className="special-font text-xl mt-4 block text-black">"Kenangan Jadi Nyata."</span>
+            <span className="special-font text-base md:text-xl mt-4 block text-black dark:text-white">"Kenangan Jadi Nyata."</span>
           </p>
         </div>
       </div>

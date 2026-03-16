@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { AnimatedTitle } from './AnimatedTitle';
 
 const FAQ_ITEMS = [
   {
@@ -31,13 +32,13 @@ export function FAQ() {
   const [openId, setOpenId] = useState<number | null>(0);
 
   return (
-    <section id="faq" className="w-full bg-[#0d0d0d] py-16 md:py-24">
+    <section id="faq" className="w-full bg-slate-100 dark:bg-slate-950 py-16 md:py-24 transition-colors duration-500">
       <div className="container mx-auto px-4 md:px-8">
         <div className="text-center mb-12">
-          <h2 className="font-zentry text-3xl font-black uppercase md:text-4xl text-white">
-            Yang Sering Ditanyain
-          </h2>
-          <p className="font-zentry text-xl font-black uppercase md:text-2xl mt-1 text-lime-400/90">
+          <AnimatedTitle containerClass="!text-black dark:!text-white text-center font-zentry">
+            {"Yang Sering <br /> Ditanyain"}
+          </AnimatedTitle>
+          <p className="font-general text-base uppercase md:text-lg mt-4 text-lime-600 dark:text-lime-400 font-black tracking-widest">
             (FAQ)
           </p>
         </div>
@@ -49,8 +50,10 @@ export function FAQ() {
               <div
                 key={id}
                 className={cn(
-                  'rounded-xl border transition-colors',
-                  isOpen ? 'border-lime-400/50 bg-[#141414]' : 'border-white/10 bg-[#141414]/80'
+                  'rounded-xl border transition-all duration-300',
+                  isOpen 
+                    ? 'border-lime-500/50 dark:border-lime-400/50 bg-white dark:bg-slate-900 shadow-sm' 
+                    : 'border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900/80'
                 )}
               >
                 <button
@@ -58,12 +61,12 @@ export function FAQ() {
                   onClick={() => setOpenId(isOpen ? null : id)}
                   className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left"
                 >
-                  <span className="font-general text-sm font-bold text-white md:text-base">
+                  <span className="font-general text-sm font-bold text-slate-800 dark:text-white md:text-base">
                     {item.q}
                   </span>
                   <ChevronDown
                     className={cn(
-                      'h-5 w-5 shrink-0 text-lime-400 transition-transform duration-200',
+                      'h-5 w-5 shrink-0 text-lime-600 dark:text-lime-400 transition-transform duration-200',
                       isOpen && 'rotate-180'
                     )}
                   />
@@ -75,7 +78,7 @@ export function FAQ() {
                   )}
                 >
                   <div className="overflow-hidden">
-                    <p className="px-5 pb-4 pt-0 font-general text-sm leading-relaxed text-white/80">
+                    <p className="px-5 pb-4 pt-0 font-general text-sm leading-relaxed text-slate-600 dark:text-white/80">
                       {item.a}
                     </p>
                   </div>

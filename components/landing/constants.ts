@@ -3,8 +3,9 @@ import { FaTiktok } from "react-icons/fa6";
 
 export const NAV_ITEMS = [
   { label: "Fitur", href: "#features" },
-  { label: "Demo AR", href: "#demo-ar" },
   { label: "Harga", href: "#pricing" },
+  { label: "E-Book", href: "#demo-ebook" },
+  { label: "Demo AR", href: "#demo-ar" },
 ] as const;
 
 export const LINKS = {
