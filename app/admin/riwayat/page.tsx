@@ -157,13 +157,13 @@ export default function AdminRiwayatPage() {
   return (
     <>
       {invoicePopupUrl && (
-        <div className="fixed inset-0 z-[110] flex flex-col bg-white" role="dialog" aria-modal="true" aria-label="Lihat invoice">
-          <div className="flex items-center justify-between px-4 py-3 border-b-4 border-slate-900 bg-slate-50 shrink-0">
+        <div className="fixed inset-0 z-[110] flex flex-col bg-white dark:bg-slate-900" role="dialog" aria-modal="true" aria-label="Lihat invoice">
+          <div className="flex items-center justify-between px-4 py-3 border-b-4 border-slate-900 bg-slate-50 dark:bg-slate-800 shrink-0">
             <h3 className="text-base font-black text-slate-900">Invoice Pembayaran</h3>
             <button
               type="button"
               onClick={() => setInvoicePopupUrl(null)}
-              className="flex items-center justify-center w-10 h-10 rounded-xl border-2 border-slate-900 bg-white text-slate-600 hover:bg-red-50 hover:text-red-500 shadow-[2px_2px_0_0_#0f172a] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all"
+              className="flex items-center justify-center w-10 h-10 rounded-xl border-2 border-slate-900 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-red-50 dark:hover:bg-red-900 hover:text-red-500 shadow-[2px_2px_0_0_#0f172a] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all"
             >
               <X className="w-5 h-5" />
             </button>
@@ -181,10 +181,10 @@ export default function AdminRiwayatPage() {
       )}
 
       <div className="flex flex-col gap-2 mb-8">
-        <h1 className="text-3xl font-black text-slate-900 sm:text-4xl tracking-tight">
+        <h1 className="text-3xl font-black text-slate-900 dark:text-white sm:text-4xl tracking-tight">
           Riwayat Transaksi
         </h1>
-        <p className="text-slate-600 font-bold text-sm sm:text-base">
+        <p className="text-slate-600 dark:text-slate-300 font-bold text-sm sm:text-base">
           {viewMode === 'mine' ? 'Daftar riwayat transaksi Top Up Anda.' : 'Monitor semua transaksi Top Up dari seluruh pengguna.'}
         </p>
       </div>
@@ -193,7 +193,7 @@ export default function AdminRiwayatPage() {
         <button
           type="button"
           onClick={() => { setViewMode('mine'); setCurrentPage(1); }}
-          className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-sm font-black border-4 border-slate-900 transition-all active:scale-95 ${viewMode === 'mine' ? 'bg-violet-400 text-slate-900 shadow-[4px_4px_0_0_#0f172a]' : 'bg-white text-slate-500 hover:bg-slate-50 shadow-none'}`}
+          className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-sm font-black border-4 border-slate-900 transition-all active:scale-95 ${viewMode === 'mine' ? 'bg-violet-400 text-slate-900 shadow-[4px_4px_0_0_#0f172a]' : 'bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-none'}`}
         >
           <User className="w-5 h-5" strokeWidth={3} />
           Riwayat Saya
@@ -201,7 +201,7 @@ export default function AdminRiwayatPage() {
         <button
           type="button"
           onClick={() => { setViewMode('all'); setCurrentPage(1); }}
-          className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-sm font-black border-4 border-slate-900 transition-all active:scale-95 ${viewMode === 'all' ? 'bg-sky-400 text-slate-900 shadow-[4px_4px_0_0_#0f172a]' : 'bg-white text-slate-500 hover:bg-slate-50 shadow-none'}`}
+          className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-sm font-black border-4 border-slate-900 transition-all active:scale-95 ${viewMode === 'all' ? 'bg-sky-400 text-slate-900 shadow-[4px_4px_0_0_#0f172a]' : 'bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-none'}`}
         >
           <Users className="w-5 h-5" strokeWidth={3} />
           Riwayat Semua User
@@ -210,14 +210,14 @@ export default function AdminRiwayatPage() {
 
       {viewMode === 'all' && (
         <div className="mb-8 relative max-w-2xl">
-          <div className="flex items-center gap-3 p-4 bg-slate-50 border-4 border-slate-900 rounded-3xl shadow-inner group focus-within:bg-white transition-all">
+          <div className="flex items-center gap-3 p-4 bg-slate-50 dark:bg-slate-800 border-4 border-slate-900 rounded-3xl shadow-inner group focus-within:bg-white dark:focus-within:bg-slate-900 transition-all">
             <Search className="h-5 w-5 text-slate-400 group-focus-within:text-slate-900 transition-colors" strokeWidth={3} />
             <input
               type="text"
               placeholder="Cari nama, email, atau ID transaksi..."
               value={searchQuery}
               onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
-              className="w-full bg-transparent text-base font-bold text-slate-900 placeholder:text-slate-400 focus:outline-none"
+              className="w-full bg-transparent text-base font-bold text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none"
             />
           </div>
         </div>
@@ -226,29 +226,29 @@ export default function AdminRiwayatPage() {
       {currentLoading ? (
         <div className="space-y-6">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="rounded-3xl border-4 border-slate-900 bg-white p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 animate-pulse shadow-[6px_6px_0_0_#0f172a]">
+            <div key={i} className="rounded-3xl border-4 border-slate-900 bg-white dark:bg-slate-900 p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 animate-pulse shadow-[6px_6px_0_0_#0f172a] dark:shadow-[6px_6px_0_0_#334155]">
               <div className="flex items-center gap-5">
-                <div className="w-14 h-14 rounded-2xl bg-slate-100 shrink-0 border-2 border-slate-200" />
+                <div className="w-14 h-14 rounded-2xl bg-slate-100 dark:bg-slate-800 shrink-0 border-2 border-slate-200 dark:border-slate-700" />
                 <div className="space-y-3">
-                  <div className="h-5 bg-slate-100 rounded-lg w-48" />
-                  <div className="h-4 bg-slate-50 rounded-lg w-64" />
+                  <div className="h-5 bg-slate-100 dark:bg-slate-800 rounded-lg w-48" />
+                  <div className="h-4 bg-slate-50 dark:bg-slate-900 rounded-lg w-64" />
                 </div>
               </div>
               <div className="flex flex-col items-end gap-3">
-                <div className="h-6 bg-slate-100 rounded-lg w-32" />
-                <div className="h-5 bg-slate-100 rounded-full w-20" />
+                <div className="h-6 bg-slate-100 dark:bg-slate-800 rounded-lg w-32" />
+                <div className="h-5 bg-slate-100 dark:bg-slate-800 rounded-full w-20" />
               </div>
             </div>
           ))}
         </div>
       ) : transactions.length === 0 ? (
-        <div className="rounded-[40px] border-4 border-slate-900 bg-white p-12 shadow-[12px_12px_0_0_#0f172a]">
+        <div className="rounded-[40px] border-4 border-slate-900 bg-white dark:bg-slate-900 p-12 shadow-[12px_12px_0_0_#0f172a] dark:shadow-[12px_12px_0_0_#334155]">
           <div className="flex flex-col items-center justify-center text-center">
-            <div className="w-24 h-24 rounded-3xl bg-slate-50 border-4 border-slate-100 flex items-center justify-center mb-6 text-slate-300">
+            <div className="w-24 h-24 rounded-3xl bg-slate-50 dark:bg-slate-800 border-4 border-slate-100 dark:border-slate-700 flex items-center justify-center mb-6 text-slate-300">
               <History className="w-12 h-12" strokeWidth={1.5} />
             </div>
-            <h3 className="text-xl font-black text-slate-900 mb-2">Belum Ada Riwayat</h3>
-            <p className="text-sm font-bold text-slate-400 max-w-sm">
+            <h3 className="text-xl font-black text-slate-900 dark:text-white mb-2">Belum Ada Riwayat</h3>
+            <p className="text-sm font-bold text-slate-400 dark:text-slate-300 max-w-sm">
               {viewMode === 'mine' ? 'Transaksi Top Up atau pemesanan album Anda akan tercatat secara otomatis di sini.' : 'Belum ada transaksi yang tercatat dalam sistem.'}
             </p>
           </div>
@@ -270,7 +270,7 @@ export default function AdminRiwayatPage() {
           {paginatedTransactions.map((tx) => (
             <div
               key={tx.id}
-              className="rounded-3xl border-4 border-slate-900 bg-white p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-[6px_6px_0_0_#0f172a] hover:shadow-[10px_10px_0_0_#0f172a] hover:-translate-x-1 hover:-translate-y-1 transition-all"
+              className="rounded-3xl border-4 border-slate-900 bg-white dark:bg-slate-900 p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-[6px_6px_0_0_#0f172a] dark:shadow-[6px_6px_0_0_#334155] hover:shadow-[10px_10px_0_0_#0f172a] dark:hover:shadow-[10px_10px_0_0_#334155] hover:-translate-x-1 hover:-translate-y-1 transition-all"
             >
               <div className="flex items-center gap-6">
                 <div
@@ -284,16 +284,16 @@ export default function AdminRiwayatPage() {
                   <CreditCard className="w-6 h-6 text-slate-900" strokeWidth={2.5} />
                 </div>
                 <div className="space-y-1">
-                  <h4 className="text-lg font-black text-slate-900 leading-tight">
+                  <h4 className="text-lg font-black text-slate-900 dark:text-white leading-tight">
                     {tx.description || (tx.album_name ? tx.album_name : (tx.credits != null ? `Top Up ${tx.credits} Credits` : 'Transaction'))}
                   </h4>
                   <div className="flex flex-col gap-1.5">
                     {viewMode === 'all' && (tx.user_full_name != null || tx.user_email != null) && (
-                      <div className="flex items-center gap-2 text-[13px] font-bold text-slate-500 bg-slate-50 px-2 py-1 rounded-lg border border-slate-200 w-fit">
-                        <User className="w-3.5 h-3.5" />
-                        <span>{tx.user_full_name ?? '-'}</span>
-                        <span className="w-1 h-1 rounded-full bg-slate-300" />
-                        <span className="font-medium text-slate-400">{tx.user_email ?? '-'}</span>
+                      <div className="flex flex-wrap items-center gap-2 text-[13px] font-bold bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 w-fit">
+                        <User className="w-4 h-4 text-indigo-500 mr-1" />
+                        <span className="text-slate-900 dark:text-white font-black">{tx.user_full_name ?? '-'}</span>
+                        <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600 mx-1" />
+                        <span className="font-medium text-slate-500 dark:text-slate-300">{tx.user_email ?? '-'}</span>
                       </div>
                     )}
                     <div className="flex flex-wrap items-center gap-3 text-[12px] font-bold text-slate-400">
@@ -309,13 +309,13 @@ export default function AdminRiwayatPage() {
                       </span>
                       {tx.external_id && (
                         <span className="flex items-center gap-1.5 font-mono">
-                          <code className="bg-slate-50 px-1.5 rounded text-slate-400 border border-slate-100">
-                            TR-{tx.external_id.split('_ts_')[1] || tx.external_id.slice(-8)}
+                          <code className="bg-slate-200 dark:bg-slate-700 px-2 rounded text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-600 text-xs tracking-wider">
+                            {`TR-${tx.external_id.split('_ts_')[1] || tx.external_id.slice(-8)}`}
                           </code>
                         </span>
                       )}
                       {tx.payment_method && (
-                        <span className="px-2 py-0.5 rounded border-2 border-slate-900 bg-indigo-50 text-slate-600 font-black text-[10px] uppercase">
+                        <span className="px-2 py-0.5 rounded border-2 border-slate-900 dark:border-slate-700 bg-indigo-50 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-200 font-black text-[10px] uppercase tracking-wide">
                           {tx.payment_method.replace(/_/g, ' ')}
                         </span>
                       )}
@@ -324,9 +324,9 @@ export default function AdminRiwayatPage() {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between md:flex-col md:items-end gap-6 md:gap-3 md:pl-6 md:border-l-4 md:border-slate-100">
+              <div className="flex items-center justify-between md:flex-col md:items-end gap-6 md:gap-3">
                 <div className="text-right">
-                  <span className="block text-2xl font-black text-slate-900">
+                  <span className="block text-2xl font-black text-slate-900 dark:text-white">
                     Rp {tx.amount.toLocaleString('id-ID')}
                   </span>
                   <div className="mt-1">

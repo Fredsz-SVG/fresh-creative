@@ -77,10 +77,21 @@ export default function PricingView({
   const [saveError, setSaveError] = useState("");
   const [mounted, setMounted] = useState(false);
   const [selectedPackageId, setSelectedPackageId] = useState<string | null>(null);
+  /** Untuk paket yang dipilih: indeks addon yang di-check (hanya addon dengan price > 0). */
+  const [selectedAddonIndices, setSelectedAddonIndices] = useState<Record<string, number[]>>({});
   const [packages, setPackages] = useState<PricingPackage[]>(DEFAULT_PACKAGES);
   const [loadingPackages, setLoadingPackages] = useState(true);
   const [activeIdx, setActiveIdx] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  const toggleAddon = (pkgId: string, addonIndex: number) => {
+    setSelectedAddonIndices((prev) => {
+      const current = prev[pkgId] ?? [];
+      const has = current.includes(addonIndex);
+      const next = has ? current.filter((i) => i !== addonIndex) : [...current, addonIndex].sort((a, b) => a - b);
+      return { ...prev, [pkgId]: next };
+    });
+  };
 
   const handleScroll = useCallback(() => {
     if (!scrollRef.current) return;
@@ -149,15 +160,18 @@ export default function PricingView({
   const totalPrice = useMemo(() => {
     if (!selectedPkg) return null;
     const n = Math.max(selectedPkg.minStudents, studentsCount || selectedPkg.minStudents);
-    let addonsTotal = 0;
-    selectedPkg.features.forEach((f) => {
+    const parsed = selectedPkg.features.map((f) => {
       try {
         const j = JSON.parse(f);
-        if (j.price) addonsTotal += Number(j.price);
-      } catch { }
+        return { name: j.name || f, price: Number(j.price) || 0 };
+      } catch {
+        return { name: f, price: 0 };
+      }
     });
-    return (n * selectedPkg.pricePerStudent) + (n * addonsTotal);
-  }, [selectedPkg, studentsCount]);
+    const chosen = selectedAddonIndices[selectedPkg.id] ?? [];
+    const addonsTotal = chosen.reduce((sum, idx) => sum + (parsed[idx]?.price ?? 0), 0);
+    return n * (selectedPkg.pricePerStudent + addonsTotal);
+  }, [selectedPkg, studentsCount, selectedAddonIndices]);
 
   const handleSaveToDb = async () => {
     if (!draft) return;
@@ -230,18 +244,18 @@ export default function PricingView({
 
   if (!mounted || loadingPackages) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-2 border-lime-500 border-t-transparent" />
+      <div className="min-h-screen flex items-center justify-center p-8 bg-white dark:bg-slate-950">
+        <div className="animate-spin rounded-full h-8 w-8 border-2 border-lime-500 dark:border-lime-400 border-t-transparent" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen p-6 sm:p-8">
+    <div className="min-h-screen p-6 sm:p-8 bg-white dark:bg-slate-950">
       <div className="max-w-2xl mx-auto">
         <Link
           href={leadId ? backHrefSaved : backHrefNoDraft}
-          className="inline-flex items-center gap-2 text-[14px] font-bold text-slate-500 hover:text-slate-900 mb-6 transition-colors"
+          className="inline-flex items-center gap-2 text-[14px] font-bold text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white mb-6 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
           Kembali
@@ -259,14 +273,17 @@ export default function PricingView({
             className="flex overflow-x-auto pt-6 pb-10 -mx-4 px-4 gap-6 snap-x snap-mandatory sm:flex-col sm:space-y-6 sm:overflow-visible sm:pt-0 sm:pb-0 sm:mx-0 sm:px-0 no-scrollbar select-none"
           >
             {packages.map((pkg) => {
-              const n = Math.max(pkg.minStudents, studentsCount || pkg.minStudents);
-              let addonsTotal = 0;
-              pkg.features.forEach((f) => {
+              const parsedFeatures = pkg.features.map((f) => {
                 try {
                   const j = JSON.parse(f);
-                  if (j.price) addonsTotal += Number(j.price);
-                } catch { }
+                  return { name: j.name || f, price: Number(j.price) || 0 };
+                } catch {
+                  return { name: f, price: 0 };
+                }
               });
+              const n = Math.max(pkg.minStudents, studentsCount || pkg.minStudents);
+              const chosenAddons = selectedAddonIndices[pkg.id] ?? [];
+              const addonsTotal = chosenAddons.reduce((sum, idx) => sum + (parsedFeatures[idx]?.price ?? 0), 0);
               const total = n * (pkg.pricePerStudent + addonsTotal);
               const isSelected = selectedPackageId === pkg.id;
               return (
@@ -275,80 +292,111 @@ export default function PricingView({
                   type="button"
                   onClick={() => setSelectedPackageId(isSelected ? null : pkg.id)}
                   className={`relative w-[85vw] sm:w-full shrink-0 snap-center text-left rounded-3xl border-4 p-6 transition-all duration-200 ${isSelected
-                    ? "border-slate-900 bg-emerald-200 shadow-[8px_8px_0_0_#0f172a] scale-100 sm:scale-[1.02] translate-x-1 translate-y-1 sm:translate-x-0 sm:translate-y-0"
-                    : "border-slate-900 bg-white shadow-[6px_6px_0_0_#0f172a] hover:translate-x-1 hover:translate-y-1 hover:shadow-none"
+                    ? "border-slate-900 dark:border-slate-600 bg-emerald-200 dark:bg-emerald-900/40 shadow-[8px_8px_0_0_#0f172a] dark:shadow-[8px_8px_0_0_#334155] scale-100 sm:scale-[1.02] translate-x-1 translate-y-1 sm:translate-x-0 sm:translate-y-0"
+                    : "border-slate-900 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-[6px_6px_0_0_#0f172a] dark:shadow-[6px_6px_0_0_#334155] hover:translate-x-1 hover:translate-y-1 hover:shadow-none"
                     }`}
                 >
                   {pkg.is_popular && !isSelected && (
-                    <span className="absolute -top-3.5 right-6 px-3 py-1 rounded-full bg-orange-400 border-2 border-slate-900 text-[11px] font-black text-slate-900 uppercase tracking-widest shadow-[3px_3px_0_0_#0f172a] rotate-2 flex items-center gap-1.5">
+                    <span className="absolute -top-3.5 right-6 px-3 py-1 rounded-full bg-orange-400 dark:bg-orange-500 border-2 border-slate-900 dark:border-slate-600 text-[11px] font-black text-slate-900 dark:text-slate-900 uppercase tracking-widest shadow-[3px_3px_0_0_#0f172a] dark:shadow-[3px_3px_0_0_#334155] rotate-2 flex items-center gap-1.5">
                       Popular <Star className="w-3 h-3 fill-slate-900" />
                     </span>
                   )}
 
-                  {/* Header: checkbox + name + price */}
+                  {/* Header: checkbox + name + base price */}
                   <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                     <div className="flex items-start sm:items-center gap-4">
-                      <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border-2 transition-all mt-1 sm:mt-0 ${isSelected ? "border-slate-900 bg-slate-900 text-emerald-300 shadow-inner" : "border-slate-300 bg-slate-50"}`}>
+                      <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border-2 transition-all mt-1 sm:mt-0 ${isSelected ? "border-slate-900 dark:border-slate-500 bg-slate-900 dark:bg-slate-600 text-emerald-300 dark:text-emerald-400 shadow-inner" : "border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800"}`}>
                         {isSelected ? <Check className="h-5 w-5" strokeWidth={3} /> : null}
                       </span>
                       <div>
-                        <span className="font-black text-slate-900 text-[18px] tracking-tight">{pkg.name}</span>
-                        <p className="text-[13px] font-bold text-slate-600 mt-1">min. {pkg.minStudents} siswa</p>
+                        <span className="font-black text-slate-900 dark:text-white text-[18px] tracking-tight">{pkg.name}</span>
+                        <p className="text-[13px] font-bold text-slate-600 dark:text-slate-300 mt-1">min. {pkg.minStudents} siswa</p>
                       </div>
                     </div>
                     <div className="text-left sm:text-right shrink-0 mt-2 sm:mt-0 pl-12 sm:pl-0">
-                      <p className="text-[20px] font-black text-slate-900 leading-tight">
-                        Rp {(pkg.pricePerStudent + addonsTotal).toLocaleString("id-ID")}
+                      <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Harga dasar</p>
+                      <p className="text-[20px] font-black text-slate-900 dark:text-white leading-tight">
+                        Rp {pkg.pricePerStudent.toLocaleString("id-ID")}
                       </p>
-                      <p className="text-[12px] font-bold text-slate-500 mt-0.5">/ siswa</p>
+                      <p className="text-[12px] font-bold text-slate-500 dark:text-slate-400 mt-0.5">/ siswa</p>
                     </div>
                   </div>
 
-                  {/* Divider */}
-                  <div className={`my-5 border-t-2 ${isSelected ? 'border-emerald-300' : 'border-slate-100'}`} />
+                  {/* Divider - hanya tampil kalau ada fitur included, supaya di atas Termasuk cuma 1 garis */}
+                  {parsedFeatures.filter((p) => p.price === 0).length > 0 && (
+                    <div className={`my-5 border-t ${isSelected ? 'border-emerald-300 dark:border-emerald-600' : 'border-slate-100 dark:border-slate-700'}`} />
+                  )}
 
-                  {/* Features list */}
+                  {/* Features (included) */}
                   <ul className="space-y-2 ml-1/2 px-1">
-                    {pkg.features.map((f, i) => {
-                      let parsed = { name: f, price: 0 }
-                      try {
-                        const j = JSON.parse(f)
-                        if (j.name) parsed = j
-                      } catch { }
-                      return (
-                        <li key={i} className={`flex items-start gap-2 text-[14px] font-bold ${isSelected ? 'text-slate-800' : 'text-slate-600'}`}>
-                          <Check className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" strokeWidth={3} />
-                          <span>{parsed.name}</span>
-                        </li>
-                      )
-                    })}
+                    {parsedFeatures.filter((p) => p.price === 0).map((parsed, idx) => (
+                      <li key={idx} className={`flex items-start gap-2 text-[14px] font-bold ${isSelected ? 'text-slate-800 dark:text-slate-200' : 'text-slate-600 dark:text-slate-300'}`}>
+                        <Check className="w-4 h-4 text-emerald-500 dark:text-emerald-400 shrink-0 mt-0.5" strokeWidth={3} />
+                        <span>{parsed.name}</span>
+                      </li>
+                    ))}
                   </ul>
 
-                  {/* Flipbook & AI Labs badges */}
+                  {/* Termasuk: Flipbook & AI Labs (fitur dulu) */}
                   {(pkg.flipbook_enabled || pkg.ai_labs_features.length > 0) && (
-                    <div className="mt-5 flex flex-wrap gap-2 px-1">
-                      {pkg.flipbook_enabled && !pkg.ai_labs_features.includes('flipbook_unlock') && (
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-orange-200 text-slate-900 text-[12px] font-black uppercase tracking-wider border-2 border-slate-900 shadow-[2px_2px_0_0_#0f172a]">
-                          <Book className="w-3.5 h-3.5" /> Flipbook
-                        </span>
-                      )}
-                      {pkg.ai_labs_features.map((slug) => (
-                        <span
-                          key={slug}
-                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[12px] font-black uppercase tracking-wider border-2 border-slate-900 shadow-[2px_2px_0_0_#0f172a] ${slug === 'flipbook_unlock' ? 'bg-orange-200 text-slate-900' : 'bg-indigo-300 text-slate-900'
-                            }`}
-                        >
-                          {slug === 'flipbook_unlock' ? <Book className="w-3.5 h-3.5" /> : <Sparkles className="w-3.5 h-3.5" />}
-                          {AI_FEATURE_LABELS[slug] ?? slug}
-                        </span>
-                      ))}
+                    <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-700 px-1">
+                      <p className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-3">Termasuk</p>
+                      <div className="flex flex-wrap gap-2">
+                        {pkg.flipbook_enabled && !pkg.ai_labs_features.includes('flipbook_unlock') && (
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-orange-200 dark:bg-orange-900/50 text-slate-900 dark:text-slate-100 text-[12px] font-black uppercase tracking-wider border-2 border-slate-900 dark:border-slate-600 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155]">
+                            <Book className="w-3.5 h-3.5" /> Flipbook
+                          </span>
+                        )}
+                        {pkg.ai_labs_features.map((slug) => (
+                          <span
+                            key={slug}
+                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[12px] font-black uppercase tracking-wider border-2 border-slate-900 dark:border-slate-600 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] ${slug === 'flipbook_unlock' ? 'bg-orange-200 dark:bg-orange-900/50 text-slate-900 dark:text-slate-100' : 'bg-indigo-300 dark:bg-indigo-900/50 text-slate-900 dark:text-slate-100'
+                              }`}
+                          >
+                            {slug === 'flipbook_unlock' ? <Book className="w-3.5 h-3.5" /> : <Sparkles className="w-3.5 h-3.5" />}
+                            {AI_FEATURE_LABELS[slug] ?? slug}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Addon (opsional, di bawah fitur) */}
+                  {parsedFeatures.some((p) => p.price > 0) && (
+                    <div className="mt-4 pt-4 border-t-2 border-slate-100 dark:border-slate-700 px-1">
+                      <p className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-3">Addon</p>
+                      <ul className="space-y-2">
+                        {parsedFeatures.map((parsed, i) => {
+                          if (parsed.price === 0) return null;
+                          const checked = chosenAddons.includes(i);
+                          return (
+                            <li key={i} className={`flex items-start gap-2 text-[14px] font-bold ${isSelected ? 'text-slate-800 dark:text-slate-200' : 'text-slate-600 dark:text-slate-300'}`}>
+                              <label
+                                onClick={(e) => e.stopPropagation()}
+                                className="flex items-center gap-2 cursor-pointer flex-1"
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={checked}
+                                  onChange={() => toggleAddon(pkg.id, i)}
+                                  className="h-4 w-4 rounded border-2 border-slate-900 dark:border-slate-500 text-emerald-500 focus:ring-0 cursor-pointer bg-white dark:bg-slate-800"
+                                />
+                                <span>{parsed.name}</span>
+                                <span className="text-[12px] text-indigo-600 dark:text-indigo-400 font-bold ml-auto">+Rp {parsed.price.toLocaleString("id-ID")}</span>
+                              </label>
+                            </li>
+                          );
+                        })}
+                      </ul>
                     </div>
                   )}
 
                   {/* Estimasi total */}
-                  <div className={`mt-5 pt-4 border-t-2 ${isSelected ? 'border-emerald-300' : 'border-slate-100'} flex items-center justify-between px-1`}>
-                    <span className="text-[13px] font-black text-slate-600 uppercase tracking-widest">Estimasi {n} siswa</span>
-                    <span className={`text-[17px] font-black ${isSelected ? "text-slate-900" : "text-slate-900"}`}>
+                  <div className={`mt-5 pt-4 border-t-2 ${isSelected ? 'border-emerald-300 dark:border-emerald-600' : 'border-slate-100 dark:border-slate-700'} flex items-center justify-between px-1`}>
+                    <span className="text-[13px] font-black text-slate-600 dark:text-slate-300 uppercase tracking-widest">
+                      {isSelected && addonsTotal > 0 ? `Dasar + add-on (${n} siswa)` : `Estimasi ${n} siswa`}
+                    </span>
+                    <span className="text-[17px] font-black text-slate-900 dark:text-white">
                       Rp {total.toLocaleString("id-ID")}
                     </span>
                   </div>
@@ -362,30 +410,30 @@ export default function PricingView({
             {packages.map((_, i) => (
               <div
                 key={i}
-                className={`h-2.5 rounded-full border-2 border-slate-900 transition-all duration-300 ${i === activeIdx ? 'w-8 bg-emerald-400' : 'w-2.5 bg-slate-200'}`}
+                className={`h-2.5 rounded-full border-2 border-slate-900 dark:border-slate-600 transition-all duration-300 ${i === activeIdx ? 'w-8 bg-emerald-400 dark:bg-emerald-500' : 'w-2.5 bg-slate-200 dark:bg-slate-700'}`}
               />
             ))}
           </div>
         </div>
 
         {draft && (
-          <div className="mt-8 border-t-4 border-slate-900 pt-8">
-            {saveError ? <p className="text-[14px] font-bold text-red-500 mb-4">{saveError}</p> : null}
+          <div className="mt-8 border-t-4 border-slate-900 dark:border-slate-700 pt-8">
+            {saveError ? <p className="text-[14px] font-bold text-red-500 dark:text-red-400 mb-4">{saveError}</p> : null}
             <button
               type="button"
               onClick={handleSaveToDb}
               disabled={saving || !selectedPackageId}
-              className="w-full px-6 py-4 bg-indigo-400 text-slate-900 border-4 border-slate-900 rounded-2xl text-[18px] font-black uppercase tracking-widest shadow-[6px_6px_0_0_#0f172a] hover:translate-x-1 hover:translate-y-1 hover:shadow-[2px_2px_0_0_#0f172a] disabled:opacity-50 transition-all"
+              className="w-full px-6 py-4 bg-indigo-400 dark:bg-indigo-600 text-slate-900 dark:text-white border-4 border-slate-900 dark:border-slate-700 rounded-2xl text-[18px] font-black uppercase tracking-widest shadow-[6px_6px_0_0_#0f172a] dark:shadow-[6px_6px_0_0_#334155] hover:translate-x-1 hover:translate-y-1 hover:shadow-[2px_2px_0_0_#0f172a] dark:hover:shadow-[2px_2px_0_0_#334155] disabled:opacity-50 transition-all"
             >
               {saving ? "Menyimpan..." : afterSaveRedirect ? "Simpan Data ke Database" : "Simpan dan Lihat Album"}
             </button>
-            <p className="text-[13px] font-bold text-slate-500 mt-4 text-center">Pilih paket di atas lalu klik simpan.</p>
+            <p className="text-[13px] font-bold text-slate-500 dark:text-slate-400 mt-4 text-center">Pilih paket di atas lalu klik simpan.</p>
           </div>
         )}
 
         {leadId && !draft && (
-          <p className="mt-8 text-[13px] font-bold text-slate-500 text-center">
-            Lead ID: <span className="text-slate-900 font-mono px-2 py-1 bg-slate-100 rounded border-2 border-slate-300">{leadId}</span>
+          <p className="mt-8 text-[13px] font-bold text-slate-500 dark:text-slate-400 text-center">
+            Lead ID: <span className="text-slate-900 dark:text-white font-mono px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded border-2 border-slate-300 dark:border-slate-600">{leadId}</span>
           </p>
         )}
       </div>

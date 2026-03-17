@@ -2491,18 +2491,24 @@ export default function AiGenerate() {
 
       {/* Confirmation Dialog untuk pindah tab dari overlays */}
       {showConfirmDialog && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-4 md:p-6 max-w-sm w-full shadow-xl">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-              Terapkan Stiker?
-            </h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+        <div className="fixed inset-0 bg-slate-900/40 dark:bg-black/50 backdrop-blur-md flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-[32px] p-6 sm:p-8 max-w-sm w-full shadow-[6px_6px_0_0_#0f172a] dark:shadow-[6px_6px_0_0_#334155] text-center">
+            <h3 className="text-xl font-black text-slate-900 dark:text-white mb-2 uppercase tracking-tight">Terapkan Stiker?</h3>
+            <p className="text-sm font-bold text-slate-500 dark:text-slate-400 mb-6">
               Stiker yang sudah ditambahkan akan diterapkan ke foto. Lanjutkan?
             </p>
             <div className="flex gap-3">
               <button
                 onClick={() => {
-                  // Terapkan stiker ke gambar
+                  setShowConfirmDialog(false)
+                  setPendingTab(null)
+                }}
+                className="flex-1 py-3.5 rounded-xl bg-slate-100 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 text-slate-900 dark:text-white text-xs font-black uppercase tracking-widest shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
+              >
+                Batal
+              </button>
+              <button
+                onClick={() => {
                   applyOverlaysToImage()
                   setShowConfirmDialog(false)
                   if (pendingTab) {
@@ -2513,19 +2519,9 @@ export default function AiGenerate() {
                     setPendingTab(null)
                   }
                 }}
-                className="flex-1 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm font-medium"
+                className="flex-1 py-3.5 rounded-xl bg-emerald-500 text-white border-2 border-slate-900 dark:border-slate-600 text-xs font-black uppercase tracking-widest shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
               >
                 Terapkan
-              </button>
-              <button
-                onClick={() => {
-                  // Batal, tetap di tab overlays
-                  setShowConfirmDialog(false)
-                  setPendingTab(null)
-                }}
-                className="flex-1 px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors text-sm font-medium"
-              >
-                Batal
               </button>
             </div>
           </div>

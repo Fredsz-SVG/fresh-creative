@@ -4,7 +4,6 @@ import { useState, useMemo, useEffect, useRef, useContext } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
-  Zap,
   X,
   Bell,
   User,
@@ -56,8 +55,11 @@ export default function DashboardShell({
   const [showTopUp, setShowTopUp] = useState(false)
   const [showNotifications, setShowNotifications] = useState(false)
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false)
+  const [bottomNavVisible, setBottomNavVisible] = useState(true)
   // Credits state
   const [credits, setCredits] = useState(0)
+  const lastScrollY = useRef(0)
+  const scrollEndTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Notifications state
   const [notifications, setNotifications] = useState<any[]>([])
@@ -314,6 +316,39 @@ export default function DashboardShell({
     ].filter(Boolean) as { href: string; label: string; icon: LucideIcon }[]
   }, [navSections])
 
+  // Bottom nav: sembunyikan saat scroll ke bawah, muncul lagi saat scroll ke atas atau scroll berhenti
+  useEffect(() => {
+    if (bottomNavItems.length === 0) return
+    const scrollThreshold = 60
+    const scrollEndDelay = 400
+
+    const handleScroll = () => {
+      const y = typeof window !== 'undefined' ? window.scrollY : 0
+      const prev = lastScrollY.current
+      lastScrollY.current = y
+
+      if (prev !== undefined) {
+        if (y > prev && y > scrollThreshold) {
+          setBottomNavVisible(false)
+        } else if (y < prev) {
+          setBottomNavVisible(true)
+        }
+      }
+
+      if (scrollEndTimer.current) clearTimeout(scrollEndTimer.current)
+      scrollEndTimer.current = setTimeout(() => {
+        setBottomNavVisible(true)
+        scrollEndTimer.current = null
+      }, scrollEndDelay)
+    }
+
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => {
+      window.removeEventListener('scroll', handleScroll)
+      if (scrollEndTimer.current) clearTimeout(scrollEndTimer.current)
+    }
+  }, [bottomNavItems.length])
+
   const navLinkClass = (isActive: boolean) =>
     `group flex items-center gap-2.5 min-h-[36px] px-3 py-2 rounded-xl text-[13px] font-black transition-all duration-200 touch-manipulation border-2 border-transparent ${isActive
       ? 'bg-indigo-300 dark:bg-indigo-500/30 border-slate-900 dark:border-white/30 text-slate-900 dark:text-white shadow-[3px_3px_0_0_#0f172a] dark:shadow-[3px_3px_0_0_rgba(255,255,255,0.2)] -translate-y-0.5'
@@ -393,22 +428,22 @@ export default function DashboardShell({
     <div className="dashboard-shell min-h-[100dvh] bg-white dark:bg-slate-950 text-gray-800 dark:text-white flex flex-col transition-colors duration-300">
       {logoutConfirmOpen && (
         <div
-          className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[120] p-4"
+          className="fixed inset-0 bg-slate-900/40 dark:bg-black/50 backdrop-blur-md flex items-center justify-center z-[120] p-4"
           onClick={() => setLogoutConfirmOpen(false)}
         >
           <div
-            className="bg-white dark:bg-slate-800 border border-gray-100 dark:border-white/10 rounded-2xl p-5 sm:p-6 max-w-md w-full shadow-2xl"
+            className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-[32px] p-6 sm:p-8 max-w-sm w-full shadow-[6px_6px_0_0_#0f172a] dark:shadow-[6px_6px_0_0_#334155] text-center"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="text-lg font-bold text-red-500 mb-2">Logout</h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-5">
+            <h3 className="text-xl font-black text-slate-900 dark:text-white mb-2 uppercase tracking-tight">Logout</h3>
+            <p className="text-sm font-bold text-slate-500 dark:text-slate-400 mb-6">
               Yakin ingin logout dari akun ini?
             </p>
-            <div className="flex gap-2 justify-end">
+            <div className="flex gap-3">
               <button
                 type="button"
                 onClick={() => setLogoutConfirmOpen(false)}
-                className="px-4 py-2 rounded-xl bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors text-sm font-semibold"
+                className="flex-1 py-3.5 rounded-xl bg-slate-100 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 text-slate-900 dark:text-white text-xs font-black uppercase tracking-widest shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
               >
                 Batal
               </button>
@@ -419,7 +454,7 @@ export default function DashboardShell({
                   setDrawerOpen(false)
                   onLogout?.()
                 }}
-                className="px-4 py-2 rounded-xl bg-red-500 text-white hover:bg-red-600 transition-colors text-sm font-semibold shadow-sm"
+                className="flex-1 py-3.5 rounded-xl bg-red-500 text-white border-2 border-slate-900 dark:border-slate-700 text-xs font-black uppercase tracking-widest shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
               >
                 Ya, Logout
               </button>
@@ -429,33 +464,35 @@ export default function DashboardShell({
       )}
       {/* Top header */}
       <header
-        className={`fixed top-0 left-0 right-0 z-40 h-14 min-h-[44px] border-b-2 border-slate-900 dark:border-white/20 bg-white dark:bg-slate-900 flex items-center justify-between px-4 pt-[env(safe-area-inset-top)] shadow-[0_4px_0_0_#0f172a] dark:shadow-[0_4px_0_0_rgba(255,255,255,0.05)] transition-colors duration-300 ${isAiLabsFeaturePage ? 'max-md:hidden' : ''}`}
+        className={`fixed top-0 left-0 right-0 z-40 h-14 min-h-[44px] border-b border-slate-900 dark:border-white/20 bg-white dark:bg-slate-900 flex items-center justify-between px-4 pt-[env(safe-area-inset-top)] shadow-[0_1px_0_0_#0f172a] dark:shadow-[0_1px_0_0_rgba(255,255,255,0.08)] transition-colors duration-300 ${isAiLabsFeaturePage ? 'max-md:hidden' : ''}`}
       >
         <div className="flex items-center gap-3 min-w-0">
           <Link
             href={logoHref}
-            className="flex items-center gap-1 md:gap-2 text-slate-900 dark:text-white font-black uppercase tracking-wider text-[10px] md:text-[15px] shrink-0 min-h-[44px]"
+            className="flex items-center gap-2 shrink-0 min-h-[44px]"
           >
-            <div className="w-5 h-5 md:w-7 md:h-7 bg-orange-300 dark:bg-orange-500/30 border-2 border-slate-900 dark:border-white/30 rounded shadow-[1.5px_1.5px_0_0_#0f172a] dark:shadow-none md:shadow-[2px_2px_0_0_#0f172a] flex items-center justify-center -mt-0.5 shrink-0">
-              <Zap className="w-2.5 h-2.5 md:w-3.5 md:h-3.5 shrink-0 text-slate-900 dark:text-orange-400 fill-slate-900 dark:fill-orange-400" />
-            </div>
-            <span className="inline">FRESHCREATIVE.ID</span>
+            <img
+              src="/img/logo.png"
+              alt="Fresh Creative"
+              className="w-7 h-7 md:w-8 md:h-8 object-contain"
+            />
+            <span className="text-slate-900 dark:text-white font-black uppercase tracking-wider text-[10px] md:text-[15px]">FRESHCREATIVE.ID</span>
           </Link>
           <span className="hidden sm:inline-flex items-center gap-2 text-slate-400 dark:text-slate-500 text-sm font-black uppercase tracking-widest truncate ml-1">
             {sectionTitle}
           </span>
         </div>
-        <div className="flex items-center gap-1">
-          {/* Credit Display */}
+        <div className="flex items-center gap-1 sm:gap-1">
+          {/* Credit Display - tanpa kotak di mobile */}
           <button
             type="button"
             onClick={() => setShowTopUp(true)}
-            className="flex flex-col items-end mr-3 sm:mr-4 group cursor-pointer"
+            className="flex flex-col items-end mr-2 sm:mr-4 group cursor-pointer py-0.5"
           >
-            <p className="text-[10px] uppercase tracking-wider text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors font-black">Credit</p>
-            <div className="flex items-center gap-1.5 text-xs font-black text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
-              <Coins className="w-3.5 h-3.5 text-amber-500" />
-              <span className="text-[15px]">{credits}</span>
+            <p className="text-[8px] sm:text-[10px] uppercase tracking-wider text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors font-black leading-tight">Credit</p>
+            <div className="flex items-center gap-1 sm:gap-1.5 text-[10px] sm:text-xs font-black text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors leading-tight">
+              <Coins className="w-5 h-5 text-amber-500 shrink-0" />
+              <span className="text-[11px] sm:text-[15px]">{credits}</span>
             </div>
           </button>
 
@@ -475,16 +512,16 @@ export default function DashboardShell({
           >
             {mounted && (theme?.isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />)}
           </button>
-          {/* Notification */}
+          {/* Notification - tanpa kotak di mobile, lingkaran di desktop */}
           <div className="relative" ref={notificationRef}>
             <button
               type="button"
               onClick={() => setShowNotifications(!showNotifications)}
-              className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-white/30 text-slate-900 dark:text-white shadow-[3px_3px_0_0_#0f172a] dark:shadow-[3px_3px_0_0_rgba(255,255,255,0.1)] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all touch-manipulation"
+              className="relative flex items-center justify-center w-7 h-7 sm:w-10 sm:h-10 rounded-full sm:rounded-xl bg-transparent dark:bg-transparent sm:bg-white sm:dark:bg-slate-800 border-0 sm:border-2 border-slate-900 dark:border-white/30 text-slate-900 dark:text-white sm:shadow-[3px_3px_0_0_#0f172a] dark:sm:shadow-[3px_3px_0_0_rgba(255,255,255,0.1)] hover:translate-x-0.5 hover:translate-y-0.5 sm:hover:shadow-none transition-all touch-manipulation"
             >
               <Bell className="w-5 h-5" strokeWidth={3} />
               {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-pink-500 border-2 border-slate-900 dark:border-pink-400/50 animate-pulse flex items-center justify-center text-[9px] font-black text-white">
+                <span className="absolute -top-0.5 -right-0.5 sm:-top-1 sm:-right-1 min-w-[12px] h-[12px] sm:min-w-[18px] sm:h-[18px] px-0.5 sm:px-1 rounded-full bg-pink-500 border-2 border-slate-900 dark:border-pink-400/50 animate-pulse flex items-center justify-center text-[7px] sm:text-[9px] font-black text-white leading-none">
                   {unreadCount}
                 </span>
               )}
@@ -581,7 +618,7 @@ export default function DashboardShell({
                   onLogout()
                 }
               }}
-              className="md:hidden flex items-center justify-center w-10 h-10 rounded-xl bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-white/30 text-slate-900 dark:text-white shadow-[3px_3px_0_0_#0f172a] dark:shadow-[3px_3px_0_0_rgba(255,255,255,0.1)] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all touch-manipulation"
+              className="md:hidden flex items-center justify-center w-7 h-7 rounded-full bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-white/30 text-slate-900 dark:text-white shadow-none hover:opacity-90 active:opacity-80 transition-all touch-manipulation"
               aria-label="Profile / Menu"
             >
               <User className="w-5 h-5" />
@@ -656,20 +693,19 @@ export default function DashboardShell({
 
       {/* Main content */}
       <main
-        className={`flex-1 w-full md:pb-8 md:pl-56 lg:pl-64 ${isAiLabsFeaturePage ? 'max-md:pt-0 max-md:pb-8 pt-14 pb-[5.5rem]' : 'pt-14 pb-[5.5rem] md:pb-20'}`}
-        style={{ paddingBottom: isAiLabsFeaturePage ? undefined : 'max(5.5rem, calc(4rem + env(safe-area-inset-bottom)))' }}
+        className={`flex-1 w-full md:pb-8 md:pl-56 lg:pl-64 ${isAiLabsFeaturePage ? 'max-md:pt-0 max-md:pb-8 pt-14 pb-[4.5rem]' : 'pt-14 pb-[4.5rem] md:pb-20'}`}
+        style={{ paddingBottom: isAiLabsFeaturePage ? undefined : 'max(4.5rem, calc(3.5rem + env(safe-area-inset-bottom)))' }}
       >
         <div className="min-h-full p-4 sm:p-5 md:p-6 lg:p-8">
           {children}
         </div>
       </main>
 
-      {/* Bottom navigation - mobile */}
+      {/* Bottom navigation - mobile (sama seperti yearbook album: flat bar, item ikon + label) */}
       {
         bottomNavItems.length > 0 && (
           <nav
-            className={`fixed bottom-0 left-0 right-0 z-40 md:hidden min-h-[4.5rem] pt-2 border-t-[3px] border-slate-900 dark:border-white/20 bg-white dark:bg-slate-900 flex items-center justify-around px-2 shadow-[0_-4px_0_0_#0f172a] dark:shadow-[0_-4px_0_0_rgba(255,255,255,0.05)] transition-colors duration-300 ${isAiLabsFeaturePage ? 'max-md:hidden' : ''}`}
-            style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}
+            className={`fixed bottom-0 left-0 right-0 z-40 md:hidden min-h-16 pb-[env(safe-area-inset-bottom)] bg-white dark:bg-slate-900 border-t-4 border-slate-900 dark:border-white/20 shadow-[0_-4px_10px_0_rgba(0,0,0,0.1)] dark:shadow-[0_-4px_10px_0_rgba(0,0,0,0.3)] flex items-center justify-around transition-transform duration-300 ease-out ${isAiLabsFeaturePage ? 'max-md:hidden' : ''} ${bottomNavVisible ? 'translate-y-0' : 'translate-y-full'}`}
           >
             {bottomNavItems.map((item) => {
               const isActive = pathname === item.href
@@ -678,14 +714,10 @@ export default function DashboardShell({
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`
-                  flex flex-col items-center justify-center gap-1 flex-1 min-h-[3.25rem] py-2 rounded-xl border-2 border-transparent
-                  transition-all duration-200 touch-manipulation active:scale-95 mx-1
-                  ${isActive ? 'text-slate-900 dark:text-white bg-emerald-300 dark:bg-emerald-500/30 border-slate-900 dark:border-white/30 shadow-[2px_2px_0_0_#0f172a] dark:shadow-none -translate-y-1' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}
-                `}
+                  className={`flex flex-col items-center justify-center flex-1 h-full gap-0.5 min-w-0 active:scale-95 transition-all ${isActive ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white'}`}
                 >
-                  <Icon className={`w-5 h-5 shrink-0 ${isActive ? 'fill-emerald-300 dark:fill-emerald-500/30' : ''}`} />
-                  <span className="text-[10px] font-bold uppercase tracking-wide">{item.label}</span>
+                  <Icon className="w-5 h-5 flex-shrink-0" strokeWidth={2.5} />
+                  <span className="text-[9px] font-black uppercase tracking-widest text-center truncate w-full px-0.5">{item.label}</span>
                 </Link>
               )
             })}

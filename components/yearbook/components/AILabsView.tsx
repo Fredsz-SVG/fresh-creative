@@ -37,6 +37,7 @@ export default function AILabsView({ album, aiLabsTool, aiLabsFeaturesByPackage 
     const FEATURE_ICONS = [Shirt, UserCircle, ImageIcon, Images, Video] as const
     const albumBase = album?.id ? (isAdmin ? `/admin/album/yearbook/${album.id}` : `/user/album/yearbook/${album.id}`) : ''
     const [unlockingFeature, setUnlockingFeature] = useState<string | null>(null)
+    const [confirmUnlockToolSlug, setConfirmUnlockToolSlug] = useState<string | null>(null)
 
     const isFeatureUnlocked = (toolSlug: string) => {
         const featureType = FEATURE_SLUG_MAP[toolSlug] || toolSlug
@@ -86,23 +87,23 @@ export default function AILabsView({ album, aiLabsTool, aiLabsFeaturesByPackage 
             const creditCost = getFeatureCreditCost(aiLabsTool)
             return (
                 <div className="flex flex-col items-center justify-center min-h-[40vh] p-4 text-center">
-                    <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-[24px] sm:rounded-[28px] bg-amber-400 flex items-center justify-center mb-6 border-4 border-slate-900 shadow-[6px_6px_0_0_#0f172a]">
-                        <Lock className="w-6 h-6 sm:w-8 sm:h-8 text-slate-900" strokeWidth={3} />
+                    <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-[24px] sm:rounded-[28px] bg-amber-400 dark:bg-amber-600 flex items-center justify-center mb-6 border-4 border-slate-900 dark:border-slate-600 shadow-[6px_6px_0_0_#0f172a] dark:shadow-[6px_6px_0_0_#334155]">
+                        <Lock className="w-6 h-6 sm:w-8 sm:h-8 text-slate-900 dark:text-white" strokeWidth={3} />
                     </div>
-                    <h2 className="text-xl sm:text-2xl font-black text-slate-900 mb-2 uppercase tracking-tight">Fitur Terkunci</h2>
-                    <p className="text-slate-400 font-bold text-[10px] sm:text-xs max-w-[280px] sm:max-w-sm mb-8 uppercase tracking-widest leading-relaxed">
+                    <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mb-2 uppercase tracking-tight">Fitur Terkunci</h2>
+                    <p className="text-slate-400 dark:text-slate-500 font-bold text-[10px] sm:text-xs max-w-[280px] sm:max-w-sm mb-8 uppercase tracking-widest leading-relaxed">
                         Buka fitur ini dengan kredit untuk mulai menggunakannya di album ini.
                     </p>
                     <div className="flex flex-col items-center gap-4">
-                        <div className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white border-2 border-slate-900 shadow-[3px_3px_0_0_#0f172a]">
-                            <Zap className="w-4 h-4 text-amber-500" strokeWidth={3} />
-                            <span className="text-sm font-black text-slate-900 uppercase tracking-widest">{creditCost} CREDIT</span>
+                        <div className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 shadow-[3px_3px_0_0_#0f172a] dark:shadow-[3px_3px_0_0_#334155]">
+                            <Zap className="w-4 h-4 text-amber-500 dark:text-amber-400" strokeWidth={3} />
+                            <span className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-widest">{creditCost} CREDIT</span>
                         </div>
                         <button
                             type="button"
-                            onClick={() => handleUnlockFeature(aiLabsTool)}
+                            onClick={() => setConfirmUnlockToolSlug(aiLabsTool)}
                             disabled={unlockingFeature === aiLabsTool}
-                            className="px-8 py-4 rounded-xl bg-indigo-500 text-white border-2 border-slate-900 font-black text-sm uppercase shadow-[6px_6px_0_0_#0f172a] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all disabled:opacity-50 flex items-center gap-2.5"
+                            className="px-8 py-4 rounded-xl bg-indigo-500 text-white border-2 border-slate-900 dark:border-slate-600 font-black text-sm uppercase shadow-[6px_6px_0_0_#0f172a] dark:shadow-[6px_6px_0_0_#334155] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all disabled:opacity-50 flex items-center gap-2.5"
                         >
                             {unlockingFeature === aiLabsTool ? (
                                 <>
@@ -117,6 +118,35 @@ export default function AILabsView({ album, aiLabsTool, aiLabsFeaturesByPackage 
                             )}
                         </button>
                     </div>
+                    {confirmUnlockToolSlug === aiLabsTool && (
+                        <div className="fixed inset-0 bg-slate-900/40 dark:bg-black/50 backdrop-blur-md flex items-center justify-center z-[200] p-4">
+                            <div className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-[32px] p-6 sm:p-8 max-w-sm w-full shadow-[6px_6px_0_0_#0f172a] dark:shadow-[6px_6px_0_0_#334155] text-center">
+                                <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight mb-2">Buka Fitur AI</h3>
+                                <p className="text-sm font-bold text-slate-500 dark:text-slate-400 mb-6">
+                                    Yakin tidak? Unlock fitur ini akan menggunakan {getFeatureCreditCost(aiLabsTool)} credit.
+                                </p>
+                                <div className="flex gap-3">
+                                    <button
+                                        type="button"
+                                        onClick={() => setConfirmUnlockToolSlug(null)}
+                                        className="flex-1 py-3.5 rounded-xl bg-slate-100 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 text-slate-900 dark:text-white text-xs font-black uppercase tracking-widest shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
+                                    >
+                                        Batal
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            handleUnlockFeature(aiLabsTool)
+                                            setConfirmUnlockToolSlug(null)
+                                        }}
+                                        className="flex-1 py-3.5 rounded-xl bg-indigo-500 text-white border-2 border-slate-900 dark:border-slate-600 text-xs font-black uppercase tracking-widest shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
+                                    >
+                                        Ya, Buka
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             )
         }
@@ -157,24 +187,24 @@ export default function AILabsView({ album, aiLabsTool, aiLabsFeaturesByPackage 
                     return (
                         <div
                             key={feature.href}
-                            className="group relative bg-white rounded-3xl border-2 border-slate-900 shadow-[6px_6px_0_0_#0f172a] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all flex flex-col overflow-hidden"
+                            className="group relative bg-white dark:bg-slate-900 rounded-3xl border-2 border-slate-900 dark:border-slate-700 shadow-[6px_6px_0_0_#0f172a] dark:shadow-[6px_6px_0_0_#334155] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all flex flex-col overflow-hidden"
                         >
                             <div className="p-5 flex flex-col h-full">
-                                <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 border-2 border-slate-900 shadow-[2px_2px_0_0_#0f172a] transition-transform group-hover:scale-110 ${iconBg}`}>
-                                    <Icon className="w-6 h-6 text-slate-900" strokeWidth={3} />
+                                <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 border-2 border-slate-900 dark:border-slate-600 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] transition-transform group-hover:scale-110 ${iconBg}`}>
+                                    <Icon className="w-6 h-6 text-slate-900 dark:text-white" strokeWidth={3} />
                                 </div>
 
                                 <div className="flex-1 min-h-[60px]">
-                                    <h3 className="text-xs sm:text-sm font-black text-slate-900 uppercase tracking-tight mb-1.5 line-clamp-1">{feature.label}</h3>
-                                    <p className="text-[10px] sm:text-xs font-bold text-slate-400 mb-4 leading-relaxed line-clamp-2">{feature.description}</p>
+                                    <h3 className="text-xs sm:text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight mb-1.5 line-clamp-1">{feature.label}</h3>
+                                    <p className="text-[10px] sm:text-xs font-bold text-slate-400 dark:text-slate-500 mb-4 leading-relaxed line-clamp-2">{feature.description}</p>
                                 </div>
 
-                                <div className="mt-auto pt-4 border-t-2 border-slate-50 flex items-center justify-between gap-3">
+                                <div className="mt-auto pt-4 border-t-2 border-slate-50 dark:border-slate-700 flex items-center justify-between gap-3">
                                     {!unlocked ? (
                                         <button
-                                            onClick={() => handleUnlockFeature(toolSlug)}
+                                            onClick={() => setConfirmUnlockToolSlug(toolSlug)}
                                             disabled={unlockingFeature === toolSlug}
-                                            className="flex-1 flex items-center justify-center gap-1.5 h-10 rounded-xl bg-amber-400 border-2 border-slate-900 shadow-[2px_2px_0_0_#0f172a] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all text-[9px] font-black uppercase tracking-widest text-slate-900"
+                                            className="flex-1 flex items-center justify-center gap-1.5 h-10 rounded-xl bg-amber-400 dark:bg-amber-600 border-2 border-slate-900 dark:border-slate-600 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all text-[9px] font-black uppercase tracking-widest text-slate-900 dark:text-white"
                                         >
                                             {unlockingFeature === toolSlug ? (
                                                 <>
@@ -191,7 +221,7 @@ export default function AILabsView({ album, aiLabsTool, aiLabsFeaturesByPackage 
                                     ) : (
                                         <NextLink
                                             href={href}
-                                            className="flex-1 flex items-center justify-center gap-1.5 h-10 rounded-xl bg-indigo-500 border-2 border-slate-900 shadow-[2px_2px_0_0_#0f172a] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all text-[9px] font-black uppercase tracking-widest text-white px-2"
+                                            className="flex-1 flex items-center justify-center gap-1.5 h-10 rounded-xl bg-indigo-500 border-2 border-slate-900 dark:border-slate-600 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all text-[9px] font-black uppercase tracking-widest text-white px-2"
                                         >
                                             <span className="truncate">BUKA</span>
                                             <ChevronRight className="w-3.5 h-3.5 shrink-0" strokeWidth={3} />
@@ -203,6 +233,36 @@ export default function AILabsView({ album, aiLabsTool, aiLabsFeaturesByPackage 
                     )
                 })}
             </div>
+
+            {confirmUnlockToolSlug && (
+                <div className="fixed inset-0 bg-slate-900/40 dark:bg-black/50 backdrop-blur-md flex items-center justify-center z-[200] p-4">
+                    <div className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-[32px] p-6 sm:p-8 max-w-sm w-full shadow-[6px_6px_0_0_#0f172a] dark:shadow-[6px_6px_0_0_#334155] text-center">
+                        <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight mb-2">Buka Fitur AI</h3>
+                        <p className="text-sm font-bold text-slate-500 dark:text-slate-400 mb-6">
+                            Yakin tidak? Unlock fitur ini akan menggunakan {getFeatureCreditCost(confirmUnlockToolSlug)} credit.
+                        </p>
+                        <div className="flex gap-3">
+                            <button
+                                type="button"
+                                onClick={() => setConfirmUnlockToolSlug(null)}
+                                className="flex-1 py-3.5 rounded-xl bg-slate-100 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 text-slate-900 dark:text-white text-xs font-black uppercase tracking-widest shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
+                            >
+                                Batal
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    handleUnlockFeature(confirmUnlockToolSlug)
+                                    setConfirmUnlockToolSlug(null)
+                                }}
+                                className="flex-1 py-3.5 rounded-xl bg-indigo-500 text-white border-2 border-slate-900 dark:border-slate-600 text-xs font-black uppercase tracking-widest shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
+                            >
+                                Ya, Buka
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }

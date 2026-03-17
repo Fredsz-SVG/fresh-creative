@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useContext } from "react";
 import { Sun, Moon, Menu, X } from "lucide-react";
+import { TiLocationArrow } from "react-icons/ti";
 import { NAV_ITEMS } from "./constants";
 import { cn } from "@/lib/utils";
 import { ThemeContext } from "@/app/providers/ThemeProvider";
@@ -91,9 +92,16 @@ export function Navbar() {
             </div>
 
             <div className="flex items-center gap-1 sm:gap-4">
+              <a
+                href="#pricing"
+                className="hidden md:inline-flex items-center gap-1 md:ml-8 px-7 py-3 bg-yellow-300 text-black font-black text-xs uppercase tracking-wide border border-slate-900 rounded-full shadow-[2px_2px_0_0_#000] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[3px_3px_0_0_#000] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all duration-200"
+              >
+                <TiLocationArrow className="text-base" />
+                <span className="font-general text-xs uppercase">Buat Project</span>
+              </a>
               <button
                 onClick={theme?.toggleTheme}
-                className="nav-icon-stroke md:ml-10 flex items-center p-2 text-slate-800 dark:text-white transition hover:opacity-100 active:scale-90 rounded-none"
+                className="nav-icon-stroke md:ml-4 flex items-center p-2 text-slate-800 dark:text-white transition hover:opacity-100 active:scale-90 rounded-none"
                 title="Toggle Theme"
               >
                 {mounted &&
@@ -162,6 +170,14 @@ export function Navbar() {
             {label}
           </a>
         ))}
+        <a
+          href="#pricing"
+          className="mt-2 inline-flex items-center justify-center gap-1 px-7 py-3 bg-yellow-300 text-black font-black text-xs uppercase tracking-wide border border-slate-900 rounded-full shadow-[2px_2px_0_0_#000] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all duration-200 w-[80%]"
+          onClick={() => setIsMenuOpen(false)}
+        >
+          <TiLocationArrow className="text-lg" />
+          <span className="font-general text-xs uppercase">Buat Project</span>
+        </a>
       </div>
     </header>
   );

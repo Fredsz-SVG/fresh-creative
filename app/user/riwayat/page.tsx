@@ -119,13 +119,13 @@ export default function UserRiwayatPage() {
   return (
     <>
       {invoicePopupUrl && (
-        <div className="fixed inset-0 z-[110] flex flex-col bg-white" role="dialog" aria-modal="true" aria-label="Invoice pembayaran">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-gray-50 shrink-0">
+        <div className="fixed inset-0 z-[110] flex flex-col bg-white dark:bg-slate-900" role="dialog" aria-modal="true" aria-label="Invoice pembayaran">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 shrink-0">
             <h3 className="text-sm font-bold text-gray-800">Invoice Pembayaran</h3>
             <button
               type="button"
               onClick={() => setInvoicePopupUrl(null)}
-              className="flex items-center justify-center w-9 h-9 rounded-xl text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
+              className="flex items-center justify-center w-9 h-9 rounded-xl text-gray-400 dark:text-slate-300 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
@@ -142,40 +142,44 @@ export default function UserRiwayatPage() {
         </div>
       )}
 
-      <DashboardTitle
-        title="Riwayat Transaksi"
-        subtitle="Daftar transaksi Top Up credit Anda."
-      />
+      <div className="flex flex-col gap-2 mb-8">
+        <h1 className="text-3xl font-black text-slate-900 dark:text-white sm:text-4xl tracking-tight">
+          Riwayat Transaksi
+        </h1>
+        <p className="text-slate-600 dark:text-slate-300 font-bold text-sm sm:text-base">
+          Daftar transaksi Top Up credit Anda.
+        </p>
+      </div>
 
       {loading ? (
         <div className="space-y-5">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="rounded-3xl border-2 border-slate-900 bg-white p-5 sm:p-6 flex items-start justify-between gap-4 animate-pulse shadow-[6px_6px_0_0_#0f172a]">
+            <div key={i} className="rounded-3xl border-2 border-slate-900 bg-white dark:bg-slate-900 p-5 sm:p-6 flex items-start justify-between gap-4 animate-pulse shadow-[6px_6px_0_0_#0f172a] dark:shadow-[6px_6px_0_0_#334155]">
               <div className="flex items-start gap-3 sm:gap-4 flex-1 min-w-0">
-                <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-slate-200 border-2 border-slate-900 shrink-0" />
+                <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-slate-200 dark:bg-slate-800 border-2 border-slate-900 shrink-0" />
                 <div className="flex flex-col min-w-0 py-1 w-full">
-                  <div className="h-5 w-3/4 bg-slate-200 rounded mb-3" />
+                  <div className="h-5 w-3/4 bg-slate-200 dark:bg-slate-800 rounded mb-3" />
                   <div className="space-y-2">
-                    <div className="h-4 w-1/2 bg-slate-100 rounded" />
-                    <div className="h-3 w-1/4 bg-slate-100 rounded" />
+                    <div className="h-4 w-1/2 bg-slate-100 dark:bg-slate-900 rounded" />
+                    <div className="h-3 w-1/4 bg-slate-100 dark:bg-slate-900 rounded" />
                   </div>
                 </div>
               </div>
               <div className="flex flex-col items-end shrink-0 self-end">
-                <div className="h-6 w-24 bg-slate-200 rounded" />
-                <div className="h-5 w-16 bg-slate-100 rounded mt-2" />
+                <div className="h-6 w-24 bg-slate-200 dark:bg-slate-800 rounded" />
+                <div className="h-5 w-16 bg-slate-100 dark:bg-slate-900 rounded mt-2" />
               </div>
             </div>
           ))}
         </div>
       ) : transactions.length === 0 ? (
-        <div className="rounded-3xl border-2 border-slate-900 bg-white p-6 sm:p-8 shadow-[8px_8px_0_0_#0f172a]">
+        <div className="rounded-3xl border-2 border-slate-900 bg-white dark:bg-slate-900 p-6 sm:p-8 shadow-[8px_8px_0_0_#0f172a] dark:shadow-[8px_8px_0_0_#334155]">
           <div className="flex flex-col items-center justify-center py-12 text-center">
-            <div className="w-20 h-20 rounded-2xl bg-indigo-100 border-2 border-slate-900 flex items-center justify-center mb-6 text-slate-900 shadow-[4px_4px_0_0_#0f172a]">
+            <div className="w-20 h-20 rounded-2xl bg-indigo-100 dark:bg-slate-800 border-2 border-slate-900 flex items-center justify-center mb-6 text-slate-900 dark:text-white shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155]">
               <History className="w-10 h-10" />
             </div>
-            <p className="text-[17px] font-black text-slate-900 mb-2">Belum ada riwayat</p>
-            <p className="text-[14px] font-bold text-slate-500 max-w-sm">
+            <p className="text-[17px] font-black text-slate-900 dark:text-white mb-2">Belum ada riwayat</p>
+            <p className="text-[14px] font-bold text-slate-500 dark:text-slate-300 max-w-sm">
               Riwayat transaksi top up Anda akan muncul di sini.
             </p>
           </div>
@@ -183,7 +187,7 @@ export default function UserRiwayatPage() {
       ) : (
         <div className="space-y-5">
           {paginatedTransactions.map((tx) => (
-            <div key={tx.id} className="rounded-3xl border-2 border-slate-900 bg-white p-5 sm:p-6 flex items-start justify-between gap-4 shadow-[5px_5px_0_0_#0f172a] hover:shadow-[7px_7px_0_0_#0f172a] hover:-translate-y-1 hover:-translate-x-1 transition-all">
+            <div key={tx.id} className="rounded-3xl border-2 border-slate-900 bg-white dark:bg-slate-900 p-5 sm:p-6 flex items-start justify-between gap-4 shadow-[5px_5px_0_0_#0f172a] dark:shadow-[5px_5px_0_0_#334155] hover:shadow-[7px_7px_0_0_#0f172a] dark:hover:shadow-[7px_7px_0_0_#334155] hover:-translate-y-1 hover:-translate-x-1 transition-all">
               {/* Left Side: Icon + Details */}
               <div className="flex items-start gap-3 sm:gap-4 flex-1 min-w-0">
                 <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-2xl border-2 border-slate-900 flex items-center justify-center shrink-0 shadow-inner ${tx.status === 'PAID' || tx.status === 'SETTLED' ? 'bg-emerald-300 text-slate-900'
@@ -193,19 +197,27 @@ export default function UserRiwayatPage() {
                   <CreditCard className="w-5 h-5 sm:w-6 sm:h-6" />
                 </div>
                 <div className="flex flex-col min-w-0 py-0.5">
-                  <h4 className="font-black text-[14px] sm:text-[17px] text-slate-900 leading-tight">
-                    {tx.description || (tx.album_name ? `Pembayaran Album: ${tx.album_name}` : (tx.credits != null ? `Top Up ${tx.credits} Credits` : 'Top Up Credit'))}
+                  <h4 className="font-black text-[14px] sm:text-[17px] text-slate-900 dark:text-white leading-tight">
+                    {tx.description
+                      ? tx.description
+                      : tx.album_name
+                        ? `Pembayaran Album: ${tx.album_name}`
+                        : tx.credits != null
+                          ? `Top Up ${tx.credits} Credits`
+                          : 'Top Up Credit'}
                   </h4>
                   <div className="text-[11px] sm:text-[13px] font-bold text-slate-500 mt-1.5 space-y-1.5">
                     <p>{new Date(tx.created_at).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
                     <div className="flex flex-wrap items-center gap-2">
                       {tx.external_id && (
-                        <span className="font-mono text-[10px] text-slate-400 tracking-wider">
-                          TR-{tx.external_id.split('_ts_')[1] || tx.external_id.slice(-8)}
+                        <span className="flex items-center gap-1.5 font-mono">
+                          <code className="bg-slate-200 dark:bg-slate-700 px-2 rounded text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-600 text-xs tracking-wider">
+                            {`TR-${tx.external_id.split('_ts_')[1] || tx.external_id.slice(-8)}`}
+                          </code>
                         </span>
                       )}
                       {tx.payment_method && (
-                        <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-slate-100 border border-slate-900 text-slate-900">
+                        <span className="px-2 py-0.5 rounded border-2 border-slate-900 dark:border-slate-700 bg-indigo-50 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-200 font-black text-[10px] uppercase tracking-wide">
                           {tx.payment_method.replace(/_/g, ' ')}
                         </span>
                       )}
@@ -227,7 +239,7 @@ export default function UserRiwayatPage() {
 
               {/* Right Side: Amount + Status (Bottom Right) */}
               <div className="flex flex-col items-end shrink-0 text-right self-end ml-2">
-                <span className="whitespace-nowrap font-black text-[15px] sm:text-xl text-slate-900">
+                <span className="whitespace-nowrap font-black text-[15px] sm:text-xl text-slate-900 dark:text-white">
                   Rp {tx.amount.toLocaleString('id-ID')}
                 </span>
                 <span className={`inline-block text-[9px] sm:text-[11px] font-black px-2 py-0.5 sm:px-2.5 sm:py-1 mt-2 rounded border-2 border-slate-900 uppercase tracking-widest shadow-[2px_2px_0_0_#0f172a] ${tx.status === 'PAID' || tx.status === 'SETTLED' ? 'bg-emerald-300 text-slate-900'

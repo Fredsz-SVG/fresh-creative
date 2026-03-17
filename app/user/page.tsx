@@ -363,16 +363,15 @@ export default function UserPage() {
         )}
         {/* Modal Konfirmasi Create Project */}
         {confirmModal && (
-          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" onClick={() => setConfirmModal(null)}>
-            <div className="bg-white dark:bg-slate-900 border-4 border-slate-900 dark:border-white/10 rounded-[2rem] p-8 max-w-sm w-full shadow-[8px_8px_0_0_#0f172a] dark:shadow-none" onClick={(e) => e.stopPropagation()}>
-              <p className="text-xl font-black text-slate-900 dark:text-white mb-6">
-                Mau buat project baru?
-              </p>
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/40 dark:bg-black/50 backdrop-blur-md" onClick={() => setConfirmModal(null)}>
+            <div className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-[32px] p-6 sm:p-8 max-w-sm w-full shadow-[6px_6px_0_0_#0f172a] dark:shadow-[6px_6px_0_0_#334155] text-center" onClick={(e) => e.stopPropagation()}>
+              <h3 className="text-xl font-black text-slate-900 dark:text-white mb-2 uppercase tracking-tight">Buat Project Baru?</h3>
+              <p className="text-sm font-bold text-slate-500 dark:text-slate-400 mb-6">Mau buat project baru?</p>
               <div className="flex flex-col gap-3">
                 <button
                   type="button"
                   onClick={() => router.push('/user/showroom')}
-                  className="w-full flex items-center justify-center gap-2 py-4 text-base font-black rounded-2xl bg-emerald-400 dark:bg-emerald-600 border-2 border-slate-900 dark:border-white/10 shadow-[4px_4px_0_0_#0f172a] dark:shadow-none text-slate-900 dark:text-white hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all"
+                  className="w-full flex items-center justify-center gap-2 py-3.5 text-xs font-black uppercase tracking-widest rounded-xl bg-emerald-400 dark:bg-emerald-600 border-2 border-slate-900 dark:border-slate-600 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] text-slate-900 dark:text-white hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
                 >
                   <BookOpen className="w-5 h-5" />
                   Go to Form
@@ -380,7 +379,7 @@ export default function UserPage() {
                 <button
                   type="button"
                   onClick={() => setConfirmModal(null)}
-                  className="w-full py-3 text-sm font-bold text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white transition-colors"
+                  className="w-full py-3.5 rounded-xl bg-slate-100 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 text-slate-900 dark:text-white text-xs font-black uppercase tracking-widest shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
                 >
                   Nanti dulu
                 </button>

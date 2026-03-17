@@ -120,9 +120,9 @@ function InlineClassEditor(p: any) {
   return (
     <div className={`w-full ${p.center ? 'flex justify-center' : ''}`}>
       {!editing ? (
-        <div className={`w-full p-4 bg-white border-2 border-slate-900 rounded-2xl shadow-[2px_2px_0_0_#0f172a] ${p.center ? 'flex justify-center' : ''}`}>
-          <div className={`flex items-center gap-3 w-full ${p.center ? 'justify-center border-b-4 border-slate-900/5 pb-2' : ''}`}>
-            <h2 className={`${p.mainHeader ? 'text-4xl lg:text-5xl' : 'text-sm lg:text-base'} font-black text-slate-900 flex-1 break-words uppercase tracking-tight ${p.center ? 'text-center' : 'text-left'}`}>{classObj.name}</h2>
+        <div className={`w-full p-4 bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-2xl shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] ${p.center ? 'flex justify-center' : ''}`}>
+          <div className={`flex items-center gap-3 w-full ${p.center ? 'justify-center border-b-4 border-slate-900/5 dark:border-slate-600/30 pb-2' : ''}`}>
+            <h2 className={`${p.mainHeader ? 'text-4xl lg:text-5xl' : 'text-sm lg:text-base'} font-black text-slate-900 dark:text-white flex-1 break-words uppercase tracking-tight ${p.center ? 'text-center' : 'text-left'}`}>{classObj.name}</h2>
             {isOwner && (
               <div className="flex gap-2 flex-shrink-0">
                 <button
@@ -132,7 +132,7 @@ function InlineClassEditor(p: any) {
                     e.stopPropagation()
                     setEditing(true)
                   }}
-                  className={`${p.mainHeader ? 'w-10 h-10 lg:w-12 lg:h-12 rounded-xl lg:rounded-2xl' : 'w-8 h-8 lg:w-9 lg:h-9 rounded-xl'} flex items-center justify-center bg-white border-2 border-slate-900 text-slate-900 hover:bg-amber-300 hover:shadow-[3px_3px_0_0_#0f172a] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all`}
+                  className={`${p.mainHeader ? 'w-10 h-10 lg:w-12 lg:h-12 rounded-xl lg:rounded-2xl' : 'w-8 h-8 lg:w-9 lg:h-9 rounded-xl'} flex items-center justify-center bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 text-slate-900 dark:text-white hover:bg-amber-300 dark:hover:bg-slate-700 hover:shadow-[3px_3px_0_0_#0f172a] dark:hover:shadow-[3px_3px_0_0_#334155] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all`}
                   title="Edit kelas"
                 >
                   <Edit3 className={p.mainHeader ? 'w-4 h-4 lg:w-5 h-5' : 'w-4 h-4'} strokeWidth={2.5} />
@@ -144,7 +144,7 @@ function InlineClassEditor(p: any) {
                     e.stopPropagation()
                     onDelete && onDelete(classObj.id, classObj.name)
                   }}
-                  className={`${p.mainHeader ? 'w-10 h-10 lg:w-12 lg:h-12 rounded-xl lg:rounded-2xl' : 'w-8 h-8 lg:w-9 lg:h-9 rounded-xl'} flex items-center justify-center bg-white border-2 border-slate-900 text-red-500 hover:bg-red-50 hover:shadow-[3px_3px_0_0_#0f172a] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all`}
+                  className={`${p.mainHeader ? 'w-10 h-10 lg:w-12 lg:h-12 rounded-xl lg:rounded-2xl' : 'w-8 h-8 lg:w-9 lg:h-9 rounded-xl'} flex items-center justify-center bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/50 hover:shadow-[3px_3px_0_0_#0f172a] dark:hover:shadow-[3px_3px_0_0_#334155] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all`}
                   title="Hapus kelas"
                 >
                   <Trash2 className={p.mainHeader ? 'w-4 h-4 lg:w-5 h-5' : 'w-4 h-4'} strokeWidth={2.5} />
@@ -154,10 +154,10 @@ function InlineClassEditor(p: any) {
           </div>
         </div>
       ) : (
-        <div className="flex flex-col gap-4 w-full bg-amber-50 p-4 rounded-[24px] border-2 border-slate-900 shadow-[2px_2px_0_0_#0f172a] animate-in zoom-in-95 duration-200">
+        <div className="flex flex-col gap-4 w-full bg-amber-50 dark:bg-amber-950/30 p-4 rounded-[24px] border-2 border-slate-900 dark:border-slate-700 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] animate-in zoom-in-95 duration-200">
           <div className="flex flex-col gap-4">
             <div className="flex flex-col gap-1.5 w-full">
-              <label className="text-[10px] text-slate-400 font-black uppercase tracking-widest pl-1">Nama Kelas</label>
+              <label className="text-[10px] text-slate-400 dark:text-slate-500 font-black uppercase tracking-widest pl-1">Nama Kelas</label>
               <input
                 ref={nameRef}
                 value={name}
@@ -167,30 +167,30 @@ function InlineClassEditor(p: any) {
                   else if (e.key === 'Escape') handleCancel()
                 }}
                 placeholder="Nama kelas..."
-                className="w-full px-4 py-2 rounded-xl text-sm bg-white border-2 border-slate-900 text-slate-900 font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500/10 transition-all placeholder:text-slate-300"
+                className="w-full px-4 py-2 rounded-xl text-sm bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 text-slate-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500/10 transition-all placeholder:text-slate-300 dark:placeholder:text-slate-500"
               />
             </div>
 
             <div className="flex flex-col gap-1.5 w-full">
-              <label className="text-[10px] text-slate-400 font-black uppercase tracking-widest pl-1">Urutan Kelas</label>
-              <div className="flex items-center gap-1.5 bg-white border-2 border-slate-900 rounded-xl p-1 shadow-[2px_2px_0_0_#0f172a] w-fit">
+              <label className="text-[10px] text-slate-400 dark:text-slate-500 font-black uppercase tracking-widest pl-1">Urutan Kelas</label>
+              <div className="flex items-center gap-1.5 bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 rounded-xl p-1 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] w-fit">
                 <button
                   type="button"
                   onClick={(e) => handleOrderChange(Math.max(0, (order ?? 0) - 1), e)}
                   disabled={order === 0}
-                  className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-50 text-slate-900 disabled:opacity-20"
+                  className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-900 dark:text-white disabled:opacity-20"
                 >
                   <Minus className="w-4 h-4" strokeWidth={3} />
                 </button>
                 <div className="px-2 text-center min-w-[40px]">
-                  <span className="text-sm font-black text-indigo-600">{(order ?? 0) + 1}</span>
-                  <span className="text-[10px] text-slate-300 font-black tracking-tighter">/{classesCount}</span>
+                  <span className="text-sm font-black text-indigo-600 dark:text-indigo-400">{(order ?? 0) + 1}</span>
+                  <span className="text-[10px] text-slate-300 dark:text-slate-500 font-black tracking-tighter">/{classesCount}</span>
                 </div>
                 <button
                   type="button"
                   onClick={(e) => handleOrderChange(Math.min((classesCount || 1) - 1, (order ?? 0) + 1), e)}
                   disabled={order >= (classesCount || 1) - 1}
-                  className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-50 text-slate-900 disabled:opacity-20"
+                  className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-900 dark:text-white disabled:opacity-20"
                 >
                   <Plus className="w-4 h-4" strokeWidth={3} />
                 </button>
@@ -202,19 +202,19 @@ function InlineClassEditor(p: any) {
             <button
               type="button"
               onClick={handleSaveName}
-              className="flex-1 py-3 rounded-xl bg-indigo-500 text-white border-2 border-slate-900 font-black text-[10px] uppercase tracking-widest shadow-[2px_2px_0_0_#0f172a] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all"
+              className="flex-1 py-3 rounded-xl bg-indigo-500 text-white border-2 border-slate-900 dark:border-slate-600 font-black text-[10px] uppercase tracking-widest shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all"
             >
               Simpan
             </button>
             <button
               type="button"
               onClick={handleCancel}
-              className="flex-1 py-3 rounded-xl bg-white text-slate-400 border-2 border-slate-900 font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 transition-all shadow-[2px_2px_0_0_#0f172a] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none"
+              className="flex-1 py-3 rounded-xl bg-white dark:bg-slate-800 text-slate-400 dark:text-slate-500 border-2 border-slate-900 dark:border-slate-600 font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none"
             >
               Batal
             </button>
           </div>
-          <p className="text-[8px] text-slate-400 font-bold uppercase tracking-tight text-center">Tekan Enter untuk simpan</p>
+          <p className="text-[8px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-tight text-center">Tekan Enter untuk simpan</p>
         </div>
       )}
     </div>
@@ -368,6 +368,7 @@ export default function YearbookClassesViewUI(props: any) {
   const [generatingInvite, setGeneratingInvite] = useState(false)
   const [deleteClassConfirm, setDeleteClassConfirm] = useState<{ classId: string; className: string } | null>(null)
   const [deleteMemberConfirm, setDeleteMemberConfirm] = useState<{ classId: string; userId?: string; memberName: string } | null>(null)
+  const [joinConfirmClassId, setJoinConfirmClassId] = useState<string | null>(null)
 
   // Manual Flipbook Pages state
   const [manualPages, setManualPages] = useState<any[]>([])
@@ -1098,10 +1099,10 @@ export default function YearbookClassesViewUI(props: any) {
 
           {/* Secondary Sidebar Panel - Hanya untuk Edit (Cover, Sambutan, Kelas); Flipbook ada di sidebar utama */}
           {((['classes', 'sambutan'].includes(sidebarMode) || isCoverView)) && (
-            <div className="hidden lg:fixed lg:left-16 lg:top-14 lg:w-64 lg:h-[calc(100vh-3.5rem)] lg:flex flex-col lg:z-35 lg:bg-white lg:border-r-2 lg:border-slate-900 shadow-[4px_0_10px_0_rgba(0,0,0,0.05)]">
+            <div className="hidden lg:fixed lg:left-16 lg:top-14 lg:w-64 lg:h-[calc(100vh-3.5rem)] lg:flex flex-col lg:z-35 lg:bg-white lg:dark:bg-slate-900 lg:border-r-2 lg:border-slate-900 lg:dark:border-slate-700 shadow-[4px_0_10px_0_rgba(0,0,0,0.05)] dark:shadow-[4px_0_10px_0_rgba(0,0,0,0.2)]">
               {/* Main "Edit" Switcher - Cover, Sambutan, Kelas saja */}
-              <div className="p-3 bg-slate-50 border-b-2 border-slate-100 flex flex-col gap-1.5 shrink-0">
-                <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] px-1">Menu Edit</p>
+              <div className="p-3 bg-slate-50 dark:bg-slate-800/50 border-b-2 border-slate-100 dark:border-slate-700 flex flex-col gap-1.5 shrink-0">
+                <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] px-1">Menu Edit</p>
                 <div className="grid grid-cols-2 gap-1.5">
                   <button
                     onClick={() => {
@@ -1109,9 +1110,9 @@ export default function YearbookClassesViewUI(props: any) {
                       const url = getYearbookSectionQueryUrl(effectiveAlbumId!, 'cover', pathname)
                       router.push(url, { scroll: false })
                     }}
-                    className={`flex items-center gap-2 p-2 rounded-xl border-2 transition-all ${isCoverView ? 'bg-white border-slate-900 shadow-[2px_2px_0_0_#0f172a] -translate-y-0.5' : 'bg-transparent border-transparent text-slate-400 hover:text-slate-600'}`}
+                    className={`flex items-center gap-2 p-2 rounded-xl border-2 transition-all ${isCoverView ? 'bg-white dark:bg-slate-800 border-slate-900 dark:border-slate-600 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] -translate-y-0.5' : 'bg-transparent border-transparent text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-white'}`}
                   >
-                    <BookOpen className={`w-3.5 h-3.5 ${isCoverView ? 'text-indigo-500' : 'text-slate-400'}`} />
+                    <BookOpen className={`w-3.5 h-3.5 ${isCoverView ? 'text-indigo-500 dark:text-indigo-400' : 'text-slate-400 dark:text-slate-500'}`} />
                     <span className="text-[9px] font-black uppercase tracking-tight">Cover</span>
                   </button>
                   <button
@@ -1120,9 +1121,9 @@ export default function YearbookClassesViewUI(props: any) {
                       const url = getYearbookSectionQueryUrl(effectiveAlbumId!, 'sambutan', pathname)
                       router.push(url, { scroll: false })
                     }}
-                    className={`flex items-center gap-2 p-2 rounded-xl border-2 transition-all ${sidebarMode === 'sambutan' ? 'bg-white border-slate-900 shadow-[2px_2px_0_0_#0f172a] -translate-y-0.5' : 'bg-transparent border-transparent text-slate-400 hover:text-slate-600'}`}
+                    className={`flex items-center gap-2 p-2 rounded-xl border-2 transition-all ${sidebarMode === 'sambutan' ? 'bg-white dark:bg-slate-800 border-slate-900 dark:border-slate-600 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] -translate-y-0.5' : 'bg-transparent border-transparent text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-white'}`}
                   >
-                    <MessageSquare className={`w-3.5 h-3.5 ${sidebarMode === 'sambutan' ? 'text-violet-500' : 'text-slate-400'}`} />
+                    <MessageSquare className={`w-3.5 h-3.5 ${sidebarMode === 'sambutan' ? 'text-violet-500 dark:text-violet-400' : 'text-slate-400 dark:text-slate-500'}`} />
                     <span className="text-[9px] font-black uppercase tracking-tight">Sambutan</span>
                   </button>
                   <button
@@ -1132,9 +1133,9 @@ export default function YearbookClassesViewUI(props: any) {
                       const url = getYearbookSectionQueryUrl(effectiveAlbumId!, 'classes', pathname)
                       router.push(url, { scroll: false })
                     }}
-                    className={`flex items-center gap-2 p-2 rounded-xl border-2 transition-all col-span-2 ${sidebarMode === 'classes' && !isCoverView ? 'bg-white border-slate-900 shadow-[2px_2px_0_0_#0f172a] -translate-y-0.5' : 'bg-transparent border-transparent text-slate-400 hover:text-slate-600'}`}
+                    className={`flex items-center gap-2 p-2 rounded-xl border-2 transition-all col-span-2 ${sidebarMode === 'classes' && !isCoverView ? 'bg-white dark:bg-slate-800 border-slate-900 dark:border-slate-600 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] -translate-y-0.5' : 'bg-transparent border-transparent text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-white'}`}
                   >
-                    <Users className={`w-3.5 h-3.5 ${sidebarMode === 'classes' && !isCoverView ? 'text-emerald-500' : 'text-slate-400'}`} />
+                    <Users className={`w-3.5 h-3.5 ${sidebarMode === 'classes' && !isCoverView ? 'text-emerald-500 dark:text-emerald-400' : 'text-slate-400 dark:text-slate-500'}`} />
                     <span className="text-[9px] font-black uppercase tracking-tight">Kelas</span>
                   </button>
                 </div>
@@ -1142,16 +1143,16 @@ export default function YearbookClassesViewUI(props: any) {
 
               {/* Header Sidebar Generik */}
               {(sidebarMode === 'classes' || sidebarMode === 'sambutan') && !isCoverView && (
-                <div className="px-6 py-5 border-b-2 border-slate-100 shrink-0">
+                <div className="px-6 py-5 border-b-2 border-slate-100 dark:border-slate-700 shrink-0">
                   <div className="flex items-center gap-2 mb-1">
-                    {sidebarMode === 'classes' && <LayoutGrid className="w-4 h-4 text-indigo-500" />}
-                    {sidebarMode === 'sambutan' && <MessageSquare className="w-4 h-4 text-violet-500" />}
-                    <h2 className="text-xs font-black text-slate-900 uppercase tracking-[0.2em]">
+                    {sidebarMode === 'classes' && <LayoutGrid className="w-4 h-4 text-indigo-500 dark:text-indigo-400" />}
+                    {sidebarMode === 'sambutan' && <MessageSquare className="w-4 h-4 text-violet-500 dark:text-violet-400" />}
+                    <h2 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-[0.2em]">
                       {sidebarMode === 'classes' && 'Daftar Kelas'}
                       {sidebarMode === 'sambutan' && 'Daftar Sambutan'}
                     </h2>
                   </div>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">
+                  <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-tight">
                     {sidebarMode === 'classes' && `${classes.length} Kelas Terdaftar`}
                     {sidebarMode === 'sambutan' && `${teachers.length} Pemberi Sambutan`}
                   </p>
@@ -1187,38 +1188,59 @@ export default function YearbookClassesViewUI(props: any) {
 
                           if (isLoadingThisClass) {
                             return (
-                              <div className="flex items-center gap-2 p-2 bg-slate-50 border-2 border-slate-200 rounded-xl">
-                                <div className="animate-spin rounded-full h-3 w-3 border-2 border-indigo-500 border-t-transparent" />
-                                <span className="text-[9px] font-black text-slate-400">Loading...</span>
+                              <div className="flex items-center gap-2 p-2 bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-600 rounded-xl">
+                                <div className="animate-spin rounded-full h-3 w-3 border-2 border-indigo-500 dark:border-indigo-400 border-t-transparent" />
+                                <span className="text-[9px] font-black text-slate-400 dark:text-slate-500">Loading...</span>
                               </div>
                             )
                           }
 
                           if (access?.status === 'approved') {
                             return (
-                              <div className="flex items-center gap-2 p-2 bg-indigo-50 border-2 border-indigo-200 rounded-xl">
-                                <Check className="w-3.5 h-3.5 text-indigo-600" strokeWidth={3} />
-                                <span className="text-[10px] font-black text-indigo-700 uppercase truncate">{access.student_name}</span>
+                              <div className="flex items-center gap-2 p-2 bg-indigo-50 dark:bg-indigo-950/50 border-2 border-indigo-200 dark:border-indigo-800 rounded-xl">
+                                <Check className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" strokeWidth={3} />
+                                <span className="text-[10px] font-black text-indigo-700 dark:text-indigo-300 uppercase truncate">{access.student_name}</span>
                               </div>
                             )
                           }
 
                           if (isPendingRequest) {
                             return (
-                              <div className="p-2 bg-amber-50 border-2 border-amber-200 rounded-xl text-center">
-                                <p className="text-[9px] font-black text-amber-600 uppercase">Menunggu Persetujuan</p>
+                              <div className="p-2 bg-amber-50 dark:bg-amber-950/40 border-2 border-amber-200 dark:border-amber-700 rounded-xl text-center">
+                                <p className="text-[9px] font-black text-amber-600 dark:text-amber-400 uppercase">Menunggu Persetujuan</p>
                               </div>
                             )
                           }
 
                           if (isOwner && !access) {
+                            const hasAccessInOtherClass = Object.entries(myAccessByClass).some(
+                              ([classId, a]) => classId !== currentClass.id && a?.status === 'approved'
+                            )
+                            if (hasAccessInOtherClass) {
+                              const otherEntry = Object.entries(myAccessByClass).find(
+                                ([classId, a]) => classId !== currentClass.id && a?.status === 'approved'
+                              )
+                              const otherClassName = otherEntry ? classes.find((c) => c.id === otherEntry[0])?.name ?? '' : ''
+                              return (
+                                <div className="p-2 bg-amber-50 dark:bg-amber-950/40 border-2 border-amber-200 dark:border-amber-700 rounded-xl text-center">
+                                  <p className="text-[9px] font-black text-amber-700 dark:text-amber-400 uppercase tracking-tight">
+                                    Anda sudah terdaftar di kelas lain{otherClassName ? `: ${otherClassName}` : ''}. Hanya bisa daftar di 1 kelas.
+                                  </p>
+                                </div>
+                              )
+                            }
                             return (
-                              <button
-                                onClick={() => handleJoinAsOwner(currentClass.id)}
-                                className="w-full py-2 bg-indigo-500 text-white border-2 border-slate-900 rounded-xl text-[10px] font-black uppercase shadow-[2.5px_2.5px_0_0_#0f172a] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 active:shadow-none transition-all"
-                              >
-                                Daftar Sekarang
-                              </button>
+                              <div className="space-y-2">
+                                <p className="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-tight text-center">
+                                  Anda owner album. Daftar di kelas ini.
+                                </p>
+                                <button
+                                  onClick={() => setJoinConfirmClassId(currentClass.id)}
+                                  className="w-full py-1.5 sm:py-2 bg-indigo-500 text-white border-2 border-slate-900 dark:border-slate-600 rounded-lg sm:rounded-xl text-[9px] sm:text-[10px] font-black uppercase shadow-[2.5px_2.5px_0_0_#0f172a] dark:shadow-[2.5px_2.5px_0_0_#334155] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 active:shadow-none transition-all"
+                                >
+                                  Daftar di Kelas
+                                </button>
+                              </div>
                             )
                           }
                           return null
@@ -1230,25 +1252,33 @@ export default function YearbookClassesViewUI(props: any) {
                     <div className="flex flex-col gap-2">
                       {classes.map((c, idx) => {
                         const isActive = idx === classIndex && !isCoverView
+                        const ownerRegisteredIn = isOwner
+                          ? Object.entries(myAccessByClass).find(([, a]) => a?.status === 'approved')?.[0]
+                          : null
+                        const ownerRegisteredClassName =
+                          ownerRegisteredIn != null ? classes.find((x) => x.id === ownerRegisteredIn)?.name ?? '' : ''
                         return (
                           <button
                             key={c.id}
                             onClick={() => {
+                              if (isOwner && ownerRegisteredIn && ownerRegisteredIn !== c.id) {
+                                toast.info(`Anda sudah terdaftar di kelas lain: ${ownerRegisteredClassName}`)
+                              }
                               setClassIndex(idx)
                               const url = getYearbookSectionQueryUrl(effectiveAlbumId!, 'classes', pathname)
                               router.push(url, { scroll: false })
                             }}
                             className={`flex items-center justify-between w-full px-4 py-3.5 rounded-2xl border-2 transition-all duration-300 font-black uppercase text-[10px] tracking-widest ${isActive
-                              ? 'bg-amber-400 border-slate-900 text-slate-900 shadow-[3px_3px_0_0_#0f172a] -translate-x-1 -translate-y-1'
-                              : 'bg-white border-slate-100 text-slate-400 opacity-60 hover:opacity-100 hover:border-slate-300'
+                              ? 'bg-amber-400 dark:bg-amber-600 border-slate-900 dark:border-slate-600 text-slate-900 dark:text-white shadow-[3px_3px_0_0_#0f172a] dark:shadow-[3px_3px_0_0_#334155] -translate-x-1 -translate-y-1'
+                              : 'bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700 text-slate-400 dark:text-slate-500 opacity-60 hover:opacity-100 hover:border-slate-300 dark:hover:border-slate-600'
                               }`}
                           >
                             <span className="truncate">{c.name}</span>
                             <div className="flex items-center gap-1.5 shrink-0">
                               {c.batch_photo_url && (
-                                <div className="w-2 h-2 bg-emerald-400 rounded-full border border-slate-900" />
+                                <div className="w-2 h-2 bg-emerald-400 dark:bg-emerald-500 rounded-full border border-slate-900 dark:border-slate-600" />
                               )}
-                              {isActive && <Check className="w-3.5 h-3.5 text-slate-900" strokeWidth={3} />}
+                              {isActive && <Check className="w-3.5 h-3.5 text-slate-900 dark:text-white" strokeWidth={3} />}
                             </div>
                           </button>
                         )
@@ -1260,19 +1290,19 @@ export default function YearbookClassesViewUI(props: any) {
                           <button
                             type="button"
                             onClick={() => setAddingClass(true)}
-                            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-slate-50 border-2 border-dashed border-slate-300 text-slate-500 hover:border-indigo-500 hover:text-indigo-600 hover:bg-indigo-50 transition-all font-black text-[10px] uppercase tracking-widest"
+                            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border-2 border-dashed border-slate-300 dark:border-slate-600 text-slate-500 dark:text-slate-400 hover:border-indigo-500 dark:hover:border-indigo-500 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 transition-all font-black text-[10px] uppercase tracking-widest"
                           >
                             <Plus className="w-4 h-4" /> Tambah Kelas
                           </button>
                         ) : (
-                          <div className="p-3 bg-white border-2 border-slate-900 rounded-xl shadow-[4px_4px_0_0_#0f172a]">
+                          <div className="p-3 bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 rounded-xl shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155]">
                             <input
                               type="text"
                               autoFocus
                               value={newClassName}
                               onChange={(e) => setNewClassName(e.target.value)}
                               placeholder="Nama Kelas..."
-                              className="w-full px-3 py-2 text-xs font-bold rounded-lg border-2 border-slate-900 bg-slate-50 mb-2 focus:outline-none"
+                              className="w-full px-3 py-2 text-xs font-bold rounded-lg border-2 border-slate-900 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white mb-2 focus:outline-none dark:placeholder:text-slate-500"
                               onKeyDown={(e) => {
                                 if (e.key === 'Enter') handleAddClass()
                                 if (e.key === 'Escape') setAddingClass(false)
@@ -1281,13 +1311,13 @@ export default function YearbookClassesViewUI(props: any) {
                             <div className="flex gap-2">
                               <button
                                 onClick={handleAddClass}
-                                className="flex-1 py-1.5 bg-indigo-500 text-white text-[9px] font-black uppercase rounded-lg border-2 border-slate-900 shadow-[2px_2px_0_0_#0f172a]"
+                                className="flex-1 py-1.5 bg-indigo-500 text-white text-[9px] font-black uppercase rounded-lg border-2 border-slate-900 dark:border-slate-600 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155]"
                               >
                                 Simpan
                               </button>
                               <button
                                 onClick={() => setAddingClass(false)}
-                                className="flex-1 py-1.5 bg-slate-100 text-slate-500 text-[9px] font-black uppercase rounded-lg border-2 border-slate-900"
+                                className="flex-1 py-1.5 bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 text-[9px] font-black uppercase rounded-lg border-2 border-slate-900 dark:border-slate-600"
                               >
                                 Batal
                               </button>
@@ -1301,9 +1331,9 @@ export default function YearbookClassesViewUI(props: any) {
 
                 {sidebarMode === 'sambutan' && !isCoverView && (
                   <div className="space-y-4">
-                    <div className="p-6 bg-indigo-50 border-4 border-slate-900 rounded-[32px] shadow-[8px_8px_0_0_#0f172a] text-center">
-                      <p className="text-3xl font-black text-slate-900 mb-1">{teachers.length}</p>
-                      <p className="text-[10px] font-black text-indigo-500 uppercase tracking-widest leading-none">Pemberi Sambutan</p>
+                    <div className="p-6 bg-indigo-50 dark:bg-indigo-950/40 border-4 border-slate-900 dark:border-slate-700 rounded-[32px] shadow-[8px_8px_0_0_#0f172a] dark:shadow-[8px_8px_0_0_#334155] text-center">
+                      <p className="text-3xl font-black text-slate-900 dark:text-white mb-1">{teachers.length}</p>
+                      <p className="text-[10px] font-black text-indigo-500 dark:text-indigo-400 uppercase tracking-widest leading-none">Pemberi Sambutan</p>
                     </div>
                   </div>
                 )}
@@ -1326,7 +1356,7 @@ export default function YearbookClassesViewUI(props: any) {
             {/* Main content - scrollable container */}
             <main className={`flex-1 ${sidebarMode === 'flipbook' ? 'overflow-hidden pb-0' : 'overflow-y-auto pb-40 lg:pb-0'} rounded-t-none transition-all duration-300 relative
               ${(['classes', 'sambutan'].includes(sidebarMode) || isCoverView) ? 'lg:ml-[20rem]' : sidebarMode === 'flipbook' ? (flipbookPreviewMode ? 'lg:ml-0' : 'lg:ml-16') : 'lg:ml-0'}
-              ${sidebarMode === 'preview' ? 'bg-slate-900' : 'bg-white'}
+              bg-white dark:bg-slate-950
             `}>
               {/* Show different content based on sidebarMode */}
               {isCoverView ? (
@@ -1338,7 +1368,7 @@ export default function YearbookClassesViewUI(props: any) {
                     <div className="flex flex-col lg:flex-row items-center lg:items-stretch gap-8 lg:gap-10 w-full relative">
                       {/* Left: Preview Container */}
                       <div className="w-full max-w-[240px] sm:max-w-xs shrink-0">
-                        <div className="relative aspect-[3/4] bg-white border-4 border-slate-900 rounded-[32px] overflow-hidden shadow-[8px_8px_0_0_#0f172a] lg:shadow-[12px_12px_0_0_#0f172a] group rotate-1">
+                        <div className="relative aspect-[3/4] bg-white dark:bg-slate-900 border-4 border-slate-900 dark:border-slate-700 rounded-[32px] overflow-hidden shadow-[8px_8px_0_0_#0f172a] dark:shadow-[8px_8px_0_0_#334155] lg:shadow-[12px_12px_0_0_#0f172a] lg:dark:shadow-[12px_12px_0_0_#334155] group rotate-1">
                           {album?.cover_image_url ? (
                             <img
                               src={album.cover_image_url}
@@ -1347,11 +1377,11 @@ export default function YearbookClassesViewUI(props: any) {
                               style={album.cover_image_position ? { objectPosition: `${album.cover_image_position}` } : undefined}
                             />
                           ) : (
-                            <div className="flex flex-col items-center justify-center w-full h-full bg-slate-50 gap-4">
-                              <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center border-2 border-dashed border-slate-300">
-                                <ImageIcon className="w-8 h-8 text-slate-300" />
+                            <div className="flex flex-col items-center justify-center w-full h-full bg-slate-50 dark:bg-slate-800 gap-4">
+                              <div className="w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center border-2 border-dashed border-slate-300 dark:border-slate-600">
+                                <ImageIcon className="w-8 h-8 text-slate-300 dark:text-slate-500" />
                               </div>
-                              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Belum ada cover</span>
+                              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Belum ada cover</span>
                             </div>
                           )}
 
@@ -1360,15 +1390,15 @@ export default function YearbookClassesViewUI(props: any) {
                             <button
                               type="button"
                               onClick={() => onPlayVideo && onPlayVideo(album.cover_video_url!)}
-                              className="absolute bottom-3 right-3 z-10 w-10 h-10 lg:w-12 lg:h-12 rounded-2xl bg-amber-400 border-4 border-slate-900 flex items-center justify-center shadow-[4px_4px_0_0_#0f172a] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all active:scale-95"
+                              className="absolute bottom-3 right-3 z-10 w-10 h-10 lg:w-12 lg:h-12 rounded-2xl bg-amber-400 dark:bg-amber-600 border-4 border-slate-900 dark:border-slate-600 flex items-center justify-center shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all active:scale-95"
                             >
-                              <Play className="w-5 h-5 lg:w-6 lg:h-6 text-slate-900 ml-0.5 lg:ml-1" fill="currentColor" />
+                              <Play className="w-5 h-5 lg:w-6 lg:h-6 text-slate-900 dark:text-white ml-0.5 lg:ml-1" fill="currentColor" />
                             </button>
                           )}
 
                           {/* Controls Overlay */}
                           {isOwner && (
-                            <div className="absolute inset-0 bg-slate-900/10 lg:opacity-0 group-hover:opacity-100 transition-all duration-300 flex flex-col justify-between p-3 lg:p-4">
+                            <div className="absolute inset-0 bg-slate-900/10 dark:bg-slate-950/30 lg:opacity-0 group-hover:opacity-100 transition-all duration-300 flex flex-col justify-between p-3 lg:p-4">
                               {/* Top controls: Image */}
                               <div className="flex justify-end items-start gap-2">
                                 {!album?.cover_image_url ? (
@@ -1376,7 +1406,7 @@ export default function YearbookClassesViewUI(props: any) {
                                     type="button"
                                     onClick={() => coverUploadInputRef.current?.click()}
                                     disabled={uploadingCover}
-                                    className="h-9 lg:h-10 px-3 lg:px-4 rounded-xl bg-white border-2 border-slate-900 shadow-[2px_2px_0_0_#0f172a] text-slate-900 font-black text-[9px] lg:text-[10px] uppercase tracking-widest flex items-center gap-2 active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all"
+                                    className="h-9 lg:h-10 px-3 lg:px-4 rounded-xl bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] text-slate-900 dark:text-white font-black text-[9px] lg:text-[10px] uppercase tracking-widest flex items-center gap-2 active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all"
                                   >
                                     <ImagePlus className="w-3.5 h-3.5 lg:w-4 h-4" />
                                     Upload Cover
@@ -1386,11 +1416,11 @@ export default function YearbookClassesViewUI(props: any) {
                                     <button
                                       type="button"
                                       onClick={handleDeleteCover}
-                                      className="w-9 h-9 lg:w-10 lg:h-10 rounded-xl bg-red-500 border-2 border-slate-900 shadow-[2px_2px_0_0_#0f172a] text-white flex items-center justify-center active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all"
+                                      className="w-9 h-9 lg:w-10 lg:h-10 rounded-xl bg-red-500 border-2 border-slate-900 dark:border-slate-600 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] text-white flex items-center justify-center active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all"
                                     >
                                       <Trash2 className="w-4 h-4" strokeWidth={3} />
                                     </button>
-                                    <div className="absolute -bottom-1 -right-1 w-4 h-4 lg:w-5 lg:h-5 bg-slate-900 flex items-center justify-center border border-white rounded lg:rounded-lg shadow-sm">
+                                    <div className="absolute -bottom-1 -right-1 w-4 h-4 lg:w-5 lg:h-5 bg-slate-900 dark:bg-slate-700 flex items-center justify-center border border-white rounded lg:rounded-lg shadow-sm">
                                       <ImageIcon className="w-2 h-2 lg:w-2.5 lg:h-2.5 text-white" />
                                     </div>
                                   </div>
@@ -1405,7 +1435,7 @@ export default function YearbookClassesViewUI(props: any) {
                                       type="button"
                                       onClick={() => coverVideoInputRef.current?.click()}
                                       disabled={uploadingCoverVideo}
-                                      className="h-9 lg:h-10 px-3 lg:px-4 rounded-xl bg-slate-900 border-2 border-slate-800 text-white font-black text-[9px] lg:text-[10px] uppercase tracking-widest flex items-center gap-2 active:translate-x-0.5 active:translate-y-0.5 transition-all"
+                                      className="h-9 lg:h-10 px-3 lg:px-4 rounded-xl bg-slate-900 dark:bg-slate-700 border-2 border-slate-800 dark:border-slate-600 text-white font-black text-[9px] lg:text-[10px] uppercase tracking-widest flex items-center gap-2 active:translate-x-0.5 active:translate-y-0.5 transition-all"
                                     >
                                       <Video className="w-3.5 h-3.5 lg:w-4 h-4" />
                                       Video
@@ -1415,11 +1445,11 @@ export default function YearbookClassesViewUI(props: any) {
                                       <button
                                         type="button"
                                         onClick={handleDeleteCoverVideo}
-                                        className="w-9 h-9 lg:w-10 lg:h-10 rounded-xl bg-red-500 border-2 border-slate-900 shadow-[2px_2px_0_0_#0f172a] text-white flex items-center justify-center active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all"
+                                        className="w-9 h-9 lg:w-10 lg:h-10 rounded-xl bg-red-500 border-2 border-slate-900 dark:border-slate-600 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] text-white flex items-center justify-center active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all"
                                       >
                                         <Trash2 className="w-4 h-4" strokeWidth={3} />
                                       </button>
-                                      <div className="absolute -bottom-1 -right-1 w-4 h-4 lg:w-5 lg:h-5 bg-slate-900 flex items-center justify-center border border-white rounded lg:rounded-lg shadow-sm">
+                                      <div className="absolute -bottom-1 -right-1 w-4 h-4 lg:w-5 lg:h-5 bg-slate-900 dark:bg-slate-700 flex items-center justify-center border border-white rounded lg:rounded-lg shadow-sm">
                                         <Video className="w-2 h-2 lg:w-2.5 lg:h-2.5 text-white" />
                                       </div>
                                     </div>
@@ -1434,8 +1464,8 @@ export default function YearbookClassesViewUI(props: any) {
                       {/* Right: Info Container */}
                       <div className="flex-1 flex flex-col justify-between self-stretch text-center lg:text-left pt-0 lg:pt-2">
                         <div className="mb-6 lg:mb-0">
-                          <h1 className="text-2xl lg:text-5xl font-black text-slate-900 mb-2 lg:mb-6 tracking-tight leading-none uppercase">{album?.name}</h1>
-                          <p className="text-slate-500 text-[10px] lg:text-lg font-bold leading-relaxed max-w-xl">
+                          <h1 className="text-2xl lg:text-5xl font-black text-slate-900 dark:text-white mb-2 lg:mb-6 tracking-tight leading-none uppercase">{album?.name}</h1>
+                          <p className="text-slate-500 dark:text-slate-400 text-[10px] lg:text-lg font-bold leading-relaxed max-w-xl">
                             {album?.description || "Selamat datang di yearbook digital Anda. Kelola sampul dan media utama album di sini."}
                           </p>
                         </div>
@@ -1451,7 +1481,7 @@ export default function YearbookClassesViewUI(props: any) {
                                 navigator.clipboard.writeText(url);
                                 toast.success('Link berhasil disalin');
                               }}
-                              className="px-8 py-4 rounded-2xl bg-white border-4 border-slate-900 text-slate-900 font-black text-sm uppercase tracking-widest shadow-[8px_8px_0_0_#0f172a] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all active:scale-95 flex items-center justify-center gap-3"
+                              className="px-8 py-4 rounded-2xl bg-white dark:bg-slate-800 border-4 border-slate-900 dark:border-slate-600 text-slate-900 dark:text-white font-black text-sm uppercase tracking-widest shadow-[8px_8px_0_0_#0f172a] dark:shadow-[8px_8px_0_0_#334155] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all active:scale-95 flex items-center justify-center gap-3"
                             >
                               <LinkIcon className="w-5 h-5" strokeWidth={3} />
                               Salin Link
@@ -1459,7 +1489,7 @@ export default function YearbookClassesViewUI(props: any) {
                             <NextLink
                               href={`/album/${album?.id}/preview`}
                               target="_blank"
-                              className="px-8 py-4 rounded-2xl bg-emerald-400 border-4 border-slate-900 text-slate-900 font-black text-sm uppercase tracking-widest shadow-[8px_8px_0_0_#0f172a] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all active:scale-95 flex items-center justify-center gap-3"
+                              className="px-8 py-4 rounded-2xl bg-emerald-400 dark:bg-emerald-600 border-4 border-slate-900 dark:border-slate-600 text-slate-900 dark:text-white font-black text-sm uppercase tracking-widest shadow-[8px_8px_0_0_#0f172a] dark:shadow-[8px_8px_0_0_#334155] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all active:scale-95 flex items-center justify-center gap-3"
                             >
                               <Eye className="w-5 h-5" strokeWidth={3} />
                               Preview Album
@@ -1511,7 +1541,7 @@ export default function YearbookClassesViewUI(props: any) {
 
                     {/* Cover Preview Modal */}
                     {coverPreview && (
-                      <div className="fixed inset-0 z-[100] bg-slate-900/90 backdrop-blur-md flex flex-col items-center justify-center p-4">
+                      <div className="fixed inset-0 z-[100] bg-slate-900/90 dark:bg-black/90 backdrop-blur-md flex flex-col items-center justify-center p-4">
                         <div className="flex flex-col items-center gap-6 w-full max-w-lg">
                           <div className="text-center space-y-2">
                             <h3 className="text-xl font-black text-white uppercase tracking-tight">Atur Posisi Cover</h3>
@@ -1520,7 +1550,7 @@ export default function YearbookClassesViewUI(props: any) {
 
                           <div
                             ref={coverPreviewContainerRef}
-                            className="w-full aspect-[3/4] bg-white border-8 border-slate-900 rounded-[40px] overflow-hidden shadow-[20px_20px_0_0_#0f172a] relative touch-none select-none cursor-move group"
+                            className="w-full aspect-[3/4] bg-white dark:bg-slate-900 border-8 border-slate-900 dark:border-slate-700 rounded-[40px] overflow-hidden shadow-[20px_20px_0_0_#0f172a] dark:shadow-[20px_20px_0_0_#334155] relative touch-none select-none cursor-move group"
                             onPointerDown={(e) => {
                               if (e.button !== 0) return
                               coverDragRef.current = {
@@ -1566,7 +1596,7 @@ export default function YearbookClassesViewUI(props: any) {
                                 if (coverPreview?.dataUrl) URL.revokeObjectURL(coverPreview.dataUrl)
                                 setCoverPreview && setCoverPreview(null)
                               }}
-                              className="flex-1 py-4 rounded-2xl bg-slate-800 text-slate-400 font-black text-xs uppercase tracking-widest border-2 border-slate-700 hover:bg-slate-700 transition-all"
+                              className="flex-1 py-4 rounded-2xl bg-slate-800 dark:bg-slate-700 text-slate-400 dark:text-slate-300 font-black text-xs uppercase tracking-widest border-2 border-slate-700 dark:border-slate-600 hover:bg-slate-700 dark:hover:bg-slate-600 transition-all"
                             >
                               Batal
                             </button>
@@ -1574,7 +1604,7 @@ export default function YearbookClassesViewUI(props: any) {
                               type="button"
                               disabled={uploadingCover}
                               onClick={() => handleUploadCover && handleUploadCover(coverPreview.file, coverPosition, coverPreview.dataUrl)}
-                              className="flex-[2] py-4 rounded-2xl bg-emerald-400 border-4 border-slate-900 text-slate-900 font-black text-xs uppercase tracking-widest shadow-[6px_6px_0_0_#0f172a] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all disabled:opacity-50"
+                              className="flex-[2] py-4 rounded-2xl bg-emerald-400 dark:bg-emerald-600 border-4 border-slate-900 dark:border-slate-600 text-slate-900 dark:text-white font-black text-xs uppercase tracking-widest shadow-[6px_6px_0_0_#0f172a] dark:shadow-[6px_6px_0_0_#334155] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all disabled:opacity-50"
                             >
                               {uploadingCover ? 'Mengunggah...' : 'Simpan & Terapkan'}
                             </button>
@@ -1690,10 +1720,10 @@ export default function YearbookClassesViewUI(props: any) {
                         <button
                           type="button"
                           onClick={() => setAddingClass(true)}
-                          className="fixed bottom-24 right-6 lg:bottom-10 lg:right-10 z-[60] flex items-center justify-center w-14 h-14 lg:w-16 lg:h-16 rounded-full bg-amber-400 border-2 border-slate-900 shadow-[3px_3px_0_0_#0f172a] active:scale-90 transition-all group"
+                          className="fixed bottom-24 right-6 lg:bottom-10 lg:right-10 z-[60] flex items-center justify-center w-14 h-14 lg:w-16 lg:h-16 rounded-full bg-amber-400 dark:bg-amber-600 border-2 border-slate-900 dark:border-slate-600 shadow-[3px_3px_0_0_#0f172a] dark:shadow-[3px_3px_0_0_#334155] active:scale-90 transition-all group"
                           title="Tambah Kelas"
                         >
-                          <Plus className="w-8 h-8 text-slate-900 transition-transform group-hover:rotate-90" strokeWidth={2.5} />
+                          <Plus className="w-8 h-8 text-slate-900 dark:text-white transition-transform group-hover:rotate-90" strokeWidth={2.5} />
                         </button>
                       )}
 
@@ -1704,27 +1734,27 @@ export default function YearbookClassesViewUI(props: any) {
                             className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
                             onClick={() => { setAddingClass(false); setNewClassName('') }}
                           />
-                          <div className="relative w-full max-w-md bg-white border-4 border-slate-900 rounded-[32px] shadow-[12px_12px_0_0_#0f172a] overflow-hidden animate-in zoom-in-95 duration-200">
+                          <div className="relative w-full max-w-md bg-white dark:bg-slate-900 border-4 border-slate-900 dark:border-slate-700 rounded-[32px] shadow-[12px_12px_0_0_#0f172a] dark:shadow-[12px_12px_0_0_#334155] overflow-hidden animate-in zoom-in-95 duration-200">
                             <div className="p-6">
                               <div className="flex items-center justify-between mb-6">
-                                <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Tambah Kelas Baru</h3>
+                                <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Tambah Kelas Baru</h3>
                                 <button
                                   onClick={() => { setAddingClass(false); setNewClassName('') }}
-                                  className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center hover:bg-slate-200 transition-all"
+                                  className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
                                 >
-                                  <X className="w-5 h-5 text-slate-500" />
+                                  <X className="w-5 h-5 text-slate-500 dark:text-slate-400" />
                                 </button>
                               </div>
 
                               <div className="flex flex-col gap-6">
                                 <div>
-                                  <label className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2 block">Nama Kelas</label>
+                                  <label className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2 block">Nama Kelas</label>
                                   <input
                                     type="text"
                                     value={newClassName}
                                     onChange={(e) => setNewClassName(e.target.value)}
                                     placeholder="Contoh: XII IPA 1"
-                                    className="w-full px-5 py-4 rounded-xl bg-slate-50 border-4 border-slate-900 text-base font-black text-slate-900 placeholder:text-slate-300 focus:outline-none focus:bg-white transition-all shadow-[4px_4px_0_0_#f1f5f9]"
+                                    className="w-full px-5 py-4 rounded-xl bg-slate-50 dark:bg-slate-800 border-4 border-slate-900 dark:border-slate-600 text-base font-black text-slate-900 dark:text-white placeholder:text-slate-300 dark:placeholder:text-slate-500 focus:outline-none focus:bg-white dark:focus:bg-slate-800 transition-all shadow-[4px_4px_0_0_#f1f5f9] dark:shadow-[4px_4px_0_0_#334155]"
                                     autoFocus
                                     onKeyDown={(e) => {
                                       if (e.key === 'Enter') handleAddClass()
@@ -1737,7 +1767,7 @@ export default function YearbookClassesViewUI(props: any) {
                                   <button
                                     type="button"
                                     onClick={() => { setAddingClass(false); setNewClassName('') }}
-                                    className="flex-1 py-4 rounded-2xl bg-slate-100 text-slate-500 text-xs font-black uppercase tracking-widest border-2 border-slate-200 hover:bg-slate-200 transition-all shadow-[2px_2px_0_0_#e2e8f0]"
+                                    className="flex-1 py-4 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-xs font-black uppercase tracking-widest border-2 border-slate-200 dark:border-slate-600 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all shadow-[2px_2px_0_0_#e2e8f0] dark:shadow-[2px_2px_0_0_#334155]"
                                   >
                                     Batal
                                   </button>
@@ -1745,7 +1775,7 @@ export default function YearbookClassesViewUI(props: any) {
                                     type="button"
                                     onClick={handleAddClass}
                                     disabled={!newClassName.trim()}
-                                    className="flex-[2] py-4 rounded-2xl bg-emerald-400 text-slate-900 text-xs font-black uppercase tracking-widest border-2 border-slate-900 shadow-[4px_4px_0_0_#0f172a] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all disabled:opacity-50"
+                                    className="flex-[2] py-4 rounded-2xl bg-emerald-400 dark:bg-emerald-600 text-slate-900 dark:text-white text-xs font-black uppercase tracking-widest border-2 border-slate-900 dark:border-slate-600 shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all disabled:opacity-50"
                                   >
                                     Simpan Kelas
                                   </button>
@@ -1761,13 +1791,13 @@ export default function YearbookClassesViewUI(props: any) {
                         {/* Group Photo Section */}
                         <div className="mb-14">
                           <div className="flex items-center gap-3 mb-6">
-                            <div className="w-2 h-8 bg-indigo-500 rounded-full border-2 border-slate-900 shadow-[2px_2px_0_0_#0f172a]"></div>
-                            <h3 className="text-xs font-black text-slate-900 uppercase tracking-[0.2em]">Foto Angkatan</h3>
+                            <div className="w-2 h-8 bg-indigo-500 dark:bg-indigo-600 rounded-full border-2 border-slate-900 dark:border-slate-600 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155]"></div>
+                            <h3 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-[0.2em]">Foto Angkatan</h3>
                           </div>
                           <div className="relative">
                             {currentClass.batch_photo_url ? (
                               <div
-                                className="relative group aspect-[3/4] lg:max-w-md lg:mx-auto rounded-[40px] border-4 border-slate-900 overflow-hidden bg-slate-100 shadow-[12px_12px_0_0_#0f172a] hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all duration-500"
+                                className="relative group aspect-[3/4] lg:max-w-md lg:mx-auto rounded-[40px] border-4 border-slate-900 dark:border-slate-700 overflow-hidden bg-slate-100 dark:bg-slate-800 shadow-[12px_12px_0_0_#0f172a] dark:shadow-[12px_12px_0_0_#334155] hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all duration-500"
                                 onClick={() => setViewingBatchPhotoClass(currentClass)}
                               >
                                 <img
@@ -1775,10 +1805,10 @@ export default function YearbookClassesViewUI(props: any) {
                                   alt={`Foto Angkatan ${currentClass.name}`}
                                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                                 />
-                                <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                  <div className="px-8 py-4 bg-white border-4 border-slate-900 rounded-2xl shadow-[8px_8px_0_0_#0f172a] flex items-center gap-3 active:scale-95 transition-all">
-                                    <Eye className="w-6 h-6 text-slate-900" strokeWidth={3} />
-                                    <span className="text-sm font-black text-slate-900 uppercase tracking-widest">Lihat Layar Penuh</span>
+                                <div className="absolute inset-0 bg-slate-900/40 dark:bg-slate-950/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                  <div className="px-8 py-4 bg-white dark:bg-slate-800 border-4 border-slate-900 dark:border-slate-600 rounded-2xl shadow-[8px_8px_0_0_#0f172a] dark:shadow-[8px_8px_0_0_#334155] flex items-center gap-3 active:scale-95 transition-all">
+                                    <Eye className="w-6 h-6 text-slate-900 dark:text-white" strokeWidth={3} />
+                                    <span className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-widest">Lihat Layar Penuh</span>
                                   </div>
                                 </div>
                                 {canManage && (
@@ -1788,7 +1818,7 @@ export default function YearbookClassesViewUI(props: any) {
                                         e.stopPropagation()
                                         handleDeleteBatchPhoto(currentClass.id)
                                       }}
-                                      className="w-14 h-14 flex items-center justify-center bg-red-500 rounded-2xl text-white hover:bg-red-600 transition-all border-2 border-slate-900 shadow-[4px_4px_0_0_#0f172a] active:shadow-none active:translate-x-0.5 active:translate-y-0.5"
+                                      className="w-14 h-14 flex items-center justify-center bg-red-500 rounded-2xl text-white hover:bg-red-600 transition-all border-2 border-slate-900 dark:border-slate-600 shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155] active:shadow-none active:translate-x-0.5 active:translate-y-0.5"
                                       title="Hapus Foto"
                                     >
                                       <Trash2 className="w-7 h-7" strokeWidth={2.5} />
@@ -1803,18 +1833,18 @@ export default function YearbookClassesViewUI(props: any) {
                                     setUploadingBatchPhotoClassId(currentClass.id)
                                     batchPhotoInputRef.current?.click()
                                   }}
-                                  className="w-full flex flex-col items-center justify-center aspect-[3/4] lg:max-w-md lg:mx-auto p-12 rounded-[40px] border-4 border-dashed border-slate-300 bg-slate-50 hover:border-indigo-400 hover:bg-slate-100 transition-all group"
+                                  className="w-full flex flex-col items-center justify-center aspect-[3/4] lg:max-w-md lg:mx-auto p-12 rounded-[40px] border-4 border-dashed border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 hover:border-indigo-400 dark:hover:border-indigo-500 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all group"
                                 >
-                                  <div className="w-24 h-24 rounded-3xl bg-white border-2 border-slate-900 flex items-center justify-center mb-8 shadow-[8px_8px_0_0_#0f172a] group-hover:shadow-none group-hover:translate-x-1 group-hover:translate-y-1 transition-all">
-                                    <ImageIcon className="w-12 h-12 text-indigo-500" strokeWidth={2.5} />
+                                  <div className="w-24 h-24 rounded-3xl bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 flex items-center justify-center mb-8 shadow-[8px_8px_0_0_#0f172a] dark:shadow-[8px_8px_0_0_#334155] group-hover:shadow-none group-hover:translate-x-1 group-hover:translate-y-1 transition-all">
+                                    <ImageIcon className="w-12 h-12 text-indigo-500 dark:text-indigo-400" strokeWidth={2.5} />
                                   </div>
-                                  <span className="text-xl font-black text-slate-900 uppercase tracking-tight">Upload Foto Angkatan</span>
-                                  <span className="text-xs text-slate-400 font-bold mt-3 uppercase tracking-widest">Pilih file gambar (Maks. 10MB)</span>
+                                  <span className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Upload Foto Angkatan</span>
+                                  <span className="text-xs text-slate-400 dark:text-slate-500 font-bold mt-3 uppercase tracking-widest">Pilih file gambar (Maks. 10MB)</span>
                                 </button>
                               ) : (
-                                <div className="w-full aspect-[3/4] lg:max-w-md lg:mx-auto flex flex-col items-center justify-center rounded-[40px] border-4 border-dashed border-slate-200 bg-slate-50">
-                                  <ImageIcon className="w-16 h-16 text-slate-300 mb-6 opacity-20" strokeWidth={1} />
-                                  <span className="text-sm font-black text-slate-400 uppercase tracking-widest">Foto Angkatan Belum Tersedia</span>
+                                <div className="w-full aspect-[3/4] lg:max-w-md lg:mx-auto flex flex-col items-center justify-center rounded-[40px] border-4 border-dashed border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
+                                  <ImageIcon className="w-16 h-16 text-slate-300 dark:text-slate-500 mb-6 opacity-20" strokeWidth={1} />
+                                  <span className="text-sm font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Foto Angkatan Belum Tersedia</span>
                                 </div>
                               )
                             )}
@@ -1823,28 +1853,28 @@ export default function YearbookClassesViewUI(props: any) {
 
                         {/* Members Grid/List */}
                         <div className="flex items-center gap-3 mb-8">
-                          <div className="w-2 h-8 bg-amber-400 rounded-full border-2 border-slate-900 shadow-[2px_2px_0_0_#0f172a]"></div>
-                          <h3 className="text-xs font-black text-slate-900 uppercase tracking-[0.2em]">Daftar Anggota</h3>
+                          <div className="w-2 h-8 bg-amber-400 dark:bg-amber-600 rounded-full border-2 border-slate-900 dark:border-slate-600 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155]"></div>
+                          <h3 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-[0.2em]">Daftar Anggota</h3>
                         </div>
 
                         {classMembers.length === 0 ? (
-                          <div className="flex flex-col items-center justify-center py-20 opacity-60 min-h-[40vh] bg-slate-50 rounded-[32px] border-4 border-dashed border-slate-200">
-                            <Users className="w-16 h-16 mb-4 opacity-20 text-slate-400" strokeWidth={1} />
-                            <p className="text-center text-sm font-black text-slate-400 uppercase tracking-widest">Belum ada anggota terdaftar</p>
+                          <div className="flex flex-col items-center justify-center py-20 opacity-60 min-h-[40vh] bg-slate-50 dark:bg-slate-800/50 rounded-[32px] border-4 border-dashed border-slate-200 dark:border-slate-700">
+                            <Users className="w-16 h-16 mb-4 opacity-20 text-slate-400 dark:text-slate-500" strokeWidth={1} />
+                            <p className="text-center text-sm font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Belum ada anggota terdaftar</p>
                           </div>
                         ) : classViewMode === 'list' ? (
                           <div className="space-y-4">
                             {classMembers.map((m, idx) => (
-                              <div key={idx} className="flex items-center justify-between p-5 rounded-[24px] border-4 border-slate-900 bg-white shadow-[6px_6px_0_0_#0f172a] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all">
+                              <div key={idx} className="flex items-center justify-between p-5 rounded-[24px] border-4 border-slate-900 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-[6px_6px_0_0_#0f172a] dark:shadow-[6px_6px_0_0_#334155] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all">
                                 <div className="flex-1 min-w-0">
-                                  <p className="text-base font-black text-slate-900 uppercase tracking-tight truncate">{m.student_name}{m.is_me ? ' (Anda)' : ''}</p>
-                                  {m.email && <p className="text-[11px] font-bold text-slate-400 truncate lowercase">{m.email}</p>}
+                                  <p className="text-base font-black text-slate-900 dark:text-white uppercase tracking-tight truncate">{m.student_name}{m.is_me ? ' (Anda)' : ''}</p>
+                                  {m.email && <p className="text-[11px] font-bold text-slate-400 dark:text-slate-500 truncate lowercase">{m.email}</p>}
                                 </div>
                                 <div className="flex gap-3 flex-shrink-0 ml-6">
                                   <button
                                     type="button"
                                     onClick={() => openGallery(currentClass.id, m.student_name, currentClass.name)}
-                                    className="px-5 py-2.5 text-[11px] font-black uppercase tracking-widest rounded-xl border-2 border-slate-900 bg-slate-50 text-slate-900 hover:bg-slate-100 shadow-[3px_3px_0_0_#0f172a] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all"
+                                    className="px-5 py-2.5 text-[11px] font-black uppercase tracking-widest rounded-xl border-2 border-slate-900 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-700 shadow-[3px_3px_0_0_#0f172a] dark:shadow-[3px_3px_0_0_#334155] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all"
                                   >
                                     Lihat
                                   </button>
@@ -1866,7 +1896,7 @@ export default function YearbookClassesViewUI(props: any) {
                                           }
                                         }
                                       }}
-                                      className="px-5 py-2.5 text-[11px] font-black uppercase tracking-widest rounded-xl border-2 border-slate-900 bg-indigo-100 text-indigo-700 hover:bg-indigo-700 hover:text-white shadow-[3px_3px_0_0_#4338ca] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all flex items-center gap-2"
+                                      className="px-5 py-2.5 text-[11px] font-black uppercase tracking-widest rounded-xl border-2 border-slate-900 dark:border-slate-600 bg-indigo-100 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-700 hover:text-white shadow-[3px_3px_0_0_#4338ca] dark:shadow-[3px_3px_0_0_#334155] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all flex items-center gap-2"
                                     >
                                       <Edit3 className="w-4 h-4" strokeWidth={3} />
                                       <span>Edit</span>
@@ -1876,7 +1906,7 @@ export default function YearbookClassesViewUI(props: any) {
                                     <button
                                       type="button"
                                       onClick={() => setDeleteMemberConfirm({ classId: currentClass.id, userId: m.is_me ? undefined : m.user_id, memberName: m.student_name })}
-                                      className="w-12 h-12 flex items-center justify-center rounded-xl bg-red-100 text-red-600 border-2 border-red-600 hover:bg-red-600 hover:text-white transition-all shadow-[3px_3px_0_0_#dc2626] active:shadow-none active:translate-x-0.5 active:translate-y-0.5"
+                                      className="w-12 h-12 flex items-center justify-center rounded-xl bg-red-100 dark:bg-red-950/50 text-red-600 dark:text-red-400 border-2 border-red-600 dark:border-red-700 hover:bg-red-600 hover:text-white transition-all shadow-[3px_3px_0_0_#dc2626] dark:shadow-[3px_3px_0_0_#334155] active:shadow-none active:translate-x-0.5 active:translate-y-0.5"
                                     >
                                       <Trash2 className="w-5 h-5" strokeWidth={2.5} />
                                     </button>
@@ -1886,10 +1916,10 @@ export default function YearbookClassesViewUI(props: any) {
                             ))}
                           </div>
                         ) : (
-                          <div className="grid gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+                          <div className="grid gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 items-start">
                             {classMembers.map((m) => (
-                              <MemberCard
-                                key={m.user_id || m.student_name}
+                              <div key={m.user_id || m.student_name} className="min-h-0 w-full [contain:layout]">
+                                <MemberCard
                                 member={m as any}
                                 firstPhoto={m.photos?.[0] || firstPhotoByStudent?.[m.student_name]}
                                 classId={currentClass.id}
@@ -1898,18 +1928,20 @@ export default function YearbookClassesViewUI(props: any) {
                                 isFlipped={editingMemberUserId === m.user_id}
                                 editPhotos={editingMemberUserId === m.user_id ? studentPhotosInCard : undefined}
                                 onStartEdit={(member) => {
+                                  // Flip saja dulu; isi form & fetch foto nanti agar flip langsung terlihat
                                   setEditingProfileClassId(currentClass.id)
                                   setEditingMemberUserId?.(member.user_id)
-                                  setEditProfileName(member.student_name || '')
-                                  setEditProfileEmail(member.email || '')
-                                  setEditProfileTtl(member.date_of_birth || '')
-                                  setEditProfileInstagram(member.instagram || '')
-                                  setEditProfilePesan(member.message || '')
-                                  setEditProfileVideoUrl(member.video_url || '')
-
-                                  if (fetchStudentPhotosForCard) {
-                                    fetchStudentPhotosForCard(currentClass.id, member.student_name)
-                                  }
+                                  requestAnimationFrame(() => {
+                                    setEditProfileName(member.student_name || '')
+                                    setEditProfileEmail(member.email || '')
+                                    setEditProfileTtl(member.date_of_birth || '')
+                                    setEditProfileInstagram(member.instagram || '')
+                                    setEditProfilePesan(member.message || '')
+                                    setEditProfileVideoUrl(member.video_url || '')
+                                    if (fetchStudentPhotosForCard) {
+                                      fetchStudentPhotosForCard(currentClass.id, member.student_name)
+                                    }
+                                  })
                                 }}
                                 onCancelEdit={() => {
                                   setEditingProfileClassId(null)
@@ -1961,6 +1993,7 @@ export default function YearbookClassesViewUI(props: any) {
                                 onOpenGallery={(cid, sname) => openGallery(cid || currentClass.id, sname || m.student_name, currentClass.name)}
                                 saving={savingProfile}
                               />
+                              </div>
                             ))}
                           </div>
                         )}
@@ -1971,16 +2004,16 @@ export default function YearbookClassesViewUI(props: any) {
               ) : null}
               {
                 deleteClassConfirm && (
-                  <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-md flex items-center justify-center z-[200] p-4">
-                    <div className="bg-white border-4 border-slate-900 rounded-[32px] p-6 lg:p-8 max-w-sm w-full shadow-[12px_12px_0_0_#0f172a] text-center">
-                      <h3 className="text-xl lg:text-2xl font-black text-slate-900 mb-2 uppercase tracking-tight">Hapus Kelas</h3>
-                      <p className="text-sm font-bold text-slate-500 mb-8 lowercase first-letter:uppercase">
+                  <div className="fixed inset-0 bg-slate-900/40 dark:bg-black/50 backdrop-blur-md flex items-center justify-center z-[200] p-4">
+                    <div className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-[32px] p-6 lg:p-8 max-w-sm w-full shadow-[6px_6px_0_0_#0f172a] dark:shadow-[6px_6px_0_0_#334155] text-center">
+                      <h3 className="text-xl lg:text-2xl font-black text-slate-900 dark:text-white mb-2 uppercase tracking-tight">Hapus Kelas</h3>
+                      <p className="text-sm font-bold text-slate-500 dark:text-slate-400 mb-8 lowercase first-letter:uppercase">
                         Yakin ingin menghapus kelas "{deleteClassConfirm.className}"? Semua data member di dalamnya akan hilang selamanya.
                       </p>
                       <div className="flex gap-3">
                         <button
                           onClick={() => setDeleteClassConfirm(null)}
-                          className="flex-1 py-3.5 rounded-xl bg-slate-50 border-2 border-slate-900 text-slate-900 text-xs font-black uppercase tracking-widest hover:bg-slate-100 transition-all"
+                          className="flex-1 py-3.5 rounded-xl bg-slate-100 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 text-slate-900 dark:text-white text-xs font-black uppercase tracking-widest shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
                         >
                           Batal
                         </button>
@@ -1989,7 +2022,7 @@ export default function YearbookClassesViewUI(props: any) {
                             handleDeleteClass(deleteClassConfirm.classId)
                             setDeleteClassConfirm(null)
                           }}
-                          className="flex-1 py-3.5 rounded-xl bg-red-500 border-2 border-slate-900 text-white text-xs font-black uppercase tracking-widest shadow-[4px_4px_0_0_#0f172a] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
+                          className="flex-1 py-3.5 rounded-xl bg-red-500 border-2 border-slate-900 dark:border-slate-700 text-white text-xs font-black uppercase tracking-widest shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
                         >
                           Ya, Hapus
                         </button>
@@ -2000,17 +2033,47 @@ export default function YearbookClassesViewUI(props: any) {
               }
 
               {
+                joinConfirmClassId && (
+                  <div className="fixed inset-0 bg-slate-900/40 dark:bg-black/50 backdrop-blur-md flex items-center justify-center z-[200] p-4">
+                    <div className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-[32px] p-6 lg:p-8 max-w-sm w-full shadow-[6px_6px_0_0_#0f172a] dark:shadow-[6px_6px_0_0_#334155] text-center">
+                      <h3 className="text-xl lg:text-2xl font-black text-slate-900 dark:text-white mb-2 uppercase tracking-tight">Daftar di Kelas</h3>
+                      <p className="text-sm font-bold text-slate-500 dark:text-slate-400 mb-8">
+                        Yakin daftar di kelas ini? Anda hanya bisa terdaftar di 1 kelas.
+                      </p>
+                      <div className="flex gap-3">
+                        <button
+                          onClick={() => setJoinConfirmClassId(null)}
+                          className="flex-1 py-3.5 rounded-xl bg-slate-100 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 text-slate-900 dark:text-white text-xs font-black uppercase tracking-widest shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
+                        >
+                          Batal
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (handleJoinAsOwner) handleJoinAsOwner(joinConfirmClassId)
+                            setJoinConfirmClassId(null)
+                          }}
+                          className="flex-1 py-3.5 rounded-xl bg-indigo-500 border-2 border-slate-900 dark:border-slate-600 text-white text-xs font-black uppercase tracking-widest shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
+                        >
+                          Ya, Daftar
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )
+              }
+
+              {
                 deleteMemberConfirm && (
-                  <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-md flex items-center justify-center z-[200] p-4">
-                    <div className="bg-white border-4 border-slate-900 rounded-[32px] p-6 lg:p-8 max-w-sm w-full shadow-[12px_12px_0_0_#0f172a] text-center">
-                      <h3 className="text-xl lg:text-2xl font-black text-slate-900 mb-2 uppercase tracking-tight">Hapus Anggota</h3>
-                      <p className="text-sm font-bold text-slate-500 mb-8">
+                  <div className="fixed inset-0 bg-slate-900/40 dark:bg-black/50 backdrop-blur-md flex items-center justify-center z-[200] p-4">
+                    <div className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-[32px] p-6 lg:p-8 max-w-sm w-full shadow-[6px_6px_0_0_#0f172a] dark:shadow-[6px_6px_0_0_#334155] text-center">
+                      <h3 className="text-xl lg:text-2xl font-black text-slate-900 dark:text-white mb-2 uppercase tracking-tight">Hapus Anggota</h3>
+                      <p className="text-sm font-bold text-slate-500 dark:text-slate-400 mb-8">
                         Hapus "{deleteMemberConfirm.memberName}" dari daftar kelas?
                       </p>
                       <div className="flex gap-3">
                         <button
                           onClick={() => setDeleteMemberConfirm(null)}
-                          className="flex-1 py-3.5 rounded-xl bg-slate-50 border-2 border-slate-900 text-slate-900 text-xs font-black uppercase tracking-widest hover:bg-slate-100 transition-all"
+                          className="flex-1 py-3.5 rounded-xl bg-slate-100 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 text-slate-900 dark:text-white text-xs font-black uppercase tracking-widest shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
                         >
                           Batal
                         </button>
@@ -2020,7 +2083,7 @@ export default function YearbookClassesViewUI(props: any) {
                             await handleDeleteClassMember(deleteMemberConfirm.classId, targetUserId)
                             setDeleteMemberConfirm(null)
                           }}
-                          className="flex-1 py-3.5 rounded-xl bg-red-500 border-2 border-slate-900 text-white text-xs font-black uppercase tracking-widest shadow-[4px_4px_0_0_#0f172a] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
+                          className="flex-1 py-3.5 rounded-xl bg-red-500 border-2 border-slate-900 dark:border-slate-700 text-white text-xs font-black uppercase tracking-widest shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
                         >
                           Ya, Hapus
                         </button>
@@ -2044,10 +2107,10 @@ export default function YearbookClassesViewUI(props: any) {
               {/* Batch Photo Viewer */}
               {
                 viewingBatchPhotoClass && viewingBatchPhotoClass.batch_photo_url && (
-                  <div className="fixed inset-0 z-[200] bg-slate-900/95 backdrop-blur-md flex flex-col animate-in fade-in duration-300 p-4 lg:p-10">
+                  <div className="fixed inset-0 z-[200] bg-slate-900/95 dark:bg-black/95 backdrop-blur-md flex flex-col animate-in fade-in duration-300 p-4 lg:p-10">
                     <div className="flex items-center justify-between mb-6 lg:mb-10 w-full max-w-6xl mx-auto">
-                      <div className="bg-amber-300 border-4 border-slate-900 px-6 py-3 rounded-2xl shadow-[6px_6px_0_0_#0f172a]">
-                        <h3 className="text-slate-900 font-black text-sm lg:text-xl uppercase tracking-widest">Foto Angkatan — {viewingBatchPhotoClass.name}</h3>
+                      <div className="bg-amber-300 dark:bg-amber-600 border-4 border-slate-900 dark:border-slate-600 px-6 py-3 rounded-2xl shadow-[6px_6px_0_0_#0f172a] dark:shadow-[6px_6px_0_0_#334155]">
+                        <h3 className="text-slate-900 dark:text-white font-black text-sm lg:text-xl uppercase tracking-widest">Foto Angkatan — {viewingBatchPhotoClass.name}</h3>
                       </div>
                       <div className="flex items-center gap-3">
                         {canManage && (
@@ -2058,7 +2121,7 @@ export default function YearbookClassesViewUI(props: any) {
                                 setViewingBatchPhotoClass(null)
                               }
                             }}
-                            className="w-12 h-12 flex items-center justify-center bg-red-500 rounded-2xl border-4 border-slate-900 text-white shadow-[4px_4px_0_0_#0f172a] active:shadow-none active:translate-x-1 active:translate-y-1 transition-all"
+                            className="w-12 h-12 flex items-center justify-center bg-red-500 rounded-2xl border-4 border-slate-900 dark:border-slate-600 text-white shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155] active:shadow-none active:translate-x-1 active:translate-y-1 transition-all"
                             title="Hapus Foto"
                           >
                             <Trash2 className="w-6 h-6" strokeWidth={3} />
@@ -2066,14 +2129,14 @@ export default function YearbookClassesViewUI(props: any) {
                         )}
                         <button
                           onClick={() => setViewingBatchPhotoClass(null)}
-                          className="w-12 h-12 flex items-center justify-center bg-white rounded-2xl border-4 border-slate-900 text-slate-900 shadow-[4px_4px_0_0_#0f172a] active:shadow-none active:translate-x-1 active:translate-y-1 transition-all"
+                          className="w-12 h-12 flex items-center justify-center bg-white dark:bg-slate-800 rounded-2xl border-4 border-slate-900 dark:border-slate-600 text-slate-900 dark:text-white shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155] active:shadow-none active:translate-x-1 active:translate-y-1 transition-all"
                         >
                           <X className="w-7 h-7" strokeWidth={4} />
                         </button>
                       </div>
                     </div>
                     <div className="flex-1 flex items-center justify-center overflow-hidden w-full max-w-7xl mx-auto">
-                      <div className="relative p-2 bg-white border-4 border-slate-900 rounded-[32px] shadow-[20px_20px_0_0_rgba(0,0,0,0.3)] max-h-full">
+                      <div className="relative p-2 bg-white dark:bg-slate-900 border-4 border-slate-900 dark:border-slate-700 rounded-[32px] shadow-[20px_20px_0_0_rgba(0,0,0,0.3)] dark:shadow-[20px_20px_0_0_#334155] max-h-full">
                         <img
                           src={viewingBatchPhotoClass.batch_photo_url}
                           alt={`Foto Angkatan ${viewingBatchPhotoClass.name}`}

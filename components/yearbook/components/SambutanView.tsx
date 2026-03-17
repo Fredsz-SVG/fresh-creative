@@ -96,27 +96,27 @@ export default function SambutanView({
                 className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
                 onClick={() => { setAddingTeacher(false); setNewTeacherName('') }}
               />
-              <div className="relative w-full max-w-md bg-white border-4 border-slate-900 rounded-[32px] shadow-[12px_12px_0_0_#0f172a] overflow-hidden animate-in zoom-in-95 duration-200 z-[101]">
+              <div className="relative w-full max-w-md bg-white dark:bg-slate-900 border-4 border-slate-900 dark:border-slate-700 rounded-[32px] shadow-[12px_12px_0_0_#0f172a] dark:shadow-[12px_12px_0_0_#334155] overflow-hidden animate-in zoom-in-95 duration-200 z-[101]">
                 <div className="p-6">
                   <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Tambah Guru</h3>
+                    <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Tambah Guru</h3>
                     <button
                       onClick={() => { setAddingTeacher(false); setNewTeacherName('') }}
-                      className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center hover:bg-slate-200 transition-all"
+                      className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
                     >
-                      <X className="w-5 h-5 text-slate-500" />
+                      <X className="w-5 h-5 text-slate-500 dark:text-slate-400" />
                     </button>
                   </div>
 
                   <div className="flex flex-col gap-6">
                     <div>
-                      <label className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2 block">Nama Lengkap Guru</label>
+                      <label className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2 block">Nama Lengkap Guru</label>
                       <input
                         type="text"
                         value={newTeacherName}
                         onChange={(e) => setNewTeacherName(e.target.value)}
                         placeholder="Contoh: Bpk. Budi Santoso"
-                        className="w-full px-5 py-4 rounded-xl bg-slate-50 border-4 border-slate-900 text-base font-black text-slate-900 placeholder:text-slate-300 focus:outline-none focus:bg-white transition-all shadow-[4px_4px_0_0_#f1f5f9]"
+                        className="w-full px-5 py-4 rounded-xl bg-slate-50 dark:bg-slate-800 border-4 border-slate-900 dark:border-slate-600 text-base font-black text-slate-900 dark:text-white placeholder:text-slate-300 dark:placeholder:text-slate-500 focus:outline-none focus:bg-white dark:focus:bg-slate-800 transition-all shadow-[4px_4px_0_0_#f1f5f9] dark:shadow-[4px_4px_0_0_#334155]"
                         autoFocus
                         onKeyDown={(e) => {
                           if (e.key === 'Enter' && newTeacherName.trim()) {
@@ -136,7 +136,7 @@ export default function SambutanView({
                       <button
                         type="button"
                         onClick={() => { setAddingTeacher(false); setNewTeacherName('') }}
-                        className="flex-1 py-4 rounded-2xl bg-slate-100 text-slate-500 text-xs font-black uppercase tracking-widest border-2 border-slate-200 hover:bg-slate-200 transition-all"
+                        className="flex-1 py-4 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-xs font-black uppercase tracking-widest border-2 border-slate-200 dark:border-slate-600 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
                       >
                         Batal
                       </button>
@@ -150,7 +150,7 @@ export default function SambutanView({
                           }
                         }}
                         disabled={!newTeacherName.trim()}
-                        className="flex-[2] py-4 rounded-2xl bg-emerald-400 text-slate-900 text-xs font-black uppercase tracking-widest border-4 border-slate-900 shadow-[6px_6px_0_0_#0f172a] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all disabled:opacity-50"
+                        className="flex-[2] py-4 rounded-2xl bg-emerald-400 dark:bg-emerald-600 text-slate-900 dark:text-white text-xs font-black uppercase tracking-widest border-4 border-slate-900 dark:border-slate-600 shadow-[6px_6px_0_0_#0f172a] dark:shadow-[6px_6px_0_0_#334155] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all disabled:opacity-50"
                       >
                         Tambah Sekarang
                       </button>
@@ -166,17 +166,17 @@ export default function SambutanView({
             <button
               type="button"
               onClick={() => setAddingTeacher(true)}
-              className="fixed bottom-24 right-6 lg:bottom-10 lg:right-10 z-[60] flex items-center justify-center w-14 h-14 lg:w-16 lg:h-16 rounded-full bg-amber-400 border-2 border-slate-900 shadow-[3px_3px_0_0_#0f172a] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all active:scale-90 group"
+              className="fixed bottom-24 right-6 lg:bottom-10 lg:right-10 z-[60] flex items-center justify-center w-14 h-14 lg:w-16 lg:h-16 rounded-full bg-amber-400 dark:bg-amber-600 border-2 border-slate-900 dark:border-slate-600 shadow-[3px_3px_0_0_#0f172a] dark:shadow-[3px_3px_0_0_#334155] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all active:scale-90 group"
               title="Tambah Guru"
             >
-              <Plus className="w-8 h-8 text-slate-900 transition-transform group-hover:rotate-90" strokeWidth={2.5} />
+              <Plus className="w-8 h-8 text-slate-900 dark:text-white transition-transform group-hover:rotate-90" strokeWidth={2.5} />
             </button>
           )}
         </>
       )}
 
       {teachers.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 min-h-[50vh] w-full bg-slate-50/50 rounded-[40px] border-4 border-dashed border-slate-200">
+        <div className="flex flex-col items-center justify-center py-20 min-h-[50vh] w-full bg-slate-50/50 dark:bg-slate-800/30 rounded-[40px] border-4 border-dashed border-slate-200 dark:border-slate-700">
           <div className="w-20 h-20 rounded-3xl bg-white border-4 border-slate-900 shadow-[8px_8px_0_0_#e2e8f0] flex items-center justify-center mb-6">
             <Users className="w-10 h-10 text-slate-300" strokeWidth={1.5} />
           </div>

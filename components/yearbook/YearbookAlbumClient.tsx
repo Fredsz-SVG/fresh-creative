@@ -156,6 +156,7 @@ export default function YearbookAlbumClient({
   const [showTeacherSearch, setShowTeacherSearch] = useState(false)
   const [classMemberSearchQuery, setClassMemberSearchQuery] = useState('')
   const [showClassMemberSearch, setShowClassMemberSearch] = useState(false)
+  const [deleteCoverConfirm, setDeleteCoverConfirm] = useState<'image' | 'video' | null>(null)
   useEffect(() => { albumRef.current = album }, [album])
 
   const isFetchingMembersRef = useRef(false)
@@ -1444,7 +1445,7 @@ export default function YearbookAlbumClient({
 
   }
 
-  const handleDeleteCover = async () => {
+  const performDeleteCover = async () => {
     if (!id || !album?.cover_image_url) return
     const res = await fetchWithAuth(`/api/albums/${id}/cover`, { method: 'DELETE', credentials: 'include' })
     const data = await res.json().catch(() => ({}))
@@ -1485,7 +1486,7 @@ export default function YearbookAlbumClient({
     }
   }
 
-  const handleDeleteCoverVideo = async () => {
+  const performDeleteCoverVideo = async () => {
     if (!id || !album?.cover_video_url) return
     const res = await fetchWithAuth(`/api/albums/${id}/cover-video`, { method: 'DELETE', credentials: 'include' })
     const data = await res.json().catch(() => ({}))
@@ -1495,6 +1496,9 @@ export default function YearbookAlbumClient({
     }
     setAlbum((prev) => prev ? { ...prev, cover_video_url: null } : null)
   }
+
+  const handleDeleteCover = () => setDeleteCoverConfirm('image')
+  const handleDeleteCoverVideo = () => setDeleteCoverConfirm('video')
 
   const handleDeletePhoto = async (photoId: string, classId: string, studentName: string) => {
     if (!id) return
@@ -1565,14 +1569,14 @@ export default function YearbookAlbumClient({
     }
   }
 
-  const mobileFirstWrapper = `w-full mx-auto bg-white lg:max-w-full flex flex-col ${sidebarModeFromPath === 'flipbook' && flipbookPreviewMode ? 'h-[100dvh] overflow-hidden' : 'min-h-screen'}`
+  const mobileFirstWrapper = `w-full mx-auto bg-white dark:bg-slate-950 lg:max-w-full flex flex-col ${sidebarModeFromPath === 'flipbook' && flipbookPreviewMode ? 'h-[100dvh] overflow-hidden' : 'min-h-screen'}`
   const contentWrapper = 'max-w-[420px] md:max-w-full w-full mx-auto'
 
   if (!id) {
     return (
       <div className={mobileFirstWrapper}>
         <div className={`${contentWrapper} p-4`}>
-          <p className="text-red-400">ID album tidak valid.</p>
+          <p className="text-red-400 dark:text-red-300">ID album tidak valid.</p>
           <BackLink href={effectiveBackHref} />
         </div>
       </div>
@@ -1592,8 +1596,8 @@ export default function YearbookAlbumClient({
       <div className={mobileFirstWrapper}>
         <div className={`${contentWrapper} p-4 pb-6`}>
           <BackLink href={effectiveBackHref} />
-          <p className="text-red-400 mt-4">{error ?? 'Album tidak ditemukan.'}</p>
-          <p className="text-muted text-sm mt-2">Pastikan album sudah disetujui (approved) dan Anda memiliki akses.</p>
+          <p className="text-red-400 dark:text-red-300 mt-4">{error ?? 'Album tidak ditemukan.'}</p>
+          <p className="text-muted dark:text-slate-400 text-sm mt-2">Pastikan album sudah disetujui (approved) dan Anda memiliki akses.</p>
         </div>
       </div>
     )
@@ -1638,59 +1642,58 @@ export default function YearbookAlbumClient({
       <div className={mobileFirstWrapper}>
         {/* Sticky Header - BackLink + judul section sejajar (mobile + desktop) */}
         {showBackLink && (
-          <div className="flex sticky top-0 z-50 bg-amber-300 border-b-2 border-slate-900 px-3 lg:px-4 h-14 items-center gap-3 lg:gap-4 shadow-[0_2.5px_0_0_#0f172a]">
+          <div className="flex sticky top-0 z-50 bg-amber-300 dark:bg-slate-900 border-b-2 border-slate-900 dark:border-slate-700 px-3 lg:px-4 h-14 items-center gap-3 lg:gap-4 shadow-[0_2.5px_0_0_#0f172a] dark:shadow-[0_2.5px_0_0_#334155]">
             {/* Mobile: compact back arrow */}
-            <Link href={isAiLabsToolActive ? aiLabsBackHref : effectiveBackHref} className="lg:hidden inline-flex items-center justify-center w-9 h-9 bg-white border-2 border-slate-900 rounded-xl text-slate-900 shadow-[2px_2px_0_0_#0f172a] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all">
+            <Link href={isAiLabsToolActive ? aiLabsBackHref : effectiveBackHref} className="lg:hidden inline-flex items-center justify-center w-9 h-9 bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 rounded-xl text-slate-900 dark:text-white shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all">
               <ChevronLeft className="w-5 h-5" />
             </Link>
-            {/* Desktop: full BackLink */}
-            <div className="hidden lg:block">
+            {/* Desktop: full BackLink (tetap di kiri, tanpa margin bawah agar sejajar vertikal) */}
+            <div className="hidden lg:flex items-center">
               {isAiLabsToolActive ? (
-                <BackLink href={aiLabsBackHref} label="Ke Daftar Fitur" />
+                <BackLink href={aiLabsBackHref} label="Ke Daftar Fitur" className="!mb-0" />
               ) : (
-                <BackLink href={effectiveBackHref} label={effectiveBackLabel} />
+                <BackLink href={effectiveBackHref} label={effectiveBackLabel} className="!mb-0" />
               )}
             </div>
             {sectionTitle && (
               <>
                 {/* Mobile: title left-aligned */}
                 <div className="lg:hidden flex-1 min-w-0">
-                  <h1 className="text-base font-black text-slate-900 truncate max-w-full text-left uppercase tracking-tight leading-none">{sectionTitle}</h1>
+                  <h1 className="text-base font-black text-slate-900 dark:text-white truncate max-w-full text-left uppercase tracking-tight leading-none">{sectionTitle}</h1>
                 </div>
                 {/* Desktop: title centered */}
                 <div className="hidden lg:block absolute left-1/2 -translate-x-1/2 text-center min-w-0 max-w-[50%]">
                   <div className="flex items-center justify-center gap-3">
-                    <h1 className="text-xl font-black text-slate-900 truncate uppercase tracking-tight">{sectionTitle}</h1>
+                    <h1 className="text-xl font-black text-slate-900 dark:text-white truncate uppercase tracking-tight">{sectionTitle}</h1>
                     {headerCount !== null && headerCount !== undefined && (
-                      <span className="px-3 py-0.5 rounded-lg bg-slate-900 text-white text-xs font-black shadow-[2px_2px_0_0_#0f172a]">
+                      <span className="px-3 py-0.5 rounded-lg bg-slate-900 dark:bg-slate-700 text-white text-xs font-black shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155]">
                         {headerCount}
                       </span>
                     )}
                   </div>
-                  {sectionSubtitle && <p className="text-[10px] font-bold text-slate-700 mt-0.5 truncate uppercase tracking-wider">{sectionSubtitle}</p>}
+                  {sectionSubtitle && <p className="text-[10px] font-bold text-slate-700 dark:text-slate-300 mt-0.5 truncate uppercase tracking-wider">{sectionSubtitle}</p>}
                 </div>
               </>
             )}
 
-
-            {/* Header Actions (Right) - satu container ml-auto agar Credit/aksi selalu di pojok kanan */}
+            {/* Header Actions (Right) */}
             <div className="ml-auto flex items-center gap-2 pr-1 lg:pr-2">
               {/* AI Labs: Credit di pojok kanan */}
               {sidebarModeFromPath === 'ai-labs' && <CreditBadgeTop />}
               {/* Flipbook Controls (Mobile & Desktop) */}
               {sidebarModeFromPath === 'flipbook' && (isOwner || isAlbumAdmin) && (flipbookEnabledByPackage || featureUnlocks.includes('flipbook')) && (
-                <div className="flex bg-white p-1 rounded-xl border-2 border-slate-900 gap-1 items-center scale-90 lg:scale-100 origin-right shadow-[3px_3px_0_0_#0f172a]">
+                <div className="flex bg-white dark:bg-slate-800 p-0.5 sm:p-1 rounded-lg sm:rounded-xl border-2 border-slate-900 dark:border-slate-600 gap-0.5 sm:gap-1 items-center shadow-[3px_3px_0_0_#0f172a] dark:shadow-[3px_3px_0_0_#334155]">
                   <button
                     onClick={() => setFlipbookPreviewMode(false)}
-                    className={`flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black uppercase transition-all ${!flipbookPreviewMode ? 'bg-indigo-400 text-white border-2 border-slate-900 shadow-[2px_2px_0_0_#0f172a]' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100'}`}
+                    className={`flex items-center justify-center gap-1 px-2 py-1 sm:px-3 sm:py-1.5 rounded-md sm:rounded-lg text-[10px] sm:text-xs font-black uppercase transition-all ${!flipbookPreviewMode ? 'bg-indigo-400 text-white border-2 border-slate-900 dark:border-slate-600 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155]' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700'}`}
                   >
-                    <Layout className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Editor</span>
+                    <Layout className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> <span className="hidden sm:inline">Editor</span>
                   </button>
                   <button
                     onClick={() => setFlipbookPreviewMode(true)}
-                    className={`flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black uppercase transition-all ${flipbookPreviewMode ? 'bg-indigo-400 text-white border-2 border-slate-900 shadow-[2px_2px_0_0_#0f172a]' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100'}`}
+                    className={`flex items-center justify-center gap-1 px-2 py-1 sm:px-3 sm:py-1.5 rounded-md sm:rounded-lg text-[10px] sm:text-xs font-black uppercase transition-all ${flipbookPreviewMode ? 'bg-indigo-400 text-white border-2 border-slate-900 dark:border-slate-600 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155]' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700'}`}
                   >
-                    <Eye className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Preview</span>
+                    <Eye className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> <span className="hidden sm:inline">Preview</span>
                   </button>
                 </div>
               )}
@@ -1700,14 +1703,14 @@ export default function YearbookAlbumClient({
               {(sidebarModeFromPath === 'sambutan' || (sidebarModeFromPath === 'classes' && !isCoverView)) && (
                 <>
                   {(sidebarModeFromPath === 'sambutan' ? showTeacherSearch : showClassMemberSearch) ? (
-                    <div className={`absolute left-[52px] ${sidebarModeFromPath === 'classes' ? 'right-[52px]' : 'right-2'} top-2 bottom-2 bg-white border-2 border-slate-900 rounded-xl px-3 flex items-center shadow-[2px_2px_0_0_#0f172a] lg:static lg:w-auto lg:h-9 lg:px-2 lg:py-1 animate-in slide-in-from-right-2 duration-200 z-[60]`}>
-                      <Search className="w-4 h-4 text-slate-400 mr-2 flex-shrink-0" />
+                    <div className={`absolute left-[52px] ${sidebarModeFromPath === 'classes' ? 'right-[52px]' : 'right-2'} top-2 bottom-2 bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 rounded-xl px-3 flex items-center shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] lg:static lg:w-auto lg:h-9 lg:px-2 lg:py-1 animate-in slide-in-from-right-2 duration-200 z-[60]`}>
+                      <Search className="w-4 h-4 text-slate-400 dark:text-slate-500 mr-2 flex-shrink-0" />
                       <input
                         type="text"
                         placeholder="Cari..."
                         value={sidebarModeFromPath === 'sambutan' ? teacherSearchQuery : classMemberSearchQuery}
                         onChange={(e) => sidebarModeFromPath === 'sambutan' ? setTeacherSearchQuery(e.target.value) : setClassMemberSearchQuery(e.target.value)}
-                        className="flex-1 bg-transparent border-none outline-none text-[11px] font-black uppercase tracking-tight text-slate-900 min-w-0"
+                        className="flex-1 bg-transparent border-none outline-none text-[11px] font-black uppercase tracking-tight text-slate-900 dark:text-white min-w-0 dark:placeholder:text-slate-500"
                         autoFocus
                       />
                       <button
@@ -1720,17 +1723,17 @@ export default function YearbookAlbumClient({
                             setClassMemberSearchQuery('');
                           }
                         }}
-                        className="ml-1 p-1.5 hover:bg-slate-100 rounded-lg transition-colors flex-shrink-0"
+                        className="ml-1 p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors flex-shrink-0"
                       >
-                        <SearchX className="w-4 h-4 text-slate-500" strokeWidth={3} />
+                        <SearchX className="w-4 h-4 text-slate-500 dark:text-slate-400" strokeWidth={3} />
                       </button>
                     </div>
                   ) : (
                     <button
                       onClick={() => sidebarModeFromPath === 'sambutan' ? setShowTeacherSearch(true) : setShowClassMemberSearch(true)}
-                      className="w-9 h-9 flex items-center justify-center bg-white border-2 border-slate-900 rounded-xl text-slate-900 shadow-[2px_2px_0_0_#0f172a] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all"
+                      className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 rounded-lg sm:rounded-xl text-slate-900 dark:text-white shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all"
                     >
-                      <Search className="w-4 h-4" strokeWidth={3} />
+                      <Search className="w-3.5 h-3.5 sm:w-4 sm:h-4" strokeWidth={3} />
                     </button>
                   )}
                 </>
@@ -1743,16 +1746,16 @@ export default function YearbookAlbumClient({
                     e.stopPropagation()
                     setMobileMenuOpen(true)
                   }}
-                  className="lg:hidden flex items-center justify-center w-9 h-9 bg-white border-2 border-slate-900 rounded-xl text-slate-900 shadow-[2px_2px_0_0_#0f172a] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all flex-shrink-0"
+                  className="lg:hidden flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 rounded-lg sm:rounded-xl text-slate-900 dark:text-white shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all flex-shrink-0"
                 >
-                  <Menu className="w-5 h-5" />
+                  <Menu className="w-4 h-4 sm:w-5 sm:h-5" />
                 </button>
               )}
             </div>
 
             {/* Mobile: Cover View Actions - Icon Only */}
             {isCoverView && (isOwner || isAlbumAdmin || isGlobalAdminUser) && (
-              <div className="lg:hidden ml-auto flex items-center gap-2 pr-1">
+              <div className="lg:hidden ml-auto flex items-center gap-1.5 sm:gap-2 pr-1">
                 <button
                   type="button"
                   onClick={(e) => {
@@ -1761,18 +1764,18 @@ export default function YearbookAlbumClient({
                     navigator.clipboard.writeText(url);
                     toast.success('Link berhasil disalin');
                   }}
-                  className="w-9 h-9 flex items-center justify-center bg-white border-2 border-slate-900 rounded-xl text-slate-900 shadow-[2px_2px_0_0_#0f172a] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all"
+                  className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 rounded-lg sm:rounded-xl text-slate-900 dark:text-white shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all"
                   title="Salin Link"
                 >
-                  <LinkIcon className="w-4 h-4" strokeWidth={3} />
+                  <LinkIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" strokeWidth={3} />
                 </button>
                 <Link
                   href={`/album/${album?.id}/preview`}
                   target="_blank"
-                  className="w-9 h-9 flex items-center justify-center bg-emerald-400 border-2 border-slate-900 rounded-xl text-slate-900 shadow-[2px_2px_0_0_#0f172a] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all"
+                  className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center bg-emerald-400 dark:bg-emerald-600 border-2 border-slate-900 dark:border-slate-600 rounded-lg sm:rounded-xl text-slate-900 dark:text-white shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all"
                   title="Preview"
                 >
-                  <Eye className="w-4 h-4" strokeWidth={3} />
+                  <Eye className="w-3.5 h-3.5 sm:w-4 sm:h-4" strokeWidth={3} />
                 </Link>
               </div>
             )}
@@ -1781,18 +1784,18 @@ export default function YearbookAlbumClient({
 
         {/* Mobile Persistent Edit Navigation - Cover, Sambutan, Kelas saja; Flipbook ada di bottom nav */}
         {((['classes', 'sambutan'].includes(sidebarModeFromPath) || isCoverView)) && !isAiLabsToolActive && (
-          <div className="lg:hidden sticky top-14 z-40 bg-transparent px-4 pt-0 pb-0">
-            <div className="flex gap-2 overflow-x-auto no-scrollbar py-2">
+          <div className="lg:hidden sticky top-14 z-40 bg-transparent px-3 sm:px-4 pt-0 pb-0">
+            <div className="flex gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar py-1.5 sm:py-2">
               <button
                 onClick={() => {
                   setView('cover')
                   const url = getYearbookSectionQueryUrl(id!, 'cover', pathname)
                   router.push(url, { scroll: false })
                 }}
-                className={`flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-xl border-2 transition-all ${isCoverView ? 'bg-slate-900 border-slate-900 text-white shadow-[2px_2px_0_0_#0f172a]' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300 hover:text-slate-900'}`}
+                className={`flex-shrink-0 flex items-center gap-1.5 sm:gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg sm:rounded-xl border-2 transition-all ${isCoverView ? 'bg-slate-900 dark:bg-slate-700 border-slate-900 dark:border-slate-600 text-white shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155]' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-500 hover:text-slate-900 dark:hover:text-white'}`}
               >
-                <BookOpen className={`w-4 h-4 ${isCoverView ? 'text-white' : 'text-slate-500'}`} />
-                <span className="text-[10px] font-black uppercase tracking-widest whitespace-nowrap">Cover</span>
+                <BookOpen className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${isCoverView ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`} />
+                <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest whitespace-nowrap">Cover</span>
               </button>
               <button
                 onClick={() => {
@@ -1800,10 +1803,10 @@ export default function YearbookAlbumClient({
                   const url = getYearbookSectionQueryUrl(id!, 'sambutan', pathname)
                   router.push(url, { scroll: false })
                 }}
-                className={`flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-xl border-2 transition-all ${sidebarModeFromPath === 'sambutan' ? 'bg-slate-900 border-slate-900 text-white shadow-[2px_2px_0_0_#0f172a]' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300 hover:text-slate-900'}`}
+                className={`flex-shrink-0 flex items-center gap-1.5 sm:gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg sm:rounded-xl border-2 transition-all ${sidebarModeFromPath === 'sambutan' ? 'bg-slate-900 dark:bg-slate-700 border-slate-900 dark:border-slate-600 text-white shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155]' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-500 hover:text-slate-900 dark:hover:text-white'}`}
               >
-                <MessageSquare className={`w-4 h-4 ${sidebarModeFromPath === 'sambutan' ? 'text-white' : 'text-slate-500'}`} />
-                <span className="text-[10px] font-black uppercase tracking-widest whitespace-nowrap">Sambutan</span>
+                <MessageSquare className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${sidebarModeFromPath === 'sambutan' ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`} />
+                <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest whitespace-nowrap">Sambutan</span>
               </button>
               <button
                 onClick={() => {
@@ -1812,10 +1815,10 @@ export default function YearbookAlbumClient({
                   const url = getYearbookSectionQueryUrl(id!, 'classes', pathname)
                   router.push(url, { scroll: false })
                 }}
-                className={`flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-xl border-2 transition-all ${sidebarModeFromPath === 'classes' && !isCoverView ? 'bg-slate-900 border-slate-900 text-white shadow-[2px_2px_0_0_#0f172a]' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300 hover:text-slate-900'}`}
+                className={`flex-shrink-0 flex items-center gap-1.5 sm:gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg sm:rounded-xl border-2 transition-all ${sidebarModeFromPath === 'classes' && !isCoverView ? 'bg-slate-900 dark:bg-slate-700 border-slate-900 dark:border-slate-600 text-white shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155]' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-500 hover:text-slate-900 dark:hover:text-white'}`}
               >
-                <Users className={`w-4 h-4 ${sidebarModeFromPath === 'classes' && !isCoverView ? 'text-white' : 'text-slate-500'}`} />
-                <span className="text-[10px] font-black uppercase tracking-widest whitespace-nowrap">Kelas</span>
+                <Users className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${sidebarModeFromPath === 'classes' && !isCoverView ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`} />
+                <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest whitespace-nowrap">Kelas</span>
               </button>
             </div>
           </div>
@@ -1937,14 +1940,49 @@ export default function YearbookAlbumClient({
             classMemberSearchQuery={classMemberSearchQuery}
           />
         </div>
+        {deleteCoverConfirm && (
+          <div className="fixed inset-0 bg-slate-900/40 dark:bg-black/50 backdrop-blur-md flex items-center justify-center z-[200] p-4">
+            <div className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-[32px] p-6 lg:p-8 max-w-sm w-full shadow-[6px_6px_0_0_#0f172a] dark:shadow-[6px_6px_0_0_#334155] text-center">
+              <h3 className="text-xl lg:text-2xl font-black text-slate-900 dark:text-white mb-2 uppercase tracking-tight">
+                {deleteCoverConfirm === 'image' ? 'Hapus Foto Cover' : 'Hapus Video Cover'}
+              </h3>
+              <p className="text-sm font-bold text-slate-500 dark:text-slate-400 mb-8 lowercase first-letter:uppercase">
+                {deleteCoverConfirm === 'image' ? 'Yakin hapus foto cover?' : 'Yakin hapus video cover?'}
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setDeleteCoverConfirm(null)}
+                  className="flex-1 py-3.5 rounded-xl bg-slate-100 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 text-slate-900 dark:text-white text-xs font-black uppercase tracking-widest shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
+                >
+                  Batal
+                </button>
+                <button
+                  onClick={async () => {
+                    if (deleteCoverConfirm === 'image') await performDeleteCover()
+                    else await performDeleteCoverVideo()
+                    setDeleteCoverConfirm(null)
+                  }}
+                  className="flex-1 py-3.5 rounded-xl bg-red-500 border-2 border-slate-900 dark:border-slate-700 text-white text-xs font-black uppercase tracking-widest shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
+                >
+                  Ya, Hapus
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
         {videoPopupUrl && id && (
-          <div className="fixed inset-0 z-[100] bg-slate-900/80 backdrop-blur-sm flex flex-col items-center justify-center p-4 animate-in fade-in duration-200" onClick={() => { setVideoPopupUrl(null); setVideoPopupError(null) }}>
-            <div className="relative w-full max-w-2xl bg-white border-4 border-slate-900 rounded-[32px] p-2 shadow-[20px_20px_0_0_#0f172a] overflow-hidden" onClick={(e) => e.stopPropagation()}>
-              <div className="aspect-video bg-black rounded-[24px] overflow-hidden border-2 border-slate-900">
+          <div className="fixed inset-0 z-[100] bg-slate-900/80 dark:bg-black/80 backdrop-blur-sm flex flex-col items-center justify-center p-4 animate-in fade-in duration-200" onClick={() => { setVideoPopupUrl(null); setVideoPopupError(null) }}>
+            <button
+              onClick={(e) => { e.stopPropagation(); setVideoPopupUrl(null); setVideoPopupError(null) }}
+              className="absolute top-4 right-4 z-10 w-10 h-10 bg-white dark:bg-slate-800 border-4 border-slate-900 dark:border-slate-700 rounded-xl flex items-center justify-center shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all text-slate-900 dark:text-white"
+            >
+              <X className="w-6 h-6" strokeWidth={3} />
+            </button>
+            <div className="relative w-full max-w-2xl rounded-[32px] overflow-hidden" onClick={(e) => e.stopPropagation()}>
+              <div className="aspect-video bg-black rounded-[24px] overflow-hidden">
                 <video
                   src={apiUrl(`/api/albums/${id}/video-play?url=${encodeURIComponent(videoPopupUrl)}`)}
                   autoPlay
-                  controls
                   playsInline
                   className="w-full h-full object-contain"
                   onError={() => setVideoPopupError('Video tidak dapat dimuat')}
@@ -1953,45 +1991,38 @@ export default function YearbookAlbumClient({
               </div>
 
               {videoPopupError && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/95 p-6 text-center">
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/95 dark:bg-slate-900/95 p-6 text-center">
                   <p className="text-sm font-black text-red-500 uppercase tracking-widest mb-4">{videoPopupError}</p>
                   <button
                     type="button"
                     onClick={() => { setVideoPopupUrl(null); setVideoPopupError(null) }}
-                    className="px-6 py-3 bg-red-500 text-white border-4 border-slate-900 rounded-2xl font-black text-xs uppercase tracking-widest shadow-[4px_4px_0_0_#0f172a] hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all"
+                    className="px-6 py-3 bg-red-500 text-white border-4 border-slate-900 dark:border-slate-700 rounded-2xl font-black text-xs uppercase tracking-widest shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155] hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all"
                   >
                     Tutup
                   </button>
                 </div>
               )}
-
-              <button
-                onClick={() => { setVideoPopupUrl(null); setVideoPopupError(null) }}
-                className="absolute top-4 right-4 w-10 h-10 bg-white border-4 border-slate-900 rounded-xl flex items-center justify-center shadow-[2px_2px_0_0_#0f172a] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all text-slate-900"
-              >
-                <X className="w-6 h-6" strokeWidth={3} />
-              </button>
             </div>
           </div>
         )}
         {coverPreview && (
-          <div className="fixed inset-0 z-[100] bg-slate-900/80 backdrop-blur-sm flex flex-col items-center justify-center p-4 animate-in zoom-in-95 duration-200">
-            <div className="bg-white border-4 border-slate-900 rounded-[32px] p-4 shadow-[16px_16px_0_0_#0f172a] max-w-md w-full">
+          <div className="fixed inset-0 z-[100] bg-slate-900/80 dark:bg-black/80 backdrop-blur-sm flex flex-col items-center justify-center p-4 animate-in zoom-in-95 duration-200">
+            <div className="bg-white dark:bg-slate-900 border-4 border-slate-900 dark:border-slate-700 rounded-[32px] p-4 shadow-[16px_16px_0_0_#0f172a] dark:shadow-[16px_16px_0_0_#334155] max-w-md w-full">
               <div className="flex items-center justify-between mb-4">
-                <p className="text-[10px] font-black text-slate-900 uppercase tracking-widest bg-amber-400 px-3 py-1 border-2 border-slate-900 rounded-lg shadow-[2px_2px_0_0_#0f172a]">PENYESUAIAN COVER</p>
+                <p className="text-[10px] font-black text-slate-900 dark:text-white uppercase tracking-widest bg-amber-400 dark:bg-amber-600 px-3 py-1 border-2 border-slate-900 dark:border-slate-600 rounded-lg shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155]">PENYESUAIAN COVER</p>
                 <button
                   onClick={() => { URL.revokeObjectURL(coverPreview.dataUrl); setCoverPreview(null) }}
-                  className="text-slate-400 hover:text-slate-900 transition-colors"
+                  className="text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors"
                 >
                   <X className="w-5 h-5" strokeWidth={3} />
                 </button>
               </div>
 
-              <p className="text-[11px] font-bold text-slate-500 mb-4 uppercase tracking-tight">Geser gambar agar posisi pas, lalu klik Terapkan.</p>
+              <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 mb-4 uppercase tracking-tight">Geser gambar agar posisi pas, lalu klik Terapkan.</p>
 
               <div
                 ref={coverPreviewContainerRef}
-                className="w-full aspect-[3/4] rounded-2xl overflow-hidden bg-slate-100 border-4 border-slate-900 relative touch-none select-none shadow-[8px_8px_0_0_#f1f5f9]"
+                className="w-full aspect-[3/4] rounded-2xl overflow-hidden bg-slate-100 dark:bg-slate-800 border-4 border-slate-900 dark:border-slate-700 relative touch-none select-none shadow-[8px_8px_0_0_#f1f5f9] dark:shadow-[8px_8px_0_0_#334155]"
                 onPointerDown={(e) => {
                   if (e.button !== 0) return
                   coverDragRef.current = {
@@ -2040,7 +2071,7 @@ export default function YearbookAlbumClient({
                     URL.revokeObjectURL(coverPreview.dataUrl)
                     setCoverPreview(null)
                   }}
-                  className="flex-1 px-5 py-3.5 rounded-xl border-4 border-slate-900 bg-white text-slate-900 font-black text-xs uppercase tracking-widest hover:bg-slate-50 active:translate-x-1 active:translate-y-1 transition-all"
+                  className="flex-1 px-5 py-3.5 rounded-xl border-4 border-slate-900 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-black text-xs uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-slate-700 active:translate-x-1 active:translate-y-1 transition-all"
                 >
                   Batal
                 </button>
@@ -2048,7 +2079,7 @@ export default function YearbookAlbumClient({
                   type="button"
                   disabled={uploadingCover}
                   onClick={() => handleUploadCover(coverPreview.file, coverPosition, coverPreview.dataUrl)}
-                  className="flex-3 px-8 py-3.5 rounded-xl bg-violet-500 text-white border-4 border-slate-900 font-black text-sm uppercase tracking-widest shadow-[6px_6px_0_0_#0f172a] hover:shadow-none hover:translate-x-1 hover:translate-y-1 active:translate-x-1.5 active:translate-y-1.5 transition-all disabled:opacity-50"
+                  className="flex-3 px-8 py-3.5 rounded-xl bg-violet-500 text-white border-4 border-slate-900 dark:border-slate-700 font-black text-sm uppercase tracking-widest shadow-[6px_6px_0_0_#0f172a] dark:shadow-[6px_6px_0_0_#334155] hover:shadow-none hover:translate-x-1 hover:translate-y-1 active:translate-x-1.5 active:translate-y-1.5 transition-all disabled:opacity-50"
                 >
                   {uploadingCover ? 'Mengunggah…' : 'Terapkan'}
                 </button>
@@ -2067,16 +2098,16 @@ export default function YearbookAlbumClient({
     const canUpload = isOwnGallery || isOwner
     return (
       <div className="fixed inset-0 z-50 bg-black flex flex-col">
-        <div className="flex items-center justify-between gap-2 p-3 border-b border-gray-200 bg-white/95 backdrop-blur-sm flex-wrap shadow-sm">
+        <div className="flex items-center justify-between gap-2 p-3 border-b border-gray-200 dark:border-slate-700 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm flex-wrap shadow-sm">
           <button
             type="button"
             onClick={() => { setView('classes'); setGalleryStudent(null); setPhotos([]) }}
-            className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-gray-700 hover:bg-gray-100 font-semibold transition-colors"
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-gray-700 dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-800 font-semibold transition-colors"
           >
             <ChevronLeft className="w-5 h-5" /> Kembali
           </button>
-          <span className="text-gray-800 font-bold truncate max-w-[40%]">{galleryStudent.studentName} — {galleryStudent.className}</span>
-          <span className="text-gray-400 text-sm font-semibold">{hasPhotos ? `${photoIndex + 1}/${photos.length}` : '0'}</span>
+          <span className="text-gray-800 dark:text-white font-bold truncate max-w-[40%]">{galleryStudent.studentName} — {galleryStudent.className}</span>
+          <span className="text-gray-400 dark:text-slate-400 text-sm font-semibold">{hasPhotos ? `${photoIndex + 1}/${photos.length}` : '0'}</span>
           {isOwnGallery && (
             <>
               <input

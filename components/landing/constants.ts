@@ -5,7 +5,6 @@ export const NAV_ITEMS = [
   { label: "Fitur", href: "#features" },
   { label: "Harga", href: "#pricing" },
   { label: "E-Book", href: "#demo-ebook" },
-  { label: "Demo AR", href: "#demo-ar" },
 ] as const;
 
 export const LINKS = {

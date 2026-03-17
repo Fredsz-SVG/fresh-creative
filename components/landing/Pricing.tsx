@@ -59,7 +59,18 @@ export function Pricing() {
   const [digitalPackages, setDigitalPackages] = useState<DigitalPackage[]>([]);
   const [loadingDigital, setLoadingDigital] = useState(true);
   const [selectedDigitalId, setSelectedDigitalId] = useState<string | null>(null);
+  /** Untuk paket yang dipilih: addon mana yang di-check (indeks). Hanya addon dengan price > 0 yang opsional. */
+  const [selectedAddonIndices, setSelectedAddonIndices] = useState<Record<string, number[]>>({});
   const [activeSwipeIndex, setActiveSwipeIndex] = useState(0);
+
+  const toggleAddon = (pkgId: string, addonIndex: number) => {
+    setSelectedAddonIndices((prev) => {
+      const current = prev[pkgId] ?? [];
+      const has = current.includes(addonIndex);
+      const next = has ? current.filter((i) => i !== addonIndex) : [...current, addonIndex].sort((a, b) => a - b);
+      return { ...prev, [pkgId]: next };
+    });
+  };
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const container = e.currentTarget;
@@ -179,17 +190,20 @@ export function Pricing() {
                 className="flex items-stretch overflow-x-auto gap-6 pt-6 pb-8 snap-x no-scrollbar sm:grid sm:grid-cols-2 lg:grid-cols-3 sm:overflow-visible sm:pt-0 sm:pb-0 sm:snap-none px-4 sm:px-0"
               >
                 {digitalPackages.map((pkg) => {
-                  let addonsTotal = 0;
-                  pkg.features.forEach((f) => {
+                  const parsedFeatures = pkg.features.map((f) => {
                     try {
                       const j = JSON.parse(f);
-                      if (j.price) addonsTotal += Number(j.price);
-                    } catch {}
+                      return { name: j.name || f, price: Number(j.price) || 0 };
+                    } catch {
+                      return { name: f, price: 0 };
+                    }
                   });
-                  const pricePerStudent = pkg.pricePerStudent + addonsTotal;
                   const n = pkg.minStudents;
-                  const total = n * pricePerStudent;
                   const isSelected = selectedDigitalId === pkg.id;
+                  const chosenAddons = selectedAddonIndices[pkg.id] ?? [];
+                  const addonsTotal = chosenAddons.reduce((sum, idx) => sum + (parsedFeatures[idx]?.price ?? 0), 0);
+                  const totalPerStudent = pkg.pricePerStudent + addonsTotal;
+                  const total = n * totalPerStudent;
                   return (
                     <div key={pkg.id} className="flex min-w-[85%] sm:min-w-0 sm:w-full flex-col snap-center sm:snap-align-none">
                       <button
@@ -221,62 +235,81 @@ export function Pricing() {
                             min. {pkg.minStudents} siswa
                           </p>
                         </div>
+                        <p className="text-[11px] font-bold text-slate-500 dark:text-white/50 uppercase tracking-wider">Harga dasar</p>
                         <p className="text-3xl font-black text-slate-900 dark:text-white">
-                          {formatRupiah(pricePerStudent)}
+                          {formatRupiah(pkg.pricePerStudent)}
                           <span className="text-sm font-bold text-slate-500 dark:text-white/60">
                             /siswa
                           </span>
                         </p>
-                        <ul className="mt-6 space-y-2 border-t border-slate-100 dark:border-white/10 pt-6">
-                          {pkg.features.map((f, i) => {
-                            let parsed = { name: f, price: 0 };
-                            try {
-                              const j = JSON.parse(f);
-                              if (j.name) parsed = j;
-                            } catch {}
-                            return (
-                              <li
-                                key={i}
-                                className="flex items-center gap-3 text-sm font-bold text-slate-700 dark:text-white/80"
-                              >
-                                <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md border border-slate-900 dark:border-white bg-lime-400 shadow-[1px_1px_0_0_#0f172a] dark:shadow-[1px_1px_0_0_#fff]">
-                                  <Check
-                                    className="h-3 w-3 text-slate-900"
-                                    strokeWidth={4}
-                                  />
-                                </div>
-                                <span>{parsed.name}</span>
-                              </li>
-                            );
-                          })}
+                        <ul className="mt-6 space-y-2 pt-1">
+                          {parsedFeatures.filter((p) => p.price === 0).map((parsed, idx) => (
+                            <li key={idx} className="flex items-center gap-3 text-sm font-bold text-slate-700 dark:text-white/80">
+                              <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md border border-slate-900 dark:border-white bg-lime-400 shadow-[1px_1px_0_0_#0f172a] dark:shadow-[1px_1px_0_0_#fff]">
+                                <Check className="h-3 w-3 text-slate-900" strokeWidth={4} />
+                              </div>
+                              <span>{parsed.name}</span>
+                            </li>
+                          ))}
                         </ul>
                         {(pkg.flipbook_enabled || pkg.ai_labs_features.length > 0) && (
-                          <div className="mt-4 flex flex-wrap gap-2">
-                            {pkg.flipbook_enabled &&
-                              !pkg.ai_labs_features.includes("flipbook_unlock") && (
-                                <span className="inline-flex items-center gap-1.5 rounded-md border border-slate-900 dark:border-white bg-lime-400 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-slate-900 shadow-[1px_1px_0_0_#0f172a] dark:shadow-[1px_1px_0_0_#fff]">
-                                  <Book className="h-3 w-3" /> Flipbook
-                                </span>
-                              )}
-                            {pkg.ai_labs_features.map((slug) => (
-                              <span
-                                key={slug}
-                                className="inline-flex items-center gap-1.5 rounded-md border border-slate-900 dark:border-white bg-cyan-400 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-slate-900 shadow-[1px_1px_0_0_#0f172a] dark:shadow-[1px_1px_0_0_#fff]"
-                              >
-                                {slug === "flipbook_unlock" ? (
-                                  <Book className="h-3 w-3" />
-                                ) : (
-                                  <Sparkles className="h-3 w-3" />
+                          <div className="mt-4 pt-4 border-t border-slate-100 dark:border-white/10">
+                            <p className="text-[11px] font-black text-slate-500 dark:text-white/50 uppercase tracking-widest mb-3">Termasuk</p>
+                            <div className="flex flex-wrap gap-2">
+                              {pkg.flipbook_enabled &&
+                                !pkg.ai_labs_features.includes("flipbook_unlock") && (
+                                  <span className="inline-flex items-center gap-1.5 rounded-md border border-slate-900 dark:border-white bg-lime-400 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-slate-900 shadow-[1px_1px_0_0_#0f172a] dark:shadow-[1px_1px_0_0_#fff]">
+                                    <Book className="h-3 w-3" /> Flipbook
+                                  </span>
                                 )}
-                                {AI_FEATURE_LABELS[slug] ?? slug}
-                              </span>
-                            ))}
+                              {pkg.ai_labs_features.map((slug) => (
+                                <span
+                                  key={slug}
+                                  className="inline-flex items-center gap-1.5 rounded-md border border-slate-900 dark:border-white bg-cyan-400 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-slate-900 shadow-[1px_1px_0_0_#0f172a] dark:shadow-[1px_1px_0_0_#fff]"
+                                >
+                                  {slug === "flipbook_unlock" ? (
+                                    <Book className="h-3 w-3" />
+                                  ) : (
+                                    <Sparkles className="h-3 w-3" />
+                                  )}
+                                  {AI_FEATURE_LABELS[slug] ?? slug}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {parsedFeatures.some((p) => p.price > 0) && (
+                          <div className="mt-4 pt-4 border-t border-slate-100 dark:border-white/10">
+                            <p className="text-[11px] font-black text-slate-500 dark:text-white/50 uppercase tracking-widest mb-3">Addon</p>
+                            <ul className="space-y-2">
+                              {parsedFeatures.map((parsed, i) => {
+                                if (parsed.price === 0) return null;
+                                const checked = chosenAddons.includes(i);
+                                return (
+                                  <li key={i} className="flex items-center gap-3 text-sm font-bold text-slate-700 dark:text-white/80">
+                                    <label
+                                      onClick={(e) => e.stopPropagation()}
+                                      className="flex items-center gap-3 cursor-pointer flex-1"
+                                    >
+                                      <input
+                                        type="checkbox"
+                                        checked={checked}
+                                        onChange={() => toggleAddon(pkg.id, i)}
+                                        className="h-5 w-5 rounded border-2 border-slate-900 dark:border-white bg-white dark:bg-slate-800 text-lime-500 focus:ring-0 cursor-pointer"
+                                      />
+                                      <span>{parsed.name}</span>
+                                      <span className="text-xs text-cyan-600 dark:text-cyan-400 ml-auto">+{formatRupiah(parsed.price)}</span>
+                                    </label>
+                                  </li>
+                                );
+                              })}
+                            </ul>
                           </div>
                         )}
                       </div>
                       <div className="mt-4 flex items-center justify-between border-t border-slate-100 dark:border-white/10 pt-4 text-sm">
                         <span className="text-slate-500 dark:text-white/60">
-                          Estimasi {n} siswa
+                          {isSelected && addonsTotal > 0 ? `Dasar + add-on (${n} siswa)` : `Estimasi ${n} siswa`}
                         </span>
                         <span className="font-semibold text-slate-900 dark:text-white">
                           {formatRupiah(total)}

@@ -341,10 +341,10 @@ export default function AdminPage() {
   return (
     <div className="max-w-7xl mx-auto">
       <div className="flex flex-col gap-2 mb-10 px-4 md:px-0">
-        <h1 className="text-3xl font-black text-slate-900 sm:text-4xl tracking-tight">
+        <h1 className="text-3xl font-black text-slate-900 dark:text-white sm:text-4xl tracking-tight">
           Admin Dashboard
         </h1>
-        <p className="text-slate-600 font-bold text-sm sm:text-base max-w-2xl">
+        <p className="text-slate-600 dark:text-slate-300 font-bold text-sm sm:text-base max-w-2xl">
           Overview of user distribution, credits, and registration activity.
         </p>
       </div>
@@ -366,14 +366,14 @@ export default function AdminPage() {
         ) : (
           <>
             {[
-              { label: 'Total User', value: stats?.totalUsers.toLocaleString() ?? '0', color: 'bg-indigo-300', shadow: '#0f172a' },
-              { label: 'Admin', value: stats?.totalAdmins.toLocaleString() ?? '0', color: 'bg-purple-300', shadow: '#0f172a' },
-              { label: 'Total Credit', value: stats?.totalCredits.toLocaleString() ?? '0', color: 'bg-amber-300', shadow: '#0f172a' },
-              { label: 'New User (7d)', value: stats?.newUsers7d.toLocaleString() ?? '0', color: 'bg-emerald-300', shadow: '#0f172a' }
+              { label: 'Total User', value: stats?.totalUsers.toLocaleString() ?? '0', color: 'bg-indigo-300 dark:bg-slate-800', shadow: 'shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155]', text: 'text-slate-900 dark:text-white' },
+              { label: 'Admin', value: stats?.totalAdmins.toLocaleString() ?? '0', color: 'bg-purple-300 dark:bg-slate-800', shadow: 'shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155]', text: 'text-slate-900 dark:text-white' },
+              { label: 'Total Credit', value: stats?.totalCredits.toLocaleString() ?? '0', color: 'bg-amber-300 dark:bg-slate-800', shadow: 'shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155]', text: 'text-slate-900 dark:text-white' },
+              { label: 'New User (7d)', value: stats?.newUsers7d.toLocaleString() ?? '0', color: 'bg-emerald-300 dark:bg-slate-800', shadow: 'shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155]', text: 'text-slate-900 dark:text-white' }
             ].map((sc) => (
-              <div key={sc.label} className={`${sc.color} border-4 border-slate-900 rounded-[24px] p-5 md:p-6 shadow-[4px_4px_0_0_#0f172a] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all`}>
-                <p className="text-[10px] md:text-xs font-black text-slate-900 uppercase tracking-widest mb-1.5 md:mb-2">{sc.label}</p>
-                <p className="text-2xl md:text-4xl font-black text-slate-900">
+              <div key={sc.label} className={`${sc.color} border-4 border-slate-900 dark:border-slate-700 rounded-[24px] p-5 md:p-6 ${sc.shadow} hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all`}>
+                <p className={`text-[10px] md:text-xs font-black uppercase tracking-widest mb-1.5 md:mb-2 ${sc.text}`}>{sc.label}</p>
+                <p className={`text-2xl md:text-4xl font-black ${sc.text}`}>
                   {sc.value}
                 </p>
               </div>
@@ -382,11 +382,11 @@ export default function AdminPage() {
         )}
       </div>
 
-      <div className="bg-white border-4 border-slate-900 rounded-[24px] md:rounded-[32px] overflow-hidden shadow-[6px_6px_0_0_#0f172a] md:shadow-[12px_12px_0_0_#0f172a] mx-4 md:mx-0">
-        <div className="px-5 py-4 md:px-8 md:py-6 border-b-4 border-slate-900 flex items-center justify-between gap-4 flex-wrap bg-violet-300">
+      <div className="bg-white dark:bg-slate-900 border-4 border-slate-900 dark:border-slate-700 rounded-[24px] md:rounded-[32px] overflow-hidden shadow-[6px_6px_0_0_#0f172a] dark:shadow-[6px_6px_0_0_#334155] md:shadow-[12px_12px_0_0_#0f172a] dark:md:shadow-[12px_12px_0_0_#334155] mx-4 md:mx-0">
+        <div className="px-5 py-4 md:px-8 md:py-6 border-b-4 border-slate-900 dark:border-slate-700 flex items-center justify-between gap-4 flex-wrap bg-violet-300 dark:bg-slate-800">
           <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-3">
-            <h2 className="text-xl md:text-2xl font-black text-slate-900 leading-none">Users</h2>
-            <span className="text-slate-900 text-sm md:text-base font-black uppercase tracking-widest ml-2">
+            <h2 className="text-xl md:text-2xl font-black text-slate-900 dark:text-white leading-none">Users</h2>
+            <span className="text-slate-900 dark:text-white text-sm md:text-base font-black uppercase tracking-widest ml-2">
               {totalRows} Total
             </span>
           </div>
@@ -399,7 +399,7 @@ export default function AdminPage() {
                 setSearch(e.target.value)
               }}
               placeholder="Cari user..."
-              className="w-full sm:w-64 px-4 py-2.5 text-sm font-bold bg-white border-4 border-slate-900 rounded-xl text-slate-900 placeholder:text-slate-400 focus:outline-none shadow-[3px_3px_0_0_#0f172a] focus:shadow-none transition-all"
+              className="w-full sm:w-64 px-4 py-2.5 text-sm font-bold bg-white dark:bg-slate-900 border-4 border-slate-900 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none shadow-[3px_3px_0_0_#0f172a] dark:shadow-[3px_3px_0_0_#334155] focus:shadow-none transition-all"
             />
           </div>
         </div>
@@ -421,25 +421,25 @@ export default function AdminPage() {
             </div>
           )}
           {!loading && stats && stats.latestUsers.length > 0 && stats.latestUsers.map((u) => (
-            <div key={u.id} className="bg-white border-4 border-slate-900 rounded-2xl p-4 space-y-4 shadow-[4px_4px_0_0_#0f172a] hover:-translate-x-0.5 hover:-translate-y-0.5 transition-all">
+            <div key={u.id} className="bg-white dark:bg-slate-800 border-4 border-slate-900 dark:border-slate-700 rounded-2xl p-4 space-y-4 shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155] hover:-translate-x-0.5 hover:-translate-y-0.5 transition-all">
               <div className="flex justify-between items-start gap-2">
                 <div className="min-w-0">
-                  <p className="text-sm font-black text-slate-900 truncate">{u.full_name || 'No Name'}</p>
-                  <p className="text-[10px] font-bold text-slate-400 truncate">{u.email || '-'}</p>
+                  <p className="text-sm font-black text-slate-900 dark:text-white truncate">{u.full_name || 'No Name'}</p>
+                  <p className="text-[10px] font-bold text-slate-400 dark:text-slate-300 truncate">{u.email || '-'}</p>
                 </div>
                 <div className="flex flex-col items-end gap-1.5 shrink-0">
-                  <span className={`px-2 py-0.5 rounded-full border-2 border-slate-900 text-[9px] font-black uppercase shadow-[2px_2px_0_0_#0f172a] ${u.is_suspended ? 'bg-red-400 text-white' : 'bg-emerald-300 text-slate-900'}`}>
+                  <span className={`px-2 py-0.5 rounded-full border-2 border-slate-900 dark:border-slate-700 text-[9px] font-black uppercase shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] ${u.is_suspended ? 'bg-red-400 text-white' : 'bg-emerald-300 dark:bg-emerald-700 text-slate-900 dark:text-white'}`}>
                     {u.is_suspended ? 'Suspended' : 'Aktif'}
                   </span>
-                  <span className="px-2 py-0.5 bg-slate-100 border-2 border-slate-900 rounded-full text-[9px] font-black uppercase shadow-[2px_2px_0_0_#0f172a]">
+                  <span className="px-2 py-0.5 bg-slate-100 dark:bg-slate-700 border-2 border-slate-900 dark:border-slate-700 rounded-full text-[9px] font-black uppercase shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] text-slate-900 dark:text-white">
                     {u.role || 'user'}
                   </span>
                 </div>
               </div>
 
-              <div className="bg-slate-50 border-2 border-slate-900 rounded-xl p-3 flex items-center justify-between">
+              <div className="bg-slate-50 dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-xl p-3 flex items-center justify-between">
                 <div>
-                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Credits</p>
+                  <p className="text-[9px] font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest leading-none mb-1">Credits</p>
                   {editUserId === u.id ? (
                     <div className="flex items-center gap-1.5">
                       <input
@@ -447,28 +447,28 @@ export default function AdminPage() {
                         min={0}
                         value={editCredits}
                         onChange={(e) => setEditCredits(e.target.value)}
-                        className="w-20 px-2 py-1 bg-white border-2 border-slate-900 rounded-lg text-xs font-black text-slate-900 focus:outline-none"
+                        className="w-20 px-2 py-1 bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 rounded-lg text-xs font-black text-slate-900 dark:text-white focus:outline-none"
                         autoFocus
                       />
                       <button
                         onClick={() => handleSaveCredits(u.id)}
-                        className="p-1 px-2.5 bg-indigo-400 border-2 border-slate-900 rounded-lg text-[10px] font-black"
+                        className="p-1 px-2.5 bg-indigo-400 dark:bg-indigo-700 border-2 border-slate-900 dark:border-slate-700 rounded-lg text-[10px] font-black text-white"
                       >
                         OK
                       </button>
                     </div>
                   ) : (
                     <div className="flex items-center gap-2">
-                      <p className="text-xl font-black text-slate-900">{u.credits?.toLocaleString() ?? 0}</p>
-                      <button onClick={() => handleStartEditCredits(u.id, u.credits ?? 0)} className="text-[10px] font-bold text-indigo-500 underline flex items-center gap-0.5">
+                      <p className="text-xl font-black text-slate-900 dark:text-white">{u.credits?.toLocaleString() ?? 0}</p>
+                      <button onClick={() => handleStartEditCredits(u.id, u.credits ?? 0)} className="text-[10px] font-bold text-indigo-500 dark:text-indigo-300 underline flex items-center gap-0.5">
                         <Pencil size={10} strokeWidth={3} /> edit
                       </button>
                     </div>
                   )}
                 </div>
                 <div className="text-right">
-                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Joined</p>
-                  <p className="text-[10px] font-bold text-slate-900">{u.created_at ? new Date(u.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: '2-digit' }) : '-'}</p>
+                  <p className="text-[9px] font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest leading-none mb-1">Joined</p>
+                  <p className="text-[10px] font-bold text-slate-900 dark:text-white">{u.created_at ? new Date(u.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: '2-digit' }) : '-'}</p>
                 </div>
               </div>
 
@@ -535,16 +535,16 @@ export default function AdminPage() {
                 </tr>
               )}
               {!loading && stats && stats.latestUsers.length > 0 && stats.latestUsers.map((u) => (
-                <tr key={u.id} className="hover:bg-slate-50 transition-colors group">
+                <tr key={u.id} className="hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors group">
                   <td className="px-5 py-4">
-                    <p className="text-sm font-black text-slate-900">{u.full_name || '-'}</p>
+                    <p className="text-sm font-black text-slate-900 dark:text-white">{u.full_name || '-'}</p>
                   </td>
                   <td className="px-5 py-4">
                     <p className="text-sm font-bold text-slate-400">{u.email || '-'}</p>
                   </td>
                   <td className="px-5 py-4">
                     <div className="flex items-center gap-2">
-                      <span className="px-3 py-1 bg-slate-100 border-2 border-slate-900 rounded-lg text-[10px] font-black uppercase">
+                      <span className="px-3 py-1 bg-slate-100 dark:bg-slate-700 border-2 border-slate-900 dark:border-slate-700 rounded-lg text-[10px] font-black uppercase text-slate-900 dark:text-white">
                         {u.role || 'user'}
                       </span>
                       <button
@@ -580,7 +580,7 @@ export default function AdminPage() {
                       </div>
                     ) : (
                       <div className="flex items-center justify-end gap-3 group/credit">
-                        <span className="text-sm font-black text-slate-900">
+                        <span className="text-sm font-black text-slate-900 dark:text-white">
                           {u.credits?.toLocaleString() ?? 0}
                         </span>
                         <button
@@ -646,24 +646,24 @@ export default function AdminPage() {
       )}
 
       {confirmOpen && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/60 backdrop-blur-md px-4">
-          <div className="bg-white border-4 border-slate-900 rounded-[24px] md:rounded-[32px] w-full max-w-sm p-6 md:p-8 text-center shadow-[12px_12px_0_0_#0f172a]">
-            <h3 className="text-xl font-black text-slate-900 mb-2">{confirmTitle}</h3>
-            <p className="text-sm font-bold text-slate-500 mb-6">{confirmDescription}</p>
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/40 dark:bg-black/50 backdrop-blur-md px-4">
+          <div className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-[32px] w-full max-w-sm p-6 sm:p-8 text-center shadow-[6px_6px_0_0_#0f172a] dark:shadow-[6px_6px_0_0_#334155]">
+            <h3 className="text-xl font-black text-slate-900 dark:text-white mb-2 uppercase tracking-tight">{confirmTitle}</h3>
+            <p className="text-sm font-bold text-slate-500 dark:text-slate-400 mb-6">{confirmDescription}</p>
             <div className="flex items-center justify-center gap-3">
               <button
                 onClick={() => setConfirmOpen(false)}
                 disabled={confirmLoading}
-                className="flex-1 px-4 py-3 bg-slate-50 border-4 border-slate-900 rounded-xl text-xs font-black uppercase hover:bg-slate-100 disabled:opacity-50 transition-all shadow-[4px_4px_0_0_#0f172a] active:shadow-none"
+                className="flex-1 py-3.5 rounded-xl bg-slate-100 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 text-slate-900 dark:text-white text-xs font-black uppercase tracking-widest shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 disabled:opacity-50 transition-all"
               >
                 {confirmCancelText}
               </button>
               <button
                 onClick={handleConfirm}
                 disabled={confirmLoading}
-                className={`flex-1 px-4 py-3 border-4 border-slate-900 rounded-xl text-xs font-black uppercase shadow-[4px_4px_0_0_#0f172a] hover:shadow-none transition-all disabled:opacity-50 ${confirmVariant === 'danger'
-                  ? 'bg-red-400 text-white'
-                  : 'bg-amber-400 text-slate-900'
+                className={`flex-1 py-3.5 rounded-xl border-2 border-slate-900 dark:border-slate-600 text-xs font-black uppercase tracking-widest shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 disabled:opacity-50 transition-all ${confirmVariant === 'danger'
+                  ? 'bg-red-500 text-white'
+                  : 'bg-amber-400 dark:bg-amber-600 text-slate-900 dark:text-white'
                   }`}
               >
                 {confirmLoading ? 'Wait...' : confirmConfirmText}

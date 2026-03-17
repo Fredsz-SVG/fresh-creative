@@ -22,7 +22,7 @@ export default function FlipbookView({
   onUpdateAlbum,
 }: FlipbookViewProps) {
   return (
-    <div className="flex flex-col h-full relative">
+    <div className="flex flex-col h-full relative bg-slate-100 dark:bg-slate-950">
       {(flipbookPreviewMode || !canManage) ? (
         <div className="flex-1 min-h-0 flex flex-col p-0">
           <ManualFlipbookViewer pages={manualPages} onPlayVideo={onPlayVideo} className="w-full h-full" albumId={album?.id} isEditorView />

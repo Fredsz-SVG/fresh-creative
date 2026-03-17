@@ -34,7 +34,7 @@ export default function CoverView({
   return (
     <div className="flex-1 flex flex-col items-center justify-center p-4 relative min-h-full">
       <div className="w-full max-w-xs mx-auto flex flex-col items-center">
-        <div className="relative w-full aspect-[3/4] bg-gray-100 rounded-xl overflow-hidden shadow-xl border border-gray-200 group">
+        <div className="relative w-full aspect-[3/4] bg-gray-100 dark:bg-slate-800 rounded-xl overflow-hidden shadow-xl border border-gray-200 dark:border-slate-700 group">
           {album?.cover_image_url ? (
             <img
               src={album.cover_image_url}
@@ -43,7 +43,7 @@ export default function CoverView({
               style={album.cover_image_position ? { objectPosition: `${album.cover_image_position}` } : undefined}
             />
           ) : (
-            <div className="flex flex-col items-center justify-center w-full h-full text-muted gap-3">
+            <div className="flex flex-col items-center justify-center w-full h-full text-muted dark:text-slate-400 gap-3">
               <BookOpen className="w-12 h-12 opacity-50" />
               <span className="text-xs">Cover album</span>
             </div>
@@ -54,28 +54,28 @@ export default function CoverView({
             <button
               type="button"
               onClick={() => onPlayVideo && onPlayVideo(album.cover_video_url!)}
-              className="absolute bottom-3 right-3 w-10 h-10 rounded-full bg-black/70 hover:bg-black/90 flex items-center justify-center group/play transition-all hover:scale-110 backdrop-blur-sm border border-gray-200"
+              className="absolute bottom-3 right-3 w-10 h-10 rounded-full bg-black/70 hover:bg-black/90 flex items-center justify-center group/play transition-all hover:scale-110 backdrop-blur-sm border border-gray-200 dark:border-slate-600"
               title="Play Video Cover"
             >
-              <Play className="w-4 h-4 text-gray-800 ml-0.5" fill="currentColor" />
+              <Play className="w-4 h-4 text-gray-800 dark:text-white ml-0.5" fill="currentColor" />
             </button>
           )}
         </div>
 
         <div className="mt-4 text-center w-full">
-          <h1 className="text-2xl font-bold text-app mb-1">{album?.name}</h1>
-          {album?.description && <p className="text-muted text-xs max-w-lg mx-auto leading-relaxed">{album.description}</p>}
+          <h1 className="text-2xl font-bold text-app dark:text-white mb-1">{album?.name}</h1>
+          {album?.description && <p className="text-muted dark:text-slate-400 text-xs max-w-lg mx-auto leading-relaxed">{album.description}</p>}
         </div>
 
         {isOwner && (
-          <div className="mt-6 p-3 w-full rounded-xl bg-gray-100 border border-gray-200">
+          <div className="mt-6 p-3 w-full rounded-xl bg-gray-100 dark:bg-slate-800/50 border border-gray-200 dark:border-slate-700">
             <div className="mb-3 text-center">
-              <p className="text-xs font-semibold text-app">Pengaturan Cover</p>
+              <p className="text-xs font-semibold text-app dark:text-white">Pengaturan Cover</p>
             </div>
 
             {/* Gambar Section */}
             <div className="mb-3">
-              <p className="text-[10px] font-medium text-muted/60 uppercase tracking-wide mb-1.5">Gambar <span className="normal-case text-muted/80">(maks. 10MB)</span></p>
+              <p className="text-[10px] font-medium text-muted/60 dark:text-slate-500 uppercase tracking-wide mb-1.5">Gambar <span className="normal-case text-muted/80 dark:text-slate-400">(maks. 10MB)</span></p>
               <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
@@ -99,11 +99,11 @@ export default function CoverView({
             </div>
 
             {/* Divider */}
-            <div className="h-px bg-gray-100 my-2.5"></div>
+            <div className="h-px bg-gray-100 dark:bg-slate-700 my-2.5"></div>
 
             {/* Video Section */}
             <div>
-              <p className="text-[10px] font-medium text-muted/60 uppercase tracking-wide mb-1.5">Video <span className="normal-case text-muted/80">(maks. 20MB)</span></p>
+              <p className="text-[10px] font-medium text-muted/60 dark:text-slate-500 uppercase tracking-wide mb-1.5">Video <span className="normal-case text-muted/80 dark:text-slate-400">(maks. 20MB)</span></p>
               <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"

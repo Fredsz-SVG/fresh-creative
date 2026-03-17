@@ -155,19 +155,9 @@ export function Features() {
         </BentoCardWrap>
 
         {/* ── Bento grid ── */}
-        <div id="nexus" className="grid h-auto md:h-[90vh] grid-cols-1 md:grid-cols-2 grid-rows-3 md:grid-rows-2 gap-5 md:gap-7">
+        <div id="nexus" className="grid h-auto md:h-[45vh] grid-cols-1 md:grid-cols-2 grid-rows-2 md:grid-rows-1 gap-5 md:gap-7">
 
-          {/* Web AR LivePhoto — tall left */}
-          <BentoCardWrap className="min-h-[300px] md:min-h-0 md:row-span-2">
-            <BentoCard
-              media="image"
-              src="/img/livehand.png"
-              title={<>Web AR LivePhoto</>}
-              description="Scan QR, arahkan ke foto—video kenangan muncul melayang di atas buku."
-            />
-          </BentoCardWrap>
-
-          {/* Video & Foto — top right */}
+          {/* Video & Foto */}
           <BentoCardWrap className="min-h-[250px] md:min-h-0">
             <BentoCard
               media="image"
@@ -177,7 +167,7 @@ export function Features() {
             />
           </BentoCardWrap>
 
-          {/* Event Organizer — bottom right */}
+          {/* Event Organizer */}
           <BentoCardWrap className="min-h-[250px] md:min-h-0">
             <BentoCard
               media="image"

@@ -95,7 +95,7 @@ function AlbumCard({
   const isApproved = album.status === 'approved'
   const isClickable = album.type === 'public' || (isApproved && (isPaid || isAdmin))
   const destinationUrl = album.type === 'public'
-    ? `${basePath}/album/public/${album.id}`
+      ? `${basePath}/album/public/${album.id}` 
     : getYearbookSectionQueryUrl(album.album_id ?? album.id, 'preview', pathname || null)
 
   const editorUrl = album.type === 'yearbook'
@@ -117,10 +117,10 @@ function AlbumCard({
           router.push(destinationUrl)
         }
       }}
-      className={`relative border-2 border-slate-900 rounded-3xl p-4 sm:p-5 flex flex-col h-full transition-all duration-200 min-h-[120px] shadow-[4px_4px_0_0_#0f172a] bg-white ${isClickable ? 'cursor-pointer hover:shadow-none hover:translate-x-1 hover:translate-y-1' : 'cursor-default opacity-80'
+      className={`relative border-2 border-slate-900 dark:border-slate-700 rounded-3xl p-4 sm:p-5 flex flex-col h-full transition-all duration-200 min-h-[120px] shadow-[5px_5px_0_0_#0f172a] dark:shadow-[5px_5px_0_0_#334155] bg-white dark:bg-slate-900 ${isClickable ? 'cursor-pointer hover:shadow-none hover:translate-x-1 hover:translate-y-1' : 'cursor-default opacity-80'
         }`}>
       {/* Album Cover - Main Primary Visual */}
-      <div className="aspect-[4/3] w-full bg-slate-100 border-2 border-slate-900 rounded-2xl mb-4 overflow-hidden relative shadow-[2px_2px_0_0_#0f172a]">
+      <div className="aspect-[4/3] w-full bg-slate-100 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 rounded-2xl mb-4 overflow-hidden relative shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155]">
         {album.cover_image_url ? (
           <img
             src={album.cover_image_url}
@@ -129,7 +129,7 @@ function AlbumCard({
             style={album.cover_image_position ? { objectPosition: album.cover_image_position } : undefined}
           />
         ) : (
-          <div className="w-full h-full flex flex-col items-center justify-center gap-2 opacity-30">
+          <div className="w-full h-full flex flex-col items-center justify-center gap-2 opacity-30 text-slate-900 dark:text-slate-200">
             <BookOpen className="w-8 h-8" />
             <span className="text-[10px] font-black uppercase">No Cover Image</span>
           </div>
@@ -143,13 +143,13 @@ function AlbumCard({
 
       <div className="flex justify-between items-start gap-2">
         <div className="flex-grow min-w-0">
-          <h2 className="text-base font-black text-slate-900 truncate" title={album.name}>{album.name}</h2>
+          <h2 className="text-base font-black text-slate-900 dark:text-slate-100 truncate" title={album.name}>{album.name}</h2>
         </div>
         {!isAdmin && (
           <button
             type="button"
             onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowInfo(!showInfo) }}
-            className="p-1 rounded-lg hover:bg-slate-100 text-slate-500 transition-colors shrink-0"
+            className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-300 transition-colors shrink-0"
           >
             <MoreVertical className="w-5 h-5" />
           </button>
@@ -159,15 +159,15 @@ function AlbumCard({
       {/* Info Detail Popup */}
       {showInfo && !isAdmin && (
         <div
-          className="absolute top-12 right-4 z-50 w-64 bg-white border-4 border-slate-900 shadow-[6px_6px_0_0_#0f172a] rounded-2xl p-4 animate-in fade-in zoom-in duration-200 cursor-default"
+          className="absolute top-12 right-4 z-50 w-64 bg-white dark:bg-slate-900 border-4 border-slate-900 dark:border-slate-700 shadow-[6px_6px_0_0_#0f172a] dark:shadow-[6px_6px_0_0_#334155] rounded-2xl p-4 animate-in fade-in zoom-in duration-200 cursor-default"
           onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
         >
-          <div className="flex justify-between items-center mb-4 pb-2 border-b-2 border-slate-100">
-            <h3 className="font-black text-slate-900 text-sm">Informasi Album</h3>
+          <div className="flex justify-between items-center mb-4 pb-2 border-b-2 border-slate-100 dark:border-slate-800">
+            <h3 className="font-black text-slate-900 dark:text-slate-100 text-sm">Informasi Album</h3>
             <button
               type="button"
               onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowInfo(false) }}
-              className="text-slate-400 hover:text-slate-900"
+              className="text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
             >
               <X className="w-4 h-4" />
             </button>
@@ -175,36 +175,36 @@ function AlbumCard({
 
           <div className="space-y-3">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-emerald-100 border-2 border-slate-900 flex items-center justify-center shrink-0">
-                <ShieldCheck className="w-4 h-4 text-emerald-600" />
+              <div className="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-900 border-2 border-slate-900 dark:border-slate-700 flex items-center justify-center shrink-0">
+                <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-300" />
               </div>
               <div>
-                <p className="text-[10px] font-bold text-slate-400 uppercase">Status</p>
-                <p className={`text-xs font-black ${displayStatus === 'approved' ? 'text-emerald-600' : 'text-orange-500'}`}>
+                <p className="text-[10px] font-bold text-slate-400 dark:text-slate-300 uppercase">Status</p>
+                <p className={`text-xs font-black ${displayStatus === 'approved' ? 'text-emerald-600 dark:text-emerald-300' : 'text-orange-500 dark:text-orange-300'}`}> 
                   {displayStatus === 'approved' ? 'Approved' : displayStatus === 'pending' ? 'Pending' : 'Declined'}
                 </p>
               </div>
             </div>
 
             <div className="flex items-center gap-3">
-              <div className={`w-8 h-8 rounded-lg border-2 border-slate-900 flex items-center justify-center shrink-0 ${isPaid ? 'bg-indigo-100' : 'bg-red-100'}`}>
-                <CreditCard className={`w-4 h-4 ${isPaid ? 'text-indigo-600' : 'text-red-500'}`} />
+              <div className={`w-8 h-8 rounded-lg border-2 border-slate-900 dark:border-slate-700 flex items-center justify-center shrink-0 ${isPaid ? 'bg-indigo-100 dark:bg-indigo-900' : 'bg-red-100 dark:bg-red-900'}`}> 
+                <CreditCard className={`w-4 h-4 ${isPaid ? 'text-indigo-600 dark:text-indigo-300' : 'text-red-500 dark:text-red-300'}`} />
               </div>
               <div>
-                <p className="text-[10px] font-bold text-slate-400 uppercase">Pembayaran</p>
-                <p className={`text-xs font-black ${isPaid ? 'text-indigo-600' : 'text-red-500'}`}>
+                <p className="text-[10px] font-bold text-slate-400 dark:text-slate-300 uppercase">Pembayaran</p>
+                <p className={`text-xs font-black ${isPaid ? 'text-indigo-600 dark:text-indigo-300' : 'text-red-500 dark:text-red-300'}`}>
                   {isPaid ? 'Lunas' : 'Belum Bayar'}
                 </p>
               </div>
             </div>
 
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-orange-100 border-2 border-slate-900 flex items-center justify-center shrink-0">
-                <Package className="w-4 h-4 text-orange-600" />
+              <div className="w-8 h-8 rounded-lg bg-orange-100 dark:bg-orange-900 border-2 border-slate-900 dark:border-slate-700 flex items-center justify-center shrink-0">
+                <Package className="w-4 h-4 text-orange-600 dark:text-orange-300" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-[10px] font-bold text-slate-400 uppercase">Paket Album</p>
-                <p className="text-xs font-black text-slate-900 truncate">
+                <p className="text-[10px] font-bold text-slate-400 dark:text-slate-300 uppercase">Paket Album</p>
+                <p className="text-xs font-black text-slate-900 dark:text-slate-100 truncate">
                   {album.type === 'yearbook'
                     ? (album.pricing_packages?.name?.replace(/^Paket\s+/i, '') || 'Yearbook')
                     : 'Shared Gallery'
@@ -214,12 +214,12 @@ function AlbumCard({
             </div>
 
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-slate-100 border-2 border-slate-900 flex items-center justify-center shrink-0">
-                <Calendar className="w-4 h-4 text-slate-600" />
+              <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 flex items-center justify-center shrink-0">
+                <Calendar className="w-4 h-4 text-slate-600 dark:text-slate-300" />
               </div>
               <div>
-                <p className="text-[10px] font-bold text-slate-400 uppercase">Tanggal Masukan</p>
-                <p className="text-xs font-black text-slate-900">{created || '-'}</p>
+                <p className="text-[10px] font-bold text-slate-400 dark:text-slate-300 uppercase">Tanggal Masukan</p>
+                <p className="text-xs font-black text-slate-900 dark:text-slate-100">{created || '-'}</p>
               </div>
             </div>
           </div>
@@ -262,13 +262,13 @@ function AlbumCard({
       )}
 
       {!isAdmin && (
-        <div className="mt-4 pt-4 border-t border-gray-100 flex flex-col gap-2">
+        <div className="mt-4 pt-4 border-t border-gray-100 dark:border-slate-800 flex flex-col gap-2">
           {album.isOwner !== false && isApproved && !isPaid && onPay && (
             <button
               type="button"
               disabled={!!loadingId}
               onClick={(e) => { e.preventDefault(); e.stopPropagation(); onPay(album) }}
-              className="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-black rounded-xl bg-emerald-400 border-2 border-slate-900 text-slate-900 shadow-[3px_3px_0_0_#0f172a] hover:translate-y-1 hover:translate-x-1 hover:shadow-none transition-all disabled:opacity-50"
+              className="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-black rounded-xl bg-emerald-400 dark:bg-emerald-700 border-2 border-slate-900 text-slate-900 dark:text-slate-100 shadow-[3px_3px_0_0_#0f172a] hover:translate-y-1 hover:translate-x-1 hover:shadow-none transition-all disabled:opacity-50"
             >
               <Check className="w-3.5 h-3.5" /> Bayar Sekarang
             </button>
@@ -277,7 +277,7 @@ function AlbumCard({
             <button
               type="button"
               onClick={(e) => { e.preventDefault(); e.stopPropagation(); onInvite(album) }}
-              className="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-black rounded-xl bg-slate-100 border-2 border-slate-900 shadow-[2px_2px_0_0_#0f172a] text-slate-900 hover:translate-y-0.5 hover:translate-x-0.5 hover:shadow-none transition-all"
+              className="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-black rounded-xl bg-slate-100 dark:bg-slate-800 border-2 border-slate-900 shadow-[2px_2px_0_0_#0f172a] text-slate-900 dark:text-slate-100 hover:translate-y-0.5 hover:translate-x-0.5 hover:shadow-none transition-all"
             >
               <UserPlus className="w-3.5 h-3.5" /> Undang Teman
             </button>
@@ -286,12 +286,12 @@ function AlbumCard({
             <Link
               href={editorUrl}
               onClick={(e) => e.stopPropagation()}
-              className="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-black rounded-xl bg-indigo-300 border-2 border-slate-900 shadow-[3px_3px_0_0_#0f172a] text-slate-900 hover:translate-y-1 hover:translate-x-1 hover:shadow-none transition-all"
+              className="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-black rounded-xl bg-indigo-300 dark:bg-indigo-900 border-2 border-slate-900 shadow-[3px_3px_0_0_#0f172a] text-slate-900 dark:text-slate-100 hover:translate-y-1 hover:translate-x-1 hover:shadow-none transition-all"
             >
               <LayoutDashboard className="w-3.5 h-3.5" /> Edit Album
             </Link>
           )}
-          <p className="text-xs text-muted text-center">
+          <p className="text-xs text-muted text-center dark:text-slate-400">
             {isClickable ? 'Klik untuk buka' : statusLabel === 'pending' ? 'Menunggu persetujuan admin' : isApproved && !isPaid ? 'Selesaikan pembayaran untuk akses' : statusLabel === 'declined' ? 'Akses dibatasi' : 'Klik untuk buka'}
           </p>
         </div>
@@ -661,12 +661,12 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
       {/* 1. Header: Title & Action Buttons Row */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 mt-2">
         <div>
-          <h1 className="text-3xl font-black text-slate-900 sm:text-4xl tracking-tight">{title}</h1>
-          <p className="text-slate-600 font-bold text-sm mt-1 sm:text-base">{subtitle}</p>
+          <h1 className="text-3xl font-black text-slate-900 dark:text-slate-100 sm:text-4xl tracking-tight">{title}</h1>
+          <p className="text-slate-600 dark:text-slate-400 font-bold text-sm mt-1 sm:text-base">{subtitle}</p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 shrink-0">
-          {/* Public Preview Toggle Button */}
+        <div className="flex flex-nowrap items-center gap-2 w-full md:w-auto min-w-0">
+          {/* Public Preview Toggle Button - flex-1 di mobile agar lebar sama dengan card */}
           <button
             type="button"
             onClick={() => {
@@ -674,10 +674,10 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
               if (showSearch) setShowSearch(false)
               if (showJoinForm) setShowJoinForm(false)
             }}
-            className={`inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-black rounded-xl border-2 border-slate-900 shadow-[4px_4px_0_0_#0f172a] transition-all active:scale-95 ${showPreviewForm ? 'bg-slate-200 text-slate-600' : 'bg-emerald-100 text-slate-900 hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none'}`}
+            className={`flex-1 min-w-0 md:flex-initial inline-flex items-center justify-center gap-1 sm:gap-2 px-2 py-2 sm:px-4 sm:py-2 text-[10px] sm:text-sm font-black rounded-lg sm:rounded-xl border-2 border-slate-900 dark:border-slate-700 shadow-[3px_3px_0_0_#0f172a] dark:shadow-[3px_3px_0_0_#334155] transition-all active:scale-95 ${showPreviewForm ? 'bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-200' : 'bg-emerald-100 text-slate-900 dark:bg-slate-800 dark:text-slate-200 hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none'}`}
           >
-            <Eye className="w-4 h-4 shrink-0" />
-            <span>{showPreviewForm ? 'Tutup' : 'Preview'}</span>
+            <Eye className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+            <span className="whitespace-nowrap truncate">{showPreviewForm ? 'Tutup' : 'Preview'}</span>
           </button>
 
           {/* Search Toggle Button */}
@@ -688,20 +688,20 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
               if (showJoinForm) setShowJoinForm(false)
               if (showPreviewForm) setShowPreviewForm(false)
             }}
-            className={`inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-black rounded-xl border-2 border-slate-900 shadow-[4px_4px_0_0_#0f172a] transition-all active:scale-95 ${showSearch ? 'bg-slate-200 text-slate-600' : 'bg-white text-slate-900 hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none'}`}
+            className={`flex-1 min-w-0 md:flex-initial inline-flex items-center justify-center gap-1 sm:gap-2 px-2 py-2 sm:px-4 sm:py-2 text-[10px] sm:text-sm font-black rounded-lg sm:rounded-xl border-2 border-slate-900 dark:border-slate-700 shadow-[3px_3px_0_0_#0f172a] dark:shadow-[3px_3px_0_0_#334155] transition-all active:scale-95 ${showSearch ? 'bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-200' : 'bg-white text-slate-900 dark:bg-slate-900 dark:text-white hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none'}`}
           >
-            <Search className="w-4 h-4 shrink-0" />
-            <span>{showSearch ? 'Tutup' : 'Search'}</span>
+            <Search className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+            <span className="whitespace-nowrap truncate">{showSearch ? 'Tutup' : 'Search'}</span>
           </button>
 
           {/* Create Project Button */}
           <button
             type="button"
             onClick={() => setConfirmModal('yearbook')}
-            className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-black rounded-xl bg-emerald-400 border-2 border-slate-900 shadow-[4px_4px_0_0_#0f172a] text-slate-900 hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all active:scale-95"
+            className="flex-1 min-w-0 md:flex-initial inline-flex items-center justify-center gap-1 sm:gap-2 px-2 py-2 sm:px-4 sm:py-2 text-[10px] sm:text-sm font-black rounded-lg sm:rounded-xl bg-emerald-400 border-2 border-slate-900 dark:border-slate-700 shadow-[3px_3px_0_0_#0f172a] dark:shadow-[3px_3px_0_0_#334155] text-slate-900 dark:text-white hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all active:scale-95"
           >
-            <Plus className="w-4 h-4 shrink-0" />
-            <span>Create</span>
+            <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+            <span className="whitespace-nowrap truncate">Create</span>
           </button>
 
           {/* Join Project Button */}
@@ -712,10 +712,10 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
               if (showSearch) setShowSearch(false)
               if (showPreviewForm) setShowPreviewForm(false)
             }}
-            className={`inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-black rounded-xl border-2 border-slate-900 shadow-[4px_4px_0_0_#0f172a] transition-all active:scale-95 ${showJoinForm ? 'bg-slate-200 text-slate-600' : 'bg-orange-400 text-slate-900 hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none'}`}
+            className={`flex-1 min-w-0 md:flex-initial inline-flex items-center justify-center gap-1 sm:gap-2 px-2 py-2 sm:px-4 sm:py-2 text-[10px] sm:text-sm font-black rounded-lg sm:rounded-xl border-2 border-slate-900 dark:border-slate-700 shadow-[3px_3px_0_0_#0f172a] dark:shadow-[3px_3px_0_0_#334155] transition-all active:scale-95 ${showJoinForm ? 'bg-slate-200 text-slate-600 dark:bg-orange-700 dark:text-white' : 'bg-orange-400 text-slate-900 dark:bg-orange-700 dark:text-white hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none'}`}
           >
-            <UserPlus className="w-4 h-4 shrink-0" />
-            <span>{showJoinForm ? 'Tutup' : 'Join'}</span>
+            <UserPlus className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+            <span className="whitespace-nowrap truncate">{showJoinForm ? 'Tutup' : 'Join'}</span>
           </button>
         </div>
       </div>
@@ -724,7 +724,7 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
       <div className="mb-8">
         {/* Public Preview Form */}
         {showPreviewForm && (
-          <div className="flex flex-col sm:flex-row gap-3 p-4 bg-emerald-50 border-2 border-slate-900 rounded-2xl animate-in slide-in-from-top-2 duration-200 shadow-inner max-w-2xl ml-auto">
+          <div className="flex flex-col sm:flex-row gap-3 p-4 bg-emerald-50 dark:bg-emerald-900/20 border-2 border-slate-900 dark:border-slate-700 rounded-2xl animate-in slide-in-from-top-2 duration-200 shadow-inner max-w-2xl mx-auto w-full">
             <div className="flex-1 relative">
               <input
                 type="text"
@@ -759,7 +759,7 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
 
         {/* Search Form */}
         {showSearch && (
-          <div className="flex items-center gap-3 p-4 bg-slate-50 border-2 border-slate-900 rounded-2xl animate-in slide-in-from-top-2 duration-200 shadow-inner max-w-2xl ml-auto">
+          <div className="flex items-center gap-3 p-4 bg-slate-50 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 rounded-2xl animate-in slide-in-from-top-2 duration-200 shadow-inner max-w-2xl mx-auto w-full">
             <Search className="w-5 h-5 text-slate-400 shrink-0" />
             <input
               type="text"
@@ -777,7 +777,7 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
 
         {/* 3. Revealable Join Form - Muncul di bawah row header */}
         {showJoinForm && (
-          <div className="flex flex-col sm:flex-row gap-3 p-4 bg-slate-50 border-2 border-slate-900 rounded-2xl animate-in slide-in-from-top-2 duration-200 shadow-inner max-w-2xl ml-auto">
+          <div className="flex flex-col sm:flex-row gap-3 p-4 bg-slate-50 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 rounded-2xl animate-in slide-in-from-top-2 duration-200 shadow-inner max-w-2xl mx-auto w-full">
             <div className="flex-1 relative">
               <input
                 type="text"
@@ -807,54 +807,48 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
           <>
             <div className="md:hidden grid grid-cols-1 gap-4">
               {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="border-2 border-slate-900 rounded-3xl p-5 bg-white shadow-[4px_4px_0_0_#0f172a] animate-pulse space-y-4">
-                  <div className="h-6 bg-slate-200 rounded w-3/4" />
-                  <div className="h-4 bg-slate-100 rounded w-1/2" />
-                  <div className="h-4 bg-slate-100 rounded w-full" />
-                  <div className="h-10 bg-slate-100 rounded w-1/3 mt-2" />
+                <div key={i} className="border-2 border-slate-900 dark:border-slate-700 rounded-3xl p-5 bg-white dark:bg-slate-900 shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155] animate-pulse space-y-4">
+                  <div className="h-6 bg-slate-200 dark:bg-slate-700 rounded w-3/4" />
+                  <div className="h-4 bg-slate-100 dark:bg-slate-800 rounded w-1/2" />
+                  <div className="h-4 bg-slate-100 dark:bg-slate-800 rounded w-full" />
+                  <div className="h-10 bg-slate-100 dark:bg-slate-800 rounded w-1/3 mt-2" />
                 </div>
               ))}
             </div>
-            <div className="hidden md:block bg-white border-2 border-slate-900 rounded-3xl overflow-hidden animate-pulse shadow-[6px_6px_0_0_#0f172a]">
-              <div className="h-14 bg-emerald-200 border-b-2 border-slate-900 w-full" />
+            <div className="hidden md:block bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-3xl overflow-hidden animate-pulse shadow-[6px_6px_0_0_#0f172a] dark:shadow-[6px_6px_0_0_#334155]">
+              <div className="h-14 bg-emerald-200 dark:bg-slate-800 border-b-2 border-slate-900 dark:border-slate-700 w-full" />
               {[1, 2, 3, 4, 5, 6].map((i) => (
-                <div key={i} className="flex items-center px-5 py-5 border-b-2 border-slate-100 gap-4">
-                  <div className="h-5 bg-slate-200 rounded w-1/3" />
-                  <div className="h-5 bg-slate-100 rounded w-1/6" />
-                  <div className="h-5 bg-slate-100 rounded w-1/6 hidden sm:block" />
-                  <div className="h-5 bg-slate-100 rounded w-1/6 hidden md:block" />
-                  <div className="h-10 w-10 bg-slate-200 border-2 border-slate-900 rounded-xl ml-auto" />
+                <div key={i} className="flex items-center px-5 py-5 border-b-2 border-slate-100 dark:border-slate-700 gap-4">
+                  <div className="h-5 bg-slate-200 dark:bg-slate-700 rounded w-1/3" />
+                  <div className="h-5 bg-slate-100 dark:bg-slate-800 rounded w-1/6" />
+                  <div className="h-5 bg-slate-100 dark:bg-slate-800 rounded w-1/6 hidden sm:block" />
+                  <div className="h-5 bg-slate-100 dark:bg-slate-800 rounded w-1/6 hidden md:block" />
+                  <div className="h-10 w-10 bg-slate-200 dark:bg-slate-700 border-2 border-slate-900 dark:border-slate-700 rounded-xl ml-auto" />
                 </div>
               ))}
             </div>
           </>
         ) : (
-          <div className="grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="grid grid-cols-1 gap-3 sm:gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-              <div key={i} className="border-2 border-slate-900 rounded-3xl p-5 flex flex-col h-full bg-white animate-pulse min-h-[160px] shadow-[4px_4px_0_0_#0f172a]">
-                <div className="flex-grow">
-                  <div className="space-y-3 mb-4">
-                    <div className="h-6 bg-slate-200 rounded-md w-3/4" />
-                    <div className="h-4 bg-slate-100 rounded-md w-1/2" />
-                  </div>
-                  <div className="flex flex-wrap gap-2 mt-auto">
-                    <div className="h-6 w-20 bg-slate-200 rounded" />
-                    <div className="h-6 w-24 bg-slate-200 rounded" />
-                  </div>
+              <div key={i} className="relative border-2 border-slate-900 dark:border-slate-700 rounded-3xl p-4 sm:p-5 flex flex-col h-full bg-white dark:bg-slate-900 animate-pulse min-h-[120px] shadow-[5px_5px_0_0_#0f172a] dark:shadow-[5px_5px_0_0_#334155]">
+                <div className="aspect-[4/3] w-full bg-slate-100 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 rounded-2xl mb-4 overflow-hidden" />
+                <div className="flex justify-between items-start gap-2 mb-2">
+                  <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded-md flex-1 min-w-0" />
                 </div>
-                <div className="mt-4 pt-4 border-t-2 border-slate-900 flex flex-col items-center gap-2">
-                  <div className="h-4 bg-slate-100 rounded w-1/3" />
+                <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-700 flex flex-col items-center gap-2">
+                  <div className="h-3 bg-slate-100 dark:bg-slate-800 rounded w-1/3" />
                 </div>
               </div>
             ))}
           </div>
         )
       ) : filteredAlbums.length === 0 ? (
-        <div className="text-center py-12 sm:py-16 border-2 border-slate-900 rounded-3xl bg-white shadow-[6px_6px_0_0_#0f172a]">
-          <h3 className="text-base font-black text-slate-900 sm:text-xl tracking-tight">
+        <div className="text-center py-12 sm:py-16 border-2 border-slate-900 dark:border-slate-700 rounded-3xl bg-white dark:bg-slate-900 shadow-[6px_6px_0_0_#0f172a] dark:shadow-[6px_6px_0_0_#334155]">
+          <h3 className="text-base font-black text-slate-900 dark:text-white sm:text-xl tracking-tight">
             {albums.length === 0 ? (isAdmin ? 'Belum ada data' : 'Belum ada album') : 'Tidak ada hasil'}
           </h3>
-          <p className="text-slate-500 font-bold text-sm sm:text-base mt-2">
+          <p className="text-slate-500 dark:text-slate-300 font-bold text-sm sm:text-base mt-2">
             {albums.length === 0 ? 'Order Yearbook dari Showroom untuk memulai.' : 'Coba kata kunci lain.'}
           </p>
         </div>
@@ -942,59 +936,59 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
             })}
           </div>
           {/* Desktop: tabel */}
-          <div className="hidden md:block bg-white border-2 border-slate-900 rounded-3xl overflow-hidden shadow-[6px_6px_0_0_#0f172a]">
+          <div className="hidden md:block bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 rounded-3xl overflow-hidden shadow-[6px_6px_0_0_#0f172a] dark:shadow-[6px_6px_0_0_#334155]">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
-                <thead className="bg-emerald-300 border-b-2 border-slate-900">
+                <thead className="bg-emerald-300 dark:bg-slate-900 border-b-2 border-slate-900 dark:border-slate-700">
                   <tr>
-                    <th className="px-3 py-3 text-[11px] font-black text-slate-900 uppercase tracking-wider">Nama Project</th>
-                    <th className="px-3 py-3 text-[11px] font-black text-slate-900 uppercase tracking-wider text-center">Paket</th>
-                    <th className="px-3 py-3 text-[11px] font-black text-slate-900 uppercase tracking-wider text-center">WA</th>
-                    <th className="px-3 py-3 text-[11px] font-black text-slate-900 uppercase tracking-wider text-center hidden lg:table-cell">Siswa</th>
-                    <th className="px-3 py-3 text-[11px] font-black text-slate-900 uppercase tracking-wider text-center hidden xl:table-cell">Estimasi</th>
-                    <th className="px-3 py-3 text-center text-[11px] font-black text-slate-900 uppercase tracking-wider">Status</th>
-                    <th className="px-3 py-3 text-right text-[11px] font-black text-slate-900 uppercase tracking-wider">Aksi</th>
+                    <th className="px-3 py-3 text-[11px] font-black text-slate-900 dark:text-white uppercase tracking-wider">Nama Project</th>
+                    <th className="px-3 py-3 text-[11px] font-black text-slate-900 dark:text-white uppercase tracking-wider text-center">Paket</th>
+                    <th className="px-3 py-3 text-[11px] font-black text-slate-900 dark:text-white uppercase tracking-wider text-center">WA</th>
+                    <th className="px-3 py-3 text-[11px] font-black text-slate-900 dark:text-white uppercase tracking-wider text-center hidden lg:table-cell">Siswa</th>
+                    <th className="px-3 py-3 text-[11px] font-black text-slate-900 dark:text-white uppercase tracking-wider text-center hidden xl:table-cell">Estimasi</th>
+                    <th className="px-3 py-3 text-center text-[11px] font-black text-slate-900 dark:text-white uppercase tracking-wider">Status</th>
+                    <th className="px-3 py-3 text-right text-[11px] font-black text-slate-900 dark:text-white uppercase tracking-wider">Aksi</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y-2 divide-slate-100">
+                <tbody className="divide-y-2 divide-slate-100 dark:divide-slate-700">
                   {paginatedAlbums.map((album) => {
                     const isProcessing = loadingId === album.id
                     return (
                       <tr
                         key={album.id}
                         onClick={() => handleRowClick(album)}
-                        className="group hover:bg-slate-50 transition-colors cursor-pointer"
+                        className="group hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors cursor-pointer"
                       >
-                        <td className="px-3 py-2.5 text-[14px] font-black text-slate-900">
+                        <td className="px-3 py-2.5 text-[14px] font-black text-slate-900 dark:text-white">
                           <div className="flex flex-col gap-0.5">
                             <span className="break-words line-clamp-1">{album.name}</span>
-                            <div className="flex items-center gap-2 text-[10px] font-bold text-slate-500">
+                            <div className="flex items-center gap-2 text-[10px] font-bold text-slate-500 dark:text-slate-300">
                               {album.school_city && <span>{album.school_city}</span>}
                               {album.pic_name && (
                                 <>
-                                  <span className="w-1 h-1 rounded-full bg-slate-300" />
-                                  <span className="text-slate-400">{album.pic_name}</span>
+                                  <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-500" />
+                                  <span className="text-slate-400 dark:text-slate-400">{album.pic_name}</span>
                                 </>
                               )}
                               {album.type === 'public' && (
                                 <>
-                                  <span className="w-1 h-1 rounded-full bg-slate-300" />
-                                  <span className="text-sky-500 uppercase tracking-tighter">Personal</span>
+                                  <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-500" />
+                                  <span className="text-sky-500 dark:text-sky-400 uppercase tracking-tighter">Personal</span>
                                 </>
                               )}
                             </div>
                           </div>
                         </td>
-                        <td className="px-3 py-2.5 text-[11px] font-bold text-slate-600 text-center whitespace-nowrap">
+                        <td className="px-3 py-2.5 text-[11px] font-bold text-slate-600 dark:text-slate-300 text-center whitespace-nowrap">
                           {album.pricing_packages?.name?.replace(/^Paket\s+/i, '') || '-'}
                         </td>
-                        <td className="px-3 py-2.5 text-[11px] font-bold text-slate-600 text-center whitespace-nowrap">
+                        <td className="px-3 py-2.5 text-[11px] font-bold text-slate-600 dark:text-slate-300 text-center whitespace-nowrap">
                           {album.wa_e164 || '-'}
                         </td>
-                        <td className="px-3 py-2.5 text-[11px] font-bold text-slate-600 text-center hidden lg:table-cell whitespace-nowrap">
+                        <td className="px-3 py-2.5 text-[11px] font-bold text-slate-600 dark:text-slate-300 text-center hidden lg:table-cell whitespace-nowrap">
                           {album.students_count || '-'}
                         </td>
-                        <td className="px-3 py-2.5 text-[11px] text-slate-600 font-bold text-center hidden xl:table-cell whitespace-nowrap">
+                        <td className="px-3 py-2.5 text-[11px] text-slate-600 dark:text-slate-300 font-bold text-center hidden xl:table-cell whitespace-nowrap">
                           {album.total_estimated_price
                             ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(album.total_estimated_price)
                             : '-'}
@@ -1002,16 +996,24 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
                         <td className="px-3 py-2.5 text-center whitespace-nowrap">
                           <div className="flex flex-col items-center gap-1">
                             <span
-                              className={`inline-block px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider rounded border-2 border-slate-900 shadow-[1px_1px_0_0_#0f172a] ${(album.status ?? 'pending') === 'approved' ? 'bg-emerald-300 text-slate-900' :
-                                (album.status ?? 'pending') === 'pending' ? 'bg-orange-300 text-slate-900' :
-                                  (album.status ?? 'pending') === 'declined' ? 'bg-red-400 text-white' :
-                                    'bg-indigo-300 text-slate-900'
-                                }`}>
+                              className={`inline-block px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider rounded border-2 border-slate-900 dark:border-slate-700 shadow-[1px_1px_0_0_#0f172a] dark:shadow-[1px_1px_0_0_#334155] ${
+                                (album.status ?? 'pending') === 'approved'
+                                  ? 'bg-emerald-300 dark:bg-emerald-700 text-slate-900 dark:text-white'
+                                  : (album.status ?? 'pending') === 'pending'
+                                  ? 'bg-orange-300 dark:bg-orange-700 text-slate-900 dark:text-white'
+                                  : (album.status ?? 'pending') === 'declined'
+                                  ? 'bg-red-400 dark:bg-red-700 text-white'
+                                  : 'bg-indigo-300 dark:bg-indigo-700 text-slate-900 dark:text-white'
+                              }`}>
                               {album.status ?? 'pending'}
                             </span>
                             {album.type === 'yearbook' && (album.status ?? 'pending') === 'approved' && (
                               <span
-                                className={`inline-block px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider rounded border-2 border-slate-900 shadow-[1px_1px_0_0_#0f172a] ${album.payment_status === 'paid' ? 'bg-emerald-300 text-slate-900' : 'bg-red-400 text-white'}`}>
+                                className={`inline-block px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider rounded border-2 border-slate-900 dark:border-slate-700 shadow-[1px_1px_0_0_#0f172a] dark:shadow-[1px_1px_0_0_#334155] ${
+                                  album.payment_status === 'paid'
+                                    ? 'bg-emerald-300 dark:bg-emerald-700 text-slate-900 dark:text-white'
+                                    : 'bg-red-400 dark:bg-red-700 text-white'
+                                }`}>
                                 {album.payment_status === 'paid' ? 'Paid' : 'Unpaid'}
                               </span>
                             )}
@@ -1113,16 +1115,15 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
 
       {/* Modal konfirmasi buat Personal / Yearbook — UI custom, bukan dialog browser */}
       {confirmModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" onClick={() => setConfirmModal(null)}>
-          <div className="bg-white border-4 border-slate-900 rounded-3xl p-6 max-w-sm w-full shadow-[8px_8px_0_0_#0f172a]" onClick={(e) => e.stopPropagation()}>
-            <p className="text-xl font-black text-slate-900 mb-6">
-              Mau buat project baru?
-            </p>
-            <div className="flex gap-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 dark:bg-black/50 backdrop-blur-md" onClick={() => setConfirmModal(null)}>
+          <div className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-[32px] p-6 sm:p-8 max-w-sm w-full shadow-[6px_6px_0_0_#0f172a] dark:shadow-[6px_6px_0_0_#334155] text-center" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-xl font-black text-slate-900 dark:text-white mb-2 uppercase tracking-tight">Buat Project Baru?</h3>
+            <p className="text-sm font-bold text-slate-500 dark:text-slate-400 mb-6">Mau buat project baru?</p>
+            <div className="flex gap-3">
               <button
                 type="button"
                 onClick={() => setConfirmModal(null)}
-                className="flex-1 py-3 text-sm font-black rounded-2xl bg-white border-2 border-slate-900 text-slate-900 shadow-[3px_3px_0_0_#0f172a] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all"
+                className="flex-1 py-3.5 rounded-xl bg-slate-100 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 text-slate-900 dark:text-white text-xs font-black uppercase tracking-widest shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
               >
                 Batal
               </button>
@@ -1133,7 +1134,7 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
                   else router.push(showroomHref)
                   setConfirmModal(null)
                 }}
-                className={`flex-1 py-3 text-sm font-black rounded-2xl border-2 border-slate-900 shadow-[3px_3px_0_0_#0f172a] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all text-slate-900 ${confirmModal === 'personal' ? 'bg-indigo-300' : 'bg-emerald-400'}`}
+                className={`flex-1 py-3.5 rounded-xl border-2 border-slate-900 dark:border-slate-600 text-xs font-black uppercase tracking-widest shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all text-slate-900 dark:text-white ${confirmModal === 'personal' ? 'bg-indigo-400 dark:bg-indigo-600' : 'bg-emerald-400 dark:bg-emerald-600'}`}
               >
                 Gas Lanjut!
               </button>
@@ -1143,14 +1144,14 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
       )}
 
       {inviteModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" onClick={() => setInviteModal(null)}>
-          <div className="bg-white border-4 border-slate-900 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-[8px_8px_0_0_#0f172a]" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-[22px] font-black text-slate-900 mb-1 leading-tight">Undangan Album</h3>
-            <p className="font-bold text-slate-600 mb-4">{inviteModal.albumName}</p>
-            <p className="text-[13px] font-bold text-slate-500 mb-6">Bagikan kode ini; penerima bisa masukkan kode di halaman Album.</p>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 dark:bg-black/60 backdrop-blur-sm" onClick={() => setInviteModal(null)}>
+          <div className="bg-white dark:bg-slate-900 border-4 border-slate-900 dark:border-slate-700 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-[8px_8px_0_0_#0f172a] dark:shadow-[8px_8px_0_0_#334155]" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-[22px] font-black text-slate-900 dark:text-white mb-1 leading-tight">Undangan Album</h3>
+            <p className="font-bold text-slate-600 dark:text-slate-300 mb-4">{inviteModal.albumName}</p>
+            <p className="text-[13px] font-bold text-slate-500 dark:text-slate-400 mb-6">Bagikan kode ini; penerima bisa masukkan kode di halaman Album.</p>
 
             <div className="flex flex-col sm:flex-row items-center gap-3 mb-6">
-              <span className="w-full sm:w-auto text-lg font-mono font-black text-slate-900 tracking-wider px-4 py-3 rounded-2xl bg-orange-100 border-2 border-slate-900 shadow-inner flex-1 text-center sm:text-left">
+              <span className="w-full sm:w-auto text-lg font-mono font-black text-slate-900 dark:text-white tracking-wider px-4 py-3 rounded-2xl bg-orange-100 dark:bg-orange-950/50 border-2 border-slate-900 dark:border-slate-600 shadow-inner flex-1 text-center sm:text-left">
                 {inviteModal.code}
               </span>
               <button
@@ -1160,7 +1161,7 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
                   setCopyFeedback(true)
                   setTimeout(() => setCopyFeedback(false), 2000)
                 }}
-                className="w-full sm:w-auto px-5 py-3 text-[15px] font-black rounded-2xl bg-indigo-300 border-2 border-slate-900 text-slate-900 shadow-[3px_3px_0_0_#0f172a] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all"
+                className="w-full sm:w-auto px-5 py-3 text-[15px] font-black rounded-2xl bg-indigo-300 dark:bg-indigo-600 border-2 border-slate-900 dark:border-slate-600 text-slate-900 dark:text-white shadow-[3px_3px_0_0_#0f172a] dark:shadow-[3px_3px_0_0_#334155] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all"
               >
                 {copyFeedback ? 'Tersalin!' : 'Salin Kode'}
               </button>
@@ -1169,7 +1170,7 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
             <button
               type="button"
               onClick={() => setInviteModal(null)}
-              className="w-full py-3 text-[15px] font-black rounded-2xl bg-white border-2 border-slate-900 text-slate-900 shadow-[3px_3px_0_0_#0f172a] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all"
+              className="w-full py-3 text-[15px] font-black rounded-2xl bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 text-slate-900 dark:text-white shadow-[3px_3px_0_0_#0f172a] dark:shadow-[3px_3px_0_0_#334155] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all"
             >
               Tutup
             </button>

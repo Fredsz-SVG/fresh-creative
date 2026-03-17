@@ -173,20 +173,20 @@ export default function TeacherCard({
   return (
     <>
       {typeof document !== 'undefined' && localConfirm && createPortal(
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[100] p-4" onClick={() => setLocalConfirm(null)}>
-          <div className="bg-white border border-red-200 rounded-2xl p-4 sm:p-6 max-w-md w-full shadow-2xl" onClick={e => e.stopPropagation()}>
-            <h3 className="text-lg font-bold text-red-500 mb-2">{localConfirm.title}</h3>
-            <p className="text-sm text-gray-500 mb-6">{localConfirm.message}</p>
-            <div className="flex gap-3 justify-end">
+        <div className="fixed inset-0 bg-slate-900/40 dark:bg-black/50 backdrop-blur-md flex items-center justify-center z-[100] p-4" onClick={() => setLocalConfirm(null)}>
+          <div className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-[32px] p-6 sm:p-8 max-w-sm w-full shadow-[6px_6px_0_0_#0f172a] dark:shadow-[6px_6px_0_0_#334155] text-center" onClick={e => e.stopPropagation()}>
+            <h3 className="text-xl font-black text-slate-900 dark:text-white mb-2 uppercase tracking-tight">{localConfirm.title}</h3>
+            <p className="text-sm font-bold text-slate-500 dark:text-slate-400 mb-6">{localConfirm.message}</p>
+            <div className="flex gap-3">
               <button
                 onClick={() => setLocalConfirm(null)}
-                className="px-5 py-2.5 rounded-xl bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-gray-800 transition-colors text-sm font-bold shadow-sm"
+                className="flex-1 py-3.5 rounded-xl bg-slate-100 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 text-slate-900 dark:text-white text-xs font-black uppercase tracking-widest shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
               >
                 Batal
               </button>
               <button
                 onClick={() => { localConfirm.onConfirm(); setLocalConfirm(null) }}
-                className="px-5 py-2.5 rounded-xl bg-red-500 text-white hover:bg-red-600 transition-colors text-sm font-bold shadow-sm"
+                className="flex-1 py-3.5 rounded-xl bg-red-500 text-white border-2 border-slate-900 dark:border-slate-700 text-xs font-black uppercase tracking-widest shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
               >
                 Ya, Hapus
               </button>
@@ -198,17 +198,17 @@ export default function TeacherCard({
 
       {typeof document !== 'undefined' && viewerOpen && createPortal(
         <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-[110] p-4" onClick={() => setViewerOpen(false)}>
-          <div className="bg-white rounded-2xl p-4 max-w-[520px] w-full shadow-2xl" onClick={e => e.stopPropagation()}>
-            <div className="flex items-start justify-between mb-3 border-b border-gray-100 pb-3">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 max-w-[520px] w-full shadow-2xl dark:shadow-[16px_16px_0_0_#334155] dark:border-4 dark:border-slate-700" onClick={e => e.stopPropagation()}>
+            <div className="flex items-start justify-between mb-3 border-b border-gray-100 dark:border-slate-700 pb-3">
               <div className="flex gap-2 items-center">
-                <button type="button" onClick={() => setViewerIndex(i => Math.max(0, i - 1))} className="p-2 rounded-xl bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors" title="Prev"><ChevronLeft className="w-5 h-5" /></button>
-                <div className="px-3 py-1.5 bg-violet-50 text-violet-600 font-bold text-xs rounded-lg">{viewerIndex + 1} / {allDisplayPhotos.length}</div>
-                <button type="button" onClick={() => setViewerIndex(i => Math.min(i + 1, allDisplayPhotos.length - 1))} className="p-2 rounded-xl bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors" title="Next"><ChevronRight className="w-5 h-5" /></button>
+                <button type="button" onClick={() => setViewerIndex(i => Math.max(0, i - 1))} className="p-2 rounded-xl bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors" title="Prev"><ChevronLeft className="w-5 h-5" /></button>
+                <div className="px-3 py-1.5 bg-violet-50 dark:bg-violet-950/50 text-violet-600 dark:text-violet-400 font-bold text-xs rounded-lg">{viewerIndex + 1} / {allDisplayPhotos.length}</div>
+                <button type="button" onClick={() => setViewerIndex(i => Math.min(i + 1, allDisplayPhotos.length - 1))} className="p-2 rounded-xl bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors" title="Next"><ChevronRight className="w-5 h-5" /></button>
               </div>
-              <button type="button" onClick={() => setViewerOpen(false)} className="p-2 rounded-xl bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-800 transition-colors"><X className="w-5 h-5" /></button>
+              <button type="button" onClick={() => setViewerOpen(false)} className="p-2 rounded-xl bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-slate-400 hover:bg-gray-200 dark:hover:bg-slate-700 hover:text-gray-800 dark:hover:text-white transition-colors"><X className="w-5 h-5" /></button>
             </div>
 
-            <div className="w-full flex items-center justify-center mb-4 bg-gray-50 rounded-xl overflow-hidden border border-gray-100" style={{ minHeight: '300px' }}>
+            <div className="w-full flex items-center justify-center mb-4 bg-gray-50 dark:bg-slate-800 rounded-xl overflow-hidden border border-gray-100 dark:border-slate-700" style={{ minHeight: '300px' }}>
               <img src={(allDisplayPhotos[viewerIndex] && allDisplayPhotos[viewerIndex].file_url) || teacher.photo_url || ''} alt={`${teacher.name} ${viewerIndex + 1}`} className="max-h-[60vh] object-contain w-full" />
             </div>
 
@@ -238,11 +238,11 @@ export default function TeacherCard({
         >
           {/* ================= FRONT SIDE ================= */}
           <div
-            className="relative w-full h-full backface-hidden rounded-2xl border-4 border-slate-900 bg-white shadow-[6px_6px_0_0_#0f172a] group-hover:shadow-none group-hover:translate-x-1 group-hover:translate-y-1 transition-all duration-300 flex flex-col overflow-hidden"
+            className="relative w-full h-full backface-hidden rounded-2xl border-4 border-slate-900 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-[6px_6px_0_0_#0f172a] dark:shadow-[6px_6px_0_0_#334155] group-hover:shadow-none group-hover:translate-x-1 group-hover:translate-y-1 transition-all duration-300 flex flex-col overflow-hidden"
             style={{ backfaceVisibility: 'hidden' }}
           >
             {/* Photo section */}
-            <div className="relative aspect-[4/5] overflow-hidden bg-slate-50 flex-shrink-0 border-b-4 border-slate-900">
+            <div className="relative aspect-[4/5] overflow-hidden bg-slate-50 dark:bg-slate-800 flex-shrink-0 border-b-4 border-slate-900 dark:border-slate-700">
               {(teacher.photos && teacher.photos.length > 0 || teacher.photo_url) ? (
                 <img
                   src={teacher.photos && teacher.photos.length > 0 ? teacher.photos[0].file_url : teacher.photo_url}
@@ -259,11 +259,11 @@ export default function TeacherCard({
                 />
               ) : (
                 <div
-                  className="w-full h-full flex flex-col items-center justify-center text-slate-300 cursor-pointer hover:bg-slate-100 transition-colors"
+                  className="w-full h-full flex flex-col items-center justify-center text-slate-300 dark:text-slate-500 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
                   onClick={() => onClickPhoto && onClickPhoto(teacher, 0)}
                 >
                   <ImagePlus className="w-10 h-10 mb-2 opacity-40" />
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Belum ada foto</span>
+                  <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Belum ada foto</span>
                 </div>
               )}
 
@@ -275,7 +275,7 @@ export default function TeacherCard({
                     e.stopPropagation()
                     onPlayVideo(teacher.video_url!)
                   }}
-                  className="absolute bottom-3 right-3 w-10 h-10 rounded-full bg-indigo-400 text-white border-2 border-slate-900 flex items-center justify-center transition-all hover:scale-110 shadow-[3px_3px_0_0_#0f172a] active:shadow-none active:translate-x-0.5 active:translate-y-0.5"
+                  className="absolute bottom-3 right-3 w-10 h-10 rounded-full bg-indigo-400 dark:bg-indigo-600 text-white border-2 border-slate-900 dark:border-slate-600 flex items-center justify-center transition-all hover:scale-110 shadow-[3px_3px_0_0_#0f172a] dark:shadow-[3px_3px_0_0_#334155] active:shadow-none active:translate-x-0.5 active:translate-y-0.5"
                   title="Putar Video"
                 >
                   <Play className="w-5 h-5 ml-1" fill="currentColor" />
@@ -284,15 +284,15 @@ export default function TeacherCard({
             </div>
 
             {/* Profile info section */}
-            <div className="flex flex-col flex-1 p-4 bg-white">
+            <div className="flex flex-col flex-1 p-4 bg-white dark:bg-slate-900">
               {/* Name & Title Group */}
               <div className="mb-2.5 flex flex-col">
-                <h3 className="font-black text-slate-900 text-base leading-tight line-clamp-1 break-words pb-0.5 uppercase tracking-tight">
+                <h3 className="font-black text-slate-900 dark:text-white text-base leading-tight line-clamp-1 break-words pb-0.5 uppercase tracking-tight">
                   {teacher.name}
                 </h3>
                 {teacher.title && (
-                  <p className="text-slate-500 text-[10px] line-clamp-1 flex items-center gap-2 font-black uppercase tracking-widest mt-0.5">
-                    <Briefcase className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" strokeWidth={2.5} />
+                  <p className="text-slate-500 dark:text-slate-400 text-[10px] line-clamp-1 flex items-center gap-2 font-black uppercase tracking-widest mt-0.5">
+                    <Briefcase className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 flex-shrink-0" strokeWidth={2.5} />
                     {teacher.title}
                   </p>
                 )}
@@ -300,9 +300,9 @@ export default function TeacherCard({
 
               {/* Message Block */}
               {teacher.message && (
-                <div className="mt-3.5 p-3 rounded-xl bg-slate-50 border-2 border-slate-900 relative flex-1 flex flex-col min-h-0 shadow-[4px_4px_0_0_#0f172a]">
-                  <Quote className="absolute -top-2 -left-2 w-5 h-5 text-slate-900 bg-white rounded-full p-1 border-2 border-slate-900" />
-                  <p className="italic font-bold text-slate-600 leading-snug text-xs line-clamp-3 pl-1 pt-0.5">
+                <div className="mt-3.5 p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 relative flex-1 flex flex-col min-h-0 shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155]">
+                  <Quote className="absolute -top-2 -left-2 w-5 h-5 text-slate-900 dark:text-slate-300 bg-white dark:bg-slate-800 rounded-full p-1 border-2 border-slate-900 dark:border-slate-600" />
+                  <p className="italic font-bold text-slate-600 dark:text-slate-300 leading-snug text-xs line-clamp-3 pl-1 pt-0.5">
                     "{stripQuotes(teacher.message)}"
                   </p>
                 </div>
@@ -311,7 +311,7 @@ export default function TeacherCard({
 
             {/* Action buttons (Bottom) */}
             {isOwner && (
-              <div className="px-3 pb-3 mt-auto bg-white flex-shrink-0">
+              <div className="px-3 pb-3 mt-auto bg-white dark:bg-slate-900 flex-shrink-0">
                 <div className="flex gap-2.5">
                   <button
                     type="button"
@@ -319,7 +319,7 @@ export default function TeacherCard({
                       e.stopPropagation()
                       onStartEdit(teacher)
                     }}
-                    className="flex-1 text-[10px] font-black uppercase tracking-widest rounded-xl bg-indigo-100 text-indigo-700 border-2 border-indigo-700 hover:bg-indigo-700 hover:text-white transition-all flex items-center justify-center gap-2 py-2 shadow-[3px_3px_0_0_#4338ca] active:shadow-none active:translate-x-0.5 active:translate-y-0.5"
+                    className="flex-1 text-[10px] font-black uppercase tracking-widest rounded-xl bg-indigo-100 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 border-2 border-indigo-700 dark:border-indigo-600 hover:bg-indigo-700 hover:text-white transition-all flex items-center justify-center gap-2 py-2 shadow-[3px_3px_0_0_#4338ca] dark:shadow-[3px_3px_0_0_#334155] active:shadow-none active:translate-x-0.5 active:translate-y-0.5"
                   >
                     <Edit3 className="w-3.5 h-3.5" /> Edit
                   </button>
@@ -332,7 +332,7 @@ export default function TeacherCard({
                         onConfirm: () => onDelete(teacher.id)
                       })
                     }}
-                    className="flex-1 text-[10px] font-black uppercase tracking-widest rounded-xl bg-red-100 text-red-600 border-2 border-red-600 hover:bg-red-600 hover:text-white transition-all flex items-center justify-center gap-2 py-2 shadow-[3px_3px_0_0_#dc2626] active:shadow-none active:translate-x-0.5 active:translate-y-0.5"
+                    className="flex-1 text-[10px] font-black uppercase tracking-widest rounded-xl bg-red-100 dark:bg-red-950/50 text-red-600 dark:text-red-400 border-2 border-red-600 dark:border-red-700 hover:bg-red-600 hover:text-white transition-all flex items-center justify-center gap-2 py-2 shadow-[3px_3px_0_0_#dc2626] dark:shadow-[3px_3px_0_0_#334155] active:shadow-none active:translate-x-0.5 active:translate-y-0.5"
                     title="Hapus guru"
                   >
                     <Trash2 className="w-3.5 h-3.5" /> Hapus
@@ -349,45 +349,45 @@ export default function TeacherCard({
               WebkitBackfaceVisibility: 'hidden',
               transform: 'rotateY(180deg)'
             }}
-            className="absolute inset-0 w-full h-full flex flex-col rounded-2xl border-4 border-slate-900 bg-white shadow-[12px_12px_0_0_#0f172a] overflow-hidden"
+            className="absolute inset-0 w-full h-full flex flex-col rounded-2xl border-4 border-slate-900 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-[12px_12px_0_0_#0f172a] dark:shadow-[12px_12px_0_0_#334155] overflow-hidden"
           >
             {/* Header */}
-            <div className="px-4 py-3 border-b-4 border-slate-900 bg-amber-300 flex items-center gap-3 flex-shrink-0">
-              <button type="button" className="w-8 h-8 rounded-lg border-2 border-slate-900 hover:bg-white/20 flex items-center justify-center bg-white shadow-[2px_2px_0_0_#0f172a] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all" onClick={onCancelEdit}>
+            <div className="px-4 py-3 border-b-4 border-slate-900 dark:border-slate-700 bg-amber-300 dark:bg-amber-600 flex items-center gap-3 flex-shrink-0">
+              <button type="button" className="w-8 h-8 rounded-lg border-2 border-slate-900 dark:border-slate-600 hover:bg-white/20 dark:hover:bg-slate-800/50 flex items-center justify-center bg-white dark:bg-slate-800 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all" onClick={onCancelEdit}>
                 <ChevronLeft className="w-5 h-5" strokeWidth={2.5} />
               </button>
-              <h3 className="text-slate-900 font-black text-xs uppercase tracking-widest">Edit Guru</h3>
+              <h3 className="text-slate-900 dark:text-white font-black text-xs uppercase tracking-widest">Edit Guru</h3>
             </div>
 
             <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2.5" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
               <div>
-                <label className="text-[10px] font-black text-slate-900 uppercase tracking-widest mb-1 block">Nama Guru</label>
+                <label className="text-[10px] font-black text-slate-900 dark:text-white uppercase tracking-widest mb-1 block">Nama Guru</label>
                 <input
                   type="text"
                   value={editName || ''}
                   onChange={(e) => setEditName(e.target.value)}
                   placeholder="Nama Guru"
-                  className="w-full px-3 py-2 rounded-xl text-xs bg-slate-50 border-2 border-slate-900 text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-bold placeholder:text-slate-400"
+                  className="w-full px-3 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-bold placeholder:text-slate-400 dark:placeholder:text-slate-500"
                 />
               </div>
               <div>
-                <label className="text-[10px] font-black text-slate-900 uppercase tracking-widest mb-1 block">Jabatan</label>
+                <label className="text-[10px] font-black text-slate-900 dark:text-white uppercase tracking-widest mb-1 block">Jabatan</label>
                 <input
                   type="text"
                   value={editTitle || ''}
                   onChange={(e) => setEditTitle(e.target.value)}
                   placeholder="Jabatan Guru (mis: Wali Kelas)"
-                  className="w-full px-3 py-2 rounded-xl text-xs bg-slate-50 border-2 border-slate-900 text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-bold placeholder:text-slate-400"
+                  className="w-full px-3 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-bold placeholder:text-slate-400 dark:placeholder:text-slate-500"
                 />
               </div>
 
               {/* Photo Preview & Upload */}
               <div className="pt-1">
-                <label className="text-[10px] font-black text-slate-900 uppercase tracking-widest mb-2 block">Foto Galeri (Maks 4)</label>
+                <label className="text-[10px] font-black text-slate-900 dark:text-white uppercase tracking-widest mb-2 block">Foto Galeri (Maks 4)</label>
                 {allDisplayPhotos.length > 0 && (
                   <div className="flex gap-3 flex-wrap mb-3">
                     {allDisplayPhotos.map((photo, idx) => (
-                      <div key={photo.id} className="relative w-14 h-14 bg-slate-100 rounded-xl flex-shrink-0 border-2 border-slate-900 shadow-[3px_3px_0_0_#0f172a]">
+                      <div key={photo.id} className="relative w-14 h-14 bg-slate-100 dark:bg-slate-800 rounded-xl flex-shrink-0 border-2 border-slate-900 dark:border-slate-600 shadow-[3px_3px_0_0_#0f172a] dark:shadow-[3px_3px_0_0_#334155]">
                         {photo.isPending && (
                           <div className="absolute -top-2 -left-2 bg-emerald-400 text-slate-900 text-[8px] font-black px-1.5 py-0.5 rounded-lg border-2 border-slate-900 z-10 shadow-[2px_2px_0_0_#0f172a] uppercase">BARU</div>
                         )}
@@ -421,12 +421,12 @@ export default function TeacherCard({
 
                 {/* Pending video preview */}
                 {pendingVideo && (
-                  <div className="flex items-center gap-3 mb-3 p-3 rounded-xl bg-sky-50 border-2 border-slate-900 shadow-[4px_4px_0_0_#0f172a]">
-                    <div className="w-10 h-10 rounded-lg bg-sky-100 flex items-center justify-center flex-shrink-0 border-2 border-slate-900">
-                      <Video className="w-5 h-5 text-sky-700" />
+                  <div className="flex items-center gap-3 mb-3 p-3 rounded-xl bg-sky-50 dark:bg-sky-950/50 border-2 border-slate-900 dark:border-slate-600 shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155]">
+                    <div className="w-10 h-10 rounded-lg bg-sky-100 dark:bg-sky-900/50 flex items-center justify-center flex-shrink-0 border-2 border-slate-900 dark:border-slate-600">
+                      <Video className="w-5 h-5 text-sky-700 dark:text-sky-400" />
                     </div>
-                    <span className="text-xs font-black text-slate-900 truncate flex-1 uppercase tracking-tight">{pendingVideo.file.name}</span>
-                    <button type="button" onClick={removePendingVideo} className="p-2 rounded-lg bg-red-100 text-red-600 border-2 border-slate-900 hover:bg-red-500 hover:text-white transition-all shadow-[2px_2px_0_0_#0f172a] active:shadow-none active:translate-x-0.5 active:translate-y-0.5">
+                    <span className="text-xs font-black text-slate-900 dark:text-slate-200 truncate flex-1 uppercase tracking-tight">{pendingVideo.file.name}</span>
+                    <button type="button" onClick={removePendingVideo} className="p-2 rounded-lg bg-red-100 dark:bg-red-950/50 text-red-600 dark:text-red-400 border-2 border-slate-900 dark:border-slate-600 hover:bg-red-500 hover:text-white transition-all shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] active:shadow-none active:translate-x-0.5 active:translate-y-0.5">
                       <X className="w-4 h-4" strokeWidth={3} />
                     </button>
                   </div>
@@ -454,43 +454,43 @@ export default function TeacherCard({
 
               {/* Video URL Input */}
               <div className="pt-1">
-                <label className="text-[10px] font-black text-slate-900 uppercase tracking-widest mb-1 block">Link Video (YouTube/Lainnya)</label>
+                <label className="text-[10px] font-black text-slate-900 dark:text-white uppercase tracking-widest mb-1 block">Link Video (YouTube/Lainnya)</label>
                 <input
                   type="url"
                   value={editVideoUrl || ''}
                   onChange={(e) => setEditVideoUrl(e.target.value)}
                   placeholder="Link Video Eksternal"
-                  className="w-full px-3 py-2 rounded-xl text-xs bg-slate-50 border-2 border-slate-900 text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-bold placeholder:text-slate-400"
+                  className="w-full px-3 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-bold placeholder:text-slate-400 dark:placeholder:text-slate-500"
                 />
               </div>
 
               {/* Message Textarea */}
               <div>
-                <label className="text-[10px] font-black text-slate-900 uppercase tracking-widest mb-1 block">Pesan / Kesan</label>
+                <label className="text-[10px] font-black text-slate-900 dark:text-white uppercase tracking-widest mb-1 block">Pesan / Kesan</label>
                 <textarea
                   value={editMessage || ''}
                   onChange={(e) => setEditMessage(e.target.value)}
                   placeholder="Pesan / Kesan"
                   rows={2}
-                  className="w-full px-3 py-2 rounded-xl text-xs bg-slate-50 border-2 border-slate-900 text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-bold placeholder:text-slate-400 resize-none"
+                  className="w-full px-3 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-bold placeholder:text-slate-400 dark:placeholder:text-slate-500 resize-none"
                 />
               </div>
             </div>
 
             {/* Save & Cancel buttons */}
-            <div className="px-4 py-3 bg-white border-t-4 border-slate-900 flex gap-3 flex-shrink-0">
+            <div className="px-4 py-3 bg-white dark:bg-slate-900 border-t-4 border-slate-900 dark:border-slate-700 flex gap-3 flex-shrink-0">
               <button
                 type="button"
                 onClick={handleSave}
                 disabled={savingTeacher}
-                className="flex-[2] px-4 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest bg-indigo-500 text-white hover:bg-indigo-600 transition-all border-2 border-slate-900 shadow-[4px_4px_0_0_#0f172a] active:shadow-none active:translate-x-1 active:translate-y-1 disabled:opacity-50 flex items-center justify-center"
+                className="flex-[2] px-4 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest bg-indigo-500 text-white hover:bg-indigo-600 transition-all border-2 border-slate-900 dark:border-slate-600 shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155] active:shadow-none active:translate-x-1 active:translate-y-1 disabled:opacity-50 flex items-center justify-center"
               >
                 {savingTeacher ? 'Loading...' : 'Simpan'}
               </button>
               <button
                 type="button"
                 onClick={onCancelEdit}
-                className="flex-1 px-4 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest bg-slate-100 text-slate-900 hover:bg-slate-200 transition-all border-2 border-slate-900 shadow-[4px_4px_0_0_#0f172a] active:shadow-none active:translate-x-1 active:translate-y-1"
+                className="flex-1 px-4 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition-all border-2 border-slate-900 dark:border-slate-600 shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155] active:shadow-none active:translate-x-1 active:translate-y-1"
               >
                 Batal
               </button>

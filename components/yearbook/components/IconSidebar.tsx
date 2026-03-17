@@ -22,7 +22,7 @@ interface IconSidebarProps {
 }
 
 const linkClass = (active: boolean) =>
-  `flex-shrink-0 flex flex-col items-center justify-center gap-1.5 py-4 border-b-2 border-slate-900 text-[10px] font-black uppercase tracking-tight transition-all w-full ${active ? 'bg-slate-900 text-white' : 'bg-white text-slate-500 hover:text-slate-900 hover:bg-slate-50'}`
+  `flex-shrink-0 flex flex-col items-center justify-center gap-1.5 py-4 border-b-2 border-slate-900 dark:border-slate-700 text-[10px] font-black uppercase tracking-tight transition-all w-full ${active ? 'bg-slate-900 dark:bg-slate-700 text-white' : 'bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-700'}`
 
 function IconSidebarInner({
   pathname = null,
@@ -46,7 +46,7 @@ function IconSidebarInner({
   }
 
   return (
-    <div className="hidden lg:fixed lg:left-0 lg:top-14 lg:w-16 lg:h-[calc(100vh-3.5rem)] lg:flex flex-col lg:z-40 lg:bg-white lg:border-r-2 lg:border-slate-900 lg:shadow-[2px_0_0_0_#0f172a]">
+    <div className="hidden lg:fixed lg:left-0 lg:top-14 lg:w-16 lg:h-[calc(100vh-3.5rem)] lg:flex flex-col lg:z-40 lg:bg-white lg:dark:bg-slate-900 lg:border-r-2 lg:border-slate-900 lg:dark:border-slate-700 lg:shadow-[2px_0_0_0_#0f172a] lg:dark:shadow-[2px_0_0_0_#334155]">
       <Link href={url('preview')} prefetch={false} className={linkClass(sidebarMode === 'preview')} title="Preview Album" onClick={handleClick('preview')}>
         <Eye className="w-6 h-6" strokeWidth={2.5} />
         <span>Preview</span>
@@ -55,7 +55,7 @@ function IconSidebarInner({
         <div className="relative">
           <Sparkles className="w-6 h-6" strokeWidth={2.5} />
           {!aiLabsAccessible && (
-            <Lock className="w-3.5 h-3.5 absolute -top-1.5 -right-1.5 text-purple-600 bg-white rounded-full p-0.5 border border-slate-900 shadow-[1px_1px_0_0_#0f172a]" />
+            <Lock className="w-3.5 h-3.5 absolute -top-1.5 -right-1.5 text-purple-600 dark:text-purple-400 bg-white dark:bg-slate-800 rounded-full p-0.5 border border-slate-900 dark:border-slate-600 shadow-[1px_1px_0_0_#0f172a] dark:shadow-[1px_1px_0_0_#334155]" />
           )}
         </div>
         <span>AI Labs</span>
@@ -68,7 +68,7 @@ function IconSidebarInner({
         <div className="relative">
           <Book className="w-6 h-6" strokeWidth={2.5} />
           {!flipbookAccessible && (
-            <Lock className="w-3.5 h-3.5 absolute -top-1.5 -right-1.5 text-amber-600 bg-white rounded-full p-0.5 border border-slate-900 shadow-[1px_1px_0_0_#0f172a]" />
+            <Lock className="w-3.5 h-3.5 absolute -top-1.5 -right-1.5 text-amber-600 dark:text-amber-400 bg-white dark:bg-slate-800 rounded-full p-0.5 border border-slate-900 dark:border-slate-600 shadow-[1px_1px_0_0_#0f172a] dark:shadow-[1px_1px_0_0_#334155]" />
           )}
         </div>
         <span>Flipbook</span>
@@ -78,7 +78,7 @@ function IconSidebarInner({
           <ClipboardList className="w-6 h-6" strokeWidth={2.5} />
           <span>Approval</span>
           {pendingCount > 0 && (
-            <span className="absolute top-3 right-3 flex h-3 w-3 rounded-full bg-red-500 border-2 border-slate-900 shadow-[1px_1px_0_0_#0f172a] animate-pulse" />
+            <span className="absolute top-3 right-3 flex h-3 w-3 rounded-full bg-red-500 border-2 border-slate-900 dark:border-slate-700 shadow-[1px_1px_0_0_#0f172a] dark:shadow-[1px_1px_0_0_#334155] animate-pulse" />
           )}
         </Link>
       )}

@@ -116,7 +116,7 @@ export function Hero() {
               <Button
                 id="watch-trailer"
                 leftIcon={TiLocationArrow}
-                containerClass="bg-yellow-300 flex-center gap-1 border border-slate-900 rounded-xl shadow-[2px_2px_0_0_#000] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[3px_3px_0_0_#000] transition-all active:translate-x-0 active:translate-y-0 active:shadow-none font-black text-base"
+                containerClass="bg-yellow-300 flex-center gap-1 border border-slate-900 rounded-full shadow-[2px_2px_0_0_#000] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[3px_3px_0_0_#000] transition-all active:translate-x-0 active:translate-y-0 active:shadow-none font-black text-base"
               >
                 Buat Project
               </Button>

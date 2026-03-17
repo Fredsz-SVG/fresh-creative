@@ -267,33 +267,33 @@ export default function ShowroomForm({ backHref, pricingPath, draftKey, source }
   };
 
   return (
-    <div className="min-h-screen p-6 sm:p-8">
+    <div className="min-h-screen p-6 sm:p-8 bg-white dark:bg-slate-950">
       <div className="w-full max-w-xl mx-auto">
         <Link
           href={backHref}
-          className="inline-flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-slate-900 mb-6 transition-colors"
+          className="inline-flex items-center gap-2 text-sm font-bold text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white mb-6 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
           Kembali
         </Link>
-        <h1 className="text-3xl font-black text-slate-900 tracking-tight">Isi Form Project</h1>
-        <p className="text-slate-600 font-bold mt-1.5">Lengkapi data di bawah untuk melanjutkan ke pilihan paket.</p>
+        <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Isi Form Project</h1>
+        <p className="text-slate-600 dark:text-slate-300 font-bold mt-1.5">Lengkapi data di bawah untuk melanjutkan ke pilihan paket.</p>
 
 
         <form onSubmit={onSubmit} className="mt-8 space-y-6">
           <div>
-            <label htmlFor="school_name" className="block text-[15px] font-black text-slate-900 mb-2">Nama Project</label>
+            <label htmlFor="school_name" className="block text-[15px] font-black text-slate-900 dark:text-white mb-2">Nama Project</label>
             <input
               id="school_name"
               name="school_name"
               value={school_name}
               onChange={(e) => setSchoolName(e.target.value)}
               placeholder="Contoh: SMAN 1 Salatiga"
-              className={`w-full px-4 py-3 bg-white border-2 rounded-xl text-slate-900 font-bold placeholder:font-normal placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-indigo-300 transition-all ${school_name.trim() && !schoolNameValid
-                ? 'border-red-500 shadow-[4px_4px_0_0_#ef4444]'
+              className={`w-full px-4 py-3 bg-white dark:bg-slate-900 border-2 rounded-xl text-slate-900 dark:text-white font-bold placeholder:font-normal placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-4 focus:ring-indigo-300 dark:focus:ring-indigo-900 transition-all ${school_name.trim() && !schoolNameValid
+                ? 'border-red-500 dark:border-red-600 shadow-[4px_4px_0_0_#ef4444] dark:shadow-[4px_4px_0_0_#dc2626]'
                 : dupCheck?.exists
-                  ? 'border-orange-500 shadow-[4px_4px_0_0_#f97316]'
-                  : 'border-slate-900 shadow-[4px_4px_0_0_#0f172a]'
+                  ? 'border-orange-500 dark:border-orange-600 shadow-[4px_4px_0_0_#f97316] dark:shadow-[4px_4px_0_0_#ea580c]'
+                  : 'border-slate-900 dark:border-slate-700 shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155]'
                 }`}
               autoComplete="organization"
             />
@@ -304,9 +304,9 @@ export default function ShowroomForm({ backHref, pricingPath, draftKey, source }
               </p>
             )}
             {dupCheck?.exists && (
-              <div className="mt-3 flex items-start gap-3 bg-orange-100 border-2 border-orange-500 rounded-xl p-4 shadow-[4px_4px_0_0_#f97316]">
-                <AlertTriangle className="w-5 h-5 text-orange-600 mt-0.5 flex-shrink-0" />
-                <p className="text-[13px] font-bold text-orange-900 leading-relaxed">
+              <div className="mt-3 flex items-start gap-3 bg-orange-100 dark:bg-orange-900/30 border-2 border-orange-500 dark:border-orange-600 rounded-xl p-4 shadow-[4px_4px_0_0_#f97316] dark:shadow-[4px_4px_0_0_#ea580c]">
+                <AlertTriangle className="w-5 h-5 text-orange-600 dark:text-orange-400 mt-0.5 flex-shrink-0" />
+                <p className="text-[13px] font-bold text-orange-900 dark:text-orange-200 leading-relaxed">
                   Nama sekolah mirip dengan <strong>&quot;{dupCheck.matched_name || school_name.trim()}&quot;</strong> yang sudah terdaftar.
                   {dupCheck.pic_name && (
                     <> Hubungi <strong>{dupCheck.pic_name}</strong></>
@@ -319,12 +319,12 @@ export default function ShowroomForm({ backHref, pricingPath, draftKey, source }
               </div>
             )}
             {checkingDup && schoolNameValid && school_name.trim().length >= 5 && (
-              <p className="text-xs font-bold text-slate-500 mt-2">Memeriksa nama project...</p>
+              <p className="text-xs font-bold text-slate-500 dark:text-slate-400 mt-2">Memeriksa nama project...</p>
             )}
           </div>
 
           <div ref={provBoxRef} className="relative">
-            <label htmlFor="province_input" className="block text-[15px] font-black text-slate-900 mb-2">Provinsi</label>
+            <label htmlFor="province_input" className="block text-[15px] font-black text-slate-900 dark:text-white mb-2">Provinsi</label>
             <input
               id="province_input"
               type="text"
@@ -333,18 +333,18 @@ export default function ShowroomForm({ backHref, pricingPath, draftKey, source }
               onFocus={() => setShowProvDrop(true)}
               disabled={loadingProv}
               placeholder={loadingProv ? "Memuat..." : "Ketik nama provinsi, lalu pilih"}
-              className="w-full px-4 py-3 bg-white border-2 border-slate-900 rounded-xl text-slate-900 font-bold placeholder:font-normal placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-indigo-300 shadow-[4px_4px_0_0_#0f172a] disabled:opacity-60 transition-all"
+              className="w-full px-4 py-3 bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-bold placeholder:font-normal placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-4 focus:ring-indigo-300 dark:focus:ring-indigo-900 shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155] disabled:opacity-60 transition-all"
               autoComplete="off"
             />
             {showProvDrop && provinceSuggestions.length > 0 ? (
-              <ul className="absolute z-20 mt-2 w-full max-h-56 overflow-auto bg-white border-2 border-slate-900 rounded-xl shadow-[6px_6px_0_0_#0f172a]">
+              <ul className="absolute z-20 mt-2 w-full max-h-56 overflow-auto bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-xl shadow-[6px_6px_0_0_#0f172a] dark:shadow-[6px_6px_0_0_#334155]">
                 {provinceSuggestions.map((p) => (
                   <li key={p.id}>
                     <button
                       type="button"
                       onMouseDown={(e) => e.preventDefault()}
                       onClick={() => lockProvince(p)}
-                      className="w-full text-left px-4 py-3 text-[14px] font-bold text-slate-800 hover:bg-indigo-100 hover:text-slate-900 transition-colors border-b-2 border-slate-100 last:border-0"
+                      className="w-full text-left px-4 py-3 text-[14px] font-bold text-slate-800 dark:text-slate-200 hover:bg-indigo-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition-colors border-b-2 border-slate-100 dark:border-slate-700 last:border-0"
                     >
                       {p.name}
                     </button>
@@ -355,7 +355,7 @@ export default function ShowroomForm({ backHref, pricingPath, draftKey, source }
           </div>
 
           <div ref={cityBoxRef} className="relative">
-            <label htmlFor="city_input" className="block text-[15px] font-black text-slate-900 mb-2">Kab/Kota</label>
+            <label htmlFor="city_input" className="block text-[15px] font-black text-slate-900 dark:text-white mb-2">Kab/Kota</label>
             <input
               id="city_input"
               type="text"
@@ -366,18 +366,18 @@ export default function ShowroomForm({ backHref, pricingPath, draftKey, source }
               placeholder={
                 !provinceId ? "Pilih provinsi dulu" : loadingCity ? "Memuat..." : "Ketik nama kota/kabupaten, lalu pilih"
               }
-              className="w-full px-4 py-3 bg-white border-2 border-slate-900 rounded-xl text-slate-900 font-bold placeholder:font-normal placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-indigo-300 shadow-[4px_4px_0_0_#0f172a] disabled:opacity-60 transition-all"
+              className="w-full px-4 py-3 bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-bold placeholder:font-normal placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-4 focus:ring-indigo-300 dark:focus:ring-indigo-900 shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155] disabled:opacity-60 transition-all"
               autoComplete="off"
             />
             {showCityDrop && provinceId && citySuggestions.length > 0 ? (
-              <ul className="absolute z-20 mt-2 w-full max-h-56 overflow-auto bg-white border-2 border-slate-900 rounded-xl shadow-[6px_6px_0_0_#0f172a]">
+              <ul className="absolute z-20 mt-2 w-full max-h-56 overflow-auto bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-xl shadow-[6px_6px_0_0_#0f172a] dark:shadow-[6px_6px_0_0_#334155]">
                 {citySuggestions.map((c) => (
                   <li key={c.id}>
                     <button
                       type="button"
                       onMouseDown={(e) => e.preventDefault()}
                       onClick={() => lockCity(c)}
-                      className="w-full text-left px-4 py-3 text-[14px] font-bold text-slate-800 hover:bg-indigo-100 hover:text-slate-900 transition-colors border-b-2 border-slate-100 last:border-0"
+                      className="w-full text-left px-4 py-3 text-[14px] font-bold text-slate-800 dark:text-slate-200 hover:bg-indigo-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition-colors border-b-2 border-slate-100 dark:border-slate-700 last:border-0"
                     >
                       {cityLabel(c)}
                     </button>
@@ -388,27 +388,27 @@ export default function ShowroomForm({ backHref, pricingPath, draftKey, source }
           </div>
 
           <div>
-            <label htmlFor="pic_name" className="block text-[15px] font-black text-slate-900 mb-2">Nama</label>
+            <label htmlFor="pic_name" className="block text-[15px] font-black text-slate-900 dark:text-white mb-2">Nama</label>
             <input
               id="pic_name"
               name="pic_name"
               value={pic_name}
               onChange={(e) => setPicName(e.target.value)}
               placeholder="Contoh: Rachel"
-              className="w-full px-4 py-3 bg-white border-2 border-slate-900 rounded-xl text-slate-900 font-bold placeholder:font-normal placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-indigo-300 shadow-[4px_4px_0_0_#0f172a] transition-all"
+              className="w-full px-4 py-3 bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-bold placeholder:font-normal placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-4 focus:ring-indigo-300 dark:focus:ring-indigo-900 shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155] transition-all"
               autoComplete="name"
             />
           </div>
 
           <div>
-            <label className="block text-[15px] font-black text-slate-900 mb-2">WhatsApp</label>
+            <label className="block text-[15px] font-black text-slate-900 dark:text-white mb-2">WhatsApp</label>
             <div className="flex gap-3">
               <input
                 id="wa_cc"
                 name="wa_cc"
                 value={countryCode}
                 onChange={(e) => setCountryCode(e.target.value)}
-                className="w-24 px-4 py-3 bg-slate-100 border-2 border-slate-900 rounded-xl text-slate-900 font-bold focus:outline-none focus:bg-white focus:ring-4 focus:ring-indigo-300 shadow-[4px_4px_0_0_#0f172a] transition-all"
+                className="w-24 px-4 py-3 bg-slate-100 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-bold focus:outline-none focus:bg-white dark:focus:bg-slate-900 focus:ring-4 focus:ring-indigo-300 dark:focus:ring-indigo-900 shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155] transition-all"
                 inputMode="text"
               />
               <input
@@ -417,25 +417,25 @@ export default function ShowroomForm({ backHref, pricingPath, draftKey, source }
                 value={waLocal}
                 onChange={(e) => setWaLocal(e.target.value.replace(/\D/g, ""))}
                 placeholder="812xxxxxxx"
-                className="flex-1 px-4 py-3 bg-white border-2 border-slate-900 rounded-xl text-slate-900 font-bold placeholder:font-normal placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-indigo-300 shadow-[4px_4px_0_0_#0f172a] transition-all"
+                className="flex-1 px-4 py-3 bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-bold placeholder:font-normal placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-4 focus:ring-indigo-300 dark:focus:ring-indigo-900 shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155] transition-all"
                 inputMode="numeric"
                 autoComplete="tel"
               />
             </div>
-            <p className="text-[13px] font-bold text-slate-500 mt-2">
-              Contoh hasil: <span className="text-slate-900">{waPreview}</span>
+            <p className="text-[13px] font-bold text-slate-500 dark:text-slate-400 mt-2">
+              Contoh hasil: <span className="text-slate-900 dark:text-white">{waPreview}</span>
             </p>
           </div>
 
           <div>
-            <label htmlFor="students_count" className="block text-[15px] font-black text-slate-900 mb-2">Jumlah Orang</label>
+            <label htmlFor="students_count" className="block text-[15px] font-black text-slate-900 dark:text-white mb-2">Jumlah Orang</label>
             <input
               id="students_count"
               name="students_count"
               value={studentsCountText}
               onChange={(e) => setStudentsCountText(e.target.value.replace(/[^\d]/g, ""))}
               placeholder="Contoh: 350"
-              className="w-full px-4 py-3 bg-white border-2 border-slate-900 rounded-xl text-slate-900 font-bold placeholder:font-normal placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-indigo-300 shadow-[4px_4px_0_0_#0f172a] transition-all"
+              className="w-full px-4 py-3 bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-bold placeholder:font-normal placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-4 focus:ring-indigo-300 dark:focus:ring-indigo-900 shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155] transition-all"
               inputMode="numeric"
             />
           </div>
@@ -454,15 +454,15 @@ export default function ShowroomForm({ backHref, pricingPath, draftKey, source }
           </div>
 
           {error && (
-            <div className="bg-red-100 border-2 border-red-500 rounded-xl p-4 shadow-[4px_4px_0_0_#ef4444]">
-              <p className="font-bold text-red-900 text-sm sm:text-base">{error}</p>
+            <div className="bg-red-100 dark:bg-red-900/30 border-2 border-red-500 dark:border-red-600 rounded-xl p-4 shadow-[4px_4px_0_0_#ef4444] dark:shadow-[4px_4px_0_0_#dc2626]">
+              <p className="font-bold text-red-900 dark:text-red-200 text-sm sm:text-base">{error}</p>
             </div>
           )}
 
           <button
             type="submit"
             disabled={submitted}
-            className="w-full mt-4 px-6 py-4 text-lg font-black rounded-2xl bg-indigo-300 border-2 border-slate-900 text-slate-900 shadow-[4px_4px_0_0_#0f172a] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all disabled:opacity-50"
+            className="w-full mt-4 px-6 py-4 text-lg font-black rounded-2xl bg-indigo-300 dark:bg-indigo-600 border-2 border-slate-900 dark:border-slate-700 text-slate-900 dark:text-white shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all disabled:opacity-50"
           >
             {submitted ? "Mengirim..." : "Lanjut ke Pricing"}
           </button>

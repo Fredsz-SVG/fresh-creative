@@ -403,14 +403,14 @@ export default function PreviewView({
 
     // ─── Card content renderer (neo-brutalist, sama dengan AI Labs / Edit) ───
     const renderCardContent = (card: CardItem) => (
-        <div className="relative w-full h-full rounded-2xl overflow-hidden border-4 border-slate-900 shadow-[4px_4px_0_0_#0f172a] select-none isolate transform-gpu bg-white">
+        <div className="relative w-full h-full rounded-2xl overflow-hidden border-4 border-slate-900 dark:border-slate-700 shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155] select-none isolate transform-gpu bg-white dark:bg-slate-900">
             {/* Background Image / Placeholder */}
             <div className="absolute inset-0">
                 {card.imageUrl ? (
                     <img src={card.imageUrl} alt={card.title} className="h-full w-full object-cover" draggable={false} />
                 ) : (
-                    <div className="w-full h-full bg-slate-100 flex items-center justify-center">
-                        <Users className="w-12 h-12 sm:w-20 sm:h-20 text-slate-300" />
+                    <div className="w-full h-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+                        <Users className="w-12 h-12 sm:w-20 sm:h-20 text-slate-300 dark:text-slate-500" />
                     </div>
                 )}
                 <div className="absolute inset-0 bg-transparent" />
@@ -418,18 +418,18 @@ export default function PreviewView({
 
             {/* Content Overlay */}
             <div className="absolute inset-x-0 bottom-0 z-20 pointer-events-none">
-                <div className="absolute inset-0 bg-gradient-to-t from-white via-white/95 via-45% to-transparent h-[150%] -top-[50%]" />
+                <div className="absolute inset-0 bg-gradient-to-t from-white via-white/95 via-45% to-transparent dark:from-slate-900 dark:via-slate-900/95 dark:via-45% dark:to-transparent h-[150%] -top-[50%]" />
 
                 <div className="relative px-4 pb-4 sm:px-6 sm:pb-6 flex flex-col gap-1.5 pt-12">
 
                     <div className="flex flex-col">
-                        <h2 className="text-xl sm:text-3xl font-black text-slate-900 leading-tight tracking-tight uppercase">
+                        <h2 className="text-xl sm:text-3xl font-black text-slate-900 dark:text-white leading-tight tracking-tight uppercase">
                             {card.title}
                         </h2>
 
                         <div className="flex flex-wrap items-center gap-2 mt-1">
                             {card.subtitle && (
-                                <p className="text-slate-600 font-black text-xs sm:text-sm tracking-wide">
+                                <p className="text-slate-600 dark:text-slate-300 font-black text-xs sm:text-sm tracking-wide">
                                     {card.subtitle}
                                 </p>
                             )}
@@ -437,7 +437,7 @@ export default function PreviewView({
                             {card.badges && card.badges.length > 0 && (
                                 <div className="flex flex-wrap gap-1">
                                     {card.badges.map((b, i) => (
-                                        <span key={i} className="text-[9px] sm:text-[10px] font-black px-2 py-0.5 rounded-lg uppercase tracking-wide bg-white border-2 border-slate-900 text-slate-900 shadow-[2px_2px_0_0_#0f172a]">
+                                        <span key={i} className="text-[9px] sm:text-[10px] font-black px-2 py-0.5 rounded-lg uppercase tracking-wide bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 text-slate-900 dark:text-white shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155]">
                                             {b.label}
                                         </span>
                                     ))}
@@ -447,8 +447,8 @@ export default function PreviewView({
                     </div>
 
                     {card.description && (
-                        <div className="relative pl-3 border-l-4 border-slate-900 my-1">
-                            <p className="text-xs sm:text-sm text-slate-600 font-bold italic line-clamp-3 leading-relaxed">
+                        <div className="relative pl-3 border-l-4 border-slate-900 dark:border-slate-600 my-1">
+                            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 font-bold italic line-clamp-3 leading-relaxed">
                                 "{card.description}"
                             </p>
                         </div>
@@ -493,7 +493,7 @@ export default function PreviewView({
                                         setVideoPopupUrl(card.videoUrl!);
                                     }
                                 }}
-                                className="pointer-events-auto flex items-center justify-center gap-2 w-full px-4 py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-[11px] sm:text-xs font-black tracking-wider transition-all active:scale-95 border-2 border-slate-900 shadow-[3px_3px_0_0_#0f172a]"
+                                className="pointer-events-auto flex items-center justify-center gap-2 w-full px-4 py-3 rounded-xl bg-slate-900 dark:bg-slate-700 hover:bg-slate-800 dark:hover:bg-slate-600 text-white text-[11px] sm:text-xs font-black tracking-wider transition-all active:scale-95 border-2 border-slate-900 dark:border-slate-600 shadow-[3px_3px_0_0_#0f172a] dark:shadow-[3px_3px_0_0_#334155]"
                             >
                                 <Play className="w-4 h-4 fill-white" />
                                 <span>PLAY VIDEO</span>
@@ -528,16 +528,16 @@ export default function PreviewView({
     }
 
     return (
-        <div className="fixed inset-0 z-[90] bg-slate-100 flex flex-col">
+        <div className="fixed inset-0 z-[90] bg-slate-100 dark:bg-slate-950 flex flex-col">
             {/* Header - neo-brutalist, tanpa garis (bg nyatu) */}
-            <div className="flex-shrink-0 flex items-center justify-between px-4 py-3 sm:px-6 sm:py-4 bg-slate-100 z-20">
+            <div className="flex-shrink-0 flex items-center justify-between px-4 py-3 sm:px-6 sm:py-4 bg-slate-100 dark:bg-slate-950 z-20">
                 <div className="flex items-center gap-3 sm:gap-4">
-                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white border-2 border-slate-900 text-slate-900 shadow-[2px_2px_0_0_#0f172a]">
+                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 text-slate-900 dark:text-white shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155]">
                         {React.cloneElement(currentSection.icon as React.ReactElement<{ className?: string }>, { className: "w-4 h-4" })}
                         <span className="text-xs sm:text-sm font-black uppercase truncate max-w-[120px] sm:max-w-none">{currentSection.label}</span>
                     </div>
                     {totalItems > 1 && (
-                        <span className="text-xs sm:text-sm text-slate-600 font-black tabular-nums bg-white border-2 border-slate-900 px-2 py-0.5 rounded-lg shadow-[2px_2px_0_0_#0f172a]">
+                        <span className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 font-black tabular-nums bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 px-2 py-0.5 rounded-lg shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155]">
                             {itemIndex + 1} / {totalItems}
                         </span>
                     )}
@@ -548,19 +548,19 @@ export default function PreviewView({
                             <button
                                 key={i}
                                 onClick={() => { if (i !== sectionIndex) { setSectionDirection(i > sectionIndex ? 1 : -1); setSectionIndex(i) } }}
-                                className={`h-2 rounded-full transition-all duration-300 ${i === sectionIndex ? 'bg-slate-900 w-6 shadow-[2px_0_0_0_#0f172a]' : 'bg-slate-300 w-2 hover:bg-slate-400'}`}
+                                className={`h-2 rounded-full transition-all duration-300 ${i === sectionIndex ? 'bg-slate-900 dark:bg-slate-600 w-6 shadow-[2px_0_0_0_#0f172a] dark:shadow-[2px_0_0_0_#334155]' : 'bg-slate-300 dark:bg-slate-600 w-2 hover:bg-slate-400 dark:hover:bg-slate-500'}`}
                                 title={s.label}
                             />
                         ))}
                     </div>
-                    <button type="button" onClick={onClose} className="p-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-amber-200 border-2 border-transparent hover:border-slate-900 transition-all">
+                    <button type="button" onClick={onClose} className="p-2 rounded-xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-amber-200 dark:hover:bg-slate-700 border-2 border-transparent hover:border-slate-900 dark:hover:border-slate-600 transition-all">
                         <X className="w-5 h-5 sm:w-6 sm:h-6" />
                     </button>
                 </div>
             </div>
 
             {/* Main Card Area - overflow-hidden + bg supaya gambar section lama tidak keliatan saat swipe */}
-            <div className="flex-1 relative flex items-center justify-center px-4 sm:px-8 py-4 sm:py-6 z-50 overflow-hidden bg-slate-100">
+            <div className="flex-1 relative flex items-center justify-center px-4 sm:px-8 py-4 sm:py-6 z-50 overflow-hidden bg-slate-100 dark:bg-slate-950">
                 <AnimatePresence custom={sectionDirection} initial={false}>
                     <motion.div
                         key={sectionIndex}
@@ -622,7 +622,7 @@ export default function PreviewView({
             </div>
 
             {/* Bottom Navigation - bg nyatu dengan halaman */}
-            <div className="flex-shrink-0 pt-3 pb-4 sm:px-6 sm:py-5 bg-slate-100 z-20 w-full overflow-hidden">
+            <div className="flex-shrink-0 pt-3 pb-4 sm:px-6 sm:py-5 bg-slate-100 dark:bg-slate-950 z-20 w-full overflow-hidden">
                 <div className="flex justify-start sm:justify-center w-full">
                     <div className="flex items-start sm:gap-6 overflow-x-auto pt-1 pb-2 no-scrollbar snap-x max-w-full w-full sm:w-auto px-2">
                         {sections.map((s, i) => (
@@ -638,12 +638,12 @@ export default function PreviewView({
                                 className="flex flex-col items-center gap-2 w-[22vw] flex-shrink-0 sm:w-auto sm:min-w-[80px] sm:px-2 snap-center group transition-all"
                             >
                                 <div className={`w-12 h-12 sm:w-16 sm:h-16 flex-shrink-0 rounded-2xl flex items-center justify-center border-2 transition-all duration-300 ${i === sectionIndex
-                                    ? 'border-slate-900 bg-slate-900 text-white scale-105 shadow-[3px_3px_0_0_#0f172a]'
-                                    : 'border-slate-900 bg-white text-slate-600 hover:bg-amber-200'
+                                    ? 'border-slate-900 dark:border-slate-600 bg-slate-900 dark:bg-slate-600 text-white scale-105 shadow-[3px_3px_0_0_#0f172a] dark:shadow-[3px_3px_0_0_#334155]'
+                                    : 'border-slate-900 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-amber-200 dark:hover:bg-slate-700'
                                     }`}>
                                     {React.cloneElement(s.icon as React.ReactElement<{ className?: string }>, { className: 'w-5 h-5 sm:w-7 sm:h-7' })}
                                 </div>
-                                <span className={`text-[11px] sm:text-xs text-center truncate w-full px-1 sm:max-w-[88px] font-black transition-colors ${i === sectionIndex ? 'text-slate-900' : 'text-slate-600 group-hover:text-slate-900'}`}>
+                                <span className={`text-[11px] sm:text-xs text-center truncate w-full px-1 sm:max-w-[88px] font-black transition-colors ${i === sectionIndex ? 'text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white'}`}>
                                     {s.label}
                                 </span>
                             </button>
@@ -664,7 +664,7 @@ export default function PreviewView({
                         <div className="absolute top-4 right-4 z-10">
                             <button
                                 onClick={() => setVideoPopupUrl(null)}
-                                className="p-3 bg-white hover:bg-amber-200 rounded-xl text-slate-900 border-2 border-slate-900 shadow-[2px_2px_0_0_#0f172a] transition-all"
+                                className="p-3 bg-white dark:bg-slate-800 hover:bg-amber-200 dark:hover:bg-slate-700 rounded-xl text-slate-900 dark:text-white border-2 border-slate-900 dark:border-slate-600 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] transition-all"
                             >
                                 <X className="w-6 h-6" />
                             </button>
@@ -675,7 +675,7 @@ export default function PreviewView({
                             animate={{ scale: 1, opacity: 1 }}
                             exit={{ scale: 0.95, opacity: 0 }}
                             transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                            className="w-full max-w-4xl max-h-[85vh] aspect-video rounded-2xl overflow-hidden bg-black border-4 border-slate-900 shadow-[6px_6px_0_0_#0f172a] relative"
+                            className="w-full max-w-4xl max-h-[85vh] aspect-video rounded-2xl overflow-hidden bg-black border-4 border-slate-900 dark:border-slate-700 relative"
                         >
                             <video
                                 src={videoPopupUrl}
