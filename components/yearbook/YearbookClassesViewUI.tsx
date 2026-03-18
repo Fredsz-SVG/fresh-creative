@@ -1213,11 +1213,12 @@ export default function YearbookClassesViewUI(props: any) {
                           }
 
                           if (isOwner && !access) {
-                            const hasAccessInOtherClass = Object.entries(myAccessByClass).some(
+                            const accessEntries = Object.entries(myAccessByClass) as [string, ClassAccess | null][]
+                            const hasAccessInOtherClass = accessEntries.some(
                               ([classId, a]) => classId !== currentClass.id && a?.status === 'approved'
                             )
                             if (hasAccessInOtherClass) {
-                              const otherEntry = Object.entries(myAccessByClass).find(
+                              const otherEntry = accessEntries.find(
                                 ([classId, a]) => classId !== currentClass.id && a?.status === 'approved'
                               )
                               const otherClassName = otherEntry ? classes.find((c) => c.id === otherEntry[0])?.name ?? '' : ''
@@ -1253,7 +1254,9 @@ export default function YearbookClassesViewUI(props: any) {
                       {classes.map((c, idx) => {
                         const isActive = idx === classIndex && !isCoverView
                         const ownerRegisteredIn = isOwner
-                          ? Object.entries(myAccessByClass).find(([, a]) => a?.status === 'approved')?.[0]
+                          ? (Object.entries(myAccessByClass) as [string, ClassAccess | null][]).find(
+                              ([, a]) => a?.status === 'approved'
+                            )?.[0]
                           : null
                         const ownerRegisteredClassName =
                           ownerRegisteredIn != null ? classes.find((x) => x.id === ownerRegisteredIn)?.name ?? '' : ''
