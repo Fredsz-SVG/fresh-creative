@@ -1497,8 +1497,12 @@ export default function YearbookAlbumClient({
     setAlbum((prev) => prev ? { ...prev, cover_video_url: null } : null)
   }
 
-  const handleDeleteCover = () => setDeleteCoverConfirm('image')
-  const handleDeleteCoverVideo = () => setDeleteCoverConfirm('video')
+  const handleDeleteCover = async () => {
+    setDeleteCoverConfirm('image')
+  }
+  const handleDeleteCoverVideo = async () => {
+    setDeleteCoverConfirm('video')
+  }
 
   const handleDeletePhoto = async (photoId: string, classId: string, studentName: string) => {
     if (!id) return
