@@ -79,42 +79,6 @@ function LoginContent() {
 
   useEffect(() => {
     let cancelled = false;
-    // Cek session secara sinkron jika memungkinkan
-    const session = supabase.auth.getSessionSync && supabase.auth.getSessionSync();
-    if (session && session.user) {
-      // Sudah login, langsung redirect tanpa spinner
-      (async () => {
-        const { data: profile, error: profileError } = await supabase
-          .from('users')
-          .select('is_suspended')
-          .eq('id', session.user.id)
-          .maybeSingle();
-        if (!profileError && profile?.is_suspended) {
-          await fetchWithAuth('/api/auth/logout');
-          await supabase.auth.signOut();
-          setSuspended(true);
-          setSuspendedMessage('Akun Anda sedang disuspend. Silakan hubungi admin.');
-          setCheckingSession(false);
-          return;
-        }
-        const res = await fetchWithAuth('/api/auth/otp-status');
-        const data = await res.json().catch(() => ({}));
-        if (data.verified) {
-          const safeNext = nextPath.startsWith('/') && !nextPath.startsWith('//') ? nextPath : '';
-          const role = await getRole(supabase, session.user);
-          let finalNext = safeNext;
-          if (role === 'admin' && finalNext.startsWith('/user')) {
-            finalNext = finalNext.replace('/user', '/admin');
-          }
-          router.replace(finalNext || (role === 'admin' ? '/admin' : '/user'));
-          return;
-        }
-        const q = nextPath ? `?next=${encodeURIComponent(nextPath)}` : '';
-        router.replace(`/auth/verify-otp${q}`);
-      })();
-      return;
-    }
-    // Fallback async: jika tidak ada getSessionSync, pakai async lama
     const redirectIfLoggedIn = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user) {
