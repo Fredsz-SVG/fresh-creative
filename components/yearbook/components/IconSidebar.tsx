@@ -47,11 +47,11 @@ function IconSidebarInner({
 
   return (
     <div className="hidden lg:fixed lg:left-0 lg:top-14 lg:w-16 lg:h-[calc(100vh-3.5rem)] lg:flex flex-col lg:z-40 lg:bg-white lg:dark:bg-slate-900 lg:border-r-2 lg:border-slate-900 lg:dark:border-slate-700 lg:shadow-[2px_0_0_0_#0f172a] lg:dark:shadow-[2px_0_0_0_#334155]">
-      <Link href={url('preview')} prefetch={false} className={linkClass(sidebarMode === 'preview')} title="Preview Album" onClick={handleClick('preview')}>
+      <a href={url('preview')} className={linkClass(sidebarMode === 'preview')} title="Preview Album" onClick={handleClick('preview')}>
         <Eye className="w-6 h-6" strokeWidth={2.5} />
         <span>Preview</span>
-      </Link>
-      <Link prefetch={false} href={url('ai-labs')} className={`relative ${linkClass(sidebarMode === 'ai-labs')}`} title="AI Labs" onClick={handleClick('ai-labs')}>
+      </a>
+      <a href={url('ai-labs')} className={`relative ${linkClass(sidebarMode === 'ai-labs')}`} title="AI Labs" onClick={handleClick('ai-labs')}>
         <div className="relative">
           <Sparkles className="w-6 h-6" strokeWidth={2.5} />
           {!aiLabsAccessible && (
@@ -59,12 +59,12 @@ function IconSidebarInner({
           )}
         </div>
         <span>AI Labs</span>
-      </Link>
-      <Link prefetch={false} href={url('classes')} className={linkClass((['classes', 'sambutan', 'cover'].includes(sidebarMode) || isCoverView))} title="Edit Konten" onClick={handleClick('classes')}>
+      </a>
+      <a href={url('classes')} className={linkClass((['classes', 'sambutan', 'cover'].includes(sidebarMode) || isCoverView))} title="Edit Konten" onClick={handleClick('classes')}>
         <Edit3 className="w-6 h-6" strokeWidth={2.5} />
         <span>Edit</span>
-      </Link>
-      <Link prefetch={false} href={url('flipbook')} className={`relative ${linkClass(sidebarMode === 'flipbook')}`} title="Flipbook" onClick={handleClick('flipbook')}>
+      </a>
+      <a href={url('flipbook')} className={`relative ${linkClass(sidebarMode === 'flipbook')}`} title="Flipbook" onClick={handleClick('flipbook')}>
         <div className="relative">
           <Book className="w-6 h-6" strokeWidth={2.5} />
           {!flipbookAccessible && (
@@ -72,15 +72,15 @@ function IconSidebarInner({
           )}
         </div>
         <span>Flipbook</span>
-      </Link>
+      </a>
       {canManage && (
-        <Link prefetch={false} href={url('approval')} className={`relative ${linkClass(sidebarMode === 'approval')}`} title="Kelola Approval" onClick={handleClick('approval')}>
+        <a href={url('approval')} className={`relative ${linkClass(sidebarMode === 'approval')}`} title="Kelola Approval" onClick={handleClick('approval')}>
           <ClipboardList className="w-6 h-6" strokeWidth={2.5} />
           <span>Approval</span>
           {pendingCount > 0 && (
             <span className="absolute top-3 right-3 flex h-3 w-3 rounded-full bg-red-500 border-2 border-slate-900 dark:border-slate-700 shadow-[1px_1px_0_0_#0f172a] dark:shadow-[1px_1px_0_0_#334155] animate-pulse" />
           )}
-        </Link>
+        </a>
       )}
     </div>
   )

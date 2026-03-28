@@ -23,14 +23,21 @@ export default function RootLayout({
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        {/* Prevent flash of unstyled content (FOUC) by applying light theme early */}
+        {/* Prevent flash of unstyled content (FOUC) by applying theme early */}
         <script
           dangerouslySetInnerHTML={{
             __html: `
               (function() {
                 try {
-                  document.documentElement.classList.remove('dark');
-                  document.documentElement.setAttribute('data-theme', 'light');
+                  var saved = localStorage.getItem('theme');
+                  var isDark = saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches);
+                  if (isDark) {
+                    document.documentElement.classList.add('dark');
+                    document.documentElement.setAttribute('data-theme', 'dark');
+                  } else {
+                    document.documentElement.classList.remove('dark');
+                    document.documentElement.setAttribute('data-theme', 'light');
+                  }
                 } catch (e) {}
               })();
             `,

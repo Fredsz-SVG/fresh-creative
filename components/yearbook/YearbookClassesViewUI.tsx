@@ -1105,34 +1105,21 @@ export default function YearbookClassesViewUI(props: any) {
                 <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] px-1">Menu Edit</p>
                 <div className="grid grid-cols-2 gap-1.5">
                   <button
-                    onClick={() => {
-                      setView('cover')
-                      const url = getYearbookSectionQueryUrl(effectiveAlbumId!, 'cover', pathname)
-                      router.push(url, { scroll: false })
-                    }}
+                    onClick={() => onSectionChange?.('cover')}
                     className={`flex items-center gap-2 p-2 rounded-xl border-2 transition-all ${isCoverView ? 'bg-white dark:bg-slate-800 border-slate-900 dark:border-slate-600 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] -translate-y-0.5' : 'bg-transparent border-transparent text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-white'}`}
                   >
                     <BookOpen className={`w-3.5 h-3.5 ${isCoverView ? 'text-indigo-500 dark:text-indigo-400' : 'text-slate-400 dark:text-slate-500'}`} />
                     <span className="text-[9px] font-black uppercase tracking-tight">Cover</span>
                   </button>
                   <button
-                    onClick={() => {
-                      setSidebarMode('sambutan')
-                      const url = getYearbookSectionQueryUrl(effectiveAlbumId!, 'sambutan', pathname)
-                      router.push(url, { scroll: false })
-                    }}
+                    onClick={() => onSectionChange?.('sambutan')}
                     className={`flex items-center gap-2 p-2 rounded-xl border-2 transition-all ${sidebarMode === 'sambutan' ? 'bg-white dark:bg-slate-800 border-slate-900 dark:border-slate-600 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] -translate-y-0.5' : 'bg-transparent border-transparent text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-white'}`}
                   >
                     <MessageSquare className={`w-3.5 h-3.5 ${sidebarMode === 'sambutan' ? 'text-violet-500 dark:text-violet-400' : 'text-slate-400 dark:text-slate-500'}`} />
                     <span className="text-[9px] font-black uppercase tracking-tight">Sambutan</span>
                   </button>
                   <button
-                    onClick={() => {
-                      setSidebarMode('classes')
-                      setView('classes')
-                      const url = getYearbookSectionQueryUrl(effectiveAlbumId!, 'classes', pathname)
-                      router.push(url, { scroll: false })
-                    }}
+                    onClick={() => onSectionChange?.('classes')}
                     className={`flex items-center gap-2 p-2 rounded-xl border-2 transition-all col-span-2 ${sidebarMode === 'classes' && !isCoverView ? 'bg-white dark:bg-slate-800 border-slate-900 dark:border-slate-600 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] -translate-y-0.5' : 'bg-transparent border-transparent text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-white'}`}
                   >
                     <Users className={`w-3.5 h-3.5 ${sidebarMode === 'classes' && !isCoverView ? 'text-emerald-500 dark:text-emerald-400' : 'text-slate-400 dark:text-slate-500'}`} />
@@ -1269,7 +1256,10 @@ export default function YearbookClassesViewUI(props: any) {
                               }
                               setClassIndex(idx)
                               const url = getYearbookSectionQueryUrl(effectiveAlbumId!, 'classes', pathname)
-                              router.push(url, { scroll: false })
+                              if (typeof window !== 'undefined') {
+                                const nativePushState = window.history.constructor.prototype.pushState
+                                nativePushState.call(window.history, null, '', url)
+                              }
                             }}
                             className={`flex items-center justify-between w-full px-4 py-3.5 rounded-2xl border-2 transition-all duration-300 font-black uppercase text-[10px] tracking-widest ${isActive
                               ? 'bg-amber-400 dark:bg-amber-600 border-slate-900 dark:border-slate-600 text-slate-900 dark:text-white shadow-[3px_3px_0_0_#0f172a] dark:shadow-[3px_3px_0_0_#334155] -translate-x-1 -translate-y-1'
@@ -1361,8 +1351,8 @@ export default function YearbookClassesViewUI(props: any) {
               ${(['classes', 'sambutan'].includes(sidebarMode) || isCoverView) ? 'lg:ml-[20rem]' : sidebarMode === 'flipbook' ? (flipbookPreviewMode ? 'lg:ml-0' : 'lg:ml-16') : 'lg:ml-0'}
               bg-white dark:bg-slate-950
             `}>
-              {/* Show different content based on sidebarMode */}
-              {isCoverView ? (
+              {/* Show different content based on sidebarMode - Pre-rendered components to avoid re-mounting via hidden class */}
+              <div className={isCoverView ? 'block w-full h-full' : 'hidden'}>
                 <div className="max-w-4xl mx-auto px-4 pt-0 pb-4 lg:py-12 relative">
                   <div className="flex flex-col gap-0 lg:gap-10">
 
@@ -1489,14 +1479,7 @@ export default function YearbookClassesViewUI(props: any) {
                               <LinkIcon className="w-5 h-5" strokeWidth={3} />
                               Salin Link
                             </button>
-                            <NextLink
-                              href={`/album/${album?.id}/preview`}
-                              target="_blank"
-                              className="px-8 py-4 rounded-2xl bg-emerald-400 dark:bg-emerald-600 border-4 border-slate-900 dark:border-slate-600 text-slate-900 dark:text-white font-black text-sm uppercase tracking-widest shadow-[8px_8px_0_0_#0f172a] dark:shadow-[8px_8px_0_0_#334155] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all active:scale-95 flex items-center justify-center gap-3"
-                            >
-                              <Eye className="w-5 h-5" strokeWidth={3} />
-                              Preview Album
-                            </NextLink>
+                            {/* Preview Album button removed as requested */}
                           </div>
                         )}
                       </div>
@@ -1617,9 +1600,10 @@ export default function YearbookClassesViewUI(props: any) {
                     )}
                   </div>
                 </div>
-              ) : sidebarMode === 'ai-labs' ? (
-                /* AI Labs - Fitur (Try On, Pose, dll.) tetap di album, URL ?tool=... */
-                /* AI Labs - Fitur (Try On, Pose, dll.) tetap di album, URL ?tool=... */
+              </div>
+
+              <div className={!isCoverView && sidebarMode === 'ai-labs' ? 'block w-full h-full' : 'hidden'}>
+                {/* AI Labs - Fitur (Try On, Pose, dll.) tetap di album, URL ?tool=... */}
                 <AILabsView
                   album={album}
                   aiLabsTool={aiLabsTool ?? null}
@@ -1628,7 +1612,9 @@ export default function YearbookClassesViewUI(props: any) {
                   featureCreditCosts={featureCreditCosts}
                   onFeatureUnlocked={onFeatureUnlocked}
                 />
-              ) : sidebarMode === 'approval' ? (
+              </div>
+
+              <div className={!isCoverView && sidebarMode === 'approval' ? 'block w-full h-full' : 'hidden'}>
                 <ApprovalView
                   joinStats={joinStats}
                   canManage={canManage}
@@ -1653,7 +1639,9 @@ export default function YearbookClassesViewUI(props: any) {
                   onUpdateRole={handleUpdateRoleWrapper}
                   onRemoveMember={handleRemoveMemberWrapper}
                 />
-              ) : sidebarMode === 'sambutan' ? (
+              </div>
+
+              <div className={!isCoverView && sidebarMode === 'sambutan' ? 'block w-full h-full' : 'hidden'}>
                 <SambutanView
                   teachers={teachers.filter(t => t.name.toLowerCase().includes(teacherSearchQuery.toLowerCase()))}
                   canManage={canManage}
@@ -1663,8 +1651,11 @@ export default function YearbookClassesViewUI(props: any) {
                   onDeletePhoto={handleDeleteTeacherPhoto}
                   onPlayVideo={onPlayVideo}
                 />
-              ) : sidebarMode === 'classes' && classes.length === 0 ? (
-                <ClassesEmptyView
+              </div>
+
+              {classes.length === 0 && (
+                <div className={!isCoverView && sidebarMode === 'classes' ? 'block w-full h-full' : 'hidden'}>
+                  <ClassesEmptyView
                   canManage={canManage}
                   addingClass={addingClass}
                   setAddingClass={setAddingClass}
@@ -1672,7 +1663,10 @@ export default function YearbookClassesViewUI(props: any) {
                   setNewClassName={setNewClassName}
                   onAddClass={handleAddClass}
                 />
-              ) : sidebarMode === 'preview' ? (
+                </div>
+              )}
+
+              {!isCoverView && sidebarMode === 'preview' ? (
                 <PreviewView
                   album={album}
                   classes={classes}
@@ -1681,15 +1675,18 @@ export default function YearbookClassesViewUI(props: any) {
                   firstPhotoByStudent={firstPhotoByStudent}
                   onPlayVideo={onPlayVideo}
                   onClose={() => {
-                    if (props.effectiveBackHref) {
-                      router.push(props.effectiveBackHref, { scroll: false })
+                    if (props.onSectionChange) {
+                      props.onSectionChange(lastSectionBeforePreviewRef.current || 'cover');
                     } else if (effectiveAlbumId) {
-                      router.push(getYearbookSectionQueryUrl(effectiveAlbumId, lastSectionBeforePreviewRef.current, pathname), { scroll: false })
+                      setSidebarMode && setSidebarMode(lastSectionBeforePreviewRef.current || 'cover');
+                      router.push(getYearbookSectionQueryUrl(effectiveAlbumId, lastSectionBeforePreviewRef.current, pathname), { scroll: false });
                     }
                   }}
                 />
-              ) : sidebarMode === 'flipbook' ? (
-                flipbookAccessible ? (
+              ) : null}
+
+              <div className={!isCoverView && sidebarMode === 'flipbook' ? 'block w-full h-[100dvh]' : 'hidden'}>
+                {flipbookAccessible ? (
                   <FlipbookView
                     album={album}
                     manualPages={manualPages}
@@ -1705,9 +1702,12 @@ export default function YearbookClassesViewUI(props: any) {
                     creditCost={featureCreditCosts['flipbook_unlock'] ?? 0}
                     onUnlocked={onFeatureUnlocked}
                   />
-                )
-              ) : sidebarMode === 'classes' ? (
-                /* Classes Content - Original grid view */
+                )}
+              </div>
+
+              {classes.length > 0 && (
+                <div className={!isCoverView && sidebarMode === 'classes' ? 'block w-full h-full' : 'hidden'}>
+                {/* Classes Content - Original grid view */
                 (() => {
                   const access = myAccessByClass[currentClass.id]
                   const hasApprovedAccess = access?.status === 'approved'
@@ -2003,8 +2003,9 @@ export default function YearbookClassesViewUI(props: any) {
                       </div>
                     </div>
                   )
-                })()
-              ) : null}
+                })()}
+                </div>
+              )}
               {
                 deleteClassConfirm && (
                   <div className="fixed inset-0 bg-slate-900/40 dark:bg-black/50 backdrop-blur-md flex items-center justify-center z-[200] p-4">

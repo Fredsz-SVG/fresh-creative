@@ -242,7 +242,19 @@ export default function YearbookAlbumClient({
 
   // Optimistic section: state-driven agar klik sidebar instan (tanpa tunggu router)
   const [activeSection, setActiveSection] = useState<typeof sectionMode>(sectionMode)
+  const latestClickedSectionRef = useRef<string | null>(null)
+
   useEffect(() => {
+    if (latestClickedSectionRef.current) {
+      if (latestClickedSectionRef.current === sectionMode) {
+        // Router sudah berhasil catch up dengan klik terakhir
+        latestClickedSectionRef.current = null
+      } else {
+        // URL telat (lagging) dari klik kita yang cepat.
+        // Jangan timpa state optimis kita supaya tampilan tidak pindah-pindah (flip-flop).
+        return
+      }
+    }
     setActiveSection(sectionMode)
   }, [sectionMode])
 
@@ -256,13 +268,19 @@ export default function YearbookAlbumClient({
 
   const handleSectionChange = useCallback(
     (section: typeof sectionMode) => {
+      latestClickedSectionRef.current = section
       setActiveSection(section)
       setView(section === 'cover' ? 'cover' : 'classes')
       setSidebarMode(section === 'cover' ? 'classes' : section)
       if (section !== 'preview' && section !== 'ai-labs') setLastEditorSection(section)
-      if (id) router.push(getYearbookSectionQueryUrl(id, section, pathname), { scroll: false })
+      if (id && typeof window !== 'undefined') {
+        const newUrl = getYearbookSectionQueryUrl(id, section, pathname)
+        // Bypass Next.js router patching to prevent RSC network roundtrip and loading states!
+        const nativePushState = window.history.constructor.prototype.pushState
+        nativePushState.call(window.history, null, '', newUrl)
+      }
     },
-    [id, pathname, router]
+    [id, pathname]
   )
 
   // Simpan sidebarMode ke localStorage (untuk fallback)
@@ -1608,37 +1626,37 @@ export default function YearbookAlbumClient({
   }
 
   if (view === 'cover' || view === 'classes') {
-    const isCoverView = sectionMode === 'cover'
+    const isCoverView = activeSection === 'cover'
     const showBackLink = true
     const currentClass = album?.classes?.[classIndex]
     const aiLabsToolLabel: Record<string, string> = { tryon: 'Virtual Try On', pose: 'Pose', 'image-editor': 'Image Editor', photogroup: 'Photo Group', phototovideo: 'Photo to Video' }
-    const isAiLabsToolActive = sidebarModeFromPath === 'ai-labs' && !!aiLabsTool
+    const isAiLabsToolActive = sidebarMode === 'ai-labs' && !!aiLabsTool
     const aiLabsBackHref = album?.id ? (useAdminBack ? `/admin/album/yearbook/${album.id}?section=ai-labs` : `/user/album/yearbook/${album.id}?section=ai-labs`) : effectiveBackHref
     const sectionTitle =
       isCoverView ? 'Cover'
-        : sidebarModeFromPath === 'ai-labs' ? (aiLabsTool ? (aiLabsToolLabel[aiLabsTool] ?? 'AI Labs') : 'AI Labs')
-          : sidebarModeFromPath === 'sambutan' ? 'Sambutan'
-            : sidebarModeFromPath === 'classes' ? (currentClass?.name ?? 'Kelas')
-              : sidebarModeFromPath === 'approval' ? 'Approval'
-                : sidebarModeFromPath === 'flipbook' ? 'Flipbook'
-                  : sidebarModeFromPath === 'preview' ? 'Preview'
+        : sidebarMode === 'ai-labs' ? (aiLabsTool ? (aiLabsToolLabel[aiLabsTool] ?? 'AI Labs') : 'AI Labs')
+          : sidebarMode === 'sambutan' ? 'Sambutan'
+            : sidebarMode === 'classes' ? (currentClass?.name ?? 'Kelas')
+              : sidebarMode === 'approval' ? 'Approval'
+                : sidebarMode === 'flipbook' ? 'Flipbook'
+                  : sidebarMode === 'preview' ? 'Preview'
                     : ''
     const sectionSubtitle =
       isCoverView ? 'Tampilan cover dan pengaturan cover album.'
-        : sidebarModeFromPath === 'ai-labs' ? (aiLabsTool ? '' : 'Pilih fitur yang ingin digunakan. Semua fitur AI tersedia di sini.')
-          : sidebarModeFromPath === 'sambutan' ? 'Kartu sambutan dan profil.'
-            : sidebarModeFromPath === 'classes' ? (currentClass ? 'Profil dan foto anggota kelas.' : 'Daftar kelas dan anggota.')
-              : sidebarModeFromPath === 'approval' ? 'Persetujuan siswa & manajemen tim album.'
-                : sidebarModeFromPath === 'flipbook' ? 'Editor dan preview flipbook.'
-                  : sidebarModeFromPath === 'preview' ? 'Preview tampilan album yearbook.'
+        : sidebarMode === 'ai-labs' ? (aiLabsTool ? '' : 'Pilih fitur yang ingin digunakan. Semua fitur AI tersedia di sini.')
+          : sidebarMode === 'sambutan' ? 'Kartu sambutan dan profil.'
+            : sidebarMode === 'classes' ? (currentClass ? 'Profil dan foto anggota kelas.' : 'Daftar kelas dan anggota.')
+              : sidebarMode === 'approval' ? 'Persetujuan siswa & manajemen tim album.'
+                : sidebarMode === 'flipbook' ? 'Editor dan preview flipbook.'
+                  : sidebarMode === 'preview' ? 'Preview tampilan album yearbook.'
                     : ''
 
     const headerCount =
-      sidebarModeFromPath === 'classes' && !isCoverView && currentClass
+      sidebarMode === 'classes' && !isCoverView && currentClass
         ? (membersByClass[currentClass.id]?.length ?? currentClass.student_count ?? 0)
-        : sidebarModeFromPath === 'sambutan'
+        : sidebarMode === 'sambutan'
           ? teacherCount
-          : sidebarModeFromPath === 'team'
+          : sidebarMode === 'team'
             ? teamMemberCount
             : null
 
@@ -1683,9 +1701,9 @@ export default function YearbookAlbumClient({
             {/* Header Actions (Right) */}
             <div className="ml-auto flex items-center gap-2 pr-1 lg:pr-2">
               {/* AI Labs: Credit di pojok kanan */}
-              {sidebarModeFromPath === 'ai-labs' && <CreditBadgeTop />}
+              {sidebarMode === 'ai-labs' && <CreditBadgeTop />}
               {/* Flipbook Controls (Mobile & Desktop) */}
-              {sidebarModeFromPath === 'flipbook' && (isOwner || isAlbumAdmin) && (flipbookEnabledByPackage || featureUnlocks.includes('flipbook')) && (
+              {sidebarMode === 'flipbook' && (isOwner || isAlbumAdmin) && (flipbookEnabledByPackage || featureUnlocks.includes('flipbook')) && (
                 <div className="flex bg-white dark:bg-slate-800 p-0.5 sm:p-1 rounded-lg sm:rounded-xl border-2 border-slate-900 dark:border-slate-600 gap-0.5 sm:gap-1 items-center shadow-[3px_3px_0_0_#0f172a] dark:shadow-[3px_3px_0_0_#334155]">
                   <button
                     onClick={() => setFlipbookPreviewMode(false)}
@@ -1702,24 +1720,24 @@ export default function YearbookAlbumClient({
                 </div>
               )}
               {/* Flipbook Locked: Credit di pojok kanan */}
-              {sidebarModeFromPath === 'flipbook' && !(flipbookEnabledByPackage || featureUnlocks.includes('flipbook')) && <CreditBadgeTop />}
+              {sidebarMode === 'flipbook' && !(flipbookEnabledByPackage || featureUnlocks.includes('flipbook')) && <CreditBadgeTop />}
               {/* Sambutan & Classes: Search Toggle */}
-              {(sidebarModeFromPath === 'sambutan' || (sidebarModeFromPath === 'classes' && !isCoverView)) && (
+              {(sidebarMode === 'sambutan' || (sidebarMode === 'classes' && activeSection !== 'cover')) && (
                 <>
-                  {(sidebarModeFromPath === 'sambutan' ? showTeacherSearch : showClassMemberSearch) ? (
-                    <div className={`absolute left-[52px] ${sidebarModeFromPath === 'classes' ? 'right-[52px]' : 'right-2'} top-2 bottom-2 bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 rounded-xl px-3 flex items-center shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] lg:static lg:w-auto lg:h-9 lg:px-2 lg:py-1 animate-in slide-in-from-right-2 duration-200 z-[60]`}>
+                  {(sidebarMode === 'sambutan' ? showTeacherSearch : showClassMemberSearch) ? (
+                    <div className={`absolute left-[52px] ${sidebarMode === 'classes' ? 'right-[52px]' : 'right-2'} top-2 bottom-2 bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 rounded-xl px-3 flex items-center shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] lg:static lg:w-auto lg:h-9 lg:px-2 lg:py-1 animate-in slide-in-from-right-2 duration-200 z-[60]`}>
                       <Search className="w-4 h-4 text-slate-400 dark:text-slate-500 mr-2 flex-shrink-0" />
                       <input
                         type="text"
                         placeholder="Cari..."
-                        value={sidebarModeFromPath === 'sambutan' ? teacherSearchQuery : classMemberSearchQuery}
-                        onChange={(e) => sidebarModeFromPath === 'sambutan' ? setTeacherSearchQuery(e.target.value) : setClassMemberSearchQuery(e.target.value)}
+                        value={sidebarMode === 'sambutan' ? teacherSearchQuery : classMemberSearchQuery}
+                        onChange={(e) => sidebarMode === 'sambutan' ? setTeacherSearchQuery(e.target.value) : setClassMemberSearchQuery(e.target.value)}
                         className="flex-1 bg-transparent border-none outline-none text-[11px] font-black uppercase tracking-tight text-slate-900 dark:text-white min-w-0 dark:placeholder:text-slate-500"
                         autoFocus
                       />
                       <button
                         onClick={() => {
-                          if (sidebarModeFromPath === 'sambutan') {
+                          if (sidebarMode === 'sambutan') {
                             setShowTeacherSearch(false);
                             setTeacherSearchQuery('');
                           } else {
@@ -1734,7 +1752,7 @@ export default function YearbookAlbumClient({
                     </div>
                   ) : (
                     <button
-                      onClick={() => sidebarModeFromPath === 'sambutan' ? setShowTeacherSearch(true) : setShowClassMemberSearch(true)}
+                      onClick={() => sidebarMode === 'sambutan' ? setShowTeacherSearch(true) : setShowClassMemberSearch(true)}
                       className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 rounded-lg sm:rounded-xl text-slate-900 dark:text-white shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all"
                     >
                       <Search className="w-3.5 h-3.5 sm:w-4 sm:h-4" strokeWidth={3} />
@@ -1743,7 +1761,7 @@ export default function YearbookAlbumClient({
                 </>
               )}
 
-              {sidebarModeFromPath === 'classes' && !isCoverView && (
+              {sidebarMode === 'classes' && activeSection !== 'cover' && (
                 <button
                   type="button"
                   onClick={(e) => {
@@ -1758,7 +1776,7 @@ export default function YearbookAlbumClient({
             </div>
 
             {/* Mobile: Cover View Actions - Icon Only */}
-            {isCoverView && (isOwner || isAlbumAdmin || isGlobalAdminUser) && (
+            {activeSection === 'cover' && (isOwner || isAlbumAdmin || isGlobalAdminUser) && (
               <div className="lg:hidden ml-auto flex items-center gap-1.5 sm:gap-2 pr-1">
                 <button
                   type="button"
@@ -1787,41 +1805,28 @@ export default function YearbookAlbumClient({
         )}
 
         {/* Mobile Persistent Edit Navigation - Cover, Sambutan, Kelas saja; Flipbook ada di bottom nav */}
-        {((['classes', 'sambutan'].includes(sidebarModeFromPath) || isCoverView)) && !isAiLabsToolActive && (
+        {((['classes', 'sambutan'].includes(sidebarMode) || activeSection === 'cover')) && !isAiLabsToolActive && (
           <div className="lg:hidden sticky top-14 z-40 bg-transparent px-3 sm:px-4 pt-0 pb-0">
             <div className="flex gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar py-1.5 sm:py-2">
               <button
-                onClick={() => {
-                  setView('cover')
-                  const url = getYearbookSectionQueryUrl(id!, 'cover', pathname)
-                  router.push(url, { scroll: false })
-                }}
-                className={`flex-shrink-0 flex items-center gap-1.5 sm:gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg sm:rounded-xl border-2 transition-all ${isCoverView ? 'bg-slate-900 dark:bg-slate-700 border-slate-900 dark:border-slate-600 text-white shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155]' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-500 hover:text-slate-900 dark:hover:text-white'}`}
+                onClick={() => handleSectionChange('cover')}
+                className={`flex-shrink-0 flex items-center gap-1.5 sm:gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg sm:rounded-xl border-2 transition-all ${activeSection === 'cover' ? 'bg-slate-900 dark:bg-slate-700 border-slate-900 dark:border-slate-600 text-white shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155]' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-500 hover:text-slate-900 dark:hover:text-white'}`}
               >
-                <BookOpen className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${isCoverView ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`} />
+                <BookOpen className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${activeSection === 'cover' ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`} />
                 <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest whitespace-nowrap">Cover</span>
               </button>
               <button
-                onClick={() => {
-                  setSidebarMode('sambutan')
-                  const url = getYearbookSectionQueryUrl(id!, 'sambutan', pathname)
-                  router.push(url, { scroll: false })
-                }}
-                className={`flex-shrink-0 flex items-center gap-1.5 sm:gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg sm:rounded-xl border-2 transition-all ${sidebarModeFromPath === 'sambutan' ? 'bg-slate-900 dark:bg-slate-700 border-slate-900 dark:border-slate-600 text-white shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155]' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-500 hover:text-slate-900 dark:hover:text-white'}`}
+                onClick={() => handleSectionChange('sambutan')}
+                className={`flex-shrink-0 flex items-center gap-1.5 sm:gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg sm:rounded-xl border-2 transition-all ${sidebarMode === 'sambutan' ? 'bg-slate-900 dark:bg-slate-700 border-slate-900 dark:border-slate-600 text-white shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155]' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-500 hover:text-slate-900 dark:hover:text-white'}`}
               >
-                <MessageSquare className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${sidebarModeFromPath === 'sambutan' ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`} />
+                <MessageSquare className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${sidebarMode === 'sambutan' ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`} />
                 <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest whitespace-nowrap">Sambutan</span>
               </button>
               <button
-                onClick={() => {
-                  setSidebarMode('classes')
-                  setView('classes')
-                  const url = getYearbookSectionQueryUrl(id!, 'classes', pathname)
-                  router.push(url, { scroll: false })
-                }}
-                className={`flex-shrink-0 flex items-center gap-1.5 sm:gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg sm:rounded-xl border-2 transition-all ${sidebarModeFromPath === 'classes' && !isCoverView ? 'bg-slate-900 dark:bg-slate-700 border-slate-900 dark:border-slate-600 text-white shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155]' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-500 hover:text-slate-900 dark:hover:text-white'}`}
+                onClick={() => handleSectionChange('classes')}
+                className={`flex-shrink-0 flex items-center gap-1.5 sm:gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg sm:rounded-xl border-2 transition-all ${sidebarMode === 'classes' && activeSection !== 'cover' ? 'bg-slate-900 dark:bg-slate-700 border-slate-900 dark:border-slate-600 text-white shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155]' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-500 hover:text-slate-900 dark:hover:text-white'}`}
               >
-                <Users className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${sidebarModeFromPath === 'classes' && !isCoverView ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`} />
+                <Users className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${sidebarMode === 'classes' && activeSection !== 'cover' ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`} />
                 <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest whitespace-nowrap">Kelas</span>
               </button>
             </div>
@@ -1915,8 +1920,8 @@ export default function YearbookAlbumClient({
             fetchStudentPhotosForCard={fetchStudentPhotosForCard}
             handleUpdateClass={handleUpdateClass}
             handleUpdateAlbum={handleUpdateAlbum}
-            // Cover View Props (pakai sectionMode agar tidak flash sidebar kelas saat buka Sampul dari URL)
-            isCoverView={sectionMode === 'cover'}
+            // Cover View Props (pakai state optimis agar langsung berubah tanpa delay URL)
+            isCoverView={activeSection === 'cover'}
             uploadingCover={uploadingCover}
             coverPreview={coverPreview}
             setCoverPreview={setCoverPreview}

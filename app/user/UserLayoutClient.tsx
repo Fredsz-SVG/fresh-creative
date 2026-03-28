@@ -135,8 +135,8 @@ export default function UserLayoutClient({
 
     if (!ok) {
         return (
-            <div className="min-h-[100dvh] bg-white flex items-center justify-center" aria-busy="true">
-                <div className="w-8 h-8 border-2 border-gray-200 border-t-lime-500 rounded-full animate-spin" />
+            <div className="min-h-[100dvh] bg-white dark:bg-slate-950 flex items-center justify-center transition-colors duration-300" aria-busy="true">
+                <div className="w-8 h-8 border-2 border-gray-200 dark:border-white/10 border-t-lime-500 dark:border-t-lime-400 rounded-full animate-spin" />
             </div>
         )
     }

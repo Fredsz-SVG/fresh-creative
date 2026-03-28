@@ -746,7 +746,7 @@ export default function FlipbookLayoutEditor({ album, onPlayVideo, onUpdateAlbum
                     </div>
                 )}
 
-                <div className="w-full bg-white dark:bg-slate-900 rounded-2xl border-4 border-slate-900 dark:border-slate-700 p-4 shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155] h-[300px] lg:h-auto lg:flex-1 flex flex-col min-h-0">
+                <div className="w-full bg-white dark:bg-slate-900 rounded-2xl border-4 border-slate-900 dark:border-slate-700 p-4 shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155] h-auto lg:flex-1 flex flex-col min-h-0">
                     <div className="flex items-center justify-between mb-3 lg:mb-4">
                         <h3 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] flex items-center gap-2">
                             Pages
@@ -766,7 +766,7 @@ export default function FlipbookLayoutEditor({ album, onPlayVideo, onUpdateAlbum
                         )}
                     </div>
 
-                    <div className="flex flex-row lg:flex-col overflow-x-auto lg:overflow-y-auto min-h-0 gap-3 pb-2 lg:pb-0 lg:space-y-3 pr-1 snap-x snap-mandatory lg:snap-none no-scrollbar">
+                    <div className="flex flex-row lg:flex-col overflow-x-auto lg:overflow-y-auto min-h-0 gap-3 pt-2 pb-3 px-1 lg:pt-0 lg:pb-0 lg:px-0 lg:space-y-3 pr-2 lg:pr-1 snap-x snap-mandatory lg:snap-none no-scrollbar">
                         {manualPages.map((page, index) => {
                             const displayNum = index + 1
                             const isFirst = index === 0
@@ -782,39 +782,42 @@ export default function FlipbookLayoutEditor({ album, onPlayVideo, onUpdateAlbum
                                 onDrop={(e) => canManage && handlePageDrop(e, index)}
                                 onDragLeave={handlePageDragLeave}
                                 onDragEnd={handlePageDragEnd}
-                                className={`flex-shrink-0 w-[45%] lg:w-full flex flex-col lg:flex-row gap-2 lg:gap-3 p-2 rounded-xl border-4 transition-all text-left group snap-start lg:snap-align-none ${selectedManualPageId === page.id
-                                    ? 'bg-amber-400 dark:bg-amber-500 border-slate-900 dark:border-slate-600 shadow-[3px_3px_0_0_#0f172a] dark:shadow-[3px_3px_0_0_#334155]'
-                                    : 'bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700'} ${isDragging ? 'opacity-50' : ''} ${isDropTarget ? 'ring-2 ring-indigo-400 dark:ring-indigo-500 ring-offset-2 dark:ring-offset-slate-900' : ''}`}
+                                className={`flex-shrink-0 w-20 sm:w-24 lg:w-full flex flex-col lg:flex-row gap-1.5 lg:gap-3 p-1.5 lg:p-2 rounded-xl border-2 lg:border-4 transition-all text-left group snap-start lg:snap-align-none ${selectedManualPageId === page.id
+                                    ? 'bg-amber-400 dark:bg-amber-500 border-slate-900 dark:border-slate-600 shadow-[2px_2px_0_0_#0f172a] lg:shadow-[3px_3px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] lg:dark:shadow-[3px_3px_0_0_#334155] -translate-y-0.5 lg:-translate-y-0'
+                                    : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700'} ${isDragging ? 'opacity-50' : ''} ${isDropTarget ? 'ring-2 ring-indigo-400 dark:ring-indigo-500 ring-offset-2 dark:ring-offset-slate-900' : ''}`}
                             >
                                 {canManage && (
                                     <div
                                         draggable
                                         onDragStart={(e) => handlePageDragStart(e, page.id)}
                                         onTouchStart={(e) => handlePageTouchStart(e, page.id)}
-                                        className="flex items-center justify-center shrink-0 cursor-grab active:cursor-grabbing text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-400 touch-none"
+                                        className="flex items-center justify-center shrink-0 cursor-grab active:cursor-grabbing text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-400 lg:py-0 py-0.5 touch-none"
                                         title="Drag untuk pindah urutan"
                                     >
-                                        <GripVertical className="w-4 h-4 lg:w-3.5 lg:h-3.5" strokeWidth={2.5} />
+                                        <GripVertical className="w-3 h-3 lg:w-3.5 lg:h-3.5" strokeWidth={3} />
                                     </div>
                                 )}
                                 <button
                                     type="button"
                                     onClick={() => setSelectedManualPageId(page.id)}
-                                    className="flex flex-1 min-w-0 flex-col lg:flex-row gap-2 lg:gap-3 p-0 rounded-lg border-0 bg-transparent text-left"
+                                    className="flex flex-1 min-w-0 flex-col lg:flex-row gap-1.5 lg:gap-3 p-0 rounded-lg border-0 bg-transparent text-left lg:items-center"
                                 >
-                                    <div className="w-full lg:w-16 aspect-[3/4] lg:h-20 bg-white dark:bg-slate-800 rounded-lg overflow-hidden flex-shrink-0 border-2 border-slate-900 dark:border-slate-600 relative shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] group-hover:shadow-none group-hover:translate-x-0.5 group-hover:translate-y-0.5 transition-all">
-                                        <img src={page.image_url} className="w-full h-full object-cover" alt={label} />
-                                        <div className="absolute top-0 right-0 bg-slate-900 dark:bg-slate-600 px-1.5 text-[8px] font-black text-white rounded-bl-lg">
+                                    <div className="w-full lg:w-14 aspect-[3/4] lg:h-[76px] bg-slate-100 dark:bg-slate-800 rounded-md overflow-hidden flex-shrink-0 border-2 border-slate-900 dark:border-slate-600 relative lg:group-hover:shadow-[2px_2px_0_0_#0f172a] dark:group-hover:shadow-[2px_2px_0_0_#334155] transition-all">
+                                        <img src={page.image_url} loading="lazy" decoding="async" className="w-full h-full object-cover" alt={label} />
+                                        <div className="absolute top-0 right-0 bg-slate-900 dark:bg-slate-600 px-1 py-0.5 text-[7px] font-black text-white rounded-bl-md">
                                             {displayNum}
                                         </div>
                                     </div>
-                                    <div className="flex-1 min-w-0 flex flex-col justify-center">
-                                        <p className={`text-[10px] sm:text-[10px] font-black uppercase tracking-widest ${selectedManualPageId === page.id ? 'text-slate-900 dark:text-white' : 'text-slate-900 dark:text-white'}`}>
+                                    <div className="flex-1 min-w-0 flex flex-col justify-center text-center lg:text-left pb-1 lg:pb-0">
+                                        <p className={`text-[8px] lg:text-[10px] font-black uppercase tracking-widest truncate w-full ${selectedManualPageId === page.id ? 'text-slate-900 dark:text-white' : 'text-slate-900 dark:text-white'}`}>
                                             {label}
                                         </p>
-                                        <p className={`text-[9px] font-bold uppercase tracking-tight mt-0.5 ${selectedManualPageId === page.id ? 'text-slate-900/60 dark:text-slate-300' : 'text-slate-400 dark:text-slate-500'}`}>
+                                        <p className={`hidden lg:block text-[9px] font-bold uppercase tracking-tight mt-0.5 ${selectedManualPageId === page.id ? 'text-slate-900/60 dark:text-slate-300' : 'text-slate-400 dark:text-slate-500'}`}>
                                             {page.flipbook_video_hotspots?.length || 0} Hotspot
                                         </p>
+                                        <div className={`lg:hidden mx-auto mt-1 flex items-center justify-center w-3 h-3 rounded-full ${page.flipbook_video_hotspots?.length ? (selectedManualPageId === page.id ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900' : 'bg-indigo-500 text-white') : 'bg-slate-200 dark:bg-slate-700 text-slate-400 dark:text-slate-400'}`}>
+                                            <span className="text-[6px] font-black">{page.flipbook_video_hotspots?.length || 0}</span>
+                                        </div>
                                     </div>
                                 </button>
                             </div>
@@ -921,25 +924,29 @@ export default function FlipbookLayoutEditor({ album, onPlayVideo, onUpdateAlbum
             </div>
 
             {/* Main Preview Area */}
-            <div className={`flex-1 min-w-0 bg-white dark:bg-slate-900 rounded-2xl border-4 border-slate-900 dark:border-slate-700 overflow-hidden relative flex flex-col h-[60vh] sm:h-[60vh] lg:h-full order-1 lg:order-2 shadow-[8px_8px_0_0_#0f172a] dark:shadow-[8px_8px_0_0_#334155] shrink-0 ${manualPages.length === 0 ? 'hidden lg:flex' : ''}`}>
-                <div className="flex-1 relative overflow-auto p-4 sm:p-12 flex items-center justify-center no-scrollbar bg-slate-50 dark:bg-slate-950 min-h-[300px]">
+            <div className={`w-full min-h-[55vh] lg:flex-1 lg:min-h-0 shrink-0 bg-white dark:bg-slate-900 rounded-[28px] lg:rounded-[36px] border-4 border-slate-900 dark:border-slate-700 overflow-hidden relative flex flex-col order-1 lg:order-2 shadow-[8px_8px_0_0_#0f172a] dark:shadow-[8px_8px_0_0_#334155] ${manualPages.length === 0 ? 'hidden lg:flex' : ''}`}>
+                <div className="flex-1 relative overflow-auto p-4 sm:p-12 flex no-scrollbar bg-white dark:bg-slate-900 min-h-[300px]">
                     {selectedPage ? (
                         <div
-                            className={`relative mx-auto inline-block max-w-[560px] rounded-sm overflow-hidden shadow-[8px_8px_0_0_#0f172a] dark:shadow-[8px_8px_0_0_#334155] border-4 border-slate-900 dark:border-slate-600 group ${isPageReady ? 'transition-opacity duration-700 opacity-100' : 'opacity-0'}`}
+                            className={`relative m-auto rounded-sm overflow-hidden shadow-[8px_8px_0_0_#0f172a] dark:shadow-[8px_8px_0_0_#334155] border-2 lg:border-4 border-slate-900 dark:border-slate-600 group ${isPageReady ? 'transition-opacity duration-700 opacity-100' : 'opacity-0'}`}
                             onMouseDown={handleMouseDown}
                             onMouseMove={handleMouseMove}
                             onMouseUp={handleMouseUp}
                             onTouchStart={handleTouchStart}
                             onTouchMove={handleTouchMove}
                             onTouchEnd={handleMouseUp}
-                            style={{ maxHeight: '90vh', touchAction: 'none' }}
+                            // Konfigurasi container proporsional paling presisi & anti-pipih/letterboxing
+                            style={{ 
+                                touchAction: 'none',
+                                aspectRatio: selectedPage.width && selectedPage.height ? `${selectedPage.width} / ${selectedPage.height}` : '3/4',
+                                height: 'auto', // Berikan keleluasaan kalkulasi height ke browser berdasarkan aspectRatio
+                                maxHeight: 'calc(55vh - 40px)', // Batas statis mutlak menghindari elemen "terpotong dari atas"
+                                maxWidth: '100%',
+                            }}
                         >
                             <img
                                 src={selectedPage.image_url}
-                                className="block w-auto h-auto max-w-full max-h-[90vh] object-contain select-none pointer-events-none"
-                                style={{
-                                    aspectRatio: selectedPage.width && selectedPage.height ? `${selectedPage.width} / ${selectedPage.height}` : undefined
-                                }}
+                                className="block w-full h-full object-cover select-none pointer-events-none"
                                 alt={`Page ${selectedPage.page_number}`}
                             />
 

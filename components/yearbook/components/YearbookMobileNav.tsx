@@ -113,19 +113,19 @@ export default function YearbookMobileNav({
       {!hideBottomNav && (
         <div className="fixed bottom-0 left-0 right-0 z-[60] bg-white dark:bg-slate-900 border-t-4 border-slate-900 dark:border-slate-700 flex lg:hidden items-center justify-around min-h-[3.5rem] sm:min-h-16 pb-safe safe-area-bottom shadow-[0_-4px_10px_0_rgba(0,0,0,0.1)] dark:shadow-[0_-4px_10px_0_rgba(0,0,0,0.3)]">
           <button
-            onClick={() => handleNavClick('classes')}
-            className={`flex flex-col items-center justify-center flex-1 h-full gap-0.5 active:scale-95 transition-all min-w-0 py-1.5 ${(['classes', 'sambutan'].includes(sidebarMode) || isCoverView) ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white'}`}
-          >
-            <Edit3 className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" strokeWidth={2.5} />
-            <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest text-center truncate w-full px-0.5">Edit</span>
-          </button>
-
-          <button
             onClick={() => handleNavClick('preview')}
             className={`flex flex-col items-center justify-center flex-1 h-full gap-0.5 active:scale-95 transition-all min-w-0 py-1.5 ${sidebarMode === 'preview' ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white'}`}
           >
             <Eye className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" strokeWidth={2.5} />
             <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest text-center truncate w-full px-0.5">Preview</span>
+          </button>
+
+          <button
+            onClick={() => handleNavClick('classes')}
+            className={`flex flex-col items-center justify-center flex-1 h-full gap-0.5 active:scale-95 transition-all min-w-0 py-1.5 ${(['classes', 'sambutan'].includes(sidebarMode) || isCoverView) ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white'}`}
+          >
+            <Edit3 className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" strokeWidth={2.5} />
+            <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest text-center truncate w-full px-0.5">Edit</span>
           </button>
 
           <div className="flex-1 flex items-center justify-center relative min-w-0 py-1.5">
@@ -294,7 +294,10 @@ export default function YearbookMobileNav({
                           toast.info(`Anda sudah terdaftar di kelas lain: ${ownerRegisteredClassName}`)
                         }
                         setClassIndex(idx)
-                        if (effectiveAlbumId) router.push(url('classes'), { scroll: false })
+                        if (effectiveAlbumId && typeof window !== 'undefined') {
+                          const nativePushState = window.history.constructor.prototype.pushState
+                          nativePushState.call(window.history, null, '', url('classes'))
+                        }
                         setMobileMenuOpen(false)
                       }}
                       className="flex-1 p-2 text-left min-w-0"

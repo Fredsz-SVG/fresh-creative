@@ -670,7 +670,7 @@ export default function ManualFlipbookViewer({ pages, onPlayVideo, className = '
   return (
     <div
       ref={wrapperRef}
-      className={`flip-book-wrapper flex flex-col w-full h-full bg-slate-100 dark:bg-slate-950 ${className} transition-opacity duration-700 ${isReady ? 'opacity-100' : 'opacity-0'} ${isCoverOnly ? 'flip-book-wrapper--cover-only' : ''} ${isBackCoverOnly ? 'flip-book-wrapper--back-cover-only' : ''} ${isFullscreen ? 'flip-book-wrapper--fullscreen' : ''} ${sectionFlipDir ? `is-flipping-${sectionFlipDir}` : ''}`}
+      className={`flip-book-wrapper flex flex-col w-full h-full bg-white dark:bg-slate-950 ${className} transition-opacity duration-700 ${isReady ? 'opacity-100' : 'opacity-0'} ${isCoverOnly ? 'flip-book-wrapper--cover-only' : ''} ${isBackCoverOnly ? 'flip-book-wrapper--back-cover-only' : ''} ${isFullscreen ? 'flip-book-wrapper--fullscreen' : ''} ${sectionFlipDir ? `is-flipping-${sectionFlipDir}` : ''}`}
     >
       <div
         ref={stageContainerRef}

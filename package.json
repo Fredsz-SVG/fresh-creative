@@ -22,6 +22,7 @@
     "cropperjs": "^1.6.2",
     "framer-motion": "^12.34.2",
     "gsap": "^3.14.2",
+    "hono": "^4.12.9",
     "ioredis": "^5.9.2",
     "lucide-react": "^0.562.0",
     "next": "^16.1.6",
