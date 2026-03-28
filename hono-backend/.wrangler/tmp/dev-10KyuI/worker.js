@@ -51286,10 +51286,10 @@ var init_dist5 = __esm({
   }
 });
 
-// .wrangler/tmp/bundle-pf2ePE/middleware-loader.entry.ts
+// .wrangler/tmp/bundle-gkV2pH/middleware-loader.entry.ts
 init_modules_watch_stub();
 
-// .wrangler/tmp/bundle-pf2ePE/middleware-insertion-facade.js
+// .wrangler/tmp/bundle-gkV2pH/middleware-insertion-facade.js
 init_modules_watch_stub();
 
 // worker.ts
@@ -57950,10 +57950,10 @@ showcase.get("/", async (c2) => {
   try {
     const admin = getAdminSupabaseClient(c2?.env);
     const { data, error } = await admin.from("site_settings").select("value").eq("key", SHOWCASE_KEY2).maybeSingle();
-    if (error) {
+    if (error || !data) {
       return c2.json(defaultShowcase2);
     }
-    const raw2 = data?.value;
+    const raw2 = data.value;
     if (!raw2 || typeof raw2 !== "object") return c2.json(defaultShowcase2);
     const albumPreviews = Array.isArray(raw2.albumPreviews) ? raw2.albumPreviews : defaultShowcase2.albumPreviews;
     const flipbookPreviewUrl = typeof raw2.flipbookPreviewUrl === "string" ? raw2.flipbookPreviewUrl : defaultShowcase2.flipbookPreviewUrl;
@@ -57963,7 +57963,7 @@ showcase.get("/", async (c2) => {
         const match2 = preview.link.match(/(?:album|yearbook)\/([^/?]+)/);
         if (match2 && match2[1]) {
           const { data: albumData } = await admin.from("albums").select("cover_image_url").eq("id", match2[1]).maybeSingle();
-          if (albumData?.cover_image_url) {
+          if (albumData && albumData.cover_image_url) {
             return { ...preview, imageUrl: albumData.cover_image_url };
           }
         }
@@ -58298,7 +58298,7 @@ var jsonError = /* @__PURE__ */ __name(async (request, env, _ctx, middlewareCtx)
 }, "jsonError");
 var middleware_miniflare3_json_error_default = jsonError;
 
-// .wrangler/tmp/bundle-pf2ePE/middleware-insertion-facade.js
+// .wrangler/tmp/bundle-gkV2pH/middleware-insertion-facade.js
 var __INTERNAL_WRANGLER_MIDDLEWARE__ = [
   middleware_ensure_req_body_drained_default,
   middleware_miniflare3_json_error_default
@@ -58331,7 +58331,7 @@ function __facade_invoke__(request, env, ctx, dispatch, finalMiddleware) {
 }
 __name(__facade_invoke__, "__facade_invoke__");
 
-// .wrangler/tmp/bundle-pf2ePE/middleware-loader.entry.ts
+// .wrangler/tmp/bundle-gkV2pH/middleware-loader.entry.ts
 var __Facade_ScheduledController__ = class ___Facade_ScheduledController__ {
   constructor(scheduledTime, cron, noRetry) {
     this.scheduledTime = scheduledTime;

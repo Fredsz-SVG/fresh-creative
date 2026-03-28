@@ -29,7 +29,7 @@ overview.get('/', async (c) => {
         id: u.id, email: u.email,
         full_name: (u.user_metadata?.full_name as string) ?? null,
       }))
-      await adminClient.from('users').upsert(rows, { onConflict: 'id', ignoreDuplicates: true })
+      await (adminClient.from('users') as any).upsert(rows as any, { onConflict: 'id', ignoreDuplicates: true })
     }
     const { count: totalUsers } = await adminClient.from('users').select('*', { count: 'exact', head: true })
     const { count: totalAdmins } = await adminClient.from('users').select('*', { count: 'exact', head: true }).eq('role', 'admin')
@@ -64,7 +64,7 @@ overview.put('/', async (c) => {
   else if (role !== undefined) return c.json({ error: 'Invalid role' }, 400)
   if (typeof isSuspended === 'boolean') update.is_suspended = isSuspended
   if (Object.keys(update).length === 0) return c.json({ error: 'No fields to update' }, 400)
-  const { data, error } = await adminClient.from('users').update(update).eq('id', id).select('id, email, full_name, role, credits, created_at').maybeSingle()
+  const { data, error } = await (adminClient.from('users') as any).update(update as any).eq('id', id).select('id, email, full_name, role, credits, created_at').maybeSingle()
   if (error) return c.json({ error: error.message }, 500)
   if (!data) return c.json({ error: 'User not found' }, 404)
   return c.json(data)
