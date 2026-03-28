@@ -2,10 +2,12 @@ name = "hono-backend"
 main = "worker.ts"
 compatibility_date = "2026-03-27"
 
+# Saat `wrangler deploy` tanpa keep_vars: Wrangler menghapus SEMUA plain text vars
+# di dashboard lalu hanya mengisi dari wrangler.toml — sehingga env dashboard “hilang”.
+# Nilai ini membuat deploy mempertahankan vars yang sudah di-set di dashboard.
+keep_vars = true
+
 [dev]
 port = 8787
 
-
-
-# Variables are managed manually in the Cloudflare Dashboard
-# to avoid being overwritten during deployments.
+# Lokal: salin hono-backend/.env.example ke .dev.vars (Wrangler memuat .dev.vars saat `wrangler dev`).

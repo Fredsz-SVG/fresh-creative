@@ -1,0 +1,21 @@
+# Salin file ini menjadi `.dev.vars` di folder hono-backend (jangan commit `.dev.vars`).
+# Wrangler memuat `.dev.vars` untuk `wrangler dev` — setara env production di dashboard.
+
+NODE_ENV=development
+
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
+
+REPLICATE_API_TOKEN=
+
+RESEND_API_KEY=
+RESEND_FROM_EMAIL=
+
+NEXT_PUBLIC_APP_URL=
+
+XENDIT_SECRET_KEY=
+XENDIT_WEBHOOK_TOKEN=
+
+SKIP_LOGIN_OTP=
+SKIP_OTP=

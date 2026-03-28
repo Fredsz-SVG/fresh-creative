@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "wrangler dev worker.ts",
     "build": "wrangler build",
-    "deploy": "wrangler deploy",
+    "deploy": "wrangler deploy --keep-vars",
+    "types:cf": "wrangler types --include-runtime=false",
     "start": "wrangler start",
     "lint": "eslint . --ext .ts",
     "format": "prettier --write .",
