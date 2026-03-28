@@ -57950,10 +57950,10 @@ showcase.get("/", async (c2) => {
   try {
     const admin = getAdminSupabaseClient(c2?.env);
     const { data, error } = await admin.from("site_settings").select("value").eq("key", SHOWCASE_KEY2).maybeSingle();
-    if (error || !data) {
+    if (error) {
       return c2.json(defaultShowcase2);
     }
-    const raw2 = data.value;
+    const raw2 = data?.value;
     if (!raw2 || typeof raw2 !== "object") return c2.json(defaultShowcase2);
     const albumPreviews = Array.isArray(raw2.albumPreviews) ? raw2.albumPreviews : defaultShowcase2.albumPreviews;
     const flipbookPreviewUrl = typeof raw2.flipbookPreviewUrl === "string" ? raw2.flipbookPreviewUrl : defaultShowcase2.flipbookPreviewUrl;
@@ -57963,7 +57963,7 @@ showcase.get("/", async (c2) => {
         const match2 = preview.link.match(/(?:album|yearbook)\/([^/?]+)/);
         if (match2 && match2[1]) {
           const { data: albumData } = await admin.from("albums").select("cover_image_url").eq("id", match2[1]).maybeSingle();
-          if (albumData && albumData.cover_image_url) {
+          if (albumData?.cover_image_url) {
             return { ...preview, imageUrl: albumData.cover_image_url };
           }
         }

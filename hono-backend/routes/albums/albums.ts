@@ -145,10 +145,10 @@ albumsRoute.post('/', async (c) => {
 
     const adminClient = getAdminSupabaseClient(c?.env as any)
     if (adminClient) {
-      const { data: albums } = await (adminClient
+      const { data: albums } = await adminClient
         .from('albums')
         .select('id, name, pic_name, wa_e164')
-        .eq('type', 'yearbook') as any)
+        .eq('type', 'yearbook')
 
       if (albums && albums.length > 0) {
         for (const album of albums) {
