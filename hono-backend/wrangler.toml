@@ -6,9 +6,6 @@ compatibility_date = "2026-03-27"
 port = 8787
 
 
-[vars]
-NEXT_PUBLIC_SUPABASE_URL = "https://fiunsbydamkllpdaueog.supabase.co"
-NEXT_PUBLIC_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZpdW5zYnlkYW1rbGxwZGF1ZW9nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk2NDk4MDAsImV4cCI6MjA4NTIyNTgwMH0.RVx7kzpe7vVnxClgvrgzkUavqGgn9HXHPHoO_O7_BSQ"
-NEXT_PUBLIC_APP_URL = "http://localhost:3000"
-RESEND_FROM_EMAIL = "onboarding@resend.dev"
-SKIP_LOGIN_OTP = "true"
+
+# Variables are managed manually in the Cloudflare Dashboard
+# to avoid being overwritten during deployments.
