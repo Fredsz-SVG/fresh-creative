@@ -1,7 +1,6 @@
 -- ============================================================================
--- DATABASE SCHEMA EXPORT (UNIFIED)
--- CREATED: 2026
--- Execute this single file in the Supabase SQL Editor on a fresh project.
+-- Fresh Creative — skema utama (tanpa seed wilayah besar)
+-- Urutan: 1) file ini  2) opsional: 0001_ref_indonesia_wilayah.sql
 -- ============================================================================
 
 -- ----------------------------------------------------------------------------
@@ -450,51 +449,6 @@ CREATE POLICY "Read Access" ON public.album_class_access FOR SELECT USING (
   OR (status = 'approved' AND EXISTS (SELECT 1 FROM public.album_members m WHERE m.album_id = album_class_access.album_id AND m.user_id = auth.uid()))
   OR (user_id = auth.uid())
 );
-
-
--- ----------------------------------------------------------------------------
--- SOURCE: 05_user_assets.sql (DISABLED - Feature removed)
-/*
-CREATE TABLE IF NOT EXISTS public.user_assets (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  file_url text NOT NULL,
-  file_name text NOT NULL,
-  file_type text,
-  size_bytes bigint,
-  created_at timestamptz DEFAULT now()
-);
-
-CREATE INDEX IF NOT EXISTS idx_user_assets_user_id ON public.user_assets(user_id);
-
-ALTER TABLE public.user_assets ENABLE ROW LEVEL SECURITY;
-
-DROP POLICY IF EXISTS "Users can manage own assets" ON public.user_assets;
-CREATE POLICY "Users can manage own assets" ON public.user_assets
-  FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
-
--- Storage Bucket: user_files
-INSERT INTO storage.buckets (id, name, public)
-VALUES ('user_files', 'user_files', true)
-ON CONFLICT (id) DO NOTHING;
-
--- Storage Policies
-DROP POLICY IF EXISTS "Assets Public Access" ON storage.objects;
-CREATE POLICY "Assets Public Access" ON storage.objects FOR SELECT
-USING ( bucket_id = 'user_files' ); 
-
-DROP POLICY IF EXISTS "Users can upload own assets" ON storage.objects;
-CREATE POLICY "Users can upload own assets" ON storage.objects FOR INSERT
-WITH CHECK ( bucket_id = 'user_files' AND auth.uid() = owner );
-
-DROP POLICY IF EXISTS "Users can update own assets" ON storage.objects;
-CREATE POLICY "Users can update own assets" ON storage.objects FOR UPDATE
-USING ( bucket_id = 'user_files' AND auth.uid() = owner );
-
-DROP POLICY IF EXISTS "Users can delete own assets" ON storage.objects;
-CREATE POLICY "Users can delete own assets" ON storage.objects FOR DELETE
-USING ( bucket_id = 'user_files' AND auth.uid() = owner );
-*/
 
 
 -- ----------------------------------------------------------------------------
@@ -1438,7 +1392,7 @@ DROP TABLE IF EXISTS public.album_class_requests CASCADE;
 -- Note: This is for STUDENT registration only, not for co-owner/admin invites
 -- Admin/member management now works through ROLE PROMOTION:
 --   1. Student registers via student invite token
---   2. Owner approves → becomes member in album_members
+--   2. Owner approves â†’ becomes member in album_members
 --   3. Owner can promote to admin via UI button (updates album_members.role)
 ALTER TABLE public.albums
   ADD COLUMN IF NOT EXISTS student_invite_token text,
@@ -1453,8 +1407,8 @@ CREATE INDEX IF NOT EXISTS idx_albums_student_invite_token
 -- Expired tokens should be checked in the application layer
 
 -- DEPRECATED SYSTEM: album_invites table is no longer used
--- Old flow: Generate invite token → User clicks link → Joins as admin/member
--- New flow: User joins as student → Owner promotes to admin if needed
+-- Old flow: Generate invite token â†’ User clicks link â†’ Joins as admin/member
+-- New flow: User joins as student â†’ Owner promotes to admin if needed
 -- Migration to drop album_invites can be created separately if cleanup is needed
 
 
@@ -1483,8 +1437,8 @@ END $$;
 -- This migration removes the old invite token system for admin/member invites
 -- 
 -- CURRENT SYSTEM (Correct Flow):
--- 1. Student registers via token → album_join_requests (pending)
--- 2. Owner approves → inserts to BOTH:
+-- 1. Student registers via token â†’ album_join_requests (pending)
+-- 2. Owner approves â†’ inserts to BOTH:
 --    - album_class_access (for class membership)
 --    - album_members (role='member' for team management)
 -- 3. Owner can promote to admin in Team sidebar via "Jadikan Admin" button
@@ -1673,576 +1627,231 @@ $$;
 
 
 -- ============================================================================
--- AUTOMATIC REGIONAL DATA SEEDING
+-- Baseline bagian 2/2 (dulu banyak file terpisah): transaksi, album payment,
+-- AI pricing, redeem, suspend user, admin realtime users, realtime publik.
+-- Jalankan setelah skema utama (file migration sebelumnya).
 -- ============================================================================
 
--- Seed 38 Provinces
-INSERT INTO public.ref_provinces (id, name) VALUES
-  ('11', 'ACEH'),
-  ('12', 'SUMATERA UTARA'),
-  ('13', 'SUMATERA BARAT'),
-  ('14', 'RIAU'),
-  ('15', 'JAMBI'),
-  ('16', 'SUMATERA SELATAN'),
-  ('17', 'BENGKULU'),
-  ('18', 'LAMPUNG'),
-  ('19', 'KEPULAUAN BANGKA BELITUNG'),
-  ('21', 'KEPULAUAN RIAU'),
-  ('31', 'DKI JAKARTA'),
-  ('32', 'JAWA BARAT'),
-  ('33', 'JAWA TENGAH'),
-  ('34', 'DI YOGYAKARTA'),
-  ('35', 'JAWA TIMUR'),
-  ('36', 'BANTEN'),
-  ('51', 'BALI'),
-  ('52', 'NUSA TENGGARA BARAT'),
-  ('53', 'NUSA TENGGARA TIMUR'),
-  ('61', 'KALIMANTAN BARAT'),
-  ('62', 'KALIMANTAN TENGAH'),
-  ('63', 'KALIMANTAN SELATAN'),
-  ('64', 'KALIMANTAN TIMUR'),
-  ('65', 'KALIMANTAN UTARA'),
-  ('71', 'SULAWESI UTARA'),
-  ('72', 'SULAWESI TENGAH'),
-  ('73', 'SULAWESI SELATAN'),
-  ('74', 'SULAWESI TENGGARA'),
-  ('75', 'GORONTALO'),
-  ('76', 'SULAWESI BARAT'),
-  ('81', 'MALUKU'),
-  ('82', 'MALUKU UTARA'),
-  ('91', 'PAPUA BARAT'),
-  ('94', 'PAPUA')
-ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name;
+-- Fitur "File Saya" — tabel dihapus jika masih ada dari proyek lama
+DROP TABLE IF EXISTS public.user_assets CASCADE;
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM pg_publication_tables
+    WHERE pubname = 'supabase_realtime' AND tablename = 'user_assets'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime DROP TABLE public.user_assets;
+  END IF;
+END $$;
 
--- Seed 514 Cities/Regencies
-INSERT INTO public.ref_cities (id, province_id, name, kind) VALUES
-  ('1101', '11', 'KABUPATEN SIMEULUE', 'kabupaten'),
-  ('1102', '11', 'KABUPATEN ACEH SINGKIL', 'kabupaten'),
-  ('1103', '11', 'KABUPATEN ACEH SELATAN', 'kabupaten'),
-  ('1104', '11', 'KABUPATEN ACEH TENGGARA', 'kabupaten'),
-  ('1105', '11', 'KABUPATEN ACEH TIMUR', 'kabupaten'),
-  ('1106', '11', 'KABUPATEN ACEH TENGAH', 'kabupaten'),
-  ('1107', '11', 'KABUPATEN ACEH BARAT', 'kabupaten'),
-  ('1108', '11', 'KABUPATEN ACEH BESAR', 'kabupaten'),
-  ('1109', '11', 'KABUPATEN PIDIE', 'kabupaten'),
-  ('1110', '11', 'KABUPATEN BIREUEN', 'kabupaten'),
-  ('1111', '11', 'KABUPATEN ACEH UTARA', 'kabupaten'),
-  ('1112', '11', 'KABUPATEN ACEH BARAT DAYA', 'kabupaten'),
-  ('1113', '11', 'KABUPATEN GAYO LUES', 'kabupaten'),
-  ('1114', '11', 'KABUPATEN ACEH TAMIANG', 'kabupaten'),
-  ('1115', '11', 'KABUPATEN NAGAN RAYA', 'kabupaten'),
-  ('1116', '11', 'KABUPATEN ACEH JAYA', 'kabupaten'),
-  ('1117', '11', 'KABUPATEN BENER MERIAH', 'kabupaten'),
-  ('1118', '11', 'KABUPATEN PIDIE JAYA', 'kabupaten'),
-  ('1171', '11', 'KOTA BANDA ACEH', 'kota'),
-  ('1172', '11', 'KOTA SABANG', 'kota'),
-  ('1173', '11', 'KOTA LANGSA', 'kota'),
-  ('1174', '11', 'KOTA LHOKSEUMAWE', 'kota'),
-  ('1175', '11', 'KOTA SUBULUSSALAM', 'kota'),
-  ('1201', '12', 'KABUPATEN NIAS', 'kabupaten'),
-  ('1202', '12', 'KABUPATEN MANDAILING NATAL', 'kabupaten'),
-  ('1203', '12', 'KABUPATEN TAPANULI SELATAN', 'kabupaten'),
-  ('1204', '12', 'KABUPATEN TAPANULI TENGAH', 'kabupaten'),
-  ('1205', '12', 'KABUPATEN TAPANULI UTARA', 'kabupaten'),
-  ('1206', '12', 'KABUPATEN TOBA SAMOSIR', 'kabupaten'),
-  ('1207', '12', 'KABUPATEN LABUHAN BATU', 'kabupaten'),
-  ('1208', '12', 'KABUPATEN ASAHAN', 'kabupaten'),
-  ('1209', '12', 'KABUPATEN SIMALUNGUN', 'kabupaten'),
-  ('1210', '12', 'KABUPATEN DAIRI', 'kabupaten'),
-  ('1211', '12', 'KABUPATEN KARO', 'kabupaten'),
-  ('1212', '12', 'KABUPATEN DELI SERDANG', 'kabupaten'),
-  ('1213', '12', 'KABUPATEN LANGKAT', 'kabupaten'),
-  ('1214', '12', 'KABUPATEN NIAS SELATAN', 'kabupaten'),
-  ('1215', '12', 'KABUPATEN HUMBANG HASUNDUTAN', 'kabupaten'),
-  ('1216', '12', 'KABUPATEN PAKPAK BHARAT', 'kabupaten'),
-  ('1217', '12', 'KABUPATEN SAMOSIR', 'kabupaten'),
-  ('1218', '12', 'KABUPATEN SERDANG BEDAGAI', 'kabupaten'),
-  ('1219', '12', 'KABUPATEN BATU BARA', 'kabupaten'),
-  ('1220', '12', 'KABUPATEN PADANG LAWAS UTARA', 'kabupaten'),
-  ('1221', '12', 'KABUPATEN PADANG LAWAS', 'kabupaten'),
-  ('1222', '12', 'KABUPATEN LABUHAN BATU SELATAN', 'kabupaten'),
-  ('1223', '12', 'KABUPATEN LABUHAN BATU UTARA', 'kabupaten'),
-  ('1224', '12', 'KABUPATEN NIAS UTARA', 'kabupaten'),
-  ('1225', '12', 'KABUPATEN NIAS BARAT', 'kabupaten'),
-  ('1271', '12', 'KOTA SIBOLGA', 'kota'),
-  ('1272', '12', 'KOTA TANJUNG BALAI', 'kota'),
-  ('1273', '12', 'KOTA PEMATANG SIANTAR', 'kota'),
-  ('1274', '12', 'KOTA TEBING TINGGI', 'kota'),
-  ('1275', '12', 'KOTA MEDAN', 'kota'),
-  ('1276', '12', 'KOTA BINJAI', 'kota'),
-  ('1277', '12', 'KOTA PADANGSIDIMPUAN', 'kota'),
-  ('1278', '12', 'KOTA GUNUNGSITOLI', 'kota'),
-  ('1301', '13', 'KABUPATEN KEPULAUAN MENTAWAI', 'kabupaten'),
-  ('1302', '13', 'KABUPATEN PESISIR SELATAN', 'kabupaten'),
-  ('1303', '13', 'KABUPATEN SOLOK', 'kabupaten'),
-  ('1304', '13', 'KABUPATEN SIJUNJUNG', 'kabupaten'),
-  ('1305', '13', 'KABUPATEN TANAH DATAR', 'kabupaten'),
-  ('1306', '13', 'KABUPATEN PADANG PARIAMAN', 'kabupaten'),
-  ('1307', '13', 'KABUPATEN AGAM', 'kabupaten'),
-  ('1308', '13', 'KABUPATEN LIMA PULUH KOTA', 'kabupaten'),
-  ('1309', '13', 'KABUPATEN PASAMAN', 'kabupaten'),
-  ('1310', '13', 'KABUPATEN SOLOK SELATAN', 'kabupaten'),
-  ('1311', '13', 'KABUPATEN DHARMASRAYA', 'kabupaten'),
-  ('1312', '13', 'KABUPATEN PASAMAN BARAT', 'kabupaten'),
-  ('1371', '13', 'KOTA PADANG', 'kota'),
-  ('1372', '13', 'KOTA SOLOK', 'kota'),
-  ('1373', '13', 'KOTA SAWAH LUNTO', 'kota'),
-  ('1374', '13', 'KOTA PADANG PANJANG', 'kota'),
-  ('1375', '13', 'KOTA BUKITTINGGI', 'kota'),
-  ('1376', '13', 'KOTA PAYAKUMBUH', 'kota'),
-  ('1377', '13', 'KOTA PARIAMAN', 'kota'),
-  ('1401', '14', 'KABUPATEN KUANTAN SINGINGI', 'kabupaten'),
-  ('1402', '14', 'KABUPATEN INDRAGIRI HULU', 'kabupaten'),
-  ('1403', '14', 'KABUPATEN INDRAGIRI HILIR', 'kabupaten'),
-  ('1404', '14', 'KABUPATEN PELALAWAN', 'kabupaten'),
-  ('1405', '14', 'KABUPATEN S I A K', 'kabupaten'),
-  ('1406', '14', 'KABUPATEN KAMPAR', 'kabupaten'),
-  ('1407', '14', 'KABUPATEN ROKAN HULU', 'kabupaten'),
-  ('1408', '14', 'KABUPATEN BENGKALIS', 'kabupaten'),
-  ('1409', '14', 'KABUPATEN ROKAN HILIR', 'kabupaten'),
-  ('1410', '14', 'KABUPATEN KEPULAUAN MERANTI', 'kabupaten'),
-  ('1471', '14', 'KOTA PEKANBARU', 'kota'),
-  ('1473', '14', 'KOTA D U M A I', 'kota'),
-  ('1501', '15', 'KABUPATEN KERINCI', 'kabupaten'),
-  ('1502', '15', 'KABUPATEN MERANGIN', 'kabupaten'),
-  ('1503', '15', 'KABUPATEN SAROLANGUN', 'kabupaten'),
-  ('1504', '15', 'KABUPATEN BATANG HARI', 'kabupaten'),
-  ('1505', '15', 'KABUPATEN MUARO JAMBI', 'kabupaten'),
-  ('1506', '15', 'KABUPATEN TANJUNG JABUNG TIMUR', 'kabupaten'),
-  ('1507', '15', 'KABUPATEN TANJUNG JABUNG BARAT', 'kabupaten'),
-  ('1508', '15', 'KABUPATEN TEBO', 'kabupaten'),
-  ('1509', '15', 'KABUPATEN BUNGO', 'kabupaten'),
-  ('1571', '15', 'KOTA JAMBI', 'kota'),
-  ('1572', '15', 'KOTA SUNGAI PENUH', 'kota'),
-  ('1601', '16', 'KABUPATEN OGAN KOMERING ULU', 'kabupaten'),
-  ('1602', '16', 'KABUPATEN OGAN KOMERING ILIR', 'kabupaten')
-ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, kind = EXCLUDED.kind;
+-- Transaksi (Xendit / paket kredit)
+CREATE TABLE IF NOT EXISTS public.transactions (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  external_id text NOT NULL UNIQUE,
+  package_id uuid REFERENCES public.credit_packages(id) ON DELETE SET NULL,
+  amount integer NOT NULL,
+  status text NOT NULL DEFAULT 'PENDING' CHECK (status IN ('PENDING', 'PAID', 'SETTLED', 'EXPIRED', 'FAILED')),
+  invoice_url text,
+  payment_method text,
+  paid_at timestamptz,
+  description text,
+  new_students_count integer,
+  album_id uuid REFERENCES public.albums(id) ON DELETE SET NULL,
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
+);
 
-INSERT INTO public.ref_cities (id, province_id, name, kind) VALUES
-  ('1603', '16', 'KABUPATEN MUARA ENIM', 'kabupaten'),
-  ('1604', '16', 'KABUPATEN LAHAT', 'kabupaten'),
-  ('1605', '16', 'KABUPATEN MUSI RAWAS', 'kabupaten'),
-  ('1606', '16', 'KABUPATEN MUSI BANYUASIN', 'kabupaten'),
-  ('1607', '16', 'KABUPATEN BANYU ASIN', 'kabupaten'),
-  ('1608', '16', 'KABUPATEN OGAN KOMERING ULU SELATAN', 'kabupaten'),
-  ('1609', '16', 'KABUPATEN OGAN KOMERING ULU TIMUR', 'kabupaten'),
-  ('1610', '16', 'KABUPATEN OGAN ILIR', 'kabupaten'),
-  ('1611', '16', 'KABUPATEN EMPAT LAWANG', 'kabupaten'),
-  ('1612', '16', 'KABUPATEN PENUKAL ABAB LEMATANG ILIR', 'kabupaten'),
-  ('1613', '16', 'KABUPATEN MUSI RAWAS UTARA', 'kabupaten'),
-  ('1671', '16', 'KOTA PALEMBANG', 'kota'),
-  ('1672', '16', 'KOTA PRABUMULIH', 'kota'),
-  ('1673', '16', 'KOTA PAGAR ALAM', 'kota'),
-  ('1674', '16', 'KOTA LUBUKLINGGAU', 'kota'),
-  ('1701', '17', 'KABUPATEN BENGKULU SELATAN', 'kabupaten'),
-  ('1702', '17', 'KABUPATEN REJANG LEBONG', 'kabupaten'),
-  ('1703', '17', 'KABUPATEN BENGKULU UTARA', 'kabupaten'),
-  ('1704', '17', 'KABUPATEN KAUR', 'kabupaten'),
-  ('1705', '17', 'KABUPATEN SELUMA', 'kabupaten'),
-  ('1706', '17', 'KABUPATEN MUKOMUKO', 'kabupaten'),
-  ('1707', '17', 'KABUPATEN LEBONG', 'kabupaten'),
-  ('1708', '17', 'KABUPATEN KEPAHIANG', 'kabupaten'),
-  ('1709', '17', 'KABUPATEN BENGKULU TENGAH', 'kabupaten'),
-  ('1771', '17', 'KOTA BENGKULU', 'kota'),
-  ('1801', '18', 'KABUPATEN LAMPUNG BARAT', 'kabupaten'),
-  ('1802', '18', 'KABUPATEN TANGGAMUS', 'kabupaten'),
-  ('1803', '18', 'KABUPATEN LAMPUNG SELATAN', 'kabupaten'),
-  ('1804', '18', 'KABUPATEN LAMPUNG TIMUR', 'kabupaten'),
-  ('1805', '18', 'KABUPATEN LAMPUNG TENGAH', 'kabupaten'),
-  ('1806', '18', 'KABUPATEN LAMPUNG UTARA', 'kabupaten'),
-  ('1807', '18', 'KABUPATEN WAY KANAN', 'kabupaten'),
-  ('1808', '18', 'KABUPATEN TULANGBAWANG', 'kabupaten'),
-  ('1809', '18', 'KABUPATEN PESAWARAN', 'kabupaten'),
-  ('1810', '18', 'KABUPATEN PRINGSEWU', 'kabupaten'),
-  ('1811', '18', 'KABUPATEN MESUJI', 'kabupaten'),
-  ('1812', '18', 'KABUPATEN TULANG BAWANG BARAT', 'kabupaten'),
-  ('1813', '18', 'KABUPATEN PESISIR BARAT', 'kabupaten'),
-  ('1871', '18', 'KOTA BANDAR LAMPUNG', 'kota'),
-  ('1872', '18', 'KOTA METRO', 'kota'),
-  ('1901', '19', 'KABUPATEN BANGKA', 'kabupaten'),
-  ('1902', '19', 'KABUPATEN BELITUNG', 'kabupaten'),
-  ('1903', '19', 'KABUPATEN BANGKA BARAT', 'kabupaten'),
-  ('1904', '19', 'KABUPATEN BANGKA TENGAH', 'kabupaten'),
-  ('1905', '19', 'KABUPATEN BANGKA SELATAN', 'kabupaten'),
-  ('1906', '19', 'KABUPATEN BELITUNG TIMUR', 'kabupaten'),
-  ('1971', '19', 'KOTA PANGKAL PINANG', 'kota'),
-  ('2101', '21', 'KABUPATEN KARIMUN', 'kabupaten'),
-  ('2102', '21', 'KABUPATEN BINTAN', 'kabupaten'),
-  ('2103', '21', 'KABUPATEN NATUNA', 'kabupaten'),
-  ('2104', '21', 'KABUPATEN LINGGA', 'kabupaten'),
-  ('2105', '21', 'KABUPATEN KEPULAUAN ANAMBAS', 'kabupaten'),
-  ('2171', '21', 'KOTA B A T A M', 'kota'),
-  ('2172', '21', 'KOTA TANJUNG PINANG', 'kota'),
-  ('3101', '31', 'KABUPATEN KEPULAUAN SERIBU', 'kabupaten'),
-  ('3171', '31', 'KOTA JAKARTA SELATAN', 'kota'),
-  ('3172', '31', 'KOTA JAKARTA TIMUR', 'kota'),
-  ('3173', '31', 'KOTA JAKARTA PUSAT', 'kota'),
-  ('3174', '31', 'KOTA JAKARTA BARAT', 'kota'),
-  ('3175', '31', 'KOTA JAKARTA UTARA', 'kota'),
-  ('3201', '32', 'KABUPATEN BOGOR', 'kabupaten'),
-  ('3202', '32', 'KABUPATEN SUKABUMI', 'kabupaten'),
-  ('3203', '32', 'KABUPATEN CIANJUR', 'kabupaten'),
-  ('3204', '32', 'KABUPATEN BANDUNG', 'kabupaten'),
-  ('3205', '32', 'KABUPATEN GARUT', 'kabupaten'),
-  ('3206', '32', 'KABUPATEN TASIKMALAYA', 'kabupaten'),
-  ('3207', '32', 'KABUPATEN CIAMIS', 'kabupaten'),
-  ('3208', '32', 'KABUPATEN KUNINGAN', 'kabupaten'),
-  ('3209', '32', 'KABUPATEN CIREBON', 'kabupaten'),
-  ('3210', '32', 'KABUPATEN MAJALENGKA', 'kabupaten'),
-  ('3211', '32', 'KABUPATEN SUMEDANG', 'kabupaten'),
-  ('3212', '32', 'KABUPATEN INDRAMAYU', 'kabupaten'),
-  ('3213', '32', 'KABUPATEN SUBANG', 'kabupaten'),
-  ('3214', '32', 'KABUPATEN PURWAKARTA', 'kabupaten'),
-  ('3215', '32', 'KABUPATEN KARAWANG', 'kabupaten'),
-  ('3216', '32', 'KABUPATEN BEKASI', 'kabupaten'),
-  ('3217', '32', 'KABUPATEN BANDUNG BARAT', 'kabupaten'),
-  ('3218', '32', 'KABUPATEN PANGANDARAN', 'kabupaten'),
-  ('3271', '32', 'KOTA BOGOR', 'kota'),
-  ('3272', '32', 'KOTA SUKABUMI', 'kota'),
-  ('3273', '32', 'KOTA BANDUNG', 'kota'),
-  ('3274', '32', 'KOTA CIREBON', 'kota'),
-  ('3275', '32', 'KOTA BEKASI', 'kota'),
-  ('3276', '32', 'KOTA DEPOK', 'kota'),
-  ('3277', '32', 'KOTA CIMAHI', 'kota'),
-  ('3278', '32', 'KOTA TASIKMALAYA', 'kota'),
-  ('3279', '32', 'KOTA BANJAR', 'kota'),
-  ('3301', '33', 'KABUPATEN CILACAP', 'kabupaten'),
-  ('3302', '33', 'KABUPATEN BANYUMAS', 'kabupaten'),
-  ('3303', '33', 'KABUPATEN PURBALINGGA', 'kabupaten'),
-  ('3304', '33', 'KABUPATEN BANJARNEGARA', 'kabupaten'),
-  ('3305', '33', 'KABUPATEN KEBUMEN', 'kabupaten'),
-  ('3306', '33', 'KABUPATEN PURWOREJO', 'kabupaten'),
-  ('3307', '33', 'KABUPATEN WONOSOBO', 'kabupaten'),
-  ('3308', '33', 'KABUPATEN MAGELANG', 'kabupaten'),
-  ('3309', '33', 'KABUPATEN BOYOLALI', 'kabupaten'),
-  ('3310', '33', 'KABUPATEN KLATEN', 'kabupaten'),
-  ('3311', '33', 'KABUPATEN SUKOHARJO', 'kabupaten'),
-  ('3312', '33', 'KABUPATEN WONOGIRI', 'kabupaten'),
-  ('3313', '33', 'KABUPATEN KARANGANYAR', 'kabupaten')
-ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, kind = EXCLUDED.kind;
+CREATE INDEX IF NOT EXISTS idx_transactions_user_id ON public.transactions(user_id);
+CREATE INDEX IF NOT EXISTS idx_transactions_external_id ON public.transactions(external_id);
+CREATE INDEX IF NOT EXISTS idx_transactions_album_id ON public.transactions(album_id);
 
-INSERT INTO public.ref_cities (id, province_id, name, kind) VALUES
-  ('3314', '33', 'KABUPATEN SRAGEN', 'kabupaten'),
-  ('3315', '33', 'KABUPATEN GROBOGAN', 'kabupaten'),
-  ('3316', '33', 'KABUPATEN BLORA', 'kabupaten'),
-  ('3317', '33', 'KABUPATEN REMBANG', 'kabupaten'),
-  ('3318', '33', 'KABUPATEN PATI', 'kabupaten'),
-  ('3319', '33', 'KABUPATEN KUDUS', 'kabupaten'),
-  ('3320', '33', 'KABUPATEN JEPARA', 'kabupaten'),
-  ('3321', '33', 'KABUPATEN DEMAK', 'kabupaten'),
-  ('3322', '33', 'KABUPATEN SEMARANG', 'kabupaten'),
-  ('3323', '33', 'KABUPATEN TEMANGGUNG', 'kabupaten'),
-  ('3324', '33', 'KABUPATEN KENDAL', 'kabupaten'),
-  ('3325', '33', 'KABUPATEN BATANG', 'kabupaten'),
-  ('3326', '33', 'KABUPATEN PEKALONGAN', 'kabupaten'),
-  ('3327', '33', 'KABUPATEN PEMALANG', 'kabupaten'),
-  ('3328', '33', 'KABUPATEN TEGAL', 'kabupaten'),
-  ('3329', '33', 'KABUPATEN BREBES', 'kabupaten'),
-  ('3371', '33', 'KOTA MAGELANG', 'kota'),
-  ('3372', '33', 'KOTA SURAKARTA', 'kota'),
-  ('3373', '33', 'KOTA SALATIGA', 'kota'),
-  ('3374', '33', 'KOTA SEMARANG', 'kota'),
-  ('3375', '33', 'KOTA PEKALONGAN', 'kota'),
-  ('3376', '33', 'KOTA TEGAL', 'kota'),
-  ('3401', '34', 'KABUPATEN KULON PROGO', 'kabupaten'),
-  ('3402', '34', 'KABUPATEN BANTUL', 'kabupaten'),
-  ('3403', '34', 'KABUPATEN GUNUNG KIDUL', 'kabupaten'),
-  ('3404', '34', 'KABUPATEN SLEMAN', 'kabupaten'),
-  ('3471', '34', 'KOTA YOGYAKARTA', 'kota'),
-  ('3501', '35', 'KABUPATEN PACITAN', 'kabupaten'),
-  ('3502', '35', 'KABUPATEN PONOROGO', 'kabupaten'),
-  ('3503', '35', 'KABUPATEN TRENGGALEK', 'kabupaten'),
-  ('3504', '35', 'KABUPATEN TULUNGAGUNG', 'kabupaten'),
-  ('3505', '35', 'KABUPATEN BLITAR', 'kabupaten'),
-  ('3506', '35', 'KABUPATEN KEDIRI', 'kabupaten'),
-  ('3507', '35', 'KABUPATEN MALANG', 'kabupaten'),
-  ('3508', '35', 'KABUPATEN LUMAJANG', 'kabupaten'),
-  ('3509', '35', 'KABUPATEN JEMBER', 'kabupaten'),
-  ('3510', '35', 'KABUPATEN BANYUWANGI', 'kabupaten'),
-  ('3511', '35', 'KABUPATEN BONDOWOSO', 'kabupaten'),
-  ('3512', '35', 'KABUPATEN SITUBONDO', 'kabupaten'),
-  ('3513', '35', 'KABUPATEN PROBOLINGGO', 'kabupaten'),
-  ('3514', '35', 'KABUPATEN PASURUAN', 'kabupaten'),
-  ('3515', '35', 'KABUPATEN SIDOARJO', 'kabupaten'),
-  ('3516', '35', 'KABUPATEN MOJOKERTO', 'kabupaten'),
-  ('3517', '35', 'KABUPATEN JOMBANG', 'kabupaten'),
-  ('3518', '35', 'KABUPATEN NGANJUK', 'kabupaten'),
-  ('3519', '35', 'KABUPATEN MADIUN', 'kabupaten'),
-  ('3520', '35', 'KABUPATEN MAGETAN', 'kabupaten'),
-  ('3521', '35', 'KABUPATEN NGAWI', 'kabupaten'),
-  ('3522', '35', 'KABUPATEN BOJONEGORO', 'kabupaten'),
-  ('3523', '35', 'KABUPATEN TUBAN', 'kabupaten'),
-  ('3524', '35', 'KABUPATEN LAMONGAN', 'kabupaten'),
-  ('3525', '35', 'KABUPATEN GRESIK', 'kabupaten'),
-  ('3526', '35', 'KABUPATEN BANGKALAN', 'kabupaten'),
-  ('3527', '35', 'KABUPATEN SAMPANG', 'kabupaten'),
-  ('3528', '35', 'KABUPATEN PAMEKASAN', 'kabupaten'),
-  ('3529', '35', 'KABUPATEN SUMENEP', 'kabupaten'),
-  ('3571', '35', 'KOTA KEDIRI', 'kota'),
-  ('3572', '35', 'KOTA BLITAR', 'kota'),
-  ('3573', '35', 'KOTA MALANG', 'kota'),
-  ('3574', '35', 'KOTA PROBOLINGGO', 'kota'),
-  ('3575', '35', 'KOTA PASURUAN', 'kota'),
-  ('3576', '35', 'KOTA MOJOKERTO', 'kota'),
-  ('3577', '35', 'KOTA MADIUN', 'kota'),
-  ('3578', '35', 'KOTA SURABAYA', 'kota'),
-  ('3579', '35', 'KOTA BATU', 'kota'),
-  ('3601', '36', 'KABUPATEN PANDEGLANG', 'kabupaten'),
-  ('3602', '36', 'KABUPATEN LEBAK', 'kabupaten'),
-  ('3603', '36', 'KABUPATEN TANGERANG', 'kabupaten'),
-  ('3604', '36', 'KABUPATEN SERANG', 'kabupaten'),
-  ('3671', '36', 'KOTA TANGERANG', 'kota'),
-  ('3672', '36', 'KOTA CILEGON', 'kota'),
-  ('3673', '36', 'KOTA SERANG', 'kota'),
-  ('3674', '36', 'KOTA TANGERANG SELATAN', 'kota'),
-  ('5101', '51', 'KABUPATEN JEMBRANA', 'kabupaten'),
-  ('5102', '51', 'KABUPATEN TABANAN', 'kabupaten'),
-  ('5103', '51', 'KABUPATEN BADUNG', 'kabupaten'),
-  ('5104', '51', 'KABUPATEN GIANYAR', 'kabupaten'),
-  ('5105', '51', 'KABUPATEN KLUNGKUNG', 'kabupaten'),
-  ('5106', '51', 'KABUPATEN BANGLI', 'kabupaten'),
-  ('5107', '51', 'KABUPATEN KARANG ASEM', 'kabupaten'),
-  ('5108', '51', 'KABUPATEN BULELENG', 'kabupaten'),
-  ('5171', '51', 'KOTA DENPASAR', 'kota'),
-  ('5201', '52', 'KABUPATEN LOMBOK BARAT', 'kabupaten'),
-  ('5202', '52', 'KABUPATEN LOMBOK TENGAH', 'kabupaten'),
-  ('5203', '52', 'KABUPATEN LOMBOK TIMUR', 'kabupaten'),
-  ('5204', '52', 'KABUPATEN SUMBAWA', 'kabupaten'),
-  ('5205', '52', 'KABUPATEN DOMPU', 'kabupaten'),
-  ('5206', '52', 'KABUPATEN BIMA', 'kabupaten'),
-  ('5207', '52', 'KABUPATEN SUMBAWA BARAT', 'kabupaten'),
-  ('5208', '52', 'KABUPATEN LOMBOK UTARA', 'kabupaten'),
-  ('5271', '52', 'KOTA MATARAM', 'kota'),
-  ('5272', '52', 'KOTA BIMA', 'kota'),
-  ('5301', '53', 'KABUPATEN SUMBA BARAT', 'kabupaten'),
-  ('5302', '53', 'KABUPATEN SUMBA TIMUR', 'kabupaten'),
-  ('5303', '53', 'KABUPATEN KUPANG', 'kabupaten'),
-  ('5304', '53', 'KABUPATEN TIMOR TENGAH SELATAN', 'kabupaten'),
-  ('5305', '53', 'KABUPATEN TIMOR TENGAH UTARA', 'kabupaten'),
-  ('5306', '53', 'KABUPATEN BELU', 'kabupaten'),
-  ('5307', '53', 'KABUPATEN ALOR', 'kabupaten'),
-  ('5308', '53', 'KABUPATEN LEMBATA', 'kabupaten')
-ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, kind = EXCLUDED.kind;
+DROP TRIGGER IF EXISTS set_transactions_timestamp ON public.transactions;
+CREATE TRIGGER set_transactions_timestamp
+  BEFORE UPDATE ON public.transactions
+  FOR EACH ROW
+  EXECUTE FUNCTION public.trigger_set_timestamp();
 
-INSERT INTO public.ref_cities (id, province_id, name, kind) VALUES
-  ('5309', '53', 'KABUPATEN FLORES TIMUR', 'kabupaten'),
-  ('5310', '53', 'KABUPATEN SIKKA', 'kabupaten'),
-  ('5311', '53', 'KABUPATEN ENDE', 'kabupaten'),
-  ('5312', '53', 'KABUPATEN NGADA', 'kabupaten'),
-  ('5313', '53', 'KABUPATEN MANGGARAI', 'kabupaten'),
-  ('5314', '53', 'KABUPATEN ROTE NDAO', 'kabupaten'),
-  ('5315', '53', 'KABUPATEN MANGGARAI BARAT', 'kabupaten'),
-  ('5316', '53', 'KABUPATEN SUMBA TENGAH', 'kabupaten'),
-  ('5317', '53', 'KABUPATEN SUMBA BARAT DAYA', 'kabupaten'),
-  ('5318', '53', 'KABUPATEN NAGEKEO', 'kabupaten'),
-  ('5319', '53', 'KABUPATEN MANGGARAI TIMUR', 'kabupaten'),
-  ('5320', '53', 'KABUPATEN SABU RAIJUA', 'kabupaten'),
-  ('5321', '53', 'KABUPATEN MALAKA', 'kabupaten'),
-  ('5371', '53', 'KOTA KUPANG', 'kota'),
-  ('6101', '61', 'KABUPATEN SAMBAS', 'kabupaten'),
-  ('6102', '61', 'KABUPATEN BENGKAYANG', 'kabupaten'),
-  ('6103', '61', 'KABUPATEN LANDAK', 'kabupaten'),
-  ('6104', '61', 'KABUPATEN MEMPAWAH', 'kabupaten'),
-  ('6105', '61', 'KABUPATEN SANGGAU', 'kabupaten'),
-  ('6106', '61', 'KABUPATEN KETAPANG', 'kabupaten'),
-  ('6107', '61', 'KABUPATEN SINTANG', 'kabupaten'),
-  ('6108', '61', 'KABUPATEN KAPUAS HULU', 'kabupaten'),
-  ('6109', '61', 'KABUPATEN SEKADAU', 'kabupaten'),
-  ('6110', '61', 'KABUPATEN MELAWI', 'kabupaten'),
-  ('6111', '61', 'KABUPATEN KAYONG UTARA', 'kabupaten'),
-  ('6112', '61', 'KABUPATEN KUBU RAYA', 'kabupaten'),
-  ('6171', '61', 'KOTA PONTIANAK', 'kota'),
-  ('6172', '61', 'KOTA SINGKAWANG', 'kota'),
-  ('6201', '62', 'KABUPATEN KOTAWARINGIN BARAT', 'kabupaten'),
-  ('6202', '62', 'KABUPATEN KOTAWARINGIN TIMUR', 'kabupaten'),
-  ('6203', '62', 'KABUPATEN KAPUAS', 'kabupaten'),
-  ('6204', '62', 'KABUPATEN BARITO SELATAN', 'kabupaten'),
-  ('6205', '62', 'KABUPATEN BARITO UTARA', 'kabupaten'),
-  ('6206', '62', 'KABUPATEN SUKAMARA', 'kabupaten'),
-  ('6207', '62', 'KABUPATEN LAMANDAU', 'kabupaten'),
-  ('6208', '62', 'KABUPATEN SERUYAN', 'kabupaten'),
-  ('6209', '62', 'KABUPATEN KATINGAN', 'kabupaten'),
-  ('6210', '62', 'KABUPATEN PULANG PISAU', 'kabupaten'),
-  ('6211', '62', 'KABUPATEN GUNUNG MAS', 'kabupaten'),
-  ('6212', '62', 'KABUPATEN BARITO TIMUR', 'kabupaten'),
-  ('6213', '62', 'KABUPATEN MURUNG RAYA', 'kabupaten'),
-  ('6271', '62', 'KOTA PALANGKA RAYA', 'kota'),
-  ('6301', '63', 'KABUPATEN TANAH LAUT', 'kabupaten'),
-  ('6302', '63', 'KABUPATEN KOTA BARU', 'kabupaten'),
-  ('6303', '63', 'KABUPATEN BANJAR', 'kabupaten'),
-  ('6304', '63', 'KABUPATEN BARITO KUALA', 'kabupaten'),
-  ('6305', '63', 'KABUPATEN TAPIN', 'kabupaten'),
-  ('6306', '63', 'KABUPATEN HULU SUNGAI SELATAN', 'kabupaten'),
-  ('6307', '63', 'KABUPATEN HULU SUNGAI TENGAH', 'kabupaten'),
-  ('6308', '63', 'KABUPATEN HULU SUNGAI UTARA', 'kabupaten'),
-  ('6309', '63', 'KABUPATEN TABALONG', 'kabupaten'),
-  ('6310', '63', 'KABUPATEN TANAH BUMBU', 'kabupaten'),
-  ('6311', '63', 'KABUPATEN BALANGAN', 'kabupaten'),
-  ('6371', '63', 'KOTA BANJARMASIN', 'kota'),
-  ('6372', '63', 'KOTA BANJAR BARU', 'kota'),
-  ('6401', '64', 'KABUPATEN PASER', 'kabupaten'),
-  ('6402', '64', 'KABUPATEN KUTAI BARAT', 'kabupaten'),
-  ('6403', '64', 'KABUPATEN KUTAI KARTANEGARA', 'kabupaten'),
-  ('6404', '64', 'KABUPATEN KUTAI TIMUR', 'kabupaten'),
-  ('6405', '64', 'KABUPATEN BERAU', 'kabupaten'),
-  ('6409', '64', 'KABUPATEN PENAJAM PASER UTARA', 'kabupaten'),
-  ('6411', '64', 'KABUPATEN MAHAKAM HULU', 'kabupaten'),
-  ('6471', '64', 'KOTA BALIKPAPAN', 'kota'),
-  ('6472', '64', 'KOTA SAMARINDA', 'kota'),
-  ('6474', '64', 'KOTA BONTANG', 'kota'),
-  ('6501', '65', 'KABUPATEN MALINAU', 'kabupaten'),
-  ('6502', '65', 'KABUPATEN BULUNGAN', 'kabupaten'),
-  ('6503', '65', 'KABUPATEN TANA TIDUNG', 'kabupaten'),
-  ('6504', '65', 'KABUPATEN NUNUKAN', 'kabupaten'),
-  ('6571', '65', 'KOTA TARAKAN', 'kota'),
-  ('7101', '71', 'KABUPATEN BOLAANG MONGONDOW', 'kabupaten'),
-  ('7102', '71', 'KABUPATEN MINAHASA', 'kabupaten'),
-  ('7103', '71', 'KABUPATEN KEPULAUAN SANGIHE', 'kabupaten'),
-  ('7104', '71', 'KABUPATEN KEPULAUAN TALAUD', 'kabupaten'),
-  ('7105', '71', 'KABUPATEN MINAHASA SELATAN', 'kabupaten'),
-  ('7106', '71', 'KABUPATEN MINAHASA UTARA', 'kabupaten'),
-  ('7107', '71', 'KABUPATEN BOLAANG MONGONDOW UTARA', 'kabupaten'),
-  ('7108', '71', 'KABUPATEN SIAU TAGULANDANG BIARO', 'kabupaten'),
-  ('7109', '71', 'KABUPATEN MINAHASA TENGGARA', 'kabupaten'),
-  ('7110', '71', 'KABUPATEN BOLAANG MONGONDOW SELATAN', 'kabupaten'),
-  ('7111', '71', 'KABUPATEN BOLAANG MONGONDOW TIMUR', 'kabupaten'),
-  ('7171', '71', 'KOTA MANADO', 'kota'),
-  ('7172', '71', 'KOTA BITUNG', 'kota'),
-  ('7173', '71', 'KOTA TOMOHON', 'kota'),
-  ('7174', '71', 'KOTA KOTAMOBAGU', 'kota'),
-  ('7201', '72', 'KABUPATEN BANGGAI KEPULAUAN', 'kabupaten'),
-  ('7202', '72', 'KABUPATEN BANGGAI', 'kabupaten'),
-  ('7203', '72', 'KABUPATEN MOROWALI', 'kabupaten'),
-  ('7204', '72', 'KABUPATEN POSO', 'kabupaten'),
-  ('7205', '72', 'KABUPATEN DONGGALA', 'kabupaten'),
-  ('7206', '72', 'KABUPATEN TOLI-TOLI', 'kabupaten'),
-  ('7207', '72', 'KABUPATEN BUOL', 'kabupaten'),
-  ('7208', '72', 'KABUPATEN PARIGI MOUTONG', 'kabupaten'),
-  ('7209', '72', 'KABUPATEN TOJO UNA-UNA', 'kabupaten'),
-  ('7210', '72', 'KABUPATEN SIGI', 'kabupaten'),
-  ('7211', '72', 'KABUPATEN BANGGAI LAUT', 'kabupaten'),
-  ('7212', '72', 'KABUPATEN MOROWALI UTARA', 'kabupaten'),
-  ('7271', '72', 'KOTA PALU', 'kota'),
-  ('7301', '73', 'KABUPATEN KEPULAUAN SELAYAR', 'kabupaten'),
-  ('7302', '73', 'KABUPATEN BULUKUMBA', 'kabupaten')
-ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, kind = EXCLUDED.kind;
+ALTER TABLE public.transactions ENABLE ROW LEVEL SECURITY;
 
-INSERT INTO public.ref_cities (id, province_id, name, kind) VALUES
-  ('7303', '73', 'KABUPATEN BANTAENG', 'kabupaten'),
-  ('7304', '73', 'KABUPATEN JENEPONTO', 'kabupaten'),
-  ('7305', '73', 'KABUPATEN TAKALAR', 'kabupaten'),
-  ('7306', '73', 'KABUPATEN GOWA', 'kabupaten'),
-  ('7307', '73', 'KABUPATEN SINJAI', 'kabupaten'),
-  ('7308', '73', 'KABUPATEN MAROS', 'kabupaten'),
-  ('7309', '73', 'KABUPATEN PANGKAJENE DAN KEPULAUAN', 'kabupaten'),
-  ('7310', '73', 'KABUPATEN BARRU', 'kabupaten'),
-  ('7311', '73', 'KABUPATEN BONE', 'kabupaten'),
-  ('7312', '73', 'KABUPATEN SOPPENG', 'kabupaten'),
-  ('7313', '73', 'KABUPATEN WAJO', 'kabupaten'),
-  ('7314', '73', 'KABUPATEN SIDENRENG RAPPANG', 'kabupaten'),
-  ('7315', '73', 'KABUPATEN PINRANG', 'kabupaten'),
-  ('7316', '73', 'KABUPATEN ENREKANG', 'kabupaten'),
-  ('7317', '73', 'KABUPATEN LUWU', 'kabupaten'),
-  ('7318', '73', 'KABUPATEN TANA TORAJA', 'kabupaten'),
-  ('7322', '73', 'KABUPATEN LUWU UTARA', 'kabupaten'),
-  ('7325', '73', 'KABUPATEN LUWU TIMUR', 'kabupaten'),
-  ('7326', '73', 'KABUPATEN TORAJA UTARA', 'kabupaten'),
-  ('7371', '73', 'KOTA MAKASSAR', 'kota'),
-  ('7372', '73', 'KOTA PAREPARE', 'kota'),
-  ('7373', '73', 'KOTA PALOPO', 'kota'),
-  ('7401', '74', 'KABUPATEN BUTON', 'kabupaten'),
-  ('7402', '74', 'KABUPATEN MUNA', 'kabupaten'),
-  ('7403', '74', 'KABUPATEN KONAWE', 'kabupaten'),
-  ('7404', '74', 'KABUPATEN KOLAKA', 'kabupaten'),
-  ('7405', '74', 'KABUPATEN KONAWE SELATAN', 'kabupaten'),
-  ('7406', '74', 'KABUPATEN BOMBANA', 'kabupaten'),
-  ('7407', '74', 'KABUPATEN WAKATOBI', 'kabupaten'),
-  ('7408', '74', 'KABUPATEN KOLAKA UTARA', 'kabupaten'),
-  ('7409', '74', 'KABUPATEN BUTON UTARA', 'kabupaten'),
-  ('7410', '74', 'KABUPATEN KONAWE UTARA', 'kabupaten'),
-  ('7411', '74', 'KABUPATEN KOLAKA TIMUR', 'kabupaten'),
-  ('7412', '74', 'KABUPATEN KONAWE KEPULAUAN', 'kabupaten'),
-  ('7413', '74', 'KABUPATEN MUNA BARAT', 'kabupaten'),
-  ('7414', '74', 'KABUPATEN BUTON TENGAH', 'kabupaten'),
-  ('7415', '74', 'KABUPATEN BUTON SELATAN', 'kabupaten'),
-  ('7471', '74', 'KOTA KENDARI', 'kota'),
-  ('7472', '74', 'KOTA BAUBAU', 'kota'),
-  ('7501', '75', 'KABUPATEN BOALEMO', 'kabupaten'),
-  ('7502', '75', 'KABUPATEN GORONTALO', 'kabupaten'),
-  ('7503', '75', 'KABUPATEN POHUWATO', 'kabupaten'),
-  ('7504', '75', 'KABUPATEN BONE BOLANGO', 'kabupaten'),
-  ('7505', '75', 'KABUPATEN GORONTALO UTARA', 'kabupaten'),
-  ('7571', '75', 'KOTA GORONTALO', 'kota'),
-  ('7601', '76', 'KABUPATEN MAJENE', 'kabupaten'),
-  ('7602', '76', 'KABUPATEN POLEWALI MANDAR', 'kabupaten'),
-  ('7603', '76', 'KABUPATEN MAMASA', 'kabupaten'),
-  ('7604', '76', 'KABUPATEN MAMUJU', 'kabupaten'),
-  ('7605', '76', 'KABUPATEN MAMUJU UTARA', 'kabupaten'),
-  ('7606', '76', 'KABUPATEN MAMUJU TENGAH', 'kabupaten'),
-  ('8101', '81', 'KABUPATEN MALUKU TENGGARA BARAT', 'kabupaten'),
-  ('8102', '81', 'KABUPATEN MALUKU TENGGARA', 'kabupaten'),
-  ('8103', '81', 'KABUPATEN MALUKU TENGAH', 'kabupaten'),
-  ('8104', '81', 'KABUPATEN BURU', 'kabupaten'),
-  ('8105', '81', 'KABUPATEN KEPULAUAN ARU', 'kabupaten'),
-  ('8106', '81', 'KABUPATEN SERAM BAGIAN BARAT', 'kabupaten'),
-  ('8107', '81', 'KABUPATEN SERAM BAGIAN TIMUR', 'kabupaten'),
-  ('8108', '81', 'KABUPATEN MALUKU BARAT DAYA', 'kabupaten'),
-  ('8109', '81', 'KABUPATEN BURU SELATAN', 'kabupaten'),
-  ('8171', '81', 'KOTA AMBON', 'kota'),
-  ('8172', '81', 'KOTA TUAL', 'kota'),
-  ('8201', '82', 'KABUPATEN HALMAHERA BARAT', 'kabupaten'),
-  ('8202', '82', 'KABUPATEN HALMAHERA TENGAH', 'kabupaten'),
-  ('8203', '82', 'KABUPATEN KEPULAUAN SULA', 'kabupaten'),
-  ('8204', '82', 'KABUPATEN HALMAHERA SELATAN', 'kabupaten'),
-  ('8205', '82', 'KABUPATEN HALMAHERA UTARA', 'kabupaten'),
-  ('8206', '82', 'KABUPATEN HALMAHERA TIMUR', 'kabupaten'),
-  ('8207', '82', 'KABUPATEN PULAU MOROTAI', 'kabupaten'),
-  ('8208', '82', 'KABUPATEN PULAU TALIABU', 'kabupaten'),
-  ('8271', '82', 'KOTA TERNATE', 'kota'),
-  ('8272', '82', 'KOTA TIDORE KEPULAUAN', 'kota'),
-  ('9101', '91', 'KABUPATEN FAKFAK', 'kabupaten'),
-  ('9102', '91', 'KABUPATEN KAIMANA', 'kabupaten'),
-  ('9103', '91', 'KABUPATEN TELUK WONDAMA', 'kabupaten'),
-  ('9104', '91', 'KABUPATEN TELUK BINTUNI', 'kabupaten'),
-  ('9105', '91', 'KABUPATEN MANOKWARI', 'kabupaten'),
-  ('9106', '91', 'KABUPATEN SORONG SELATAN', 'kabupaten'),
-  ('9107', '91', 'KABUPATEN SORONG', 'kabupaten'),
-  ('9108', '91', 'KABUPATEN RAJA AMPAT', 'kabupaten'),
-  ('9109', '91', 'KABUPATEN TAMBRAUW', 'kabupaten'),
-  ('9110', '91', 'KABUPATEN MAYBRAT', 'kabupaten'),
-  ('9111', '91', 'KABUPATEN MANOKWARI SELATAN', 'kabupaten'),
-  ('9112', '91', 'KABUPATEN PEGUNUNGAN ARFAK', 'kabupaten'),
-  ('9171', '91', 'KOTA SORONG', 'kota'),
-  ('9401', '94', 'KABUPATEN MERAUKE', 'kabupaten'),
-  ('9402', '94', 'KABUPATEN JAYAWIJAYA', 'kabupaten'),
-  ('9403', '94', 'KABUPATEN JAYAPURA', 'kabupaten'),
-  ('9404', '94', 'KABUPATEN NABIRE', 'kabupaten'),
-  ('9408', '94', 'KABUPATEN KEPULAUAN YAPEN', 'kabupaten'),
-  ('9409', '94', 'KABUPATEN BIAK NUMFOR', 'kabupaten'),
-  ('9410', '94', 'KABUPATEN PANIAI', 'kabupaten'),
-  ('9411', '94', 'KABUPATEN PUNCAK JAYA', 'kabupaten'),
-  ('9412', '94', 'KABUPATEN MIMIKA', 'kabupaten'),
-  ('9413', '94', 'KABUPATEN BOVEN DIGOEL', 'kabupaten'),
-  ('9414', '94', 'KABUPATEN MAPPI', 'kabupaten'),
-  ('9415', '94', 'KABUPATEN ASMAT', 'kabupaten'),
-  ('9416', '94', 'KABUPATEN YAHUKIMO', 'kabupaten'),
-  ('9417', '94', 'KABUPATEN PEGUNUNGAN BINTANG', 'kabupaten'),
-  ('9418', '94', 'KABUPATEN TOLIKARA', 'kabupaten')
-ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, kind = EXCLUDED.kind;
+DROP POLICY IF EXISTS "Users can read own transactions" ON public.transactions;
+CREATE POLICY "Users can read own transactions" ON public.transactions FOR SELECT USING (auth.uid() = user_id);
 
-INSERT INTO public.ref_cities (id, province_id, name, kind) VALUES
-  ('9419', '94', 'KABUPATEN SARMI', 'kabupaten'),
-  ('9420', '94', 'KABUPATEN KEEROM', 'kabupaten'),
-  ('9426', '94', 'KABUPATEN WAROPEN', 'kabupaten'),
-  ('9427', '94', 'KABUPATEN SUPIORI', 'kabupaten'),
-  ('9428', '94', 'KABUPATEN MAMBERAMO RAYA', 'kabupaten'),
-  ('9429', '94', 'KABUPATEN NDUGA', 'kabupaten'),
-  ('9430', '94', 'KABUPATEN LANNY JAYA', 'kabupaten'),
-  ('9431', '94', 'KABUPATEN MAMBERAMO TENGAH', 'kabupaten'),
-  ('9432', '94', 'KABUPATEN YALIMO', 'kabupaten'),
-  ('9433', '94', 'KABUPATEN PUNCAK', 'kabupaten'),
-  ('9434', '94', 'KABUPATEN DOGIYAI', 'kabupaten'),
-  ('9435', '94', 'KABUPATEN INTAN JAYA', 'kabupaten'),
-  ('9436', '94', 'KABUPATEN DEIYAI', 'kabupaten'),
-  ('9471', '94', 'KOTA JAYAPURA', 'kota')
-ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, kind = EXCLUDED.kind;
+DROP POLICY IF EXISTS "Users can insert own transactions" ON public.transactions;
+CREATE POLICY "Users can insert own transactions" ON public.transactions FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Admins can read all transactions" ON public.transactions;
+CREATE POLICY "Admins can read all transactions" ON public.transactions FOR SELECT USING (
+  EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'admin')
+);
+
+-- Pembayaran album
+ALTER TABLE public.albums
+  ADD COLUMN IF NOT EXISTS payment_status text DEFAULT 'unpaid',
+  ADD COLUMN IF NOT EXISTS payment_url text;
+
+ALTER TABLE public.albums DROP CONSTRAINT IF EXISTS albums_payment_status_check;
+UPDATE public.albums SET payment_status = 'unpaid' WHERE payment_status IS NULL OR payment_status NOT IN ('unpaid', 'paid');
+UPDATE public.albums a SET payment_status = 'paid'
+WHERE a.payment_status = 'unpaid'
+  AND EXISTS (
+    SELECT 1 FROM public.transactions t
+    WHERE t.album_id = a.id AND t.status IN ('PAID', 'SETTLED')
+  );
+ALTER TABLE public.albums
+  ADD CONSTRAINT albums_payment_status_check CHECK (payment_status IN ('unpaid', 'paid'));
+ALTER TABLE public.albums ALTER COLUMN payment_status SET DEFAULT 'unpaid';
+
+-- AI Labs — harga kredit
+CREATE TABLE IF NOT EXISTS public.ai_feature_pricing (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  feature_slug text NOT NULL UNIQUE,
+  credits_per_use integer NOT NULL DEFAULT 0 CHECK (credits_per_use >= 0),
+  credits_per_unlock integer NOT NULL DEFAULT 0 CHECK (credits_per_unlock >= 0),
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
+);
+
+CREATE OR REPLACE FUNCTION public.set_ai_feature_pricing_updated_at()
+RETURNS trigger AS $$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS set_ai_feature_pricing_updated_at ON public.ai_feature_pricing;
+CREATE TRIGGER set_ai_feature_pricing_updated_at
+  BEFORE UPDATE ON public.ai_feature_pricing
+  FOR EACH ROW
+  EXECUTE FUNCTION public.set_ai_feature_pricing_updated_at();
+
+ALTER TABLE public.ai_feature_pricing ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow public read access" ON public.ai_feature_pricing;
+DROP POLICY IF EXISTS "Allow all modification" ON public.ai_feature_pricing;
+CREATE POLICY "Allow public read access" ON public.ai_feature_pricing FOR SELECT USING (true);
+CREATE POLICY "Allow all modification" ON public.ai_feature_pricing FOR ALL USING (true) WITH CHECK (true);
+
+INSERT INTO public.ai_feature_pricing (feature_slug, credits_per_use, credits_per_unlock)
+VALUES
+  ('tryon', 1, 30),
+  ('pose', 1, 30),
+  ('photogroup', 1, 20),
+  ('phototovideo', 1, 20),
+  ('image_remove_bg', 1, 10),
+  ('flipbook_unlock', 0, 50)
+ON CONFLICT (feature_slug) DO UPDATE SET
+  credits_per_use = EXCLUDED.credits_per_use,
+  credits_per_unlock = EXCLUDED.credits_per_unlock;
+
+ALTER TABLE public.pricing_packages ADD COLUMN IF NOT EXISTS flipbook_enabled boolean NOT NULL DEFAULT false;
+ALTER TABLE public.pricing_packages ADD COLUMN IF NOT EXISTS ai_labs_features text[] NOT NULL DEFAULT '{}';
+ALTER TABLE public.pricing_packages ADD COLUMN IF NOT EXISTS is_popular boolean NOT NULL DEFAULT false;
+
+UPDATE public.pricing_packages SET
+  flipbook_enabled = true,
+  ai_labs_features = ARRAY['tryon', 'pose', 'photogroup', 'phototovideo', 'image_remove_bg']
+WHERE id = 'premium';
+
+-- Unlock fitur per album
+CREATE TABLE IF NOT EXISTS public.feature_unlocks (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  album_id uuid NOT NULL REFERENCES public.albums(id) ON DELETE CASCADE,
+  feature_type text NOT NULL CHECK (
+    feature_type IN ('flipbook', 'tryon', 'pose', 'photogroup', 'phototovideo', 'image_remove_bg')
+  ),
+  credits_spent integer NOT NULL DEFAULT 0,
+  unlocked_at timestamptz NOT NULL DEFAULT now(),
+  UNIQUE(user_id, album_id, feature_type)
+);
+
+ALTER TABLE public.feature_unlocks ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Users can view own unlocks" ON public.feature_unlocks;
+CREATE POLICY "Users can view own unlocks" ON public.feature_unlocks FOR SELECT USING (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Users can insert own unlocks" ON public.feature_unlocks;
+CREATE POLICY "Users can insert own unlocks" ON public.feature_unlocks FOR INSERT WITH CHECK (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Service role full access unlocks" ON public.feature_unlocks;
+CREATE POLICY "Service role full access unlocks" ON public.feature_unlocks FOR ALL USING (true) WITH CHECK (true);
+
+-- Kode redeem kredit
+CREATE TABLE IF NOT EXISTS public.redeem_codes (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  code text NOT NULL UNIQUE,
+  credits integer NOT NULL CHECK (credits > 0),
+  max_uses integer NOT NULL DEFAULT 1,
+  used_count integer NOT NULL DEFAULT 0,
+  is_active boolean NOT NULL DEFAULT true,
+  expires_at timestamptz,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.redeem_history (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  redeem_code_id uuid NOT NULL REFERENCES public.redeem_codes(id) ON DELETE CASCADE,
+  user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  credits_received integer NOT NULL,
+  redeemed_at timestamptz NOT NULL DEFAULT now(),
+  UNIQUE(redeem_code_id, user_id)
+);
+
+CREATE OR REPLACE FUNCTION public.set_redeem_codes_updated_at()
+RETURNS trigger AS $$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS set_redeem_codes_updated_at ON public.redeem_codes;
+CREATE TRIGGER set_redeem_codes_updated_at
+  BEFORE UPDATE ON public.redeem_codes
+  FOR EACH ROW
+  EXECUTE FUNCTION public.set_redeem_codes_updated_at();
+
+ALTER TABLE public.redeem_codes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.redeem_history ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Public read active codes" ON public.redeem_codes;
+CREATE POLICY "Public read active codes" ON public.redeem_codes FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Service role full access codes" ON public.redeem_codes;
+CREATE POLICY "Service role full access codes" ON public.redeem_codes FOR ALL USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Users can view own redemptions" ON public.redeem_history;
+CREATE POLICY "Users can view own redemptions" ON public.redeem_history FOR SELECT USING (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Service role full access history" ON public.redeem_history;
+CREATE POLICY "Service role full access history" ON public.redeem_history FOR ALL USING (true) WITH CHECK (true);
+
+-- Suspensi akun + admin baca semua users (Realtime admin panel)
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS is_suspended boolean NOT NULL DEFAULT false;
+CREATE INDEX IF NOT EXISTS idx_users_is_suspended ON public.users(is_suspended);
+
+DROP POLICY IF EXISTS "Admins can view all users" ON public.users;
+CREATE POLICY "Admins can view all users" ON public.users FOR SELECT USING (public.check_is_global_admin());
+
+ALTER TABLE public.album_teachers DROP CONSTRAINT IF EXISTS album_teachers_created_by_fkey;
+ALTER TABLE public.album_teachers
+  ADD CONSTRAINT album_teachers_created_by_fkey
+  FOREIGN KEY (created_by) REFERENCES auth.users(id) ON DELETE SET NULL;
+
+-- Daftarkan semua tabel public ke supabase_realtime (satu blok, mengganti migrasi terpisah)
+DO $$
+DECLARE
+  rec RECORD;
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_publication WHERE pubname = 'supabase_realtime') THEN
+    CREATE PUBLICATION supabase_realtime;
+  END IF;
+  FOR rec IN (SELECT tablename FROM pg_tables WHERE schemaname = 'public') LOOP
+    BEGIN
+      EXECUTE format('ALTER PUBLICATION supabase_realtime ADD TABLE public.%I;', rec.tablename);
+    EXCEPTION
+      WHEN duplicate_object THEN NULL;
+      WHEN OTHERS THEN
+        RAISE NOTICE 'Skip realtime registration for %: %', rec.tablename, SQLERRM;
+    END;
+  END LOOP;
+END $$;
+
+NOTIFY pgrst, 'reload schema';
