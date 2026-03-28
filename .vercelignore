@@ -1,0 +1,6 @@
+hono-backend/
+node_modules/
+.next/
+.wrangler/
+dist/
+build/

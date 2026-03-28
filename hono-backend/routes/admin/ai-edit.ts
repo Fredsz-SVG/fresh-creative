@@ -29,10 +29,10 @@ aiEdit.put('/', async (c) => {
   if ((!id && !feature_slug) || (!hasUse && !hasUnlock)) {
     return c.json({ error: 'Invalid payload' }, 400)
   }
-  const updateObj: Record<string, number> = {}
+  const updateObj: any = {}
   if (hasUse) updateObj.credits_per_use = credits_per_use
   if (hasUnlock) updateObj.credits_per_unlock = credits_per_unlock
-  let query = adminClient.from('ai_feature_pricing').update(updateObj).select('id, feature_slug, credits_per_use, credits_per_unlock')
+  let query: any = adminClient.from('ai_feature_pricing').update(updateObj).select('id, feature_slug, credits_per_use, credits_per_unlock')
   if (id) query = query.eq('id', id)
   else if (feature_slug) query = query.eq('feature_slug', feature_slug)
   const { data, error } = await query.maybeSingle()
