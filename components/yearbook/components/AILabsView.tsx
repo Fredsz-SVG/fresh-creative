@@ -29,9 +29,10 @@ interface AILabsViewProps {
     featureUnlocks?: string[]
     featureCreditCosts?: Record<string, number>
     onFeatureUnlocked?: () => void
+    featureUnlocksLoaded?: boolean
 }
 
-export default function AILabsView({ album, aiLabsTool, aiLabsFeaturesByPackage = [], featureUnlocks = [], featureCreditCosts = {}, onFeatureUnlocked }: AILabsViewProps) {
+export default function AILabsView({ album, aiLabsTool, aiLabsFeaturesByPackage = [], featureUnlocks = [], featureCreditCosts = {}, onFeatureUnlocked, featureUnlocksLoaded = false }: AILabsViewProps) {
     const pathname = require('next/navigation').usePathname()
     const isAdmin = pathname?.startsWith('/admin')
     const FEATURE_ICONS = [Shirt, UserCircle, ImageIcon, Images, Video] as const
@@ -82,6 +83,8 @@ export default function AILabsView({ album, aiLabsTool, aiLabsFeaturesByPackage 
     }
 
     if (aiLabsTool && albumBase) {
+        // While feature unlock data is still loading, show nothing to avoid flash
+        if (!featureUnlocksLoaded) return null
         // Check if tool is unlocked before rendering
         if (!isFeatureUnlocked(aiLabsTool)) {
             const creditCost = getFeatureCreditCost(aiLabsTool)
@@ -200,7 +203,9 @@ export default function AILabsView({ album, aiLabsTool, aiLabsFeaturesByPackage 
                                 </div>
 
                                 <div className="mt-auto pt-4 border-t-2 border-slate-50 dark:border-slate-700 flex items-center justify-between gap-3">
-                                    {!unlocked ? (
+                                    {!featureUnlocksLoaded ? (
+                                        <div className="flex-1 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 animate-pulse" />
+                                    ) : !unlocked ? (
                                         <button
                                             onClick={() => setConfirmUnlockToolSlug(toolSlug)}
                                             disabled={unlockingFeature === toolSlug}

@@ -117,6 +117,7 @@ export type YearbookClassesViewProps = {
   setMobileMenuOpen: (v: boolean) => void
   featureUnlocks?: string[]
   flipbookEnabledByPackage?: boolean
+  featureUnlocksLoaded?: boolean
   aiLabsFeaturesByPackage?: string[]
   featureCreditCosts?: Record<string, number>
   onFeatureUnlocked?: () => void

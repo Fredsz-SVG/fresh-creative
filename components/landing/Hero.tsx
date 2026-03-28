@@ -3,7 +3,7 @@
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { useEffect, useState, useContext, useCallback } from "react";
+import { useEffect, useState, useContext, useCallback, useRef } from "react";
 import { TiLocationArrow } from "react-icons/ti";
 import { Button } from "./Button";
 import { VIDEO_LINKS } from "./constants";
@@ -13,6 +13,41 @@ import { cn } from "@/lib/utils";
 gsap.registerPlugin(useGSAP, ScrollTrigger);
 
 const LOADER_TIMEOUT_MS = 4000;
+
+function AnimatedCounter({ target, suffix = '', duration = 2000, formatFn }: { target: number; suffix?: string; duration?: number; formatFn?: (n: number) => string }) {
+  const [count, setCount] = useState(0);
+  const ref = useRef<HTMLSpanElement>(null);
+  const hasAnimated = useRef(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !hasAnimated.current) {
+          hasAnimated.current = true;
+          const start = performance.now();
+          const animate = (now: number) => {
+            const elapsed = now - start;
+            const progress = Math.min(elapsed / duration, 1);
+            // ease-out cubic
+            const eased = 1 - Math.pow(1 - progress, 3);
+            setCount(Math.round(eased * target));
+            if (progress < 1) requestAnimationFrame(animate);
+          };
+          requestAnimationFrame(animate);
+        }
+      },
+      { threshold: 0.5 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [target, duration]);
+
+  const display = formatFn ? formatFn(count) : `${count}`;
+  return <span ref={ref}>{display}{suffix}</span>;
+}
 
 export function Hero() {
   const [isLoading, setIsLoading] = useState(true);
@@ -90,19 +125,19 @@ export function Hero() {
         </div>
 
         <h1
-          className="special-font hero-heading text-blue-75 absolute right-8 bottom-8 z-40 drop-shadow-2xl !text-[20vw] sm:!text-6xl md:!text-8xl lg:!text-[10rem] leading-[0.8] tracking-wide"
+          className="special-font hero-heading text-blue-75 absolute right-8 bottom-8 z-40 drop-shadow-2xl !text-[12vw] sm:!text-5xl md:!text-7xl lg:!text-[8rem] leading-[0.8] tracking-wide"
           style={{ WebkitTextStroke: '1.5px #fff', paintOrder: 'stroke fill' }}
         >
-          CRE<b>A</b>TIVE
+          INDON<b>E</b>SIA
         </h1>
 
         <div className="absolute top-0 left-0 z-40 flex size-full flex-col justify-between pt-6 pb-32 sm:py-10 sm:pb-24 md:pb-40 lg:pb-56 xl:pb-64">
           <div className="mt-10 sm:mt-24 px-8 sm:px-20">
             <h1
-              className="special-font hero-heading text-white drop-shadow-2xl !text-[20vw] sm:!text-6xl md:!text-8xl lg:!text-[10rem] leading-[0.8] tracking-wide"
+              className="special-font hero-heading text-white drop-shadow-2xl !text-[12vw] sm:!text-5xl md:!text-7xl lg:!text-[8rem] leading-[0.8] tracking-wide"
               style={{ WebkitTextStroke: '1.5px #fff', paintOrder: 'stroke fill' }}
             >
-              FR<b>E</b>SH
+              FR<b>E</b>SH CRE<b>A</b>TIVE
             </h1>
             <p className="mt-4 mb-6 sm:mb-5 max-w-lg text-base sm:text-lg font-bold leading-[1.4] text-white drop-shadow-md md:text-2xl" style={{ fontFamily: "'DM Sans', sans-serif", WebkitTextStroke: '0.5px #000', paintOrder: 'stroke fill' }}>
               Simpan cerita sekolahmu dalam buku fisik maupun digital. <br className="hidden sm:block" />
@@ -124,51 +159,39 @@ export function Hero() {
 
             <div className="mt-6 sm:mt-10 flex flex-wrap gap-6 sm:gap-10 md:gap-14">
               <div className="flex flex-col">
-                <span className="special-font text-3xl sm:text-4xl font-bold text-white md:text-5xl">5+</span>
+                <span className="special-font text-3xl sm:text-4xl font-bold text-white md:text-5xl">
+                  <AnimatedCounter target={5} suffix="+" />
+                </span>
                 <span className="font-general text-[8px] sm:text-[10px] uppercase tracking-widest text-white/60">
                   Sekolah
                 </span>
               </div>
               <div className="flex flex-col">
-                <span className="special-font text-3xl sm:text-4xl font-bold text-white md:text-5xl">1.5k</span>
+                <span className="special-font text-3xl sm:text-4xl font-bold text-white md:text-5xl">
+                  <AnimatedCounter target={1500} formatFn={(n) => n >= 1000 ? `${(n / 1000).toFixed(1)}` : `${n}`} suffix="k" />
+                </span>
                 <span className="font-general text-[8px] sm:text-[10px] uppercase tracking-widest text-white/60">
                   Siswa
                 </span>
               </div>
               <div className="flex flex-col">
-                <span className="special-font text-3xl sm:text-4xl font-bold text-white md:text-5xl">0%</span>
+                <span className="special-font text-3xl sm:text-4xl font-bold text-white md:text-5xl">
+                  <AnimatedCounter target={0} suffix="%" />
+                </span>
                 <span className="font-general text-[8px] sm:text-[10px] uppercase tracking-widest text-white/60">
                   Pungli
                 </span>
               </div>
-            </div>
-
-            <div className="mt-3 sm:mt-5 flex items-center gap-2 text-white/90 drop-shadow-md">
-              <span className="font-general text-[10px] sm:text-sm uppercase tracking-wide">
-                Tech Partner
-              </span>
-              <a
-                href="https://livephoto.id/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="transition-opacity hover:opacity-80 active:opacity-60"
-              >
-                <img
-                  src="/img/livephotos.svg"
-                  alt="LivePhotos"
-                  className="h-6 sm:h-8 w-auto dark:brightness-0 dark:invert nav-icon-stroke"
-                />
-              </a>
             </div>
           </div>
         </div>
       </div>
 
       <h1
-        className="special-font hero-heading absolute right-8 bottom-8 text-black !text-[20vw] sm:!text-6xl md:!text-8xl lg:!text-[10rem] leading-[0.8] tracking-wide"
+        className="special-font hero-heading absolute right-8 bottom-8 text-black !text-[12vw] sm:!text-5xl md:!text-7xl lg:!text-[8rem] leading-[0.8] tracking-wide"
         style={{ WebkitTextStroke: '1.5px #fff', paintOrder: 'stroke fill' }}
       >
-        CRE<b>A</b>TIVE
+        INDON<b>E</b>SIA
       </h1>
     </section>
   );

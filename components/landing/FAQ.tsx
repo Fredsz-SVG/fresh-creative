@@ -7,10 +7,6 @@ import { AnimatedTitle } from './AnimatedTitle';
 
 const FAQ_ITEMS = [
   {
-    q: 'Ini beneran gratis buat panitia?',
-    a: 'Beneran dong! Panitia bisa pakai dashboard manajemen data kami 100% gratis. Bayarnya nanti aja pas siswa mau cetak buku atau download foto HD.',
-  },
-  {
     q: 'AI-nya bisa gaya apa aja?',
     a: 'Banyak banget! Mulai dari style Yearbook 90s, Korea, Cyberpunk, sampai Professional LinkedIn headshot. Semua otomatis!',
   },
@@ -34,12 +30,15 @@ export function FAQ() {
   return (
     <section id="faq" className="w-full bg-slate-100 dark:bg-slate-950 py-16 md:py-24 transition-colors duration-500">
       <div className="container mx-auto px-4 md:px-8">
-        <div className="text-center mb-12">
-          <AnimatedTitle containerClass="!text-black dark:!text-white text-center font-zentry">
-            {"Yang Sering <br /> Ditanyain"}
-          </AnimatedTitle>
-          <p className="font-general text-base uppercase md:text-lg mt-4 text-lime-600 dark:text-lime-400 font-black tracking-widest">
-            (FAQ)
+        <div className="text-center sm:text-left mb-12 sm:mb-16">
+          <p className="font-general text-[10px] sm:text-xs uppercase tracking-[0.2em] text-lime-600 dark:text-lime-400 font-black mb-3">
+            FAQ
+          </p>
+          <h2 className="text-4xl sm:text-5xl lg:text-6xl font-black text-slate-900 dark:text-white tracking-tight uppercase">
+            Yang Sering <br className="hidden lg:block" /><span className="text-emerald-500">Ditanyain.</span>
+          </h2>
+          <p className="mt-4 sm:mt-6 text-sm sm:text-base font-medium text-slate-600 dark:text-slate-400 max-w-2xl mx-auto sm:mx-0">
+            Masih ada yang bingung? Mungkin jawaban yang kamu cari ada di sini.
           </p>
         </div>
 
@@ -51,8 +50,8 @@ export function FAQ() {
                 key={id}
                 className={cn(
                   'rounded-xl border transition-all duration-300',
-                  isOpen 
-                    ? 'border-lime-500/50 dark:border-lime-400/50 bg-white dark:bg-slate-900 shadow-sm' 
+                  isOpen
+                    ? 'border-lime-500/50 dark:border-lime-400/50 bg-white dark:bg-slate-900 shadow-sm'
                     : 'border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900/80'
                 )}
               >

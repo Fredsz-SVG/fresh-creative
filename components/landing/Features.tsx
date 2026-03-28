@@ -3,12 +3,9 @@
 import { VIDEO_LINKS } from "./constants";
 import { type PropsWithChildren } from "react";
 
-// ─── Font import (paste di <head> atau globals.css) ───────────────────────
-// @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&family=Syne:wght@700;800&display=swap');
-
 function BentoCardWrap({ children, className = "" }: PropsWithChildren<{ className?: string }>) {
   return (
-    <div className={`transition-all duration-300 border border-slate-900 dark:border-white shadow-[2px_2px_0_0_#0f172a] md:shadow-[3px_3px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#fff] md:dark:shadow-[3px_3px_0_0_#fff] hover:-translate-y-0.5 hover:-translate-x-0.5 hover:shadow-[3px_3px_0_0_#0f172a] md:hover:shadow-[4px_4px_0_0_#0f172a] dark:hover:shadow-[3px_3px_0_0_#fff] md:dark:hover:shadow-[4px_4px_0_0_#fff] overflow-hidden rounded-[1.5rem] md:rounded-[2rem] ${className}`}>
+    <div className={`group relative transition-all duration-300 border border-slate-900 dark:border-white shadow-[2px_2px_0_0_#0f172a] md:shadow-[3px_3px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#a3e635] md:dark:shadow-[3px_3px_0_0_#a3e635] hover:-translate-y-1 hover:-translate-x-1 hover:shadow-[4px_4px_0_0_#0f172a] md:hover:shadow-[5px_5px_0_0_#0f172a] dark:hover:shadow-[4px_4px_0_0_#a3e635] md:dark:hover:shadow-[5px_5px_0_0_#a3e635] overflow-hidden rounded-[1.5rem] md:rounded-[2rem] bg-slate-900 ${className}`}>
       {children}
     </div>
   );
@@ -73,46 +70,18 @@ function BentoCard({ media, src, title, description }: BentoCardProps) {
       />
 
       {/* Content */}
-      <div className="relative z-20 flex size-full flex-col justify-end p-6 md:p-7">
-        {/* Title + description di bawah */}
+      <div className="relative z-20 flex size-full flex-col justify-end p-6 md:p-8">
         <div>
-          <h2
-            className="bento-title special-font card-title-font"
-            style={{
-              fontFamily: "'Bebas Neue', sans-serif",
-              fontWeight: 400,
-              fontSize: "clamp(2.2rem, 4.5vw, 3.8rem)",
-              lineHeight: 1.1,
-              letterSpacing: "0.06em",
-              color: "#fff",
-              textShadow: "0 4px 32px rgba(0,0,0,0.7)",
-            }}
-          >
+          <h2 className="font-zentry text-4xl md:text-5xl lg:text-6xl text-white uppercase tracking-tight drop-shadow-lg leading-none">
             {title}
           </h2>
           {description && (
-            <p
-              className="mt-4 max-w-xs"
-              style={{
-                fontFamily: "'DM Sans', sans-serif",
-                fontWeight: 400,
-                fontSize: "clamp(0.85rem, 1.2vw, 1rem)",
-                lineHeight: 1.75,
-                color: "rgba(220,230,255,0.75)",
-                letterSpacing: "0.015em",
-              }}
-            >
+            <p className="mt-2 md:mt-3 max-w-sm font-general text-sm md:text-base font-bold text-slate-200 drop-shadow-md leading-relaxed">
               {description}
             </p>
           )}
         </div>
       </div>
-
-      {/* Subtle border glow on hover */}
-      <div
-        className="absolute inset-0 z-20 rounded-[inherit] opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
-        style={{ boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.12)" }}
-      />
     </article>
   );
 }
@@ -124,24 +93,13 @@ export function Features() {
     >
       <div className="container mx-auto px-3 md:px-10">
 
-        {/* Section header — hanya headline, tanpa eyebrow & subtext */}
-        <div className="px-3 md:px-5 py-10 md:py-16" id="features">
-          <h1
-            className="text-slate-900 dark:text-white"
-            style={{
-              fontFamily: "'Cormorant Garamond', serif",
-              fontWeight: 300,
-              fontStyle: "italic",
-              fontSize: "clamp(2.4rem, 6vw, 5rem)",
-              lineHeight: 1.05,
-              letterSpacing: "-0.01em",
-              maxWidth: "22ch",
-            }}
-          >
-            Satu ekosistem,
-            <br />
-            <span className="text-violet-600 dark:text-violet-400 opacity-85">semua kenangan.</span>
-          </h1>
+        <div className="px-3 md:px-5 py-10 md:py-16 text-center sm:text-left" id="features">
+          <p className="font-general text-[10px] sm:text-xs uppercase tracking-[0.2em] text-lime-600 dark:text-lime-400 font-black mb-3">
+            Our Services
+          </p>
+          <h2 className="text-4xl sm:text-5xl lg:text-6xl font-black text-slate-900 dark:text-white tracking-tight uppercase">
+            Bisa Ngapain <br className="hidden sm:block" /><span className="text-violet-600 dark:text-violet-400">Aja Sih?</span>
+          </h2>
         </div>
 
         {/* ── Hero card: Yearbook ── */}
@@ -179,16 +137,6 @@ export function Features() {
 
         </div>
       </div>
-
-      {/* Global style (inject ke globals.css atau <style jsx global>) */}
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&family=Bebas+Neue&display=swap');
-
-        .card-title-font {
-          font-family: 'Bebas Neue', sans-serif !important;
-          letter-spacing: 0.06em !important;
-        }
-      `}</style>
     </section>
   );
 }

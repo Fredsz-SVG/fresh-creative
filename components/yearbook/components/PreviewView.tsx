@@ -54,6 +54,7 @@ interface PreviewViewProps {
     firstPhotoByStudent: Record<string, string>
     onPlayVideo?: (url: string) => void
     onClose: () => void
+    hideCloseButton?: boolean
 }
 
 type Section = {
@@ -222,6 +223,7 @@ export default function PreviewView({
     firstPhotoByStudent,
     onPlayVideo,
     onClose,
+    hideCloseButton,
 }: PreviewViewProps) {
     const sections: Section[] = useMemo(() => [
         { type: 'cover', label: 'Cover', icon: <BookOpen className="w-4 h-4" /> },
@@ -542,8 +544,8 @@ export default function PreviewView({
                         </span>
                     )}
                 </div>
-                <div className="flex items-center gap-2 sm:gap-3">
-                    <div className="hidden sm:flex items-center gap-1.5 px-2">
+                <div className="flex items-center gap-3">
+                    <div className="hidden sm:flex items-center gap-1.5">
                         {sections.map((s, i) => (
                             <button
                                 key={i}
@@ -553,9 +555,18 @@ export default function PreviewView({
                             />
                         ))}
                     </div>
-                    <button type="button" onClick={onClose} className="p-2 rounded-xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-amber-200 dark:hover:bg-slate-700 border-2 border-transparent hover:border-slate-900 dark:hover:border-slate-600 transition-all">
-                        <X className="w-5 h-5 sm:w-6 sm:h-6" />
-                    </button>
+                    {hideCloseButton ? (
+                        <button
+                          onClick={onClose}
+                          className="w-8 h-8 bg-yellow-300 hover:bg-yellow-400 rounded-full flex items-center justify-center text-black border-2 border-slate-900 transition-all active:scale-95"
+                        >
+                          <X className="w-5 h-5" strokeWidth={3} />
+                        </button>
+                    ) : (
+                        <button type="button" onClick={onClose} className="p-2 rounded-xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-amber-200 dark:hover:bg-slate-700 border-2 border-transparent hover:border-slate-900 dark:hover:border-slate-600 transition-all">
+                            <X className="w-5 h-5 sm:w-6 sm:h-6" />
+                        </button>
+                    )}
                 </div>
             </div>
 

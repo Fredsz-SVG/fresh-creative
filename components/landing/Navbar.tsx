@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useRef, useState, useContext } from "react";
-import { Sun, Moon, Menu, X } from "lucide-react";
+import { Sun, MoonStar, Menu, X } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { TiLocationArrow } from "react-icons/ti";
 import { NAV_ITEMS } from "./constants";
 import { cn } from "@/lib/utils";
@@ -66,9 +67,12 @@ export function Navbar() {
   return (
     <header
       ref={navContainerRef}
-      className="fixed inset-x-0 top-0 z-50 h-14 border-none transition-transform duration-200 ease-out sm:h-16 rounded-none"
+      className={cn(
+        "fixed inset-x-0 top-0 z-50 h-14 border-none transition-all duration-200 ease-out sm:h-16 rounded-none",
+        isMenuOpen && "!shadow-none !border-b-0"
+      )}
     >
-      <div className="absolute top-1/2 w-full -translate-y-1/2">
+      <div className="absolute top-1/2 w-full -translate-y-1/2 z-50">
         <nav className="flex size-full items-center justify-between px-4 sm:p-4">
           <div className="flex items-center gap-4 sm:gap-7">
             <a
@@ -94,22 +98,72 @@ export function Navbar() {
             <div className="flex items-center gap-1 sm:gap-4">
               <a
                 href="#pricing"
-                className="hidden md:inline-flex items-center gap-1 md:ml-8 px-7 py-3 bg-yellow-300 text-black font-black text-xs uppercase tracking-wide border border-slate-900 rounded-full shadow-[2px_2px_0_0_#000] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[3px_3px_0_0_#000] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all duration-200"
+                className="hidden md:inline-flex items-center gap-1 md:ml-8 px-7 py-3 bg-yellow-300 text-black font-black text-xs uppercase tracking-wide border border-slate-900 dark:border-white rounded-full shadow-[2px_2px_0_0_#000] dark:shadow-[2px_2px_0_0_#a3e635] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[3px_3px_0_0_#000] dark:hover:shadow-[3px_3px_0_0_#a3e635] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all duration-200"
               >
                 <TiLocationArrow className="text-base" />
                 <span className="font-general text-xs uppercase">Buat Project</span>
               </a>
               <button
                 onClick={theme?.toggleTheme}
-                className="nav-icon-stroke md:ml-4 flex items-center p-2 text-slate-800 dark:text-white transition hover:opacity-100 active:scale-90 rounded-none"
+                className="nav-icon-stroke md:ml-4 flex items-center justify-center p-2 text-slate-800 dark:text-white transition hover:opacity-100 active:scale-90 rounded-none w-10 h-10 overflow-hidden"
                 title="Toggle Theme"
               >
-                {mounted &&
-                  (theme?.isDark ? (
-                    <Sun size={18} className="sm:size-[20px]" aria-hidden strokeWidth={2.5} />
-                  ) : (
-                    <Moon size={18} className="sm:size-[20px]" aria-hidden strokeWidth={2.5} />
-                  ))}
+                <AnimatePresence mode="wait">
+                  {mounted &&
+                    (theme?.isDark ? (
+                      <motion.div
+                        key="sun"
+                        initial={{ opacity: 0, scale: 0.5, rotate: -90 }}
+                        animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                        exit={{ opacity: 0, scale: 0.5, rotate: 90 }}
+                        transition={{ duration: 0.2 }}
+                        className="flex items-center justify-center"
+                      >
+                        <svg 
+                          width="18" 
+                          height="18" 
+                          viewBox="0 0 24 24" 
+                          className="sm:size-[20px]" 
+                          aria-hidden 
+                          fill="none" 
+                          stroke="currentColor" 
+                          strokeWidth="2" 
+                          strokeLinecap="round" 
+                          strokeLinejoin="round"
+                        >
+                          <circle cx="12" cy="12" r="4" fill="currentColor" />
+                          <path d="M12 2v2" />
+                          <path d="M12 20v2" />
+                          <path d="M4.93 4.93l1.41 1.41" />
+                          <path d="M17.66 17.66l1.41 1.41" />
+                          <path d="M2 12h2" />
+                          <path d="M20 12h2" />
+                          <path d="M4.93 19.07l1.41-1.41" />
+                          <path d="M17.66 6.34l1.41-1.41" />
+                        </svg>
+                      </motion.div>
+                    ) : (
+                      <motion.div
+                        key="moon"
+                        initial={{ opacity: 0, scale: 0.5, rotate: 90 }}
+                        animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                        exit={{ opacity: 0, scale: 0.5, rotate: -90 }}
+                        transition={{ duration: 0.2 }}
+                        className="flex items-center justify-center"
+                      >
+                        <svg 
+                          width="18" 
+                          height="18" 
+                          viewBox="0 0 24 24" 
+                          className="sm:size-[20px]" 
+                          aria-hidden 
+                          fill="currentColor"
+                        >
+                          <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z" />
+                        </svg>
+                      </motion.div>
+                    ))}
+                </AnimatePresence>
               </button>
 
               <button
@@ -156,8 +210,8 @@ export function Navbar() {
       {/* Mobile Menu Overlay */}
       <div 
         className={cn(
-          "fixed inset-x-0 top-[56px] sm:top-[64px] bg-white dark:bg-slate-950 border-b-2 border-slate-900 dark:border-white/20 shadow-lg transition-all duration-300 ease-in-out md:hidden flex flex-col items-center gap-6 pt-12 pb-8 z-[40]",
-          isMenuOpen ? "translate-y-0 opacity-100 visible" : "-translate-y-full opacity-0 invisible pointer-events-none"
+          "fixed inset-x-0 top-0 bg-white dark:bg-slate-950 transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] md:hidden flex flex-col items-center gap-6 pt-[88px] sm:pt-[100px] pb-10 z-[40]",
+          isMenuOpen ? "translate-y-0 opacity-100 visible shadow-2xl border-b-2 border-slate-900 dark:border-white/20" : "-translate-y-8 opacity-0 invisible pointer-events-none"
         )}
       >
         {NAV_ITEMS.map(({ label, href }) => (
@@ -172,7 +226,7 @@ export function Navbar() {
         ))}
         <a
           href="#pricing"
-          className="mt-2 inline-flex items-center justify-center gap-1 px-7 py-3 bg-yellow-300 text-black font-black text-xs uppercase tracking-wide border border-slate-900 rounded-full shadow-[2px_2px_0_0_#000] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all duration-200 w-[80%]"
+          className="mt-2 inline-flex items-center justify-center gap-1 px-7 py-3 bg-yellow-300 text-black font-black text-xs uppercase tracking-wide border border-slate-900 dark:border-white rounded-full shadow-[2px_2px_0_0_#000] dark:shadow-[2px_2px_0_0_#fff] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[3px_3px_0_0_#000] dark:hover:shadow-[3px_3px_0_0_#fff] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all duration-200 w-[80%]"
           onClick={() => setIsMenuOpen(false)}
         >
           <TiLocationArrow className="text-lg" />

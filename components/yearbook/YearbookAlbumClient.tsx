@@ -151,6 +151,7 @@ export default function YearbookAlbumClient({
   const [flipbookEnabledByPackage, setFlipbookEnabledByPackage] = useState(false)
   const [aiLabsFeaturesByPackage, setAiLabsFeaturesByPackage] = useState<string[]>([])
   const [featureCreditCosts, setFeatureCreditCosts] = useState<Record<string, number>>({})
+  const [featureUnlocksLoaded, setFeatureUnlocksLoaded] = useState(false)
   const [lastEditorSection, setLastEditorSection] = useState<string | null>(null)
   const [teacherSearchQuery, setTeacherSearchQuery] = useState('')
   const [showTeacherSearch, setShowTeacherSearch] = useState(false)
@@ -214,6 +215,8 @@ export default function YearbookAlbumClient({
       }
     } catch (e) {
       console.error('Error fetching feature unlocks:', e)
+    } finally {
+      setFeatureUnlocksLoaded(true)
     }
   }, [id])
 
@@ -1703,7 +1706,7 @@ export default function YearbookAlbumClient({
               {/* AI Labs: Credit di pojok kanan */}
               {sidebarMode === 'ai-labs' && <CreditBadgeTop />}
               {/* Flipbook Controls (Mobile & Desktop) */}
-              {sidebarMode === 'flipbook' && (isOwner || isAlbumAdmin) && (flipbookEnabledByPackage || featureUnlocks.includes('flipbook')) && (
+              {sidebarMode === 'flipbook' && (isOwner || isAlbumAdmin) && (featureUnlocksLoaded ? (flipbookEnabledByPackage || featureUnlocks.includes('flipbook')) : true) && (
                 <div className="flex bg-white dark:bg-slate-800 p-0.5 sm:p-1 rounded-lg sm:rounded-xl border-2 border-slate-900 dark:border-slate-600 gap-0.5 sm:gap-1 items-center shadow-[3px_3px_0_0_#0f172a] dark:shadow-[3px_3px_0_0_#334155]">
                   <button
                     onClick={() => setFlipbookPreviewMode(false)}
@@ -1720,7 +1723,7 @@ export default function YearbookAlbumClient({
                 </div>
               )}
               {/* Flipbook Locked: Credit di pojok kanan */}
-              {sidebarMode === 'flipbook' && !(flipbookEnabledByPackage || featureUnlocks.includes('flipbook')) && <CreditBadgeTop />}
+              {sidebarMode === 'flipbook' && featureUnlocksLoaded && !(flipbookEnabledByPackage || featureUnlocks.includes('flipbook')) && <CreditBadgeTop />}
               {/* Sambutan & Classes: Search Toggle */}
               {(sidebarMode === 'sambutan' || (sidebarMode === 'classes' && activeSection !== 'cover')) && (
                 <>
@@ -1941,6 +1944,7 @@ export default function YearbookAlbumClient({
             onTeamMemberCountChange={setTeamMemberCount}
             featureUnlocks={featureUnlocks}
             flipbookEnabledByPackage={flipbookEnabledByPackage}
+            featureUnlocksLoaded={featureUnlocksLoaded}
             aiLabsFeaturesByPackage={aiLabsFeaturesByPackage}
             featureCreditCosts={featureCreditCosts}
             onFeatureUnlocked={fetchFeatureUnlocks}

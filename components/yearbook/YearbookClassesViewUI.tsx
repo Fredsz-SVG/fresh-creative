@@ -321,6 +321,7 @@ export default function YearbookClassesViewUI(props: any) {
     setMobileMenuOpen = () => { },
     featureUnlocks = [] as string[],
     flipbookEnabledByPackage = false,
+    featureUnlocksLoaded = false,
     aiLabsFeaturesByPackage = [] as string[],
     featureCreditCosts = {} as Record<string, number>,
     onFeatureUnlocked,
@@ -333,10 +334,12 @@ export default function YearbookClassesViewUI(props: any) {
   const effectiveAlbumId = albumIdProp || album?.id || ''
 
   // Flipbook is accessible if: enabled by pricing package OR unlocked by owner via credits
-  const flipbookAccessible = flipbookEnabledByPackage || featureUnlocks.includes('flipbook')
+  // While feature unlock data hasn't loaded yet, treat as accessible to avoid flash of locked state
+  const flipbookAccessible = !featureUnlocksLoaded || flipbookEnabledByPackage || featureUnlocks.includes('flipbook')
 
   // AI Labs is accessible if: at least one feature enabled by package OR at least one AI feature unlocked individually
-  const aiLabsAccessible = aiLabsFeaturesByPackage.length > 0 || featureUnlocks.some(f => ['tryon', 'pose', 'photogroup', 'phototovideo', 'image_remove_bg'].includes(f))
+  // While feature unlock data hasn't loaded yet, treat as accessible to avoid flash of locked state
+  const aiLabsAccessible = !featureUnlocksLoaded || aiLabsFeaturesByPackage.length > 0 || featureUnlocks.some(f => ['tryon', 'pose', 'photogroup', 'phototovideo', 'image_remove_bg'].includes(f))
   const coverPreviewContainerRef = useRef<HTMLDivElement>(null)
   const coverDragRef = useRef<{ startX: number; startY: number; startPosX: number; startPosY: number } | null>(null)
   const coverUploadInputRef = useRef<HTMLInputElement>(null)
@@ -1611,6 +1614,7 @@ export default function YearbookClassesViewUI(props: any) {
                   featureUnlocks={featureUnlocks}
                   featureCreditCosts={featureCreditCosts}
                   onFeatureUnlocked={onFeatureUnlocked}
+                  featureUnlocksLoaded={featureUnlocksLoaded}
                 />
               </div>
 

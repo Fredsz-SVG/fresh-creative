@@ -55,7 +55,7 @@ function formatRupiah(n: number) {
 }
 
 export function Pricing() {
-  const [tab, setTab] = useState<TabType>("fisik");
+  const [tab, setTab] = useState<TabType>("digital");
   const [digitalPackages, setDigitalPackages] = useState<DigitalPackage[]>([]);
   const [loadingDigital, setLoadingDigital] = useState(true);
   const [selectedDigitalId, setSelectedDigitalId] = useState<string | null>(null);
@@ -87,7 +87,6 @@ export function Pricing() {
   const [cover, setCover] = useState<(typeof COVER_OPTIONS)[number]["id"]>("standard");
   const [packaging, setPackaging] = useState<(typeof PACKAGING_OPTIONS)[number]["id"]>("tas");
   const [videoCinematic, setVideoCinematic] = useState(false);
-  const [arLivePhoto, setArLivePhoto] = useState(false);
   const [fotografer, setFotografer] = useState<(typeof FOTOGRAFER_OPTIONS)[number]["id"]>("tidak");
 
   useEffect(() => {
@@ -120,7 +119,6 @@ export function Pricing() {
     const coverPack = coverOpt.add + packOpt.add;
     let sharedCost = 0;
     if (videoCinematic) sharedCost += 3000000 / Math.max(1, jumlahSiswa);
-    if (arLivePhoto) sharedCost += 32000;
     const cashback = 29000;
     const perSiswa = Math.round(printBinding + coverPack / Math.max(1, jumlahSiswa) + sharedCost - cashback);
     return {
@@ -130,23 +128,26 @@ export function Pricing() {
       cashback,
       perSiswa: Math.max(0, perSiswa),
     };
-  }, [cover, packaging, videoCinematic, arLivePhoto, jumlahSiswa]);
+  }, [cover, packaging, videoCinematic, jumlahSiswa]);
 
   return (
     <section id="pricing" className="w-full bg-slate-100 dark:bg-slate-950 py-16 md:py-24 transition-colors duration-500">
       <div className="container mx-auto px-4 md:px-8">
-        <div className="text-center mb-12">
-          <AnimatedTitle containerClass="!text-black dark:!text-white text-center font-zentry">
-            {"Harga Jujur <br /> Sejak Awal."}
-          </AnimatedTitle>
-          <p className="mt-6 text-slate-500 dark:text-white/60 font-general uppercase tracking-widest text-xs md:text-sm">
+        <div className="text-center sm:text-left mb-12 sm:mb-16">
+          <p className="font-general text-[10px] sm:text-xs uppercase tracking-[0.2em] text-lime-600 dark:text-lime-400 font-black mb-3">
+            Pricing
+          </p>
+          <h2 className="text-4xl sm:text-5xl lg:text-6xl font-black text-slate-900 dark:text-white tracking-tight uppercase">
+            Harga Jujur <br className="hidden sm:block" /><span className="text-cyan-500">Sejak Awal.</span>
+          </h2>
+          <p className="mt-4 sm:mt-6 text-sm sm:text-base font-medium text-slate-600 dark:text-slate-400 max-w-2xl mx-auto sm:mx-0">
             Investasi transparan untuk kenangan abadi, tanpa biaya siluman.
           </p>
         </div>
 
         {/* Tab: Digital | Fisik */}
         <div className="flex justify-center mb-10">
-          <div className="inline-flex flex-wrap justify-center rounded-xl border border-slate-900 dark:border-white bg-white dark:bg-slate-900 p-1 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#fff]">
+          <div className="inline-flex flex-wrap justify-center rounded-xl border border-slate-900 dark:border-white bg-white dark:bg-slate-900 p-1 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[#a3e635]">
             <button
               type="button"
               onClick={() => setTab("digital")}
@@ -212,7 +213,7 @@ export function Pricing() {
                         className={`relative w-full h-full rounded-[1.5rem] sm:rounded-[2rem] border-2 p-6 sm:p-8 text-left transition-all duration-300 focus:outline-none flex flex-col ${
                           isSelected
                             ? "border-slate-900 dark:border-white bg-lime-400/10 shadow-none translate-x-[3px] translate-y-[3px]"
-                            : "border-slate-900 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-[3px_3px_0_0_#0f172a] dark:shadow-[3px_3px_0_0_#fff] hover:-translate-y-0.5 hover:-translate-x-0.5 hover:shadow-[4px_4px_0_0_#0f172a] dark:hover:shadow-[4px_4px_0_0_#fff]"
+                            : "border-slate-900 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-[3px_3px_0_0_#0f172a] dark:shadow-[#a3e635] hover:-translate-y-0.5 hover:-translate-x-0.5 hover:shadow-[4px_4px_0_0_#0f172a] dark:hover:shadow-[#a3e635]"
                         }`}
                       >
                       {isSelected && (
@@ -245,7 +246,7 @@ export function Pricing() {
                         <ul className="mt-6 space-y-2 pt-1">
                           {parsedFeatures.filter((p) => p.price === 0).map((parsed, idx) => (
                             <li key={idx} className="flex items-center gap-3 text-sm font-bold text-slate-700 dark:text-white/80">
-                              <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md border border-slate-900 dark:border-white bg-lime-400 shadow-[1px_1px_0_0_#0f172a] dark:shadow-[1px_1px_0_0_#fff]">
+                              <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md border border-slate-900 dark:border-white bg-lime-400 shadow-[1px_1px_0_0_#0f172a] dark:shadow-[#a3e635]">
                                 <Check className="h-3 w-3 text-slate-900" strokeWidth={4} />
                               </div>
                               <span>{parsed.name}</span>
@@ -258,14 +259,14 @@ export function Pricing() {
                             <div className="flex flex-wrap gap-2">
                               {pkg.flipbook_enabled &&
                                 !pkg.ai_labs_features.includes("flipbook_unlock") && (
-                                  <span className="inline-flex items-center gap-1.5 rounded-md border border-slate-900 dark:border-white bg-lime-400 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-slate-900 shadow-[1px_1px_0_0_#0f172a] dark:shadow-[1px_1px_0_0_#fff]">
+                                  <span className="inline-flex items-center gap-1.5 rounded-md border border-slate-900 dark:border-white bg-lime-400 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-slate-900 shadow-[1px_1px_0_0_#0f172a] dark:shadow-[#a3e635]">
                                     <Book className="h-3 w-3" /> Flipbook
                                   </span>
                                 )}
                               {pkg.ai_labs_features.map((slug) => (
                                 <span
                                   key={slug}
-                                  className="inline-flex items-center gap-1.5 rounded-md border border-slate-900 dark:border-white bg-cyan-400 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-slate-900 shadow-[1px_1px_0_0_#0f172a] dark:shadow-[1px_1px_0_0_#fff]"
+                                  className="inline-flex items-center gap-1.5 rounded-md border border-slate-900 dark:border-white bg-cyan-400 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-slate-900 shadow-[1px_1px_0_0_#0f172a] dark:shadow-[#a3e635]"
                                 >
                                   {slug === "flipbook_unlock" ? (
                                     <Book className="h-3 w-3" />
@@ -319,7 +320,7 @@ export function Pricing() {
                         className={`mt-6 block w-full rounded-xl py-3 border border-slate-900 dark:border-white text-center text-sm font-black uppercase transition-all duration-300 ${
                           isSelected
                             ? "bg-lime-500 text-white dark:text-black shadow-none"
-                            : "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#fff] group-hover:bg-lime-400"
+                            : "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-[2px_2px_0_0_#0f172a] dark:shadow-[#a3e635] group-hover:bg-lime-400"
                         }`}
                       >
                         {isSelected ? "Paket dipilih" : "Pilih Paket"}
@@ -345,15 +346,18 @@ export function Pricing() {
               </div>
 
               {selectedDigitalId && (
-                <div className="mt-12 sm:mt-16 flex flex-col items-center gap-6 rounded-[1.5rem] sm:rounded-[2rem] border border-slate-900 dark:border-white bg-lime-400 p-6 sm:p-8 text-center shadow-[3px_3px_0_0_#0f172a] dark:shadow-[3px_3px_0_0_#fff]">
-                  <p className="text-base sm:text-lg font-black text-slate-900 tracking-tight">
-                    🔥 Mantap! Paket <span className="underline decoration-2">{digitalPackages.find((p) => p.id === selectedDigitalId)?.name}</span> siap diproses.
-                  </p>
+                <div className="fixed sm:relative bottom-0 left-0 right-0 z-[100] sm:z-auto sm:mt-12 sm:mt-16 flex flex-col sm:flex-row items-center justify-between sm:justify-center gap-3 sm:gap-6 rounded-t-[1.5rem] sm:rounded-[2rem] border-t-4 sm:border-2 border-slate-900 dark:border-white bg-lime-400 p-4 sm:p-6 sm:p-8 text-center shadow-[0_-8px_30px_-15px_rgba(0,0,0,0.3)] sm:shadow-[3px_3px_0_0_#0f172a] dark:sm:shadow-[3px_3px_0_0_#fff] animate-in slide-in-from-bottom-full sm:animate-none duration-300">
+                  <div className="flex-1 text-left sm:text-center">
+                    <p className="text-xs sm:text-base sm:text-lg font-black text-slate-900 tracking-tight leading-tight">
+                      🔥 Paket <span className="underline decoration-2">{digitalPackages.find((p) => p.id === selectedDigitalId)?.name}</span> dipilih.
+                    </p>
+                    <p className="hidden sm:block text-sm font-bold text-slate-700 mt-1">Siap untuk diproses sekarang juga.</p>
+                  </div>
                   <a
                     href="/login?next=/admin/showroom"
-                    className="group inline-flex items-center gap-2 rounded-2xl border border-slate-900 bg-white px-8 sm:px-10 py-3.5 sm:py-4 text-sm sm:text-base font-black text-slate-900 transition-all hover:-translate-y-0.5 hover:-translate-x-0.5 hover:shadow-[3px_3px_0_0_#0f172a] active:translate-x-0 active:translate-y-0 active:shadow-none"
+                    className="group inline-flex items-center gap-2 rounded-xl sm:rounded-2xl border-2 sm:border border-slate-900 bg-white px-5 sm:px-8 sm:px-10 py-3 sm:py-3.5 sm:py-4 text-[11px] sm:text-sm sm:text-base font-black text-slate-900 transition-all hover:-translate-y-0.5 hover:-translate-x-0.5 hover:shadow-[3px_3px_0_0_#0f172a] active:translate-x-0 active:translate-y-0 active:shadow-none whitespace-nowrap"
                   >
-                    Lanjutkan Sekarang <TiLocationArrow className="h-5 w-5 transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />
+                    Lanjut <span className="hidden sm:inline">Sekarang</span> <TiLocationArrow className="h-4 w-4 sm:h-5 sm:w-5 transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />
                   </a>
                 </div>
               )}
@@ -364,7 +368,7 @@ export function Pricing() {
 
         {/* Fisik: estimasi budget angkatan (kodingan yang sudah ada) */}
         {tab === "fisik" && (
-        <div className="mx-auto max-w-6xl rounded-[1.5rem] sm:rounded-[2.5rem] border-2 border-slate-900 dark:border-white bg-white dark:bg-slate-900 shadow-[3px_3px_0_0_#0f172a] dark:shadow-[3px_3px_0_0_#fff] p-5 sm:p-8 md:p-12">
+        <div className="mx-auto max-w-6xl rounded-[1.5rem] sm:rounded-[2.5rem] border-2 border-slate-900 dark:border-white bg-white dark:bg-slate-900 shadow-[3px_3px_0_0_#0f172a] dark:shadow-[#a3e635] p-5 sm:p-8 md:p-12">
           <h3 className="font-sans text-lg sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white mb-6 sm:mb-10 flex items-center gap-3">
             <span className="h-6 sm:h-8 w-2 bg-lime-500" /> Estimasi Budget Angkatan
           </h3>
@@ -438,7 +442,7 @@ export function Pricing() {
                   <select
                     value={cover}
                     onChange={(e) => setCover(e.target.value as typeof cover)}
-                    className="w-full rounded-xl border border-slate-900 dark:border-white bg-slate-50 dark:bg-slate-800 px-3 sm:px-4 py-2 sm:py-2.5 text-slate-900 dark:text-white text-xs sm:text-sm font-bold focus:shadow-[2px_2px_0_0_#0f172a] dark:focus:shadow-[2px_2px_0_0_#fff] focus:outline-none transition-all shadow-[1px_1px_0_0_#0f172a] dark:shadow-[1px_1px_0_0_#fff]"
+                    className="w-full rounded-xl border border-slate-900 dark:border-white bg-slate-50 dark:bg-slate-800 px-3 sm:px-4 py-2 sm:py-2.5 text-slate-900 dark:text-white text-xs sm:text-sm font-bold focus:shadow-[2px_2px_0_0_#0f172a] dark:focus:shadow-[#a3e635] focus:outline-none transition-all shadow-[1px_1px_0_0_#0f172a] dark:shadow-[#a3e635]"
                   >
                     {COVER_OPTIONS.map((opt) => (
                       <option key={opt.id} value={opt.id} className="bg-white dark:bg-gray-900 text-slate-900 dark:text-white">
@@ -454,7 +458,7 @@ export function Pricing() {
                   <select
                     value={packaging}
                     onChange={(e) => setPackaging(e.target.value as typeof packaging)}
-                    className="w-full rounded-xl border border-slate-900 dark:border-white bg-slate-50 dark:bg-slate-800 px-3 sm:px-4 py-2 sm:py-2.5 text-slate-900 dark:text-white text-xs sm:text-sm font-bold focus:shadow-[2px_2px_0_0_#0f172a] dark:focus:shadow-[2px_2px_0_0_#fff] focus:outline-none transition-all shadow-[1px_1px_0_0_#0f172a] dark:shadow-[1px_1px_0_0_#fff]"
+                    className="w-full rounded-xl border border-slate-900 dark:border-white bg-slate-50 dark:bg-slate-800 px-3 sm:px-4 py-2 sm:py-2.5 text-slate-900 dark:text-white text-xs sm:text-sm font-bold focus:shadow-[2px_2px_0_0_#0f172a] dark:focus:shadow-[#a3e635] focus:outline-none transition-all shadow-[1px_1px_0_0_#0f172a] dark:shadow-[#a3e635]"
                   >
                     {PACKAGING_OPTIONS.map((opt) => (
                       <option key={opt.id} value={opt.id} className="bg-white dark:bg-gray-900 text-slate-900 dark:text-white">
@@ -474,25 +478,13 @@ export function Pricing() {
                         type="checkbox"
                         checked={videoCinematic}
                         onChange={(e) => setVideoCinematic(e.target.checked)}
-                        className="h-5 w-5 sm:h-6 sm:w-6 rounded-none border border-slate-900 dark:border-white bg-white dark:bg-slate-800 text-lime-500 focus:ring-0 shadow-[1px_1px_0_0_#0f172a] dark:shadow-[1px_1px_0_0_#fff] checked:bg-lime-500"
+                        className="h-5 w-5 sm:h-6 sm:w-6 rounded-none border border-slate-900 dark:border-white bg-white dark:bg-slate-800 text-lime-500 focus:ring-0 shadow-[1px_1px_0_0_#0f172a] dark:shadow-[#a3e635] checked:bg-lime-500"
                       />
                       <span className="text-xs sm:text-sm text-slate-700 dark:text-white/90">
                         Video Cinematic
                       </span>
                     </span>
                     <span className="text-xs sm:text-sm text-cyan-600 dark:text-cyan-400 font-bold">+3jt</span>
-                  </label>
-                  <label className="flex items-center justify-between gap-4 cursor-pointer py-0.5 sm:py-1">
-                    <span className="flex items-center gap-2 sm:gap-3">
-                      <input
-                        type="checkbox"
-                        checked={arLivePhoto}
-                        onChange={(e) => setArLivePhoto(e.target.checked)}
-                        className="h-5 w-5 sm:h-6 sm:w-6 rounded-none border border-slate-900 dark:border-white bg-white dark:bg-slate-800 text-lime-500 focus:ring-0 shadow-[1px_1px_0_0_#0f172a] dark:shadow-[1px_1px_0_0_#fff] checked:bg-lime-500"
-                      />
-                      <span className="text-xs sm:text-sm text-slate-700 dark:text-white/90">AR LivePhoto</span>
-                    </span>
-                    <span className="text-xs sm:text-sm text-cyan-600 dark:text-cyan-400 font-bold">+32rb</span>
                   </label>
                 </div>
               </div>
@@ -504,7 +496,7 @@ export function Pricing() {
                 <select
                   value={fotografer}
                   onChange={(e) => setFotografer(e.target.value as typeof fotografer)}
-                  className="w-full rounded-xl border border-slate-900 dark:border-white bg-slate-50 dark:bg-slate-800 px-3 sm:px-4 py-2 sm:py-2.5 text-slate-900 dark:text-white text-xs sm:text-sm font-bold focus:shadow-[2px_2px_0_0_#0f172a] dark:focus:shadow-[2px_2px_0_0_#fff] focus:outline-none transition-all shadow-[1px_1px_0_0_#0f172a] dark:shadow-[1px_1px_0_0_#fff]"
+                  className="w-full rounded-xl border border-slate-900 dark:border-white bg-slate-50 dark:bg-slate-800 px-3 sm:px-4 py-2 sm:py-2.5 text-slate-900 dark:text-white text-xs sm:text-sm font-bold focus:shadow-[2px_2px_0_0_#0f172a] dark:focus:shadow-[#a3e635] focus:outline-none transition-all shadow-[1px_1px_0_0_#0f172a] dark:shadow-[#a3e635]"
                 >
                   {FOTOGRAFER_OPTIONS.map((opt) => (
                     <option key={opt.id} value={opt.id} className="bg-white dark:bg-gray-900 text-slate-900 dark:text-white">
@@ -552,17 +544,14 @@ export function Pricing() {
                 </div>
               </div>
 
-              {!arLivePhoto && (
-                <div className="rounded-2xl border border-slate-900 dark:border-white bg-cyan-400 p-4 sm:p-5 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#fff]">
-                  <p className="text-[11px] sm:text-sm text-slate-900 font-bold flex items-start gap-2 sm:gap-3">
-                    <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 shrink-0" />
-                    <span>
-                      <strong className="uppercase underline">Recommended:</strong> Tambah AR
-                      LivePhoto!
-                    </span>
-                  </p>
-                </div>
-              )}
+              <div className="rounded-xl border border-lime-300 dark:border-lime-500/30 bg-lime-100 dark:bg-lime-950/30 p-3 sm:p-4">
+                <p className="text-[10px] sm:text-xs text-lime-800 dark:text-lime-400 font-bold flex items-start gap-2">
+                  <Check className="h-4 w-4 sm:h-5 sm:w-5 shrink-0" strokeWidth={3} />
+                  <span>
+                    Paket ini <strong>sudah mencakup AR LivePhoto</strong> secara gratis! 😎
+                  </span>
+                </p>
+              </div>
 
               <button
                 type="button"

@@ -9,7 +9,7 @@ export function Footer() {
           <div className="flex flex-col gap-4">
             <h3 className="text-lg font-black uppercase tracking-wider text-white">Tentang Kami</h3>
             <nav className="flex flex-col gap-2">
-              <a href="#about" className="text-sm transition hover:text-white hover:underline">
+              <a href="#hero" className="text-sm transition hover:text-white hover:underline">
                 Apa itu Fresh Creative?
               </a>
               <a href="#demo-ebook" className="text-sm transition hover:text-white hover:underline">
@@ -33,11 +33,10 @@ export function Footer() {
 
           {/* Address Section */}
           <div className="col-span-1 md:col-span-2 lg:col-span-2 flex flex-col gap-4">
-            <h3 className="text-lg font-black uppercase tracking-wider text-white">PT Indonesia Creative Technology</h3>
+            <h3 className="text-lg font-black uppercase tracking-wider text-white">Fresh Creative Indonesia</h3>
             <div className="max-w-md text-sm leading-relaxed">
               <p>
-                AD PREMIER Lantai 17 SUITE 04 B, Jalan TB. SIMATUPANG NOMOR 5,
-                Desa/Kelurahan Ragunan, Kec. Pasar Minggu, Kota Adm. Jakarta Selatan
+                Jl. Tentara Pelajar No.18, Mangunsari, Kec. Sidomukti, Kota Salatiga, Jawa Tengah 50721
               </p>
             </div>
           </div>

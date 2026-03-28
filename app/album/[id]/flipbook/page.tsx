@@ -1,9 +1,9 @@
 'use client'
 
 import React, { useCallback, useEffect, useState } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { ChevronLeft, Loader2 } from 'lucide-react'
+import { ChevronLeft, Loader2, X } from 'lucide-react'
 import ManualFlipbookViewer from '@/components/yearbook/components/ManualFlipbookViewer'
 import { apiUrl } from '@/lib/api-url'
 
@@ -19,6 +19,8 @@ type ManualFlipbookPage = {
 export default function PublicFlipbookPage() {
   const params = useParams()
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const isEmbedded = searchParams?.get('embedded') === 'true'
   const id = params?.id as string
   const [pages, setPages] = useState<ManualFlipbookPage[]>([])
   const [loading, setLoading] = useState(true)
@@ -102,18 +104,30 @@ export default function PublicFlipbookPage() {
   }
 
   return (
-    <div className="h-[100dvh] bg-slate-50 flex flex-col overflow-hidden">
-      <header className="shrink-0 flex items-center justify-between gap-3 px-3 py-2 bg-slate-50 border-b-2 border-slate-900 z-10 relative">
-        <button
-          type="button"
-          onClick={() => router.back()}
-          className="flex flex-shrink-0 items-center justify-center w-8 h-8 lg:w-auto lg:h-auto lg:px-3 lg:py-1.5 gap-1.5 text-xs font-black text-slate-900 bg-white border-2 border-slate-900 rounded-lg shadow-[2px_2px_0_0_#0f172a] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all active:scale-95"
-        >
-          <ChevronLeft className="w-4 h-4" strokeWidth={3} />
-          <span className="hidden lg:inline uppercase tracking-widest">Kembali</span>
-        </button>
-        <span className="flex-1 text-sm sm:text-base font-black text-slate-900 uppercase tracking-tight truncate text-center">{albumName}</span>
-        <div className="w-8 lg:w-28" />
+    <div className="h-[100dvh] bg-slate-50 dark:bg-slate-950 flex flex-col overflow-hidden transition-colors duration-500">
+      <header className="shrink-0 flex items-center justify-between gap-3 px-3 py-2 bg-slate-50 dark:bg-slate-950 border-b-2 border-slate-900 dark:border-slate-800 z-10 relative">
+        {isEmbedded ? (
+          <button
+            type="button"
+            onClick={() => window.parent.postMessage('CLOSE_YEARBOOK_PREVIEW', '*')}
+            className="flex items-center justify-center w-8 h-8 bg-yellow-300 hover:bg-yellow-400 rounded-full border-2 border-slate-900 shadow-[2px_2px_0_0_#0f172a] transition-all active:scale-95"
+          >
+            <X className="w-4 h-4" strokeWidth={3} />
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => router.back()}
+            className="flex flex-shrink-0 items-center justify-center w-8 h-8 lg:w-auto lg:h-auto lg:px-3 lg:py-1.5 gap-1.5 text-xs font-black text-slate-900 bg-white border-2 border-slate-900 rounded-lg shadow-[2px_2px_0_0_#0f172a] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all active:scale-95"
+          >
+            <ChevronLeft className="w-4 h-4" strokeWidth={3} />
+            <span className="hidden lg:inline uppercase tracking-widest">Kembali</span>
+          </button>
+        )}
+        <span className="flex-1 text-sm sm:text-base font-black text-slate-900 dark:text-white uppercase tracking-tight truncate text-center">{albumName}</span>
+        <div className="w-8 lg:w-10 flex justify-end">
+          {isEmbedded && <div className="w-8 h-8" />}
+        </div>
       </header>
       <main className="flex-1 min-h-0 flex flex-col p-0 bg-transparent">
         <ManualFlipbookViewer
