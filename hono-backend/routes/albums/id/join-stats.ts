@@ -1,29 +1,67 @@
 import { Hono } from 'hono'
 import { getSupabaseClient } from '../../../lib/supabase'
+import { getD1 } from '../../../lib/edge-env'
+import { getRole } from '../../../lib/auth'
 
 const albumsIdJoinStats = new Hono()
 
 albumsIdJoinStats.get('/', async (c) => {
+  const albumId = c.req.param('id')
+  const supabase = getSupabaseClient(c)
+  const db = getD1(c)
+  if (!db) return c.json({ error: 'Database not configured' }, 503)
+
   try {
-    const albumId = c.req.param('id')
-    const supabase = getSupabaseClient(c)
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user) return c.json({ error: 'Unauthorized' }, 401)
 
-    // Call the stats function
-    const { data, error } = await supabase.rpc('get_album_join_stats', {
-      _album_id: albumId
+    const album = await db
+      .prepare(`SELECT id, user_id, students_count FROM albums WHERE id = ?`)
+      .bind(albumId)
+      .first<{ id: string; user_id: string; students_count: number | null }>()
+    if (!album) return c.json({ error: 'Album not found' }, 404)
+
+    const globalRole = await getRole(c, user)
+    const adminCheck = await db
+      .prepare(`SELECT role FROM album_members WHERE album_id = ? AND user_id = ? AND role = 'admin'`)
+      .bind(albumId, user.id)
+      .first<{ role: string }>()
+    const isOwner = album.user_id === user.id
+    const isGlobalAdmin = globalRole === 'admin'
+    const isAlbumAdmin = !!adminCheck?.role
+    const canManage = isOwner || isAlbumAdmin || isGlobalAdmin
+    if (!canManage) return c.json({ error: 'Forbidden' }, 403)
+
+    const approved = await db
+      .prepare(`SELECT COUNT(*) as c FROM album_class_access WHERE album_id = ? AND status = 'approved'`)
+      .bind(albumId)
+      .first<{ c: number }>()
+    const pending = await db
+      .prepare(`SELECT COUNT(*) as c FROM album_join_requests WHERE album_id = ? AND status = 'pending'`)
+      .bind(albumId)
+      .first<{ c: number }>()
+    const rejected = await db
+      .prepare(`SELECT COUNT(*) as c FROM album_join_requests WHERE album_id = ? AND status = 'rejected'`)
+      .bind(albumId)
+      .first<{ c: number }>()
+
+    // Owner album dihitung sebagai 1 slot terisi (walau owner tidak punya row album_class_access).
+    const approved_count = (approved?.c ?? 0) + 1
+    const pending_count = pending?.c ?? 0
+    const rejected_count = rejected?.c ?? 0
+    const limit_count = album.students_count ?? null
+    const available_slots =
+      typeof limit_count === 'number' && limit_count > 0
+        ? Math.max(0, limit_count - approved_count)
+        : 999999
+
+    return c.json({
+      limit_count,
+      approved_count,
+      pending_count,
+      rejected_count,
+      available_slots,
     })
-
-    if (error) throw error
-
-    const stats = data?.[0] || {
-      limit_count: null,
-      approved_count: 0,
-      pending_count: 0,
-      rejected_count: 0,
-      available_slots: 999999
-    }
-
-    return c.json(stats)
   } catch (error) {
     console.error('Error fetching join stats:', error)
     return c.json({ error: 'Failed to fetch statistics' }, 500)

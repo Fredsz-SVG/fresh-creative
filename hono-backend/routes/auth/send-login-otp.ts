@@ -1,5 +1,7 @@
 import { Hono } from 'hono'
-import { getSupabaseClient, getAdminSupabaseClient } from '../../lib/supabase'
+import { getSupabaseClient } from '../../lib/supabase'
+import { getD1 } from '../../lib/edge-env'
+import { ensureUserInD1, honoEnvForSupabasePublicSync } from '../../lib/d1-users'
 
 const OTP_EXPIRY_MINUTES = 5
 
@@ -17,21 +19,30 @@ sendLoginOtp.post('/', async (c) => {
     return c.json({ error: 'Unauthorized' }, 401)
   }
 
+  const db0 = getD1(c)
+  if (db0) await ensureUserInD1(db0, user, honoEnvForSupabasePublicSync(c.env))
+
   const apiKey = (c.env as any).RESEND_API_KEY
   const fromEmail = (c.env as any).RESEND_FROM_EMAIL || 'onboarding@resend.dev'
 
   if (apiKey) {
     const code = generateOtp()
     const expiresAt = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000).toISOString()
-    let db: any
-    try { db = getAdminSupabaseClient(c?.env as any) } catch { db = supabase }
+    const db = getD1(c)
+    if (!db) {
+      return c.json({ error: 'Database not configured' }, 503)
+    }
 
-    const { error: upsertError } = await db
-      .from('login_otps')
-      .upsert({ user_id: user.id, code, expires_at: expiresAt }, { onConflict: 'user_id' })
+    const r = await db
+      .prepare(
+        `INSERT INTO login_otps (user_id, code, expires_at) VALUES (?, ?, ?)
+         ON CONFLICT(user_id) DO UPDATE SET code = excluded.code, expires_at = excluded.expires_at, created_at = datetime('now')`
+      )
+      .bind(user.id, code, expiresAt)
+      .run()
 
-    if (upsertError) {
-      return c.json({ error: upsertError.message }, 500)
+    if (!r.success) {
+      return c.json({ error: 'Gagal menyimpan OTP' }, 500)
     }
 
     try {

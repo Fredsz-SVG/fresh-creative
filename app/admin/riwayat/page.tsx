@@ -2,7 +2,6 @@
 
 import { History, ExternalLink, Loader2, CreditCard, X, Users, User, Search, RefreshCw, ChevronLeft, ChevronRight, Calendar } from 'lucide-react'
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react'
-import { supabase } from '@/lib/supabase'
 import { fetchWithAuth } from '../../../lib/api-client'
 import Link from 'next/link'
 
@@ -109,32 +108,16 @@ export default function AdminRiwayatPage() {
     }
   }, [viewMode, fetchTransactions])
 
+  // Supabase auth-only: no Realtime, no polling. Use manual refresh button + refetch on tab focus.
   useEffect(() => {
-    let isActive = true
-    let ch: ReturnType<typeof supabase.channel> | null = null
-
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (!user || !isActive) return
-      const channelName = viewMode === 'all' ? 'riwayat-admin-all' : `riwayat-admin-mine-${user.id}`
-      ch = supabase
-        .channel(channelName)
-        .on(
-          'postgres_changes',
-          { event: '*', schema: 'public', table: 'transactions' },
-          () => {
-            fetchTransactions(viewMode, true)
-          }
-        )
-        .subscribe((status, err) => {
-          if (err) console.warn('Realtime transactions:', status, err)
-        })
-    })
-
+    const onVisible = () => {
+      fetchTransactions(viewMode, true)
+    }
+    window.addEventListener('focus', onVisible)
+    document.addEventListener('visibilitychange', onVisible)
     return () => {
-      isActive = false
-      if (ch) {
-        supabase.removeChannel(ch)
-      }
+      window.removeEventListener('focus', onVisible)
+      document.removeEventListener('visibilitychange', onVisible)
     }
   }, [viewMode, fetchTransactions])
 

@@ -33,6 +33,7 @@ export default function AdminPage() {
   const [editCredits, setEditCredits] = useState('')
   const [savingId, setSavingId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [currentAdminId, setCurrentAdminId] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
   const [confirmOpen, setConfirmOpen] = useState(false)
@@ -50,6 +51,15 @@ export default function AdminPage() {
     return () => {
       mountedRef.current = false
     }
+  }, [])
+
+  // Needed to hide actions for the currently logged-in admin.
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setCurrentAdminId(session?.user?.id ?? null)
+    }).catch(() => {
+      setCurrentAdminId(null)
+    })
   }, [])
 
   const fetchOverview = useCallback(async (silent = false) => {
@@ -93,34 +103,16 @@ export default function AdminPage() {
   }, [fetchOverview])
 
   useEffect(() => {
-    let usersChannel: ReturnType<typeof supabase.channel> | null = null
-    let transactionsChannel: ReturnType<typeof supabase.channel> | null = null
-
-    usersChannel = supabase
-      .channel('admin-users-realtime')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'users' },
-        () => {
-          fetchOverview(true)
-        }
-      )
-      .subscribe()
-
-    transactionsChannel = supabase
-      .channel('admin-transactions-realtime')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'transactions' },
-        () => {
-          fetchOverview(true)
-        }
-      )
-      .subscribe()
-
+    // Supabase auth-only: no Realtime, no polling.
+    // Refetch when admin returns to tab.
+    const onVisible = () => {
+      fetchOverview(true)
+    }
+    window.addEventListener('focus', onVisible)
+    document.addEventListener('visibilitychange', onVisible)
     return () => {
-      if (usersChannel) supabase.removeChannel(usersChannel)
-      if (transactionsChannel) supabase.removeChannel(transactionsChannel)
+      window.removeEventListener('focus', onVisible)
+      document.removeEventListener('visibilitychange', onVisible)
     }
   }, [fetchOverview])
 
@@ -473,20 +465,24 @@ export default function AdminPage() {
               </div>
 
               <div className="grid grid-cols-2 gap-2">
-                <button
-                  onClick={() => handleChangeRole(u.id, u.role === 'admin' ? 'user' : 'admin')}
-                  disabled={savingId === u.id}
-                  className="px-3 py-2 bg-slate-100 border-2 border-slate-900 rounded-xl text-[10px] font-black uppercase hover:bg-slate-200 transition-colors disabled:opacity-50"
-                >
-                  {u.role === 'admin' ? 'Remove Admin' : 'Make Admin'}
-                </button>
-                <button
-                  onClick={() => handleSuspendUser(u.id, !!u.is_suspended)}
-                  disabled={savingId === u.id}
-                  className={`px-3 py-2 border-2 border-slate-900 rounded-xl text-[10px] font-black uppercase transition-colors disabled:opacity-50 ${u.is_suspended ? 'bg-emerald-300 text-slate-900' : 'bg-amber-300 text-slate-900'}`}
-                >
-                  {u.is_suspended ? 'Unsuspend' : 'Suspend'}
-                </button>
+                {!(currentAdminId && u.id === currentAdminId) && (
+                  <>
+                    <button
+                      onClick={() => handleChangeRole(u.id, u.role === 'admin' ? 'user' : 'admin')}
+                      disabled={savingId === u.id}
+                      className="px-3 py-2 bg-slate-100 border-2 border-slate-900 rounded-xl text-[10px] font-black uppercase hover:bg-slate-200 transition-colors disabled:opacity-50"
+                    >
+                      {u.role === 'admin' ? 'Remove Admin' : 'Make Admin'}
+                    </button>
+                    <button
+                      onClick={() => handleSuspendUser(u.id, !!u.is_suspended)}
+                      disabled={savingId === u.id}
+                      className={`px-3 py-2 border-2 border-slate-900 rounded-xl text-[10px] font-black uppercase transition-colors disabled:opacity-50 ${u.is_suspended ? 'bg-emerald-300 text-slate-900' : 'bg-amber-300 text-slate-900'}`}
+                    >
+                      {u.is_suspended ? 'Unsuspend' : 'Suspend'}
+                    </button>
+                  </>
+                )}
                 <button
                   onClick={() => handleDeleteUser(u.id)}
                   disabled={deletingId === u.id}
@@ -547,13 +543,15 @@ export default function AdminPage() {
                       <span className="px-3 py-1 bg-slate-100 dark:bg-slate-700 border-2 border-slate-900 dark:border-slate-700 rounded-lg text-[10px] font-black uppercase text-slate-900 dark:text-white">
                         {u.role || 'user'}
                       </span>
-                      <button
-                        onClick={() => handleChangeRole(u.id, u.role === 'admin' ? 'user' : 'admin')}
-                        disabled={savingId === u.id}
-                        className="opacity-0 group-hover:opacity-100 text-[10px] font-black text-indigo-500 underline uppercase transition-all"
-                      >
-                        Change
-                      </button>
+                      {!(currentAdminId && u.id === currentAdminId) && (
+                        <button
+                          onClick={() => handleChangeRole(u.id, u.role === 'admin' ? 'user' : 'admin')}
+                          disabled={savingId === u.id}
+                          className="opacity-0 group-hover:opacity-100 text-[10px] font-black text-indigo-500 underline uppercase transition-all"
+                        >
+                          Change
+                        </button>
+                      )}
                     </div>
                   </td>
                   <td className="px-5 py-4">
@@ -599,13 +597,15 @@ export default function AdminPage() {
                   </td>
                   <td className="px-5 py-4 text-right">
                     <div className="flex items-center justify-end gap-2">
-                      <button
-                        onClick={() => handleSuspendUser(u.id, !!u.is_suspended)}
-                        className={`p-2 rounded-xl border-2 border-slate-900 shadow-[2px_2px_0_0_#0f172a] hover:shadow-none transition-all ${u.is_suspended ? 'bg-emerald-300 text-slate-900' : 'bg-amber-300 text-slate-900'}`}
-                        title={u.is_suspended ? 'Unsuspend User' : 'Suspend User'}
-                      >
-                        {u.is_suspended ? <Sparkles size={16} strokeWidth={3} /> : <X size={16} strokeWidth={3} />}
-                      </button>
+                      {!(currentAdminId && u.id === currentAdminId) && (
+                        <button
+                          onClick={() => handleSuspendUser(u.id, !!u.is_suspended)}
+                          className={`p-2 rounded-xl border-2 border-slate-900 shadow-[2px_2px_0_0_#0f172a] hover:shadow-none transition-all ${u.is_suspended ? 'bg-emerald-300 text-slate-900' : 'bg-amber-300 text-slate-900'}`}
+                          title={u.is_suspended ? 'Unsuspend User' : 'Suspend User'}
+                        >
+                          {u.is_suspended ? <Sparkles size={16} strokeWidth={3} /> : <X size={16} strokeWidth={3} />}
+                        </button>
+                      )}
                       <button
                         onClick={() => handleDeleteUser(u.id)}
                         className="p-2 bg-red-400 text-white rounded-xl border-2 border-slate-900 shadow-[2px_2px_0_0_#0f172a] hover:shadow-none transition-all"

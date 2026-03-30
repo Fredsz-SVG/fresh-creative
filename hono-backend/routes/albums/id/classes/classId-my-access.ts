@@ -1,10 +1,13 @@
 import { Hono } from 'hono'
-import { getSupabaseClient, getAdminSupabaseClient } from '../../../../lib/supabase'
+import { getSupabaseClient } from '../../../../lib/supabase'
+import { getD1 } from '../../../../lib/edge-env'
 
 const myAccessRoute = new Hono()
 
 myAccessRoute.get('/', async (c) => {
   const supabase = getSupabaseClient(c)
+  const db = getD1(c)
+  if (!db) return c.json({ error: 'Database not configured' }, 503)
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return c.json({ error: 'Unauthorized' }, 401)
 
@@ -12,23 +15,22 @@ myAccessRoute.get('/', async (c) => {
   const classId = c.req.param('classId')
   if (!albumId || !classId) return c.json({ error: 'Album ID and class ID required' }, 400)
 
-  const admin = getAdminSupabaseClient(c?.env as any)
-  const client = admin ?? supabase
+  const access = await db
+    .prepare(
+      `SELECT id, student_name, email, status, created_at, date_of_birth, instagram, message, video_url
+       FROM album_class_access WHERE album_id = ? AND class_id = ? AND user_id = ?`
+    )
+    .bind(albumId, classId, user.id)
+    .first<Record<string, unknown>>()
 
-  const { data: access, error } = await client
-    .from('album_class_access')
-    .select('id, student_name, email, status, created_at, date_of_birth, instagram, message, video_url')
-    .eq('class_id', classId)
-    .eq('user_id', user.id)
-    .maybeSingle()
-
-  if (error) return c.json({ error: error.message }, 500)
   if (!access) return c.json({ access: null })
   return c.json(access)
 })
 
 myAccessRoute.patch('/', async (c) => {
   const supabase = getSupabaseClient(c)
+  const db = getD1(c)
+  if (!db) return c.json({ error: 'Database not configured' }, 503)
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return c.json({ error: 'Unauthorized' }, 401)
 
@@ -36,62 +38,94 @@ myAccessRoute.patch('/', async (c) => {
   const classId = c.req.param('classId')
   if (!albumId || !classId) return c.json({ error: 'Album ID and class ID required' }, 400)
 
-  const admin = getAdminSupabaseClient(c?.env as any)
-  const client = admin ?? supabase
+  const access = await db
+    .prepare(`SELECT id, user_id, status FROM album_class_access WHERE class_id = ? AND user_id = ? AND album_id = ?`)
+    .bind(classId, user.id, albumId)
+    .first<{ id: string; user_id: string; status: string }>()
 
-  const { data: access, error: fetchErr } = await client
-    .from('album_class_access')
-    .select('id, user_id, status')
-    .eq('class_id', classId)
-    .eq('user_id', user.id)
-    .maybeSingle()
-
-  if (fetchErr) return c.json({ error: fetchErr.message }, 500)
   if (!access) return c.json({ error: 'Akses tidak ditemukan' }, 404)
-  if ((access as { status: string }).status !== 'approved') return c.json({ error: 'Hanya bisa menyunting setelah akses disetujui' }, 403)
+  if (access.status !== 'approved') return c.json({ error: 'Hanya bisa menyunting setelah akses disetujui' }, 403)
 
   const body = await c.req.json().catch(() => ({}))
   const student_name = typeof body?.student_name === 'string' ? body.student_name.trim() : undefined
-  const email = body?.email !== undefined ? (typeof body.email === 'string' ? body.email.trim() || null : null) : undefined
-  const date_of_birth = body?.date_of_birth !== undefined ? (typeof body.date_of_birth === 'string' ? body.date_of_birth.trim() || null : null) : undefined
-  const instagram = body?.instagram !== undefined ? (typeof body.instagram === 'string' ? body.instagram.trim() || null : null) : undefined
-  const message = body?.message !== undefined ? (typeof body.message === 'string' ? body.message.trim() || null : null) : undefined
-  const video_url = body?.video_url !== undefined ? (typeof body.video_url === 'string' ? body.video_url.trim() || null : null) : undefined
+  const email =
+    body?.email !== undefined ? (typeof body.email === 'string' ? body.email.trim() || null : null) : undefined
+  const date_of_birth =
+    body?.date_of_birth !== undefined
+      ? typeof body.date_of_birth === 'string'
+        ? body.date_of_birth.trim() || null
+        : null
+      : undefined
+  const instagram =
+    body?.instagram !== undefined
+      ? typeof body.instagram === 'string'
+        ? body.instagram.trim() || null
+        : null
+      : undefined
+  const message =
+    body?.message !== undefined ? (typeof body.message === 'string' ? body.message.trim() || null : null) : undefined
+  const video_url =
+    body?.video_url !== undefined ? (typeof body.video_url === 'string' ? body.video_url.trim() || null : null) : undefined
 
-  if (student_name === undefined && email === undefined && date_of_birth === undefined && instagram === undefined && message === undefined && video_url === undefined) {
-    return c.json({ error: 'Minimal satu field required (student_name, email, date_of_birth, instagram, message, video_url)' }, 400)
+  if (
+    student_name === undefined &&
+    email === undefined &&
+    date_of_birth === undefined &&
+    instagram === undefined &&
+    message === undefined &&
+    video_url === undefined
+  ) {
+    return c.json(
+      {
+        error:
+          'Minimal satu field required (student_name, email, date_of_birth, instagram, message, video_url)',
+      },
+      400
+    )
   }
-  const updates: {
-    student_name?: string
-    email?: string | null
-    date_of_birth?: string | null
-    instagram?: string | null
-    message?: string | null
-    video_url?: string | null
-    updated_at: string
-  } = { updated_at: new Date().toISOString() }
-  if (student_name !== undefined) updates.student_name = student_name
-  if (email !== undefined) updates.email = email
-  if (date_of_birth !== undefined) updates.date_of_birth = date_of_birth
-  if (instagram !== undefined) updates.instagram = instagram
-  if (message !== undefined) updates.message = message
-  if (video_url !== undefined) updates.video_url = video_url
+  const sets: string[] = []
+  const vals: unknown[] = []
+  if (student_name !== undefined) {
+    sets.push('student_name = ?')
+    vals.push(student_name)
+  }
+  if (email !== undefined) {
+    sets.push('email = ?')
+    vals.push(email)
+  }
+  if (date_of_birth !== undefined) {
+    sets.push('date_of_birth = ?')
+    vals.push(date_of_birth)
+  }
+  if (instagram !== undefined) {
+    sets.push('instagram = ?')
+    vals.push(instagram)
+  }
+  if (message !== undefined) {
+    sets.push('message = ?')
+    vals.push(message)
+  }
+  if (video_url !== undefined) {
+    sets.push('video_url = ?')
+    vals.push(video_url)
+  }
+  sets.push(`updated_at = datetime('now')`)
+  vals.push(access.id)
 
-  const { data: updated, error } = await client
-    .from('album_class_access')
-    .update(updates)
-    .eq('id', (access as { id: string }).id)
-    .select()
-    .single()
+  const r = await db
+    .prepare(`UPDATE album_class_access SET ${sets.join(', ')} WHERE id = ?`)
+    .bind(...vals)
+    .run()
+  if (!r.success) return c.json({ error: 'Update failed' }, 500)
 
-  if (error) return c.json({ error: error.message }, 500)
-
-  // Invalidate cache
+  const updated = await db.prepare(`SELECT * FROM album_class_access WHERE id = ?`).bind(access.id).first()
   return c.json(updated)
 })
 
 myAccessRoute.delete('/', async (c) => {
   const supabase = getSupabaseClient(c)
+  const db = getD1(c)
+  if (!db) return c.json({ error: 'Database not configured' }, 503)
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return c.json({ error: 'Unauthorized' }, 401)
 
@@ -99,33 +133,21 @@ myAccessRoute.delete('/', async (c) => {
   const classId = c.req.param('classId')
   if (!albumId || !classId) return c.json({ error: 'Album ID and class ID required' }, 400)
 
-  const admin = getAdminSupabaseClient(c?.env as any)
-  const client = admin ?? supabase
+  const access = await db
+    .prepare(`SELECT id, status FROM album_class_access WHERE class_id = ? AND user_id = ? AND album_id = ?`)
+    .bind(classId, user.id, albumId)
+    .first<{ id: string; status: string }>()
 
-  const { data: access, error: fetchErr } = await client
-    .from('album_class_access')
-    .select('id, status')
-    .eq('class_id', classId)
-    .eq('user_id', user.id)
-    .maybeSingle()
-
-  if (fetchErr) return c.json({ error: fetchErr.message }, 500)
   if (!access) return c.json({ error: 'Akses tidak ditemukan' }, 404)
 
-  const { error: deleteErr } = await client
-    .from('album_class_access')
-    .delete()
-    .eq('id', (access as { id: string }).id)
-  if (deleteErr) return c.json({ error: deleteErr.message }, 500)
+  const del = await db.prepare(`DELETE FROM album_class_access WHERE id = ?`).bind(access.id).run()
+  if (!del.success) return c.json({ error: 'Delete failed' }, 500)
 
-  // Also delete from album_join_requests so user can re-register
-  await client
-    .from('album_join_requests')
-    .delete()
-    .eq('album_id', albumId)
-    .eq('user_id', user.id)
+  await db
+    .prepare(`DELETE FROM album_join_requests WHERE album_id = ? AND user_id = ?`)
+    .bind(albumId, user.id)
+    .run()
 
-  // Invalidate cache
   return c.json({ success: true })
 })
 

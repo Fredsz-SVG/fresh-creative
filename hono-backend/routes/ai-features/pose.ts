@@ -1,5 +1,7 @@
 import { Hono } from 'hono'
 import { getSupabaseClient } from '../../lib/supabase'
+import { getD1 } from '../../lib/edge-env'
+import { getUserRow } from '../../lib/d1-users'
 import Replicate from 'replicate'
 
 const POSE_MODEL = 'sdxl-based/consistent-character'
@@ -20,12 +22,17 @@ const pose = new Hono()
 pose.post('/', async (c) => {
   try {
     const supabase = getSupabaseClient(c)
+    const db = getD1(c)
+    if (!db) return c.json({ ok: false, error: 'Database not configured' }, 503)
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) return c.json({ ok: false, error: 'Unauthorized' }, 401)
 
-    const { data: pricing } = await supabase.from('ai_feature_pricing').select('credits_per_use').eq('feature_slug', 'pose').maybeSingle()
+    const pricing = await db
+      .prepare(`SELECT credits_per_use FROM ai_feature_pricing WHERE feature_slug = ?`)
+      .bind('pose')
+      .first<{ credits_per_use: number }>()
     const creditsPerUse = pricing?.credits_per_use ?? 0
-    const { data: userRow } = await supabase.from('users').select('credits').eq('id', user.id).single()
+    const userRow = await getUserRow(db, user.id)
     if (creditsPerUse > 0 && (userRow?.credits ?? 0) < creditsPerUse) {
       return c.json({ ok: false, error: 'Credit tidak cukup' }, 402)
     }
@@ -52,8 +59,11 @@ pose.post('/', async (c) => {
     if (!results.length) return c.json({ ok: false, error: 'Tidak ada hasil' }, 500)
 
     if (creditsPerUse > 0) {
-      const { data: latest } = await supabase.from('users').select('credits').eq('id', user.id).single()
-      await supabase.from('users').update({ credits: Math.max((latest?.credits ?? 0) - creditsPerUse, 0) }).eq('id', user.id)
+      const latest = await getUserRow(db, user.id)
+      await db
+        .prepare(`UPDATE users SET credits = ?, updated_at = datetime('now') WHERE id = ?`)
+        .bind(Math.max((latest?.credits ?? 0) - creditsPerUse, 0), user.id)
+        .run()
     }
     return c.json({ ok: true, results })
   } catch (err: any) {

@@ -1,41 +1,30 @@
+import type { D1Database } from '@cloudflare/workers-types'
 import { Hono } from 'hono'
-import { getSupabaseClient, getAdminSupabaseClient } from '../../lib/supabase'
-
-const SHOWCASE_KEY = 'showcase'
-
-const defaultShowcase = {
-  albumPreviews: [] as { title: string; imageUrl: string; link: string }[],
-  flipbookPreviewUrl: '',
-}
-
-const getShowcase = async (c: any) => {
-  const admin = getAdminSupabaseClient(c?.env as any)
-  const { data, error } = await admin
-    .from('site_settings')
-    .select('value')
-    .eq('key', SHOWCASE_KEY)
-    .maybeSingle()
-  if (error || !data?.value) return defaultShowcase
-  const raw = data.value as any
-  return {
-    albumPreviews: Array.isArray(raw.albumPreviews) ? raw.albumPreviews : defaultShowcase.albumPreviews,
-    flipbookPreviewUrl: typeof raw.flipbookPreviewUrl === 'string' ? raw.flipbookPreviewUrl : defaultShowcase.flipbookPreviewUrl,
-  }
-}
+import { getShowcaseFromD1, saveShowcaseToD1, type ShowcasePayload } from '../../lib/showcase-d1'
+import { getSupabaseClient } from '../../lib/supabase'
+import { getRole } from '../../lib/auth'
+import { ensureUserInD1, honoEnvForSupabasePublicSync } from '../../lib/d1-users'
 
 const adminShowcase = new Hono()
+
+function requireDb(c: { env: unknown }): D1Database | null {
+  return (c.env as { DB?: D1Database }).DB ?? null
+}
 
 // GET /api/admin/showcase
 adminShowcase.get('/', async (c) => {
   const supabase = getSupabaseClient(c)
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   if (authError || !user) return c.json({ error: 'Unauthorized' }, 401)
-  const { data: profile } = await supabase.from('users').select('role').eq('id', user.id).maybeSingle()
-  if (profile?.role !== 'admin') return c.json({ error: 'Forbidden' }, 403)
+
+  const db = requireDb(c)
+  if (!db) return c.json({ error: 'D1 tidak terkonfigurasi' }, 503)
+  await ensureUserInD1(db, user, honoEnvForSupabasePublicSync(c.env))
+  if ((await getRole(c, user)) !== 'admin') return c.json({ error: 'Forbidden' }, 403)
   try {
-    const payload = await getShowcase(c)
+    const payload = await getShowcaseFromD1(db)
     return c.json(payload)
-  } catch (e) {
+  } catch {
     return c.json({ error: 'Failed to load showcase' }, 500)
   }
 })
@@ -45,23 +34,38 @@ adminShowcase.put('/', async (c) => {
   const supabase = getSupabaseClient(c)
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   if (authError || !user) return c.json({ error: 'Unauthorized' }, 401)
-  const { data: profile } = await supabase.from('users').select('role').eq('id', user.id).maybeSingle()
-  if (profile?.role !== 'admin') return c.json({ error: 'Forbidden' }, 403)
+
+  const db = requireDb(c)
+  if (!db) return c.json({ error: 'D1 tidak terkonfigurasi' }, 503)
+  await ensureUserInD1(db, user, honoEnvForSupabasePublicSync(c.env))
+  if ((await getRole(c, user)) !== 'admin') return c.json({ error: 'Forbidden' }, 403)
 
   const body = await c.req.json().catch(() => ({}))
   const albumPreviews = Array.isArray(body?.albumPreviews)
     ? body.albumPreviews
-        .filter((x: any) => x && typeof x.title === 'string' && typeof x.link === 'string')
-        .map((x: any) => ({ title: x.title, imageUrl: typeof x.imageUrl === 'string' ? x.imageUrl : '', link: x.link }))
+        .filter(
+          (x: unknown) =>
+            x !== null &&
+            typeof x === 'object' &&
+            typeof (x as { title?: unknown }).title === 'string' &&
+            typeof (x as { link?: unknown }).link === 'string'
+        )
+        .map((x: { title: string; link: string; imageUrl?: string }) => ({
+          title: x.title,
+          imageUrl: typeof x.imageUrl === 'string' ? x.imageUrl : '',
+          link: x.link,
+        }))
     : []
   const flipbookPreviewUrl = typeof body?.flipbookPreviewUrl === 'string' ? body.flipbookPreviewUrl : ''
 
-  const admin = getAdminSupabaseClient(c?.env as any)
-  const { error } = await admin
-    .from('site_settings')
-    .upsert({ key: SHOWCASE_KEY, value: { albumPreviews, flipbookPreviewUrl } }, { onConflict: 'key' })
-  if (error) return c.json({ error: error.message }, 500)
-  return c.json({ albumPreviews, flipbookPreviewUrl })
+  const payload: ShowcasePayload = { albumPreviews, flipbookPreviewUrl }
+  try {
+    await saveShowcaseToD1(db, payload)
+    return c.json(payload)
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : 'save failed'
+    return c.json({ error: msg }, 500)
+  }
 })
 
 export default adminShowcase

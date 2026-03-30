@@ -389,18 +389,20 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
   }, [active, fetchUrl, initialData, fetchAlbums])
 
   useEffect(() => {
-    const channel = supabase
-      .channel(`albums-realtime-${variant}-${resolvedLinkContext}-${fetchUrl.includes('scope=mine') ? 'mine' : 'all'}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'albums' }, () => {
-        const now = Date.now()
-        if (now - lastRealtimeFetchRef.current < 500) return
-        lastRealtimeFetchRef.current = now
-        fetchAlbums(true)
-      })
-      .subscribe()
-
+    // Supabase auth-only: no Realtime, no polling.
+    // Refetch when tab/window becomes visible again.
+    if (!active) return
+    const onVisible = () => {
+      const now = Date.now()
+      if (now - lastRealtimeFetchRef.current < 500) return
+      lastRealtimeFetchRef.current = now
+      fetchAlbums(true)
+    }
+    window.addEventListener('focus', onVisible)
+    document.addEventListener('visibilitychange', onVisible)
     return () => {
-      supabase.removeChannel(channel)
+      window.removeEventListener('focus', onVisible)
+      document.removeEventListener('visibilitychange', onVisible)
     }
   }, [fetchAlbums, fetchUrl, resolvedLinkContext, variant, active])
 

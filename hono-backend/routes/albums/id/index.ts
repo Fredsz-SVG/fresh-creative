@@ -1,78 +1,64 @@
 import { Hono } from 'hono'
-import { getSupabaseClient, getAdminSupabaseClient } from '../../../lib/supabase'
+import { getSupabaseClient } from '../../../lib/supabase'
+import { getRole } from '../../../lib/auth'
+import { getD1 } from '../../../lib/edge-env'
+import { parseJsonArray } from '../../../lib/d1-json'
 
-async function getRole(supabase: any, user: any): Promise<'admin' | 'user'> {
-  try {
-    const { data, error } = await supabase
-      .from('users')
-      .select('role')
-      .eq('id', user.id)
-      .maybeSingle()
-    if (!error && data?.role === 'admin') return 'admin'
-    if (!error && data?.role === 'user') return 'user'
-    const metaRole = (user.user_metadata?.role as string) || (user.app_metadata?.role as string)
-    if (metaRole === 'admin' || metaRole === 'user') return metaRole
-  } catch {}
-  return 'user'
-}
+const albumIdRoute = new Hono()
 
-const albumId = new Hono()
-
-albumId.get('/:id', async (c) => {
+// Mounted at `/api/albums/:id` in `hono-backend/index.ts`, so handlers should use `/`.
+albumIdRoute.get('/', async (c) => {
   const supabase = getSupabaseClient(c)
+  const db = getD1(c)
+  if (!db) return c.json({ error: 'Database not configured' }, 503)
+
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return c.json({ error: 'Unauthorized' }, 401)
-  const albumId = c.req.param('id')
-  if (!albumId) return c.json({ error: 'Album ID required' }, 400)
+  const id = c.req.param('id')
+  if (!id) return c.json({ error: 'Album ID required' }, 400)
+
   try {
-    const admin = getAdminSupabaseClient(c?.env as any)
-    const client = admin ?? supabase
-    const selectWithPosition = 'id, name, type, status, cover_image_url, cover_image_position, cover_video_url, description, user_id, created_at, flipbook_mode, payment_status, payment_url, total_estimated_price, pricing_package_id'
-    const selectWithoutPosition = 'id, name, type, status, cover_image_url, description, user_id, created_at, flipbook_mode, payment_status, payment_url, total_estimated_price, pricing_package_id'
-    const [albumRes, role] = await Promise.all([
-      client.from('albums').select(selectWithPosition).eq('id', albumId).single(),
-      getRole(supabase, user)
+    const [row, role] = await Promise.all([
+      db
+        .prepare(
+          `SELECT id, name, type, status, cover_image_url, cover_image_position, cover_video_url, description, user_id, created_at, flipbook_mode, payment_status, payment_url, total_estimated_price, pricing_package_id
+           FROM albums WHERE id = ?`
+        )
+        .bind(id)
+        .first<Record<string, unknown>>(),
+      getRole(c, user),
     ])
-    let album = albumRes.data ?? null
-    let albumErr = albumRes.error
-    if (albumErr && album == null) {
-      const fallback = await client.from('albums').select(selectWithoutPosition).eq('id', albumId).single()
-      album = fallback.data ?? null
-      albumErr = fallback.error
-      if (album) album.cover_image_position = null
-    }
-    if (albumErr || !album) {
+
+    if (!row) {
       return c.json({ error: 'Album not found' }, 404)
     }
-    const row = album
+
     const isActualOwner = row.user_id === user.id
     const isAdmin = role === 'admin'
     const isOwner = isActualOwner || isAdmin
     let isAlbumAdmin = false
     if (!isOwner && !isAdmin) {
-      const { data: member } = await (admin ?? supabase)
-        .from('album_members')
-        .select('role')
-        .eq('album_id', albumId)
-        .eq('user_id', user.id)
-        .maybeSingle()
+      const member = await db
+        .prepare(
+          `SELECT role FROM album_members WHERE album_id = ? AND user_id = ?`
+        )
+        .bind(id, user.id)
+        .first<{ role: string }>()
       if (member) {
-        if (member.role === 'admin') {
-          isAlbumAdmin = true
-        }
+        if (member.role === 'admin') isAlbumAdmin = true
       } else {
-        const { data: approvedClassAccess } = await (admin ?? supabase)
-          .from('album_class_access')
-          .select('id, status')
-          .eq('album_id', albumId)
-          .eq('user_id', user.id)
-          .eq('status', 'approved')
-          .maybeSingle()
-        if (!approvedClassAccess) {
+        const approved = await db
+          .prepare(
+            `SELECT id FROM album_class_access WHERE album_id = ? AND user_id = ? AND status = 'approved'`
+          )
+          .bind(id, user.id)
+          .first<{ id: string }>()
+        if (!approved) {
           return c.json({ error: 'Album not found' }, 404)
         }
       }
     }
+
     if (row.type !== 'yearbook') {
       return c.json({
         id: row.id,
@@ -85,39 +71,50 @@ albumId.get('/:id', async (c) => {
         description: row.description ?? null,
         isOwner,
         classes: [],
-      }, 500)
+      })
     }
-    const { data: classes, error: classesErr } = await client
-      .from('album_classes')
-      .select('id, name, sort_order, batch_photo_url')
-      .eq('album_id', albumId)
-      .order('sort_order', { ascending: true })
-    if (classesErr) {
-      return c.json({ error: classesErr.message })
-    }
-    const classList = (classes ?? [])
+
+    const classesRes = await db
+      .prepare(
+        `SELECT id, name, sort_order, batch_photo_url FROM album_classes WHERE album_id = ? ORDER BY sort_order ASC`
+      )
+      .bind(id)
+      .all<{ id: string; name: string; sort_order: number; batch_photo_url: string | null }>()
+
+    const classList = classesRes.results ?? []
     const studentCounts: Record<string, number> = {}
-    const { data: allAccess } = await client
-      .from('album_class_access')
-      .select('class_id, status, photos, student_name')
-      .eq('album_id', albumId)
-    if (allAccess) {
-      for (const c of classList) {
-        const classMembers = allAccess.filter((a: any) => a.class_id === c.id)
-        const validMembers = classMembers.filter((a: any) =>
-          a.status === 'approved' || (Array.isArray(a.photos) && a.photos.length > 0)
-        )
-        const uniqueNames = new Set(validMembers.map((m: any) => m.student_name).filter(Boolean))
-        studentCounts[c.id] = uniqueNames.size
-      }
+
+    const accessRes = await db
+      .prepare(
+        `SELECT class_id, status, photos, student_name FROM album_class_access WHERE album_id = ?`
+      )
+      .bind(id)
+      .all<{
+        class_id: string
+        status: string
+        photos: string
+        student_name: string | null
+      }>()
+
+    const allAccess = accessRes.results ?? []
+    for (const cl of classList) {
+      const classMembers = allAccess.filter((a) => a.class_id === cl.id)
+      const validMembers = classMembers.filter((a) => {
+        const photos = parseJsonArray(a.photos)
+        return a.status === 'approved' || photos.length > 0
+      })
+      const uniqueNames = new Set(validMembers.map((m) => m.student_name).filter(Boolean))
+      studentCounts[cl.id] = uniqueNames.size
     }
-    const classesWithCount = classList.map((c: any) => ({
-      id: c.id,
-      name: c.name,
-      sort_order: c.sort_order,
-      student_count: studentCounts[c.id] ?? 0,
-      batch_photo_url: c.batch_photo_url
+
+    const classesWithCount = classList.map((cl) => ({
+      id: cl.id,
+      name: cl.name,
+      sort_order: cl.sort_order,
+      student_count: studentCounts[cl.id] ?? 0,
+      batch_photo_url: cl.batch_photo_url,
     }))
+
     return c.json({
       id: row.id,
       name: row.name,
@@ -127,7 +124,7 @@ albumId.get('/:id', async (c) => {
       cover_image_position: row.cover_image_position ?? null,
       cover_video_url: row.cover_video_url ?? null,
       description: row.description ?? null,
-      flipbook_mode: row.flipbook_mode || 'manual',
+      flipbook_mode: (row.flipbook_mode as string) || 'manual',
       isOwner,
       isAlbumAdmin,
       isGlobalAdmin: isAdmin,
@@ -137,44 +134,67 @@ albumId.get('/:id', async (c) => {
       pricing_package_id: row.pricing_package_id || null,
       classes: classesWithCount,
     })
-  } finally {}
+  } finally {
+    /* noop */
+  }
 })
 
-albumId.patch('/:id', async (c) => {
+albumIdRoute.patch('/', async (c) => {
   const supabase = getSupabaseClient(c)
+  const db = getD1(c)
+  if (!db) return c.json({ error: 'Database not configured' }, 503)
+
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return c.json({ error: 'Unauthorized' }, 401)
-  const albumId = c.req.param('id')
-  if (!albumId) return c.json({ error: 'Album ID required' }, 400)
-  const admin = getAdminSupabaseClient(c?.env as any)
-  const client = admin ?? supabase
-  const { data: album, error: albumErr } = await client
-    .from('albums')
-    .select('id, user_id')
-    .eq('id', albumId)
-    .single()
-  if (albumErr || !album) return c.json({ error: 'Album not found' }, 404)
-  const role = await getRole(supabase, user)
+  const id = c.req.param('id')
+  if (!id) return c.json({ error: 'Album ID required' }, 400)
+
+  const album = await db
+    .prepare(`SELECT id, user_id FROM albums WHERE id = ?`)
+    .bind(id)
+    .first<{ id: string; user_id: string }>()
+  if (!album) return c.json({ error: 'Album not found' }, 404)
+
+  const role = await getRole(c, user)
   if (album.user_id !== user.id && role !== 'admin') {
     return c.json({ error: 'Only owner can update' }, 403)
   }
+
   const body = await c.req.json()
-  const { cover_image_url, description, students_count, flipbook_mode, total_estimated_price } = body as any
-  const updates: any = {}
-  if (cover_image_url !== undefined) updates.cover_image_url = cover_image_url
-  if (description !== undefined) updates.description = description
-  if (students_count !== undefined) updates.students_count = students_count
-  if (flipbook_mode !== undefined) updates.flipbook_mode = flipbook_mode
-  if (total_estimated_price !== undefined) updates.total_estimated_price = total_estimated_price
-  if (Object.keys(updates).length === 0) return c.json(album, 500)
-  const { data: updated, error } = await client
-    .from('albums')
-    .update(updates)
-    .eq('id', albumId)
-    .select()
-    .single()
-  if (error) return c.json({ error: error.message })
+  const { cover_image_url, description, students_count, flipbook_mode, total_estimated_price } =
+    body as Record<string, unknown>
+
+  const sets: string[] = []
+  const vals: unknown[] = []
+  if (cover_image_url !== undefined) {
+    sets.push('cover_image_url = ?')
+    vals.push(cover_image_url)
+  }
+  if (description !== undefined) {
+    sets.push('description = ?')
+    vals.push(description)
+  }
+  if (students_count !== undefined) {
+    sets.push('students_count = ?')
+    vals.push(students_count)
+  }
+  if (flipbook_mode !== undefined) {
+    sets.push('flipbook_mode = ?')
+    vals.push(flipbook_mode)
+  }
+  if (total_estimated_price !== undefined) {
+    sets.push('total_estimated_price = ?')
+    vals.push(total_estimated_price)
+  }
+  if (sets.length === 0) return c.json(album, 400)
+
+  vals.push(id)
+  const sql = `UPDATE albums SET ${sets.join(', ')}, updated_at = datetime('now') WHERE id = ?`
+  const r = await db.prepare(sql).bind(...vals).run()
+  if (!r.success) return c.json({ error: 'Update failed' }, 500)
+
+  const updated = await db.prepare(`SELECT * FROM albums WHERE id = ?`).bind(id).first()
   return c.json(updated)
 })
 
-export default albumId
+export default albumIdRoute

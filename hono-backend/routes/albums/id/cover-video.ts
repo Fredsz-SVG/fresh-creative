@@ -1,12 +1,19 @@
 import { Hono } from 'hono'
-import { getSupabaseClient, getAdminSupabaseClient } from '../../../lib/supabase'
+import { getSupabaseClient } from '../../../lib/supabase'
 import { getRole } from '../../../lib/auth'
+import { getD1, getAssets } from '../../../lib/edge-env'
+import { putAlbumPhoto } from '../../../lib/r2-assets'
+import { publicAlbumAssetUrl } from '../../../lib/public-file-url'
 
 const albumCoverVideoRoute = new Hono()
 
 // POST /api/albums/:id/cover-video
 albumCoverVideoRoute.post('/', async (c) => {
   const supabase = getSupabaseClient(c)
+  const db = getD1(c)
+  const bucket = getAssets(c)
+  if (!db) return c.json({ error: 'Database not configured' }, 503)
+  if (!bucket) return c.json({ error: 'Storage not configured' }, 503)
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return c.json({ error: 'Unauthorized' }, 401)
 
@@ -20,10 +27,10 @@ albumCoverVideoRoute.post('/', async (c) => {
   try {
     const formData = await c.req.formData()
     const file = formData.get('file')
-    if (file && file instanceof File) {
-      fileData = await file.arrayBuffer()
-      filename = file.name || 'cover-video.mp4'
-      mimetype = file.type || 'video/mp4'
+    if (file != null && typeof file !== 'string') {
+      fileData = await (file as Blob).arrayBuffer()
+      filename = (file as File).name || 'cover-video.mp4'
+      mimetype = (file as File).type || 'video/mp4'
     }
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
@@ -35,61 +42,63 @@ albumCoverVideoRoute.post('/', async (c) => {
   const MAX_VIDEO_BYTES = 20 * 1024 * 1024
   if (fileData.byteLength > MAX_VIDEO_BYTES) return c.json({ error: 'Video maksimal 20MB' }, 413)
 
-  const { data: album, error: albumErr } = await supabase
-    .from('albums').select('id, user_id').eq('id', albumId).single()
-  if (albumErr || !album) return c.json({ error: 'Album not found' }, 404)
-  const role = await getRole(supabase, user)
-  if ((album as any).user_id !== user.id && role !== 'admin') {
+  const album = await db
+    .prepare(`SELECT id, user_id FROM albums WHERE id = ?`)
+    .bind(albumId)
+    .first<{ id: string; user_id: string }>()
+  if (!album) return c.json({ error: 'Album not found' }, 404)
+  const role = await getRole(c, user)
+  if (album.user_id !== user.id && role !== 'admin') {
     return c.json({ error: 'Hanya pemilik album yang dapat mengubah video sampul' }, 403)
   }
 
-  const admin = getAdminSupabaseClient(c?.env as any)
   const ext = filename.split('.').pop()?.toLowerCase() || 'mp4'
   const safeExt = ['mp4', 'webm', 'mov', 'avi'].includes(ext) ? ext : 'mp4'
-  const path = `${albumId}/cover-video.${safeExt}`
+  const relPath = `${albumId}/cover-video.${safeExt}`
 
-  const { error: uploadErr } = await admin.storage
-    .from('album-photos')
-    .upload(path, fileData, { contentType: mimetype, upsert: true })
+  try {
+    await putAlbumPhoto(bucket, relPath, fileData, { contentType: mimetype, cacheControl: 'public, max-age=3600' })
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e)
+    return c.json({ error: msg || 'Upload video sampul gagal' }, 500)
+  }
 
-  if (uploadErr) return c.json({ error: uploadErr.message || 'Upload video sampul gagal' }, 500)
+  const videoUrl = publicAlbumAssetUrl(c, relPath)
 
-  const { data: urlData } = admin.storage.from('album-photos').getPublicUrl(path)
-  const videoUrl = urlData.publicUrl
-
-  const { error: updateErr } = await admin
-    .from('albums')
-    .update({ cover_video_url: videoUrl, updated_at: new Date().toISOString() })
-    .eq('id', albumId)
-
-  if (updateErr) return c.json({ error: updateErr.message }, 500)
+  const r = await db
+    .prepare(`UPDATE albums SET cover_video_url = ?, updated_at = datetime('now') WHERE id = ?`)
+    .bind(videoUrl, albumId)
+    .run()
+  if (!r.success) return c.json({ error: 'Update failed' }, 500)
   return c.json({ cover_video_url: videoUrl })
 })
 
 // DELETE /api/albums/:id/cover-video
 albumCoverVideoRoute.delete('/', async (c) => {
   const supabase = getSupabaseClient(c)
+  const db = getD1(c)
+  if (!db) return c.json({ error: 'Database not configured' }, 503)
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return c.json({ error: 'Unauthorized' }, 401)
 
   const albumId = c.req.param('id')
   if (!albumId) return c.json({ error: 'Album ID required' }, 400)
 
-  const { data: album, error: albumErr } = await supabase
-    .from('albums').select('id, user_id').eq('id', albumId).single()
-  if (albumErr || !album) return c.json({ error: 'Album not found' }, 404)
-  const role = await getRole(supabase, user)
-  if ((album as any).user_id !== user.id && role !== 'admin') {
+  const album = await db
+    .prepare(`SELECT id, user_id FROM albums WHERE id = ?`)
+    .bind(albumId)
+    .first<{ id: string; user_id: string }>()
+  if (!album) return c.json({ error: 'Album not found' }, 404)
+  const role = await getRole(c, user)
+  if (album.user_id !== user.id && role !== 'admin') {
     return c.json({ error: 'Hanya pemilik album yang dapat menghapus video sampul' }, 403)
   }
 
-  const admin = getAdminSupabaseClient(c?.env as any)
-  const { error: updateErr } = await admin
-    .from('albums')
-    .update({ cover_video_url: null, updated_at: new Date().toISOString() })
-    .eq('id', albumId)
-
-  if (updateErr) return c.json({ error: updateErr.message }, 500)
+  const upd = await db
+    .prepare(`UPDATE albums SET cover_video_url = NULL, updated_at = datetime('now') WHERE id = ?`)
+    .bind(albumId)
+    .run()
+  if (!upd.success) return c.json({ error: 'Update failed' }, 500)
   return c.json({ message: 'Video sampul dihapus' })
 })
 

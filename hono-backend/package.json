@@ -4,22 +4,28 @@
   "type": "module",
   "main": "worker.ts",
   "scripts": {
-    "dev": "wrangler dev worker.ts",
+    "dev": "wrangler dev worker.ts --remote",
+    "dev:local": "wrangler dev worker.ts",
     "build": "wrangler build",
     "deploy": "wrangler deploy --keep-vars",
     "types:cf": "wrangler types --include-runtime=false",
     "start": "wrangler start",
     "lint": "eslint . --ext .ts",
     "format": "prettier --write .",
-    "test": "vitest run"
+    "test": "vitest run",
+    "d1:seed-wilayah": "node scripts/build-d1-ref-wilayah.mjs",
+    "d1:sync-users-from-supabase": "node scripts/sync-supabase-users-to-d1.mjs",
+    "d1:sync-users-from-supabase:local": "node scripts/sync-supabase-users-to-d1.mjs --local"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.100.1",
     "hono": "^4.12.9",
+    "jose": "^6.2.2",
     "replicate": "^1.4.0",
     "resend": "^4.0.0"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260329.1",
     "@typescript-eslint/eslint-plugin": "^6.19.1",
     "@typescript-eslint/parser": "^6.19.1",
     "eslint": "^8.56.0",

@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import { fetchWithAuth } from '../../../lib/api-client'
 
@@ -44,18 +43,6 @@ export default function YearbookManagementPage() {
 
   useEffect(() => {
     fetchYearbookOrders()
-
-    // Subscribe to realtime changes on 'albums' table
-    const channel = supabase
-      .channel('admin-yearbook-realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'albums' }, () => {
-        fetchYearbookOrders()
-      })
-      .subscribe()
-
-    return () => {
-      supabase.removeChannel(channel)
-    }
   }, [])
 
   const handleUpdateStatus = async (e: React.MouseEvent, order: YearbookOrder, status: 'approved' | 'declined') => {

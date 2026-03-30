@@ -6,7 +6,6 @@ import { toast } from 'sonner'
 import NextLink from 'next/link'
 import { useSearchParams, useRouter, usePathname } from 'next/navigation'
 import { getYearbookSectionQueryUrl } from './lib/yearbook-paths'
-import { supabase } from '@/lib/supabase'
 import TeacherCard from '@/components/TeacherCard'
 import MemberCard from '@/components/MemberCard'
 import TryOn from '@/components/fitur/TryOn'
@@ -454,18 +453,21 @@ export default function YearbookClassesViewUI(props: any) {
   // Fetch Manual Pages
   const fetchManualPages = async () => {
     if (!album?.id) return
-    const { data: pages, error } = await supabase
-      .from('manual_flipbook_pages')
-      .select('*, flipbook_video_hotspots(*)')
-      .eq('album_id', album.id)
-      .order('page_number', { ascending: true })
-
-    if (error) {
+    try {
+      const res = await fetchWithAuth(`/api/albums/${album.id}/flipbook`, {
+        credentials: 'include',
+        cache: 'no-store',
+      })
+      const pages = await res.json().catch(() => [])
+      if (!res.ok) {
+        console.error('Error fetching manual pages:', pages)
+        return
+      }
+      if (Array.isArray(pages)) {
+        setManualPages(pages)
+      }
+    } catch (error) {
       console.error('Error fetching manual pages:', error)
-      return
-    }
-    if (pages) {
-      setManualPages(pages)
     }
   }
 
@@ -475,86 +477,7 @@ export default function YearbookClassesViewUI(props: any) {
     }
   }, [sidebarMode, album?.id, flipbookPreviewMode])
 
-  // Realtime Subscription for flipbook hotspots - ensures viewer is always up to date
-  useEffect(() => {
-    if (!album?.id) return
-
-    const channel = supabase
-      .channel(`flipbook-hotspots-view-${album.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'flipbook_video_hotspots',
-        },
-        (payload) => {
-          const { eventType, new: newRecord, old: oldRecord } = payload as any
-
-          if (eventType === 'INSERT') {
-            setManualPages((prev: any[]) => prev.map(page => {
-              if (page.id === newRecord.page_id) {
-                // Prevent duplicates
-                if (page.flipbook_video_hotspots?.some((h: any) => h.id === newRecord.id)) {
-                  return page
-                }
-                return {
-                  ...page,
-                  flipbook_video_hotspots: [...(page.flipbook_video_hotspots || []), newRecord]
-                }
-              }
-              return page
-            }))
-          } else if (eventType === 'UPDATE') {
-            setManualPages((prev: any[]) => prev.map(page => ({
-              ...page,
-              flipbook_video_hotspots: page.flipbook_video_hotspots?.map((h: any) =>
-                h.id === newRecord.id ? { ...h, ...newRecord } : h
-              )
-            })))
-          } else if (eventType === 'DELETE') {
-            setManualPages((prev: any[]) => prev.map(page => ({
-              ...page,
-              flipbook_video_hotspots: page.flipbook_video_hotspots?.filter((h: any) => h.id !== oldRecord.id)
-            })))
-          }
-        }
-      )
-      .subscribe()
-
-    return () => {
-      supabase.removeChannel(channel)
-    }
-  }, [album?.id])
-
-  // Realtime: tampilkan link undangan langsung ke semua admin (album + global) saat ada yang buat
-  useEffect(() => {
-    if (!album?.id || !canManage) return
-
-    const channel = supabase
-      .channel(`album-invite-token-${album.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'albums',
-          filter: `id=eq.${album.id}`,
-        },
-        (payload) => {
-          const newRecord = (payload as { new?: Record<string, unknown> }).new
-          if (newRecord && ('student_invite_token' in newRecord || 'student_invite_expires_at' in newRecord)) {
-            setInviteToken((newRecord.student_invite_token as string) || null)
-            setInviteExpiresAt((newRecord.student_invite_expires_at as string) || null)
-          }
-        }
-      )
-      .subscribe()
-
-    return () => {
-      supabase.removeChannel(channel)
-    }
-  }, [album?.id, canManage])
+  // Supabase auth-only: no Realtime. View is refreshed on demand (after actions) and when the user revisits the tab.
 
   // Fetch invite token
   const fetchInviteToken = async () => {
@@ -641,6 +564,24 @@ export default function YearbookClassesViewUI(props: any) {
     fetchInviteToken()
   }, [sidebarMode, canManage, album?.id])
 
+  // Prefetch semua tab approval saat masuk section "approval"
+  // Agar jumlah & isi tab langsung muncul dan switching tab terasa instan.
+  useEffect(() => {
+    if (sidebarMode !== 'approval' || !canManage || !album?.id) return
+    if (!pendingLoaded) {
+      setPendingLoaded(true)
+      fetchJoinRequests('pending')
+    }
+    if (!approvedLoaded) {
+      setApprovedLoaded(true)
+      fetchJoinRequests('approved')
+    }
+    if (!teamLoaded) {
+      setTeamLoaded(true)
+      fetchMembers()
+    }
+  }, [sidebarMode, canManage, album?.id, pendingLoaded, approvedLoaded, teamLoaded])
+
   // Fetch tab data only on first view of that tab (no refetch on switch, no spinner)
   useEffect(() => {
     if (sidebarMode !== 'approval' || !canManage || !album?.id) return
@@ -665,42 +606,8 @@ export default function YearbookClassesViewUI(props: any) {
     }
   }, [sidebarMode])
 
-  // Realtime: only when data actually changes, update the cached list (no refetch on tab switch)
-  useEffect(() => {
-    if (sidebarMode !== 'approval' || !album?.id || !canManage) return
-
-    const channel = supabase
-      .channel(`album-team-requests-${album.id}`)
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'album_join_requests', filter: `album_id=eq.${album.id}` },
-        () => {
-          fetchJoinStats()
-          fetchJoinRequests('pending')
-        }
-      )
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'album_members', filter: `album_id=eq.${album.id}` },
-        () => {
-          fetchJoinStats()
-          fetchMembers()
-        }
-      )
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'album_class_access', filter: `album_id=eq.${album.id}` },
-        () => {
-          fetchJoinStats()
-          fetchJoinRequests('approved')
-        }
-      )
-      .subscribe()
-
-    return () => {
-      supabase.removeChannel(channel)
-    }
-  }, [sidebarMode, album?.id, canManage])
+  // Supabase auth-only: no Realtime, no polling.
+  // Lists are refreshed after actions (approve/reject/add/remove) and when the user revisits the tab.
 
   // Handle approve join request
   const handleApproveJoinRequest = async (requestId: string, assigned_class_id: string) => {
@@ -1367,7 +1274,11 @@ export default function YearbookClassesViewUI(props: any) {
                         <div className="relative aspect-[3/4] bg-white dark:bg-slate-900 border-4 border-slate-900 dark:border-slate-700 rounded-[32px] overflow-hidden shadow-[8px_8px_0_0_#0f172a] dark:shadow-[8px_8px_0_0_#334155] lg:shadow-[12px_12px_0_0_#0f172a] lg:dark:shadow-[12px_12px_0_0_#334155] group rotate-1">
                           {album?.cover_image_url ? (
                             <img
-                              src={album.cover_image_url}
+                              src={(() => {
+                                const u = String(album.cover_image_url || '')
+                                // Jika URL tersimpan absolute (origin worker), pakai path saja agar lewat Next rewrites.
+                                return u.includes('/api/files/') ? u.replace(/^https?:\/\/[^/]+/i, '') : u
+                              })()}
                               alt={album.name}
                               className="w-full h-full object-cover"
                               style={album.cover_image_position ? { objectPosition: `${album.cover_image_position}` } : undefined}

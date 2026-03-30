@@ -37,7 +37,11 @@ export default function CoverView({
         <div className="relative w-full aspect-[3/4] bg-gray-100 dark:bg-slate-800 rounded-xl overflow-hidden shadow-xl border border-gray-200 dark:border-slate-700 group">
           {album?.cover_image_url ? (
             <img
-              src={album.cover_image_url}
+              src={(() => {
+                const u = String(album.cover_image_url || '')
+                // Jika URL tersimpan absolute (origin worker), pakai path saja agar lewat Next rewrites.
+                return u.includes('/api/files/') ? u.replace(/^https?:\/\/[^/]+/i, '') : u
+              })()}
               alt={album.name}
               className="w-full h-full object-cover"
               style={album.cover_image_position ? { objectPosition: `${album.cover_image_position}` } : undefined}

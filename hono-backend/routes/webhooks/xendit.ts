@@ -1,22 +1,12 @@
 import { Hono } from 'hono'
+import { getD1 } from '../../lib/edge-env'
 import { getAdminSupabaseClient } from '../../lib/supabase'
 
 const webhooksXendit = new Hono()
 
 // POST /api/webhooks/xendit
 webhooksXendit.post('/', async (c) => {
-  // WARNING: process.env is not available in Cloudflare Workers. Use environment bindings instead.
-  // This is a stub. You must adapt secret/token validation for Workers.
-  // See: https://developers.cloudflare.com/workers/platform/environment-variables/
-  // const xenditWebhookToken = process.env.XENDIT_WEBHOOK_TOKEN
-  // const callbackToken = c.req.header('x-callback-token')
-  // if (xenditWebhookToken && callbackToken !== xenditWebhookToken) {
-  //   return c.json({ error: 'Unauthorized webhook' }, 401)
-  // }
-
-  // Parse payload
   const payload = await c.req.json()
-  // console.log('Received Xendit Webhook:', JSON.stringify(payload).slice(0, 500))
   const raw = payload?.data ?? payload
   const status = (raw?.status ?? payload?.status ?? '').toUpperCase()
   const externalId = raw?.external_id ?? payload?.external_id
@@ -24,34 +14,113 @@ webhooksXendit.post('/', async (c) => {
   const paymentMethod = specificChannel || raw?.payment_method || null
 
   if (!externalId) {
-    // console.warn('Xendit webhook: no external_id in payload', payload)
     return c.json({ error: 'No external_id provided' }, 400)
   }
 
-  const supabase = getAdminSupabaseClient(c?.env as any)
+  const db = getD1(c)
+  if (!db) return c.json({ error: 'Database not configured' }, 503)
 
-  // If status EXPIRED, update DB transaction to EXPIRED but do not topup
   if (status === 'EXPIRED') {
-    const { error: txError } = await supabase
-      .from('transactions')
-      .update({ status })
-      .eq('external_id', externalId)
-    // if (txError) console.warn('Could not update expired status:', txError)
+    await db
+      .prepare(`UPDATE transactions SET status = ?, updated_at = datetime('now') WHERE external_id = ?`)
+      .bind(status, externalId)
+      .run()
     return c.json({ message: 'Transaction expired handled successfully' }, 400)
   }
 
-  // If not PAID or SETTLED (and not EXPIRED), ignore
   if (status !== 'PAID' && status !== 'SETTLED') {
     return c.json({ message: 'Ignored, unhandled status', received: status })
   }
 
-  // Parse externalId: pkg_<pkgId>_user_<userId>_ts_<timestamp> or album_<albumId>_user_<userId>_ts_<timestamp>
   const isPackage = externalId.startsWith('pkg_')
   const isAlbum = externalId.startsWith('album_')
 
-  // NOTE: The rest of the logic (crediting user, updating album, etc.) must be ported and tested for Workers.
-  // For now, this is a stub for Cloudflare Workers compatibility.
-  return c.json({ message: 'Webhook received (stub for Workers)', status, externalId, paymentMethod })
+  // Update for terminal statuses
+  if (status === 'PAID' || status === 'SETTLED') {
+    await db
+      .prepare(
+        `UPDATE transactions
+         SET status = ?, payment_method = ?, paid_at = datetime('now'), updated_at = datetime('now')
+         WHERE external_id = ?`
+      )
+      .bind(status, paymentMethod, externalId)
+      .run()
+
+    const txRow = await db
+      .prepare(`SELECT package_id, album_id, new_students_count, amount FROM transactions WHERE external_id = ?`)
+      .bind(externalId)
+      .first<{ package_id: string | null; album_id: string | null; new_students_count: number | null; amount: number }>()
+
+    if (txRow?.package_id && isPackage) {
+      const pkg = await db
+        .prepare(`SELECT credits FROM credit_packages WHERE id = ?`)
+        .bind(txRow.package_id)
+        .first<{ credits: number }>()
+
+      if (pkg?.credits) {
+        const userId = await db
+          .prepare(`SELECT user_id FROM transactions WHERE external_id = ?`)
+          .bind(externalId)
+          .first<{ user_id: string }>()
+
+        if (userId?.user_id) {
+          const userRow = await db
+            .prepare(`SELECT credits FROM users WHERE id = ?`)
+            .bind(userId.user_id)
+            .first<{ credits: number | null }>()
+
+          const currentCredits = userRow?.credits ?? 0
+          const nextCredits = currentCredits + pkg.credits
+          await db
+            .prepare(`UPDATE users SET credits = ?, updated_at = datetime('now') WHERE id = ?`)
+            .bind(nextCredits, userId.user_id)
+            .run()
+
+          // Mirror to Supabase `public.users.credits` (source of truth)
+          try {
+            const admin = getAdminSupabaseClient(c?.env as Record<string, string>)
+            await admin.from('users').update({ credits: nextCredits }).eq('id', userId.user_id)
+          } catch {
+            // ignore
+          }
+        }
+      }
+    }
+
+    if (txRow?.album_id && isAlbum) {
+      if (typeof txRow.new_students_count === 'number' && txRow.new_students_count > 0) {
+        await db
+          .prepare(
+            `UPDATE albums
+             SET payment_status = 'paid', students_count = ?, total_estimated_price = ?, updated_at = datetime('now')
+             WHERE id = ?`
+          )
+          .bind(txRow.new_students_count, txRow.amount, txRow.album_id)
+          .run()
+      } else {
+        await db
+          .prepare(
+            `UPDATE albums
+             SET payment_status = 'paid', total_estimated_price = ?, updated_at = datetime('now')
+             WHERE id = ?`
+          )
+          .bind(txRow.amount, txRow.album_id)
+          .run()
+      }
+    }
+
+    return c.json({
+      message: 'Webhook processed',
+      status,
+      externalId,
+      paymentMethod,
+      isPackage,
+      isAlbum,
+    })
+  }
+
+  // Ignore non-terminal statuses
+  return c.json({ message: 'Webhook received', status, externalId, paymentMethod, isPackage, isAlbum })
 })
 
 export default webhooksXendit

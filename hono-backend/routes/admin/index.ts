@@ -1,5 +1,5 @@
 import { Hono } from 'hono'
-import aiEdit from './admin/ai-edit'
+import aiEdit from './ai-edit'
 import transactions from './transactions'
 import usersOverview from './users-overview'
 

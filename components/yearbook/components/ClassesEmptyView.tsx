@@ -22,21 +22,21 @@ export default function ClassesEmptyView({
 }: ClassesEmptyViewProps) {
   return (
     <div className="flex-1 flex flex-col items-center justify-center min-h-[50vh] px-4 py-8">
-      <div className="flex flex-col items-center justify-center text-center border-2 border-dashed border-gray-200 rounded-xl py-16 px-8 max-w-md w-full">
-        <p className="text-app font-medium text-lg mb-3">Belum ada kelas</p>
+      <div className="flex flex-col items-center justify-center text-center max-w-md w-full rounded-2xl border-2 border-slate-900 dark:border-slate-600 bg-white dark:bg-slate-900 px-8 py-14 shadow-[2px_2px_0_0_rgba(15,23,42,0.18)] dark:shadow-[2px_2px_0_0_rgba(51,65,85,0.55)]">
+        <p className="text-slate-900 dark:text-white font-black text-lg mb-2 uppercase tracking-tight">Belum ada kelas</p>
         {canManage && (
           <>
-            <p className="text-sm text-gray-400 leading-relaxed lg:hidden mb-4">
+            <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed lg:hidden mb-5 font-bold">
               Buka icon menu → + Nama kelas
             </p>
-            <p className="text-sm text-gray-400 leading-relaxed hidden lg:block mb-4">
+            <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed hidden lg:block mb-5 font-bold">
               Gunakan tombol + Nama kelas di daftar kiri
             </p>
             {!addingClass ? (
               <button
                 type="button"
                 onClick={() => setAddingClass(true)}
-                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-violet-500 text-white text-sm font-medium hover:bg-violet-500 active:scale-95 transition-all"
+                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-amber-300 text-slate-900 text-sm font-black hover:bg-amber-400 active:translate-x-0.5 active:translate-y-0.5 transition-all border-2 border-slate-900 dark:border-slate-600 shadow-[2px_2px_0_0_rgba(15,23,42,0.18)] dark:shadow-[2px_2px_0_0_rgba(51,65,85,0.55)]"
               >
                 <Plus className="w-4 h-4" /> Nama kelas
               </button>
@@ -47,14 +47,14 @@ export default function ClassesEmptyView({
                   value={newClassName}
                   onChange={(e) => setNewClassName(e.target.value)}
                   placeholder="Nama kelas"
-                  className="px-3 py-2 rounded-lg bg-gray-100 border border-gray-200 text-app text-sm placeholder:text-gray-500 w-full"
+                  className="px-3 py-2 rounded-xl bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 text-slate-900 dark:text-white text-sm placeholder:text-slate-400 w-full shadow-[2px_2px_0_0_rgba(15,23,42,0.12)] dark:shadow-[2px_2px_0_0_rgba(51,65,85,0.5)] focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
                   autoFocus
                 />
                 <div className="flex gap-2">
                   <button
                     type="button"
                     onClick={onAddClass}
-                    className="flex-1 px-4 py-2 rounded-lg bg-violet-500 text-white text-sm font-medium hover:bg-violet-500"
+                    className="flex-1 px-4 py-2 rounded-xl bg-indigo-500 text-white text-sm font-black hover:bg-indigo-600 active:translate-x-0.5 active:translate-y-0.5 transition-all border-2 border-slate-900 dark:border-slate-600 shadow-[2px_2px_0_0_rgba(15,23,42,0.18)] dark:shadow-[2px_2px_0_0_rgba(51,65,85,0.55)]"
                   >
                     Tambah
                   </button>
@@ -64,7 +64,7 @@ export default function ClassesEmptyView({
                       setAddingClass(false)
                       setNewClassName('')
                     }}
-                    className="flex-1 px-4 py-2 rounded-lg border border-gray-200 text-gray-400 hover:text-gray-800 text-sm"
+                    className="flex-1 px-4 py-2 rounded-xl border-2 border-slate-900 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white bg-white dark:bg-slate-800 text-sm font-black active:translate-x-0.5 active:translate-y-0.5 transition-all shadow-[2px_2px_0_0_rgba(15,23,42,0.12)] dark:shadow-[2px_2px_0_0_rgba(51,65,85,0.5)]"
                   >
                     Batal
                   </button>

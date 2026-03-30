@@ -1,5 +1,9 @@
 import { Hono } from 'hono'
 import { getSupabaseClient } from '../../../../lib/supabase'
+import { getRole } from '../../../../lib/auth'
+import { getD1, getAssets } from '../../../../lib/edge-env'
+import { putAlbumPhoto } from '../../../../lib/r2-assets'
+import { publicAlbumAssetUrl } from '../../../../lib/public-file-url'
 
 const teacherIdPhotos = new Hono()
 
@@ -7,6 +11,10 @@ const teacherIdPhotos = new Hono()
 teacherIdPhotos.post('/', async (c) => {
   try {
     const supabase = getSupabaseClient(c)
+    const db = getD1(c)
+    const bucket = getAssets(c)
+    if (!db) return c.json({ error: 'Database not configured' }, 503)
+    if (!bucket) return c.json({ error: 'Storage not configured' }, 503)
     const albumId = c.req.param('id')
     const teacherId = c.req.param('teacherId')
 
@@ -17,10 +25,10 @@ teacherIdPhotos.post('/', async (c) => {
     try {
       const formData = await c.req.formData()
       const file = formData.get('file')
-      if (file && file instanceof File) {
-        fileData = await file.arrayBuffer()
-        filename = file.name || 'photo.jpg'
-        mimetype = file.type || 'image/jpeg'
+      if (file != null && typeof file !== 'string') {
+        fileData = await (file as Blob).arrayBuffer()
+        filename = (file as File).name || 'photo.jpg'
+        mimetype = (file as File).type || 'image/jpeg'
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
@@ -32,52 +40,62 @@ teacherIdPhotos.post('/', async (c) => {
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) return c.json({ error: 'Unauthorized' }, 401)
 
-    const { data: userData } = await supabase.from('users').select('role').eq('id', user.id).maybeSingle()
-    const isGlobalAdmin = userData?.role === 'admin'
+    const isGlobalAdmin = (await getRole(c, user)) === 'admin'
 
     if (!isGlobalAdmin) {
-      const { data: album } = await supabase.from('albums').select('user_id').eq('id', albumId).maybeSingle()
+      const album = await db
+        .prepare(`SELECT user_id FROM albums WHERE id = ?`)
+        .bind(albumId)
+        .first<{ user_id: string }>()
       if (!album) return c.json({ error: 'Album not found' }, 404)
       const isOwner = album.user_id === user.id
       if (!isOwner) {
-        const { data: member } = await supabase
-          .from('album_members').select('role').eq('album_id', albumId).eq('user_id', user.id).maybeSingle()
-        if (!member || !['admin', 'owner'].includes(member.role)) return c.json({ error: 'Forbidden' }, 403)
+        const member = await db
+          .prepare(`SELECT role FROM album_members WHERE album_id = ? AND user_id = ?`)
+          .bind(albumId, user.id)
+          .first<{ role: string }>()
+        if (!member || member.role !== 'admin') return c.json({ error: 'Forbidden' }, 403)
       }
     }
 
-    const { data: teacher } = await supabase
-      .from('album_teachers').select('id').eq('id', teacherId).eq('album_id', albumId).maybeSingle()
+    const teacher = await db
+      .prepare(`SELECT id FROM album_teachers WHERE id = ? AND album_id = ?`)
+      .bind(teacherId, albumId)
+      .first<{ id: string }>()
     if (!teacher) return c.json({ error: 'Teacher not found' }, 404)
 
     const fileExt = filename.split('.').pop() || 'jpg'
     const fileName = `${Date.now()}.${fileExt}`
-    const filePath = `teachers/${teacherId}/${fileName}`
+    const relPath = `teachers/${teacherId}/${fileName}`
 
-    const { error: uploadError } = await supabase.storage
-      .from('album-photos').upload(filePath, fileData, { contentType: mimetype })
-    if (uploadError) return c.json({ error: uploadError.message }, 500)
+    try {
+      await putAlbumPhoto(bucket, relPath, fileData, { contentType: mimetype })
+    } catch (e: unknown) {
+      return c.json({ error: e instanceof Error ? e.message : 'Upload failed' }, 500)
+    }
 
-    const { data: { publicUrl } } = supabase.storage.from('album-photos').getPublicUrl(filePath)
+    const publicUrl = publicAlbumAssetUrl(c, relPath)
 
-    const { data: maxSort } = await supabase
-      .from('album_teacher_photos').select('sort_order').eq('teacher_id', teacherId)
-      .order('sort_order', { ascending: false }).limit(1).maybeSingle()
-
+    const maxSort = await db
+      .prepare(`SELECT sort_order FROM album_teacher_photos WHERE teacher_id = ? ORDER BY sort_order DESC LIMIT 1`)
+      .bind(teacherId)
+      .first<{ sort_order: number | null }>()
     const nextSort = (maxSort?.sort_order ?? -1) + 1
 
-    const { data: newPhotos, error: insertError } = await supabase
-      .from('album_teacher_photos')
-      .insert({ teacher_id: teacherId, file_url: publicUrl, sort_order: nextSort })
-      .select()
+    const photoId = crypto.randomUUID()
+    const ins = await db
+      .prepare(
+        `INSERT INTO album_teacher_photos (id, teacher_id, file_url, sort_order, created_at) VALUES (?, ?, ?, ?, datetime('now'))`
+      )
+      .bind(photoId, teacherId, publicUrl, nextSort)
+      .run()
+    if (!ins.success) return c.json({ error: 'Insert failed' }, 500)
 
-    if (insertError) return c.json({ error: insertError.message }, 500)
-    if (!newPhotos || newPhotos.length === 0) return c.json({ error: 'Failed to create photo record' }, 500)
-
-    return c.json(newPhotos[0], 201)
-  } catch (error: any) {
+    const row = await db.prepare(`SELECT * FROM album_teacher_photos WHERE id = ?`).bind(photoId).first()
+    return c.json(row, 201)
+  } catch (error: unknown) {
     console.error('Error in POST teacher photos:', error)
-    return c.json({ error: error.message || 'Internal server error' }, 500)
+    return c.json({ error: error instanceof Error ? error.message : 'Internal server error' }, 500)
   }
 })
 

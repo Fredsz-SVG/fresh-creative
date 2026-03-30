@@ -1,12 +1,16 @@
 import { Hono } from 'hono'
-import { getSupabaseClient, getAdminSupabaseClient } from '../../../../lib/supabase'
+import { getSupabaseClient } from '../../../../lib/supabase'
 import { getRole } from '../../../../lib/auth'
+import { getD1 } from '../../../../lib/edge-env'
+import { parseJsonArray } from '../../../../lib/d1-json'
 
 const classMembersRoute = new Hono()
 
 classMembersRoute.get('/', async (c) => {
   try {
     const supabase = getSupabaseClient(c)
+    const db = getD1(c)
+    if (!db) return c.json({ error: 'Database not configured' }, 503)
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return c.json({ error: 'Unauthorized' }, 401)
 
@@ -14,56 +18,50 @@ classMembersRoute.get('/', async (c) => {
     const classId = c.req.param('classId')
     if (!albumId || !classId) return c.json({ error: 'Album ID and class ID required' }, 400)
 
-    const admin = getAdminSupabaseClient(c?.env as any)
-    const client = admin ?? supabase
-
-    const { data: album } = await client.from('albums').select('id, user_id').eq('id', albumId).single()
+    const album = await db
+      .prepare(`SELECT id, user_id FROM albums WHERE id = ?`)
+      .bind(albumId)
+      .first<{ id: string; user_id: string }>()
     if (!album) return c.json({ error: 'Album not found' }, 404)
 
-    const role = await getRole(supabase, user)
-    const isOwner = (album as { user_id: string }).user_id === user.id || role === 'admin'
+    const role = await getRole(c, user)
+    const isOwner = album.user_id === user.id || role === 'admin'
     if (!isOwner) {
-      // Check if user is album member (admin/helper)
-      const { data: member } = await client.from('album_members').select('album_id').eq('album_id', albumId).eq('user_id', user.id).maybeSingle()
+      const member = await db
+        .prepare(`SELECT album_id FROM album_members WHERE album_id = ? AND user_id = ?`)
+        .bind(albumId, user.id)
+        .first<{ album_id: string }>()
       if (!member) {
-        // Check if user has approved class access (student who was approved)
-        const { data: classAccess } = await client
-          .from('album_class_access')
-          .select('id')
-          .eq('album_id', albumId)
-          .eq('user_id', user.id)
-          .eq('status', 'approved')
-          .maybeSingle()
+        const classAccess = await db
+          .prepare(
+            `SELECT id FROM album_class_access WHERE album_id = ? AND user_id = ? AND status = 'approved'`
+          )
+          .bind(albumId, user.id)
+          .first<{ id: string }>()
         if (!classAccess) {
           return c.json({ error: 'Tidak punya akses ke album ini' }, 403)
         }
       }
     }
 
-    const { data: cls } = await client
-      .from('album_classes')
-      .select('id, album_id')
-      .eq('id', classId)
-      .eq('album_id', albumId)
-      .single()
+    const cls = await db
+      .prepare(`SELECT id, album_id FROM album_classes WHERE id = ? AND album_id = ?`)
+      .bind(classId, albumId)
+      .first<{ id: string; album_id: string }>()
 
     if (!cls) return c.json({ error: 'Class not found' }, 404)
 
-    const { data: list, error } = await client
-      .from('album_class_access')
-      .select('user_id, student_name, email, date_of_birth, instagram, message, video_url, photos, status')
-      .eq('class_id', classId)
-      .in('status', ['approved', 'pending'])
-      .order('student_name', { ascending: true })
-
-    if (error) {
-      console.error('Supabase query error:', error)
-      return c.json({ error: error.message }, 500)
-    }
+    const { results: list } = await db
+      .prepare(
+        `SELECT user_id, student_name, email, date_of_birth, instagram, message, video_url, photos, status
+         FROM album_class_access WHERE class_id = ? AND status IN ('approved', 'pending') ORDER BY student_name ASC`
+      )
+      .bind(classId)
+      .all<Record<string, unknown>>()
 
     const members = (list ?? [])
-      .filter((r: any) => isOwner || r.status === 'approved')
-      .map((r: { user_id: string; student_name: string; email?: string | null; date_of_birth?: string | null; instagram?: string | null; message?: string | null; video_url?: string | null; photos?: string[]; status?: string }) => ({
+      .filter((r) => isOwner || r.status === 'approved')
+      .map((r) => ({
         user_id: r.user_id,
         student_name: r.student_name,
         email: r.email ?? null,
@@ -71,15 +69,15 @@ classMembersRoute.get('/', async (c) => {
         instagram: r.instagram ?? null,
         message: r.message ?? null,
         video_url: r.video_url ?? null,
-        photos: r.photos ?? [],
+        photos: parseJsonArray(r.photos as string),
         is_me: r.user_id === user.id,
         status: r.status,
       }))
 
-    return c.json(members, 500)
-  } catch (err: any) {
+    return c.json(members, 200)
+  } catch (err: unknown) {
     console.error('Error fetching members:', err)
-    return c.json({ error: 'Internal server error' })
+    return c.json({ error: 'Internal server error' }, 500)
   }
 })
 

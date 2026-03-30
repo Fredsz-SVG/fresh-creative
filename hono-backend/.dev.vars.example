@@ -1,11 +1,13 @@
-# Salin file ini menjadi `.dev.vars` di folder hono-backend (jangan commit `.dev.vars`).
-# Wrangler memuat `.dev.vars` untuk `wrangler dev` — setara env production di dashboard.
+# Salin file ini menjadi `.dev.vars` (folder hono-backend).
+# Ini SATU-SATUNYA file env lokal yang dibaca Wrangler untuk `wrangler dev`.
+# File `.env` di folder ini TIDAK dipakai Worker — jangan dipakai untuk secret.
 
 NODE_ENV=development
 
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
+SUPABASE_JWT_SECRET=
 
 REPLICATE_API_TOKEN=
 

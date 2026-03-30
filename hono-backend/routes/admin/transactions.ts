@@ -1,58 +1,81 @@
 import { Hono } from 'hono'
-import { getSupabaseClient, getAdminSupabaseClient } from '../../lib/supabase'
+import { getSupabaseClient } from '../../lib/supabase'
+import { getRole } from '../../lib/auth'
+import { getD1 } from '../../lib/edge-env'
+import { ensureUserInD1, honoEnvForSupabasePublicSync } from '../../lib/d1-users'
 
 const transactions = new Hono()
 
+const txSelect = `t.id, t.user_id, t.external_id, t.amount, t.status, t.payment_method, t.invoice_url, t.created_at, t.album_id, t.description,
+  cp.credits as pkg_credits, a.name as album_name`
+
 transactions.get('/', async (c) => {
   const supabase = getSupabaseClient(c)
+  const db = getD1(c)
+  if (!db) return c.json({ error: 'Database not configured' }, 503)
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   if (authError || !user) return c.json({ error: 'Unauthorized' }, 401)
-  const { data: profile } = await supabase.from('users').select('role').eq('id', user.id).maybeSingle()
-  if (profile?.role !== 'admin') return c.json({ error: 'Forbidden' }, 403)
+  await ensureUserInD1(db, user, honoEnvForSupabasePublicSync(c.env))
+  if ((await getRole(c, user)) !== 'admin') return c.json({ error: 'Forbidden' }, 403)
   const url = new URL(c.req.url)
   const scope = url.searchParams.get('scope')
-  const adminClient = getAdminSupabaseClient(c?.env as any)
-  const selectWithDesc = 'id, external_id, amount, status, payment_method, invoice_url, created_at, album_id, description, albums(name), credit_packages(credits)'
-  const selectWithoutDesc = 'id, external_id, amount, status, payment_method, invoice_url, created_at, album_id, albums(name), credit_packages(credits)'
+
   if (scope !== 'all') {
-    let data: any[] | null = null; let error: any = null
-    const selectWithDescUser = 'id, external_id, amount, status, payment_method, invoice_url, created_at, album_id, description, albums(name), credit_packages(credits)'
-    const res1 = await adminClient.from('transactions').select(selectWithDescUser).eq('user_id', user.id).order('created_at', { ascending: false })
-    if (res1.error) {
-      const res2 = await adminClient.from('transactions').select(selectWithoutDesc).eq('user_id', user.id).order('created_at', { ascending: false })
-      data = res2.data; error = res2.error
-    } else { data = res1.data }
-    if (error) return c.json({ error: error.message }, 500)
-    const list = (data || []).map((row: any) => {
-      const { credit_packages, albums, ...rest } = row
-      const pkg = Array.isArray(credit_packages) ? credit_packages[0] : credit_packages
-      const album = Array.isArray(albums) ? albums[0] : albums
-      return { ...rest, credits: pkg?.credits ?? null, album_name: album?.name ?? null }
+    const { results } = await db
+      .prepare(
+        `SELECT t.id, t.external_id, t.amount, t.status, t.payment_method, t.invoice_url, t.created_at, t.album_id, t.description,
+          cp.credits as pkg_credits, a.name as album_name
+         FROM transactions t
+         LEFT JOIN credit_packages cp ON t.package_id = cp.id
+         LEFT JOIN albums a ON t.album_id = a.id
+         WHERE t.user_id = ?
+         ORDER BY t.created_at DESC`
+      )
+      .bind(user.id)
+      .all<Record<string, unknown>>()
+    const list = (results ?? []).map((row) => {
+      const { pkg_credits, album_name, ...rest } = row
+      return { ...rest, credits: pkg_credits ?? null, album_name: album_name ?? null }
     })
     return c.json(list)
   }
-  // All transactions (scope=all)
-  const selectAllWithDesc = 'id, user_id, external_id, amount, status, payment_method, invoice_url, created_at, album_id, description, albums(name), credit_packages(credits)'
-  const selectAllWithoutDesc = 'id, user_id, external_id, amount, status, payment_method, invoice_url, created_at, album_id, albums(name), credit_packages(credits)'
-  let rows: any[] | null = null; let rowsError: any = null
-  const r1 = await adminClient.from('transactions').select(selectAllWithDesc).order('created_at', { ascending: false })
-  if (r1.error) {
-    const r2 = await adminClient.from('transactions').select(selectAllWithoutDesc).order('created_at', { ascending: false })
-    rows = r2.data; rowsError = r2.error
-  } else { rows = r1.data }
-  if (rowsError) return c.json({ error: rowsError.message }, 500)
-  const list = rows || []
+
+  const { results: rows } = await db
+    .prepare(
+      `SELECT ${txSelect}
+       FROM transactions t
+       LEFT JOIN credit_packages cp ON t.package_id = cp.id
+       LEFT JOIN albums a ON t.album_id = a.id
+       ORDER BY t.created_at DESC`
+    )
+    .all<Record<string, unknown>>()
+
+  const list = rows ?? []
   if (list.length === 0) return c.json([])
-  const userIds = [...new Set(list.map((r: any) => r.user_id))]
-  const { data: users } = await adminClient.from('users').select('id, full_name, email').in('id', userIds)
-  const userMap = new Map((users || []).map((u: any) => [u.id, { full_name: u.full_name || '-', email: u.email || '-' }]))
-  return c.json(list.map((tx: any) => {
-    const u: any = userMap.get(tx.user_id) || { full_name: '-', email: '-' }
-    const { credit_packages, albums, ...rest } = tx
-    const pkg = Array.isArray(credit_packages) ? credit_packages[0] : credit_packages
-    const album = Array.isArray(albums) ? albums[0] : albums
-    return { ...rest, credits: pkg?.credits ?? null, album_name: album?.name ?? null, user_full_name: u.full_name, user_email: u.email }
-  }))
+
+  const userIds = [...new Set(list.map((r) => r.user_id as string).filter(Boolean))]
+  const placeholders = userIds.map(() => '?').join(',')
+  const { results: users } = await db
+    .prepare(`SELECT id, full_name, email FROM users WHERE id IN (${placeholders})`)
+    .bind(...userIds)
+    .all<{ id: string; full_name: string | null; email: string | null }>()
+  const userMap = new Map(
+    (users ?? []).map((u) => [u.id, { full_name: u.full_name || '-', email: u.email || '-' }])
+  )
+
+  return c.json(
+    list.map((tx) => {
+      const u = userMap.get(tx.user_id as string) || { full_name: '-', email: '-' }
+      const { pkg_credits, album_name, ...rest } = tx
+      return {
+        ...rest,
+        credits: pkg_credits ?? null,
+        album_name: album_name ?? null,
+        user_full_name: u.full_name,
+        user_email: u.email,
+      }
+    })
+  )
 })
 
 export default transactions

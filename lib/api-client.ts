@@ -1,14 +1,13 @@
 /**
- * API client for the Fastify backend (separate origin).
- * Sends Supabase access token in Authorization header so the backend can authenticate
- * when cookies are not sent cross-origin (e.g. frontend :3000 → backend :8000).
+ * API client untuk backend Hono (origin terpisah).
+ * Mengirim Supabase access token di header Authorization bila cookie tidak ikut cross-origin.
  */
 import { apiUrl } from './api-url'
 import { supabase } from './supabase'
 
 /**
  * Returns headers including Authorization: Bearer <token> when user is logged in.
- * Use for all requests to the Fastify backend that require auth.
+ * Use for all requests to the API that require auth.
  */
 export async function getAuthHeaders(): Promise<Record<string, string>> {
   const {

@@ -326,11 +326,15 @@ export default function ApprovalView({
                 </button>
                 <input
                   type="number"
-                  min={joinStats?.approved_count || 1}
+                  min={Math.max(originalLimitValue, joinStats?.approved_count || 1)}
                   value={editLimitValue}
                   onChange={(e) => {
                     const v = parseInt(e.target.value)
-                    if (!isNaN(v) && v < (joinStats?.approved_count || 1)) return
+                    const minAllowed = Math.max(originalLimitValue, joinStats?.approved_count || 1)
+                    if (!isNaN(v) && v < minAllowed) {
+                      setEditLimitValue(String(minAllowed))
+                      return
+                    }
                     setEditLimitValue(e.target.value)
                   }}
                   className="flex-1 w-full max-w-[120px] px-2 py-3 rounded-xl bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 text-slate-900 dark:text-white text-center text-xl font-black focus:outline-none focus:ring-2 focus:ring-indigo-500/20 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none shadow-[inset_2px_2px_0_0_rgba(15,23,42,0.1)] dark:shadow-[inset_2px_2px_0_0_rgba(51,65,85,0.3)] transition-all"

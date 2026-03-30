@@ -1,54 +1,13 @@
 
-
 import { createClient } from '@supabase/supabase-js'
 import { Context } from 'hono'
+import { getAccessTokenFromContext } from './get-access-token'
+
 // ESM default export agar wrangler tidak error import
 export default {}
 
 export function getSupabaseClient(c: Context) {
-  let token: string | undefined
-  const cookies = c.req.raw.headers.get('cookie') || ''
-  // Simple cookie parse (for demo, use a lib for production)
-  const cookieObj = Object.fromEntries(cookies.split(';').map(v => v.trim().split('=')))
-  let rawCookie = cookieObj['sb-access-token']
-
-  // Modern @supabase/ssr cookies
-  if (!rawCookie && c.env && c.env.NEXT_PUBLIC_SUPABASE_URL) {
-    try {
-      const ref = new URL(c.env.NEXT_PUBLIC_SUPABASE_URL).hostname.split('.')[0]
-      const authKey = `sb-${ref}-auth-token`
-      rawCookie = cookieObj[authKey]
-      if (!rawCookie) {
-        let chunkStr = ''
-        for (let i = 0; i < 5; i++) {
-          if (cookieObj[`${authKey}.${i}`]) chunkStr += cookieObj[`${authKey}.${i}`]
-        }
-        if (chunkStr) rawCookie = chunkStr
-      }
-    } catch {}
-  }
-  if (rawCookie) {
-    try {
-      let str = rawCookie
-      if (str.startsWith('base64-')) {
-        str = decodeURIComponent(escape(atob(str.substring(7))))
-      }
-      const parsed = JSON.parse(str)
-      if (parsed?.access_token) token = parsed.access_token
-      else if (Array.isArray(parsed) && parsed[0]) token = typeof parsed[0] === 'string' ? parsed[0] : (parsed[0] as any).access_token || (parsed as any).access_token
-      if (typeof rawCookie === 'string' && rawCookie.startsWith('eyJ')) token = rawCookie
-    } catch {}
-  }
-  // Fallback ke Authorization header
-  if (!token) {
-    const auth = c.req.raw.headers.get('authorization')
-    if (auth) {
-      const parts = auth.split(' ')
-      if (parts.length === 2 && parts[0] === 'Bearer') {
-        token = parts[1]
-      }
-    }
-  }
+  const token = getAccessTokenFromContext(c)
   return createClient(
     c.env.NEXT_PUBLIC_SUPABASE_URL!,
     c.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -61,6 +20,10 @@ export function getSupabaseClient(c: Context) {
 
 let adminClientCache: ReturnType<typeof createClient> | null = null
 
+/**
+ * Service role — **hanya** untuk `auth.admin.*` (list/delete user), bukan Postgres/Storage.
+ * Data aplikasi lewat D1 + R2.
+ */
 export function getAdminSupabaseClient(env?: Record<string, string>) {
   if (adminClientCache) return adminClientCache
 

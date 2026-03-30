@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react'
 import { Coins } from 'lucide-react'
-import { supabase } from '@/lib/supabase'
 import TopUpModal from '@/components/dashboard/TopUpModal'
 import { apiUrl } from '../../../lib/api-url'
 import { fetchWithAuth } from '../../../lib/api-client'
@@ -12,33 +11,11 @@ export default function CreditBadgeTop() {
     const [showTopUp, setShowTopUp] = useState(false)
 
     useEffect(() => {
-        let channel: any
-
         const init = async () => {
             try {
                 const res = await fetchWithAuth('/api/user/me')
                 const data = await res.json()
                 if (typeof data.credits === 'number') setCredits(data.credits)
-
-                if (data.id) {
-                    channel = supabase
-                        .channel(`ailabs-realtime-header-${data.id}`)
-                        .on(
-                            'postgres_changes',
-                            {
-                                event: 'UPDATE',
-                                schema: 'public',
-                                table: 'users',
-                                filter: `id=eq.${data.id}`
-                            },
-                            (payload: any) => {
-                                if (payload.new && typeof payload.new.credits === 'number') {
-                                    setCredits(payload.new.credits)
-                                }
-                            }
-                        )
-                        .subscribe()
-                }
             } catch (e) {
                 // ignore
             }
@@ -57,7 +34,6 @@ export default function CreditBadgeTop() {
         window.addEventListener('credits-updated', onCreditsUpdated)
 
         return () => {
-            if (channel) supabase.removeChannel(channel)
             window.removeEventListener('credits-updated', onCreditsUpdated)
         }
     }, [])

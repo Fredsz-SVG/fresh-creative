@@ -392,45 +392,22 @@ export default function YearbookAlbumClient({
     }
   }, [view, id, fetchAllAccess, initialAccess])
 
-  // Realtime: tambah/edit/hapus group langsung muncul tanpa refresh
+  // Supabase auth-only: no Realtime, no polling.
+  // Refetch when user returns to tab (helps keep classes/members up to date across devices).
   useEffect(() => {
-    if (!id || !album?.id) return
-    const albumId = album.id
-
-    const channel = supabase
-      .channel(`yearbook-classes-${albumId}`)
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'album_classes', filter: `album_id=eq.${albumId}` },
-        () => {
-          // Skip if we just made a local update in the last 3 seconds (optimistic update)
-          const timeSinceLastUpdate = Date.now() - lastLocalUpdateRef.current
-          if (timeSinceLastUpdate > 3000) {
-            fetchAlbum(true)
-          }
-        }
-      )
-      .on(
-        'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'album_classes', filter: `album_id=eq.${albumId}` },
-        () => {
-          // Skip if we just made a local update in the last 3 seconds
-          const timeSinceLastUpdate = Date.now() - lastLocalUpdateRef.current
-          if (timeSinceLastUpdate > 3000) {
-            fetchAlbum(true)
-          }
-        }
-      )
-      .on(
-        'postgres_changes',
-        { event: 'DELETE', schema: 'public', table: 'album_classes', filter: `album_id=eq.${albumId}` },
-        () => { fetchAlbum(true) }
-      )
-      .subscribe()
-    return () => {
-      supabase.removeChannel(channel)
+    if (!id) return
+    const onVisible = () => {
+      fetchAlbum(true)
+      fetchAllAccessRef.current()
+      fetchAllClassMembersRef.current()
     }
-  }, [id, album?.id, fetchAlbum])
+    window.addEventListener('focus', onVisible)
+    document.addEventListener('visibilitychange', onVisible)
+    return () => {
+      window.removeEventListener('focus', onVisible)
+      document.removeEventListener('visibilitychange', onVisible)
+    }
+  }, [id, fetchAlbum])
 
   // Optimized: Fetch ALL class members in one request
   const fetchAllClassMembers = useCallback(async () => {
@@ -515,96 +492,7 @@ export default function YearbookAlbumClient({
     }
   }, [id, album?.classes?.length, fetchAllClassMembers, initialMembers])
 
-  // Realtime: approval + access + profil card. Pakai ref agar global admin / device lain selalu refetch dengan data terbaru.
-  useEffect(() => {
-    if (!id || !album?.id || !album?.classes?.length) return
-    const albumId = album.id
-
-    const channel = supabase
-      .channel(`yearbook-access-${albumId}`)
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'album_class_access', filter: `album_id=eq.${albumId}` },
-        () => {
-          if (accessUpdateTimeoutRef.current) clearTimeout(accessUpdateTimeoutRef.current)
-          accessUpdateTimeoutRef.current = setTimeout(() => {
-            refetchAccessAndMembersRef.current()
-            setRealtimeCounter(c => c + 1)
-          }, 1000)
-        }
-      )
-      .on(
-        'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'album_class_access', filter: `album_id=eq.${albumId}` },
-        () => {
-          if (accessUpdateTimeoutRef.current) clearTimeout(accessUpdateTimeoutRef.current)
-          accessUpdateTimeoutRef.current = setTimeout(() => {
-            refetchAccessAndMembersRef.current()
-            setRealtimeCounter(c => c + 1)
-          }, 1000)
-        }
-      )
-      .on(
-        'postgres_changes',
-        { event: 'DELETE', schema: 'public', table: 'album_class_access', filter: `album_id=eq.${albumId}` },
-        () => {
-          if (accessUpdateTimeoutRef.current) clearTimeout(accessUpdateTimeoutRef.current)
-          accessUpdateTimeoutRef.current = setTimeout(() => {
-            refetchAccessAndMembersRef.current()
-            setRealtimeCounter(c => c + 1)
-          }, 1000)
-        }
-      )
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'album_join_requests', filter: `album_id=eq.${albumId}` },
-        () => {
-          if (accessUpdateTimeoutRef.current) clearTimeout(accessUpdateTimeoutRef.current)
-          accessUpdateTimeoutRef.current = setTimeout(() => {
-            fetchAllAccessRef.current()
-            setRealtimeCounter(c => c + 1)
-          }, 1000)
-        }
-      )
-      .on(
-        'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'album_join_requests', filter: `album_id=eq.${albumId}` },
-        () => {
-          if (accessUpdateTimeoutRef.current) clearTimeout(accessUpdateTimeoutRef.current)
-          accessUpdateTimeoutRef.current = setTimeout(() => {
-            fetchAllAccessRef.current()
-            setRealtimeCounter(c => c + 1)
-          }, 1000)
-        }
-      )
-      .on(
-        'postgres_changes',
-        { event: 'DELETE', schema: 'public', table: 'album_join_requests', filter: `album_id=eq.${albumId}` },
-        () => {
-          if (accessUpdateTimeoutRef.current) clearTimeout(accessUpdateTimeoutRef.current)
-          accessUpdateTimeoutRef.current = setTimeout(() => {
-            fetchAllAccessRef.current()
-            setRealtimeCounter(c => c + 1)
-          }, 1000)
-        }
-      )
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'album_members', filter: `album_id=eq.${albumId}` },
-        () => {
-          if (accessUpdateTimeoutRef.current) clearTimeout(accessUpdateTimeoutRef.current)
-          accessUpdateTimeoutRef.current = setTimeout(() => {
-            fetchAllAccessRef.current()
-            fetchAllClassMembersRef.current()
-            setRealtimeCounter(c => c + 1)
-          }, 1000)
-        }
-      )
-      .subscribe()
-    return () => {
-      supabase.removeChannel(channel)
-    }
-  }, [id, album?.id, album?.classes, fetchAllAccess, fetchMembersForAllClasses])
+  // (Realtime removed)
 
   useEffect(() => {
     setPersonalIndex(0)
@@ -689,6 +577,8 @@ export default function YearbookAlbumClient({
 
   const fetchFirstPhotosForClass = useCallback(async (classId: string) => {
     if (!id) return
+    // Optimistic class IDs (temp-*) belum ada di D1, jadi jangan fetch untuk menghindari 404 noise.
+    if (classId.startsWith('temp-')) return
     const res = await fetchWithAuth(`/api/albums/${id}/photos?class_id=${encodeURIComponent(classId)}`, { credentials: 'include', cache: 'no-store' })
     const list = await res.json().catch(() => []) as { student_name: string; file_url: string }[]
     if (!Array.isArray(list)) return

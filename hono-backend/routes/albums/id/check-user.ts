@@ -1,5 +1,6 @@
 import { Hono } from 'hono'
-import { getSupabaseClient, getAdminSupabaseClient } from '../../../lib/supabase'
+import { getSupabaseClient } from '../../../lib/supabase'
+import { getD1 } from '../../../lib/edge-env'
 
 const checkUserRoute = new Hono()
 
@@ -7,63 +8,47 @@ checkUserRoute.get('/', async (c) => {
   try {
     const albumId = c.req.param('id')
     const supabase = getSupabaseClient(c)
+    const db = getD1(c)
+    if (!db) return c.json({ error: 'Database not configured' }, 503)
 
-    // Check if user is authenticated
     const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (!user) {
-      return c.json({ hasRequest: false }, 500)
+    if (authError || !user) {
+      return c.json({ hasRequest: false }, 200)
     }
 
-    // Use admin client to check if user has a request
-    const adminClient = getAdminSupabaseClient(c?.env as any)
-    if (!adminClient) {
-      return c.json({ error: 'Database connection failed' })
-    }
+    const existing = await db
+      .prepare(`SELECT id, status FROM album_join_requests WHERE album_id = ? AND user_id = ?`)
+      .bind(albumId, user.id)
+      .first<{ id: string; status: string }>()
 
-    // Check album_join_requests for pending/rejected requests
-    const { data: existing } = await adminClient
-      .from('album_join_requests')
-      .select('id, status')
-      .eq('album_id', albumId)
-      .eq('user_id', user.id)
-      .maybeSingle()
-
-    // If approved, verify they still have active access in album_class_access or album_members
     if (existing && existing.status === 'approved') {
-      // Check if user still has active access
-      const { data: classAccess } = await adminClient
-        .from('album_class_access')
-        .select('id')
-        .eq('album_id', albumId)
-        .eq('user_id', user.id)
-        .eq('status', 'approved')
-        .maybeSingle()
+      const classAccess = await db
+        .prepare(
+          `SELECT id FROM album_class_access WHERE album_id = ? AND user_id = ? AND status = 'approved'`
+        )
+        .bind(albumId, user.id)
+        .first<{ id: string }>()
 
-      const { data: memberAccess } = await adminClient
-        .from('album_members')
-        .select('id')
-        .eq('album_id', albumId)
-        .eq('user_id', user.id)
-        .maybeSingle()
+      const memberAccess = await db
+        .prepare(`SELECT 1 FROM album_members WHERE album_id = ? AND user_id = ?`)
+        .bind(albumId, user.id)
+        .first()
 
-      // If they have active access, return approved status
       if (classAccess || memberAccess) {
-        return c.json({ hasRequest: true, status: 'approved' }, 500)
+        return c.json({ hasRequest: true, status: 'approved' }, 200)
       }
 
-      // Approved but no longer has access - allow re-registration
       return c.json({ hasRequest: false })
     }
 
-    // Return pending/rejected status as-is
     if (existing) {
       return c.json({ hasRequest: true, status: existing.status })
     }
 
     return c.json({ hasRequest: false })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error checking user request:', error)
-    return c.json({ error: 'Internal server error' })
+    return c.json({ error: 'Internal server error' }, 500)
   }
 })
 

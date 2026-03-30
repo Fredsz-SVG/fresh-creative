@@ -1,197 +1,75 @@
 
-import { createClient } from '@/lib/supabase-server'
-import { createAdminClient } from '@/lib/supabase-admin'
-import { getRole } from '@/lib/auth'
-import { getCache, setCache, delCache, key } from '@/lib/redis'
+import { cookies } from 'next/headers'
+
+type Json = Record<string, unknown> | unknown[] | null
+
+function getServerOrigin(): string {
+    const explicit = process.env.NEXT_PUBLIC_APP_URL?.trim()
+    if (explicit) return explicit.replace(/\/$/, '')
+
+    const vercel = process.env.VERCEL_URL?.trim()
+    if (vercel) return `https://${vercel.replace(/^https?:\/\//, '').replace(/\/$/, '')}`
+
+    // Local fallback (dev)
+    return 'http://localhost:3001'
+}
+
+async function fetchApiJson(path: string): Promise<{ ok: boolean; status: number; json: Json }> {
+    const cookieStore = await cookies()
+    const cookieHeader = cookieStore
+        .getAll()
+        .map((c) => `${c.name}=${c.value}`)
+        .join('; ')
+
+    const origin = getServerOrigin()
+    const url = path.startsWith('http') ? path : `${origin}${path.startsWith('/') ? '' : '/'}${path}`
+
+    const res = await fetch(url, {
+        // Server-side fetch: forward cookies so Hono can read Supabase auth token from cookie.
+        headers: cookieHeader ? { cookie: cookieHeader } : undefined,
+        cache: 'no-store',
+    })
+    const json = (await res.json().catch(() => null)) as Json
+    return { ok: res.ok, status: res.status, json }
+}
 
 /**
  * Fetch Album Overview (incl. classes & counts) with Redis Cache.
  * Used by GET /api/albums/[id] and SSR page.
  */
 export async function getAlbumOverview(albumId: string, userId?: string) {
-    // 2. Fetch DB
-    const admin = createAdminClient()
-    const client = admin || await createClient()
-
-    // Fetch Album Meta
-    const selectWithPosition = 'id, name, type, status, cover_image_url, cover_image_position, cover_video_url, description, user_id, created_at, flipbook_mode, payment_status, payment_url, total_estimated_price'
-    const selectWithoutPosition = 'id, name, type, status, cover_image_url, description, user_id, created_at, flipbook_mode, payment_status, payment_url, total_estimated_price'
-
-    const { data: albumWithPosition, error: errWithPosition } = await client
-        .from('albums')
-        .select(selectWithPosition)
-        .eq('id', albumId)
-        .single()
-
-    let album: Record<string, unknown> | null = null
-
-    if (errWithPosition && !albumWithPosition) {
-        // Fallback for older schema if column missing (safe bet)
-        const { data: albumFallback } = await client
-            .from('albums')
-            .select(selectWithoutPosition)
-            .eq('id', albumId)
-            .single()
-        album = albumFallback as Record<string, unknown> | null
-        if (album) (album as any).cover_image_position = null
-    } else {
-        album = albumWithPosition as Record<string, unknown> | null
+    // D1 source: Hono endpoint already does permission checks using cookies/JWT.
+    // Note: `userId` retained for backward compatibility, but not needed here.
+    const { ok, status, json } = await fetchApiJson(`/api/albums/${encodeURIComponent(albumId)}`)
+    if (!ok) {
+        // 401/403 => no access; 404 => not found
+        return null
     }
-
-    if (!album) return null // Not found
-
-    // Fetch Classes & Counts
-    let classesWithCount: any[] = []
-    if (album.type === 'yearbook') {
-        const { data: classes } = await client
-            .from('album_classes')
-            .select('id, name, sort_order, batch_photo_url')
-            .eq('album_id', albumId)
-            .order('sort_order', { ascending: true })
-
-        const classList = (classes ?? []) as { id: string; name: string; sort_order: number; batch_photo_url: string | null }[]
-        const studentCounts: Record<string, number> = {}
-
-        const { data: allAccess } = await client
-            .from('album_class_access')
-            .select('class_id, student_name, status, photos')
-            .eq('album_id', albumId)
-
-        if (allAccess) {
-            for (const c of classList) {
-                const classMembers = allAccess.filter(a => a.class_id === c.id)
-                // Logic: Approved OR has photos
-                const validMembers = classMembers.filter(a =>
-                    a.status === 'approved' || (Array.isArray(a.photos) && a.photos.length > 0)
-                )
-                // Unique Names
-                const uniqueNames = new Set(validMembers.map(m => m.student_name).filter(Boolean))
-                studentCounts[c.id] = uniqueNames.size
-            }
-        }
-
-        classesWithCount = classList.map((c) => ({
-            id: c.id,
-            name: c.name,
-            sort_order: c.sort_order,
-            student_count: studentCounts[c.id] ?? 0,
-            batch_photo_url: c.batch_photo_url,
-        }))
-    }
-
-    const albumData = { ...album, classes: classesWithCount }
-
-    // 3. Permission Checks (if userId provided)
-    if (userId) {
-        const supabase = await createClient()
-
-        const admin = createAdminClient()
-        const client = admin || supabase
-
-        const row = albumData as { id: string; name: string; type: string; status?: string; cover_image_url?: string | null; cover_image_position?: string | null; cover_video_url?: string | null; description?: string | null; user_id: string; flipbook_mode?: string | null; payment_status?: string | null; payment_url?: string | null; total_estimated_price?: number | null; classes: any[] }
-
-        const isActualOwner = row.user_id === userId
-
-        // Check admin status via users table
-        let isAdmin = false
-        try {
-            const { data: profile } = await supabase.from('users').select('role').eq('id', userId).single()
-            if (profile?.role === 'admin') isAdmin = true
-        } catch { }
-
-        const isOwner = isActualOwner || isAdmin
-        let isAlbumAdmin = false
-
-        if (!isOwner && !isAdmin) {
-            const { data: member } = await client
-                .from('album_members')
-                .select('role')
-                .eq('album_id', albumId)
-                .eq('user_id', userId)
-                .maybeSingle()
-
-            if (member?.role === 'admin') {
-                isAlbumAdmin = true
-            } else {
-                // Check access (approved member)
-                const { data: approved } = await client
-                    .from('album_class_access')
-                    .select('id, status')
-                    .eq('album_id', albumId)
-                    .eq('user_id', userId)
-                    .eq('status', 'approved')
-                    .maybeSingle()
-
-                if (!approved) return null // No Access
-            }
-        }
-
-        return {
-            id: row.id,
-            name: row.name,
-            type: row.type,
-            status: row.status,
-            cover_image_url: row.cover_image_url ?? null,
-            cover_image_position: row.cover_image_position ?? null,
-            cover_video_url: (row as any).cover_video_url ?? null,
-            description: row.description ?? null,
-            flipbook_mode: (row as any).flipbook_mode || 'manual',
-            isOwner,
-            isAlbumAdmin,
-            isGlobalAdmin: isAdmin,
-            payment_status: row.payment_status || 'unpaid',
-            payment_url: row.payment_url || null,
-            total_estimated_price: row.total_estimated_price || 0,
-            classes: row.classes || [],
-        }
-    }
-
-    return albumData
+    return json as any
 }
 
 /**
  * Fetch All Class Members (for directory) with Redis Cache.
  */
 export async function getAlbumAllMembers(albumId: string) {
-    const admin = createAdminClient()
-    const client = admin || await createClient()
-
-    const { data, error } = await client
-        .from('album_class_access')
-        .select('class_id, user_id, student_name, email, date_of_birth, instagram, message, video_url, photos, status')
-        .eq('album_id', albumId)
-        .in('status', ['approved', 'pending'])
-        .order('student_name', { ascending: true })
-
-    if (error) {
-        console.error('Fetch Members Error', error)
-        return []
-    }
-
-    const result = data || []
-    return result
+    const { ok, json } = await fetchApiJson(`/api/albums/${encodeURIComponent(albumId)}/all-class-members`)
+    if (!ok) return []
+    return (Array.isArray(json) ? json : []) as any[]
 }
 
 /**
  * Fetch My Access & Requests (No Cache - User Specific & Dynamic)
  */
 export async function getMyAccessAndRequests(albumId: string, userId: string) {
-    const supabase = await createClient()
-
-    const [accessRes, requestsRes] = await Promise.all([
-        supabase.from('album_class_access').select('*').eq('album_id', albumId).eq('user_id', userId),
-        supabase.from('album_join_requests').select('*').eq('album_id', albumId).eq('user_id', userId)
-    ])
-
-    const accessByClass: Record<string, any> = {}
-    accessRes.data?.forEach(item => {
-        if (item.class_id) accessByClass[item.class_id] = item
-    })
-
-    const requestsByClass: Record<string, any> = {}
-    requestsRes.data?.forEach(item => {
-        if (item.assigned_class_id) requestsByClass[item.assigned_class_id] = item
-    })
-
-    return { access: accessByClass, requests: requestsByClass }
+    // D1 source: Hono endpoint returns already-grouped maps.
+    // Note: `userId` retained for backward compatibility, but not needed here.
+    const { ok, json } = await fetchApiJson(`/api/albums/${encodeURIComponent(albumId)}/my-access-all`)
+    if (!ok || !json || typeof json !== 'object' || Array.isArray(json)) {
+        return { access: {}, requests: {} }
+    }
+    const o = json as { access?: unknown; requests?: unknown }
+    return {
+        access: (o.access && typeof o.access === 'object' && !Array.isArray(o.access) ? o.access : {}) as any,
+        requests: (o.requests && typeof o.requests === 'object' && !Array.isArray(o.requests) ? o.requests : {}) as any,
+    }
 }

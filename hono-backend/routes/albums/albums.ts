@@ -1,107 +1,140 @@
 import { Hono } from 'hono'
-import { getSupabaseClient, getAdminSupabaseClient } from '../../lib/supabase'
+import { getSupabaseClient } from '../../lib/supabase'
 import { getRole } from '../../lib/auth'
+import { getD1 } from '../../lib/edge-env'
+import { ensureUserInD1, honoEnvForSupabasePublicSync } from '../../lib/d1-users'
 import { isSimilarSchoolName } from '../../lib/school-name-utils'
+
+const albumColsUser =
+  `a.id, a.user_id, a.name, a.type, a.status, a.created_at, a.cover_image_url, a.pricing_package_id, a.payment_status, a.payment_url, a.total_estimated_price, p.name as pricing_pkg_name`
+
+function mapAlbumRow(r: Record<string, unknown>) {
+  const pkg = r.pricing_pkg_name
+    ? { name: r.pricing_pkg_name }
+    : null
+  const { pricing_pkg_name: _p, ...rest } = r
+  return { ...rest, pricing_packages: pkg }
+}
 
 const albumsRoute = new Hono()
 
 albumsRoute.get('/', async (c) => {
   try {
     const supabase = getSupabaseClient(c)
-    const { data: { user } } = await supabase.auth.getUser()
+    const db = getD1(c)
+    if (!db) return c.json({ error: 'Database not configured' }, 503)
 
+    const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
       return c.json([])
     }
 
     let role: 'admin' | 'user' = 'user'
     try {
-      role = await getRole(supabase, user)
+      role = await getRole(c, user)
     } catch {
-      // ignore
+      /* ignore */
     }
     const isAdmin = role === 'admin'
     const scope = c.req.query('scope')
     const shouldUseAdminScope = isAdmin && scope !== 'mine'
 
-    // Admin: Fetch ALL albums
     if (shouldUseAdminScope) {
-      const adminClient = getAdminSupabaseClient(c?.env as any)
-      if (!adminClient) {
-        return c.json({ error: 'Admin client not configured' }, 500)
-      }
+      const { results } = await db
+        .prepare(
+          `SELECT a.id, a.name, a.type, a.status, a.created_at, a.pricing_package_id, a.school_city, a.kab_kota, a.wa_e164, a.province_id, a.province_name, a.pic_name, a.students_count, a.source, a.total_estimated_price, a.payment_status, a.payment_url,
+            p.name as pricing_pkg_name
+           FROM albums a
+           LEFT JOIN pricing_packages p ON a.pricing_package_id = p.id
+           ORDER BY a.created_at DESC`
+        )
+        .all<Record<string, unknown>>()
 
-      const { data: albums, error } = await adminClient
-        .from('albums')
-        .select(`
-          id, name, type, status, created_at, 
-          pricing_package_id, 
-          pricing_packages(name), 
-          school_city, kab_kota, wa_e164, province_id, province_name, pic_name, students_count, source, total_estimated_price,
-          payment_status, payment_url
-        `)
-        .order('created_at', { ascending: false })
-
-      if (error) {
-        console.error('[GET /api/albums] admin error:', error.message)
-        return c.json({ error: error.message }, 500)
-      }
-
-      const result = (albums ?? []).map((a: any) => {
-        const pkg = Array.isArray(a.pricing_packages) ? a.pricing_packages[0] : a.pricing_packages
-        return {
-          ...a,
-          pricing_packages: pkg,
-          isOwner: false
-        }
+      const rows = results ?? []
+      const result = rows.map((a) => {
+        const m = mapAlbumRow(a)
+        return { ...m, isOwner: false }
       })
-
       return c.json(result)
     }
 
-    const albumColumns = 'id, name, type, status, user_id, created_at, cover_image_url, pricing_package_id, pricing_packages(name), payment_status, payment_url, total_estimated_price'
+    const owned = await db
+      .prepare(
+        `SELECT ${albumColsUser}
+         FROM albums a
+         LEFT JOIN pricing_packages p ON a.pricing_package_id = p.id
+         WHERE a.user_id = ?
+         ORDER BY a.created_at DESC`
+      )
+      .bind(user.id)
+      .all<Record<string, unknown>>()
 
-    const [ownedRes, memberRowsRes] = await Promise.all([
-      supabase.from('albums').select(albumColumns).eq('user_id', user.id).order('created_at', { ascending: false }),
-      supabase.from('album_members').select('album_id').eq('user_id', user.id)
-    ])
-    if (ownedRes.error) return c.json({ error: ownedRes.error.message })
-    const ownedAlbums = ownedRes.data ?? []
-    const memberAlbumIds = (memberRowsRes.data ?? []).map((r: { album_id: string }) => r.album_id).filter(Boolean)
+    const ownedAlbums = (owned.results ?? []).map(mapAlbumRow)
+    const ownedIds = new Set(ownedAlbums.map((a: any) => a.id))
 
-    const adminClient = getAdminSupabaseClient(c?.env as any)
-    const [memberAlbumsRes, approvedRowsRes] = await Promise.all([
-      memberAlbumIds.length > 0 ? supabase.from('albums').select(albumColumns).in('id', memberAlbumIds) : Promise.resolve({ data: [] as any[] }),
-      adminClient
-        ? adminClient.from('album_class_access').select('album_id').eq('user_id', user.id).eq('status', 'approved')
-        : Promise.resolve({ data: [] as any[] })
-    ])
-    const memberAlbums = memberAlbumsRes.data ?? []
-    const approvedAlbumIds = (approvedRowsRes.data ?? []).map((r: { album_id: string }) => r.album_id).filter(Boolean)
+    const memberRows = await db
+      .prepare(`SELECT album_id FROM album_members WHERE user_id = ?`)
+      .bind(user.id)
+      .all<{ album_id: string }>()
+    const memberAlbumIds = (memberRows.results ?? [])
+      .map((r) => r.album_id)
+      .filter(Boolean)
 
-    let approvedClassAccessAlbums: any[] = []
-    if (adminClient && approvedAlbumIds.length > 0) {
-      const { data } = await adminClient.from('albums').select(albumColumns).in('id', approvedAlbumIds)
-      approvedClassAccessAlbums = data ?? []
+    let memberAlbums: any[] = []
+    if (memberAlbumIds.length > 0) {
+      const ph = memberAlbumIds.map(() => '?').join(',')
+      const mr = await db
+        .prepare(
+          `SELECT ${albumColsUser}
+           FROM albums a
+           LEFT JOIN pricing_packages p ON a.pricing_package_id = p.id
+           WHERE a.id IN (${ph})`
+        )
+        .bind(...memberAlbumIds)
+        .all<Record<string, unknown>>()
+      memberAlbums = (mr.results ?? []).map(mapAlbumRow)
     }
 
-    const ownedSet = new Set((ownedAlbums ?? []).map(a => a.id))
-    const memberSet = new Set(memberAlbums.map(a => a.id))
+    const approvedRows = await db
+      .prepare(
+        `SELECT DISTINCT album_id FROM album_class_access WHERE user_id = ? AND status = 'approved'`
+      )
+      .bind(user.id)
+      .all<{ album_id: string }>()
+    const approvedAlbumIds = (approvedRows.results ?? [])
+      .map((r) => r.album_id)
+      .filter((id) => id && !ownedIds.has(id))
+
+    let approvedClassAccessAlbums: any[] = []
+    if (approvedAlbumIds.length > 0) {
+      const ph = approvedAlbumIds.map(() => '?').join(',')
+      const ar = await db
+        .prepare(
+          `SELECT ${albumColsUser}
+           FROM albums a
+           LEFT JOIN pricing_packages p ON a.pricing_package_id = p.id
+           WHERE a.id IN (${ph})`
+        )
+        .bind(...approvedAlbumIds)
+        .all<Record<string, unknown>>()
+      approvedClassAccessAlbums = (ar.results ?? []).map(mapAlbumRow)
+    }
+
+    const memberSet = new Set(memberAlbums.map((a: any) => a.id))
     const finalAlbums = [
-      ...(ownedAlbums ?? []).map(a => ({ ...a, isOwner: true })),
-      ...memberAlbums.filter(a => !ownedSet.has(a.id)).map(a => ({ ...a, isOwner: false })),
-      ...approvedClassAccessAlbums.filter(a => !ownedSet.has(a.id) && !memberSet.has(a.id)).map(a => ({ ...a, isOwner: false, status: 'approved' }))
+      ...ownedAlbums.map((a: any) => ({ ...a, isOwner: true })),
+      ...memberAlbums.filter((a: any) => !ownedIds.has(a.id)).map((a: any) => ({ ...a, isOwner: false })),
+      ...approvedClassAccessAlbums
+        .filter((a: any) => !ownedIds.has(a.id) && !memberSet.has(a.id))
+        .map((a: any) => ({ ...a, isOwner: false, status: 'approved' })),
     ]
 
-    finalAlbums.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    finalAlbums.sort(
+      (a, b) =>
+        new Date(b.created_at as string).getTime() - new Date(a.created_at as string).getTime()
+    )
 
-    const normalized = finalAlbums.map((a: any) => {
-      const pkg = Array.isArray(a.pricing_packages) ? a.pricing_packages[0] : a.pricing_packages
-      return { ...a, pricing_packages: pkg }
-    })
-
-    return c.json(normalized)
-
+    return c.json(finalAlbums)
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
     console.error('[GET /api/albums]', err)
@@ -111,11 +144,15 @@ albumsRoute.get('/', async (c) => {
 
 albumsRoute.post('/', async (c) => {
   const supabase = getSupabaseClient(c)
-  const { data: { user } } = await supabase.auth.getUser()
+  const db = getD1(c)
+  if (!db) return c.json({ error: 'Database not configured' }, 503)
 
+  const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
     return c.json({ error: 'Unauthorized. Please login.' }, 401)
   }
+
+  await ensureUserInD1(db, user, honoEnvForSupabasePublicSync(c.env))
 
   let body: any
   try {
@@ -125,11 +162,16 @@ albumsRoute.post('/', async (c) => {
   }
 
   const { type = 'yearbook', name, school_name } = body
+  const id = crypto.randomUUID()
+  const now = new Date().toISOString()
 
-  const dataToInsert: any = {
+  const baseInsert: Record<string, unknown> = {
+    id,
     user_id: user.id,
-    type: type,
+    type,
     status: 'pending',
+    created_at: now,
+    updated_at: now,
   }
 
   if (type === 'yearbook') {
@@ -140,65 +182,106 @@ albumsRoute.post('/', async (c) => {
 
     const SCHOOL_NAME_REGEX = /^(SMAN|SMKN|SMK|SMA|MAN|MA|SMPN|SMP|MTsN|MTs|SDN|SD|MIN|MI)\s+\d+\s+.{2,}$/i
     if (!SCHOOL_NAME_REGEX.test(finalName)) {
-      return c.json({ error: 'Format nama sekolah harus seperti: SMAN 1 Salatiga, SMKN 2 Bandung, dst.' }, 400)
+      return c.json(
+        {
+          error:
+            'Format nama sekolah harus seperti: SMAN 1 Salatiga, SMKN 2 Bandung, dst.',
+        },
+        400
+      )
     }
 
-    const adminClient = getAdminSupabaseClient(c?.env as any)
-    if (adminClient) {
-      const { data: albums } = await adminClient
-        .from('albums')
-        .select('id, name, pic_name, wa_e164')
-        .eq('type', 'yearbook')
+    const dupRows = await db
+      .prepare(`SELECT id, name, pic_name, wa_e164 FROM albums WHERE type = 'yearbook'`)
+      .all<{ name: string | null; pic_name: string | null; wa_e164: string | null }>()
 
-      if (albums && albums.length > 0) {
-        for (const album of albums) {
-          if (isSimilarSchoolName(finalName, album.name || '')) {
-            const contact = [album.pic_name, album.wa_e164].filter(Boolean).join(' - ')
-            return c.json({
-              error: `Nama sekolah "${finalName}" mirip dengan "${album.name}" yang sudah terdaftar.${contact ? ` Hubungi ${contact} untuk informasi lebih lanjut.` : ''}`
-            }, 409)
-          }
-        }
+    for (const album of dupRows.results ?? []) {
+      if (isSimilarSchoolName(finalName, album.name || '')) {
+        const contact = [album.pic_name, album.wa_e164].filter(Boolean).join(' - ')
+        return c.json(
+          {
+            error: `Nama sekolah "${finalName}" mirip dengan "${album.name}" yang sudah terdaftar.${contact ? ` Hubungi ${contact} untuk informasi lebih lanjut.` : ''}`,
+          },
+          409
+        )
       }
     }
 
-    dataToInsert.name = finalName
-    dataToInsert.school_city = body.school_city
-    dataToInsert.kab_kota = body.kab_kota
-    dataToInsert.wa_e164 = body.wa_e164
-    dataToInsert.province_id = body.province_id
-    dataToInsert.province_name = body.province_name
-    dataToInsert.pic_name = body.pic_name
-    dataToInsert.students_count = body.students_count
-    dataToInsert.source = body.source || 'showroom'
-    dataToInsert.pricing_package_id = body.pricing_package_id
-    dataToInsert.total_estimated_price = body.total_estimated_price
-
+    Object.assign(baseInsert, {
+      name: finalName,
+      school_city: body.school_city ?? null,
+      kab_kota: body.kab_kota ?? null,
+      wa_e164: body.wa_e164 ?? null,
+      province_id: body.province_id ?? null,
+      province_name: body.province_name ?? null,
+      pic_name: body.pic_name ?? null,
+      students_count: body.students_count ?? null,
+      source: body.source || 'showroom',
+      pricing_package_id: body.pricing_package_id ?? null,
+      total_estimated_price: body.total_estimated_price ?? null,
+    })
   } else if (type === 'public') {
     if (!name) {
       return c.json({ error: 'Nama album wajib.' }, 400)
     }
-    dataToInsert.name = name
-    dataToInsert.status = 'approved'
+    Object.assign(baseInsert, {
+      name,
+      status: 'approved',
+    })
   } else {
     return c.json({ error: 'Invalid type' }, 400)
   }
 
-  const { data, error } = await supabase
-    .from('albums')
-    .insert(dataToInsert)
-    .select()
-    .single()
-
-  if (error) {
-    return c.json({ error: error.message }, 500)
+  const cols = Object.keys(baseInsert)
+  const placeholders = cols.map(() => '?').join(', ')
+  const sql = `INSERT INTO albums (${cols.join(', ')}) VALUES (${placeholders})`
+  try {
+    await db.prepare(sql).bind(...cols.map((k) => baseInsert[k])).run()
+  } catch (e: any) {
+    return c.json({ error: e?.message ?? 'Insert failed' }, 500)
   }
 
-  return c.json(data)
+  const row = await db.prepare(`SELECT * FROM albums WHERE id = ?`).bind(id).first()
+  return c.json(row)
+})
+
+// Admin approve/decline album
+// Frontend (AlbumsView) memanggil: PUT /api/albums { id, status: 'approved'|'declined' }
+albumsRoute.put('/', async (c) => {
+  const supabase = getSupabaseClient(c)
+  const db = getD1(c)
+  if (!db) return c.json({ error: 'Database not configured' }, 503)
+
+  const { data: { user }, error: authError } = await supabase.auth.getUser()
+  if (authError || !user) return c.json({ error: 'Unauthorized' }, 401)
+
+  await ensureUserInD1(db, user, honoEnvForSupabasePublicSync(c.env))
+  if ((await getRole(c, user)) !== 'admin') return c.json({ error: 'Forbidden' }, 403)
+
+  const body = await c.req.json().catch(() => ({}))
+  const { id, status } = body as Record<string, unknown>
+
+  if (!id || typeof id !== 'string') return c.json({ error: 'Album ID is required' }, 400)
+  if (status !== 'approved' && status !== 'declined') {
+    return c.json({ error: 'status must be approved or declined' }, 400)
+  }
+
+  const r = await db
+    .prepare(`UPDATE albums SET status = ?, updated_at = datetime('now') WHERE id = ?`)
+    .bind(status, id)
+    .run()
+  if (!r.success) return c.json({ error: 'Update failed' }, 500)
+  if (r.meta.changes === 0) return c.json({ error: 'Album not found' }, 404)
+
+  const row = await db.prepare(`SELECT * FROM albums WHERE id = ?`).bind(id).first<Record<string, unknown>>()
+  return c.json(row)
 })
 
 albumsRoute.delete('/', async (c) => {
   const supabase = getSupabaseClient(c)
+  const db = getD1(c)
+  if (!db) return c.json({ error: 'Database not configured' }, 503)
+
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return c.json({ error: 'Unauthorized' }, 401)
 
@@ -206,17 +289,19 @@ albumsRoute.delete('/', async (c) => {
   const { id } = body
   if (!id) return c.json({ error: 'Album ID is required' }, 400)
 
-  const role = await getRole(supabase, user)
+  const role = await getRole(c, user)
 
   if (role === 'admin') {
-    const admin = getAdminSupabaseClient(c?.env as any)
-    if (!admin) return c.json({ error: 'Admin client not configured' }, 500)
-    const { data: albumData } = await admin.from('albums').select('user_id').eq('id', id).single()
-    const { error } = await admin.from('albums').delete().eq('id', id)
-    if (error) return c.json({ error: error.message }, 500)
+    const r = await db.prepare(`DELETE FROM albums WHERE id = ?`).bind(id).run()
+    if (!r.success) return c.json({ error: 'Delete failed' }, 500)
   } else {
-    const { error } = await supabase.from('albums').delete().eq('id', id).eq('user_id', user.id)
-    if (error) return c.json({ error: error.message }, 500)
+    const r = await db
+      .prepare(`DELETE FROM albums WHERE id = ? AND user_id = ?`)
+      .bind(id, user.id)
+      .run()
+    if (!r.success || r.meta.changes === 0) {
+      return c.json({ error: 'Album not found or forbidden' }, 403)
+    }
   }
 
   return c.json({ message: 'Album deleted successfully' })

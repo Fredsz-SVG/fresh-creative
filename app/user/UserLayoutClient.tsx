@@ -60,31 +60,6 @@ export default function UserLayoutClient({
             } catch {
             }
 
-            const channel = supabase
-                .channel(`user-suspend-${session.user.id}`)
-                .on(
-                    'postgres_changes',
-                    { event: 'UPDATE', schema: 'public', table: 'users', filter: `id=eq.${session.user.id}` },
-                    async (payload) => {
-                        const nextSuspended = (payload.new as any)?.is_suspended
-                        if (nextSuspended) {
-                            await fetchWithAuth('/api/auth/logout')
-                            await supabase.auth.signOut()
-                            if (!unsubscribed) router.replace('/login?error=account_suspended')
-                        }
-                    }
-                )
-                .on(
-                    'postgres_changes',
-                    { event: 'DELETE', schema: 'public', table: 'users', filter: `id=eq.${session.user.id}` },
-                    async () => {
-                        await fetchWithAuth('/api/auth/logout')
-                        await supabase.auth.signOut()
-                        if (!unsubscribed) router.replace('/login?error=Akun+telah+dihapus+oleh+admin.')
-                    }
-                )
-                .subscribe()
-
             const res = await fetchWithAuth('/api/auth/otp-status')
             const data = await res.json().catch(() => ({}))
             if (!data.verified) {
@@ -114,7 +89,6 @@ export default function UserLayoutClient({
 
             return () => {
                 unsubscribed = true
-                supabase.removeChannel(channel)
             }
         }
         const cleanupPromise = check()

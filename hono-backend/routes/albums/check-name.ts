@@ -1,27 +1,20 @@
 import { Hono } from 'hono'
-import { getAdminSupabaseClient } from '../../lib/supabase'
+import { getD1 } from '../../lib/edge-env'
 import { isSimilarSchoolName } from '../../lib/school-name-utils'
 
 const checkName = new Hono()
 
 checkName.get('/', async (c) => {
+  const db = getD1(c)
+  if (!db) return c.json({ error: 'Database not configured' }, 503)
   const url = new URL(c.req.url)
   const name = url.searchParams.get('name')?.trim()
   if (!name) {
     return c.json({ exists: false })
   }
-  const admin = getAdminSupabaseClient(c?.env as any)
-  if (!admin) {
-    return c.json({ error: 'Admin client not configured' }, 500)
-  }
-  const { data: albums, error } = await admin
-    .from('albums')
-    .select('id, name, pic_name, wa_e164')
-    .eq('type', 'yearbook')
-  if (error) {
-    console.error('[check-name] error:', error.message)
-    return c.json({ exists: false })
-  }
+  const { results: albums } = await db
+    .prepare(`SELECT id, name, pic_name, wa_e164 FROM albums WHERE type = 'yearbook'`)
+    .all<{ id: string; name: string | null; pic_name: string | null; wa_e164: string | null }>()
   if (!albums || albums.length === 0) {
     return c.json({ exists: false })
   }

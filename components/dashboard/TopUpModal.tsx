@@ -103,61 +103,6 @@ export default function TopUpModal({ isOpen, onClose, currentCredit = 0, onCredi
                     .catch(err => console.error(err))
                     .finally(() => setLoading(false))
             }
-
-            // Realtime subscription
-            const channel = supabase
-                .channel('room-credit-packages')
-                .on(
-                    'postgres_changes',
-                    { event: '*', schema: 'public', table: 'credit_packages' },
-                    (payload: any) => {
-
-                        // Optimistic Update
-                        setPackages((prev) => {
-                            let newPackages = [...prev]
-
-                            if (payload.eventType === 'INSERT') {
-                                newPackages.push(payload.new)
-                            } else if (payload.eventType === 'UPDATE') {
-                                newPackages = newPackages.map((p) => (p.id === payload.new.id ? payload.new : p))
-                            } else if (payload.eventType === 'DELETE') {
-                                newPackages = newPackages.filter((p) => p.id !== payload.old.id)
-                                // Clear selection if needed
-                                setSelectedPkg((cur) => (cur === payload.old.id ? null : cur))
-                            }
-
-                            // Sort by price (ascending)
-                            return newPackages.sort((a, b) => a.price - b.price)
-                        })
-
-                        // Backup Fetch (debounced)
-                        setTimeout(() => {
-                            fetchWithAuth(`/api/credits/packages?t=${Date.now()}`)
-                                .then((res) => res.json())
-                                .then((data) => {
-                                    if (Array.isArray(data)) {
-                                        setPackages(data)
-                                    }
-                                })
-                        }, 1000)
-                    }
-                )
-                .subscribe()
-
-            // Polling Backup (Every 3s)
-            const interval = setInterval(() => {
-                fetchWithAuth(`/api/credits/packages?t=${Date.now()}`)
-                    .then((res) => res.json())
-                    .then((data) => {
-                        if (Array.isArray(data)) setPackages(data)
-                    })
-                    .catch(() => { })
-            }, 3000)
-
-            return () => {
-                supabase.removeChannel(channel)
-                clearInterval(interval)
-            }
         }
     }, [isOpen])
 

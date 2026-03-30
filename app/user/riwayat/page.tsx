@@ -57,30 +57,16 @@ export default function UserRiwayatPage() {
   }, [fetchTransactions])
 
   useEffect(() => {
-    let isActive = true
-    let ch: ReturnType<typeof supabase.channel> | null = null
-
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (!user || !isActive) return
-      ch = supabase
-        .channel(`riwayat-user-${user.id}`)
-        .on(
-          'postgres_changes',
-          { event: '*', schema: 'public', table: 'transactions' },
-          () => {
-            fetchTransactions(true)
-          }
-        )
-        .subscribe((status, err) => {
-          if (err) console.warn('Realtime transactions:', status, err)
-        })
-    })
-
+    // Supabase auth-only: no Realtime, no polling.
+    // Refetch when user returns to tab.
+    const onVisible = () => {
+      fetchTransactions(true)
+    }
+    window.addEventListener('focus', onVisible)
+    document.addEventListener('visibilitychange', onVisible)
     return () => {
-      isActive = false
-      if (ch) {
-        supabase.removeChannel(ch)
-      }
+      window.removeEventListener('focus', onVisible)
+      document.removeEventListener('visibilitychange', onVisible)
     }
   }, [fetchTransactions])
 

@@ -1,29 +1,30 @@
+import type { Context } from 'hono'
 import type { User, Session } from '@supabase/supabase-js'
-import type { SupabaseClient } from '@supabase/supabase-js'
+import { getD1 } from './edge-env'
 
 /**
- * Ambil role user: prioritas dari tabel public.users (supabase), fallback ke JWT metadata.
- * Jadi kalau role diubah di database, langsung dipakai setelah refresh/fetch.
+ * Role dari D1 `users.role`, fallback metadata JWT (tanpa Postgres Supabase).
  */
 export async function getRole(
-  supabase: SupabaseClient,
+  c: Context,
   user: User | { id: string; user_metadata?: Record<string, unknown>; app_metadata?: Record<string, unknown> }
 ): Promise<'admin' | 'user'> {
-  try {
-    const { data, error } = await supabase
-      .from('users')
-      .select('role')
-      .eq('id', user.id)
-      .maybeSingle()
-
-    if (!error && data?.role === 'admin') return 'admin'
-    if (!error && data?.role === 'user') return 'user'
-
-    const metaRole = (user.user_metadata?.role as string) || (user.app_metadata?.role as string)
-    if (metaRole === 'admin' || metaRole === 'user') return metaRole
-  } catch {
-    // tabel users belum ada / query gagal — anggap user
+  const db = getD1(c)
+  if (db) {
+    try {
+      const row = await db
+        .prepare(`SELECT role FROM users WHERE id = ?`)
+        .bind(user.id)
+        .first<{ role: string }>()
+      if (row?.role === 'admin') return 'admin'
+      if (row?.role === 'user') return 'user'
+    } catch {
+      /* ignore */
+    }
   }
+  const metaRole =
+    (user.user_metadata?.role as string) || (user.app_metadata?.role as string)
+  if (metaRole === 'admin' || metaRole === 'user') return metaRole
   return 'user'
 }
 

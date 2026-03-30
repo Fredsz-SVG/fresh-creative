@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react'
 import { Edit, Plus, Save, Trash2, X, Loader2, Check, Copy, Gift, ToggleLeft, ToggleRight, Clock, ChevronRight, Layout, Zap, Hash, Calendar, AlertCircle, Users, Star } from 'lucide-react'
 import { toast } from 'sonner'
-import { supabase } from '@/lib/supabase'
 import { fetchWithAuth } from '../../../lib/api-client'
 
 interface CreditPackage {
@@ -148,28 +147,6 @@ export default function AdminCreditSettingsPage() {
     useEffect(() => {
         fetchPackages()
         fetchRedeemCodes()
-
-        const channel = supabase
-            .channel('realtime-admin-credits')
-            .on(
-                'postgres_changes',
-                { event: '*', schema: 'public', table: 'credit_packages' },
-                () => {
-                    fetchPackages(true)
-                }
-            )
-            .on(
-                'postgres_changes',
-                { event: '*', schema: 'public', table: 'redeem_codes' },
-                () => {
-                    fetchRedeemCodes(true)
-                }
-            )
-            .subscribe()
-
-        return () => {
-            supabase.removeChannel(channel)
-        }
     }, [])
 
     const handleSave = async (pkg: Partial<CreditPackage>) => {

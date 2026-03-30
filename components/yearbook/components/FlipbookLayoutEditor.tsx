@@ -76,21 +76,24 @@ export default function FlipbookLayoutEditor({ album, onPlayVideo, onUpdateAlbum
 
     const fetchManualPages = async () => {
         if (!album?.id) return
-        const { data: pages, error } = await supabase
-            .from('manual_flipbook_pages')
-            .select('*, flipbook_video_hotspots(*)')
-            .eq('album_id', album.id)
-            .order('page_number', { ascending: true })
-
-        if (error) {
-            console.error('Error fetching manual pages:', error)
-            return
-        }
-        if (pages) {
-            setManualPages(pages)
-            if (pages.length > 0 && !selectedManualPageId) {
-                setSelectedManualPageId(pages[0].id)
+        try {
+            const res = await fetchWithAuth(`/api/albums/${album.id}/flipbook`, {
+                credentials: 'include',
+                cache: 'no-store',
+            })
+            const pages = await res.json().catch(() => [])
+            if (!res.ok) {
+                console.error('Error fetching manual pages:', pages)
+                return
             }
+            if (Array.isArray(pages)) {
+                setManualPages(pages as ManualFlipbookPage[])
+                if (pages.length > 0 && !selectedManualPageId) {
+                    setSelectedManualPageId((pages[0] as any).id)
+                }
+            }
+        } catch (err) {
+            console.error('Error fetching manual pages:', err)
         }
     }
 
@@ -100,58 +103,7 @@ export default function FlipbookLayoutEditor({ album, onPlayVideo, onUpdateAlbum
             fetchManualPages()
         }
     }, [album?.id])
-
-    // Realtime Subscription
-    useEffect(() => {
-        if (!album?.id) return
-
-        const channel = supabase
-            .channel(`flipbook-hotspots-${album.id}`)
-            .on(
-                'postgres_changes',
-                {
-                    event: '*',
-                    schema: 'public',
-                    table: 'flipbook_video_hotspots'
-                },
-                (payload) => {
-                    const { eventType, new: newRecord, old: oldRecord } = payload as any
-
-                    if (eventType === 'INSERT') {
-                        setManualPages(prev => prev.map(page => {
-                            if (page.id === newRecord.page_id) {
-                                // Prevent duplicates if already added via local state
-                                if (page.flipbook_video_hotspots?.some(h => h.id === newRecord.id)) {
-                                    return page
-                                }
-                                return {
-                                    ...page,
-                                    flipbook_video_hotspots: [...(page.flipbook_video_hotspots || []), newRecord]
-                                }
-                            }
-                            return page
-                        }))
-                    } else if (eventType === 'UPDATE') {
-                        setManualPages(prev => prev.map(page => ({
-                            ...page,
-                            flipbook_video_hotspots: page.flipbook_video_hotspots?.map(h =>
-                                h.id === newRecord.id ? { ...h, ...newRecord } : h
-                            )
-                        })))
-                    } else if (eventType === 'DELETE') {
-                        setManualPages(prev => prev.map(page => ({
-                            ...page,
-                            flipbook_video_hotspots: page.flipbook_video_hotspots?.filter(h => h.id !== oldRecord.id)
-                        })))
-                    }
-                }
-            )
-            .subscribe()
-
-        return () => {
-            supabase.removeChannel(channel)
-        }
-    }, [album?.id])
+    // Supabase auth-only: no Realtime. We refetch pages after actions as needed.
 
     const handleDeleteAllPages = async () => {
         if (!manualPages.length) return

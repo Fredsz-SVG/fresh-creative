@@ -1,12 +1,20 @@
 import { Hono } from 'hono'
-import { getSupabaseClient, getAdminSupabaseClient } from '../../../lib/supabase'
+import { getSupabaseClient } from '../../../lib/supabase'
 import { getRole } from '../../../lib/auth'
+import { getD1, getAssets } from '../../../lib/edge-env'
+import { putAlbumPhoto } from '../../../lib/r2-assets'
+import { publicAlbumAssetUrl } from '../../../lib/public-file-url'
 
 const albumCoverRoute = new Hono()
 
 // POST /api/albums/:id/cover
 albumCoverRoute.post('/', async (c) => {
   const supabase = getSupabaseClient(c)
+  const db = getD1(c)
+  const bucket = getAssets(c)
+  if (!db) return c.json({ error: 'Database not configured' }, 503)
+  if (!bucket) return c.json({ error: 'Storage not configured' }, 503)
+
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return c.json({ error: 'Unauthorized' }, 401)
 
@@ -22,10 +30,10 @@ albumCoverRoute.post('/', async (c) => {
   try {
     const formData = await c.req.formData()
     const file = formData.get('file')
-    if (file && file instanceof File) {
-      fileData = await file.arrayBuffer()
-      filename = file.name || 'cover.jpg'
-      mimetype = file.type || 'image/jpeg'
+    if (file != null && typeof file !== 'string') {
+      fileData = await (file as Blob).arrayBuffer()
+      filename = (file as File).name || 'cover.jpg'
+      mimetype = (file as File).type || 'image/jpeg'
     }
     const px = formData.get('position_x')
     const py = formData.get('position_y')
@@ -46,60 +54,70 @@ albumCoverRoute.post('/', async (c) => {
       ? `${positionX}% ${positionY}%`
       : null
 
-  const { data: album, error: albumErr } = await supabase
-    .from('albums').select('id, user_id').eq('id', albumId).single()
-  if (albumErr || !album) return c.json({ error: 'Album not found' }, 404)
-  const role = await getRole(supabase, user)
-  if ((album as any).user_id !== user.id && role !== 'admin') {
+  const album = await db
+    .prepare(`SELECT id, user_id FROM albums WHERE id = ?`)
+    .bind(albumId)
+    .first<{ id: string; user_id: string }>()
+  if (!album) return c.json({ error: 'Album not found' }, 404)
+
+  const role = await getRole(c, user)
+  if (album.user_id !== user.id && role !== 'admin') {
     return c.json({ error: 'Hanya pemilik album yang dapat mengubah sampul' }, 403)
   }
 
-  const admin = getAdminSupabaseClient(c?.env as any)
   const ext = filename.split('.').pop()?.toLowerCase() || 'jpg'
   const safeExt = ['jpg', 'jpeg', 'png', 'webp', 'gif'].includes(ext) ? ext : 'jpg'
-  const path = `${albumId}/cover.${safeExt}`
+  const relPath = `${albumId}/cover.${safeExt}`
 
-  const { data: uploadData, error: uploadErr } = await admin.storage
-    .from('album-photos')
-    .upload(path, fileData, { contentType: mimetype, upsert: true })
+  try {
+    await putAlbumPhoto(bucket, relPath, fileData, { contentType: mimetype })
+  } catch (e: any) {
+    return c.json({ error: e?.message || 'Upload gagal' }, 500)
+  }
 
-  if (uploadErr) return c.json({ error: uploadErr.message || 'Upload gagal' }, 500)
+  const coverUrl = publicAlbumAssetUrl(c, relPath)
 
-  const { data: urlData } = admin.storage.from('album-photos').getPublicUrl(uploadData.path)
-  const coverUrl = urlData.publicUrl
+  const r = await db
+    .prepare(
+      `UPDATE albums SET cover_image_url = ?, cover_image_position = ?, updated_at = datetime('now') WHERE id = ?`
+    )
+    .bind(coverUrl, coverPosition, albumId)
+    .run()
+  if (!r.success) return c.json({ error: 'Update gagal' }, 500)
 
-  const updatePayload: { cover_image_url: string; cover_image_position?: string } = { cover_image_url: coverUrl }
-  if (coverPosition != null) updatePayload.cover_image_position = coverPosition
-
-  const { error: updateErr } = await admin.from('albums').update(updatePayload).eq('id', albumId)
-  if (updateErr) return c.json({ error: updateErr.message }, 500)
   return c.json({ cover_image_url: coverUrl, cover_image_position: coverPosition ?? undefined })
 })
 
 // DELETE /api/albums/:id/cover
 albumCoverRoute.delete('/', async (c) => {
   const supabase = getSupabaseClient(c)
+  const db = getD1(c)
+  if (!db) return c.json({ error: 'Database not configured' }, 503)
+
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return c.json({ error: 'Unauthorized' }, 401)
 
   const albumId = c.req.param('id')
   if (!albumId) return c.json({ error: 'Album ID required' }, 400)
 
-  const { data: album, error: albumErr } = await supabase
-    .from('albums').select('id, user_id').eq('id', albumId).single()
-  if (albumErr || !album) return c.json({ error: 'Album not found' }, 404)
-  const role = await getRole(supabase, user)
-  if ((album as any).user_id !== user.id && role !== 'admin') {
+  const album = await db
+    .prepare(`SELECT id, user_id FROM albums WHERE id = ?`)
+    .bind(albumId)
+    .first<{ id: string; user_id: string }>()
+  if (!album) return c.json({ error: 'Album not found' }, 404)
+
+  const role = await getRole(c, user)
+  if (album.user_id !== user.id && role !== 'admin') {
     return c.json({ error: 'Hanya pemilik album yang dapat menghapus sampul' }, 403)
   }
 
-  const admin = getAdminSupabaseClient(c?.env as any)
-  const { error: updateErr } = await admin
-    .from('albums')
-    .update({ cover_image_url: null, cover_image_position: null, updated_at: new Date().toISOString() })
-    .eq('id', albumId)
-
-  if (updateErr) return c.json({ error: updateErr.message }, 500)
+  const r = await db
+    .prepare(
+      `UPDATE albums SET cover_image_url = NULL, cover_image_position = NULL, updated_at = datetime('now') WHERE id = ?`
+    )
+    .bind(albumId)
+    .run()
+  if (!r.success) return c.json({ error: 'Update gagal' }, 500)
   return c.json({ message: 'Sampul dihapus' })
 })
 

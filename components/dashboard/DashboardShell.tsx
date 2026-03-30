@@ -90,8 +90,6 @@ export default function DashboardShell({
   }
 
   useEffect(() => {
-    let channel: any
-
     fetchNotifications() // initial fetch
 
     const init = async () => {
@@ -99,87 +97,20 @@ export default function DashboardShell({
         const res = await fetchWithAuth('/api/user/me')
         const data = await res.json()
         if (typeof data.credits === 'number') setCredits(data.credits)
-
-        if (data.id) {
-          channel = supabase
-            .channel(`user-realtime-${data.id}`)
-            .on(
-              'postgres_changes',
-              {
-                event: 'UPDATE',
-                schema: 'public',
-                table: 'users',
-                filter: `id=eq.${data.id}`
-              },
-              (payload: any) => {
-                if (payload.new && typeof payload.new.credits === 'number') {
-                  setCredits(payload.new.credits)
-                }
-              }
-            )
-            .on(
-              'postgres_changes',
-              {
-                event: 'INSERT',
-                schema: 'public',
-                table: 'notifications',
-                filter: `user_id=eq.${data.id}`
-              },
-              (payload: any) => {
-                if (payload.new) {
-                  setNotifications(prev => [payload.new, ...prev])
-                  if (!payload.new.is_read) {
-                    setUnreadCount(prev => prev + 1)
-                  }
-                }
-              }
-            )
-            .on(
-              'postgres_changes',
-              {
-                event: 'UPDATE',
-                schema: 'public',
-                table: 'notifications',
-                filter: `user_id=eq.${data.id}`
-              },
-              (payload: any) => {
-                if (payload.new) {
-                  setNotifications(prev => prev.map(n => n.id === payload.new.id ? payload.new : n))
-                  // Re-calculate unread count from the new state to be safe
-                  setNotifications(currentNotifs => {
-                    const updated = currentNotifs.map(n => n.id === payload.new.id ? payload.new : n)
-                    setUnreadCount(updated.filter(n => !n.is_read).length)
-                    return updated
-                  })
-                }
-              }
-            )
-            .on(
-              'postgres_changes',
-              {
-                event: 'DELETE',
-                schema: 'public',
-                table: 'notifications',
-                filter: `user_id=eq.${data.id}`
-              },
-              (payload: any) => {
-                if (payload.old) {
-                  setNotifications(prev => {
-                    const filtered = prev.filter(n => n.id !== payload.old.id)
-                    setUnreadCount(filtered.filter(n => !n.is_read).length)
-                    return filtered
-                  })
-                }
-              }
-            )
-            .subscribe()
-        }
       } catch (e) {
         // ignore
       }
     }
 
     init()
+
+    const onVisible = () => {
+      refreshCredits()
+      // Only refresh notifications when drawer is open or page regains focus
+      fetchNotifications()
+    }
+    window.addEventListener('focus', onVisible)
+    document.addEventListener('visibilitychange', onVisible)
 
     const onCreditsUpdated = () => {
       fetchWithAuth('/api/user/me')
@@ -192,7 +123,8 @@ export default function DashboardShell({
     window.addEventListener('credits-updated', onCreditsUpdated)
 
     return () => {
-      if (channel) supabase.removeChannel(channel)
+      window.removeEventListener('focus', onVisible)
+      document.removeEventListener('visibilitychange', onVisible)
       window.removeEventListener('credits-updated', onCreditsUpdated)
     }
   }, [])

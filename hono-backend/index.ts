@@ -82,6 +82,7 @@ import pricing from './routes/pricing';
 import proxyImage from './routes/proxy-image';
 import selectArea from './routes/select-area';
 import showcase from './routes/showcase';
+import files from './routes/files';
 
 // ── User ──
 import userJoinRequests from './routes/user/join-requests';
@@ -214,6 +215,7 @@ app.route('/api/pricing', pricing);
 app.route('/api/proxy-image', proxyImage);
 app.route('/api/select-area', selectArea);
 app.route('/api/showcase', showcase);
+app.route('/api/files', files);
 
 // User
 app.route('/api/user/join-requests', userJoinRequests);

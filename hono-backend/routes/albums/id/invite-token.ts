@@ -1,5 +1,6 @@
 import { Hono } from 'hono'
-import { getSupabaseClient, getAdminSupabaseClient } from '../../../lib/supabase'
+import { getSupabaseClient } from '../../../lib/supabase'
+import { getD1 } from '../../../lib/edge-env'
 
 function generateShortInviteCode(): string {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
@@ -12,6 +13,8 @@ const albumInviteTokenRoute = new Hono()
 
 albumInviteTokenRoute.get('/', async (c) => {
   const supabase = getSupabaseClient(c)
+  const db = getD1(c)
+  if (!db) return c.json({ error: 'Database not configured' }, 503)
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
     return c.json({ error: 'Unauthorized' }, 401)
@@ -20,26 +23,28 @@ albumInviteTokenRoute.get('/', async (c) => {
   if (!albumId) {
     return c.json({ error: 'Album ID required' }, 400)
   }
-  const supabaseAdmin = getAdminSupabaseClient(c?.env as any)
-  const { data: album, error: albumErr } = await (supabaseAdmin || supabase)
-    .from('albums')
-    .select('id, user_id, student_invite_token, student_invite_expires_at')
-    .eq('id', albumId)
-    .single()
-  if (albumErr || !album) {
+  const album = await db
+    .prepare(
+      `SELECT id, user_id, student_invite_token, student_invite_expires_at FROM albums WHERE id = ?`
+    )
+    .bind(albumId)
+    .first<{
+      id: string
+      user_id: string
+      student_invite_token: string | null
+      student_invite_expires_at: string | null
+    }>()
+  if (!album) {
     return c.json({ error: 'Album not found' }, 404)
   }
-  // Check if user is owner or admin
   const isOwner = album.user_id === user.id
   if (!isOwner) {
-    // Check if album admin
-    const { data: member } = await supabase
-      .from('album_members')
-      .select('role')
-      .eq('album_id', albumId)
-      .eq('user_id', user.id)
-      .eq('role', 'admin')
-      .maybeSingle()
+    const member = await db
+      .prepare(
+        `SELECT role FROM album_members WHERE album_id = ? AND user_id = ? AND role = 'admin'`
+      )
+      .bind(albumId, user.id)
+      .first<{ role: string }>()
     if (!member) {
       return c.json({ error: 'Forbidden' }, 403)
     }
@@ -52,6 +57,8 @@ albumInviteTokenRoute.get('/', async (c) => {
 
 albumInviteTokenRoute.post('/', async (c) => {
   const supabase = getSupabaseClient(c)
+  const db = getD1(c)
+  if (!db) return c.json({ error: 'Database not configured' }, 503)
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
     return c.json({ error: 'Unauthorized' }, 401)
@@ -60,45 +67,37 @@ albumInviteTokenRoute.post('/', async (c) => {
   if (!albumId) {
     return c.json({ error: 'Album ID required' }, 400)
   }
-  const supabaseAdmin = getAdminSupabaseClient(c?.env as any)
-  const { data: album, error: albumErr } = await (supabaseAdmin || supabase)
-    .from('albums')
-    .select('id, user_id')
-    .eq('id', albumId)
-    .single()
-  if (albumErr || !album) {
+  const album = await db
+    .prepare(`SELECT id, user_id FROM albums WHERE id = ?`)
+    .bind(albumId)
+    .first<{ id: string; user_id: string }>()
+  if (!album) {
     return c.json({ error: 'Album not found' }, 404)
   }
-  // Check if user is owner or admin
   const isOwner = album.user_id === user.id
   if (!isOwner) {
-    // Check if album admin
-    const { data: member } = await supabase
-      .from('album_members')
-      .select('role')
-      .eq('album_id', albumId)
-      .eq('user_id', user.id)
-      .eq('role', 'admin')
-      .maybeSingle()
+    const member = await db
+      .prepare(
+        `SELECT role FROM album_members WHERE album_id = ? AND user_id = ? AND role = 'admin'`
+      )
+      .bind(albumId, user.id)
+      .first<{ role: string }>()
     if (!member) {
       return c.json({ error: 'Only album owner or admin can create invite token' }, 403)
     }
   }
   const body = await c.req.json().catch(() => ({}))
   const expiresInDays = body?.expiresInDays || 7
-  // Generate new token (kode pendek saja)
   const token = generateShortInviteCode()
   const expiresAt = new Date()
   expiresAt.setDate(expiresAt.getDate() + expiresInDays)
-  // Update album with new token
-  const { error: updateErr } = await (supabaseAdmin || supabase)
-    .from('albums')
-    .update({
-      student_invite_token: token,
-      student_invite_expires_at: expiresAt.toISOString(),
-    })
-    .eq('id', albumId)
-  if (updateErr) {
+  const r = await db
+    .prepare(
+      `UPDATE albums SET student_invite_token = ?, student_invite_expires_at = ?, updated_at = datetime('now') WHERE id = ?`
+    )
+    .bind(token, expiresAt.toISOString(), albumId)
+    .run()
+  if (!r.success) {
     return c.json({ error: 'Failed to generate invite token' }, 500)
   }
   return c.json({

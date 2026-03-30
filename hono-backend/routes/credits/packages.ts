@@ -1,74 +1,96 @@
 import { Hono } from 'hono'
-import { getSupabaseClient } from '../../lib/supabase'
+import { getD1 } from '../../lib/edge-env'
 
 const creditsPackages = new Hono()
 
-// GET /api/credits/packages
+function mapCredit(row: Record<string, unknown>) {
+  return {
+    id: row.id,
+    name: row.name,
+    credits: row.credits,
+    price: row.price,
+    popular: Number(row.popular) === 1,
+    created_at: row.created_at,
+  }
+}
+
+// GET /api/credits/packages — D1 (edge)
 creditsPackages.get('/', async (c) => {
-  const supabase = getSupabaseClient(c)
-  const { data, error } = await supabase
-    .from('credit_packages')
-    .select('*')
-    .order('price', { ascending: true })
-  if (error) {
-    return c.json({ error: error.message }, 500)
+  const db = getD1(c)
+  if (!db) return c.json({ error: 'D1 tidak terkonfigurasi' }, 503)
+  try {
+    const { results } = await db
+      .prepare('SELECT * FROM credit_packages ORDER BY price ASC')
+      .all<Record<string, unknown>>()
+    return c.json((results ?? []).map(mapCredit))
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : 'error'
+    return c.json({ error: msg }, 500)
   }
-  return c.json(data)
 })
 
-// POST /api/credits/packages
 creditsPackages.post('/', async (c) => {
-  const supabase = getSupabaseClient(c)
-  const body = await c.req.json()
-  const { credits, price, popular } = body
-  const { data, error } = await supabase
-    .from('credit_packages')
-    .insert([{ credits, price, popular }])
-    .select()
-  if (error) {
-    return c.json({ error: error.message }, 500)
+  const db = getD1(c)
+  if (!db) return c.json({ error: 'D1 tidak terkonfigurasi' }, 503)
+  const body = await c.req.json().catch(() => ({}))
+  const id = typeof body.id === 'string' && body.id ? body.id : crypto.randomUUID()
+  const credits = Number(body.credits)
+  const price = Number(body.price)
+  const popular = body.popular ? 1 : 0
+  const name = body.name != null ? String(body.name) : null
+  if (!Number.isFinite(credits) || !Number.isFinite(price)) {
+    return c.json({ error: 'Invalid payload' }, 400)
   }
-  return c.json(data)
+  try {
+    await db
+      .prepare('INSERT INTO credit_packages (id, name, credits, price, popular) VALUES (?, ?, ?, ?, ?)')
+      .bind(id, name, credits, price, popular)
+      .run()
+    const row = await db.prepare('SELECT * FROM credit_packages WHERE id = ?').bind(id).first<Record<string, unknown>>()
+    return c.json(row ? mapCredit(row) : { id })
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : 'error'
+    return c.json({ error: msg }, 500)
+  }
 })
 
-// PUT /api/credits/packages
 creditsPackages.put('/', async (c) => {
-  const supabase = getSupabaseClient(c)
-  const body = await c.req.json()
-  const { id, credits, price, popular } = body
-  if (!id) {
-    return c.json({ error: 'ID is required' }, 400)
+  const db = getD1(c)
+  if (!db) return c.json({ error: 'D1 tidak terkonfigurasi' }, 503)
+  const body = await c.req.json().catch(() => ({}))
+  const id = body.id
+  if (!id) return c.json({ error: 'ID is required' }, 400)
+  const credits = Number(body.credits)
+  const price = Number(body.price)
+  const popular = body.popular ? 1 : 0
+  try {
+    const r = await db
+      .prepare('UPDATE credit_packages SET credits = ?, price = ?, popular = ? WHERE id = ?')
+      .bind(credits, price, popular, id)
+      .run()
+    if (r.meta.changes === 0) return c.json({ error: 'No rows updated' }, 404)
+    const row = await db.prepare('SELECT * FROM credit_packages WHERE id = ?').bind(id).first<Record<string, unknown>>()
+    return c.json(row ? mapCredit(row) : {})
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : 'error'
+    return c.json({ error: msg }, 500)
   }
-  const { data, error } = await supabase
-    .from('credit_packages')
-    .update({ credits, price, popular })
-    .eq('id', id)
-    .select()
-  if (error) {
-    return c.json({ error: error.message }, 500)
-  }
-  if (!data || data.length === 0) {
-    return c.json({ error: 'No rows updated. Check RLS or ID.' }, 404)
-  }
-  return c.json(data)
 })
 
-// DELETE /api/credits/packages
 creditsPackages.delete('/', async (c) => {
-  const supabase = getSupabaseClient(c)
-  const body = await c.req.json()
-  const { id } = body
-  if (!id) {
-    return c.json({ error: 'ID is required' }, 400)
+  const db = getD1(c)
+  if (!db) return c.json({ error: 'D1 tidak terkonfigurasi' }, 503)
+  const body = await c.req.json().catch(() => ({}))
+  const id = body.id
+  if (!id) return c.json({ error: 'ID is required' }, 400)
+  try {
+    const r = await db.prepare('DELETE FROM credit_packages WHERE id = ?').bind(id).run()
+    if (r.meta.changes === 0) return c.json({ error: 'Not found' }, 404)
+    return c.json({ success: true })
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : 'error'
+    return c.json({ error: msg }, 500)
   }
-  const { error } = await supabase
-    .from('credit_packages')
-    .delete()
-    .eq('id', id)
-  if (error) {
-    return c.json({ error: error.message }, 500)
-  }
-  return c.json({ success: true })
 })
 
 export default creditsPackages

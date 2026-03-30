@@ -1,12 +1,18 @@
 import { Hono } from 'hono'
-import { getSupabaseClient, getAdminSupabaseClient } from '../../../../lib/supabase'
+import { getSupabaseClient } from '../../../../lib/supabase'
 import { getRole } from '../../../../lib/auth'
+import { getD1, getAssets } from '../../../../lib/edge-env'
+import { deleteAlbumObject, putAlbumPhoto } from '../../../../lib/r2-assets'
+import { publicAlbumAssetUrl } from '../../../../lib/public-file-url'
+import { parseJsonArray } from '../../../../lib/d1-json'
 
 const albumsIdPhotos = new Hono()
 
 // GET /api/albums/:id/photos
 albumsIdPhotos.get('/', async (c) => {
   const supabase = getSupabaseClient(c)
+  const db = getD1(c)
+  if (!db) return c.json({ error: 'Database not configured' }, 503)
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return c.json({ error: 'Unauthorized' }, 401)
 
@@ -18,48 +24,132 @@ albumsIdPhotos.get('/', async (c) => {
   const studentName = searchParams['student_name']
   if (!classId) return c.json({ error: 'class_id required' }, 400)
 
-  const admin = getAdminSupabaseClient(c?.env as any)
-  const role = await getRole(supabase, user)
-  const { data: album } = await (admin ?? supabase).from('albums').select('id, user_id').eq('id', albumId).single()
-  const isOwnerOrAdmin = album && ((album as { user_id: string }).user_id === user.id || role === 'admin')
-  const client = isOwnerOrAdmin && admin ? admin : supabase
+  const role = await getRole(c, user)
+  const album = await db
+    .prepare(`SELECT id, user_id FROM albums WHERE id = ?`)
+    .bind(albumId)
+    .first<{ id: string; user_id: string }>()
+  const isOwnerOrAdmin = album && (album.user_id === user.id || role === 'admin')
 
-  const { data: cls } = await client
-    .from('album_classes')
-    .select('id, album_id')
-    .eq('id', classId)
-    .eq('album_id', albumId)
-    .single()
+  const cls = await db
+    .prepare(`SELECT id, album_id FROM album_classes WHERE id = ? AND album_id = ?`)
+    .bind(classId, albumId)
+    .first<{ id: string; album_id: string }>()
   if (!cls) return c.json({ error: 'Class not found' }, 404)
 
-  let query = client
-    .from('album_class_access')
-    .select('student_name, photos, created_at')
-    .eq('album_id', albumId)
-    .eq('class_id', classId)
-
+  let records: { student_name: string | null; photos: string; created_at: string | null }[] = []
   if (studentName != null && studentName !== '') {
-    query = query.eq('student_name', decodeURIComponent(studentName))
+    const row = await db
+      .prepare(
+        `SELECT student_name, photos, created_at FROM album_class_access WHERE album_id = ? AND class_id = ? AND student_name = ?`
+      )
+      .bind(albumId, classId, decodeURIComponent(studentName))
+      .all<{ student_name: string | null; photos: string; created_at: string | null }>()
+    records = row.results ?? []
+  } else {
+    if (!isOwnerOrAdmin) {
+      return c.json({ error: 'Forbidden' }, 403)
+    }
+    const row = await db
+      .prepare(
+        `SELECT student_name, photos, created_at FROM album_class_access WHERE album_id = ? AND class_id = ?`
+      )
+      .bind(albumId, classId)
+      .all<{ student_name: string | null; photos: string; created_at: string | null }>()
+    records = row.results ?? []
   }
 
-  const { data: records, error } = await query
-  if (error) return c.json({ error: error.message }, 500)
-
-  const photos = (records || []).flatMap((r: any) => {
-    const studentPhotos = (r.photos as string[]) || []
+  const photos = records.flatMap((r) => {
+    const studentPhotos = parseJsonArray(r.photos) as string[]
     return studentPhotos.map((url, idx) => ({
       id: `${r.student_name}-${idx}`,
       file_url: url,
       student_name: r.student_name,
-      created_at: r.created_at
+      created_at: r.created_at,
     }))
   })
   return c.json(photos)
 })
 
+// DELETE /api/albums/:id/photos?class_id=&student_name=&index=
+albumsIdPhotos.delete('/', async (c) => {
+  const supabase = getSupabaseClient(c)
+  const db = getD1(c)
+  const bucket = getAssets(c)
+  if (!db) return c.json({ error: 'Database not configured' }, 503)
+  if (!bucket) return c.json({ error: 'Storage not configured' }, 503)
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return c.json({ error: 'Unauthorized' }, 401)
+
+  const albumId = c.req.param('id')
+  if (!albumId) return c.json({ error: 'Album ID required' }, 400)
+
+  const classId = c.req.query('class_id') || ''
+  const studentName = c.req.query('student_name') ? decodeURIComponent(c.req.query('student_name')!) : ''
+  const indexStr = c.req.query('index') || ''
+  const index = parseInt(indexStr, 10)
+  if (!classId || !studentName || Number.isNaN(index)) {
+    return c.json({ error: 'class_id, student_name, and index required' }, 400)
+  }
+
+  const album = await db
+    .prepare(`SELECT user_id FROM albums WHERE id = ?`)
+    .bind(albumId)
+    .first<{ user_id: string }>()
+  if (!album) return c.json({ error: 'Album not found' }, 404)
+  const role = await getRole(c, user)
+  const isOwner = album.user_id === user.id || role === 'admin'
+  if (!isOwner) {
+    const access = await db
+      .prepare(
+        `SELECT id, photos FROM album_class_access WHERE album_id = ? AND class_id = ? AND user_id = ? AND status = 'approved' AND student_name = ?`
+      )
+      .bind(albumId, classId, user.id, studentName)
+      .first<{ id: string; photos: string }>()
+    if (!access) return c.json({ error: 'Forbidden' }, 403)
+  }
+
+  const row = await db
+    .prepare(
+      `SELECT photos FROM album_class_access WHERE album_id = ? AND class_id = ? AND student_name = ?`
+    )
+    .bind(albumId, classId, studentName)
+    .first<{ photos: string }>()
+  if (!row) return c.json({ error: 'Not found' }, 404)
+
+  const arr = parseJsonArray(row.photos) as string[]
+  if (index < 0 || index >= arr.length) return c.json({ error: 'Invalid index' }, 400)
+  const removedUrl = arr[index]
+  const updatedPhotos = arr.filter((_, i) => i !== index)
+
+  try {
+    const pathPart = removedUrl.split('/api/files/')[1]
+    if (pathPart) {
+      const decoded = decodeURIComponent(pathPart.replace(/\/+/g, '/'))
+      const rel = decoded.replace(/^album-photos\//, '')
+      await deleteAlbumObject(bucket, rel)
+    }
+  } catch {
+    /* best-effort */
+  }
+
+  const upd = await db
+    .prepare(
+      `UPDATE album_class_access SET photos = ?, updated_at = datetime('now') WHERE album_id = ? AND class_id = ? AND student_name = ?`
+    )
+    .bind(JSON.stringify(updatedPhotos), albumId, classId, studentName)
+    .run()
+  if (!upd.success) return c.json({ error: 'Update failed' }, 500)
+  return c.json({ message: 'Foto dihapus' })
+})
+
 // POST /api/albums/:id/photos
 albumsIdPhotos.post('/', async (c) => {
   const supabase = getSupabaseClient(c)
+  const db = getD1(c)
+  const bucket = getAssets(c)
+  if (!db) return c.json({ error: 'Database not configured' }, 503)
+  if (!bucket) return c.json({ error: 'Storage not configured' }, 503)
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return c.json({ error: 'Unauthorized' }, 401)
 
@@ -75,10 +165,10 @@ albumsIdPhotos.post('/', async (c) => {
   try {
     const formData = await c.req.formData()
     const file = formData.get('file')
-    if (file && file instanceof File) {
-      fileData = await file.arrayBuffer()
-      filename = file.name || 'photo.jpg'
-      mimetype = file.type || 'image/jpeg'
+    if (file != null && typeof file !== 'string') {
+      fileData = await (file as Blob).arrayBuffer()
+      filename = (file as File).name || 'photo.jpg'
+      mimetype = (file as File).type || 'image/jpeg'
     }
     const ci = formData.get('class_id')
     if (ci) classId = ci.toString().trim()
@@ -89,70 +179,98 @@ albumsIdPhotos.post('/', async (c) => {
     return c.json({ error: msg || 'Invalid multipart body' }, 400)
   }
 
-  if (!fileData || fileData.byteLength === 0 || !classId || !studentName) {
-    return c.json({ error: 'file, class_id, and student_name required' }, 400)
+  if (!fileData || fileData.byteLength === 0 || !classId) {
+    return c.json({ error: 'file and class_id required' }, 400)
   }
 
   const MAX_PHOTO_BYTES = 10 * 1024 * 1024
   if (fileData.byteLength > MAX_PHOTO_BYTES) return c.json({ error: 'Foto maksimal 10MB' }, 413)
 
-  const admin = getAdminSupabaseClient(c?.env as any)
-  const client = admin ?? supabase
-
-  const { data: album } = await client.from('albums').select('id, user_id').eq('id', albumId).single()
+  const album = await db
+    .prepare(`SELECT id, user_id FROM albums WHERE id = ?`)
+    .bind(albumId)
+    .first<{ id: string; user_id: string }>()
   if (!album) return c.json({ error: 'Album not found' }, 404)
 
-  const role = await getRole(supabase, user)
-  const isOwner = (album as any).user_id === user.id || role === 'admin'
+  const role = await getRole(c, user)
+  const isOwner = album.user_id === user.id || role === 'admin'
   if (!isOwner) {
-    const { data: member } = await client.from('album_members').select('album_id').eq('album_id', albumId).eq('user_id', user.id).maybeSingle()
+    const member = await db
+      .prepare(`SELECT album_id FROM album_members WHERE album_id = ? AND user_id = ?`)
+      .bind(albumId, user.id)
+      .first<{ album_id: string }>()
     if (!member) {
-      const { data: classAccess } = await client
-        .from('album_class_access').select('id').eq('album_id', albumId).eq('user_id', user.id).eq('status', 'approved').maybeSingle()
+      const classAccess = await db
+        .prepare(
+          `SELECT id FROM album_class_access WHERE album_id = ? AND user_id = ? AND status = 'approved'`
+        )
+        .bind(albumId, user.id)
+        .first<{ id: string }>()
       if (!classAccess) return c.json({ error: 'No access to album' }, 403)
     }
   }
 
-  const { data: cls } = await client.from('album_classes').select('id, album_id').eq('id', classId).eq('album_id', albumId).single()
+  const cls = await db
+    .prepare(`SELECT id, album_id FROM album_classes WHERE id = ? AND album_id = ?`)
+    .bind(classId, albumId)
+    .first<{ id: string; album_id: string }>()
   if (!cls) return c.json({ error: 'Class not found' }, 404)
 
-  if (!isOwner) {
-    const { data: access } = await client
-      .from('album_class_access').select('id').eq('class_id', classId).eq('user_id', user.id).eq('status', 'approved').eq('student_name', studentName).maybeSingle()
-    if (!access) return c.json({ error: 'Anda harus punya akses disetujui untuk nama ini di kelas ini' }, 403)
+  // Permission model:
+  // - Owner / global admin: boleh upload untuk siapa saja (butuh student_name untuk memilih record).
+  // - Member approved: hanya boleh upload untuk record miliknya sendiri (student_name dari DB sebagai source of truth).
+  let targetAccess: { id: string; student_name: string | null; photos: string } | null = null
+  if (isOwner) {
+    if (!studentName) return c.json({ error: 'student_name required' }, 400)
+    targetAccess = await db
+      .prepare(
+        `SELECT id, student_name, photos FROM album_class_access WHERE album_id = ? AND class_id = ? AND student_name = ?`
+      )
+      .bind(albumId, classId, studentName)
+      .first<{ id: string; student_name: string | null; photos: string }>()
+  } else {
+    targetAccess = await db
+      .prepare(
+        `SELECT id, student_name, photos FROM album_class_access WHERE album_id = ? AND class_id = ? AND user_id = ? AND status = 'approved'`
+      )
+      .bind(albumId, classId, user.id)
+      .first<{ id: string; student_name: string | null; photos: string }>()
+    // Untuk member, kalau UI tidak kirim student_name atau beda, kita tetap pakai dari DB.
+    studentName = targetAccess?.student_name || studentName
   }
+  if (!targetAccess) return c.json({ error: 'Access record not found' }, 404)
 
   const ext = filename.split('.').pop()?.toLowerCase() || 'jpg'
   const safeExt = ['jpg', 'jpeg', 'png', 'webp', 'gif'].includes(ext) ? ext : 'jpg'
-  const path = `${albumId}/${classId}/${crypto.randomUUID()}.${safeExt}`
+  const relPath = `${albumId}/${classId}/${crypto.randomUUID()}.${safeExt}`
 
-  const { data: uploadData, error: uploadErr } = await (admin ?? supabase).storage
-    .from('album-photos').upload(path, fileData, { contentType: mimetype, upsert: false })
-  if (uploadErr) return c.json({ error: uploadErr.message || 'Upload gagal' }, 500)
+  try {
+    await putAlbumPhoto(bucket, relPath, fileData, { contentType: mimetype })
+  } catch (e: unknown) {
+    return c.json({ error: e instanceof Error ? e.message : 'Upload gagal' }, 500)
+  }
 
-  const { data: urlData } = (admin ?? supabase).storage.from('album-photos').getPublicUrl(uploadData.path)
-  const fileUrl = urlData.publicUrl
+  const fileUrl = publicAlbumAssetUrl(c, relPath)
 
-  const { data: accessRecord } = await client
-    .from('album_class_access').select('photos').eq('album_id', albumId).eq('class_id', classId).eq('student_name', studentName).maybeSingle()
-  if (!accessRecord) return c.json({ error: 'Access record not found' }, 404)
-
-  const currentPhotos = (accessRecord.photos as string[]) || []
+  const currentPhotos = parseJsonArray(targetAccess.photos) as string[]
   if (currentPhotos.length >= 4) return c.json({ error: 'Maksimal 4 foto per siswa' }, 400)
 
   const updatedPhotos = [...currentPhotos, fileUrl]
-  const { error: updateErr } = await client
-    .from('album_class_access').update({ photos: updatedPhotos }).eq('album_id', albumId).eq('class_id', classId).eq('student_name', studentName)
-  if (updateErr) return c.json({ error: updateErr.message }, 500)
+  const upd = await db
+    .prepare(
+      `UPDATE album_class_access SET photos = ?, updated_at = datetime('now') WHERE id = ?`
+    )
+    .bind(JSON.stringify(updatedPhotos), targetAccess.id)
+    .run()
+  if (!upd.success) return c.json({ error: 'Update failed' }, 500)
 
   return c.json({
     id: crypto.randomUUID(),
     file_url: fileUrl,
     student_name: studentName,
     photo_index: updatedPhotos.length - 1,
-    total_photos: updatedPhotos.length
+    total_photos: updatedPhotos.length,
   })
 })
-
 
 export default albumsIdPhotos

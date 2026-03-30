@@ -1,24 +1,34 @@
 /**
- * Returns the base URL for the Fastify API backend.
- * In production, this should point to your Render deployment URL.
- * In development, it points to 127.0.0.1:8000.
+ * Origin untuk request API.
+ * - Browser: string kosong → path relatif ke app Next; next.config.js mem-proksi /api/* ke Hono
+ *   (same-origin, tanpa CORS, tetap jalan walau env mengarah ke 127.0.0.1:8787 tapi firewall/browser membatasi).
+ * - Server (RSC/Route Handler): URL app (NEXT_PUBLIC_APP_URL / VERCEL_URL), agar fetch memicu rewrite proxy.
+ *
+ * NEXT_PUBLIC_API_URL tetap dipakai di next.config.js sebagai target proxy.
  */
-export function getApiUrl(): string {
-    let url = '';
-    if (typeof window !== 'undefined') {
-        // Client-side: use localhost so cookies are sent correctly
-        url = process.env.NEXT_PUBLIC_API_URL?.replace('127.0.0.1', 'localhost') || 'http://localhost:8000'
-    } else {
-        // Server-side: use 127.0.0.1 to avoid Node.js IPv6 resolution issues
-        url = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000'
+function getServerAppOrigin(): string {
+    const explicit = process.env.NEXT_PUBLIC_APP_URL?.trim()
+    if (explicit) {
+        return explicit.endsWith('/') ? explicit.slice(0, -1) : explicit
     }
-    // Remove trailing slash if present to avoid double slashes in concatenated paths
-    return url.endsWith('/') ? url.slice(0, -1) : url
+    const vercel = process.env.VERCEL_URL?.trim()
+    if (vercel) {
+        const host = vercel.replace(/^https?:\/\//, '').replace(/\/$/, '')
+        return `https://${host}`
+    }
+    return 'http://localhost:3000'
+}
+
+export function getApiUrl(): string {
+    if (typeof window !== 'undefined') {
+        return ''
+    }
+    return getServerAppOrigin()
 }
 
 /**
  * Helper to build a full API URL from a path.
- * Usage: apiUrl('/api/albums') => 'http://127.0.0.1:8000/api/albums'
+ * Usage: apiUrl('/api/albums') => 'http://127.0.0.1:8787/api/albums'
  */
 export function apiUrl(path: string): string {
     const base = getApiUrl()

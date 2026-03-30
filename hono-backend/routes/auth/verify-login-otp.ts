@@ -1,7 +1,9 @@
 import { Hono } from 'hono'
 import { setCookie } from 'hono/cookie'
-import { getSupabaseClient, getAdminSupabaseClient } from '../../lib/supabase'
+import { getSupabaseClient } from '../../lib/supabase'
 import { getRole } from '../../lib/auth'
+import { getD1 } from '../../lib/edge-env'
+import { ensureUserInD1, honoEnvForSupabasePublicSync, isUserSuspendedD1 } from '../../lib/d1-users'
 
 const OTP_COOKIE_NAME = 'otp_verified'
 const OTP_COOKIE_MAX_AGE = 60 * 60 * 24 * 30 // 30 days
@@ -20,65 +22,74 @@ verifyLoginOtp.post('/', async (c) => {
   }
 
   const supabase = getSupabaseClient(c)
+  const db = getD1(c)
+  if (!db) {
+    return c.json({ error: 'Database not configured' }, 503)
+  }
+
   const { data: { user }, error: authError } = await supabase.auth.getUser()
 
   if (authError || !user?.email) {
     return c.json({ error: 'Unauthorized' }, 401)
   }
 
-  const { data: profile } = await supabase
-    .from('users')
-    .select('is_suspended')
-    .eq('id', user.id)
-    .maybeSingle()
+  await ensureUserInD1(db, user, honoEnvForSupabasePublicSync(c.env))
 
-  if (profile?.is_suspended) {
+  if (await isUserSuspendedD1(db, user.id)) {
     await supabase.auth.signOut()
     return c.json({ error: 'Akun Anda sedang disuspend. Silakan hubungi admin.' }, 403)
   }
 
-  let db: any
-  try { db = getAdminSupabaseClient(c?.env as any) } catch { db = supabase }
-
-  const { data: row } = await db
-    .from('login_otps')
-    .select('user_id')
-    .eq('user_id', user.id)
-    .eq('code', code)
-    .gt('expires_at', new Date().toISOString())
-    .maybeSingle()
+  const nowIso = new Date().toISOString()
+  const row = await db
+    .prepare(
+      `SELECT user_id FROM login_otps WHERE user_id = ? AND code = ? AND expires_at > ?`
+    )
+    .bind(user.id, code, nowIso)
+    .first<{ user_id: string }>()
 
   if (row) {
-    await db.from('login_otps').delete().eq('user_id', user.id)
-    const role = await getRole(supabase, user)
+    await db.prepare(`DELETE FROM login_otps WHERE user_id = ?`).bind(user.id).run()
+    const role = await getRole(c, user)
     const redirectTo = role === 'admin' ? '/admin' : '/user'
     const isProduction = (c.env as any).NODE_ENV === 'production'
     setCookie(c, OTP_COOKIE_NAME, '1', {
-      path: '/', maxAge: OTP_COOKIE_MAX_AGE, httpOnly: true,
-      sameSite: 'Lax', secure: isProduction,
+      path: '/',
+      maxAge: OTP_COOKIE_MAX_AGE,
+      httpOnly: true,
+      sameSite: 'Lax',
+      secure: isProduction,
     })
     return c.json({ ok: true, redirectTo })
   }
 
-  // Fallback: Supabase verifyOtp
+  // Fallback: Supabase verifyOtp (auth saja)
   const { data, error: verifyError } = await supabase.auth.verifyOtp({
-    email: user.email, token: code, type: 'email',
+    email: user.email,
+    token: code,
+    type: 'email',
   })
 
   if (verifyError) {
-    const msg = verifyError.message === 'Token has expired or is invalid'
-      ? 'Kode OTP tidak valid atau sudah kadaluarsa' : verifyError.message
+    const msg =
+      verifyError.message === 'Token has expired or is invalid'
+        ? 'Kode OTP tidak valid atau sudah kadaluarsa'
+        : verifyError.message
     return c.json({ error: msg }, 400)
   }
 
   const verifiedUser = data?.user ?? user
-  const role = await getRole(supabase, verifiedUser)
+  await ensureUserInD1(db, verifiedUser, honoEnvForSupabasePublicSync(c.env))
+  const role = await getRole(c, verifiedUser)
   const redirectTo = safeNext || (role === 'admin' ? '/admin' : '/user')
   const isProduction = (c.env as any).NODE_ENV === 'production'
 
   setCookie(c, OTP_COOKIE_NAME, '1', {
-    path: '/', maxAge: OTP_COOKIE_MAX_AGE, httpOnly: true,
-    sameSite: 'Lax', secure: isProduction,
+    path: '/',
+    maxAge: OTP_COOKIE_MAX_AGE,
+    httpOnly: true,
+    sameSite: 'Lax',
+    secure: isProduction,
   })
   return c.json({ ok: true, redirectTo })
 })

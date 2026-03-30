@@ -1,11 +1,14 @@
 import { Hono } from 'hono'
-import { getSupabaseClient, getAdminSupabaseClient } from '../../../../lib/supabase'
+import { getSupabaseClient } from '../../../../lib/supabase'
 import { getRole } from '../../../../lib/auth'
+import { getD1 } from '../../../../lib/edge-env'
 
 const classIdRoute = new Hono()
 
 classIdRoute.delete('/', async (c) => {
   const supabase = getSupabaseClient(c)
+  const db = getD1(c)
+  if (!db) return c.json({ error: 'Database not configured' }, 503)
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return c.json({ error: 'Unauthorized' }, 401)
 
@@ -13,37 +16,33 @@ classIdRoute.delete('/', async (c) => {
   const classId = c.req.param('classId')
   if (!albumId || !classId) return c.json({ error: 'Album ID and class ID required' }, 400)
 
-  const admin = getAdminSupabaseClient(c?.env as any)
-  const client = admin ?? supabase
+  const album = await db
+    .prepare(`SELECT id, user_id FROM albums WHERE id = ?`)
+    .bind(albumId)
+    .first<{ id: string; user_id: string }>()
 
-  const { data: album, error: albumErr } = await client
-    .from('albums')
-    .select('id, user_id')
-    .eq('id', albumId)
-    .single()
-
-  if (albumErr || !album) return c.json({ error: 'Album not found' }, 404)
-  const role = await getRole(supabase, user)
-  if ((album as { user_id: string }).user_id !== user.id && role !== 'admin') {
+  if (!album) return c.json({ error: 'Album not found' }, 404)
+  const role = await getRole(c, user)
+  if (album.user_id !== user.id && role !== 'admin') {
     return c.json({ error: 'Only owner can delete class' }, 403)
   }
 
-  const { data: cls } = await client
-    .from('album_classes')
-    .select('id')
-    .eq('id', classId)
-    .eq('album_id', albumId)
-    .single()
+  const cls = await db
+    .prepare(`SELECT id FROM album_classes WHERE id = ? AND album_id = ?`)
+    .bind(classId, albumId)
+    .first<{ id: string }>()
 
   if (!cls) return c.json({ error: 'Class not found' }, 404)
 
-  const { error: delErr } = await client.from('album_classes').delete().eq('id', classId)
-  if (delErr) return c.json({ error: delErr.message }, 500)
+  const del = await db.prepare(`DELETE FROM album_classes WHERE id = ?`).bind(classId).run()
+  if (!del.success) return c.json({ error: 'Delete failed' }, 500)
   return c.json({ message: 'Class deleted' })
 })
 
 classIdRoute.patch('/', async (c) => {
   const supabase = getSupabaseClient(c)
+  const db = getD1(c)
+  if (!db) return c.json({ error: 'Database not configured' }, 503)
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return c.json({ error: 'Unauthorized' }, 401)
 
@@ -51,27 +50,21 @@ classIdRoute.patch('/', async (c) => {
   const classId = c.req.param('classId')
   if (!albumId || !classId) return c.json({ error: 'Album ID and class ID required' }, 400)
 
-  const admin = getAdminSupabaseClient(c?.env as any)
-  const client = admin ?? supabase
+  const album = await db
+    .prepare(`SELECT id, user_id FROM albums WHERE id = ?`)
+    .bind(albumId)
+    .first<{ id: string; user_id: string }>()
 
-  const { data: album, error: albumErr } = await client
-    .from('albums')
-    .select('id, user_id')
-    .eq('id', albumId)
-    .single()
-
-  if (albumErr || !album) return c.json({ error: 'Album not found' }, 404)
-  const role = await getRole(supabase, user)
-  if ((album as { user_id: string }).user_id !== user.id && role !== 'admin') {
+  if (!album) return c.json({ error: 'Album not found' }, 404)
+  const role = await getRole(c, user)
+  if (album.user_id !== user.id && role !== 'admin') {
     return c.json({ error: 'Only owner can update class' }, 403)
   }
 
-  const { data: cls } = await client
-    .from('album_classes')
-    .select('id, album_id')
-    .eq('id', classId)
-    .eq('album_id', albumId)
-    .maybeSingle()
+  const cls = await db
+    .prepare(`SELECT id, album_id FROM album_classes WHERE id = ? AND album_id = ?`)
+    .bind(classId, albumId)
+    .first<{ id: string; album_id: string }>()
 
   if (!cls) return c.json({ error: 'Class not found' }, 404)
 
@@ -80,35 +73,44 @@ classIdRoute.patch('/', async (c) => {
   const sort_order = body?.sort_order !== undefined ? Number(body.sort_order) : undefined
   const batch_photo_url = typeof body?.batch_photo_url === 'string' ? body.batch_photo_url : undefined
 
-  const updates: { name?: string; sort_order?: number; batch_photo_url?: string } = {}
+  const updates: string[] = []
+  const vals: unknown[] = []
   if (name !== undefined) {
     if (!name) return c.json({ error: 'Class name is required' }, 400)
-    // ensure unique name within album
-    const { data: existing } = await client
-      .from('album_classes')
-      .select('id')
-      .eq('album_id', albumId)
-      .eq('name', name)
-      .maybeSingle()
-    if (existing && existing.id !== classId) return c.json({ error: 'Class with this name already exists' }, 400)
-    updates.name = name
+    const existing = await db
+      .prepare(`SELECT id FROM album_classes WHERE album_id = ? AND name = ? AND id != ?`)
+      .bind(albumId, name, classId)
+      .first<{ id: string }>()
+    if (existing) return c.json({ error: 'Class with this name already exists' }, 400)
+    updates.push('name = ?')
+    vals.push(name)
   }
-  if (sort_order !== undefined && !Number.isNaN(sort_order)) updates.sort_order = sort_order
-  if (batch_photo_url !== undefined) updates.batch_photo_url = batch_photo_url
-
-  if (Object.keys(updates).length === 0) {
-    const { data: current } = await client.from('album_classes').select('id, name, sort_order, batch_photo_url').eq('id', classId).maybeSingle()
-    return c.json(current ?? {}, 500)
+  if (sort_order !== undefined && !Number.isNaN(sort_order)) {
+    updates.push('sort_order = ?')
+    vals.push(sort_order)
+  }
+  if (batch_photo_url !== undefined) {
+    updates.push('batch_photo_url = ?')
+    vals.push(batch_photo_url)
   }
 
-  const { data: updated, error } = await client
-    .from('album_classes')
-    .update(updates)
-    .eq('id', classId)
-    .select('id, name, sort_order, batch_photo_url')
-    .single()
+  if (updates.length === 0) {
+    const current = await db
+      .prepare(`SELECT id, name, sort_order, batch_photo_url FROM album_classes WHERE id = ?`)
+      .bind(classId)
+      .first()
+    return c.json(current ?? {}, 200)
+  }
 
-  if (error) return c.json({ error: error.message })
+  vals.push(classId)
+  const sql = `UPDATE album_classes SET ${updates.join(', ')} WHERE id = ?`
+  const r = await db.prepare(sql).bind(...vals).run()
+  if (!r.success) return c.json({ error: 'Update failed' }, 500)
+
+  const updated = await db
+    .prepare(`SELECT id, name, sort_order, batch_photo_url FROM album_classes WHERE id = ?`)
+    .bind(classId)
+    .first()
   return c.json(updated)
 })
 

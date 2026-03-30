@@ -1,10 +1,13 @@
 import { Hono } from 'hono'
-import { getSupabaseClient, getAdminSupabaseClient } from '../../lib/supabase'
+import { getSupabaseClient } from '../../lib/supabase'
+import { getRole } from '../../lib/auth'
+import { getD1 } from '../../lib/edge-env'
 
-async function checkIsAdmin(userId: string, c: any) {
-  const admin = getAdminSupabaseClient(c?.env as any)
-  const { data } = await admin.from('users').select('role').eq('id', userId).maybeSingle()
-  return data?.role === 'admin'
+async function checkIsAdmin(c: import('hono').Context, userId: string): Promise<boolean> {
+  const db = getD1(c)
+  if (!db) return false
+  const row = await db.prepare(`SELECT role FROM users WHERE id = ?`).bind(userId).first<{ role: string }>()
+  return row?.role === 'admin'
 }
 
 const creditsRedeem = new Hono()
@@ -12,25 +15,47 @@ const creditsRedeem = new Hono()
 // GET: list redeem codes (admin)
 creditsRedeem.get('/', async (c) => {
   const supabase = getSupabaseClient(c)
+  const db = getD1(c)
+  if (!db) return c.json({ error: 'Database not configured' }, 503)
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return c.json({ error: 'Unauthorized' }, 401)
 
-  const adminCheck = await checkIsAdmin(user.id, c)
-  if (!adminCheck) return c.json({ error: 'Forbidden' }, 403)
+  if (!(await checkIsAdmin(c, user.id))) return c.json({ error: 'Forbidden' }, 403)
 
-  const admin = getAdminSupabaseClient(c?.env as any)
-  const { data, error } = await admin
-    .from('redeem_codes')
-    .select('*, redeem_history(id, user_id, credits_received, redeemed_at)')
-    .order('created_at', { ascending: false })
-
-  if (error) return c.json({ error: error.message }, 500)
-  return c.json(data ?? [])
+  const { results: codes } = await db
+    .prepare(`SELECT * FROM redeem_codes ORDER BY created_at DESC`)
+    .all<Record<string, unknown>>()
+  const codeList = codes ?? []
+  const ids = codeList.map((r) => r.id as string).filter(Boolean)
+  let historyByCode = new Map<string, Record<string, unknown>[]>()
+  if (ids.length > 0) {
+    const ph = ids.map(() => '?').join(',')
+    const { results: hist } = await db
+      .prepare(
+        `SELECT id, redeem_code_id, user_id, credits_received, redeemed_at FROM redeem_history WHERE redeem_code_id IN (${ph})`
+      )
+      .bind(...ids)
+      .all<Record<string, unknown>>()
+    historyByCode = new Map()
+    for (const h of hist ?? []) {
+      const cid = h.redeem_code_id as string
+      const arr = historyByCode.get(cid) ?? []
+      arr.push(h)
+      historyByCode.set(cid, arr)
+    }
+  }
+  const data = codeList.map((row) => ({
+    ...row,
+    redeem_history: historyByCode.get(row.id as string) ?? [],
+  }))
+  return c.json(data)
 })
 
 // POST: create redeem code (admin) OR redeem code (user)
 creditsRedeem.post('/', async (c) => {
   const supabase = getSupabaseClient(c)
+  const db = getD1(c)
+  if (!db) return c.json({ error: 'Database not configured' }, 503)
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return c.json({ error: 'Unauthorized' }, 401)
 
@@ -38,109 +63,150 @@ creditsRedeem.post('/', async (c) => {
   const { action } = body
 
   if (action === 'redeem') {
-    // User redeeming a code
     const code = body.code
-    if (!code || !code.trim()) return c.json({ error: 'Kode redeem harus diisi.' }, 400)
+    if (!code || !String(code).trim()) return c.json({ error: 'Kode redeem harus diisi.' }, 400)
 
-    const admin = getAdminSupabaseClient(c?.env as any)
-    const cleanCode = code.toUpperCase().trim()
+    const cleanCode = String(code).toUpperCase().trim()
 
-    const { data: redeemCode, error: findErr } = await admin
-      .from('redeem_codes').select('*').eq('code', cleanCode).maybeSingle()
+    const redeemCode = await db
+      .prepare(`SELECT * FROM redeem_codes WHERE code = ?`)
+      .bind(cleanCode)
+      .first<Record<string, unknown>>()
 
-    if (findErr) return c.json({ error: findErr.message }, 500)
     if (!redeemCode) return c.json({ error: 'Kode tidak ditemukan.' }, 404)
     if (!redeemCode.is_active) return c.json({ error: 'Kode sudah tidak aktif.' }, 410)
-    if (redeemCode.expires_at && new Date(redeemCode.expires_at) < new Date()) {
+    if (redeemCode.expires_at && new Date(redeemCode.expires_at as string) < new Date()) {
       return c.json({ error: 'Kode sudah kadaluarsa.' }, 410)
     }
-    if (redeemCode.used_count >= redeemCode.max_uses) {
+    if ((redeemCode.used_count as number) >= (redeemCode.max_uses as number)) {
       return c.json({ error: 'Kode sudah mencapai batas pemakaian.' }, 410)
     }
 
-    const { data: existing } = await admin
-      .from('redeem_history').select('id').eq('redeem_code_id', redeemCode.id).eq('user_id', user.id).maybeSingle()
+    const existing = await db
+      .prepare(`SELECT id FROM redeem_history WHERE redeem_code_id = ? AND user_id = ?`)
+      .bind(redeemCode.id, user.id)
+      .first<{ id: string }>()
     if (existing) return c.json({ error: 'Kamu sudah pernah menggunakan kode ini.' }, 409)
 
-    const { data: userRow } = await admin.from('users').select('credits').eq('id', user.id).single()
+    const userRow = await db
+      .prepare(`SELECT credits FROM users WHERE id = ?`)
+      .bind(user.id)
+      .first<{ credits: number | null }>()
     const currentCredits = userRow?.credits ?? 0
-    const newCredits = currentCredits + redeemCode.credits
+    const add = redeemCode.credits as number
+    const newCredits = currentCredits + add
 
-    const { error: updateErr } = await admin.from('users').update({ credits: newCredits }).eq('id', user.id)
-    if (updateErr) return c.json({ error: 'Gagal menambah credit.' }, 500)
+    const rUp = await db
+      .prepare(`UPDATE users SET credits = ?, updated_at = datetime('now') WHERE id = ?`)
+      .bind(newCredits, user.id)
+      .run()
+    if (!rUp.success) return c.json({ error: 'Gagal menambah credit.' }, 500)
 
-    await admin.from('redeem_history').insert({
-      redeem_code_id: redeemCode.id, user_id: user.id, credits_received: redeemCode.credits,
-    })
-    await admin.from('redeem_codes').update({ used_count: redeemCode.used_count + 1 }).eq('id', redeemCode.id)
+    const histId = crypto.randomUUID()
+    await db
+      .prepare(
+        `INSERT INTO redeem_history (id, redeem_code_id, user_id, credits_received, redeemed_at)
+         VALUES (?, ?, ?, ?, datetime('now'))`
+      )
+      .bind(histId, redeemCode.id, user.id, add)
+      .run()
 
-    return c.json({ ok: true, credits_received: redeemCode.credits, credits_total: newCredits })
+    await db
+      .prepare(`UPDATE redeem_codes SET used_count = used_count + 1, updated_at = datetime('now') WHERE id = ?`)
+      .bind(redeemCode.id)
+      .run()
+
+    return c.json({ ok: true, credits_received: add, credits_total: newCredits })
   }
 
-  // Admin creating a new code
-  const adminCheck = await checkIsAdmin(user.id, c)
-  if (!adminCheck) return c.json({ error: 'Forbidden' }, 403)
+  if (!(await checkIsAdmin(c, user.id))) return c.json({ error: 'Forbidden' }, 403)
 
   const { code: newCode, credits, max_uses, expires_at } = body
   if (!newCode || typeof credits !== 'number' || credits <= 0) {
     return c.json({ error: 'Code and credits are required' }, 400)
   }
 
-  const admin = getAdminSupabaseClient(c?.env as any)
-  const { data, error } = await admin
-    .from('redeem_codes')
-    .insert({ code: newCode.toUpperCase().trim(), credits, max_uses: max_uses ?? 1, expires_at: expires_at || null })
-    .select()
-
-  if (error) {
-    if (error.code === '23505') return c.json({ error: 'Kode sudah ada, gunakan kode lain.' }, 409)
-    return c.json({ error: error.message }, 500)
+  const id = crypto.randomUUID()
+  try {
+    await db
+      .prepare(
+        `INSERT INTO redeem_codes (id, code, credits, max_uses, expires_at, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, datetime('now'), datetime('now'))`
+      )
+      .bind(id, String(newCode).toUpperCase().trim(), credits, max_uses ?? 1, expires_at || null)
+      .run()
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e)
+    if (msg.includes('UNIQUE') || msg.includes('unique')) {
+      return c.json({ error: 'Kode sudah ada, gunakan kode lain.' }, 409)
+    }
+    return c.json({ error: msg }, 500)
   }
-  return c.json(data[0], 201)
+  const row = await db.prepare(`SELECT * FROM redeem_codes WHERE id = ?`).bind(id).first()
+  return c.json(row, 201)
 })
 
 // PUT: update redeem code (admin)
 creditsRedeem.put('/', async (c) => {
   const supabase = getSupabaseClient(c)
+  const db = getD1(c)
+  if (!db) return c.json({ error: 'Database not configured' }, 503)
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return c.json({ error: 'Unauthorized' }, 401)
 
-  const adminCheck = await checkIsAdmin(user.id, c)
-  if (!adminCheck) return c.json({ error: 'Forbidden' }, 403)
+  if (!(await checkIsAdmin(c, user.id))) return c.json({ error: 'Forbidden' }, 403)
 
   const body = await c.req.json().catch(() => ({}))
   const { id, credits, max_uses, is_active, expires_at } = body
   if (!id) return c.json({ error: 'ID required' }, 400)
 
-  const admin = getAdminSupabaseClient(c?.env as any)
-  const updateObj: Record<string, any> = {}
-  if (typeof credits === 'number' && credits > 0) updateObj.credits = credits
-  if (typeof max_uses === 'number' && max_uses >= 1) updateObj.max_uses = max_uses
-  if (typeof is_active === 'boolean') updateObj.is_active = is_active
-  if (expires_at !== undefined) updateObj.expires_at = expires_at || null
-
-  const { data, error } = await admin.from('redeem_codes').update(updateObj).eq('id', id).select()
-  if (error) return c.json({ error: error.message }, 500)
-  if (!data?.length) return c.json({ error: 'Not found' }, 404)
-  return c.json(data[0])
+  const sets: string[] = []
+  const vals: unknown[] = []
+  if (typeof credits === 'number' && credits > 0) {
+    sets.push('credits = ?')
+    vals.push(credits)
+  }
+  if (typeof max_uses === 'number' && max_uses >= 1) {
+    sets.push('max_uses = ?')
+    vals.push(max_uses)
+  }
+  if (typeof is_active === 'boolean') {
+    sets.push('is_active = ?')
+    vals.push(is_active ? 1 : 0)
+  }
+  if (expires_at !== undefined) {
+    sets.push('expires_at = ?')
+    vals.push(expires_at || null)
+  }
+  if (sets.length === 0) return c.json({ error: 'No fields' }, 400)
+  sets.push(`updated_at = datetime('now')`)
+  vals.push(id)
+  const r = await db
+    .prepare(`UPDATE redeem_codes SET ${sets.join(', ')} WHERE id = ?`)
+    .bind(...vals)
+    .run()
+  if (!r.success) return c.json({ error: 'Update failed' }, 500)
+  if (r.meta.changes === 0) return c.json({ error: 'Not found' }, 404)
+  const row = await db.prepare(`SELECT * FROM redeem_codes WHERE id = ?`).bind(id).first()
+  return c.json(row)
 })
 
 // DELETE: delete redeem code (admin)
 creditsRedeem.delete('/', async (c) => {
   const supabase = getSupabaseClient(c)
+  const db = getD1(c)
+  if (!db) return c.json({ error: 'Database not configured' }, 503)
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return c.json({ error: 'Unauthorized' }, 401)
 
-  const adminCheck = await checkIsAdmin(user.id, c)
-  if (!adminCheck) return c.json({ error: 'Forbidden' }, 403)
+  if (!(await checkIsAdmin(c, user.id))) return c.json({ error: 'Forbidden' }, 403)
 
   const body = await c.req.json().catch(() => ({}))
   const { id } = body
   if (!id) return c.json({ error: 'ID required' }, 400)
 
-  const admin = getAdminSupabaseClient(c?.env as any)
-  const { error } = await admin.from('redeem_codes').delete().eq('id', id)
-  if (error) return c.json({ error: error.message }, 500)
+  const r = await db.prepare(`DELETE FROM redeem_codes WHERE id = ?`).bind(id).run()
+  if (!r.success) return c.json({ error: 'Delete failed' }, 500)
   return c.json({ ok: true })
 })
 

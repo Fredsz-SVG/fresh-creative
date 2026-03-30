@@ -212,6 +212,22 @@ export default function MemberCard({
 
   return (
     <>
+      {/* Hidden inputs for media picking (triggered by buttons). */}
+      <input
+        ref={photoInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handlePhotoSelected}
+      />
+      <input
+        ref={videoInputRef}
+        type="file"
+        accept="video/*"
+        className="hidden"
+        onChange={handleVideoSelected}
+      />
+
       {/* Moderation / Delete Confirmation Modal */}
       {typeof document !== 'undefined' && localConfirm && createPortal(
         <div className="fixed inset-0 bg-slate-900/40 dark:bg-black/50 backdrop-blur-md flex items-center justify-center z-[100] p-4" onClick={() => setLocalConfirm(null)}>

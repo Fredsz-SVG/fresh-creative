@@ -1,52 +1,69 @@
 import { Hono } from 'hono'
-import { getSupabaseClient, getAdminSupabaseClient } from '../../lib/supabase'
+import { getSupabaseClient } from '../../lib/supabase'
+import { getD1 } from '../../lib/edge-env'
 
 const userJoinRequests = new Hono()
 
 userJoinRequests.get('/', async (c) => {
   try {
     const supabase = getSupabaseClient(c)
+    const db = getD1(c)
+    if (!db) return c.json({ error: 'Database not configured' }, 503)
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return c.json({ error: 'Unauthorized' }, 401)
 
-    const adminClient = getAdminSupabaseClient(c?.env as any)
+    const { results: pendingRequests } = await db
+      .prepare(
+        `SELECT id, album_id, student_name, class_name, email, status, requested_at FROM album_join_requests
+         WHERE user_id = ? AND status IN ('pending', 'rejected') ORDER BY requested_at DESC`
+      )
+      .bind(user.id)
+      .all<Record<string, unknown>>()
 
-    const { data: pendingRequests, error: pendingError } = await adminClient
-      .from('album_join_requests')
-      .select('id, album_id, student_name, class_name, email, status, requested_at')
-      .eq('user_id', user.id).in('status', ['pending', 'rejected'])
-      .order('requested_at', { ascending: false })
+    const { results: approvedAccess } = await db
+      .prepare(
+        `SELECT id, album_id, class_id, student_name, email, status, created_at FROM album_class_access
+         WHERE user_id = ? AND status = 'approved' ORDER BY created_at DESC`
+      )
+      .bind(user.id)
+      .all<Record<string, unknown>>()
 
-    if (pendingError) return c.json({ error: 'Failed to fetch join requests' }, 500)
-
-    const { data: approvedAccess } = await adminClient
-      .from('album_class_access')
-      .select('id, album_id, class_id, student_name, email, status, created_at')
-      .eq('user_id', user.id).eq('status', 'approved')
-      .order('created_at', { ascending: false })
-
-    const allRequests: any[] = [
-      ...(pendingRequests || []),
-      ...(approvedAccess || []).map((acc: any) => ({ ...acc, requested_at: acc.created_at })),
+    const allRequests: Record<string, unknown>[] = [
+      ...(pendingRequests ?? []),
+      ...(approvedAccess ?? []).map((acc) => ({ ...acc, requested_at: acc.created_at })),
     ]
 
     if (allRequests.length > 0) {
-      const albumIds = [...new Set(allRequests.map(r => r.album_id))]
-      const classIds = [...new Set(allRequests.map(r => r.class_id).filter(Boolean))]
+      const albumIds = [...new Set(allRequests.map((r) => r.album_id as string))]
+      const classIds = [...new Set(allRequests.map((r) => r.class_id).filter(Boolean))] as string[]
 
-      const { data: albums } = await adminClient.from('albums').select('id, name').in('id', albumIds)
-      const { data: classes } = classIds.length > 0
-        ? await adminClient.from('album_classes').select('id, name').in('id', classIds)
-        : { data: null }
+      const albumPlaceholders = albumIds.map(() => '?').join(',')
+      const { results: albums } = await db
+        .prepare(`SELECT id, name FROM albums WHERE id IN (${albumPlaceholders})`)
+        .bind(...albumIds)
+        .all<{ id: string; name: string }>()
 
-      const albumMap = new Map(albums?.map((a: any) => [a.id, a.name]) || [])
-      const classMap = new Map(classes?.map((c: any) => [c.id, c.name]) || [])
+      let classes: { id: string; name: string }[] = []
+      if (classIds.length > 0) {
+        const cph = classIds.map(() => '?').join(',')
+        const cr = await db
+          .prepare(`SELECT id, name FROM album_classes WHERE id IN (${cph})`)
+          .bind(...classIds)
+          .all<{ id: string; name: string }>()
+        classes = cr.results ?? []
+      }
 
-      return c.json(allRequests.map((req: any) => ({
-        ...req,
-        album_name: albumMap.get(req.album_id) || 'Unknown Album',
-        class_name: req.class_name || (req.class_id ? classMap.get(req.class_id) : null) || null,
-      })))
+      const albumMap = new Map((albums ?? []).map((a) => [a.id, a.name]))
+      const classMap = new Map(classes.map((cl) => [cl.id, cl.name]))
+
+      return c.json(
+        allRequests.map((req) => ({
+          ...req,
+          album_name: albumMap.get(req.album_id as string) || 'Unknown Album',
+          class_name:
+            req.class_name || (req.class_id ? classMap.get(req.class_id as string) : null) || null,
+        }))
+      )
     }
 
     return c.json([])
