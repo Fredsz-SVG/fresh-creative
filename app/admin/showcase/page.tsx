@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { fetchWithAuth } from '../../../lib/api-client'
 import { toast } from 'sonner'
 import { Loader2, Eye, BookOpen, Save, ExternalLink } from 'lucide-react'
@@ -10,28 +10,60 @@ export default function AdminShowcasePage() {
   const [saving, setSaving] = useState(false)
   const [albumCarouselLink, setAlbumCarouselLink] = useState('')
   const [flipbookPreviewUrl, setFlipbookPreviewUrl] = useState('')
+  const hasCacheRef = React.useRef(false)
 
-  const fetchShowcase = useCallback(async () => {
-    setLoading(true)
+  const cacheKey = 'admin_showcase_v1'
+
+  // Instant render from cache to avoid skeleton when switching sidebar.
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    try {
+      const raw = window.sessionStorage.getItem(cacheKey)
+      if (!raw) return
+      const parsed = JSON.parse(raw) as { ts: number; data: { albumCarouselLink: string; flipbookPreviewUrl: string } }
+      if (parsed?.data) {
+        setAlbumCarouselLink(parsed.data.albumCarouselLink || '')
+        setFlipbookPreviewUrl(parsed.data.flipbookPreviewUrl || '')
+        setLoading(false)
+        hasCacheRef.current = true
+      }
+    } catch {
+      // ignore
+    }
+  }, [])
+
+  const fetchShowcase = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true)
     try {
       const res = await fetchWithAuth('/api/admin/showcase')
-      const data = await res.json().catch(() => ({}))
+      const data = (await res.json().catch(() => ({}))) as unknown
       if (res.ok) {
-        const list = Array.isArray(data.albumPreviews) ? data.albumPreviews : []
-        setAlbumCarouselLink(list[0]?.link ? String(list[0].link) : '')
-        setFlipbookPreviewUrl(typeof data.flipbookPreviewUrl === 'string' ? data.flipbookPreviewUrl : '')
+        const obj = (data && typeof data === 'object' && !Array.isArray(data) ? (data as any) : {}) as any
+        const list = Array.isArray(obj.albumPreviews) ? obj.albumPreviews : []
+        const albumLink = list[0]?.link ? String(list[0].link) : ''
+        const flipbookLink = typeof obj.flipbookPreviewUrl === 'string' ? obj.flipbookPreviewUrl : ''
+        setAlbumCarouselLink(albumLink)
+        setFlipbookPreviewUrl(flipbookLink)
+        if (typeof window !== 'undefined') {
+          try {
+            window.sessionStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), data: { albumCarouselLink: albumLink, flipbookPreviewUrl: flipbookLink } }))
+          } catch {
+            // ignore
+          }
+        }
       } else {
-        toast.error(data?.error || 'Gagal memuat pengaturan preview')
+        const err = (data && typeof data === 'object' && !Array.isArray(data) ? (data as any).error : undefined) as string | undefined
+        toast.error(err || 'Gagal memuat pengaturan preview')
       }
     } catch {
       toast.error('Gagal memuat pengaturan preview')
     } finally {
-      setLoading(false)
+      if (!silent) setLoading(false)
     }
   }, [])
 
   useEffect(() => {
-    fetchShowcase()
+    fetchShowcase(hasCacheRef.current)
   }, [fetchShowcase])
 
   const handleSave = async () => {
@@ -45,12 +77,13 @@ export default function AdminShowcasePage() {
           flipbookPreviewUrl: flipbookPreviewUrl.trim(),
         }),
       })
-      const data = await res.json().catch(() => ({}))
+      const data = (await res.json().catch(() => ({}))) as unknown
       if (res.ok) {
         toast.success('Pengaturan preview berhasil disimpan.')
         fetchShowcase()
       } else {
-        toast.error(data?.error || 'Gagal menyimpan')
+        const err = (data && typeof data === 'object' && !Array.isArray(data) ? (data as any).error : undefined) as string | undefined
+        toast.error(err || 'Gagal menyimpan')
       }
     } catch {
       toast.error('Gagal menyimpan')

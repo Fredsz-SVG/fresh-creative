@@ -21,16 +21,7 @@ albumsIdJoinStats.get('/', async (c) => {
       .first<{ id: string; user_id: string; students_count: number | null }>()
     if (!album) return c.json({ error: 'Album not found' }, 404)
 
-    const globalRole = await getRole(c, user)
-    const adminCheck = await db
-      .prepare(`SELECT role FROM album_members WHERE album_id = ? AND user_id = ? AND role = 'admin'`)
-      .bind(albumId, user.id)
-      .first<{ role: string }>()
-    const isOwner = album.user_id === user.id
-    const isGlobalAdmin = globalRole === 'admin'
-    const isAlbumAdmin = !!adminCheck?.role
-    const canManage = isOwner || isAlbumAdmin || isGlobalAdmin
-    if (!canManage) return c.json({ error: 'Forbidden' }, 403)
+    // Join-stats is used by the registration flow; allow any authenticated user to read capacity/counts.
 
     const approved = await db
       .prepare(`SELECT COUNT(*) as c FROM album_class_access WHERE album_id = ? AND status = 'approved'`)
@@ -45,8 +36,13 @@ albumsIdJoinStats.get('/', async (c) => {
       .bind(albumId)
       .first<{ c: number }>()
 
-    // Owner album dihitung sebagai 1 slot terisi (walau owner tidak punya row album_class_access).
-    const approved_count = (approved?.c ?? 0) + 1
+    // Owner album dihitung sebagai 1 slot terisi, tapi jangan dobel jika owner sudah punya akses approved ke kelas.
+    const ownerHasApprovedAccess = await db
+      .prepare(`SELECT 1 as ok FROM album_class_access WHERE album_id = ? AND user_id = ? AND status = 'approved' LIMIT 1`)
+      .bind(albumId, album.user_id)
+      .first<{ ok: number }>()
+
+    const approved_count = (approved?.c ?? 0) + (ownerHasApprovedAccess ? 0 : 1)
     const pending_count = pending?.c ?? 0
     const rejected_count = rejected?.c ?? 0
     const limit_count = album.students_count ?? null

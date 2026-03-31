@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { Check, X, Trash2, UserPlus, Loader2, ImagePlus, BookOpen, ChevronRight, Search, Edit, LayoutDashboard, MoreVertical, Calendar, ShieldCheck, CreditCard, Package, Plus, Eye, ClipboardPaste } from 'lucide-react'
+import { Check, X, Trash2, UserPlus, Loader2, ImagePlus, BookOpen, ChevronRight, Search, Edit, LayoutDashboard, MoreVertical, Calendar, ShieldCheck, CreditCard, Package, Plus, Eye, ClipboardPaste, LayoutGrid } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { getYearbookSectionQueryUrl } from '../yearbook/lib/yearbook-paths'
 import { apiUrl } from '../../lib/api-url'
@@ -76,6 +76,7 @@ function AlbumCard({
   onInvite,
   onPay,
   loadingId,
+  onYearbookPublicChoice,
 }: {
   album: AlbumRow
   variant: 'user' | 'admin'
@@ -87,6 +88,7 @@ function AlbumCard({
   onPay?: (album: AlbumRow) => void
   loadingId?: string | null
   pathname?: string | null
+  onYearbookPublicChoice?: (album: AlbumRow) => void
 }) {
   const router = useRouter()
   const [showInfo, setShowInfo] = useState(false)
@@ -96,7 +98,7 @@ function AlbumCard({
   const isClickable = album.type === 'public' || (isApproved && (isPaid || isAdmin))
   const destinationUrl = album.type === 'public'
       ? `${basePath}/album/public/${album.id}` 
-    : getYearbookSectionQueryUrl(album.album_id ?? album.id, 'preview', pathname || null)
+    : `/album/${album.album_id ?? album.id}/preview`
 
   const editorUrl = album.type === 'yearbook'
     ? getYearbookSectionQueryUrl(album.album_id ?? album.id, 'cover', pathname || null)
@@ -114,6 +116,10 @@ function AlbumCard({
     <div
       onClick={(e) => {
         if (isClickable && !isLoading) {
+          if (album.type === 'yearbook' && onYearbookPublicChoice) {
+            onYearbookPublicChoice(album)
+            return
+          }
           router.push(destinationUrl)
         }
       }}
@@ -286,13 +292,31 @@ function AlbumCard({
             <Link
               href={editorUrl}
               onClick={(e) => e.stopPropagation()}
+              prefetch
+              scroll={false}
+              onMouseEnter={() => {
+                try { router.prefetch(editorUrl) } catch { /* ignore */ }
+              }}
+              onMouseDown={() => {
+                try { router.prefetch(editorUrl) } catch { /* ignore */ }
+              }}
               className="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-black rounded-xl bg-indigo-300 dark:bg-indigo-900 border-2 border-slate-900 shadow-[3px_3px_0_0_#0f172a] text-slate-900 dark:text-slate-100 hover:translate-y-1 hover:translate-x-1 hover:shadow-none transition-all"
             >
               <LayoutDashboard className="w-3.5 h-3.5" /> Edit Album
             </Link>
           )}
           <p className="text-xs text-muted text-center dark:text-slate-400">
-            {isClickable ? 'Klik untuk buka' : statusLabel === 'pending' ? 'Menunggu persetujuan admin' : isApproved && !isPaid ? 'Selesaikan pembayaran untuk akses' : statusLabel === 'declined' ? 'Akses dibatasi' : 'Klik untuk buka'}
+            {isClickable
+            ? album.type === 'yearbook' && onYearbookPublicChoice
+              ? 'Klik untuk pilih tampilan'
+              : 'Klik untuk buka'
+            : statusLabel === 'pending'
+              ? 'Menunggu persetujuan admin'
+              : isApproved && !isPaid
+                ? 'Selesaikan pembayaran untuk akses'
+                : statusLabel === 'declined'
+                  ? 'Akses dibatasi'
+                  : 'Klik untuk buka'}
           </p>
         </div>
       )}
@@ -303,8 +327,6 @@ function AlbumCard({
 }
 
 export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albums', linkContext, active = true }: AlbumsViewProps) {
-  const [albums, setAlbums] = useState<AlbumRow[]>(initialData || [])
-  const [loading, setLoading] = useState(!initialData)
   const [loadingId, setLoadingId] = useState<string | null>(null)
   const [inviteLoading, setInviteLoading] = useState<string | null>(null)
   const [inviteModal, setInviteModal] = useState<{ link: string; code: string; albumName: string } | null>(null)
@@ -320,6 +342,9 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
   const [searchQuery, setSearchQuery] = useState('')
   const [previewInput, setPreviewInput] = useState('')
   const [previewError, setPreviewError] = useState<string | null>(null)
+  const [yearbookOpenChoice, setYearbookOpenChoice] = useState<AlbumRow | null>(null)
+  const [yearbookChoiceLoading, setYearbookChoiceLoading] = useState(false)
+  const [yearbookChoiceFlipbook, setYearbookChoiceFlipbook] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 10
   const router = useRouter()
@@ -330,6 +355,75 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
   const hasFetchedRef = useRef<boolean>(!!initialData)
   const isFetchingRef = useRef(false)
   const lastRealtimeFetchRef = useRef(0)
+
+  const cacheKey = `albums_v1:${variant}:${resolvedLinkContext}:${fetchUrl}`
+
+  const [albums, setAlbums] = useState<AlbumRow[]>(() => {
+    if (initialData) return initialData
+    if (typeof window === 'undefined') return []
+    try {
+      const raw = window.sessionStorage.getItem(cacheKey)
+      if (!raw) return []
+      const parsed = JSON.parse(raw) as { ts: number; data: AlbumRow[] }
+      return Array.isArray(parsed?.data) ? parsed.data : []
+    } catch {
+      return []
+    }
+  })
+  const [loading, setLoading] = useState(() => {
+    if (initialData) return false
+    if (typeof window === 'undefined') return true
+    try {
+      const raw = window.sessionStorage.getItem(cacheKey)
+      if (!raw) return true
+      const parsed = JSON.parse(raw) as { ts: number; data: AlbumRow[] }
+      return !Array.isArray(parsed?.data)
+    } catch {
+      return true
+    }
+  })
+
+  // Cache is hydrated in state initializer (no skeleton flash).
+  useEffect(() => {
+    if (!initialData && albums.length > 0) {
+      hasFetchedRef.current = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const closeYearbookPublicChoice = useCallback(() => {
+    setYearbookOpenChoice(null)
+    setYearbookChoiceFlipbook(false)
+    setYearbookChoiceLoading(false)
+  }, [])
+
+  const beginYearbookPublicChoice = useCallback((album: AlbumRow) => {
+    const aid = album.album_id ?? album.id
+    setYearbookOpenChoice(album)
+    setYearbookChoiceLoading(true)
+    setYearbookChoiceFlipbook(false)
+    void (async () => {
+      try {
+        const res = await fetchWithAuth(`/api/albums/${aid}/unlock-feature`, {
+          credentials: 'include',
+          cache: 'no-store',
+        })
+        const data = (await res.json().catch(() => ({}))) as {
+          flipbook_enabled_by_package?: boolean
+          unlocked_features?: string[]
+          flipbook_unlocked_on_album?: boolean
+        }
+        const pkg = data.flipbook_enabled_by_package === true
+        const mine = Array.isArray(data.unlocked_features) && data.unlocked_features.includes('flipbook')
+        const onAlbum = data.flipbook_unlocked_on_album === true
+        setYearbookChoiceFlipbook(pkg || mine || onAlbum)
+      } catch {
+        setYearbookChoiceFlipbook(false)
+      } finally {
+        setYearbookChoiceLoading(false)
+      }
+    })()
+  }, [])
 
   const filteredAlbums = useMemo(() => {
     if (!searchQuery.trim()) return albums
@@ -358,13 +452,20 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
       if (!res.ok) throw new Error('Failed to fetch albums')
       const data = await res.json()
       setAlbums(data)
+      if (typeof window !== 'undefined') {
+        try {
+          window.sessionStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), data }))
+        } catch {
+          // ignore
+        }
+      }
     } catch (err) {
       console.error(err)
     } finally {
       isFetchingRef.current = false
       setLoading(false)
     }
-  }, [fetchUrl])
+  }, [fetchUrl, cacheKey])
 
   useEffect(() => {
     if (initialData && initialData.length >= 0) {
@@ -1080,6 +1181,7 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
               onInvite={!isAdmin ? handleInvite : undefined}
               onPay={!isAdmin ? handlePay : undefined}
               loadingId={loadingId ?? inviteLoading}
+              onYearbookPublicChoice={beginYearbookPublicChoice}
             />
           ))}
         </div>
@@ -1111,6 +1213,70 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
             >
               Selanjutnya
             </button>
+          </div>
+        </div>
+      )}
+
+      {yearbookOpenChoice && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/50 dark:bg-black/55 backdrop-blur-md"
+          onClick={closeYearbookPublicChoice}
+          role="presentation"
+        >
+          <div
+            className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-[28px] p-6 sm:p-8 max-w-md w-full shadow-[6px_6px_0_0_#0f172a] dark:shadow-[6px_6px_0_0_#334155]"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="yearbook-open-choice-title"
+          >
+            <h3 id="yearbook-open-choice-title" className="text-lg sm:text-xl font-black text-slate-900 dark:text-white mb-1 uppercase tracking-tight">
+              Buka album
+            </h3>
+            <p className="text-sm font-bold text-slate-600 dark:text-slate-300 mb-6 line-clamp-2">
+              {yearbookOpenChoice.name}
+            </p>
+            {yearbookChoiceLoading ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="w-10 h-10 text-indigo-500 animate-spin" aria-hidden />
+              </div>
+            ) : (
+              <div className="flex flex-col gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const id = yearbookOpenChoice.album_id ?? yearbookOpenChoice.id
+                    router.push(`/album/${id}/preview`)
+                    closeYearbookPublicChoice()
+                  }}
+                  className="w-full flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl bg-violet-300 dark:bg-violet-800 border-2 border-slate-900 dark:border-slate-600 text-slate-900 dark:text-white text-sm font-black uppercase tracking-wider shadow-[3px_3px_0_0_#0f172a] dark:shadow-[3px_3px_0_0_#334155] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all"
+                >
+                  <LayoutGrid className="w-5 h-5 shrink-0" strokeWidth={2.5} />
+                  Kartu
+                </button>
+                {yearbookChoiceFlipbook && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const id = yearbookOpenChoice.album_id ?? yearbookOpenChoice.id
+                      router.push(`/album/${id}/flipbook`)
+                      closeYearbookPublicChoice()
+                    }}
+                    className="w-full flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl bg-emerald-300 dark:bg-emerald-800 border-2 border-slate-900 dark:border-slate-600 text-slate-900 dark:text-white text-sm font-black uppercase tracking-wider shadow-[3px_3px_0_0_#0f172a] dark:shadow-[3px_3px_0_0_#334155] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all"
+                  >
+                    <BookOpen className="w-5 h-5 shrink-0" strokeWidth={2.5} />
+                    Flipbook
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={closeYearbookPublicChoice}
+                  className="w-full py-3 rounded-xl bg-slate-100 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 text-slate-900 dark:text-white text-xs font-black uppercase tracking-widest shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
+                >
+                  Batal
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}

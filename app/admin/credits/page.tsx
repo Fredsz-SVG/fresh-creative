@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Edit, Plus, Save, Trash2, X, Loader2, Check, Copy, Gift, ToggleLeft, ToggleRight, Clock, ChevronRight, Layout, Zap, Hash, Calendar, AlertCircle, Users, Star } from 'lucide-react'
 import { toast } from 'sonner'
 import { fetchWithAuth } from '../../../lib/api-client'
@@ -129,13 +129,51 @@ export default function AdminCreditSettingsPage() {
     const [showCreateRedeem, setShowCreateRedeem] = useState(false)
     const [newCode, setNewCode] = useState({ code: '', credits: 10, max_uses: 1, expires_at: '' })
 
+    const cacheKeyPackages = 'admin_credit_packages_v1'
+    const cacheKeyRedeem = 'admin_redeem_codes_v1'
+    const hasCachePackagesRef = useRef(false)
+    const hasCacheRedeemRef = useRef(false)
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return
+        try {
+            const pkgRaw = window.sessionStorage.getItem(cacheKeyPackages)
+            const redeemRaw = window.sessionStorage.getItem(cacheKeyRedeem)
+            if (pkgRaw) {
+                const parsed = JSON.parse(pkgRaw) as { ts: number; data: CreditPackage[] }
+                if (Array.isArray(parsed?.data)) {
+                    setPackages(parsed.data)
+                    setLoading(false)
+                    hasCachePackagesRef.current = true
+                }
+            }
+            if (redeemRaw) {
+                const parsed = JSON.parse(redeemRaw) as { ts: number; data: RedeemCode[] }
+                if (Array.isArray(parsed?.data)) {
+                    setRedeemCodes(parsed.data)
+                    setLoadingRedeem(false)
+                    hasCacheRedeemRef.current = true
+                }
+            }
+        } catch {
+            // ignore
+        }
+    }, [])
+
     const fetchPackages = async (silent = false) => {
         if (!silent) setLoading(true)
         try {
             const res = await fetchWithAuth(`/api/credits/packages?t=${Date.now()}`)
             if (!res.ok) throw new Error('Failed to fetch packages')
-            const data = await res.json()
-            setPackages(data)
+            const data = (await res.json()) as unknown
+            setPackages(Array.isArray(data) ? (data as CreditPackage[]) : [])
+            if (typeof window !== 'undefined') {
+                try {
+                    window.sessionStorage.setItem(cacheKeyPackages, JSON.stringify({ ts: Date.now(), data }))
+                } catch {
+                    // ignore
+                }
+            }
         } catch (err) {
             console.error(err)
             toast.error('Gagal memuat paket')
@@ -145,8 +183,8 @@ export default function AdminCreditSettingsPage() {
     }
 
     useEffect(() => {
-        fetchPackages()
-        fetchRedeemCodes()
+        fetchPackages(hasCachePackagesRef.current)
+        fetchRedeemCodes(hasCacheRedeemRef.current)
     }, [])
 
     const handleSave = async (pkg: Partial<CreditPackage>) => {
@@ -183,7 +221,15 @@ export default function AdminCreditSettingsPage() {
         try {
             const res = await fetchWithAuth(`/api/credits/redeem?t=${Date.now()}`)
             if (!res.ok) throw new Error('Failed to fetch redeem codes')
-            setRedeemCodes(await res.json())
+            const data = (await res.json()) as unknown
+            setRedeemCodes(Array.isArray(data) ? (data as RedeemCode[]) : [])
+            if (typeof window !== 'undefined') {
+                try {
+                    window.sessionStorage.setItem(cacheKeyRedeem, JSON.stringify({ ts: Date.now(), data }))
+                } catch {
+                    // ignore
+                }
+            }
         } catch (err) {
             console.error(err)
         } finally {
@@ -217,9 +263,9 @@ export default function AdminCreditSettingsPage() {
                     expires_at: expiresAtISO,
                 }),
             })
-            const data = await res.json()
-            if (!res.ok) throw new Error(data.error || 'Gagal membuat kode')
-            toast.success(`Kode ${data.code} berhasil dibuat!`)
+            const data = (await res.json().catch(() => ({}))) as { error?: string; code?: string }
+            if (!res.ok) throw new Error(data?.error || 'Gagal membuat kode')
+            toast.success(`Kode ${data?.code ?? code} berhasil dibuat!`)
             setShowCreateRedeem(false)
             setNewCode({ code: '', credits: 10, max_uses: 1, expires_at: '' })
             fetchRedeemCodes(true)

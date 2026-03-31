@@ -293,7 +293,6 @@ export default function PreviewView({
                 meta: [
                     ...(m.date_of_birth ? [{ icon: <Cake className="w-3.5 h-3.5" />, text: m.date_of_birth }] : []),
                     ...(m.instagram ? [{ icon: <Instagram className="w-3.5 h-3.5" />, text: m.instagram }] : []),
-                    ...(m.email ? [{ icon: <Mail className="w-3.5 h-3.5" />, text: m.email }] : []),
                 ],
             }))
             return [classCover, ...memberCards]

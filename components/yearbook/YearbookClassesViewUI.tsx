@@ -1049,10 +1049,16 @@ export default function YearbookClassesViewUI(props: any) {
                       {sidebarMode === 'sambutan' && 'Daftar Sambutan'}
                     </h2>
                   </div>
-                  <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-tight">
-                    {sidebarMode === 'classes' && `${classes.length} Kelas Terdaftar`}
-                    {sidebarMode === 'sambutan' && `${teachers.length} Pemberi Sambutan`}
-                  </p>
+                  {sidebarMode === 'classes' && (
+                    <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-tight">
+                      {`${classes.length} Kelas Terdaftar`}
+                    </p>
+                  )}
+                  {sidebarMode === 'sambutan' && (
+                    <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-tight">
+                      {teachers.length === 1 ? '1 orang' : `${teachers.length} orang`}
+                    </p>
+                  )}
                 </div>
               )}
 
@@ -1161,9 +1167,6 @@ export default function YearbookClassesViewUI(props: any) {
                           <button
                             key={c.id}
                             onClick={() => {
-                              if (isOwner && ownerRegisteredIn && ownerRegisteredIn !== c.id) {
-                                toast.info(`Anda sudah terdaftar di kelas lain: ${ownerRegisteredClassName}`)
-                              }
                               setClassIndex(idx)
                               const url = getYearbookSectionQueryUrl(effectiveAlbumId!, 'classes', pathname)
                               if (typeof window !== 'undefined') {
@@ -1232,14 +1235,6 @@ export default function YearbookClassesViewUI(props: any) {
                   </div>
                 )}
 
-                {sidebarMode === 'sambutan' && !isCoverView && (
-                  <div className="space-y-4">
-                    <div className="p-6 bg-indigo-50 dark:bg-indigo-950/40 border-4 border-slate-900 dark:border-slate-700 rounded-[32px] shadow-[8px_8px_0_0_#0f172a] dark:shadow-[8px_8px_0_0_#334155] text-center">
-                      <p className="text-3xl font-black text-slate-900 dark:text-white mb-1">{teachers.length}</p>
-                      <p className="text-[10px] font-black text-indigo-500 dark:text-indigo-400 uppercase tracking-widest leading-none">Pemberi Sambutan</p>
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
           )}

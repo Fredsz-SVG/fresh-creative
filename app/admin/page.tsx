@@ -45,6 +45,9 @@ export default function AdminPage() {
   const [confirmLoading, setConfirmLoading] = useState(false)
   const confirmActionRef = useRef<null | (() => Promise<void>)>(null)
   const mountedRef = useRef(true)
+  const hasCacheRef = useRef(false)
+
+  const cacheKey = `admin_users_overview_v1:${page}:${search.trim().toLowerCase() || ''}`
 
   useEffect(() => {
     mountedRef.current = true
@@ -52,6 +55,23 @@ export default function AdminPage() {
       mountedRef.current = false
     }
   }, [])
+
+  // Instant render from cache to avoid skeleton on back/side nav.
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    try {
+      const raw = window.sessionStorage.getItem(cacheKey)
+      if (!raw) return
+      const parsed = JSON.parse(raw) as { ts: number; data: OverviewStats }
+      if (parsed?.data) {
+        setStats(parsed.data)
+        setLoading(false)
+        hasCacheRef.current = true
+      }
+    } catch {
+      // ignore cache errors
+    }
+  }, [cacheKey])
 
   // Needed to hide actions for the currently logged-in admin.
   useEffect(() => {
@@ -78,14 +98,28 @@ export default function AdminPage() {
       params.set('_t', String(ts))
 
       const res = await fetchWithAuth(`/api/admin/users/overview?${params.toString()}`)
-      const data = await res.json().catch(() => null)
+      const data = (await res.json().catch(() => null)) as unknown
       if (!res.ok) {
-        if (mountedRef.current && !silent) setError(data?.error || 'Gagal memuat overview')
+        const err = (data && typeof data === 'object' && !Array.isArray(data) ? (data as any).error : undefined) as
+          | string
+          | undefined
+        if (mountedRef.current && !silent) setError(err || 'Gagal memuat overview')
         if (mountedRef.current && !silent) setLoading(false)
         return
       }
       if (mountedRef.current) {
-        setStats(data)
+        if (data && typeof data === 'object' && !Array.isArray(data)) {
+          setStats(data as OverviewStats)
+        } else if (!silent) {
+          setError('Gagal memuat overview')
+        }
+        if (typeof window !== 'undefined') {
+          try {
+            window.sessionStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), data }))
+          } catch {
+            // ignore
+          }
+        }
       }
     } catch {
       if (mountedRef.current && !silent) {
@@ -99,7 +133,7 @@ export default function AdminPage() {
   }, [page, search])
 
   useEffect(() => {
-    fetchOverview()
+    fetchOverview(hasCacheRef.current)
   }, [fetchOverview])
 
   useEffect(() => {
@@ -124,9 +158,12 @@ export default function AdminPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, credits: value }),
       })
-      const data = await res.json().catch(() => null)
+      const data = (await res.json().catch(() => null)) as unknown
       if (!res.ok) {
-        alert(data?.error || 'Gagal update credit')
+        const err = (data && typeof data === 'object' && !Array.isArray(data) ? (data as any).error : undefined) as
+          | string
+          | undefined
+        alert(err || 'Gagal update credit')
         return
       }
       setStats((prev) => {
@@ -154,9 +191,12 @@ export default function AdminPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, isSuspended: payload.isSuspended }),
       })
-      const data = await res.json().catch(() => null)
+      const data = (await res.json().catch(() => null)) as unknown
       if (!res.ok) {
-        alert(data?.error || 'Gagal update user')
+        const err = (data && typeof data === 'object' && !Array.isArray(data) ? (data as any).error : undefined) as
+          | string
+          | undefined
+        alert(err || 'Gagal update user')
         return
       }
       if (typeof payload.isSuspended === 'boolean') {
@@ -244,9 +284,12 @@ export default function AdminPage() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ id: userId }),
           })
-          const data = await res.json().catch(() => null)
+          const data = (await res.json().catch(() => null)) as unknown
           if (!res.ok) {
-            alert(data?.error || 'Gagal menghapus user')
+            const err = (data && typeof data === 'object' && !Array.isArray(data) ? (data as any).error : undefined) as
+              | string
+              | undefined
+            alert(err || 'Gagal menghapus user')
             return
           }
           setStats((prev) => {
@@ -298,9 +341,12 @@ export default function AdminPage() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ id: userId, role: nextRole }),
           })
-          const data = await res.json().catch(() => null)
+          const data = (await res.json().catch(() => null)) as unknown
           if (!res.ok) {
-            alert(data?.error || 'Gagal update role')
+            const err = (data && typeof data === 'object' && !Array.isArray(data) ? (data as any).error : undefined) as
+              | string
+              | undefined
+            alert(err || 'Gagal update role')
             return
           }
           setStats((prev) => {
@@ -374,7 +420,7 @@ export default function AdminPage() {
         )}
       </div>
 
-      <div className="bg-white dark:bg-slate-900 border-4 border-slate-900 dark:border-slate-700 rounded-[24px] md:rounded-[32px] overflow-hidden shadow-[6px_6px_0_0_#0f172a] dark:shadow-[6px_6px_0_0_#334155] md:shadow-[12px_12px_0_0_#0f172a] dark:md:shadow-[12px_12px_0_0_#334155] mx-4 md:mx-0">
+      <div className="bg-white dark:bg-slate-900 border-4 border-slate-900 dark:border-slate-700 rounded-[24px] md:rounded-[32px] overflow-hidden shadow-[3px_3px_0_0_#0f172a] dark:shadow-[3px_3px_0_0_#334155] md:shadow-[6px_6px_0_0_#0f172a] dark:md:shadow-[6px_6px_0_0_#334155] mx-4 md:mx-0">
         <div className="px-5 py-4 md:px-8 md:py-6 border-b-4 border-slate-900 dark:border-slate-700 flex items-center justify-between gap-4 flex-wrap bg-violet-300 dark:bg-slate-800">
           <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-3">
             <h2 className="text-xl md:text-2xl font-black text-slate-900 dark:text-white leading-none">Users</h2>

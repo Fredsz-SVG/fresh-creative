@@ -1593,8 +1593,10 @@ export default function YearbookAlbumClient({
 
             {/* Header Actions (Right) */}
             <div className="ml-auto flex items-center gap-2 pr-1 lg:pr-2">
-              {/* AI Labs: Credit di pojok kanan */}
-              {sidebarMode === 'ai-labs' && <CreditBadgeTop />}
+              {/* Credits badge: keep mounted to avoid resetting to 0 on tab switch */}
+              <div className={(sidebarMode === 'ai-labs' || (sidebarMode === 'flipbook' && featureUnlocksLoaded && !(flipbookEnabledByPackage || featureUnlocks.includes('flipbook')))) ? '' : 'invisible pointer-events-none'}>
+                <CreditBadgeTop />
+              </div>
               {/* Flipbook Controls (Mobile & Desktop) */}
               {sidebarMode === 'flipbook' && (isOwner || isAlbumAdmin) && (featureUnlocksLoaded ? (flipbookEnabledByPackage || featureUnlocks.includes('flipbook')) : true) && (
                 <div className="flex bg-white dark:bg-slate-800 p-0.5 sm:p-1 rounded-lg sm:rounded-xl border-2 border-slate-900 dark:border-slate-600 gap-0.5 sm:gap-1 items-center shadow-[3px_3px_0_0_#0f172a] dark:shadow-[3px_3px_0_0_#334155]">
@@ -1612,8 +1614,6 @@ export default function YearbookAlbumClient({
                   </button>
                 </div>
               )}
-              {/* Flipbook Locked: Credit di pojok kanan */}
-              {sidebarMode === 'flipbook' && featureUnlocksLoaded && !(flipbookEnabledByPackage || featureUnlocks.includes('flipbook')) && <CreditBadgeTop />}
               {/* Sambutan & Classes: Search Toggle */}
               {(sidebarMode === 'sambutan' || (sidebarMode === 'classes' && activeSection !== 'cover')) && (
                 <>

@@ -244,6 +244,18 @@ albumsIdMembers.delete('/', async (c) => {
     .bind(albumId, targetUserId)
     .run()
   if (!del.success) return c.json({ error: 'Delete failed' }, 500)
+
+  // Keep team/approval data consistent: removing member from album
+  // must also remove class access rows and pending/rejected requests.
+  await db
+    .prepare(`DELETE FROM album_class_access WHERE album_id = ? AND user_id = ?`)
+    .bind(albumId, targetUserId)
+    .run()
+  await db
+    .prepare(`DELETE FROM album_join_requests WHERE album_id = ? AND user_id = ?`)
+    .bind(albumId, targetUserId)
+    .run()
+
   return c.json({ success: true })
 })
 

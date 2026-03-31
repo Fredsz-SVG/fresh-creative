@@ -38,9 +38,46 @@ type ShowcaseAlbumPreview = {
 }
 
 export default function UserPage() {
-  const [showcaseLoading, setShowcaseLoading] = useState(true)
-  const [albumPreviews, setAlbumPreviews] = useState<ShowcaseAlbumPreview[]>([])
-  const [flipbookPreviewUrl, setFlipbookPreviewUrl] = useState('')
+  const showcaseCacheKey = 'showcase_v1'
+  const hasCacheRef = useRef(false)
+
+  const [albumPreviews, setAlbumPreviews] = useState<ShowcaseAlbumPreview[]>(() => {
+    if (typeof window === 'undefined') return []
+    try {
+      const raw = window.sessionStorage.getItem(showcaseCacheKey)
+      if (!raw) return []
+      const parsed = JSON.parse(raw) as { ts: number; data: { albumPreviews: ShowcaseAlbumPreview[]; flipbookPreviewUrl: string } }
+      const previews = Array.isArray(parsed?.data?.albumPreviews) ? parsed.data.albumPreviews : []
+      if (previews.length > 0) hasCacheRef.current = true
+      return previews
+    } catch {
+      return []
+    }
+  })
+  const [flipbookPreviewUrl, setFlipbookPreviewUrl] = useState(() => {
+    if (typeof window === 'undefined') return ''
+    try {
+      const raw = window.sessionStorage.getItem(showcaseCacheKey)
+      if (!raw) return ''
+      const parsed = JSON.parse(raw) as { ts: number; data: { albumPreviews: ShowcaseAlbumPreview[]; flipbookPreviewUrl: string } }
+      const url = parsed?.data?.flipbookPreviewUrl
+      if (typeof url === 'string' && url) hasCacheRef.current = true
+      return typeof url === 'string' ? url : ''
+    } catch {
+      return ''
+    }
+  })
+  const [showcaseLoading, setShowcaseLoading] = useState(() => {
+    if (typeof window === 'undefined') return true
+    try {
+      const raw = window.sessionStorage.getItem(showcaseCacheKey)
+      if (!raw) return true
+      const parsed = JSON.parse(raw) as { ts: number; data: { albumPreviews: ShowcaseAlbumPreview[]; flipbookPreviewUrl: string } }
+      return !(parsed?.data && (Array.isArray(parsed.data.albumPreviews) || typeof parsed.data.flipbookPreviewUrl === 'string'))
+    } catch {
+      return true
+    }
+  })
   const [userName, setUserName] = useState<string | null>(null)
   const [nameLoaded, setNameLoaded] = useState(false)
   const [showCarouselPreview, setShowCarouselPreview] = useState(false)
@@ -56,6 +93,7 @@ export default function UserPage() {
   const searchParams = useSearchParams()
   const hasToastedRef = useRef(false)
   const router = useRouter()
+  // Cache is hydrated in state initializers (no skeleton flash).
 
   useEffect(() => {
     if (searchParams.get('toast') === 'google_signup_success' && !hasToastedRef.current) {
@@ -65,8 +103,8 @@ export default function UserPage() {
     }
   }, [searchParams])
 
-  const fetchShowcase = useCallback(async () => {
-    setShowcaseLoading(true)
+  const fetchShowcase = useCallback(async (silent = false) => {
+    if (!silent) setShowcaseLoading(true)
     try {
       const res = await fetch(apiUrl('/api/showcase'), { cache: 'no-store' })
       const data = await res.json().catch(() => ({}))
@@ -74,6 +112,13 @@ export default function UserPage() {
         const previews = Array.isArray(data.albumPreviews) ? data.albumPreviews : []
         setAlbumPreviews(previews)
         setFlipbookPreviewUrl(typeof data.flipbookPreviewUrl === 'string' ? data.flipbookPreviewUrl : '')
+        if (typeof window !== 'undefined') {
+          try {
+            window.sessionStorage.setItem(showcaseCacheKey, JSON.stringify({ ts: Date.now(), data: { albumPreviews: previews, flipbookPreviewUrl: typeof data.flipbookPreviewUrl === 'string' ? data.flipbookPreviewUrl : '' } }))
+          } catch {
+            // ignore
+          }
+        }
       } else {
         setAlbumPreviews([])
         setFlipbookPreviewUrl('')
@@ -82,12 +127,12 @@ export default function UserPage() {
       setAlbumPreviews([])
       setFlipbookPreviewUrl('')
     } finally {
-      setShowcaseLoading(false)
+      if (!silent) setShowcaseLoading(false)
     }
   }, [])
 
   useEffect(() => {
-    fetchShowcase()
+    fetchShowcase(hasCacheRef.current)
   }, [fetchShowcase])
 
   useEffect(() => {
@@ -200,11 +245,11 @@ export default function UserPage() {
                 <div className="animate-spin rounded-full h-8 w-8 border-2 border-slate-300 border-t-emerald-500" />
               </div>
             ) : albumPreviews.length === 0 ? (
-              <div className="relative z-10 w-full flex flex-col items-center py-8">
-                <div className="relative group cursor-not-allowed">
+              <div className="relative z-10 text-center space-y-8 w-full">
+                <div className="relative group cursor-not-allowed w-full flex justify-center grayscale opacity-50 hover:opacity-60 transition-opacity">
                   <AnimatedCarouselMockup />
-                  <div className="absolute inset-0 bg-white/50 backdrop-blur-[1px] flex items-center justify-center rounded-[2.5rem] opacity-0 group-hover:opacity-100 transition-opacity">
-                    <span className="bg-white/90 text-slate-800 font-bold px-4 py-2 rounded-full shadow-lg text-sm">Belum diatur</span>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                    <span className="bg-white/90 text-slate-800 font-bold px-4 py-2 rounded-full shadow-lg text-sm border-2 border-slate-900 dark:border-white/20">Belum diatur</span>
                   </div>
                 </div>
               </div>
@@ -303,10 +348,10 @@ export default function UserPage() {
               </div>
             ) : (
               <div className="relative z-10 text-center space-y-8 w-full">
-                <div className="relative group cursor-not-allowed w-full flex justify-center grayscale opacity-50">
+                <div className="relative group cursor-not-allowed w-full flex justify-center grayscale opacity-50 hover:opacity-60 transition-opacity">
                   <AnimatedFlipbookMockup />
-                  <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                    <span className="bg-white/90 text-slate-800 font-bold px-4 py-2 rounded-full shadow-lg text-sm">Belum diatur</span>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                    <span className="bg-white/90 text-slate-800 font-bold px-4 py-2 rounded-full shadow-lg text-sm border-2 border-slate-900 dark:border-white/20">Belum diatur</span>
                   </div>
                 </div>
               </div>

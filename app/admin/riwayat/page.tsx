@@ -48,6 +48,26 @@ export default function AdminRiwayatPage() {
   const transactions = transactionsMap[viewMode] || []
   const currentLoading = loading && transactionsMap[viewMode] === null
 
+  // Cache per tab so switching sidebar doesn't re-skeleton.
+  const cacheKeyMine = 'admin_transactions_v1:mine'
+  const cacheKeyAll = 'admin_transactions_v1:all'
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    try {
+      const mineRaw = window.sessionStorage.getItem(cacheKeyMine)
+      const allRaw = window.sessionStorage.getItem(cacheKeyAll)
+      const mine = mineRaw ? (JSON.parse(mineRaw) as { ts: number; data: Transaction[] }).data : null
+      const all = allRaw ? (JSON.parse(allRaw) as { ts: number; data: Transaction[] }).data : null
+      if (mine || all) {
+        setTransactionsMap({ mine: mine ?? null, all: all ?? null })
+        setLoading(false)
+      }
+    } catch {
+      // ignore
+    }
+  }, [])
+
   const fetchTransactions = useCallback(async (mode: ViewMode, skipLoading = false) => {
     if (!skipLoading) {
       setLoading(true)
@@ -61,7 +81,15 @@ export default function AdminRiwayatPage() {
         return
       }
       const data = await res.json()
-      setTransactionsMap(prev => ({ ...prev, [mode]: Array.isArray(data) ? data : [] }))
+      const list = Array.isArray(data) ? data : []
+      setTransactionsMap(prev => ({ ...prev, [mode]: list }))
+      if (typeof window !== 'undefined') {
+        try {
+          window.sessionStorage.setItem(mode === 'all' ? cacheKeyAll : cacheKeyMine, JSON.stringify({ ts: Date.now(), data: list }))
+        } catch {
+          // ignore
+        }
+      }
     } catch (err) {
       console.error('Error fetching transactions:', err)
       setTransactionsMap(prev => ({ ...prev, [mode]: [] }))
@@ -88,8 +116,8 @@ export default function AdminRiwayatPage() {
             for (let i = 0; i <= retries; i++) {
               try {
                 const res = await fetchWithAuth('/api/credits/sync-invoice', { method: 'POST' })
-                const data = await res.json().catch(() => ({}))
-                synced = data.synced ?? 0
+                const data = (await res.json().catch(() => ({}))) as { synced?: number }
+                synced = data?.synced ?? 0
                 if (synced > 0) break
                 if (i < retries) await new Promise((r) => setTimeout(r, 2500))
               } catch {

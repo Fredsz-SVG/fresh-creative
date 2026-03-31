@@ -49,10 +49,20 @@ albumsIdUnlockFeature.get('/', async (c) => {
 
   const u = unlocks ?? []
   const unlockedFeatures = u.map((x) => x.feature_type)
+
+  const flipOnAlbumRow = await db
+    .prepare(
+      `SELECT 1 as x FROM feature_unlocks WHERE album_id = ? AND feature_type = 'flipbook' LIMIT 1`
+    )
+    .bind(albumId)
+    .first<{ x: number }>()
+  const flipbook_unlocked_on_album = !!flipOnAlbumRow
+
   return c.json({
     unlocks: u,
     unlocked_features: unlockedFeatures,
     flipbook_enabled_by_package: flipbookEnabledByPackage,
+    flipbook_unlocked_on_album,
     ai_labs_features_by_package: aiLabsFeaturesByPackage,
     is_owner: album?.user_id === user.id,
     credit_costs: creditCosts,

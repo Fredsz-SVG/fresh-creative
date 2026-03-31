@@ -2,7 +2,6 @@
 
 import React, { useCallback, useEffect, useState } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
-import Link from 'next/link'
 import { ChevronLeft, Loader2, X } from 'lucide-react'
 import ManualFlipbookViewer from '@/components/yearbook/components/ManualFlipbookViewer'
 import { apiUrl } from '@/lib/api-url'
@@ -70,12 +69,39 @@ export default function PublicFlipbookPage() {
     }
   }
 
+  const handleGoBack = () => {
+    if (typeof window === 'undefined') return
+    if (window.history.length > 1) {
+      router.back()
+      return
+    }
+    try {
+      const ref = document.referrer
+      if (ref) {
+        const u = new URL(ref)
+        if (u.origin === window.location.origin) {
+          router.push(`${u.pathname}${u.search}${u.hash}`)
+          return
+        }
+      }
+    } catch {
+      // ignore
+    }
+    router.back()
+  }
+
   if (!id) {
     return (
       <div className="min-h-[100dvh] bg-amber-300 flex flex-col items-center justify-center p-4">
         <div className="bg-white border-4 border-slate-900 shadow-[8px_8px_0_0_#0f172a] rounded-2xl p-8 max-w-sm w-full text-center">
           <p className="text-slate-900 font-black text-lg uppercase tracking-tight mb-4">Album ID tidak valid</p>
-          <Link href="/" className="inline-block px-6 py-3 bg-indigo-400 text-white font-black text-sm uppercase rounded-xl border-4 border-slate-900 shadow-[4px_4px_0_0_#0f172a] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all">Kembali ke Beranda</Link>
+          <button
+            type="button"
+            onClick={handleGoBack}
+            className="inline-block px-6 py-3 bg-indigo-400 text-white font-black text-sm uppercase rounded-xl border-4 border-slate-900 shadow-[4px_4px_0_0_#0f172a] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all"
+          >
+            Kembali
+          </button>
         </div>
       </div>
     )
@@ -97,7 +123,13 @@ export default function PublicFlipbookPage() {
       <div className="min-h-[100dvh] bg-amber-300 flex flex-col items-center justify-center p-4">
         <div className="bg-white border-4 border-slate-900 shadow-[8px_8px_0_0_#0f172a] rounded-2xl p-8 max-w-sm w-full text-center">
           <p className="text-slate-900 font-black text-lg uppercase tracking-tight mb-6">{error || 'Belum ada halaman.'}</p>
-          <Link href="/" className="inline-block px-6 py-3 bg-indigo-400 text-white font-black text-sm uppercase rounded-xl border-4 border-slate-900 shadow-[4px_4px_0_0_#0f172a] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all">Kembali ke Beranda</Link>
+          <button
+            type="button"
+            onClick={handleGoBack}
+            className="inline-block px-6 py-3 bg-indigo-400 text-white font-black text-sm uppercase rounded-xl border-4 border-slate-900 shadow-[4px_4px_0_0_#0f172a] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all"
+          >
+            Kembali
+          </button>
         </div>
       </div>
     )

@@ -42,43 +42,28 @@ albumInviteRoute.post('/', async (c) => {
     if (!member) return c.json({ error: 'Only album owner or admin can create invite' }, 403)
   }
 
-  const body = await c.req.json().catch(() => ({}))
-  const inviteRole = body?.role === 'admin' ? 'admin' : 'member'
-  if (inviteRole === 'admin' && !isOwner && !isSysAdmin) {
-    return c.json({ error: 'Only main owner can create admin invites' }, 403)
-  }
-
+  // Deprecated role-based invite is removed. We now use student_invite_token on albums.
   const token = generateShortInviteCode()
   const expiresAt = new Date()
   expiresAt.setDate(expiresAt.getDate() + 7)
-  const id = crypto.randomUUID()
-  try {
-    await db
-      .prepare(
-        `INSERT INTO album_invites (id, album_id, token, created_by, role, expires_at, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, datetime('now'))`
-      )
-      .bind(id, albumId, token, user.id, inviteRole, expiresAt.toISOString())
-      .run()
-  } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : String(e)
-    return c.json({ error: msg }, 500)
-  }
-
-  const row = await db
-    .prepare(`SELECT id, token, expires_at, role FROM album_invites WHERE id = ?`)
-    .bind(id)
-    .first<{ id: string; token: string; expires_at: string; role: string }>()
-  if (!row) return c.json({ error: 'Insert failed' }, 500)
+  const upd = await db
+    .prepare(
+      `UPDATE albums
+       SET student_invite_token = ?, student_invite_expires_at = ?, updated_at = datetime('now')
+       WHERE id = ?`
+    )
+    .bind(token, expiresAt.toISOString(), albumId)
+    .run()
+  if (!upd.success) return c.json({ error: 'Failed to generate invite token' }, 500)
 
   const origin = c.req.header('origin') || ''
-  const inviteLink = `${origin}/join/${row.token}`
+  const inviteLink = `${origin}/invite/${token}`
 
   return c.json({
-    token: row.token,
-    role: row.role,
+    token,
+    role: 'member',
     inviteLink,
-    expiresAt: row.expires_at,
+    expiresAt: expiresAt.toISOString(),
   })
 })
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useLayoutEffect, useState } from 'react'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { getRole } from '@/lib/auth'
@@ -25,6 +25,47 @@ const userNavSections: NavSection[] = [
     // AI Labs dipindah ke sidebar album (yearbook)
 ]
 
+const USER_GATE_STORAGE_KEY = 'fresh_user_layout_verified_v1'
+const USER_GATE_MAX_AGE_MS = 7 * 864e5
+
+function readUserGate(): boolean {
+    if (typeof window === 'undefined') return false
+    try {
+        const raw = sessionStorage.getItem(USER_GATE_STORAGE_KEY)
+        if (!raw) return false
+        const o = JSON.parse(raw) as { ok?: boolean; ts?: number }
+        if (o?.ok !== true || typeof o.ts !== 'number') return false
+        if (Date.now() - o.ts > USER_GATE_MAX_AGE_MS) {
+            sessionStorage.removeItem(USER_GATE_STORAGE_KEY)
+            return false
+        }
+        return true
+    } catch {
+        try {
+            sessionStorage.removeItem(USER_GATE_STORAGE_KEY)
+        } catch {
+            // ignore
+        }
+        return false
+    }
+}
+
+function writeUserGate() {
+    try {
+        sessionStorage.setItem(USER_GATE_STORAGE_KEY, JSON.stringify({ ok: true, ts: Date.now() }))
+    } catch {
+        // ignore
+    }
+}
+
+function clearUserGate() {
+    try {
+        sessionStorage.removeItem(USER_GATE_STORAGE_KEY)
+    } catch {
+        // ignore
+    }
+}
+
 export default function UserLayoutClient({
     children,
 }: {
@@ -39,19 +80,27 @@ export default function UserLayoutClient({
     const [userName, setUserName] = useState<string>('')
     const [userEmail, setUserEmail] = useState<string>('')
 
+    useLayoutEffect(() => {
+        if (readUserGate()) setOk(true)
+    }, [])
+
     useEffect(() => {
         let unsubscribed = false
         const check = async () => {
             const { data: { session } } = await supabase.auth.getSession()
             if (!session) {
+                clearUserGate()
+                if (!unsubscribed) setOk(false)
                 if (!unsubscribed) router.replace('/login')
                 return
             }
 
             try {
                 const resMe = await fetchWithAuth('/api/user/me')
-                const me = await resMe.json().catch(() => ({}))
+                const me = (await resMe.json().catch(() => ({}))) as { isSuspended?: boolean }
                 if (resMe.ok && me?.isSuspended) {
+                    clearUserGate()
+                    if (!unsubscribed) setOk(false)
                     await fetchWithAuth('/api/auth/logout')
                     await supabase.auth.signOut()
                     if (!unsubscribed) router.replace('/login?error=account_suspended')
@@ -61,13 +110,17 @@ export default function UserLayoutClient({
             }
 
             const res = await fetchWithAuth('/api/auth/otp-status')
-            const data = await res.json().catch(() => ({}))
+            const data = (await res.json().catch(() => ({}))) as { verified?: boolean }
             if (!data.verified) {
+                clearUserGate()
+                if (!unsubscribed) setOk(false)
                 if (!unsubscribed) router.replace('/auth/verify-otp')
                 return
             }
             const role = await getRole(supabase, session.user)
             if (role === 'admin') {
+                clearUserGate()
+                if (!unsubscribed) setOk(false)
                 const p = pathname ?? ''
                 if (p.startsWith('/user/album/yearbook/')) {
                     const id = p.split('/user/album/yearbook/')[1]?.split('/')[0]
@@ -86,6 +139,7 @@ export default function UserLayoutClient({
             setUserEmail(session.user?.email ?? '')
             setUserName(session.user?.user_metadata?.full_name ?? session.user?.email ?? 'User')
             setOk(true)
+            writeUserGate()
 
             return () => {
                 unsubscribed = true
@@ -98,9 +152,10 @@ export default function UserLayoutClient({
                 if (typeof cleanup === 'function') cleanup()
             })
         }
-    }, [router, pathname, searchParams])
+    }, [router])
 
     const handleLogout = async () => {
+        clearUserGate()
         await fetchWithAuth('/api/auth/logout')
         await supabase.auth.signOut()
         router.refresh()

@@ -1,13 +1,10 @@
 'use client'
 
 import React, { useState } from 'react'
+import dynamic from 'next/dynamic'
 import NextLink from 'next/link'
+import { usePathname } from 'next/navigation'
 import { Video, Shirt, UserCircle, ImageIcon, Images, Lock, Coins, Loader2, Zap, ChevronRight } from 'lucide-react'
-import TryOn from '@/components/fitur/TryOn'
-import Pose from '@/components/fitur/Pose'
-import ImageEditor from '@/components/fitur/ImageEditor'
-import PhotoGroup from '@/components/fitur/PhotoGroup'
-import PhotoToVideo from '@/components/fitur/PhotoToVideo'
 import { AI_LABS_FEATURES_USER } from '@/lib/dashboard-nav'
 import { toast } from 'sonner'
 import { apiUrl } from '../../../lib/api-url'
@@ -32,8 +29,40 @@ interface AILabsViewProps {
     featureUnlocksLoaded?: boolean
 }
 
+function ToolLoading({ label }: { label: string }) {
+    return (
+        <div className="max-w-5xl mx-auto px-3 py-6 sm:p-8">
+            <div className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-3xl p-6 shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155]">
+                <div className="flex items-center gap-3">
+                    <Loader2 className="w-5 h-5 animate-spin text-indigo-500" />
+                    <div className="min-w-0">
+                        <p className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-widest truncate">{label}</p>
+                        <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Menyiapkan fitur…</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    )
+}
+
+// Lazy-load heavy tools so opening a tool doesn't block the UI.
+const TryOn = dynamic(() => import('@/components/fitur/TryOn'), { ssr: false, loading: () => <ToolLoading label="Virtual Try On" /> })
+const Pose = dynamic(() => import('@/components/fitur/Pose'), { ssr: false, loading: () => <ToolLoading label="Pose" /> })
+const ImageEditor = dynamic(() => import('@/components/fitur/ImageEditor'), { ssr: false, loading: () => <ToolLoading label="Image Editor" /> })
+const PhotoGroup = dynamic(() => import('@/components/fitur/PhotoGroup'), { ssr: false, loading: () => <ToolLoading label="Photo Group" /> })
+const PhotoToVideo = dynamic(() => import('@/components/fitur/PhotoToVideo'), { ssr: false, loading: () => <ToolLoading label="Photo to Video" /> })
+
+// Preload helpers to make navigation feel instant.
+const preloadTool: Record<string, () => void> = {
+    tryon: () => { void import('@/components/fitur/TryOn') },
+    pose: () => { void import('@/components/fitur/Pose') },
+    'image-editor': () => { void import('@/components/fitur/ImageEditor') },
+    photogroup: () => { void import('@/components/fitur/PhotoGroup') },
+    phototovideo: () => { void import('@/components/fitur/PhotoToVideo') },
+}
+
 export default function AILabsView({ album, aiLabsTool, aiLabsFeaturesByPackage = [], featureUnlocks = [], featureCreditCosts = {}, onFeatureUnlocked, featureUnlocksLoaded = false }: AILabsViewProps) {
-    const pathname = require('next/navigation').usePathname()
+    const pathname = usePathname()
     const isAdmin = pathname?.startsWith('/admin')
     const FEATURE_ICONS = [Shirt, UserCircle, ImageIcon, Images, Video] as const
     const albumBase = album?.id ? (isAdmin ? `/admin/album/yearbook/${album.id}` : `/user/album/yearbook/${album.id}`) : ''
@@ -83,8 +112,8 @@ export default function AILabsView({ album, aiLabsTool, aiLabsFeaturesByPackage 
     }
 
     if (aiLabsTool && albumBase) {
-        // While feature unlock data is still loading, show nothing to avoid flash
-        if (!featureUnlocksLoaded) return null
+        // While feature unlock data is still loading, show a lightweight loader (avoid blank).
+        if (!featureUnlocksLoaded) return <ToolLoading label="AI Labs" />
         // Check if tool is unlocked before rendering
         if (!isFeatureUnlocked(aiLabsTool)) {
             const creditCost = getFeatureCreditCost(aiLabsTool)
@@ -154,10 +183,9 @@ export default function AILabsView({ album, aiLabsTool, aiLabsFeaturesByPackage 
             )
         }
 
-        // Helper to render tool
-        const renderTool = (Component: React.ComponentType) => (
+        const renderTool = (Tool: React.ComponentType) => (
             <div className="max-w-5xl mx-auto px-3 py-3 sm:p-4">
-                <Component />
+                <Tool />
             </div>
         )
 
@@ -226,7 +254,11 @@ export default function AILabsView({ album, aiLabsTool, aiLabsFeaturesByPackage 
                                     ) : (
                                         <NextLink
                                             href={href}
+                                            prefetch
+                                            scroll={false}
                                             className="flex-1 flex items-center justify-center gap-1.5 h-10 rounded-xl bg-indigo-500 border-2 border-slate-900 dark:border-slate-600 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all text-[9px] font-black uppercase tracking-widest text-white px-2"
+                                            onMouseEnter={() => preloadTool[toolSlug]?.()}
+                                            onMouseDown={() => preloadTool[toolSlug]?.()}
                                         >
                                             <span className="truncate">BUKA</span>
                                             <ChevronRight className="w-3.5 h-3.5 shrink-0" strokeWidth={3} />

@@ -20,8 +20,30 @@ type Transaction = {
 }
 
 export default function UserRiwayatPage() {
-  const [transactions, setTransactions] = useState<Transaction[]>([])
-  const [loading, setLoading] = useState(true)
+  const cacheKey = 'user_transactions_v1'
+
+  const [transactions, setTransactions] = useState<Transaction[]>(() => {
+    if (typeof window === 'undefined') return []
+    try {
+      const raw = window.sessionStorage.getItem(cacheKey)
+      if (!raw) return []
+      const parsed = JSON.parse(raw) as { ts: number; data: Transaction[] }
+      return Array.isArray(parsed?.data) ? parsed.data : []
+    } catch {
+      return []
+    }
+  })
+  const [loading, setLoading] = useState(() => {
+    if (typeof window === 'undefined') return true
+    try {
+      const raw = window.sessionStorage.getItem(cacheKey)
+      if (!raw) return true
+      const parsed = JSON.parse(raw) as { ts: number; data: Transaction[] }
+      return !Array.isArray(parsed?.data)
+    } catch {
+      return true
+    }
+  })
   const [invoicePopupUrl, setInvoicePopupUrl] = useState<string | null>(null)
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 10
@@ -33,6 +55,8 @@ export default function UserRiwayatPage() {
 
   const totalPages = Math.ceil(transactions.length / itemsPerPage)
 
+  // Cache is hydrated in state initializer (no skeleton flash).
+
   const fetchTransactions = useCallback(async (skipLoading = false) => {
     if (!skipLoading) setLoading(true)
     try {
@@ -43,7 +67,15 @@ export default function UserRiwayatPage() {
         return
       }
       const data = await res.json()
-      setTransactions(Array.isArray(data) ? data : [])
+      const list = Array.isArray(data) ? data : []
+      setTransactions(list)
+      if (typeof window !== 'undefined') {
+        try {
+          window.sessionStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), data: list }))
+        } catch {
+          // ignore
+        }
+      }
     } catch (err) {
       console.error('Error fetching transactions:', err)
       setTransactions([])

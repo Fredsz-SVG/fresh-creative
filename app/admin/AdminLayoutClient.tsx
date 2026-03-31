@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useRouter, usePathname, useSearchParams } from 'next/navigation'
+import { useEffect, useLayoutEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { getRole } from '@/lib/auth'
 import DashboardShell from '@/components/dashboard/DashboardShell'
@@ -9,6 +9,48 @@ import { LayoutDashboard, History } from 'lucide-react'
 import type { NavSection } from '@/components/dashboard/DashboardShell'
 import { PRICING_SECTION_ADMIN, ALBUMS_SECTION_ADMIN, SHOWCASE_SECTION_ADMIN } from '@/lib/dashboard-nav'
 import { fetchWithAuth } from '../../lib/api-client'
+
+/** Session cache: after first successful admin gate, skip full-screen spinner when layout remounts (e.g. back from /album/.../preview). */
+const ADMIN_GATE_STORAGE_KEY = 'fresh_admin_layout_verified_v1'
+const ADMIN_GATE_MAX_AGE_MS = 7 * 864e5
+
+function readAdminGate(): boolean {
+    if (typeof window === 'undefined') return false
+    try {
+        const raw = sessionStorage.getItem(ADMIN_GATE_STORAGE_KEY)
+        if (!raw) return false
+        const o = JSON.parse(raw) as { ok?: boolean; ts?: number }
+        if (o?.ok !== true || typeof o.ts !== 'number') return false
+        if (Date.now() - o.ts > ADMIN_GATE_MAX_AGE_MS) {
+            sessionStorage.removeItem(ADMIN_GATE_STORAGE_KEY)
+            return false
+        }
+        return true
+    } catch {
+        try {
+            sessionStorage.removeItem(ADMIN_GATE_STORAGE_KEY)
+        } catch {
+            /* ignore */
+        }
+        return false
+    }
+}
+
+function writeAdminGate() {
+    try {
+        sessionStorage.setItem(ADMIN_GATE_STORAGE_KEY, JSON.stringify({ ok: true, ts: Date.now() }))
+    } catch {
+        /* ignore */
+    }
+}
+
+function clearAdminGate() {
+    try {
+        sessionStorage.removeItem(ADMIN_GATE_STORAGE_KEY)
+    } catch {
+        /* ignore */
+    }
+}
 
 const adminNavSections: NavSection[] = [
     {
@@ -30,27 +72,33 @@ export default function AdminLayoutClient({
     children: React.ReactNode
 }) {
     const router = useRouter()
-    const pathname = usePathname()
-    const searchParams = useSearchParams()
     const [ok, setOk] = useState(false)
 
     // Theme is now managed by ThemeProvider (supports dark/light toggle)
     const [userName, setUserName] = useState<string>('')
     const [userEmail, setUserEmail] = useState<string>('')
 
+    useLayoutEffect(() => {
+        if (readAdminGate()) setOk(true)
+    }, [])
+
     useEffect(() => {
         let unsubscribed = false
         const check = async () => {
             const { data: { session } } = await supabase.auth.getSession()
             if (!session) {
+                clearAdminGate()
+                if (!unsubscribed) setOk(false)
                 if (!unsubscribed) router.replace('/login')
                 return
             }
 
             try {
                 const resMe = await fetchWithAuth('/api/user/me')
-                const me = await resMe.json().catch(() => ({}))
+                const me = (await resMe.json().catch(() => ({}))) as { isSuspended?: boolean }
                 if (resMe.ok && me?.isSuspended) {
+                    clearAdminGate()
+                    if (!unsubscribed) setOk(false)
                     await fetchWithAuth('/api/auth/logout')
                     await supabase.auth.signOut()
                     if (!unsubscribed) router.replace('/login?error=account_suspended')
@@ -60,13 +108,17 @@ export default function AdminLayoutClient({
             }
 
             const res = await fetchWithAuth('/api/auth/otp-status')
-            const data = await res.json().catch(() => ({}))
+            const data = (await res.json().catch(() => ({}))) as { verified?: boolean }
             if (!data.verified) {
+                clearAdminGate()
+                if (!unsubscribed) setOk(false)
                 if (!unsubscribed) router.replace('/auth/verify-otp')
                 return
             }
             const role = await getRole(supabase, session.user)
             if (role !== 'admin') {
+                clearAdminGate()
+                if (!unsubscribed) setOk(false)
                 if (!unsubscribed) router.replace('/user')
                 return
             }
@@ -74,21 +126,16 @@ export default function AdminLayoutClient({
             setUserEmail(session.user?.email ?? '')
             setUserName(session.user?.user_metadata?.full_name ?? session.user?.email ?? 'Admin')
             setOk(true)
-
-            return () => {
-                unsubscribed = true
-            }
+            writeAdminGate()
         }
-        const cleanupPromise = check()
+        void check()
         return () => {
             unsubscribed = true
-            cleanupPromise.then((cleanup) => {
-                if (typeof cleanup === 'function') cleanup()
-            })
         }
-    }, [router, pathname, searchParams])
+    }, [router])
 
     const handleLogout = async () => {
+        clearAdminGate()
         await fetchWithAuth('/api/auth/logout')
         await supabase.auth.signOut()
         router.refresh()

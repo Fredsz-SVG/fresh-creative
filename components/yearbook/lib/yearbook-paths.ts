@@ -32,9 +32,12 @@ const MODE_TO_SLUG: Record<SectionMode, SectionSlug | null> = {
 const BASE_USER = '/user/album/yearbook'
 const BASE_ADMIN = '/admin/album/yearbook'
 
-/** Base path album (sampul/cover). Deteksi admin dari pathname agar sidebar tidak selalu balik ke Sampul. */
+/** Base path album (sampul/cover). Deteksi admin vs user dari pathname dashboard (/admin/albums, /user/albums, …). */
 export function getYearbookBasePath(id: string, pathname?: string | null): string {
-  if (pathname && pathname.startsWith(BASE_ADMIN + '/')) return `${BASE_ADMIN}/${id}`
+  const p = pathname?.trim() || ''
+  if (p === BASE_ADMIN || p.startsWith(`${BASE_ADMIN}/`)) return `${BASE_ADMIN}/${id}`
+  if (p === '/admin' || p.startsWith('/admin/')) return `${BASE_ADMIN}/${id}`
+  if (p === '/user' || p.startsWith('/user/')) return `${BASE_USER}/${id}`
   return `${BASE_USER}/${id}`
 }
 

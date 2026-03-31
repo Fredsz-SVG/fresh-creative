@@ -70,14 +70,7 @@ export default function AlbumRegisterForm({ albumId: albumIdProp, token, loginRe
 
     const checkAuthAndFetchData = async () => {
       try {
-        // Auth + data album paralel supaya form muncul lebih cepat
-        const [authResult, checkRes, albumRes, statsRes] = await Promise.all([
-          supabase.auth.getUser(),
-          fetchWithAuth(`/api/albums/${albumId}/check-user`, { cache: 'no-store' }),
-          fetchWithAuth(`/api/albums/${albumId}/public`, { cache: 'no-store' }),
-          fetchWithAuth(`/api/albums/${albumId}/join-stats`, { cache: 'no-store' })
-        ])
-
+        const authResult = await supabase.auth.getUser()
         const currentUser = authResult.data.user
         if (!currentUser) {
           toast.error('Silakan login terlebih dahulu untuk mendaftar')
@@ -85,6 +78,13 @@ export default function AlbumRegisterForm({ albumId: albumIdProp, token, loginRe
           return
         }
         setUser(currentUser)
+
+        // Auth OK → fetch album data + stats
+        const [checkRes, albumRes, statsRes] = await Promise.all([
+          fetchWithAuth(`/api/albums/${albumId}/check-user`, { cache: 'no-store' }),
+          fetchWithAuth(`/api/albums/${albumId}/public`, { cache: 'no-store' }),
+          fetchWithAuth(`/api/albums/${albumId}/join-stats`, { cache: 'no-store' }),
+        ])
 
         if (checkRes.ok) {
           const checkData = await checkRes.json()

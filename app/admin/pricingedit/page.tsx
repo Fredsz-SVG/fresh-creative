@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Edit, Plus, Save, Trash2, X, Book, Sparkles, Star, ChevronRight, Layout, Zap, RefreshCw } from 'lucide-react'
 import { fetchWithAuth } from '../../../lib/api-client'
 
@@ -216,38 +216,86 @@ export default function PricingEditPage() {
   const [aiPricing, setAiPricing] = useState<AiFeaturePricing[]>([])
   const [loadingAi, setLoadingAi] = useState(true)
   const [editingAi, setEditingAi] = useState<AiFeaturePricing | null>(null)
+  const hasCachePackagesRef = useRef(false)
+  const hasCacheAiRef = useRef(false)
 
-  const fetchPackages = async () => {
-    setLoading(true)
+  const cacheKeyPackages = 'admin_pricing_packages_v1'
+  const cacheKeyAi = 'admin_ai_pricing_v1'
+
+  // Instant render from cache to avoid skeleton when switching sidebar.
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    try {
+      const pkgRaw = window.sessionStorage.getItem(cacheKeyPackages)
+      const aiRaw = window.sessionStorage.getItem(cacheKeyAi)
+      if (pkgRaw) {
+        const parsed = JSON.parse(pkgRaw) as { ts: number; data: PricingPackage[] }
+        if (Array.isArray(parsed?.data)) {
+          setPackages(parsed.data)
+          setLoading(false)
+          hasCachePackagesRef.current = true
+        }
+      }
+      if (aiRaw) {
+        const parsed = JSON.parse(aiRaw) as { ts: number; data: AiFeaturePricing[] }
+        if (Array.isArray(parsed?.data)) {
+          setAiPricing(parsed.data)
+          setLoadingAi(false)
+          hasCacheAiRef.current = true
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }, [])
+
+  const fetchPackages = async (silent = false) => {
+    if (!silent) setLoading(true)
     try {
       const res = await fetchWithAuth(`/api/pricing?t=${Date.now()}`, { cache: 'no-store' })
       if (!res.ok) throw new Error('Failed to fetch packages')
-      const data = await res.json()
-      data.sort((a: PricingPackage, b: PricingPackage) => a.price_per_student - b.price_per_student)
-      setPackages(data)
+      const data = (await res.json()) as unknown
+      const list = Array.isArray(data) ? (data as PricingPackage[]) : []
+      list.sort((a, b) => a.price_per_student - b.price_per_student)
+      setPackages(list)
+      if (typeof window !== 'undefined') {
+        try {
+          window.sessionStorage.setItem(cacheKeyPackages, JSON.stringify({ ts: Date.now(), data: list }))
+        } catch {
+          // ignore
+        }
+      }
     } catch (err) {
       console.error(err)
     } finally {
-      setLoading(false)
+      if (!silent) setLoading(false)
     }
   }
 
-  const fetchAiPricing = async () => {
-    setLoadingAi(true)
+  const fetchAiPricing = async (silent = false) => {
+    if (!silent) setLoadingAi(true)
     try {
       const res = await fetchWithAuth(`/api/admin/ai-edit?t=${Date.now()}`)
       if (!res.ok) throw new Error('Failed to fetch AI pricing')
-      setAiPricing(await res.json())
+      const data = (await res.json()) as unknown
+      setAiPricing(Array.isArray(data) ? (data as AiFeaturePricing[]) : [])
+      if (typeof window !== 'undefined') {
+        try {
+          window.sessionStorage.setItem(cacheKeyAi, JSON.stringify({ ts: Date.now(), data }))
+        } catch {
+          // ignore
+        }
+      }
     } catch (err) {
       console.error(err)
     } finally {
-      setLoadingAi(false)
+      if (!silent) setLoadingAi(false)
     }
   }
 
   useEffect(() => {
-    fetchPackages()
-    fetchAiPricing()
+    fetchPackages(hasCachePackagesRef.current)
+    fetchAiPricing(hasCacheAiRef.current)
   }, [])
 
   const [saveStatus, setSaveStatus] = useState<string | null>(null)

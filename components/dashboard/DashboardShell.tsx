@@ -304,6 +304,7 @@ export default function DashboardShell({
                   <li key={item.href}>
                     <Link
                       href={item.href}
+                      prefetch
                       onClick={() => setDrawerOpen(false)}
                       className={navLinkClass(isActive)}
                     >

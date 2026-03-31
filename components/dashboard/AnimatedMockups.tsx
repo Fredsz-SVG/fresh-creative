@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 
 export function AnimatedCarouselMockup({ imageUrl }: { imageUrl?: string }) {
     return (
-        <div className="relative w-full h-full max-w-[180px] sm:max-w-[240px] aspect-[4/5] mx-auto flex items-center justify-center p-2 sm:p-2 perspective-[1000px]">
+        <div className="relative w-full h-full max-w-[220px] sm:max-w-[300px] aspect-[4/5] mx-auto flex items-center justify-center p-2 sm:p-3 perspective-[1000px]">
 
             {/* Animated Swiping Card Container */}
             <div className="relative w-full h-full overflow-visible">
@@ -77,7 +77,7 @@ export function AnimatedCarouselMockup({ imageUrl }: { imageUrl?: string }) {
 
 export function AnimatedFlipbookMockup() {
     return (
-        <div className="relative w-full h-full max-w-[220px] sm:max-w-[320px] aspect-[4/3] mx-auto rounded-xl bg-orange-200 dark:bg-orange-950/40 border-[3px] border-slate-900 dark:border-white shadow-[8px_8px_0_0_#0f172a] dark:shadow-[8px_8px_0_0_#a3e635] overflow-visible flex items-center justify-center p-2 sm:p-3 [perspective:1000px]">
+        <div className="relative w-full h-full max-w-[260px] sm:max-w-[380px] aspect-[4/3] mx-auto rounded-xl bg-orange-200 dark:bg-orange-950/40 border-[3px] border-slate-900 dark:border-white shadow-[8px_8px_0_0_#0f172a] dark:shadow-[8px_8px_0_0_#a3e635] overflow-visible flex items-center justify-center p-2 sm:p-3 [perspective:1000px]">
 
             {/* Book Container */}
             <div className="relative w-full h-full bg-white border-2 border-slate-900 rounded-md flex [transform-style:preserve-3d]">

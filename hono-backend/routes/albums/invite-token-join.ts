@@ -20,62 +20,25 @@ inviteTokenJoin.post('/:token/join', async (c) => {
     return c.json({ error: 'Token required' }, 400)
   }
 
-  const invite = await db
-    .prepare(`SELECT id, album_id, expires_at, role FROM album_invites WHERE token = ?`)
+  const albumByStudentToken = await db
+    .prepare(`SELECT id, student_invite_expires_at FROM albums WHERE student_invite_token = ?`)
     .bind(token)
-    .first<{ id: string; album_id: string; expires_at: string; role: string }>()
-
-  if (!invite) {
-    const albumByStudentToken = await db
-      .prepare(`SELECT id FROM albums WHERE student_invite_token = ?`)
-      .bind(token)
-      .first<{ id: string }>()
-    if (albumByStudentToken) {
-      return c.json({
-        redirectTo: `/invite/${token}`,
-        message: 'Gunakan halaman pendaftaran untuk kode ini.',
-      })
-    }
+    .first<{ id: string; student_invite_expires_at: string | null }>()
+  if (!albumByStudentToken) {
     return c.json({ error: 'Invite not found or invalid' }, 404)
   }
-
-  const expiresAt = new Date(invite.expires_at)
-  if (expiresAt < new Date()) {
+  if (
+    albumByStudentToken.student_invite_expires_at &&
+    new Date(albumByStudentToken.student_invite_expires_at) < new Date()
+  ) {
     return c.json({ error: 'Invite expired' }, 410)
   }
 
-  const albumId = invite.album_id
-  const inviteRole = invite.role || 'member'
-
-  const existing = await db
-    .prepare(`SELECT album_id, role FROM album_members WHERE album_id = ? AND user_id = ?`)
-    .bind(albumId, user.id)
-    .first<{ album_id: string; role: string }>()
-
-  if (existing) {
-    if (inviteRole === 'admin' && existing.role !== 'admin') {
-      await db
-        .prepare(`UPDATE album_members SET role = 'admin' WHERE album_id = ? AND user_id = ?`)
-        .bind(albumId, user.id)
-        .run()
-      return c.json({ message: 'Role upgraded to admin', albumId })
-    }
-    return c.json({ message: 'Already a member', albumId })
-  }
-
-  try {
-    await db
-      .prepare(
-        `INSERT INTO album_members (album_id, user_id, role, joined_at) VALUES (?, ?, ?, datetime('now'))`
-      )
-      .bind(albumId, user.id, inviteRole)
-      .run()
-  } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : String(e)
-    return c.json({ error: msg }, 500)
-  }
-
-  return c.json({ message: `Joined album as ${inviteRole}`, albumId })
+  return c.json({
+    redirectTo: `/invite/${token}`,
+    message: 'Gunakan halaman pendaftaran untuk kode ini.',
+    albumId: albumByStudentToken.id,
+  })
 })
 
 export default inviteTokenJoin
