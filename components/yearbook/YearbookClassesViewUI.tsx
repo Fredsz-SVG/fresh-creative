@@ -18,7 +18,6 @@ import IconSidebar from './components/IconSidebar'
 import AILabsView from './components/AILabsView'
 import PreviewView from './components/PreviewView'
 import SambutanView from './components/SambutanView'
-import TeamView from './components/TeamView'
 import ApprovalView from './components/ApprovalView'
 import FlipbookView from './components/FlipbookView'
 import FlipbookLockedView from './components/FlipbookLockedView'
@@ -1595,7 +1594,7 @@ export default function YearbookClassesViewUI(props: any) {
                 />
               ) : null}
 
-              <div className={!isCoverView && sidebarMode === 'flipbook' ? 'block w-full h-[100dvh]' : 'hidden'}>
+              <div className={!isCoverView && sidebarMode === 'flipbook' ? 'block w-full h-full min-h-0' : 'hidden'}>
                 {flipbookAccessible ? (
                   <FlipbookView
                     album={album}

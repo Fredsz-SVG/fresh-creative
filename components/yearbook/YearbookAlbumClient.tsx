@@ -1484,7 +1484,7 @@ export default function YearbookAlbumClient({
     }
   }
 
-  const mobileFirstWrapper = `w-full mx-auto bg-white dark:bg-slate-950 lg:max-w-full flex flex-col ${sidebarModeFromPath === 'flipbook' && flipbookPreviewMode ? 'h-[100dvh] overflow-hidden' : 'min-h-screen'}`
+  const mobileFirstWrapper = `w-full mx-auto bg-white dark:bg-slate-950 lg:max-w-full flex flex-col ${sidebarModeFromPath === 'flipbook' && flipbookPreviewMode ? 'h-[100dvh]' : 'min-h-screen'}`
   const contentWrapper = 'max-w-[420px] md:max-w-full w-full mx-auto'
 
   if (!id) {

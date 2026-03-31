@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useRef } from 'react'
 import { Play, Image as ImageIcon, ImagePlus, Trash2, Loader2, BookOpen, BookMarked, GripVertical } from 'lucide-react'
-import { supabase } from '@/lib/supabase'
 import { toast } from 'sonner'
 import { apiUrl } from '../../../lib/api-url'
 import { fetchWithAuth } from '../../../lib/api-client'
@@ -97,6 +96,22 @@ export default function FlipbookLayoutEditor({ album, onPlayVideo, onUpdateAlbum
         }
     }
 
+    const uploadFlipbookAsset = async (file: File | Blob, target: 'pages' | 'hotspots'): Promise<string> => {
+        if (!album?.id) throw new Error('Album ID tidak valid')
+        const formData = new FormData()
+        formData.append('file', file)
+        formData.append('target', target)
+        const res = await fetchWithAuth(`/api/albums/${album.id}/flipbook/upload`, {
+            method: 'POST',
+            body: formData,
+        })
+        const payload = await res.json().catch(() => ({} as { file_url?: string; error?: string }))
+        if (!res.ok || !payload?.file_url) {
+            throw new Error(payload?.error || 'Upload file gagal')
+        }
+        return payload.file_url
+    }
+
     // Initial Fetch
     useEffect(() => {
         if (album?.id) {
@@ -134,12 +149,12 @@ export default function FlipbookLayoutEditor({ album, onPlayVideo, onUpdateAlbum
     }
 
     const handleSaveHotspot = async (hotspotId: string, updates: Partial<VideoHotspot>) => {
-        const { error } = await supabase
-            .from('flipbook_video_hotspots')
-            .update(updates)
-            .eq('id', hotspotId)
-
-        if (!error) {
+        const res = await fetchWithAuth(`/api/albums/${album.id}/flipbook/hotspots/${hotspotId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updates),
+        })
+        if (res.ok) {
             setManualPages(prev => prev.map(p => ({
                 ...p,
                 flipbook_video_hotspots: p.flipbook_video_hotspots?.map(h => h.id === hotspotId ? { ...h, ...updates } : h)
@@ -151,12 +166,10 @@ export default function FlipbookLayoutEditor({ album, onPlayVideo, onUpdateAlbum
     }
 
     const handleDeleteHotspot = async (hotspotId: string) => {
-        const { error } = await supabase
-            .from('flipbook_video_hotspots')
-            .delete()
-            .eq('id', hotspotId)
-
-        if (!error) {
+        const res = await fetchWithAuth(`/api/albums/${album.id}/flipbook/hotspots/${hotspotId}`, {
+            method: 'DELETE',
+        })
+        if (res.ok) {
             setManualPages(prev => prev.map(p => ({
                 ...p,
                 flipbook_video_hotspots: p.flipbook_video_hotspots?.filter(h => h.id !== hotspotId)
@@ -207,9 +220,10 @@ export default function FlipbookLayoutEditor({ album, onPlayVideo, onUpdateAlbum
 
         if (width < 1 || height < 1) return
 
-        const { data, error } = await supabase
-            .from('flipbook_video_hotspots')
-            .insert({
+        const res = await fetchWithAuth(`/api/albums/${album.id}/flipbook/hotspots`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
                 page_id: selectedManualPageId,
                 video_url: '',
                 label: `Hotspot #${(manualPages.find(p => p.id === selectedManualPageId)?.flipbook_video_hotspots?.length || 0) + 1}`,
@@ -217,11 +231,10 @@ export default function FlipbookLayoutEditor({ album, onPlayVideo, onUpdateAlbum
                 y: y,
                 width: width,
                 height: height
-            })
-            .select()
-            .single()
-
-        if (data && !error) {
+            }),
+        })
+        const data = await res.json().catch(() => null)
+        if (res.ok && data) {
             setManualPages(prev => prev.map(p =>
                 p.id === selectedManualPageId
                     ? { ...p, flipbook_video_hotspots: [...(p.flipbook_video_hotspots || []), data] }
@@ -238,26 +251,17 @@ export default function FlipbookLayoutEditor({ album, onPlayVideo, onUpdateAlbum
         const toastId = toast.loading('Mengunggah video...')
 
         try {
-            const fileExt = file.name.split('.').pop()
-            const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`
-            const filePath = `albums/${album.id}/flipbook/hotspots/${fileName}`
+            const publicUrl = await uploadFlipbookAsset(file, 'hotspots')
 
-            const { data, error: uploadError } = await supabase.storage
-                .from('album-photos')
-                .upload(filePath, file)
-
-            if (uploadError) throw uploadError
-
-            const { data: { publicUrl } } = supabase.storage
-                .from('album-photos')
-                .getPublicUrl(filePath)
-
-            const { error: updateError } = await supabase
-                .from('flipbook_video_hotspots')
-                .update({ video_url: publicUrl })
-                .eq('id', hotspotId)
-
-            if (updateError) throw updateError
+            const updateRes = await fetchWithAuth(`/api/albums/${album.id}/flipbook/hotspots/${hotspotId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ video_url: publicUrl }),
+            })
+            if (!updateRes.ok) {
+                const err = await updateRes.json().catch(() => ({} as { error?: string }))
+                throw new Error(err.error || 'Gagal menyimpan video hotspot')
+            }
 
             setManualPages(prev => prev.map(p => ({
                 ...p,
@@ -323,36 +327,28 @@ export default function FlipbookLayoutEditor({ album, onPlayVideo, onUpdateAlbum
                     const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.8))
 
                     if (blob) {
-                        const fileName = `page-${i}-${Date.now()}.jpg`
-                        const filePath = `albums/${album.id}/flipbook/pages/${fileName}`
-                        const { error: uploadError } = await supabase.storage
-                            .from('album-photos')
-                            .upload(filePath, blob)
+                        const publicUrl = await uploadFlipbookAsset(blob, 'pages')
+                        const pageNumber = startPageNumber + (i - 1)
 
-                        if (!uploadError) {
-                            const { data: { publicUrl } } = supabase.storage.from('album-photos').getPublicUrl(filePath)
-                            const pageNumber = startPageNumber + (i - 1)
+                        const pageRes = await fetchWithAuth(`/api/albums/${album.id}/flipbook/pages`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                album_id: album.id,
+                                page_number: pageNumber,
+                                image_url: publicUrl,
+                                width: Math.round(viewport.width),
+                                height: Math.round(viewport.height)
+                            }),
+                        })
+                        const pageData = await pageRes.json().catch(() => null)
+                        if (!pageRes.ok) {
+                            const err = (pageData || {}) as { error?: string }
+                            throw new Error(`Gagal menyimpan halaman ${i}: ${err.error || 'Unknown error'}`)
+                        }
 
-                            const { data: pageData, error: dbError } = await supabase
-                                .from('manual_flipbook_pages')
-                                .insert({
-                                    album_id: album.id,
-                                    page_number: pageNumber,
-                                    image_url: publicUrl,
-                                    width: Math.round(viewport.width),
-                                    height: Math.round(viewport.height)
-                                })
-                                .select()
-                                .single()
-
-                            if (dbError) {
-                                console.error('Database Error during PDF upload:', dbError)
-                                throw new Error(`Gagal menyimpan halaman ${i}: ${dbError.message}`)
-                            }
-
-                            if (pageData) {
-                                newPages.push({ ...pageData, flipbook_video_hotspots: [] })
-                            }
+                        if (pageData) {
+                            newPages.push({ ...pageData, flipbook_video_hotspots: [] })
                         }
                     }
                 }
@@ -384,38 +380,43 @@ export default function FlipbookLayoutEditor({ album, onPlayVideo, onUpdateAlbum
         const toastId = toast.loading('Mengunggah cover...')
 
         try {
-            const fileExt = file.name.split('.').pop()
-            const fileName = `cover-${Date.now()}.${fileExt}`
-            const filePath = `albums/${album.id}/flipbook/pages/${fileName}`
-
-            const { error: uploadError } = await supabase.storage
-                .from('album-photos')
-                .upload(filePath, file)
-            if (uploadError) throw uploadError
-
-            const { data: { publicUrl } } = supabase.storage.from('album-photos').getPublicUrl(filePath)
+            const publicUrl = await uploadFlipbookAsset(file, 'pages')
 
             // Check if cover (page_number=1) already exists
             const existingCover = manualPages.find(p => p.page_number === 1)
             if (existingCover) {
                 // Update existing cover
-                const { error: updateErr } = await supabase
-                    .from('manual_flipbook_pages')
-                    .update({ image_url: publicUrl })
-                    .eq('id', existingCover.id)
-                if (updateErr) throw updateErr
+                const updateRes = await fetchWithAuth(`/api/albums/${album.id}/flipbook/pages/${existingCover.id}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ image_url: publicUrl }),
+                })
+                if (!updateRes.ok) {
+                    const err = await updateRes.json().catch(() => ({} as { error?: string }))
+                    throw new Error(err.error || 'Gagal update cover')
+                }
             } else {
                 // Shift all existing pages +1 then insert cover at page_number 1
                 for (const p of manualPages.sort((a, b) => b.page_number - a.page_number)) {
-                    await supabase
-                        .from('manual_flipbook_pages')
-                        .update({ page_number: p.page_number + 1 })
-                        .eq('id', p.id)
+                    const shiftRes = await fetchWithAuth(`/api/albums/${album.id}/flipbook/pages/${p.id}`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ page_number: p.page_number + 1 }),
+                    })
+                    if (!shiftRes.ok) {
+                        const err = await shiftRes.json().catch(() => ({} as { error?: string }))
+                        throw new Error(err.error || 'Gagal menggeser halaman')
+                    }
                 }
-                const { error: insertErr } = await supabase
-                    .from('manual_flipbook_pages')
-                    .insert({ album_id: album.id, page_number: 1, image_url: publicUrl })
-                if (insertErr) throw insertErr
+                const insertRes = await fetchWithAuth(`/api/albums/${album.id}/flipbook/pages`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ album_id: album.id, page_number: 1, image_url: publicUrl }),
+                })
+                if (!insertRes.ok) {
+                    const err = await insertRes.json().catch(() => ({} as { error?: string }))
+                    throw new Error(err.error || 'Gagal menambah cover')
+                }
             }
 
             await fetchManualPages()
@@ -438,25 +439,21 @@ export default function FlipbookLayoutEditor({ album, onPlayVideo, onUpdateAlbum
         const toastId = toast.loading('Mengunggah back cover...')
 
         try {
-            const fileExt = file.name.split('.').pop()
-            const fileName = `backcover-${Date.now()}.${fileExt}`
-            const filePath = `albums/${album.id}/flipbook/pages/${fileName}`
-
-            const { error: uploadError } = await supabase.storage
-                .from('album-photos')
-                .upload(filePath, file)
-            if (uploadError) throw uploadError
-
-            const { data: { publicUrl } } = supabase.storage.from('album-photos').getPublicUrl(filePath)
+            const publicUrl = await uploadFlipbookAsset(file, 'pages')
 
             const lastPageNumber = manualPages.length > 0
                 ? Math.max(...manualPages.map(p => p.page_number)) + 1
                 : 1
 
-            const { error: insertErr } = await supabase
-                .from('manual_flipbook_pages')
-                .insert({ album_id: album.id, page_number: lastPageNumber, image_url: publicUrl })
-            if (insertErr) throw insertErr
+            const insertRes = await fetchWithAuth(`/api/albums/${album.id}/flipbook/pages`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ album_id: album.id, page_number: lastPageNumber, image_url: publicUrl }),
+            })
+            if (!insertRes.ok) {
+                const err = await insertRes.json().catch(() => ({} as { error?: string }))
+                throw new Error(err.error || 'Gagal menambah back cover')
+            }
 
             await fetchManualPages()
             toast.success('Back cover berhasil diunggah!', { id: toastId })
@@ -512,12 +509,12 @@ export default function FlipbookLayoutEditor({ album, onPlayVideo, onUpdateAlbum
         touchDragPageIdRef.current = null
         touchDragOverIndexRef.current = null
         try {
-            for (let i = 0; i < reordered.length; i++) {
-                await supabase
-                    .from('manual_flipbook_pages')
-                    .update({ page_number: i + 1 })
-                    .eq('id', reordered[i].id)
-            }
+            const res = await fetchWithAuth(`/api/albums/${album.id}/flipbook/pages/reorder`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ page_ids: reordered.map((p) => p.id) }),
+            })
+            if (!res.ok) throw new Error('Gagal mengubah urutan')
             toast.success('Urutan halaman diperbarui')
         } catch (err: any) {
             console.error(err)

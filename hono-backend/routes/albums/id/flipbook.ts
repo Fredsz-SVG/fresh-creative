@@ -1,9 +1,260 @@
 import { Hono } from 'hono'
+import type { Context } from 'hono'
 import { getSupabaseClient } from '../../../lib/supabase'
 import { getRole } from '../../../lib/auth'
 import { getD1 } from '../../../lib/edge-env'
+import { getAssets } from '../../../lib/edge-env'
+import { putAlbumPhoto } from '../../../lib/r2-assets'
+import { publicAlbumAssetUrl } from '../../../lib/public-file-url'
 
 const albumFlipbookRoute = new Hono()
+
+async function canManageFlipbook(c: Context, albumId: string) {
+  const supabase = getSupabaseClient(c)
+  const db = getD1(c)
+  if (!db) return { ok: false as const, status: 503, error: 'Database not configured' }
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { ok: false as const, status: 401, error: 'Unauthorized' }
+  const album = await db
+    .prepare(`SELECT id, user_id FROM albums WHERE id = ?`)
+    .bind(albumId)
+    .first<{ id: string; user_id: string }>()
+  if (!album) return { ok: false as const, status: 404, error: 'Album not found' }
+  const role = await getRole(c, user)
+  const isOwner = album.user_id === user.id || role === 'admin'
+  if (isOwner) return { ok: true as const, db, userId: user.id }
+  const member = await db
+    .prepare(`SELECT role FROM album_members WHERE album_id = ? AND user_id = ?`)
+    .bind(albumId, user.id)
+    .first<{ role: string }>()
+  if (member?.role === 'admin') return { ok: true as const, db, userId: user.id }
+  return { ok: false as const, status: 403, error: 'Only administrators can manage flipbook' }
+}
+
+// POST /api/albums/:id/flipbook/upload — upload flipbook file to R2 (owner/admin/album-admin)
+albumFlipbookRoute.post('/upload', async (c) => {
+  const supabase = getSupabaseClient(c)
+  const db = getD1(c)
+  const bucket = getAssets(c)
+  if (!db) return c.json({ error: 'Database not configured' }, 503)
+  if (!bucket) return c.json({ error: 'Storage not configured' }, 503)
+
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return c.json({ error: 'Unauthorized' }, 401)
+
+  const albumId = c.req.param('id')
+  if (!albumId) return c.json({ error: 'Album ID required' }, 400)
+
+  const album = await db
+    .prepare(`SELECT id, user_id FROM albums WHERE id = ?`)
+    .bind(albumId)
+    .first<{ id: string; user_id: string }>()
+  if (!album) return c.json({ error: 'Album not found' }, 404)
+
+  const role = await getRole(c, user)
+  const isOwner = album.user_id === user.id || role === 'admin'
+  let isAlbumAdmin = false
+  if (!isOwner) {
+    const member = await db
+      .prepare(`SELECT role FROM album_members WHERE album_id = ? AND user_id = ?`)
+      .bind(albumId, user.id)
+      .first<{ role: string }>()
+    isAlbumAdmin = member?.role === 'admin'
+  }
+  if (!isOwner && !isAlbumAdmin) {
+    return c.json({ error: 'Only administrators can upload flipbook assets' }, 403)
+  }
+
+  let fileData: ArrayBuffer | null = null
+  let filename = ''
+  let mimetype = 'application/octet-stream'
+  let target = 'pages'
+
+  try {
+    const formData = await c.req.formData()
+    const file = formData.get('file')
+    if (file != null && typeof file !== 'string') {
+      fileData = await (file as Blob).arrayBuffer()
+      filename = (file as File).name || 'file.bin'
+      mimetype = (file as File).type || 'application/octet-stream'
+    }
+    const t = formData.get('target')
+    if (typeof t === 'string' && t.trim()) target = t.trim().toLowerCase()
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err)
+    return c.json({ error: msg || 'Invalid multipart body' }, 400)
+  }
+
+  if (!fileData || fileData.byteLength === 0) return c.json({ error: 'file required' }, 400)
+  if (!['pages', 'hotspots'].includes(target)) return c.json({ error: 'Invalid target' }, 400)
+
+  const ext = filename.split('.').pop()?.toLowerCase() || 'bin'
+  const safeImageExt = ['jpg', 'jpeg', 'png', 'webp', 'gif']
+  const safeVideoExt = ['mp4', 'webm', 'mov', 'm4v']
+  const safeExt = [...safeImageExt, ...safeVideoExt].includes(ext) ? ext : 'bin'
+  const relPath = `${albumId}/flipbook/${target}/${crypto.randomUUID()}.${safeExt}`
+
+  try {
+    await putAlbumPhoto(bucket, relPath, fileData, {
+      contentType: mimetype,
+      cacheControl: 'public, max-age=3600',
+    })
+  } catch (e: unknown) {
+    return c.json({ error: e instanceof Error ? e.message : 'Upload gagal' }, 500)
+  }
+
+  return c.json({ file_url: publicAlbumAssetUrl(c, relPath), rel_path: relPath })
+})
+
+// POST /api/albums/:id/flipbook/pages — insert page
+albumFlipbookRoute.post('/pages', async (c) => {
+  const albumId = c.req.param('id')
+  if (!albumId) return c.json({ error: 'Album ID required' }, 400)
+  const perm = await canManageFlipbook(c, albumId)
+  if (!perm.ok) return c.json({ error: perm.error }, perm.status)
+  const body = await c.req.json<Record<string, unknown>>()
+  const pageNumber = Number(body.page_number ?? 0)
+  const imageUrl = String(body.image_url ?? '')
+  const width = body.width == null ? null : Number(body.width)
+  const height = body.height == null ? null : Number(body.height)
+  if (!pageNumber || !imageUrl) return c.json({ error: 'page_number and image_url required' }, 400)
+  const id = crypto.randomUUID()
+  const ins = await perm.db
+    .prepare(
+      `INSERT INTO manual_flipbook_pages (id, album_id, page_number, image_url, width, height, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, datetime('now'))`
+    )
+    .bind(id, albumId, pageNumber, imageUrl, width, height)
+    .run()
+  if (!ins.success) return c.json({ error: 'Insert failed' }, 500)
+  const row = await perm.db
+    .prepare(`SELECT * FROM manual_flipbook_pages WHERE id = ?`)
+    .bind(id)
+    .first<Record<string, unknown>>()
+  return c.json(row)
+})
+
+// PATCH /api/albums/:id/flipbook/pages/:pageId — update page
+albumFlipbookRoute.patch('/pages/:pageId', async (c) => {
+  const albumId = c.req.param('id')
+  const pageId = c.req.param('pageId')
+  if (!albumId || !pageId) return c.json({ error: 'Album ID and page ID required' }, 400)
+  const perm = await canManageFlipbook(c, albumId)
+  if (!perm.ok) return c.json({ error: perm.error }, perm.status)
+  const body = await c.req.json<Record<string, unknown>>()
+  const sets: string[] = []
+  const vals: unknown[] = []
+  if (body.image_url !== undefined) { sets.push('image_url = ?'); vals.push(String(body.image_url ?? '')) }
+  if (body.page_number !== undefined) { sets.push('page_number = ?'); vals.push(Number(body.page_number ?? 0)) }
+  if (body.width !== undefined) { sets.push('width = ?'); vals.push(body.width == null ? null : Number(body.width)) }
+  if (body.height !== undefined) { sets.push('height = ?'); vals.push(body.height == null ? null : Number(body.height)) }
+  if (sets.length === 0) return c.json({ error: 'No fields to update' }, 400)
+  vals.push(pageId, albumId)
+  const upd = await perm.db
+    .prepare(`UPDATE manual_flipbook_pages SET ${sets.join(', ')} WHERE id = ? AND album_id = ?`)
+    .bind(...vals)
+    .run()
+  if (!upd.success) return c.json({ error: 'Update failed' }, 500)
+  const row = await perm.db
+    .prepare(`SELECT * FROM manual_flipbook_pages WHERE id = ? AND album_id = ?`)
+    .bind(pageId, albumId)
+    .first<Record<string, unknown>>()
+  return c.json(row)
+})
+
+// POST /api/albums/:id/flipbook/pages/reorder — set page order by ids
+albumFlipbookRoute.post('/pages/reorder', async (c) => {
+  const albumId = c.req.param('id')
+  if (!albumId) return c.json({ error: 'Album ID required' }, 400)
+  const perm = await canManageFlipbook(c, albumId)
+  if (!perm.ok) return c.json({ error: perm.error }, perm.status)
+  const body = await c.req.json<Record<string, unknown>>()
+  const pageIds = Array.isArray(body.page_ids) ? (body.page_ids as unknown[]).map((v) => String(v)) : []
+  if (!pageIds.length) return c.json({ error: 'page_ids required' }, 400)
+  for (let i = 0; i < pageIds.length; i++) {
+    await perm.db
+      .prepare(`UPDATE manual_flipbook_pages SET page_number = ? WHERE id = ? AND album_id = ?`)
+      .bind(i + 1, pageIds[i], albumId)
+      .run()
+  }
+  return c.json({ ok: true })
+})
+
+// POST /api/albums/:id/flipbook/hotspots — insert hotspot
+albumFlipbookRoute.post('/hotspots', async (c) => {
+  const albumId = c.req.param('id')
+  if (!albumId) return c.json({ error: 'Album ID required' }, 400)
+  const perm = await canManageFlipbook(c, albumId)
+  if (!perm.ok) return c.json({ error: perm.error }, perm.status)
+  const body = await c.req.json<Record<string, unknown>>()
+  const pageId = String(body.page_id ?? '')
+  if (!pageId) return c.json({ error: 'page_id required' }, 400)
+  const id = crypto.randomUUID()
+  const videoUrl = String(body.video_url ?? '')
+  const label = String(body.label ?? '')
+  const x = Number(body.x ?? 0)
+  const y = Number(body.y ?? 0)
+  const width = Number(body.width ?? 0)
+  const height = Number(body.height ?? 0)
+  const ins = await perm.db
+    .prepare(
+      `INSERT INTO flipbook_video_hotspots (id, page_id, video_url, label, x, y, width, height, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`
+    )
+    .bind(id, pageId, videoUrl, label, x, y, width, height)
+    .run()
+  if (!ins.success) return c.json({ error: 'Insert failed' }, 500)
+  const row = await perm.db
+    .prepare(`SELECT * FROM flipbook_video_hotspots WHERE id = ?`)
+    .bind(id)
+    .first<Record<string, unknown>>()
+  return c.json(row)
+})
+
+// PATCH /api/albums/:id/flipbook/hotspots/:hotspotId — update hotspot
+albumFlipbookRoute.patch('/hotspots/:hotspotId', async (c) => {
+  const albumId = c.req.param('id')
+  const hotspotId = c.req.param('hotspotId')
+  if (!albumId || !hotspotId) return c.json({ error: 'Album ID and hotspot ID required' }, 400)
+  const perm = await canManageFlipbook(c, albumId)
+  if (!perm.ok) return c.json({ error: perm.error }, perm.status)
+  const body = await c.req.json<Record<string, unknown>>()
+  const sets: string[] = []
+  const vals: unknown[] = []
+  if (body.video_url !== undefined) { sets.push('video_url = ?'); vals.push(String(body.video_url ?? '')) }
+  if (body.label !== undefined) { sets.push('label = ?'); vals.push(String(body.label ?? '')) }
+  if (body.x !== undefined) { sets.push('x = ?'); vals.push(Number(body.x ?? 0)) }
+  if (body.y !== undefined) { sets.push('y = ?'); vals.push(Number(body.y ?? 0)) }
+  if (body.width !== undefined) { sets.push('width = ?'); vals.push(Number(body.width ?? 0)) }
+  if (body.height !== undefined) { sets.push('height = ?'); vals.push(Number(body.height ?? 0)) }
+  if (sets.length === 0) return c.json({ error: 'No fields to update' }, 400)
+  vals.push(hotspotId)
+  const upd = await perm.db
+    .prepare(`UPDATE flipbook_video_hotspots SET ${sets.join(', ')} WHERE id = ?`)
+    .bind(...vals)
+    .run()
+  if (!upd.success) return c.json({ error: 'Update failed' }, 500)
+  const row = await perm.db
+    .prepare(`SELECT * FROM flipbook_video_hotspots WHERE id = ?`)
+    .bind(hotspotId)
+    .first<Record<string, unknown>>()
+  return c.json(row)
+})
+
+// DELETE /api/albums/:id/flipbook/hotspots/:hotspotId — delete hotspot
+albumFlipbookRoute.delete('/hotspots/:hotspotId', async (c) => {
+  const albumId = c.req.param('id')
+  const hotspotId = c.req.param('hotspotId')
+  if (!albumId || !hotspotId) return c.json({ error: 'Album ID and hotspot ID required' }, 400)
+  const perm = await canManageFlipbook(c, albumId)
+  if (!perm.ok) return c.json({ error: perm.error }, perm.status)
+  const del = await perm.db
+    .prepare(`DELETE FROM flipbook_video_hotspots WHERE id = ?`)
+    .bind(hotspotId)
+    .run()
+  if (!del.success) return c.json({ error: 'Delete failed' }, 500)
+  return c.json({ ok: true })
+})
 
 // GET /api/albums/:id/flipbook/public — no auth, for public showcase
 albumFlipbookRoute.get('/public', async (c) => {

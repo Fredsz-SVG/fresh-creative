@@ -234,7 +234,7 @@ export default function UserPage() {
             <h3 className="text-[13px] sm:text-[18px] font-black text-slate-800 dark:text-white tracking-tight leading-tight">Swipe Album</h3>
             <p className="text-[10px] sm:text-xs font-bold text-slate-500 dark:text-slate-400 leading-tight mt-1.5 hidden sm:block px-2">Eksplorasi profil dengan mudah lewat kontrol geser.</p>
           </div>
-          <div className="relative p-2 sm:p-10 flex flex-col items-center justify-center border-t border-gray-100 dark:border-white/5 min-h-[220px] sm:min-h-[480px] overflow-hidden bg-slate-50/50 dark:bg-slate-950/50">
+          <div className="relative p-2 sm:p-10 flex flex-col items-center justify-center border-t border-gray-100 dark:border-white/5 min-h-[190px] sm:min-h-[460px] overflow-hidden bg-slate-50/50 dark:bg-slate-950/50">
             {/* Dotted Grid Pattern Background */}
             <div className="absolute inset-0 bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] dark:bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:20px_20px] opacity-40" />
             <div className="absolute inset-0 bg-gradient-to-b from-white/60 dark:from-slate-900/60 via-transparent to-slate-50/90 dark:to-slate-950/90" />
@@ -245,7 +245,7 @@ export default function UserPage() {
                 <div className="animate-spin rounded-full h-8 w-8 border-2 border-slate-300 border-t-emerald-500" />
               </div>
             ) : albumPreviews.length === 0 ? (
-              <div className="relative z-10 text-center space-y-8 w-full">
+              <div className="relative z-10 text-center space-y-5 sm:space-y-8 w-full">
                 <div className="relative group cursor-not-allowed w-full flex justify-center grayscale opacity-50 hover:opacity-60 transition-opacity">
                   <AnimatedCarouselMockup />
                   <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
@@ -314,15 +314,15 @@ export default function UserPage() {
             <h3 className="text-[13px] sm:text-[18px] font-black text-slate-800 dark:text-white tracking-tight leading-tight">3D Flipbook</h3>
             <p className="text-[10px] sm:text-xs font-bold text-slate-500 dark:text-slate-400 leading-tight mt-1.5 hidden sm:block px-2">Sensasi otentik membalik lembaran fisik memori digitalmu.</p>
           </div>
-          <div className="relative p-2 sm:p-10 flex flex-col items-center justify-center border-t border-gray-100 dark:border-white/5 min-h-[220px] sm:min-h-[480px] overflow-hidden bg-slate-50/50 dark:bg-slate-950/50">
+          <div className="relative p-2 sm:p-10 flex flex-col items-center justify-center border-t border-gray-100 dark:border-white/5 min-h-[190px] sm:min-h-[460px] overflow-hidden bg-slate-50/50 dark:bg-slate-950/50">
             {/* Dotted Grid Pattern Background */}
             <div className="absolute inset-0 bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] dark:bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:20px_20px] opacity-40" />
             <div className="absolute inset-0 bg-gradient-to-b from-white/60 dark:from-slate-900/60 via-transparent to-slate-50/90 dark:to-slate-950/90" />
             <div className="absolute top-0 right-1/2 translate-x-1/2 w-64 h-32 bg-emerald-300/20 dark:bg-emerald-500/10 blur-[50px] pointer-events-none" />
 
             {flipbookPreviewUrl ? (
-              <div className="relative z-10 text-center space-y-8 w-full">
-                <div className="relative group cursor-pointer w-full flex justify-center hover:-translate-y-2 transition-transform duration-500 hover:drop-shadow-2xl">
+              <div className="relative z-10 text-center space-y-5 sm:space-y-8 w-full">
+                <div className="relative group cursor-pointer w-full flex justify-center px-1 sm:px-0 hover:-translate-y-1 sm:hover:-translate-y-2 transition-transform duration-500 hover:drop-shadow-2xl">
                   {flipbookPreviewUrl.startsWith('/') ? (
                     <Link href={flipbookPreviewUrl} className="block w-full relative">
                       <AnimatedFlipbookMockup />
@@ -347,8 +347,8 @@ export default function UserPage() {
                 </div>
               </div>
             ) : (
-              <div className="relative z-10 text-center space-y-8 w-full">
-                <div className="relative group cursor-not-allowed w-full flex justify-center grayscale opacity-50 hover:opacity-60 transition-opacity">
+              <div className="relative z-10 text-center space-y-5 sm:space-y-8 w-full">
+                <div className="relative group cursor-not-allowed w-full flex justify-center px-1 sm:px-0 grayscale opacity-50 hover:opacity-60 transition-opacity">
                   <AnimatedFlipbookMockup />
                   <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
                     <span className="bg-white/90 text-slate-800 font-bold px-4 py-2 rounded-full shadow-lg text-sm border-2 border-slate-900 dark:border-white/20">Belum diatur</span>

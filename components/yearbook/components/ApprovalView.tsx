@@ -1,11 +1,10 @@
 'use client'
 
 import React, { useState, useEffect, useMemo } from 'react'
-import { Edit3, Plus, Minus, Check, X, Clock, ClipboardList, Copy, Link as LinkIcon, CreditCard, Loader2, Wallet } from 'lucide-react'
+import { Edit3, Plus, Minus, Check, X, Clock, ClipboardList, Copy, Link as LinkIcon, CreditCard, Loader2, Wallet, Trash2, Search } from 'lucide-react'
 import { toast } from 'sonner'
 import { apiUrl } from '../../../lib/api-url'
 import { fetchWithAuth } from '../../../lib/api-client'
-import TeamView from './TeamView'
 
 type AlbumClass = { id: string; name: string; sort_order?: number; student_count?: number }
 type JoinRequest = {
@@ -89,12 +88,23 @@ export default function ApprovalView({
   useEffect(() => {
     setApprovalClassIndex(0)
   }, [approvalTab])
+  // Backward compatibility: if old state still sets "team", fold it into approved.
+  useEffect(() => {
+    if (approvalTab === 'team') setApprovalTab('approved')
+  }, [approvalTab, setApprovalTab])
   const [assigningRequest, setAssigningRequest] = useState<string | null>(null)
   const [selectedClassForAssign, setSelectedClassForAssign] = useState('')
   const [pricingPackages, setPricingPackages] = useState<PricingPackage[]>([])
   const [loadingPricing, setLoadingPricing] = useState(false)
   const [loadingCheckout, setLoadingCheckout] = useState(false)
   const [checkoutInvoiceUrl, setCheckoutInvoiceUrl] = useState<string | null>(null)
+  const [approvedSearch, setApprovedSearch] = useState('')
+  const [roleChangeConfirm, setRoleChangeConfirm] = useState<{
+    userId: string
+    newRole: 'admin' | 'member'
+    memberName: string
+  } | null>(null)
+  const [removeConfirm, setRemoveConfirm] = useState<{ userId: string; memberName: string } | null>(null)
 
   // Fetch pricing packages when editing limit
   useEffect(() => {
@@ -223,6 +233,13 @@ export default function ApprovalView({
   const safeIndex = Math.min(approvalClassIndex, Math.max(0, sortedGroupKeys.length - 1))
   const currentGroupKey = sortedGroupKeys[safeIndex] || ''
   const classRequests = requestsByGroup[currentGroupKey] || []
+  const searchQ = approvedSearch.trim().toLowerCase()
+  const showCrossClassSearch = approvalTab === 'approved' && searchQ.length > 0
+  const displayRequests = showCrossClassSearch
+    ? joinRequests.filter((r) =>
+      `${r.student_name ?? ''} ${r.email ?? ''}`.toLowerCase().includes(searchQ)
+    )
+    : classRequests
   let groupLabel: string
   let classObj: AlbumClass | null = null
   if (currentGroupKey === 'unassigned') {
@@ -236,8 +253,72 @@ export default function ApprovalView({
     groupLabel = className
   }
 
+  const handleConfirmRole = async () => {
+    if (!roleChangeConfirm) return
+    await onUpdateRole(roleChangeConfirm.userId, roleChangeConfirm.newRole)
+    setRoleChangeConfirm(null)
+  }
+
+  const handleConfirmRemove = async () => {
+    if (!removeConfirm) return
+    await onRemoveMember(removeConfirm.userId)
+    setRemoveConfirm(null)
+  }
+
   return (
     <div className="max-w-5xl mx-auto px-2 py-2 sm:px-3 sm:py-4">
+      {roleChangeConfirm && (
+        <div className="fixed inset-0 bg-slate-900/40 dark:bg-black/50 backdrop-blur-md flex items-center justify-center z-[100] p-4">
+          <div className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-[32px] p-6 sm:p-8 max-w-sm w-full shadow-[6px_6px_0_0_#0f172a] dark:shadow-[6px_6px_0_0_#334155] text-center">
+            <h3 className="text-xl font-black text-slate-900 dark:text-white mb-2 uppercase tracking-tight">Konfirmasi Perubahan</h3>
+            <p className="text-sm font-bold text-slate-500 dark:text-slate-400 mb-6">
+              {roleChangeConfirm.newRole === 'admin'
+                ? `Jadikan "${roleChangeConfirm.memberName}" sebagai Admin?`
+                : `Jadikan "${roleChangeConfirm.memberName}" sebagai Anggota?`}
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setRoleChangeConfirm(null)}
+                className="flex-1 py-3.5 rounded-xl bg-slate-100 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 text-slate-900 dark:text-white text-xs font-black uppercase tracking-widest shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
+              >
+                Tidak
+              </button>
+              <button
+                onClick={handleConfirmRole}
+                className="flex-1 py-3.5 rounded-xl bg-violet-500 text-white border-2 border-slate-900 dark:border-slate-600 text-xs font-black uppercase tracking-widest shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
+              >
+                Ya, Lanjutkan
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {removeConfirm && (
+        <div className="fixed inset-0 bg-slate-900/40 dark:bg-black/50 backdrop-blur-md flex items-center justify-center z-[100] p-4">
+          <div className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-[32px] p-6 sm:p-8 max-w-sm w-full shadow-[6px_6px_0_0_#0f172a] dark:shadow-[6px_6px_0_0_#334155] text-center">
+            <h3 className="text-xl font-black text-slate-900 dark:text-white mb-2 uppercase tracking-tight">Hapus Anggota</h3>
+            <p className="text-sm font-bold text-slate-500 dark:text-slate-400 mb-6">
+              Hapus akses "<span className="text-slate-900 dark:text-slate-200 font-black">{removeConfirm.memberName}</span>" dari album ini?
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setRemoveConfirm(null)}
+                className="flex-1 py-3.5 rounded-xl bg-slate-100 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 text-slate-900 dark:text-white text-xs font-black uppercase tracking-widest shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
+              >
+                Batal
+              </button>
+              <button
+                onClick={handleConfirmRemove}
+                className="flex-1 py-3.5 rounded-xl bg-red-500 text-white border-2 border-slate-900 dark:border-slate-700 text-xs font-black uppercase tracking-widest shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
+              >
+                Ya, Hapus
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Checkout Invoice Popup */}
       {checkoutInvoiceUrl && (
         <div className="fixed inset-0 z-[110] flex flex-col bg-white dark:bg-slate-950" role="dialog" aria-modal="true" aria-label="Pembayaran">
@@ -496,7 +577,7 @@ export default function ApprovalView({
         </div>
       </div>
 
-      <div className="grid grid-cols-3 sm:flex gap-1.5 sm:gap-2 mb-4 sm:mb-8 bg-slate-100 dark:bg-slate-800 p-1.5 sm:p-2 rounded-xl sm:rounded-[24px] border-2 sm:border-4 border-slate-900 dark:border-slate-700 shadow-[4px_4px_0_0_#0f172a] dark:shadow-[6px_6px_0_0_#334155]">
+      <div className="grid grid-cols-2 sm:flex gap-1.5 sm:gap-2 mb-4 sm:mb-8 bg-slate-100 dark:bg-slate-800 p-1.5 sm:p-2 rounded-xl sm:rounded-[24px] border-2 sm:border-4 border-slate-900 dark:border-slate-700 shadow-[4px_4px_0_0_#0f172a] dark:shadow-[6px_6px_0_0_#334155]">
         <button
           type="button"
           onClick={() => setApprovalTab('pending')}
@@ -525,49 +606,36 @@ export default function ApprovalView({
             {joinStats?.approved_count || 0}
           </span>
         </button>
-        <button
-          type="button"
-          onClick={() => setApprovalTab('team')}
-          className={`flex-1 min-w-0 flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-2 px-1 py-2 sm:px-6 sm:py-4 rounded-md sm:rounded-xl transition-all font-black text-[8px] sm:text-xs md:text-sm uppercase border-2 ${approvalTab === 'team'
-            ? 'bg-emerald-400 dark:bg-emerald-600 border-slate-900 dark:border-slate-600 text-slate-900 dark:text-white shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155]'
-            : 'bg-white dark:bg-slate-800 border-transparent text-slate-400 dark:text-slate-500 opacity-60'
-            }`}
-        >
-          <ClipboardList className="w-3 h-3 sm:w-5 sm:h-5 shrink-0" strokeWidth={3} />
-          <span className="truncate w-full text-center sm:truncate-none">Tim</span>
-          <span className={`px-1 py-0.5 rounded text-[8px] sm:text-[10px] shrink-0 ${approvalTab === 'team' ? 'bg-slate-900 dark:bg-slate-700 text-emerald-400 dark:text-emerald-300' : 'bg-slate-200 dark:bg-slate-700 text-slate-400 dark:text-slate-500'}`}>
-            {members.length || 0}
-          </span>
-        </button>
       </div>
 
-      {approvalTab === 'team' ? (
-        <div className="-mx-3 sm:mx-0">
-          <TeamView
-            members={members}
-            isOwner={isOwner}
-            isGlobalAdmin={isGlobalAdmin}
-            canManage={canManage}
-            currentUserId={currentUserId}
-            onUpdateRole={onUpdateRole}
-            onRemoveMember={onRemoveMember}
-          />
-        </div>
-      ) : (
-        sortedGroupKeys.length === 0 ? (
+      {sortedGroupKeys.length === 0 ? (
           <div className="text-center py-8 sm:py-20 px-3 sm:px-4 bg-white dark:bg-slate-900 border-2 sm:border-4 border-slate-900 dark:border-slate-700 rounded-2xl sm:rounded-[32px] shadow-[6px_6px_0_0_#0f172a] dark:shadow-[8px_8px_0_0_#334155]">
             <div className="w-14 h-14 sm:w-20 sm:h-20 mx-auto mb-4 sm:mb-6 rounded-2xl sm:rounded-3xl bg-amber-300 dark:bg-amber-500 border-2 sm:border-4 border-slate-900 dark:border-slate-600 flex items-center justify-center shadow-[inset_-4px_-4px_0_0_rgba(15,23,42,0.2)]">
               <ClipboardList className="w-7 h-7 sm:w-10 sm:h-10 text-slate-900" strokeWidth={3} />
             </div>
             <p className="text-base sm:text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight mb-1.5 sm:mb-2">
-              {approvalTab === 'pending' ? 'Semua sudah diproses' : 'Belum ada tanggapan'}
+              Semua sudah diproses
             </p>
             <p className="text-[10px] sm:text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">
-              {approvalTab === 'pending' ? 'Tidak ada permintaan menunggu' : 'Setujui permintaan untuk menampilkan'}
+              Tidak ada permintaan menunggu
             </p>
           </div>
         ) : (
           <div className="flex flex-col gap-3 sm:gap-6">
+            {approvalTab === 'approved' && (
+              <div className="flex justify-end">
+                <div className="relative w-full sm:max-w-sm mb-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500" strokeWidth={3} />
+                  <input
+                    type="text"
+                    value={approvedSearch}
+                    onChange={(e) => setApprovedSearch(e.target.value)}
+                    placeholder="Cari nama / email (semua kelas)..."
+                    className="w-full pl-10 pr-4 py-2.5 text-xs sm:text-sm font-bold rounded-xl bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] focus:shadow-none focus:translate-x-0.5 focus:translate-y-0.5 transition-all focus:outline-none"
+                  />
+                </div>
+              </div>
+            )}
             <div className="flex gap-2 sm:gap-3 overflow-x-auto pb-3 pt-1 px-0.5 no-scrollbar" style={{ scrollbarWidth: 'none' }}>
               {sortedGroupKeys.map((groupKey, idx) => {
                 const tabLabel =
@@ -598,8 +666,13 @@ export default function ApprovalView({
               })}
             </div>
             <div className="flex flex-col gap-3 sm:gap-4">
-              {classRequests.map((request) => {
+              {displayRequests.map((request) => {
                 const isAssigning = assigningRequest === request.id
+                const matchedMember = members.find((m: any) => {
+                  if (request.email && m?.email && String(m.email).toLowerCase() === String(request.email).toLowerCase()) return true
+                  if (request.student_name && m?.name && String(m.name).toLowerCase() === String(request.student_name).toLowerCase()) return true
+                  return false
+                })
                 return (
                   <div
                     key={request.id}
@@ -617,9 +690,13 @@ export default function ApprovalView({
 
                         <div className="flex flex-col gap-2">
                           {request.status === 'approved' && classObj && (
-                            <span className="w-fit text-[10px] px-2 py-0.5 rounded-md bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 font-black uppercase tracking-widest border-2 border-slate-900 dark:border-slate-600 shrink-0">
-                              {classObj.name}
-                            </span>
+                            <div className="flex flex-wrap items-center gap-2">
+                              {matchedMember?.role === 'owner' && <span className="w-fit text-[10px] px-2 py-0.5 rounded-md bg-amber-400 dark:bg-amber-500 text-slate-900 font-black uppercase tracking-widest border-2 border-slate-900 dark:border-slate-600 shrink-0">Pemilik</span>}
+                              {matchedMember?.role === 'admin' && <span className="w-fit text-[10px] px-2 py-0.5 rounded-md bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 font-black uppercase tracking-widest border-2 border-slate-900 dark:border-slate-600 shrink-0">Admin</span>}
+                              {matchedMember?.role === 'member' && <span className="w-fit text-[10px] px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-black uppercase tracking-widest border-2 border-slate-900 dark:border-slate-600 shrink-0">Anggota</span>}
+                              {matchedMember?.role === 'no-account' && <span className="w-fit text-[10px] px-2 py-0.5 rounded-md bg-rose-100 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 font-black uppercase tracking-widest border-2 border-slate-900 dark:border-slate-600 shrink-0">Belum Login</span>}
+                              {currentUserId && matchedMember?.user_id === currentUserId && <span className="w-fit text-[10px] px-2 py-0.5 rounded-md bg-indigo-500 dark:bg-indigo-600 text-white font-black uppercase tracking-widest border-2 border-slate-900 dark:border-slate-600 shrink-0">Anda</span>}
+                            </div>
                           )}
                           <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                             {request.email && (
@@ -632,6 +709,39 @@ export default function ApprovalView({
                         </div>
                       </div>
                     </div>
+                    {approvalTab === 'approved' && (isOwner || canManage) && matchedMember?.user_id && matchedMember?.role !== 'owner' && (
+                      <div className="flex gap-1.5 sm:gap-2 shrink-0 sm:ml-auto w-full sm:w-auto mt-2 sm:mt-0 pt-2 sm:pt-0 border-t-2 sm:border-t-0 border-slate-100 dark:border-slate-700">
+                        {(isOwner || isGlobalAdmin) && (
+                          matchedMember.role !== 'admin' ? (
+                            <button
+                              type="button"
+                              onClick={() => setRoleChangeConfirm({ userId: matchedMember.user_id, newRole: 'admin', memberName: matchedMember.name || matchedMember.email || request.student_name })}
+                              className="flex-1 sm:flex-none px-3 py-2 rounded-lg sm:rounded-xl text-[9px] sm:text-[10px] font-black uppercase bg-indigo-500 dark:bg-indigo-600 text-white border-2 border-slate-900 dark:border-slate-600 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[3px_3px_0_0_#334155]"
+                            >
+                              Set Admin
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => setRoleChangeConfirm({ userId: matchedMember.user_id, newRole: 'member', memberName: matchedMember.name || matchedMember.email || request.student_name })}
+                              className="flex-1 sm:flex-none px-3 py-2 rounded-lg sm:rounded-xl text-[9px] sm:text-[10px] font-black uppercase bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-2 border-slate-900 dark:border-slate-600"
+                            >
+                              Jadi Anggota
+                            </button>
+                          )
+                        )}
+                        {canManage && (
+                          <button
+                            type="button"
+                            onClick={() => setRemoveConfirm({ userId: matchedMember.user_id, memberName: matchedMember.name || matchedMember.email || request.student_name })}
+                            className="w-10 h-10 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 text-red-500 dark:text-red-400 hover:bg-red-500 hover:text-white flex items-center justify-center"
+                            title="Hapus akses"
+                          >
+                            <Trash2 className="w-4 h-4" strokeWidth={3} />
+                          </button>
+                        )}
+                      </div>
+                    )}
                     {request.status === 'pending' && !isAssigning && (
                       <div className="flex gap-1.5 sm:gap-2 shrink-0 sm:ml-auto w-full sm:w-auto mt-2 sm:mt-0 pt-2 sm:pt-0 border-t-2 sm:border-t-0 border-slate-100 dark:border-slate-700">
                         <button
@@ -690,14 +800,21 @@ export default function ApprovalView({
                             <X className="w-4 h-4 sm:w-5 sm:h-5" strokeWidth={4} />
                           </button>
                         </div>
+            {showCrossClassSearch && displayRequests.length === 0 && (
+              <div className="text-center py-10 px-4 bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-2xl shadow-[4px_4px_0_0_#0f172a] dark:shadow-[6px_6px_0_0_#334155]">
+                <p className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-widest">Tidak ada hasil</p>
+                <p className="text-xs font-bold text-slate-500 dark:text-slate-400 mt-2">Coba kata kunci lain.</p>
+              </div>
+            )}
                       </div>
                     )}
+
+      {/* team management now attached directly to approved request cards above */}
                   </div>
                 )
               })}
             </div>
           </div>
-        )
       )}
     </div>
   )
