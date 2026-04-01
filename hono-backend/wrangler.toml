@@ -29,5 +29,13 @@ migrations_dir = "d1/migrations"
 binding = "ASSETS"
 bucket_name = "fresh-creative-assets"
 
+[[durable_objects.bindings]]
+name = "REALTIME_HUB"
+class_name = "RealtimeHubDurableObject"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["RealtimeHubDurableObject"]
+
 # [vars]
 # SUPABASE_JWT_SECRET = "isi-dari-supabase-dashboard"

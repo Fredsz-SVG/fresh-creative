@@ -1,7 +1,6 @@
 import { Hono } from 'hono'
 import { getSupabaseClient } from '../../../lib/supabase'
 import { getD1 } from '../../../lib/edge-env'
-import { getRole } from '../../../lib/auth'
 
 const albumsIdJoinStats = new Hono()
 

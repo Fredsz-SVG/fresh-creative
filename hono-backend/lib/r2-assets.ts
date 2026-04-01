@@ -1,5 +1,6 @@
 import type { R2Bucket } from '@cloudflare/workers-types'
 import { r2ObjectKeyFromAlbumPath } from './storage-layout'
+import { publishRealtimeEventFromGlobal } from './realtime'
 
 type PutBody = ArrayBuffer | ReadableStream | ArrayBufferView | string | null | Blob
 type PutBodyNormalized = string | ArrayBuffer | ArrayBufferView
@@ -9,14 +10,21 @@ const isBlobLike = (value: unknown): value is Blob =>
   value !== null &&
   typeof (value as Blob).arrayBuffer === 'function'
 
+const isReadableStreamLike = (value: unknown): value is ReadableStream =>
+  typeof value === 'object' &&
+  value !== null &&
+  typeof (value as ReadableStream).getReader === 'function'
+
 async function normalizePutBody(body: PutBody): Promise<PutBodyNormalized> {
   if (body === null) return ''
   if (typeof body === 'string') return body
   if (body instanceof ArrayBuffer) return body
   if (ArrayBuffer.isView(body)) return body
   if (isBlobLike(body)) return await body.arrayBuffer()
-  // Fallback for cross-runtime stream mismatch: convert unsupported body to empty payload.
-  return ''
+  if (isReadableStreamLike(body)) {
+    return await new Response(body as unknown as BodyInit).arrayBuffer()
+  }
+  throw new Error('Unsupported upload body type')
 }
 
 /**
@@ -36,6 +44,12 @@ export async function putAlbumPhoto(
       ? { contentType: options.contentType, cacheControl: options.cacheControl ?? 'public, max-age=3600' }
       : { cacheControl: options?.cacheControl ?? 'public, max-age=3600' },
   })
+  await publishRealtimeEventFromGlobal({
+    type: 'r2.object.put',
+    channel: 'assets',
+    payload: { key },
+    ts: new Date().toISOString(),
+  })
   return { key }
 }
 
@@ -47,4 +61,10 @@ export async function getAlbumObject(bucket: R2Bucket, relativePathInsideAlbumBu
 export async function deleteAlbumObject(bucket: R2Bucket, relativePathInsideAlbumBucket: string) {
   const key = r2ObjectKeyFromAlbumPath(relativePathInsideAlbumBucket)
   await bucket.delete(key)
+  await publishRealtimeEventFromGlobal({
+    type: 'r2.object.delete',
+    channel: 'assets',
+    payload: { key },
+    ts: new Date().toISOString(),
+  })
 }

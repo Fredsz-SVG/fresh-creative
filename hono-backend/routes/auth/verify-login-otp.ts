@@ -8,6 +8,10 @@ import { ensureUserInD1, honoEnvForSupabasePublicSync, isUserSuspendedD1 } from 
 const OTP_COOKIE_NAME = 'otp_verified'
 const OTP_COOKIE_MAX_AGE = 60 * 60 * 24 * 30 // 30 days
 
+type AuthEnv = {
+  NODE_ENV?: string
+}
+
 const verifyLoginOtp = new Hono()
 
 verifyLoginOtp.post('/', async (c) => {
@@ -52,7 +56,7 @@ verifyLoginOtp.post('/', async (c) => {
     await db.prepare(`DELETE FROM login_otps WHERE user_id = ?`).bind(user.id).run()
     const role = await getRole(c, user)
     const redirectTo = role === 'admin' ? '/admin' : '/user'
-    const isProduction = (c.env as any).NODE_ENV === 'production'
+    const isProduction = (c.env as AuthEnv).NODE_ENV === 'production'
     setCookie(c, OTP_COOKIE_NAME, '1', {
       path: '/',
       maxAge: OTP_COOKIE_MAX_AGE,
@@ -82,7 +86,7 @@ verifyLoginOtp.post('/', async (c) => {
   await ensureUserInD1(db, verifiedUser, honoEnvForSupabasePublicSync(c.env))
   const role = await getRole(c, verifiedUser)
   const redirectTo = safeNext || (role === 'admin' ? '/admin' : '/user')
-  const isProduction = (c.env as any).NODE_ENV === 'production'
+  const isProduction = (c.env as AuthEnv).NODE_ENV === 'production'
 
   setCookie(c, OTP_COOKIE_NAME, '1', {
     path: '/',

@@ -75,7 +75,7 @@ albumClasses.post('/', async (c) => {
     return c.json({ error: 'Only owner can add class' }, 403)
   }
 
-  const body = await c.req.json()
+  const body = await c.req.json().catch(() => ({})) as Record<string, unknown>
   const name = typeof body?.name === 'string' ? body.name.trim() : ''
   if (!name) return c.json({ error: 'Class name is required' }, 400)
 
@@ -99,8 +99,8 @@ albumClasses.post('/', async (c) => {
       )
       .bind(id, albumId, name, sort_order)
       .run()
-  } catch (e: any) {
-    const msg = String(e?.message ?? e)
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e)
     const isDuplicate = /UNIQUE constraint|duplicate/i.test(msg)
     if (isDuplicate) {
       return c.json({ error: 'Kelas dengan nama ini sudah ada di album ini' }, 400)

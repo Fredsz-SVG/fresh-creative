@@ -1,7 +1,17 @@
 import { Hono } from 'hono'
 import { getD1 } from '../lib/edge-env'
+import { publishRealtimeEventFromContext } from '../lib/realtime'
 
 const pricing = new Hono()
+const PRICING_CACHE_TTL_MS = 30_000
+
+let pricingCache: Array<Record<string, unknown>> | null = null
+let pricingCacheExpiresAt = 0
+
+function resetPricingCache() {
+  pricingCache = null
+  pricingCacheExpiresAt = 0
+}
 
 function parsePkg(row: Record<string, unknown>) {
   let features: unknown = []
@@ -35,9 +45,22 @@ function parsePkg(row: Record<string, unknown>) {
 pricing.get('/', async (c) => {
   const db = getD1(c)
   if (!db) return c.json({ error: 'D1 tidak terkonfigurasi' }, 503)
+
+  const now = Date.now()
+  if (pricingCache && now < pricingCacheExpiresAt) {
+    c.header('Cache-Control', 'public, max-age=30, stale-while-revalidate=120')
+    c.header('X-Cache', 'HIT')
+    return c.json(pricingCache)
+  }
+
   try {
     const { results } = await db.prepare('SELECT * FROM pricing_packages ORDER BY id').all<Record<string, unknown>>()
-    return c.json((results ?? []).map(parsePkg))
+    const parsed = (results ?? []).map(parsePkg)
+    pricingCache = parsed
+    pricingCacheExpiresAt = now + PRICING_CACHE_TTL_MS
+    c.header('Cache-Control', 'public, max-age=30, stale-while-revalidate=120')
+    c.header('X-Cache', 'MISS')
+    return c.json(parsed)
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : 'error'
     console.error('Pricing Error:', err)
@@ -68,6 +91,13 @@ pricing.post('/', async (c) => {
       )
       .bind(id, name, price_per_student, min_students, features, flipbook_enabled, ai_labs_features, is_popular)
       .run()
+    resetPricingCache()
+    await publishRealtimeEventFromContext(c, {
+      type: 'pricing.updated',
+      channel: 'pricing',
+      payload: { action: 'create', id },
+      ts: new Date().toISOString(),
+    })
     const row = await db.prepare('SELECT * FROM pricing_packages WHERE id = ?').bind(id).first<Record<string, unknown>>()
     return c.json(row ? parsePkg(row) : { id })
   } catch (err: unknown) {
@@ -98,6 +128,13 @@ pricing.put('/', async (c) => {
       .bind(name, price_per_student, min_students, features, flipbook_enabled, ai_labs_features, is_popular, id)
       .run()
     if (r.meta.changes === 0) return c.json({ error: 'Package not found' }, 404)
+    resetPricingCache()
+    await publishRealtimeEventFromContext(c, {
+      type: 'pricing.updated',
+      channel: 'pricing',
+      payload: { action: 'update', id },
+      ts: new Date().toISOString(),
+    })
     const row = await db.prepare('SELECT * FROM pricing_packages WHERE id = ?').bind(id).first<Record<string, unknown>>()
     return c.json(row ? [parsePkg(row)] : [])
   } catch (err: unknown) {
@@ -115,6 +152,13 @@ pricing.delete('/', async (c) => {
   try {
     const r = await db.prepare('DELETE FROM pricing_packages WHERE id = ?').bind(id).run()
     if (r.meta.changes === 0) return c.json({ error: 'Not found' }, 404)
+    resetPricingCache()
+    await publishRealtimeEventFromContext(c, {
+      type: 'pricing.updated',
+      channel: 'pricing',
+      payload: { action: 'delete', id },
+      ts: new Date().toISOString(),
+    })
     return c.json({ message: 'Package deleted successfully' })
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : 'error'

@@ -25,6 +25,7 @@ classIdVideo.post('/', async (c) => {
   let filename = ''
   let mimetype = 'video/mp4'
   let studentName = ''
+  let accessId: string | null = null
 
   try {
     const formData = await c.req.formData()
@@ -66,8 +67,7 @@ classIdVideo.post('/', async (c) => {
     if (!access) return c.json({ error: 'Anda hanya dapat upload video untuk profil Anda sendiri' }, 403)
     // Source of truth dari DB agar tidak gagal karena student_name di UI beda/blank
     studentName = access.student_name || studentName || user.id
-    // Update nanti pakai id row ini
-    ;(c as any).var = { ...(c as any).var, _accessId: access.id }
+    accessId = access.id
   } else {
     if (!studentName) return c.json({ error: 'student_name required' }, 400)
   }
@@ -93,7 +93,7 @@ classIdVideo.post('/', async (c) => {
       }`
     )
     .bind(
-      ...(isOwner ? [videoUrl, classId, studentName, albumId] : [videoUrl, (c as any).var?._accessId])
+      ...(isOwner ? [videoUrl, classId, studentName, albumId] : [videoUrl, accessId])
     )
     .run()
   if (!upd.success) return c.json({ error: 'Update failed' }, 500)

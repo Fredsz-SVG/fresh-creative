@@ -1,8 +1,16 @@
 import type { Metadata, Viewport } from 'next'
+import { Nunito } from 'next/font/google'
 import { Toaster } from 'sonner'
 import './globals.css'
 import ThemeProvider from './providers/ThemeProvider'
+import RealtimeProvider from './providers/RealtimeProvider'
 import AuthErrorRedirect from './components/AuthErrorRedirect'
+
+const nunito = Nunito({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700', '800', '900'],
+  display: 'swap',
+})
 
 export const viewport: Viewport = {
   colorScheme: 'light',
@@ -21,8 +29,6 @@ export default function RootLayout({
   return (
     <html lang="id" suppressHydrationWarning>
       <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         {/* Prevent flash of unstyled content (FOUC) by applying theme early */}
         <script
           dangerouslySetInnerHTML={{
@@ -44,11 +50,13 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body suppressHydrationWarning>
+      <body className={nunito.className} suppressHydrationWarning>
         <ThemeProvider>
-          <AuthErrorRedirect />
-          <Toaster richColors position="top-center" />
-          {children}
+          <RealtimeProvider>
+            <AuthErrorRedirect />
+            <Toaster richColors position="top-center" />
+            {children}
+          </RealtimeProvider>
         </ThemeProvider>
       </body>
     </html>

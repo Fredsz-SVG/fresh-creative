@@ -56,7 +56,7 @@ albumsIdMembers.get('/', async (c) => {
 
     const memberIds =
       members?.map((m) => m.user_id).filter((id) => id !== album.user_id) ?? []
-    let emailByUserId: Record<string, string> = {}
+    const emailByUserId: Record<string, string> = {}
     if (memberIds.length > 0) {
       const ph = memberIds.map(() => '?').join(',')
       const { results: userRows } = await db

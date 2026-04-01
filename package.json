@@ -6,7 +6,12 @@
     "dev": "next dev -p 3001",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
+    "lint": "eslint app components lib scripts types proxy.ts next.config.js tailwind.config.js postcss.config.js --ext .js,.jsx,.ts,.tsx",
+    "lint:fix": "eslint app components lib scripts types proxy.ts next.config.js tailwind.config.js postcss.config.js --fix --ext .js,.jsx,.ts,.tsx",
+    "typecheck": "tsc --noEmit",
+    "format": "npx prettier --write .",
+    "format:check": "npx prettier --check .",
+    "check": "npm run lint && npm run typecheck && npm run build",
     "seed:cities": "node scripts/seed_ref_cities.mjs"
   },
   "dependencies": {

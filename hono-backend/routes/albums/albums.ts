@@ -12,9 +12,13 @@ function mapAlbumRow(r: Record<string, unknown>) {
   const pkg = r.pricing_pkg_name
     ? { name: r.pricing_pkg_name }
     : null
-  const { pricing_pkg_name: _p, ...rest } = r
+  const rest = { ...r }
+  delete (rest as { pricing_pkg_name?: unknown }).pricing_pkg_name
   return { ...rest, pricing_packages: pkg }
 }
+
+const getAlbumId = (album: Record<string, unknown>): string =>
+  typeof album.id === 'string' ? album.id : ''
 
 const albumsRoute = new Hono()
 
@@ -69,8 +73,8 @@ albumsRoute.get('/', async (c) => {
       .bind(user.id)
       .all<Record<string, unknown>>()
 
-    const ownedAlbums = (owned.results ?? []).map(mapAlbumRow)
-    const ownedIds = new Set(ownedAlbums.map((a: any) => a.id))
+    const ownedAlbums: Record<string, unknown>[] = (owned.results ?? []).map(mapAlbumRow)
+    const ownedIds = new Set(ownedAlbums.map(getAlbumId).filter(Boolean))
 
     const memberRows = await db
       .prepare(`SELECT album_id FROM album_members WHERE user_id = ?`)
@@ -80,7 +84,7 @@ albumsRoute.get('/', async (c) => {
       .map((r) => r.album_id)
       .filter(Boolean)
 
-    let memberAlbums: any[] = []
+    let memberAlbums: Record<string, unknown>[] = []
     if (memberAlbumIds.length > 0) {
       const ph = memberAlbumIds.map(() => '?').join(',')
       const mr = await db
@@ -105,7 +109,7 @@ albumsRoute.get('/', async (c) => {
       .map((r) => r.album_id)
       .filter((id) => id && !ownedIds.has(id))
 
-    let approvedClassAccessAlbums: any[] = []
+    let approvedClassAccessAlbums: Record<string, unknown>[] = []
     if (approvedAlbumIds.length > 0) {
       const ph = approvedAlbumIds.map(() => '?').join(',')
       const ar = await db
@@ -120,19 +124,20 @@ albumsRoute.get('/', async (c) => {
       approvedClassAccessAlbums = (ar.results ?? []).map(mapAlbumRow)
     }
 
-    const memberSet = new Set(memberAlbums.map((a: any) => a.id))
-    const finalAlbums = [
-      ...ownedAlbums.map((a: any) => ({ ...a, isOwner: true })),
-      ...memberAlbums.filter((a: any) => !ownedIds.has(a.id)).map((a: any) => ({ ...a, isOwner: false })),
+    const memberSet = new Set(memberAlbums.map(getAlbumId).filter(Boolean))
+    const finalAlbums: Array<Record<string, unknown> & { isOwner: boolean }> = [
+      ...ownedAlbums.map((a) => ({ ...a, isOwner: true })),
+      ...memberAlbums.filter((a) => !ownedIds.has(getAlbumId(a))).map((a) => ({ ...a, isOwner: false })),
       ...approvedClassAccessAlbums
-        .filter((a: any) => !ownedIds.has(a.id) && !memberSet.has(a.id))
-        .map((a: any) => ({ ...a, isOwner: false, status: 'approved' })),
+        .filter((a) => !ownedIds.has(getAlbumId(a)) && !memberSet.has(getAlbumId(a)))
+        .map((a) => ({ ...a, isOwner: false, status: 'approved' })),
     ]
 
-    finalAlbums.sort(
-      (a, b) =>
-        new Date(b.created_at as string).getTime() - new Date(a.created_at as string).getTime()
-    )
+    finalAlbums.sort((a, b) => {
+      const bTime = new Date(String(b['created_at'] ?? '')).getTime()
+      const aTime = new Date(String(a['created_at'] ?? '')).getTime()
+      return bTime - aTime
+    })
 
     return c.json(finalAlbums)
   } catch (err) {
@@ -154,14 +159,17 @@ albumsRoute.post('/', async (c) => {
 
   await ensureUserInD1(db, user, honoEnvForSupabasePublicSync(c.env))
 
-  let body: any
+  let body: Record<string, unknown>
   try {
-    body = await c.req.json()
+    const parsed = await c.req.json().catch(() => null)
+    body = parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed as Record<string, unknown> : {}
   } catch {
     return c.json({ error: 'Invalid JSON' }, 400)
   }
 
-  const { type = 'yearbook', name, school_name } = body
+  const type = typeof body.type === 'string' ? body.type : 'yearbook'
+  const name = typeof body.name === 'string' ? body.name : ''
+  const school_name = typeof body.school_name === 'string' ? body.school_name : ''
   const id = crypto.randomUUID()
   const now = new Date().toISOString()
 
@@ -237,8 +245,8 @@ albumsRoute.post('/', async (c) => {
   const sql = `INSERT INTO albums (${cols.join(', ')}) VALUES (${placeholders})`
   try {
     await db.prepare(sql).bind(...cols.map((k) => baseInsert[k])).run()
-  } catch (e: any) {
-    return c.json({ error: e?.message ?? 'Insert failed' }, 500)
+  } catch (e: unknown) {
+    return c.json({ error: e instanceof Error ? e.message : 'Insert failed' }, 500)
   }
 
   const row = await db.prepare(`SELECT * FROM albums WHERE id = ?`).bind(id).first()

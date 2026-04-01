@@ -71,8 +71,9 @@ albumCoverRoute.post('/', async (c) => {
 
   try {
     await putAlbumPhoto(bucket, relPath, fileData, { contentType: mimetype })
-  } catch (e: any) {
-    return c.json({ error: e?.message || 'Upload gagal' }, 500)
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : 'Upload gagal'
+    return c.json({ error: message }, 500)
   }
 
   const coverUrl = publicAlbumAssetUrl(c, relPath)

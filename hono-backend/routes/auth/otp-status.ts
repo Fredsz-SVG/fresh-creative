@@ -6,7 +6,12 @@ import { isUserSuspendedD1 } from '../../lib/d1-users'
 
 const OTP_COOKIE_NAME = 'otp_verified'
 
-function getSkipOtp(env: any): boolean {
+type OtpEnv = {
+  SKIP_OTP?: string
+  SKIP_LOGIN_OTP?: string
+}
+
+function getSkipOtp(env: OtpEnv): boolean {
   const v = (env?.SKIP_OTP || env?.SKIP_LOGIN_OTP || '').trim().toLowerCase().replace(/^"|"$/g, '')
   return v === 'true' || v === '1' || v === 'yes'
 }

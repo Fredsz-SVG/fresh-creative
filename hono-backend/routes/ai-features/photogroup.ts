@@ -7,10 +7,25 @@ import Replicate from 'replicate'
 
 const PHOTO_GROUP_MODEL = 'flux-kontext-apps/multi-image-list'
 
+type ReplicateEnv = {
+  REPLICATE_API_TOKEN?: string
+}
+
+type UrlLike = {
+  url?: string | (() => string)
+}
+
+type PhotoGroupBody = {
+  subjects?: string[]
+  prompt?: string
+  aspect_ratio?: string
+  output_format?: string
+}
+
 function getOutputUrl(output: unknown): string {
   if (typeof output === 'string') return output
   if (output && typeof output === 'object' && 'url' in output) {
-    const u = (output as any).url
+    const u = (output as UrlLike).url
     return typeof u === 'function' ? u() : typeof u === 'string' ? u : ''
   }
   return ''
@@ -34,15 +49,15 @@ photogroup.post('/', async (c) => {
     if (creditsPerUse > 0 && (userRow?.credits ?? 0) < creditsPerUse) {
       return c.json({ ok: false, error: 'Credit tidak cukup' }, 402)
     }
-    const REPLICATE_API_TOKEN = (c.env as any).REPLICATE_API_TOKEN || ''
+    const REPLICATE_API_TOKEN = (c.env as ReplicateEnv).REPLICATE_API_TOKEN || ''
     if (!REPLICATE_API_TOKEN) return c.json({ ok: false, error: 'REPLICATE_API_TOKEN tidak dikonfigurasi' }, 500)
     const replicate = new Replicate({ auth: REPLICATE_API_TOKEN })
-    const body = await c.req.json()
-    const subjects = body.subjects
+    const body = (await c.req.json()) as PhotoGroupBody
+    const subjects = Array.isArray(body.subjects) ? body.subjects.filter((s): s is string => typeof s === 'string') : []
     if (!subjects || !Array.isArray(subjects) || subjects.length < 2) return c.json({ ok: false, error: 'Minimal 2 gambar' }, 400)
     if (subjects.length > 10) return c.json({ ok: false, error: 'Maksimal 10 gambar' }, 400)
     if (!(body.prompt || '').trim()) return c.json({ ok: false, error: 'Prompt wajib diisi!' }, 400)
-    const output = await replicate.run(PHOTO_GROUP_MODEL as any, { input: { prompt: body.prompt, aspect_ratio: body.aspect_ratio || 'match_input_image', input_images: subjects, output_format: body.output_format || 'png', safety_tolerance: 2 } })
+    const output = await replicate.run(PHOTO_GROUP_MODEL, { input: { prompt: body.prompt, aspect_ratio: body.aspect_ratio || 'match_input_image', input_images: subjects, output_format: body.output_format || 'png', safety_tolerance: 2 } })
     const result = getOutputUrl(output)
     if (!result) return c.json({ ok: false, error: 'Tidak ada hasil' }, 500)
     if (creditsPerUse > 0) {
@@ -53,9 +68,9 @@ photogroup.post('/', async (c) => {
         .run()
     }
     return c.json({ ok: true, result })
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Photo Group error:', err)
-    return c.json({ ok: false, error: err?.message || 'Gagal' }, 500)
+    return c.json({ ok: false, error: err instanceof Error ? err.message : 'Gagal' }, 500)
   }
 })
 

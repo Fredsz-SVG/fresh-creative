@@ -1,3 +1,4 @@
-import app from './index'
+import app, { RealtimeHubDurableObject } from './index'
 
+export { RealtimeHubDurableObject }
 export default app

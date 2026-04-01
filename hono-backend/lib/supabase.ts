@@ -4,7 +4,11 @@ import { Context } from 'hono'
 import { getAccessTokenFromContext } from './get-access-token'
 
 // ESM default export agar wrangler tidak error import
-export default {}
+const supabaseModule = {}
+export default supabaseModule
+
+type EnvLike = Record<string, string | undefined>
+type GlobalWithEnv = typeof globalThis & { env?: EnvLike }
 
 export function getSupabaseClient(c: Context) {
   const token = getAccessTokenFromContext(c)
@@ -27,7 +31,9 @@ let adminClientCache: ReturnType<typeof createClient> | null = null
 export function getAdminSupabaseClient(env?: Record<string, string>) {
   if (adminClientCache) return adminClientCache
 
-  const e = env || (typeof globalThis !== 'undefined' && (globalThis as any).env) || (typeof process !== 'undefined' ? process.env : {})
+  const globalEnv = typeof globalThis !== 'undefined' ? (globalThis as GlobalWithEnv).env : undefined
+  const processEnv = typeof process !== 'undefined' ? (process.env as EnvLike) : {}
+  const e: EnvLike = env || globalEnv || processEnv
   const url = e?.NEXT_PUBLIC_SUPABASE_URL
   const key = e?.SUPABASE_SERVICE_ROLE_KEY
   if (!url || !key) throw new Error('Missing SUPABASE env vars')

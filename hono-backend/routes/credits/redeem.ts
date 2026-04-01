@@ -1,6 +1,5 @@
 import { Hono } from 'hono'
 import { getSupabaseClient } from '../../lib/supabase'
-import { getRole } from '../../lib/auth'
 import { getD1 } from '../../lib/edge-env'
 
 async function checkIsAdmin(c: import('hono').Context, userId: string): Promise<boolean> {

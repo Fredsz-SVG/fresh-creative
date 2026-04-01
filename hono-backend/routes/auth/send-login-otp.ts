@@ -5,6 +5,15 @@ import { ensureUserInD1, honoEnvForSupabasePublicSync } from '../../lib/d1-users
 
 const OTP_EXPIRY_MINUTES = 5
 
+type ResendEnv = {
+  RESEND_API_KEY?: string
+  RESEND_FROM_EMAIL?: string
+}
+
+type ResendErrorLike = {
+  message?: string
+}
+
 function generateOtp(): string {
   return Math.floor(100000 + Math.random() * 900000).toString()
 }
@@ -22,8 +31,9 @@ sendLoginOtp.post('/', async (c) => {
   const db0 = getD1(c)
   if (db0) await ensureUserInD1(db0, user, honoEnvForSupabasePublicSync(c.env))
 
-  const apiKey = (c.env as any).RESEND_API_KEY
-  const fromEmail = (c.env as any).RESEND_FROM_EMAIL || 'onboarding@resend.dev'
+  const env = c.env as ResendEnv
+  const apiKey = env.RESEND_API_KEY
+  const fromEmail = env.RESEND_FROM_EMAIL || 'onboarding@resend.dev'
 
   if (apiKey) {
     const code = generateOtp()
@@ -56,7 +66,8 @@ sendLoginOtp.post('/', async (c) => {
       })
       if (resendError) {
         console.error('Resend API error:', resendError)
-        return c.json({ error: (resendError as any).message || 'Gagal mengirim email OTP' }, 500)
+        const message = (resendError as ResendErrorLike).message || 'Gagal mengirim email OTP'
+        return c.json({ error: message }, 500)
       }
     } catch (err) {
       console.error('Resend send error:', err)

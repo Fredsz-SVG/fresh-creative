@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { fetchWithAuth } from '../../../lib/api-client'
 import { toast } from 'sonner'
 import { Loader2, Eye, BookOpen, Save, ExternalLink } from 'lucide-react'
@@ -11,6 +11,8 @@ export default function AdminShowcasePage() {
   const [albumCarouselLink, setAlbumCarouselLink] = useState('')
   const [flipbookPreviewUrl, setFlipbookPreviewUrl] = useState('')
   const hasCacheRef = React.useRef(false)
+  const albumInputRef = useRef<HTMLInputElement | null>(null)
+  const flipbookInputRef = useRef<HTMLInputElement | null>(null)
 
   const cacheKey = 'admin_showcase_v1'
 
@@ -67,20 +69,26 @@ export default function AdminShowcasePage() {
   }, [fetchShowcase])
 
   const handleSave = async () => {
+    const latestAlbumLink = (albumInputRef.current?.value ?? albumCarouselLink).trim()
+    const latestFlipbookLink = (flipbookInputRef.current?.value ?? flipbookPreviewUrl).trim()
+    // Keep state synced with actual input DOM values before sending.
+    setAlbumCarouselLink(latestAlbumLink)
+    setFlipbookPreviewUrl(latestFlipbookLink)
+
     setSaving(true)
     try {
       const res = await fetchWithAuth('/api/admin/showcase', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          albumPreviews: albumCarouselLink.trim() ? [{ title: '', imageUrl: '', link: albumCarouselLink.trim() }] : [],
-          flipbookPreviewUrl: flipbookPreviewUrl.trim(),
+          albumPreviews: latestAlbumLink ? [{ title: '', imageUrl: '', link: latestAlbumLink }] : [],
+          flipbookPreviewUrl: latestFlipbookLink,
         }),
       })
       const data = (await res.json().catch(() => ({}))) as unknown
       if (res.ok) {
         toast.success('Pengaturan preview berhasil disimpan.')
-        fetchShowcase()
+        await fetchShowcase(true)
       } else {
         const err = (data && typeof data === 'object' && !Array.isArray(data) ? (data as any).error : undefined) as string | undefined
         toast.error(err || 'Gagal menyimpan')
@@ -141,6 +149,7 @@ export default function AdminShowcasePage() {
             </p>
             <div className="relative">
               <input
+                ref={flipbookInputRef}
                 type="text"
                 value={flipbookPreviewUrl}
                 onChange={(e) => setFlipbookPreviewUrl(e.target.value)}
@@ -167,6 +176,7 @@ export default function AdminShowcasePage() {
             </p>
             <div className="relative">
               <input
+                ref={albumInputRef}
                 type="text"
                 value={albumCarouselLink}
                 onChange={(e) => setAlbumCarouselLink(e.target.value)}

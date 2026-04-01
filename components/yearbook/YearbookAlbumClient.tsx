@@ -23,6 +23,8 @@ import { useYearbookMembers } from './hooks/useYearbookMembers'
 import { useYearbookCoverState, useYearbookProfileEditState, useYearbookGalleryState } from './hooks/useYearbookUI'
 import { useCurrentUserId } from './hooks/useCurrentUserId'
 import { useYearbookSearchState } from './hooks/useYearbookSearchState'
+import { useYearbookSyncLifecycle } from './hooks/useYearbookSyncLifecycle'
+import { useYearbookTeamCounts } from './hooks/useYearbookTeamCounts'
 
 export type YearbookAlbumClientProps = {
   backHref?: string
@@ -152,6 +154,13 @@ export default function YearbookAlbumClient({
 
   const fetchAllAccess = useCallback(() => fetchAllAccessBase(albumRef), [fetchAllAccessBase, albumRef])
 
+  const {
+    teacherCount,
+    setTeacherCount,
+    teamMemberCount,
+    setTeamMemberCount,
+  } = useYearbookTeamCounts()
+
   const [addingClass, setAddingClass] = useState(false)
   const [newClassName, setNewClassName] = useState('')
   const [requestForm, setRequestForm] = useState<{ student_name: string; email: string }>({ student_name: '', email: '' })
@@ -161,8 +170,6 @@ export default function YearbookAlbumClient({
   const coverPreviewContainerRef = useRef<HTMLDivElement>(null)
   const coverDragRef = useRef<{ startX: number; startY: number; startPosX: number; startPosY: number } | null>(null)
   const coverVideoInputRef = useRef<HTMLInputElement>(null)
-  const [teacherCount, setTeacherCount] = useState<number>(0)
-  const [teamMemberCount, setTeamMemberCount] = useState<number>(0)
   const lastLocalUpdateRef = useRef<number>(0)
   const accessUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
@@ -253,32 +260,6 @@ export default function YearbookAlbumClient({
     ? 'Kembali ke Editor'
     : originalBackLabel
 
-  // Background: Fetch all access data immediately (now efficient)
-  // Background: Fetch all access data immediately (now efficient)
-  useEffect(() => {
-    if ((view !== 'classes' && view !== 'cover') || !id) return
-    if (!initialAccess?.access || Object.keys(initialAccess.access).length === 0) {
-      fetchAllAccess()
-    }
-  }, [view, id, fetchAllAccess, initialAccess])
-
-  // Supabase auth-only: no Realtime, no polling.
-  // Refetch when user returns to tab (helps keep classes/members up to date across devices).
-  useEffect(() => {
-    if (!id) return
-    const onVisible = () => {
-      fetchAlbum(true)
-      fetchAllAccessRef.current()
-      fetchAllClassMembersRef.current()
-    }
-    window.addEventListener('focus', onVisible)
-    document.addEventListener('visibilitychange', onVisible)
-    return () => {
-      window.removeEventListener('focus', onVisible)
-      document.removeEventListener('visibilitychange', onVisible)
-    }
-  }, [id, fetchAlbum])
-
   // Optimized: Fetch ALL class members in one request
   const fetchAllClassMembers = useCallback(async () => {
     if (!id || isFetchingMembersRef.current) return
@@ -340,27 +321,16 @@ export default function YearbookAlbumClient({
 
 
 
-  const refetchAccessAndMembersRef = useRef<() => void>(() => { })
-  const fetchAllAccessRef = useRef(fetchAllAccess)
-  fetchAllAccessRef.current = fetchAllAccess
-  const fetchAllClassMembersRef = useRef(fetchAllClassMembers)
-  fetchAllClassMembersRef.current = fetchAllClassMembers
-
-  useEffect(() => {
-    if (!id) return
-    refetchAccessAndMembersRef.current = () => {
-      fetchAllAccessRef.current()
-      fetchAllClassMembersRef.current()
-    }
-  }, [id, fetchAllAccess, fetchAllClassMembers])
-
-  // Initial fetch
-  useEffect(() => {
-    if (!id || !album?.classes?.length) return
-    if (!initialMembers || Object.keys(initialMembers).length === 0) {
-      fetchAllClassMembers()
-    }
-  }, [id, album?.classes?.length, fetchAllClassMembers, initialMembers])
+  useYearbookSyncLifecycle({
+    id,
+    view,
+    initialAccess,
+    initialMembers,
+    albumClassesLength: album?.classes?.length,
+    fetchAlbum,
+    fetchAllAccess,
+    fetchAllClassMembers,
+  })
 
   // (Realtime removed)
 

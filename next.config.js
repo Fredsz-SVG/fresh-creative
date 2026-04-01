@@ -2,6 +2,10 @@
 const honoApiBase = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8787').replace(/\/$/, '')
 
 const nextConfig = {
+  compress: true,
+  experimental: {
+    optimizePackageImports: ['lucide-react', 'react-icons'],
+  },
   async rewrites() {
     // Same-origin /api/* → Hono (browser tidak perlu langsung ke :8787; kurangi CORS & "Failed to fetch").
     // fallback: jalankan setelah route Next milik app (mis. app/api/audio) dicek.
@@ -15,6 +19,8 @@ const nextConfig = {
     }
   },
   images: {
+    formats: ['image/avif', 'image/webp'],
+    minimumCacheTTL: 60,
     remotePatterns: [
       {
         protocol: 'https',

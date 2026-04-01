@@ -9,26 +9,44 @@ import { publicAlbumAssetUrl } from '../../../lib/public-file-url'
 
 const albumFlipbookRoute = new Hono()
 
-async function canManageFlipbook(c: Context, albumId: string) {
+type FlipbookManageDenied = {
+  ok: false
+  status: 401 | 403 | 404 | 503
+  error: string
+}
+
+type FlipbookManageAllowed = {
+  ok: true
+  db: D1Database
+  userId: string
+}
+
+type FlipbookManageResult = FlipbookManageDenied | FlipbookManageAllowed
+
+async function canManageFlipbook(c: Context, albumId: string): Promise<FlipbookManageResult> {
   const supabase = getSupabaseClient(c)
   const db = getD1(c)
-  if (!db) return { ok: false as const, status: 503, error: 'Database not configured' }
+  if (!db) return { ok: false, status: 503, error: 'Database not configured' }
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { ok: false as const, status: 401, error: 'Unauthorized' }
+  if (!user) return { ok: false, status: 401, error: 'Unauthorized' }
   const album = await db
     .prepare(`SELECT id, user_id FROM albums WHERE id = ?`)
     .bind(albumId)
     .first<{ id: string; user_id: string }>()
-  if (!album) return { ok: false as const, status: 404, error: 'Album not found' }
+  if (!album) return { ok: false, status: 404, error: 'Album not found' }
   const role = await getRole(c, user)
   const isOwner = album.user_id === user.id || role === 'admin'
-  if (isOwner) return { ok: true as const, db, userId: user.id }
+  if (isOwner) return { ok: true, db, userId: user.id }
   const member = await db
     .prepare(`SELECT role FROM album_members WHERE album_id = ? AND user_id = ?`)
     .bind(albumId, user.id)
     .first<{ role: string }>()
-  if (member?.role === 'admin') return { ok: true as const, db, userId: user.id }
-  return { ok: false as const, status: 403, error: 'Only administrators can manage flipbook' }
+  if (member?.role === 'admin') return { ok: true, db, userId: user.id }
+  return { ok: false, status: 403, error: 'Only administrators can manage flipbook' }
+}
+
+function denyFlipbookManage(c: Context, perm: FlipbookManageDenied) {
+  return c.json({ error: perm.error }, { status: perm.status })
 }
 
 // POST /api/albums/:id/flipbook/upload — upload flipbook file to R2 (owner/admin/album-admin)
@@ -111,7 +129,7 @@ albumFlipbookRoute.post('/pages', async (c) => {
   const albumId = c.req.param('id')
   if (!albumId) return c.json({ error: 'Album ID required' }, 400)
   const perm = await canManageFlipbook(c, albumId)
-  if (!perm.ok) return c.json({ error: perm.error }, { status: perm.status as any })
+  if (!perm.ok) return denyFlipbookManage(c, perm as FlipbookManageDenied)
   const body = await c.req.json<Record<string, unknown>>()
   const pageNumber = Number(body.page_number ?? 0)
   const imageUrl = String(body.image_url ?? '')
@@ -140,7 +158,7 @@ albumFlipbookRoute.patch('/pages/:pageId', async (c) => {
   const pageId = c.req.param('pageId')
   if (!albumId || !pageId) return c.json({ error: 'Album ID and page ID required' }, 400)
   const perm = await canManageFlipbook(c, albumId)
-  if (!perm.ok) return c.json({ error: perm.error }, { status: perm.status as any })
+  if (!perm.ok) return denyFlipbookManage(c, perm as FlipbookManageDenied)
   const body = await c.req.json<Record<string, unknown>>()
   const sets: string[] = []
   const vals: unknown[] = []
@@ -167,7 +185,7 @@ albumFlipbookRoute.post('/pages/reorder', async (c) => {
   const albumId = c.req.param('id')
   if (!albumId) return c.json({ error: 'Album ID required' }, 400)
   const perm = await canManageFlipbook(c, albumId)
-  if (!perm.ok) return c.json({ error: perm.error }, { status: perm.status as any })
+  if (!perm.ok) return denyFlipbookManage(c, perm as FlipbookManageDenied)
   const body = await c.req.json<Record<string, unknown>>()
   const pageIds = Array.isArray(body.page_ids) ? (body.page_ids as unknown[]).map((v) => String(v)) : []
   if (!pageIds.length) return c.json({ error: 'page_ids required' }, 400)
@@ -185,7 +203,7 @@ albumFlipbookRoute.post('/hotspots', async (c) => {
   const albumId = c.req.param('id')
   if (!albumId) return c.json({ error: 'Album ID required' }, 400)
   const perm = await canManageFlipbook(c, albumId)
-  if (!perm.ok) return c.json({ error: perm.error }, { status: perm.status as any })
+  if (!perm.ok) return denyFlipbookManage(c, perm as FlipbookManageDenied)
   const body = await c.req.json<Record<string, unknown>>()
   const pageId = String(body.page_id ?? '')
   if (!pageId) return c.json({ error: 'page_id required' }, 400)
@@ -217,7 +235,7 @@ albumFlipbookRoute.patch('/hotspots/:hotspotId', async (c) => {
   const hotspotId = c.req.param('hotspotId')
   if (!albumId || !hotspotId) return c.json({ error: 'Album ID and hotspot ID required' }, 400)
   const perm = await canManageFlipbook(c, albumId)
-  if (!perm.ok) return c.json({ error: perm.error }, { status: perm.status as any })
+  if (!perm.ok) return denyFlipbookManage(c, perm as FlipbookManageDenied)
   const body = await c.req.json<Record<string, unknown>>()
   const sets: string[] = []
   const vals: unknown[] = []
@@ -247,7 +265,7 @@ albumFlipbookRoute.delete('/hotspots/:hotspotId', async (c) => {
   const hotspotId = c.req.param('hotspotId')
   if (!albumId || !hotspotId) return c.json({ error: 'Album ID and hotspot ID required' }, 400)
   const perm = await canManageFlipbook(c, albumId)
-  if (!perm.ok) return c.json({ error: perm.error }, { status: perm.status as any })
+  if (!perm.ok) return denyFlipbookManage(c, perm as FlipbookManageDenied)
   const del = await perm.db
     .prepare(`DELETE FROM flipbook_video_hotspots WHERE id = ?`)
     .bind(hotspotId)
@@ -275,7 +293,7 @@ albumFlipbookRoute.get('/public', async (c) => {
       .all<Record<string, unknown>>()
     const pages = pageRows ?? []
     const pageIds = pages.map((p) => p.id as string).filter(Boolean)
-    let hotspotsByPage = new Map<string, Record<string, unknown>[]>()
+    const hotspotsByPage = new Map<string, Record<string, unknown>[]>()
     if (pageIds.length > 0) {
       const ph = pageIds.map(() => '?').join(',')
       const { results: hs } = await db
@@ -358,7 +376,7 @@ albumFlipbookRoute.get('/', async (c) => {
     .all<Record<string, unknown>>()
   const pages = pageRows ?? []
   const pageIds = pages.map((p) => p.id as string).filter(Boolean)
-  let hotspotsByPage = new Map<string, Record<string, unknown>[]>()
+  const hotspotsByPage = new Map<string, Record<string, unknown>[]>()
   if (pageIds.length > 0) {
     const ph = pageIds.map(() => '?').join(',')
     const { results: hs } = await db

@@ -8,10 +8,23 @@ import Replicate from 'replicate'
 
 const PHOTO_TO_VIDEO_MODEL = 'wan-video/wan-2.2-i2v-fast'
 
+type ReplicateEnv = {
+  REPLICATE_API_TOKEN?: string
+}
+
+type UrlLike = {
+  url?: string | (() => string)
+}
+
+type PhotoToVideoBody = {
+  image?: string
+  prompt?: string
+}
+
 function getOutputUrl(output: unknown): string {
   if (typeof output === 'string') return output
   if (output && typeof output === 'object' && 'url' in output) {
-    const u = (output as any).url
+    const u = (output as UrlLike).url
     return typeof u === 'function' ? u() : typeof u === 'string' ? u : ''
   }
   return ''
@@ -35,14 +48,14 @@ phototovideo.post('/', async (c) => {
     if (creditsPerUse > 0 && (userRow?.credits ?? 0) < creditsPerUse) {
       return c.json({ ok: false, error: 'Credit tidak cukup' }, 402)
     }
-    const REPLICATE_API_TOKEN = (c.env as any).REPLICATE_API_TOKEN || ''
+    const REPLICATE_API_TOKEN = (c.env as ReplicateEnv).REPLICATE_API_TOKEN || ''
     if (!REPLICATE_API_TOKEN) return c.json({ ok: false, error: 'REPLICATE_API_TOKEN tidak dikonfigurasi' }, 500)
 
 
     const replicate = new Replicate({ auth: REPLICATE_API_TOKEN })
-    const body = await c.req.json()
+    const body = (await c.req.json()) as PhotoToVideoBody
     if (!body.image) return c.json({ ok: false, error: 'File foto tidak valid' }, 400)
-    const output = await replicate.run(PHOTO_TO_VIDEO_MODEL as any, { input: { image: body.image, prompt: body.prompt || 'A cinematic video', go_fast: true, num_frames: 81, resolution: '480p', sample_shift: 12, frames_per_second: 16 } })
+    const output = await replicate.run(PHOTO_TO_VIDEO_MODEL, { input: { image: body.image, prompt: body.prompt || 'A cinematic video', go_fast: true, num_frames: 81, resolution: '480p', sample_shift: 12, frames_per_second: 16 } })
     const videoUrl = getOutputUrl(output)
     if (!videoUrl) return c.json({ ok: false, error: 'Tidak ada hasil video' }, 500)
     if (creditsPerUse > 0) {
@@ -53,9 +66,9 @@ phototovideo.post('/', async (c) => {
         .run()
     }
     return c.json({ ok: true, video: videoUrl })
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Photo to Video error:', err)
-    return c.json({ ok: false, error: err?.message || 'Gagal' }, 500)
+    return c.json({ ok: false, error: err instanceof Error ? err.message : 'Gagal' }, 500)
   }
 })
 

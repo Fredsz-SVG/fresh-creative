@@ -4,6 +4,7 @@ import { getShowcaseFromD1, saveShowcaseToD1, type ShowcasePayload } from '../..
 import { getSupabaseClient } from '../../lib/supabase'
 import { getRole } from '../../lib/auth'
 import { ensureUserInD1, honoEnvForSupabasePublicSync } from '../../lib/d1-users'
+import { publishRealtimeEventFromContext } from '../../lib/realtime'
 
 const adminShowcase = new Hono()
 
@@ -61,6 +62,12 @@ adminShowcase.put('/', async (c) => {
   const payload: ShowcasePayload = { albumPreviews, flipbookPreviewUrl }
   try {
     await saveShowcaseToD1(db, payload)
+    await publishRealtimeEventFromContext(c, {
+      type: 'showcase.updated',
+      channel: 'showcase',
+      payload: { action: 'replace' },
+      ts: new Date().toISOString(),
+    })
     return c.json(payload)
   } catch (e) {
     const msg = e instanceof Error ? e.message : 'save failed'

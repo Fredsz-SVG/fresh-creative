@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
-import { requireAuth, logger } from './middleware';
+import { logger } from './middleware';
+import { publishRealtimeEventFromContext } from './lib/realtime'
 
 // ── Admin ──
 import adminAiEdit from './routes/admin/ai-edit';
@@ -80,6 +81,7 @@ import creditsSyncInvoice from './routes/credits/sync-invoice';
 // ── Misc ──
 import pricing from './routes/pricing';
 import proxyImage from './routes/proxy-image';
+import realtime from './routes/realtime';
 import selectArea from './routes/select-area';
 import showcase from './routes/showcase';
 import files from './routes/files';
@@ -98,12 +100,15 @@ import webhooksXendit from './routes/webhooks/xendit';
 // App setup
 // ══════════════════════════════════════════════════════
 const app = new Hono();
+type GlobalWithEnv = typeof globalThis & { env?: Record<string, unknown> }
+type AppEnv = { NEXT_PUBLIC_APP_URL?: string }
 
 // Global middleware
 app.use('*', logger)
 app.use('*', async (c, next) => {
   if (typeof globalThis !== 'undefined') {
-    (globalThis as any).env = c.env;
+    const runtimeGlobal = globalThis as GlobalWithEnv
+    runtimeGlobal.env = c.env as Record<string, unknown>
   }
   await next();
 });
@@ -111,7 +116,7 @@ app.use('*', async (c, next) => {
 // CORS — izinkan frontend (Vercel) mengakses backend (Cloudflare Workers)
 app.use('*', cors({
   origin: (origin, c) => {
-    const appUrl = (c.env as any)?.NEXT_PUBLIC_APP_URL || ''
+    const appUrl = (c.env as AppEnv)?.NEXT_PUBLIC_APP_URL || ''
     const allowed = [
       appUrl,
       'http://localhost:3000',
@@ -128,6 +133,27 @@ app.use('*', cors({
   credentials: true,
   maxAge: 86400,
 }))
+
+app.use('*', async (c, next) => {
+  await next()
+
+  const method = c.req.method.toUpperCase()
+  const isMutation = method === 'POST' || method === 'PUT' || method === 'PATCH' || method === 'DELETE'
+  if (!isMutation) return
+  if (c.res.status >= 400) return
+  if (c.req.path.startsWith('/api/realtime')) return
+
+  await publishRealtimeEventFromContext(c, {
+    type: 'api.mutated',
+    channel: 'global',
+    payload: {
+      method,
+      path: c.req.path,
+      status: c.res.status,
+    },
+    ts: new Date().toISOString(),
+  })
+})
 
 // ══════════════════════════════════════════════════════
 // Register ALL routes
@@ -213,6 +239,7 @@ app.route('/api/credits/sync-invoice', creditsSyncInvoice);
 // Misc
 app.route('/api/pricing', pricing);
 app.route('/api/proxy-image', proxyImage);
+app.route('/api/realtime', realtime);
 app.route('/api/select-area', selectArea);
 app.route('/api/showcase', showcase);
 app.route('/api/files', files);
@@ -229,5 +256,63 @@ app.route('/api/webhooks/xendit', webhooksXendit);
 
 // Health check
 app.get('/', (c) => c.json({ status: '🟢 API is running (Hono)' }));
+
+type RealtimeSession = {
+  connectedAt: string
+}
+
+export class RealtimeHubDurableObject {
+  constructor(private readonly state: DurableObjectState) {}
+
+  async fetch(request: Request): Promise<Response> {
+    const url = new URL(request.url)
+
+    if (url.pathname === '/ws') {
+      if (request.headers.get('Upgrade')?.toLowerCase() !== 'websocket') {
+        return new Response('Expected websocket upgrade', { status: 426 })
+      }
+      const pair = new WebSocketPair()
+      const client = pair[0]
+      const server = pair[1]
+      this.state.acceptWebSocket(server)
+      this.state.setWebSocketAutoResponse(new WebSocketRequestResponsePair('ping', 'pong'))
+      server.serializeAttachment({ connectedAt: new Date().toISOString() } satisfies RealtimeSession)
+      return new Response(null, { status: 101, webSocket: client })
+    }
+
+    if (url.pathname === '/publish') {
+      if (request.method !== 'POST') {
+        return new Response('Method not allowed', { status: 405 })
+      }
+      const payload = await request.text()
+      for (const ws of this.state.getWebSockets()) {
+        try {
+          ws.send(payload)
+        } catch {
+          // Ignore closed sockets.
+        }
+      }
+      return new Response(null, { status: 204 })
+    }
+
+    return new Response('Not found', { status: 404 })
+  }
+
+  webSocketClose(ws: WebSocket): void {
+    try {
+      ws.close(1000, 'closed')
+    } catch {
+      // ignore
+    }
+  }
+
+  webSocketError(ws: WebSocket): void {
+    try {
+      ws.close(1011, 'error')
+    } catch {
+      // ignore
+    }
+  }
+}
 
 export default app;

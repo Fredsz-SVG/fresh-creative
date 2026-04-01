@@ -7,11 +7,31 @@ import Replicate from 'replicate'
 const POSE_MODEL = 'sdxl-based/consistent-character'
 const POSE_VERSION = '9c77a3c2f884193fcee4d89645f02a0b9def9434f9e03cb98460456b831c8772'
 
+type ReplicateEnv = {
+  REPLICATE_API_TOKEN?: string
+}
+
+type UrlLike = {
+  url?: string | (() => string)
+}
+
+type PoseBody = {
+  subject?: string
+  prompt?: string
+  output_format?: string
+  number_of_outputs?: number
+  randomise_poses?: boolean
+  number_of_images_per_pose?: number
+}
+
 function getOutputUrls(output: unknown): string[] {
   if (!Array.isArray(output)) return []
-  return output.map((item: any) => {
+  return output.map((item: unknown) => {
     if (typeof item === 'string') return item
-    if (item?.url) return typeof item.url === 'function' ? item.url() : item.url
+    if (item && typeof item === 'object' && 'url' in item) {
+      const url = (item as UrlLike).url
+      return typeof url === 'function' ? url() : typeof url === 'string' ? url : ''
+    }
     return ''
   }).filter(Boolean)
 }
@@ -37,14 +57,14 @@ pose.post('/', async (c) => {
       return c.json({ ok: false, error: 'Credit tidak cukup' }, 402)
     }
 
-    const REPLICATE_API_TOKEN = (c.env as any).REPLICATE_API_TOKEN || ''
+    const REPLICATE_API_TOKEN = (c.env as ReplicateEnv).REPLICATE_API_TOKEN || ''
     if (!REPLICATE_API_TOKEN) return c.json({ ok: false, error: 'REPLICATE_API_TOKEN tidak dikonfigurasi' }, 500)
 
     const replicate = new Replicate({ auth: REPLICATE_API_TOKEN })
-    const body = await c.req.json().catch(() => ({}))
+    const body = (await c.req.json().catch(() => ({}))) as PoseBody
     if (!body.subject) return c.json({ ok: false, error: 'File foto karakter wajib' }, 400)
 
-    const output = await replicate.run(`${POSE_MODEL}:${POSE_VERSION}` as any, {
+    const output = await replicate.run(`${POSE_MODEL}:${POSE_VERSION}`, {
       input: {
         prompt: body.prompt || 'A headshot photo',
         subject: body.subject,
@@ -66,9 +86,9 @@ pose.post('/', async (c) => {
         .run()
     }
     return c.json({ ok: true, results })
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Pose error:', err)
-    return c.json({ ok: false, error: err?.message || 'Gagal' }, 500)
+    return c.json({ ok: false, error: err instanceof Error ? err.message : 'Gagal' }, 500)
   }
 })
 
