@@ -21,6 +21,8 @@ import { useYearbookFeatures } from './hooks/useYearbookFeatures'
 import { useYearbookAccess } from './hooks/useYearbookAccess'
 import { useYearbookMembers } from './hooks/useYearbookMembers'
 import { useYearbookCoverState, useYearbookProfileEditState, useYearbookGalleryState } from './hooks/useYearbookUI'
+import { useCurrentUserId } from './hooks/useCurrentUserId'
+import { useYearbookSearchState } from './hooks/useYearbookSearchState'
 
 export type YearbookAlbumClientProps = {
   backHref?: string
@@ -137,6 +139,17 @@ export default function YearbookAlbumClient({
     setDeleteCoverConfirm,
   } = useYearbookCoverState()
 
+  const currentUserId = useCurrentUserId()
+  const {
+    teacherSearchQuery,
+    classMemberSearchQuery,
+    openSearch,
+    closeSearch,
+    isSearchOpen,
+    getSearchValue,
+    setSearchValue,
+  } = useYearbookSearchState()
+
   const fetchAllAccess = useCallback(() => fetchAllAccessBase(albumRef), [fetchAllAccessBase, albumRef])
 
   const [addingClass, setAddingClass] = useState(false)
@@ -150,27 +163,13 @@ export default function YearbookAlbumClient({
   const coverVideoInputRef = useRef<HTMLInputElement>(null)
   const [teacherCount, setTeacherCount] = useState<number>(0)
   const [teamMemberCount, setTeamMemberCount] = useState<number>(0)
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const lastLocalUpdateRef = useRef<number>(0)
   const accessUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   // Use refs for stable access in callbacks without triggering recreations
   const [realtimeCounter, setRealtimeCounter] = useState(0)
-  const [teacherSearchQuery, setTeacherSearchQuery] = useState('')
-  const [showTeacherSearch, setShowTeacherSearch] = useState(false)
-  const [classMemberSearchQuery, setClassMemberSearchQuery] = useState('')
-  const [showClassMemberSearch, setShowClassMemberSearch] = useState(false)
 
   const isFetchingMembersRef = useRef(false)
-
-  // Fetch current user
-  useEffect(() => {
-    const fetchCurrentUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (user) setCurrentUserId(user.id)
-    }
-    fetchCurrentUser()
-  }, [])
 
   // Section dari URL: path segment atau query ?section=
   const sectionMode = getSectionModeFromUrl(pathname, searchParams.get('section'), id ?? '')
@@ -1503,27 +1502,19 @@ export default function YearbookAlbumClient({
               {/* Sambutan & Classes: Search Toggle */}
               {(sidebarMode === 'sambutan' || (sidebarMode === 'classes' && activeSection !== 'cover')) && (
                 <>
-                  {(sidebarMode === 'sambutan' ? showTeacherSearch : showClassMemberSearch) ? (
+                  {isSearchOpen(sidebarMode === 'sambutan' ? 'sambutan' : 'classes') ? (
                     <div className={`absolute left-[52px] ${sidebarMode === 'classes' ? 'right-[52px]' : 'right-2'} top-2 bottom-2 bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 rounded-xl px-3 flex items-center shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] lg:static lg:w-auto lg:h-9 lg:px-2 lg:py-1 animate-in slide-in-from-right-2 duration-200 z-[60]`}>
                       <Search className="w-4 h-4 text-slate-400 dark:text-slate-500 mr-2 flex-shrink-0" />
                       <input
                         type="text"
                         placeholder="Cari..."
-                        value={sidebarMode === 'sambutan' ? teacherSearchQuery : classMemberSearchQuery}
-                        onChange={(e) => sidebarMode === 'sambutan' ? setTeacherSearchQuery(e.target.value) : setClassMemberSearchQuery(e.target.value)}
+                        value={getSearchValue(sidebarMode === 'sambutan' ? 'sambutan' : 'classes')}
+                        onChange={(e) => setSearchValue(sidebarMode === 'sambutan' ? 'sambutan' : 'classes', e.target.value)}
                         className="flex-1 bg-transparent border-none outline-none text-[11px] font-black uppercase tracking-tight text-slate-900 dark:text-white min-w-0 dark:placeholder:text-slate-500"
                         autoFocus
                       />
                       <button
-                        onClick={() => {
-                          if (sidebarMode === 'sambutan') {
-                            setShowTeacherSearch(false);
-                            setTeacherSearchQuery('');
-                          } else {
-                            setShowClassMemberSearch(false);
-                            setClassMemberSearchQuery('');
-                          }
-                        }}
+                        onClick={() => closeSearch(sidebarMode === 'sambutan' ? 'sambutan' : 'classes')}
                         className="ml-1 p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors flex-shrink-0"
                       >
                         <SearchX className="w-4 h-4 text-slate-500 dark:text-slate-400" strokeWidth={3} />
@@ -1531,7 +1522,7 @@ export default function YearbookAlbumClient({
                     </div>
                   ) : (
                     <button
-                      onClick={() => sidebarMode === 'sambutan' ? setShowTeacherSearch(true) : setShowClassMemberSearch(true)}
+                      onClick={() => openSearch(sidebarMode === 'sambutan' ? 'sambutan' : 'classes')}
                       className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 rounded-lg sm:rounded-xl text-slate-900 dark:text-white shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all"
                     >
                       <Search className="w-3.5 h-3.5 sm:w-4 sm:h-4" strokeWidth={3} />

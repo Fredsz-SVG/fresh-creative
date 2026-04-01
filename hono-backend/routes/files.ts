@@ -27,11 +27,19 @@ files.get('*', async (c) => {
   if (!obj) return c.notFound()
 
   const headers = new Headers()
-  obj.writeHttpMetadata(headers as any)
+  const metadata = obj.httpMetadata
+  if (metadata?.contentType) headers.set('Content-Type', metadata.contentType)
+  if (metadata?.contentLanguage) headers.set('Content-Language', metadata.contentLanguage)
+  if (metadata?.contentDisposition) headers.set('Content-Disposition', metadata.contentDisposition)
+  if (metadata?.contentEncoding) headers.set('Content-Encoding', metadata.contentEncoding)
+  if (metadata?.cacheControl) headers.set('Cache-Control', metadata.cacheControl)
+  if (metadata?.cacheExpiry) headers.set('Expires', metadata.cacheExpiry.toUTCString())
   if (!headers.has('Content-Type')) {
     headers.set('Content-Type', 'application/octet-stream')
   }
-  headers.set('Cache-Control', 'public, max-age=3600')
+  if (!headers.has('Cache-Control')) {
+    headers.set('Cache-Control', 'public, max-age=3600')
+  }
   return new Response(obj.body as unknown as BodyInit, { headers })
 })
 

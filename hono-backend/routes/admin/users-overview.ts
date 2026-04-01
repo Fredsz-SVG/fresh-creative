@@ -4,6 +4,7 @@ import { getSupabaseClient, getAdminSupabaseClient } from '../../lib/supabase'
 import { getRole } from '../../lib/auth'
 import { getD1 } from '../../lib/edge-env'
 import { ensureUserInD1, honoEnvForSupabasePublicSync } from '../../lib/d1-users'
+import { mirrorUserFieldsToSupabase } from '../../lib/supabase-user-mirror'
 import type { D1Database } from '@cloudflare/workers-types'
 
 const overview = new Hono()
@@ -143,7 +144,6 @@ overview.put('/', async (c) => {
     return c.json({ error: 'Forbidden: cannot change your own suspension status' }, 403)
   }
 
-  const adminAuth = getAdminSupabaseClient(c?.env as Record<string, string>)
   const supaUpdate: Record<string, unknown> = {}
   if (typeof credits === 'number') supaUpdate.credits = credits
   if (role === 'admin' || role === 'user') supaUpdate.role = role
@@ -151,8 +151,16 @@ overview.put('/', async (c) => {
   if (typeof isSuspended === 'boolean') supaUpdate.is_suspended = isSuspended
 
   if (Object.keys(supaUpdate).length > 0) {
-    const { error: supaError } = await (adminAuth as any).from('users').update(supaUpdate).eq('id', id)
-    if (supaError) return c.json({ error: supaError.message }, 500)
+    try {
+      await mirrorUserFieldsToSupabase(c?.env as Record<string, string>, id, {
+        credits: typeof credits === 'number' ? credits : undefined,
+        role: role === 'admin' || role === 'user' ? role : undefined,
+        is_suspended: typeof isSuspended === 'boolean' ? isSuspended : undefined,
+      })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Supabase mirror update failed'
+      return c.json({ error: message }, 500)
+    }
   }
 
   const update: string[] = []

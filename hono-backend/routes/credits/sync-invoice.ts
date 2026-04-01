@@ -1,6 +1,7 @@
 import { Hono } from 'hono'
-import { getSupabaseClient, getAdminSupabaseClient } from '../../lib/supabase'
+import { getSupabaseClient } from '../../lib/supabase'
 import { getD1 } from '../../lib/edge-env'
+import { mirrorUserCreditsToSupabase } from '../../lib/supabase-user-mirror'
 
 const creditsSyncInvoice = new Hono()
 
@@ -82,8 +83,7 @@ creditsSyncInvoice.post('/', async (c) => {
 
           // Keep Supabase `public.users.credits` in sync so ensureUserInD1() doesn't overwrite D1 credits back to 0.
           try {
-            const admin = getAdminSupabaseClient(c?.env as Record<string, string>)
-            await (admin as any).from('users').update({ credits: newCredits }).eq('id', userId)
+            await mirrorUserCreditsToSupabase(c?.env as Record<string, string>, userId, newCredits)
           } catch {
             // ignore if env missing
           }

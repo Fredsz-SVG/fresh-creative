@@ -1,6 +1,6 @@
 import { Hono } from 'hono'
 import { getD1 } from '../../lib/edge-env'
-import { getAdminSupabaseClient } from '../../lib/supabase'
+import { mirrorUserCreditsToSupabase } from '../../lib/supabase-user-mirror'
 
 const webhooksXendit = new Hono()
 
@@ -78,8 +78,7 @@ webhooksXendit.post('/', async (c) => {
 
           // Mirror to Supabase `public.users.credits` (source of truth)
           try {
-            const admin = getAdminSupabaseClient(c?.env as Record<string, string>)
-            await (admin as any).from('users').update({ credits: nextCredits }).eq('id', userId.user_id)
+            await mirrorUserCreditsToSupabase(c?.env as Record<string, string>, userId.user_id, nextCredits)
           } catch {
             // ignore
           }
