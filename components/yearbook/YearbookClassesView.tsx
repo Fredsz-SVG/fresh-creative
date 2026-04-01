@@ -2,11 +2,7 @@
 
 import React from 'react'
 import YearbookClassesViewUI from './YearbookClassesViewUI'
-
-type AlbumClass = { id: string; name: string; sort_order: number; student_count: number; batch_photo_url?: string | null }
-type ClassAccess = { id: string; student_name: string; email?: string | null; status: string }
-type ClassRequest = { id: string; student_name: string; email?: string | null; status: string }
-type ClassMember = { user_id: string; student_name: string; email: string | null; date_of_birth: string | null; instagram: string | null; message: string | null; video_url: string | null; is_me?: boolean }
+import type { AlbumClass, ClassAccess, ClassMember, ClassRequest } from './types'
 
 
 export type YearbookClassesViewProps = {
@@ -31,7 +27,7 @@ export type YearbookClassesViewProps = {
   handleAddClass: () => void
   handleDeleteClass: (classId: string, className: string) => void
   handleUpdateClass?: (classId: string, updates: { name?: string; sort_order?: number; batch_photo_url?: string }) => Promise<{ id: string; name: string; sort_order?: number; batch_photo_url: string | null } | null>
-  handleUpdateAlbum?: (updates: { description?: string; cover_image_url?: string; students_count?: number; flipbook_mode?: 'manual'; total_estimated_price?: number }) => Promise<void>
+  handleUpdateAlbum?: (updates: { description?: string; cover_image_url?: string; students_count?: number; flipbook_mode?: 'manual'; total_estimated_price?: number }) => Promise<unknown>
   goPrevClass: () => void
   goNextClass: () => void
   requestsByClass: Record<string, ClassRequest[]>

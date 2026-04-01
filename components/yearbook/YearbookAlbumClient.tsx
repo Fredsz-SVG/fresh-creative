@@ -13,32 +13,8 @@ import { getSectionModeFromUrl, getYearbookSectionQueryUrl } from './lib/yearboo
 import CreditBadgeTop from './components/CreditBadgeTop'
 import { apiUrl } from '../../lib/api-url'
 import { fetchWithAuth } from '../../lib/api-client'
-
-type Album = {
-  id: string
-  name: string
-  type: string
-  status?: string
-  cover_image_url?: string | null
-  cover_image_position?: string | null
-  cover_video_url?: string | null
-  description?: string | null
-  isOwner?: boolean
-  isAlbumAdmin?: boolean
-  isGlobalAdmin?: boolean
-  flipbook_mode?: 'manual' | null
-  payment_status?: string
-  payment_url?: string | null
-  total_estimated_price?: number
-  pricing_package_id?: string | null
-  classes: { id: string; name: string; sort_order: number; student_count: number; batch_photo_url?: string | null }[]
-}
-
-type ClassAccess = { id: string; student_name: string; email?: string | null; status: string; date_of_birth?: string | null; instagram?: string | null; message?: string | null; video_url?: string | null }
-type ClassRequest = { id: string; student_name: string; email?: string | null; status: string }
-type ClassMember = { user_id: string; student_name: string; email: string | null; date_of_birth: string | null; instagram: string | null; message: string | null; video_url: string | null; photos?: string[]; is_me?: boolean; status?: string }
-
-type Photo = { id: string; file_url: string; student_name: string; created_at?: string }
+import type { Album, ClassAccess, ClassMember, ClassRequest, Photo } from './types'
+import { asString, asObject, asStringArray, asNumberRecord, getErrorMessage } from './utils/response-narrowing'
 
 export type YearbookAlbumClientProps = {
   backHref?: string
@@ -180,18 +156,18 @@ export default function YearbookAlbumClient({
     }
     try {
       const res = await fetchWithAuth(`/api/albums/${id}`, { credentials: 'include', cache: 'no-store' })
-      const data = await res.json().catch(() => ({}))
+      const data = asObject(await res.json().catch(() => ({})))
       if (!res.ok) {
-        setError(data?.error ?? 'Album tidak ditemukan')
+        setError(getErrorMessage(data, 'Album tidak ditemukan'))
         setAlbum(null)
         return
       }
-      if (data.type !== 'yearbook') {
+      if (asString(data.type) !== 'yearbook') {
         setError('Bukan album yearbook')
         setAlbum(null)
         return
       }
-      setAlbum(data)
+      setAlbum(data as Album)
     } finally {
       if (!silent) setLoading(false)
     }
@@ -207,11 +183,11 @@ export default function YearbookAlbumClient({
     try {
       const res = await fetchWithAuth(`/api/albums/${id}/unlock-feature`, { credentials: 'include', cache: 'no-store' })
       if (res.ok) {
-        const data = await res.json()
-        setFeatureUnlocks(data.unlocked_features ?? [])
-        setFlipbookEnabledByPackage(data.flipbook_enabled_by_package ?? false)
-        setAiLabsFeaturesByPackage(data.ai_labs_features_by_package ?? [])
-        setFeatureCreditCosts(data.credit_costs ?? {})
+        const data = asObject(await res.json().catch(() => ({})))
+        setFeatureUnlocks(asStringArray(data.unlocked_features))
+        setFlipbookEnabledByPackage(data.flipbook_enabled_by_package === true)
+        setAiLabsFeaturesByPackage(asStringArray(data.ai_labs_features_by_package))
+        setFeatureCreditCosts(asNumberRecord(data.credit_costs))
       }
     } catch (e) {
       console.error('Error fetching feature unlocks:', e)
@@ -345,11 +321,11 @@ export default function YearbookAlbumClient({
       isFetchingAccessRef.current = true
       // 1. Fetch My Access & My Requests for ALL classes
       const myAccessRes = await fetchWithAuth(`/api/albums/${id}/my-access-all`, { credentials: 'include', cache: 'no-store' })
-      const myAccessData = await myAccessRes.json().catch(() => ({}))
+      const myAccessData = asObject(await myAccessRes.json().catch(() => ({})))
 
       if (myAccessRes.ok) {
-        setMyAccessByClass(myAccessData.access || {})
-        setMyRequestByClass(myAccessData.requests || {})
+        setMyAccessByClass((myAccessData.access as Record<string, ClassAccess | null>) || {})
+        setMyRequestByClass((myAccessData.requests as Record<string, ClassRequest | null>) || {})
       }
 
       // 2. If Admin, fetch ALL pending requests for approval
@@ -641,7 +617,7 @@ export default function YearbookAlbumClient({
     })
     const data = await res.json().catch(() => ({}))
     if (!res.ok) {
-      alert(data?.error ?? 'Gagal menghapus kelas')
+      alert(getErrorMessage(data, 'Gagal menghapus kelas'))
       return
     }
     setAlbum((prev) => {
@@ -802,7 +778,7 @@ export default function YearbookAlbumClient({
 
       if (!res.ok) {
         // Revert optimistic update on error
-        toast.error(data?.error ?? 'Gagal menambah kelas')
+        toast.error(getErrorMessage(data, 'Gagal menambah kelas'))
         setAlbum((prev) =>
           prev
             ? {
@@ -867,21 +843,49 @@ export default function YearbookAlbumClient({
 
   const handleRequestAccess = async (classId: string) => {
     if (!id || !requestForm.student_name.trim()) return
+    
+    // Snapshot values sebelum async call
+    const studentName = requestForm.student_name.trim()
+    const email = requestForm.email.trim() || undefined
+    
     const res = await fetchWithAuth(`/api/albums/${id}/classes/${classId}/request`, {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ student_name: requestForm.student_name.trim(), email: requestForm.email.trim() || undefined }),
+      body: JSON.stringify({ student_name: studentName, email }),
     })
-    const data = await res.json().catch(() => ({}))
+    const data = asObject(await res.json().catch(() => ({})))
     if (!res.ok) {
-      toast.error(data?.error ?? 'Gagal mengajukan akses')
+      toast.error(getErrorMessage(data, 'Gagal mengajukan akses'))
       return
     }
+    
+    const status = asString(data.status)
     // Response bisa dari album_class_access (approved) atau album_class_requests (pending request)
-    if (data.status === 'approved') {
-      setMyAccessByClass((prev) => ({ ...prev, [classId]: { id: data.id, student_name: data.student_name, email: data.email ?? null, status: 'approved', date_of_birth: data.date_of_birth ?? null, instagram: data.instagram ?? null, message: data.message ?? null, video_url: data.video_url ?? null } }))
+    if (status === 'approved') {
+      const idValue = asString(data.id) ?? ''
+      const emailValue = asString(data.email) ?? null
+      const dateOfBirth = asString(data.date_of_birth) ?? null
+      const instagram = asString(data.instagram) ?? null
+      const message = asString(data.message) ?? null
+      const videoUrl = asString(data.video_url) ?? null
+      const userId = asString(data.user_id) ?? ''
+      
+      setMyAccessByClass((prev) => ({
+        ...prev,
+        [classId]: {
+          id: idValue,
+          student_name: studentName,
+          email: emailValue,
+          status: 'approved',
+          date_of_birth: dateOfBirth,
+          instagram,
+          message,
+          video_url: videoUrl
+        }
+      }))
       setMyRequestByClass((prev) => ({ ...prev, [classId]: null }))
+      
       // Optimistic: tambah diri ke daftar member agar profil card langsung muncul
       setMembersByClass((prev) => {
         const list = prev[classId] ?? []
@@ -892,22 +896,31 @@ export default function YearbookAlbumClient({
           [classId]: [
             ...list,
             {
-              user_id: data.user_id ?? '',
-              student_name: data.student_name ?? '',
-              email: data.email ?? null,
-              date_of_birth: data.date_of_birth ?? null,
-              instagram: data.instagram ?? null,
-              message: data.message ?? null,
-              video_url: data.video_url ?? null,
+              user_id: userId,
+              student_name: studentName,
+              email: email ?? null,
+              date_of_birth: dateOfBirth,
+              instagram,
+              message,
+              video_url: videoUrl,
               is_me: true
             } as ClassMember
           ]
         }
       })
-      // Jangan refetch di sini: bisa menimpa optimistic update dan card hilang. Realtime akan sync.
       toast.success('Anda terdaftar di kelas ini.')
     } else {
-      setMyRequestByClass((prev) => ({ ...prev, [classId]: { id: data.id, student_name: data.student_name, email: data.email ?? null, status: data.status ?? 'pending' } }))
+      // pending request
+      const idValue = asString(data.id) ?? ''
+      setMyRequestByClass((prev) => ({
+        ...prev,
+        [classId]: {
+          id: idValue,
+          student_name: studentName,
+          email: email ?? null,
+          status: 'pending'
+        }
+      }))
       toast.success('Permintaan pendaftaran dikirim. Menunggu persetujuan.')
     }
     setRequestForm({ student_name: '', email: '' })
@@ -921,9 +934,9 @@ export default function YearbookAlbumClient({
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status }),
     })
-    const data = await res.json().catch(() => ({}))
+    const data = asObject(await res.json().catch(() => ({})))
     if (!res.ok) {
-      toast.error(data?.error ?? 'Gagal')
+      toast.error(getErrorMessage(data, 'Gagal'))
       return
     }
     // Remove request dari pending list
@@ -955,38 +968,43 @@ export default function YearbookAlbumClient({
       }),
     })
 
-    const data = await res.json().catch(() => ({}))
+    const data = asObject(await res.json().catch(() => ({})))
 
     if (!res.ok) {
-      toast.error(data?.error ?? 'Gagal bergabung ke kelas')
+      toast.error(getErrorMessage(data, 'Gagal bergabung ke kelas'))
       return
     }
+
+    const access = asObject(data.access)
+    const accessId = asString(access.id) ?? ''
+    const accessStudentName = asString(access.student_name) ?? ''
+    const accessEmail = asString(access.email) ?? null
 
     // Update state: tambahkan owner ke myAccessByClass dengan status approved
     setMyAccessByClass((prev) => ({
       ...prev,
       [classId]: {
-        id: data.access.id,
-        student_name: data.access.student_name ?? '',
-        email: data.access.email ?? null,
+        id: accessId,
+        student_name: accessStudentName,
+        email: accessEmail,
         status: 'approved'
       },
     }))
 
     // Optimistic: tambah owner ke daftar member agar profil card langsung muncul
-    const access = data.access as { user_id?: string; student_name?: string; email?: string | null }
     setMembersByClass((prev) => {
       const list = prev[classId] ?? []
-      const alreadyIn = list.some((m) => m.is_me || m.user_id === access.user_id)
+      const accessUserId = asString(access.user_id)
+      const alreadyIn = list.some((m) => m.is_me || (accessUserId ? m.user_id === accessUserId : false))
       if (alreadyIn) return prev
       return {
         ...prev,
         [classId]: [
           ...list,
           {
-            user_id: access.user_id ?? '',
-            student_name: access.student_name ?? '',
-            email: access.email ?? null,
+            user_id: asString(access.user_id) ?? '',
+            student_name: accessStudentName,
+            email: accessEmail,
             date_of_birth: null,
             instagram: null,
             message: null,
@@ -999,8 +1017,8 @@ export default function YearbookAlbumClient({
 
     // Auto-open edit form dengan nama default dari API (user_metadata / email / user_id)
     setEditingProfileClassId(classId)
-    setEditProfileName(data.access.student_name ?? '')
-    setEditProfileEmail(data.access.email ?? '')
+    setEditProfileName(accessStudentName)
+    setEditProfileEmail(accessEmail ?? '')
     setEditProfileTtl('')
     setEditProfileInstagram('')
     setEditProfilePesan('')
@@ -1029,9 +1047,9 @@ export default function YearbookAlbumClient({
       setSavingProfile(true)
       try {
         const res = await fetchWithAuth(url, { method: 'DELETE', credentials: 'include' })
-        const data = await res.json().catch(() => ({}))
+        const data = asObject(await res.json().catch(() => ({})))
         if (!res.ok) {
-          toast.error(data?.error ?? 'Gagal menghapus profil')
+          toast.error(getErrorMessage(data, 'Gagal menghapus profil'))
           return
         }
         if (!isEditingOther) {
@@ -1095,9 +1113,9 @@ export default function YearbookAlbumClient({
           video_url: dataToSave.video_url?.trim() || null,
         }),
       })
-      const data = await res.json().catch(() => ({}))
+      const data = asObject(await res.json().catch(() => ({})))
       if (!res.ok) {
-        toast.error(data?.error ?? 'Gagal menyimpan')
+        toast.error(getErrorMessage(data, 'Gagal menyimpan'))
         return
       }
       const d = data as ClassAccess
@@ -1187,9 +1205,9 @@ export default function YearbookAlbumClient({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ role }),
       })
-      const data = await res.json().catch(() => ({}))
+      const data = asObject(await res.json().catch(() => ({})))
       if (!res.ok) {
-        toast.error(data?.error ?? 'Gagal mengubah role')
+        toast.error(getErrorMessage(data, 'Gagal mengubah role'))
         return
       }
       toast.success(`Role berhasil diubah menjadi ${role === 'admin' ? 'Admin' : 'Member'}`)
@@ -1208,9 +1226,9 @@ export default function YearbookAlbumClient({
         method: 'DELETE',
         credentials: 'include',
       })
-      const data = await res.json().catch(() => ({}))
+      const data = asObject(await res.json().catch(() => ({})))
       if (!res.ok) {
-        toast.error(data?.error ?? 'Gagal menghapus member')
+        toast.error(getErrorMessage(data, 'Gagal menghapus member'))
         return
       }
       toast.success('Member berhasil dihapus dari album')
@@ -1255,9 +1273,9 @@ export default function YearbookAlbumClient({
         method: 'DELETE',
         credentials: 'include',
       })
-      const data = await res.json().catch(() => ({}))
+      const data = asObject(await res.json().catch(() => ({})))
       if (!res.ok) {
-        toast.error(data?.error ?? 'Gagal menghapus anggota')
+        toast.error(getErrorMessage(data, 'Gagal menghapus anggota'))
         // Rollback: refetch to restore correct state
         await fetchAllClassMembers()
         await fetchAllAccess()
@@ -1295,9 +1313,9 @@ export default function YearbookAlbumClient({
       credentials: 'include',
       body: formData,
     })
-    const data = await res.json().catch(() => ({}))
+    const data = asObject(await res.json().catch(() => ({})))
     if (!res.ok) {
-      toast.error(data?.error ?? 'Gagal upload foto')
+      toast.error(getErrorMessage(data, 'Gagal upload foto'))
       return
     }
 
@@ -1331,22 +1349,23 @@ export default function YearbookAlbumClient({
       credentials: 'include',
       body: formData,
     })
-    const data = await res.json().catch(() => ({}))
+    const data = asObject(await res.json().catch(() => ({})))
     if (!res.ok) {
-      toast.error(data?.error ?? 'Gagal upload video')
+      toast.error(getErrorMessage(data, 'Gagal upload video'))
       return
     }
     setLastUploadedVideoName(file.name)
     setTimeout(() => setLastUploadedVideoName(null), 5000)
     // Update the form field with the new video URL so it appears in the edit form
-    if (data?.video_url) {
-      setEditProfileVideoUrl(data.video_url)
+    const videoUrl = asString(data.video_url)
+    if (videoUrl) {
+      setEditProfileVideoUrl(videoUrl)
       // Optimistic update: immediately reflect video_url in membersByClass so the play icon shows
       setMembersByClass(prev => {
         const list = prev[classId]
         if (!list) return prev
         const updated = list.map(m =>
-          m.student_name === studentName ? { ...m, video_url: data.video_url } : m
+          m.student_name === studentName ? { ...m, video_url: videoUrl } : m
         )
         return { ...prev, [classId]: updated }
       })
@@ -1359,9 +1378,9 @@ export default function YearbookAlbumClient({
   const performDeleteCover = async () => {
     if (!id || !album?.cover_image_url) return
     const res = await fetchWithAuth(`/api/albums/${id}/cover`, { method: 'DELETE', credentials: 'include' })
-    const data = await res.json().catch(() => ({}))
+    const data = asObject(await res.json().catch(() => ({})))
     if (!res.ok) {
-      alert(data?.error ?? 'Gagal menghapus cover')
+      alert(getErrorMessage(data, 'Gagal menghapus cover'))
       return
     }
     setAlbum((prev) => prev ? { ...prev, cover_image_url: null, cover_image_position: null } : null)
@@ -1386,12 +1405,13 @@ export default function YearbookAlbumClient({
         credentials: 'include',
         body: formData,
       })
-      const data = await res.json().catch(() => ({}))
+      const data = asObject(await res.json().catch(() => ({})))
       if (!res.ok) {
-        alert(data?.error ?? 'Gagal upload video cover')
+        alert(getErrorMessage(data, 'Gagal upload video cover'))
         return
       }
-      setAlbum((prev) => prev ? { ...prev, cover_video_url: data.cover_video_url ?? null } : null)
+      const coverVideoUrl = asString(data.cover_video_url) ?? null
+      setAlbum((prev) => prev ? { ...prev, cover_video_url: coverVideoUrl } : null)
     } finally {
       setUploadingCoverVideo(false)
     }
@@ -1400,9 +1420,9 @@ export default function YearbookAlbumClient({
   const performDeleteCoverVideo = async () => {
     if (!id || !album?.cover_video_url) return
     const res = await fetchWithAuth(`/api/albums/${id}/cover-video`, { method: 'DELETE', credentials: 'include' })
-    const data = await res.json().catch(() => ({}))
+    const data = asObject(await res.json().catch(() => ({})))
     if (!res.ok) {
-      alert(data?.error ?? 'Gagal menghapus video cover')
+      alert(getErrorMessage(data, 'Gagal menghapus video cover'))
       return
     }
     setAlbum((prev) => prev ? { ...prev, cover_video_url: null } : null)
@@ -1428,9 +1448,9 @@ export default function YearbookAlbumClient({
 
     // Konfirmasi sudah dilakukan di UI component sebelum memanggil fungsi ini
     const res = await fetchWithAuth(`/api/albums/${id}/photos?class_id=${encodeURIComponent(classId)}&student_name=${encodeURIComponent(studentName)}&index=${index}`, { method: 'DELETE', credentials: 'include' })
-    const data = await res.json().catch(() => ({}))
+    const data = asObject(await res.json().catch(() => ({})))
     if (!res.ok) {
-      toast.error(data?.error ?? 'Gagal menghapus foto')
+      toast.error(getErrorMessage(data, 'Gagal menghapus foto'))
       return
     }
     toast.success('Foto berhasil dihapus')
@@ -1463,17 +1483,17 @@ export default function YearbookAlbumClient({
         credentials: 'include',
         body: formData,
       })
-      const data = await res.json().catch(() => ({}))
+      const data = asObject(await res.json().catch(() => ({})))
       if (!res.ok) {
-        alert(data?.error ?? 'Gagal upload cover')
+        alert(getErrorMessage(data, 'Gagal upload cover'))
         return
       }
       setAlbum((prev) =>
         prev
           ? {
             ...prev,
-            cover_image_url: data.cover_image_url,
-            cover_image_position: data.cover_image_position ?? prev.cover_image_position,
+            cover_image_url: asString(data.cover_image_url) ?? '',
+            cover_image_position: asString(data.cover_image_position) ?? prev.cover_image_position,
           }
           : null
       )

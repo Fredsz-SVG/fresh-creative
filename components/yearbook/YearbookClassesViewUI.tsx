@@ -8,215 +8,32 @@ import { useSearchParams, useRouter, usePathname } from 'next/navigation'
 import { getYearbookSectionQueryUrl } from './lib/yearbook-paths'
 import TeacherCard from '@/components/TeacherCard'
 import MemberCard from '@/components/MemberCard'
-import TryOn from '@/components/fitur/TryOn'
-import Pose from '@/components/fitur/Pose'
-import ImageEditor from '@/components/fitur/ImageEditor'
-import PhotoGroup from '@/components/fitur/PhotoGroup'
-import PhotoToVideo from '@/components/fitur/PhotoToVideo'
+import { TryOn, Pose, ImageEditor, PhotoGroup, PhotoToVideo } from '@/components/features'
 import { AI_LABS_FEATURES_USER } from '@/lib/dashboard-nav'
 import IconSidebar from './components/IconSidebar'
 import AILabsView from './components/AILabsView'
 import PreviewView from './components/PreviewView'
 import SambutanView from './components/SambutanView'
 import ApprovalView from './components/ApprovalView'
+import InlineClassEditor from './components/InlineClassEditor'
 import FlipbookView from './components/FlipbookView'
 import FlipbookLockedView from './components/FlipbookLockedView'
 import ClassesEmptyView from './components/ClassesEmptyView'
 import YearbookMobileNav from './components/YearbookMobileNav'
 import { apiUrl } from '../../lib/api-url'
 import { fetchWithAuth } from '../../lib/api-client'
+import type { AlbumClass, ClassAccess, ClassMember, ClassRequest, Photo, Teacher, TeacherPhoto } from './types'
 
-type AlbumClass = { id: string; name: string; sort_order?: number; student_count?: number; batch_photo_url?: string | null }
-type ClassAccess = { id: string; student_name: string; email?: string | null; status: string; date_of_birth?: string | null; instagram?: string | null; message?: string | null; video_url?: string | null }
-type ClassRequest = { id: string; student_name: string; email?: string | null; status: string }
-type ClassMember = { user_id: string; student_name: string; email: string | null; date_of_birth: string | null; instagram: string | null; message: string | null; video_url: string | null; photos?: string[]; is_me?: boolean }
 type StudentInClass = { student_name: string; photo_count: number }
-type Photo = { id: string; file_url: string; student_name: string; created_at?: string }
-type Teacher = { id: string; name: string; title?: string; message?: string; photo_url?: string; video_url?: string; sort_order?: number; photos?: { id: string; file_url: string; sort_order: number }[] }
 
-function InlineClassEditor(p: any) {
-  const classObj = p.classObj as AlbumClass
-  const isOwner = p.isOwner as boolean
-  const onDelete = p.onDelete
-  const onUpdate = p.onUpdate
-  const classIndex = p.classIndex as number
-  const classesCount = p.classesCount as number
-  const [editing, setEditing] = useState(false)
-  const [name, setName] = useState(classObj?.name ?? '')
-  const [order, setOrder] = useState<number>(typeof classIndex === 'number' ? classIndex : (classObj?.sort_order ?? 0))
-  const nameRef = useRef<HTMLInputElement | null>(null)
-  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+const asApiObject = (value: unknown): Record<string, unknown> => {
+  if (value && typeof value === 'object' && !Array.isArray(value)) return value as Record<string, unknown>
+  return {}
+}
 
-  useEffect(() => {
-    setName(classObj?.name ?? '')
-    setOrder(typeof classIndex === 'number' ? classIndex : (classObj?.sort_order ?? 0))
-  }, [classObj, classIndex])
-
-  useEffect(() => {
-    if (editing && nameRef.current) nameRef.current.focus()
-  }, [editing])
-
-  useEffect(() => {
-    return () => {
-      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
-    }
-  }, [])
-
-  // Early return if classObj is null - AFTER all hooks
-  if (!classObj) {
-    return <div className="text-sm text-gray-500">Memuat...</div>
-  }
-
-  const saveChanges = (nameVal: string, orderVal: number) => {
-    if (!onUpdate) return
-    // Fire and forget - no loading state
-    onUpdate(classObj.id, { name: nameVal.trim(), sort_order: Number(orderVal) }).catch((e: any) => {
-      console.error('Error saving class:', e)
-    })
-  }
-
-  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newName = e.target.value
-    setName(newName)
-  }
-
-  const handleOrderChange = (newOrder: number, e?: React.MouseEvent) => {
-    if (e) {
-      e.preventDefault()
-      e.stopPropagation()
-    }
-    setOrder(newOrder)
-    // Real-time save on order change - immediately, no timeout
-    saveChanges(name, newOrder)
-  }
-
-  const handleSaveName = (e?: React.MouseEvent) => {
-    if (e) {
-      e.preventDefault()
-      e.stopPropagation()
-    }
-    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
-    if (!name.trim()) {
-      alert('Nama kelas tidak boleh kosong')
-      return
-    }
-    saveChanges(name, order)
-    setEditing(false)
-  }
-
-  const handleCancel = (e?: React.MouseEvent) => {
-    if (e) {
-      e.preventDefault()
-      e.stopPropagation()
-    }
-    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
-    setEditing(false)
-    setName(classObj.name)
-    setOrder(classObj.sort_order ?? 0)
-  }
-
-  return (
-    <div className={`w-full ${p.center ? 'flex justify-center' : ''}`}>
-      {!editing ? (
-        <div className={`w-full p-4 bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-2xl shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] ${p.center ? 'flex justify-center' : ''}`}>
-          <div className={`flex items-center gap-3 w-full ${p.center ? 'justify-center border-b-4 border-slate-900/5 dark:border-slate-600/30 pb-2' : ''}`}>
-            <h2 className={`${p.mainHeader ? 'text-4xl lg:text-5xl' : 'text-sm lg:text-base'} font-black text-slate-900 dark:text-white flex-1 break-words uppercase tracking-tight ${p.center ? 'text-center' : 'text-left'}`}>{classObj.name}</h2>
-            {isOwner && (
-              <div className="flex gap-2 flex-shrink-0">
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.preventDefault()
-                    e.stopPropagation()
-                    setEditing(true)
-                  }}
-                  className={`${p.mainHeader ? 'w-10 h-10 lg:w-12 lg:h-12 rounded-xl lg:rounded-2xl' : 'w-8 h-8 lg:w-9 lg:h-9 rounded-xl'} flex items-center justify-center bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 text-slate-900 dark:text-white hover:bg-amber-300 dark:hover:bg-slate-700 hover:shadow-[3px_3px_0_0_#0f172a] dark:hover:shadow-[3px_3px_0_0_#334155] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all`}
-                  title="Edit kelas"
-                >
-                  <Edit3 className={p.mainHeader ? 'w-4 h-4 lg:w-5 h-5' : 'w-4 h-4'} strokeWidth={2.5} />
-                </button>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.preventDefault()
-                    e.stopPropagation()
-                    onDelete && onDelete(classObj.id, classObj.name)
-                  }}
-                  className={`${p.mainHeader ? 'w-10 h-10 lg:w-12 lg:h-12 rounded-xl lg:rounded-2xl' : 'w-8 h-8 lg:w-9 lg:h-9 rounded-xl'} flex items-center justify-center bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/50 hover:shadow-[3px_3px_0_0_#0f172a] dark:hover:shadow-[3px_3px_0_0_#334155] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all`}
-                  title="Hapus kelas"
-                >
-                  <Trash2 className={p.mainHeader ? 'w-4 h-4 lg:w-5 h-5' : 'w-4 h-4'} strokeWidth={2.5} />
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      ) : (
-        <div className="flex flex-col gap-4 w-full bg-amber-50 dark:bg-amber-950/30 p-4 rounded-[24px] border-2 border-slate-900 dark:border-slate-700 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] animate-in zoom-in-95 duration-200">
-          <div className="flex flex-col gap-4">
-            <div className="flex flex-col gap-1.5 w-full">
-              <label className="text-[10px] text-slate-400 dark:text-slate-500 font-black uppercase tracking-widest pl-1">Nama Kelas</label>
-              <input
-                ref={nameRef}
-                value={name}
-                onChange={handleNameChange}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') handleSaveName()
-                  else if (e.key === 'Escape') handleCancel()
-                }}
-                placeholder="Nama kelas..."
-                className="w-full px-4 py-2 rounded-xl text-sm bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 text-slate-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500/10 transition-all placeholder:text-slate-300 dark:placeholder:text-slate-500"
-              />
-            </div>
-
-            <div className="flex flex-col gap-1.5 w-full">
-              <label className="text-[10px] text-slate-400 dark:text-slate-500 font-black uppercase tracking-widest pl-1">Urutan Kelas</label>
-              <div className="flex items-center gap-1.5 bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 rounded-xl p-1 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] w-fit">
-                <button
-                  type="button"
-                  onClick={(e) => handleOrderChange(Math.max(0, (order ?? 0) - 1), e)}
-                  disabled={order === 0}
-                  className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-900 dark:text-white disabled:opacity-20"
-                >
-                  <Minus className="w-4 h-4" strokeWidth={3} />
-                </button>
-                <div className="px-2 text-center min-w-[40px]">
-                  <span className="text-sm font-black text-indigo-600 dark:text-indigo-400">{(order ?? 0) + 1}</span>
-                  <span className="text-[10px] text-slate-300 dark:text-slate-500 font-black tracking-tighter">/{classesCount}</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={(e) => handleOrderChange(Math.min((classesCount || 1) - 1, (order ?? 0) + 1), e)}
-                  disabled={order >= (classesCount || 1) - 1}
-                  className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-900 dark:text-white disabled:opacity-20"
-                >
-                  <Plus className="w-4 h-4" strokeWidth={3} />
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={handleSaveName}
-              className="flex-1 py-3 rounded-xl bg-indigo-500 text-white border-2 border-slate-900 dark:border-slate-600 font-black text-[10px] uppercase tracking-widest shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all"
-            >
-              Simpan
-            </button>
-            <button
-              type="button"
-              onClick={handleCancel}
-              className="flex-1 py-3 rounded-xl bg-white dark:bg-slate-800 text-slate-400 dark:text-slate-500 border-2 border-slate-900 dark:border-slate-600 font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none"
-            >
-              Batal
-            </button>
-          </div>
-          <p className="text-[8px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-tight text-center">Tekan Enter untuk simpan</p>
-        </div>
-      )}
-    </div>
-  )
+const getApiErrorMessage = (payload: unknown, fallback: string): string => {
+  const data = asApiObject(payload)
+  return typeof data.error === 'string' ? data.error : fallback
 }
 
 export default function YearbookClassesViewUI(props: any) {
@@ -484,9 +301,9 @@ export default function YearbookClassesViewUI(props: any) {
     try {
       const res = await fetchWithAuth(`/api/albums/${album.id}/invite-token`, { credentials: 'include' })
       if (res.ok) {
-        const data = await res.json()
-        setInviteToken(data.token || null)
-        setInviteExpiresAt(data.expiresAt || null)
+        const data = asApiObject(await res.json().catch(() => ({})))
+        setInviteToken(typeof data.token === 'string' ? data.token : null)
+        setInviteExpiresAt(typeof data.expiresAt === 'string' ? data.expiresAt : null)
       }
     } catch (error) {
       console.error('Error fetching invite token:', error)
@@ -505,9 +322,9 @@ export default function YearbookClassesViewUI(props: any) {
         body: JSON.stringify({ expiresInDays: 7 })
       })
       if (res.ok) {
-        const data = await res.json()
-        setInviteToken(data.token)
-        setInviteExpiresAt(data.expiresAt)
+        const data = asApiObject(await res.json().catch(() => ({})))
+        setInviteToken(typeof data.token === 'string' ? data.token : null)
+        setInviteExpiresAt(typeof data.expiresAt === 'string' ? data.expiresAt : null)
         toast.success('Link undangan berhasil dibuat!')
       } else {
         toast.error('Gagal membuat link undangan')
@@ -617,7 +434,7 @@ export default function YearbookClassesViewUI(props: any) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'approve', assigned_class_id }),
       })
-      const data = await res.json()
+      const data = await res.json().catch(() => ({} as unknown))
       if (res.ok) {
         toast.success('Request disetujui! Member berhasil ditambahkan.')
         fetchJoinStats()
@@ -625,7 +442,7 @@ export default function YearbookClassesViewUI(props: any) {
         fetchJoinRequests('approved')
         if (fetchMembersForClass) await fetchMembersForClass(assigned_class_id)
       } else {
-        toast.error(data.error || 'Gagal menyetujui request')
+        toast.error(getApiErrorMessage(data, 'Gagal menyetujui request'))
       }
     } catch (error) {
       console.error('Error approving request:', error)
@@ -655,8 +472,8 @@ export default function YearbookClassesViewUI(props: any) {
         toast.success(`Batas diubah menjadi ${val}`)
         fetchJoinStats()
       } else {
-        const data = await res.json().catch(() => ({}))
-        toast.error(data.error || 'Gagal mengubah batas')
+        const data = await res.json().catch(() => ({} as unknown))
+        toast.error(getApiErrorMessage(data, 'Gagal mengubah batas'))
       }
     } catch {
       toast.error('Gagal mengubah batas')
@@ -675,13 +492,13 @@ export default function YearbookClassesViewUI(props: any) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'reject', rejected_reason: reason }),
       })
-      const data = await res.json()
+      const data = await res.json().catch(() => ({} as unknown))
       if (res.ok) {
         toast.success('Request ditolak')
         fetchJoinStats()
         fetchJoinRequests('pending')
       } else {
-        toast.error(data.error || 'Gagal menolak request')
+        toast.error(getApiErrorMessage(data, 'Gagal menolak request'))
       }
     } catch (error) {
       console.error('Error rejecting request:', error)
@@ -698,13 +515,13 @@ export default function YearbookClassesViewUI(props: any) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, title }),
       })
-      const data = await res.json()
-      if (res.ok && data.id) {
-        setTeachers(prev => [...prev, data])
+      const data = asApiObject(await res.json().catch(() => ({})))
+      if (res.ok && typeof data.id === 'string') {
+        setTeachers(prev => [...prev, data as unknown as Teacher])
         props.onTeacherCountChange?.(teachers.length + 1)
         toast.success('Berhasil ditambahkan')
       } else {
-        toast.error(data.error || 'Gagal menambahkan')
+        toast.error(getApiErrorMessage(data, 'Gagal menambahkan'))
       }
     } catch (error) {
       console.error('Error adding teacher:', error)
@@ -724,11 +541,11 @@ export default function YearbookClassesViewUI(props: any) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(textUpdates),
       })
-      const data = await res.json()
-      if (res.ok && data.id) {
-        setTeachers(prev => prev.map(t => t.id === teacherId ? { ...data, photos: t.photos } : t))
+      const data = asApiObject(await res.json().catch(() => ({})))
+      if (res.ok && typeof data.id === 'string') {
+        setTeachers(prev => prev.map(t => t.id === teacherId ? { ...(data as unknown as Teacher), photos: t.photos } : t))
       } else {
-        toast.error(data.error || 'Gagal memperbarui guru')
+        toast.error(getApiErrorMessage(data, 'Gagal memperbarui guru'))
         return
       }
 
@@ -762,8 +579,8 @@ export default function YearbookClassesViewUI(props: any) {
         props.onTeacherCountChange?.(teachers.length - 1)
         toast.success('Guru berhasil dihapus')
       } else {
-        const data = await res.json()
-        toast.error(data.error || 'Gagal menghapus guru')
+        const data = await res.json().catch(() => ({} as unknown))
+        toast.error(getApiErrorMessage(data, 'Gagal menghapus guru'))
       }
     } catch (error) {
       console.error('Error deleting teacher:', error)
@@ -784,18 +601,19 @@ export default function YearbookClassesViewUI(props: any) {
         method: 'POST',
         body: formData,
       })
-      const data = await res.json()
-      if (res.ok && data.id) {
+      const data = asApiObject(await res.json().catch(() => ({})))
+      if (res.ok && typeof data.id === 'string') {
+        const teacherPhoto = data as unknown as TeacherPhoto
         // Add new photo to teacher's photos array
         setTeachers(prev => prev.map(t => {
           if (t.id === teacherId) {
             const photos = t.photos || []
-            return { ...t, photos: [...photos, data] }
+            return { ...t, photos: [...photos, teacherPhoto] }
           }
           return t
         }))
       } else {
-        toast.error(data.error || 'Gagal upload foto')
+        toast.error(getApiErrorMessage(data, 'Gagal upload foto'))
       }
     } catch (error) {
       console.error('Error uploading photo:', error)
@@ -820,8 +638,8 @@ export default function YearbookClassesViewUI(props: any) {
         }))
         toast.success('Foto berhasil dihapus')
       } else {
-        const data = await res.json()
-        toast.error(data.error || 'Gagal menghapus foto')
+        const data = await res.json().catch(() => ({} as unknown))
+        toast.error(getApiErrorMessage(data, 'Gagal menghapus foto'))
       }
     } catch (error) {
       console.error('Error deleting photo:', error)
@@ -842,8 +660,8 @@ export default function YearbookClassesViewUI(props: any) {
         ))
         toast.success('Foto berhasil dihapus')
       } else {
-        const data = await res.json()
-        toast.error(data.error || 'Gagal menghapus foto')
+        const data = await res.json().catch(() => ({} as unknown))
+        toast.error(getApiErrorMessage(data, 'Gagal menghapus foto'))
       }
     } catch (error) {
       console.error('Error deleting photo:', error)
@@ -867,13 +685,14 @@ export default function YearbookClassesViewUI(props: any) {
         method: 'POST',
         body: formData,
       })
-      const data = await res.json()
-      if (res.ok && data.video_url) {
+      const data = asApiObject(await res.json().catch(() => ({})))
+      if (res.ok && typeof data.video_url === 'string') {
+        const videoUrl = data.video_url
         setTeachers(prev => prev.map(t =>
-          t.id === teacherId ? { ...t, video_url: data.video_url } : t
+          t.id === teacherId ? { ...t, video_url: videoUrl } : t
         ))
       } else {
-        toast.error(data.error || 'Gagal upload video')
+        toast.error(getApiErrorMessage(data, 'Gagal upload video'))
       }
     } catch (error) {
       console.error('Error uploading video:', error)
@@ -901,16 +720,16 @@ export default function YearbookClassesViewUI(props: any) {
         body: formData,
       })
 
-      const data = await res.json()
+      const data = asApiObject(await res.json().catch(() => ({})))
 
-      if (res.ok && data.batch_photo_url) {
+      if (res.ok && typeof data.batch_photo_url === 'string') {
         toast.success('Foto angkatan berhasil diupload')
         // Optimistic update via parent — also triggers realtime for other devices
         if (handleUpdateClass) {
-          await handleUpdateClass(classId, { batch_photo_url: data.batch_photo_url })
+          await handleUpdateClass(classId, { batch_photo_url: data.batch_photo_url as string })
         }
       } else {
-        toast.error(data.error || 'Gagal upload foto')
+        toast.error(getApiErrorMessage(data, 'Gagal upload foto'))
       }
     } catch (error) {
       console.error('Error uploading batch photo:', error)
@@ -941,8 +760,8 @@ export default function YearbookClassesViewUI(props: any) {
           handleUpdateClass(classId, { batch_photo_url: '' })
         }
       } else {
-        const data = await res.json()
-        toast.error(data.error || 'Gagal menghapus foto')
+        const data = await res.json().catch(() => ({} as unknown))
+        toast.error(getApiErrorMessage(data, 'Gagal menghapus foto'))
         // Rollback: refetch album to restore correct state (silent = no skeleton)
         if (fetchAlbum) fetchAlbum(true)
       }
@@ -1309,7 +1128,7 @@ export default function YearbookClassesViewUI(props: any) {
                                     disabled={uploadingCover}
                                     className="h-9 lg:h-10 px-3 lg:px-4 rounded-xl bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] text-slate-900 dark:text-white font-black text-[9px] lg:text-[10px] uppercase tracking-widest flex items-center gap-2 active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all"
                                   >
-                                    <ImagePlus className="w-3.5 h-3.5 lg:w-4 h-4" />
+                                    <ImagePlus className="w-3.5 h-3.5 lg:w-4 lg:h-4" />
                                     Upload Cover
                                   </button>
                                 ) : (
@@ -1338,7 +1157,7 @@ export default function YearbookClassesViewUI(props: any) {
                                       disabled={uploadingCoverVideo}
                                       className="h-9 lg:h-10 px-3 lg:px-4 rounded-xl bg-slate-900 dark:bg-slate-700 border-2 border-slate-800 dark:border-slate-600 text-white font-black text-[9px] lg:text-[10px] uppercase tracking-widest flex items-center gap-2 active:translate-x-0.5 active:translate-y-0.5 transition-all"
                                     >
-                                      <Video className="w-3.5 h-3.5 lg:w-4 h-4" />
+                                      <Video className="w-3.5 h-3.5 lg:w-4 lg:h-4" />
                                       Video
                                     </button>
                                   ) : (
