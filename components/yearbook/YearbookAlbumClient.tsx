@@ -17,6 +17,10 @@ import type { Album, ClassAccess, ClassMember, ClassRequest, Photo } from './typ
 import { asString, asObject, asStringArray, asNumberRecord, getErrorMessage } from './utils/response-narrowing'
 import { useYearbookUIState } from './hooks/useYearbookUIState'
 import { useYearbookAlbumData } from './hooks/useYearbookAlbumData'
+import { useYearbookFeatures } from './hooks/useYearbookFeatures'
+import { useYearbookAccess } from './hooks/useYearbookAccess'
+import { useYearbookMembers } from './hooks/useYearbookMembers'
+import { useYearbookCoverState, useYearbookProfileEditState, useYearbookGalleryState } from './hooks/useYearbookUI'
 
 export type YearbookAlbumClientProps = {
   backHref?: string
@@ -49,46 +53,101 @@ export default function YearbookAlbumClient({
   // UI State: view, classIndex, sidebarMode, classViewMode, personalIndex, etc. with localStorage persistence
   const { view, setView, classIndex, setClassIndex, sidebarMode, setSidebarMode, classViewMode, setClassViewMode, personalIndex, setPersonalIndex, flipbookPreviewMode, setFlipbookPreviewMode, mobileMenuOpen, setMobileMenuOpen, lastEditorSection, setLastEditorSection } = useYearbookUIState(id)
 
-  const [photos, setPhotos] = useState<Photo[]>([])
-  const [galleryStudent, setGalleryStudent] = useState<{ classId: string; studentName: string; className: string } | null>(null)
-  const [photoIndex, setPhotoIndex] = useState(0)
+  // Features: feature unlocks, flipbook/ai-labs features by package
+  const { featureUnlocks, setFeatureUnlocks, flipbookEnabledByPackage, setFlipbookEnabledByPackage, aiLabsFeaturesByPackage, setAiLabsFeaturesByPackage, featureCreditCosts, setFeatureCreditCosts, featureUnlocksLoaded, setFeatureUnlocksLoaded, fetchFeatureUnlocks } = useYearbookFeatures(id)
+
+  // Access: my access/request state and admin requests
+  const {
+    myAccessByClass,
+    setMyAccessByClass,
+    myRequestByClass,
+    setMyRequestByClass,
+    accessDataLoaded,
+    setAccessDataLoaded,
+    requestsByClass,
+    setRequestsByClass,
+    selectedRequestId,
+    setSelectedRequestId,
+    fetchAllAccess: fetchAllAccessBase,
+  } = useYearbookAccess(id, initialAccess)
+
+  const {
+    membersByClass,
+    setMembersByClass,
+    firstPhotoByStudentByClass,
+    setFirstPhotoByStudentByClass,
+    studentPhotosInCard,
+    setStudentPhotosInCard,
+    studentNameForPhotosInCard,
+    setStudentNameForPhotosInCard,
+    studentPhotoIndexInCard,
+    setStudentPhotoIndexInCard,
+  } = useYearbookMembers(id, initialMembers)
+
+  const {
+    photos,
+    setPhotos,
+    galleryStudent,
+    setGalleryStudent,
+    photoIndex,
+    setPhotoIndex,
+    touchStartX,
+    setTouchStartX,
+    personalCardExpanded,
+    setPersonalCardExpanded,
+  } = useYearbookGalleryState()
+
+  const {
+    editingProfileClassId,
+    setEditingProfileClassId,
+    editingMemberUserId,
+    setEditingMemberUserId,
+    editProfileName,
+    setEditProfileName,
+    editProfileEmail,
+    setEditProfileEmail,
+    editProfileTtl,
+    setEditProfileTtl,
+    editProfileInstagram,
+    setEditProfileInstagram,
+    editProfilePesan,
+    setEditProfilePesan,
+    editProfileVideoUrl,
+    setEditProfileVideoUrl,
+    savingProfile,
+    setSavingProfile,
+    lastUploadedVideoName,
+    setLastUploadedVideoName,
+  } = useYearbookProfileEditState()
+
+  const {
+    uploadingCover,
+    setUploadingCover,
+    coverPreview,
+    setCoverPreview,
+    coverPosition,
+    setCoverPosition,
+    uploadingCoverVideo,
+    setUploadingCoverVideo,
+    videoPopupUrl,
+    setVideoPopupUrl,
+    videoPopupError,
+    setVideoPopupError,
+    deleteCoverConfirm,
+    setDeleteCoverConfirm,
+  } = useYearbookCoverState()
+
+  const fetchAllAccess = useCallback(() => fetchAllAccessBase(albumRef), [fetchAllAccessBase, albumRef])
+
   const [addingClass, setAddingClass] = useState(false)
   const [newClassName, setNewClassName] = useState('')
-  const [myAccessByClass, setMyAccessByClass] = useState<Record<string, ClassAccess | null>>(initialAccess?.access || {})
-  const [myRequestByClass, setMyRequestByClass] = useState<Record<string, ClassRequest | null>>(initialAccess?.requests || {})
-  const [accessDataLoaded, setAccessDataLoaded] = useState(!!initialAccess?.access && Object.keys(initialAccess.access).length > 0)
-  const [requestsByClass, setRequestsByClass] = useState<Record<string, ClassRequest[]>>({})
-  const [selectedRequestId, setSelectedRequestId] = useState<string | null>(null)
   const [requestForm, setRequestForm] = useState<{ student_name: string; email: string }>({ student_name: '', email: '' })
-  const [membersByClass, setMembersByClass] = useState<Record<string, ClassMember[]>>(initialMembers || {})
   
-  const [editingProfileClassId, setEditingProfileClassId] = useState<string | null>(null)
-  const [editingMemberUserId, setEditingMemberUserId] = useState<string | null>(null)
-  const [editProfileName, setEditProfileName] = useState('')
-  const [editProfileEmail, setEditProfileEmail] = useState('')
-  const [editProfileTtl, setEditProfileTtl] = useState('')
-  const [editProfileInstagram, setEditProfileInstagram] = useState('')
-  const [editProfilePesan, setEditProfilePesan] = useState('')
-  const [editProfileVideoUrl, setEditProfileVideoUrl] = useState('')
-  const [savingProfile, setSavingProfile] = useState(false)
-  const [touchStartX, setTouchStartX] = useState<number | null>(null)
-  const [personalCardExpanded, setPersonalCardExpanded] = useState(false)
-  const [firstPhotoByStudentByClass, setFirstPhotoByStudentByClass] = useState<Record<string, Record<string, string>>>({})
-  const [studentPhotosInCard, setStudentPhotosInCard] = useState<Photo[]>([])
-  const [studentNameForPhotosInCard, setStudentNameForPhotosInCard] = useState<string | null>(null)
-  const [studentPhotoIndexInCard, setStudentPhotoIndexInCard] = useState(0)
   const galleryUploadInputRef = useRef<HTMLInputElement>(null)
   const coverUploadInputRef = useRef<HTMLInputElement>(null)
-  const [uploadingCover, setUploadingCover] = useState(false)
-  const [coverPreview, setCoverPreview] = useState<{ file: File; dataUrl: string } | null>(null)
-  const [coverPosition, setCoverPosition] = useState({ x: 50, y: 50 })
   const coverPreviewContainerRef = useRef<HTMLDivElement>(null)
   const coverDragRef = useRef<{ startX: number; startY: number; startPosX: number; startPosY: number } | null>(null)
   const coverVideoInputRef = useRef<HTMLInputElement>(null)
-  const [lastUploadedVideoName, setLastUploadedVideoName] = useState<string | null>(null)
-  const [videoPopupUrl, setVideoPopupUrl] = useState<string | null>(null)
-  const [videoPopupError, setVideoPopupError] = useState<string | null>(null)
-  const [uploadingCoverVideo, setUploadingCoverVideo] = useState(false)
   const [teacherCount, setTeacherCount] = useState<number>(0)
   const [teamMemberCount, setTeamMemberCount] = useState<number>(0)
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
@@ -97,19 +156,12 @@ export default function YearbookAlbumClient({
 
   // Use refs for stable access in callbacks without triggering recreations
   const [realtimeCounter, setRealtimeCounter] = useState(0)
-  const [featureUnlocks, setFeatureUnlocks] = useState<string[]>([])
-  const [flipbookEnabledByPackage, setFlipbookEnabledByPackage] = useState(false)
-  const [aiLabsFeaturesByPackage, setAiLabsFeaturesByPackage] = useState<string[]>([])
-  const [featureCreditCosts, setFeatureCreditCosts] = useState<Record<string, number>>({})
-  const [featureUnlocksLoaded, setFeatureUnlocksLoaded] = useState(false)
   const [teacherSearchQuery, setTeacherSearchQuery] = useState('')
   const [showTeacherSearch, setShowTeacherSearch] = useState(false)
   const [classMemberSearchQuery, setClassMemberSearchQuery] = useState('')
   const [showClassMemberSearch, setShowClassMemberSearch] = useState(false)
-  const [deleteCoverConfirm, setDeleteCoverConfirm] = useState<'image' | 'video' | null>(null)
 
   const isFetchingMembersRef = useRef(false)
-  const isFetchingAccessRef = useRef(false)
 
   // Fetch current user
   useEffect(() => {
@@ -119,29 +171,6 @@ export default function YearbookAlbumClient({
     }
     fetchCurrentUser()
   }, [])
-
-  // Fetch feature unlocks for this album
-  const fetchFeatureUnlocks = useCallback(async () => {
-    if (!id) return
-    try {
-      const res = await fetchWithAuth(`/api/albums/${id}/unlock-feature`, { credentials: 'include', cache: 'no-store' })
-      if (res.ok) {
-        const data = asObject(await res.json().catch(() => ({})))
-        setFeatureUnlocks(asStringArray(data.unlocked_features))
-        setFlipbookEnabledByPackage(data.flipbook_enabled_by_package === true)
-        setAiLabsFeaturesByPackage(asStringArray(data.ai_labs_features_by_package))
-        setFeatureCreditCosts(asNumberRecord(data.credit_costs))
-      }
-    } catch (e) {
-      console.error('Error fetching feature unlocks:', e)
-    } finally {
-      setFeatureUnlocksLoaded(true)
-    }
-  }, [id])
-
-  useEffect(() => {
-    if (id) fetchFeatureUnlocks()
-  }, [id, fetchFeatureUnlocks])
 
   // Section dari URL: path segment atau query ?section=
   const sectionMode = getSectionModeFromUrl(pathname, searchParams.get('section'), id ?? '')
@@ -224,55 +253,6 @@ export default function YearbookAlbumClient({
   const effectiveBackLabel = (sectionMode === 'preview' && lastEditorSection)
     ? 'Kembali ke Editor'
     : originalBackLabel
-
-  // Optimized: Fetch all access data in one go (using my-access-all endpoint)
-  // No longer need per-class fetch because the new endpoint is efficient
-  const fetchAllAccess = useCallback(async () => {
-    if (!id || isFetchingAccessRef.current) return
-    const currentAlbum = albumRef.current
-    const canManageAlbum = currentAlbum?.isOwner === true || currentAlbum?.isAlbumAdmin === true
-
-    try {
-      isFetchingAccessRef.current = true
-      // 1. Fetch My Access & My Requests for ALL classes
-      const myAccessRes = await fetchWithAuth(`/api/albums/${id}/my-access-all`, { credentials: 'include', cache: 'no-store' })
-      const myAccessData = asObject(await myAccessRes.json().catch(() => ({})))
-
-      if (myAccessRes.ok) {
-        setMyAccessByClass((myAccessData.access as Record<string, ClassAccess | null>) || {})
-        setMyRequestByClass((myAccessData.requests as Record<string, ClassRequest | null>) || {})
-      }
-
-      // 2. If Admin, fetch ALL pending requests for approval
-      if (canManageAlbum) {
-        const requestsRes = await fetchWithAuth(`/api/albums/${id}/join-requests?status=pending`, { credentials: 'include', cache: 'no-store' })
-        const requestsData = await requestsRes.json().catch(() => [])
-
-        if (requestsRes.ok && Array.isArray(requestsData)) {
-          const byClass: Record<string, ClassRequest[]> = {}
-          requestsData.forEach((req: any) => {
-            const clsId = req.assigned_class_id
-            if (clsId) {
-              if (!byClass[clsId]) byClass[clsId] = []
-              byClass[clsId].push(req)
-            }
-          })
-          setRequestsByClass(prev => ({ ...prev, ...byClass }))
-        }
-      }
-
-      setAccessDataLoaded(true)
-    } catch (e) {
-      console.error('Error fetching access data:', e)
-    } finally {
-      isFetchingAccessRef.current = false
-    }
-  }, [id])
-
-
-
-
-
 
   // Background: Fetch all access data immediately (now efficient)
   // Background: Fetch all access data immediately (now efficient)
