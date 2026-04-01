@@ -38,7 +38,8 @@ files.get('*', async (c) => {
     headers.set('Content-Type', 'application/octet-stream')
   }
   if (!headers.has('Cache-Control')) {
-    headers.set('Cache-Control', 'public, max-age=3600')
+    // Asset key menggunakan UUID/versioned path, aman cache panjang untuk performa.
+    headers.set('Cache-Control', 'public, max-age=31536000, immutable')
   }
   return new Response(obj.body as unknown as BodyInit, { headers })
 })

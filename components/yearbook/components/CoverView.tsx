@@ -1,6 +1,7 @@
 'use client'
 
 import { BookOpen, ImagePlus, Video, Trash2, Play } from 'lucide-react'
+import FastImage from '@/components/ui/FastImage'
 
 interface CoverViewProps {
   album: any
@@ -36,7 +37,7 @@ export default function CoverView({
       <div className="w-full max-w-xs mx-auto flex flex-col items-center">
         <div className="relative w-full aspect-[3/4] bg-gray-100 dark:bg-slate-800 rounded-xl overflow-hidden shadow-xl border border-gray-200 dark:border-slate-700 group">
           {album?.cover_image_url ? (
-            <img
+            <FastImage
               src={(() => {
                 const u = String(album.cover_image_url || '')
                 // Jika URL tersimpan absolute (origin worker), pakai path saja agar lewat Next rewrites.
@@ -44,6 +45,7 @@ export default function CoverView({
               })()}
               alt={album.name}
               className="w-full h-full object-cover"
+              priority
               style={album.cover_image_position ? { objectPosition: `${album.cover_image_position}` } : undefined}
             />
           ) : (

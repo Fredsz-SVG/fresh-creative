@@ -35,6 +35,8 @@ type ManualFlipbookViewerProps = {
   albumId?: string
   /** true = dipakai di halaman editor user (navbar lebih kecil & jarak longgar agar tidak mepet) */
   isEditorView?: boolean
+  /** true when preview container is currently displayed */
+  isVisible?: boolean
 }
 
 /* Efek tekukan buku (spine): garis vertikal + lekukan 3D di tepi jilid */
@@ -84,9 +86,11 @@ const Page = React.memo(React.forwardRef<HTMLDivElement, {
       <img
         src={props.page.image_url}
         alt={`Page ${props.page.page_number}`}
-        className="w-full h-full object-cover pointer-events-none select-none"
+        className="w-full h-full object-fill pointer-events-none select-none"
         draggable={false}
-        loading="lazy"
+        loading={props.page.page_number <= 6 ? 'eager' : 'lazy'}
+        fetchPriority={props.page.page_number <= 4 ? 'high' : 'auto'}
+        decoding="async"
       />
       {props.page.flipbook_video_hotspots?.map(h => (
         <Hotspot key={h.id} h={h} onPlay={props.onPlay} />
@@ -139,12 +143,10 @@ const BlankPage = React.memo(React.forwardRef<HTMLDivElement>(function BlankPage
 }))
 BlankPage.displayName = 'BlankPage'
 
-// Ukuran "stage" buku (library render di sini, lalu di-scale ke layar)
-const BOOK_STAGE_WIDTH = 1400
-const BOOK_STAGE_HEIGHT = 900
-// Mobile: satu halaman portrait agar usePortrait aktif (blockWidth < pageWidth*2)
-const MOBILE_STAGE_WIDTH = 400
-const MOBILE_STAGE_HEIGHT = 600
+// Base tinggi stage; lebar dihitung adaptif dari rasio halaman agar tidak crop/distort.
+const DESKTOP_STAGE_BASE_HEIGHT = 900
+const MOBILE_STAGE_BASE_HEIGHT = 600
+const FALLBACK_PAGE_ASPECT = 3 / 4
 
 const FlipBookInner = React.memo(({ flipbookKey, pageElements, isMobileScreen, bookRef, onFlip, triggerPrevWithAnimationRef, stageWidth, stageHeight, isCoverOnly, isBackCoverOnly, startPage }: {
   flipbookKey: string
@@ -311,7 +313,7 @@ const FlipBookInner = React.memo(({ flipbookKey, pageElements, isMobileScreen, b
 })
 FlipBookInner.displayName = 'FlipBookInner'
 
-export default function ManualFlipbookViewer({ pages, onPlayVideo, className = '', albumId, isEditorView = false }: ManualFlipbookViewerProps) {
+export default function ManualFlipbookViewer({ pages, onPlayVideo, className = '', albumId, isEditorView = false, isVisible = true }: ManualFlipbookViewerProps) {
   const book = useRef<any>(null)
   const stageContainerRef = useRef<HTMLDivElement>(null)
   const wrapperRef = useRef<HTMLDivElement>(null)
@@ -332,11 +334,20 @@ export default function ManualFlipbookViewer({ pages, onPlayVideo, className = '
   const [pageInputValue, setPageInputValue] = useState('')
   const [sectionFlipDir, setSectionFlipDir] = useState<'next' | 'prev' | null>(null)
   const [showSharePopup, setShowSharePopup] = useState(false)
+  const preloadedImageUrlsRef = useRef<Set<string>>(new Set())
 
   const isMobileScreenRef = useRef(isMobileScreen)
   isMobileScreenRef.current = isMobileScreen
-  const stageWidth = isMobileScreen ? MOBILE_STAGE_WIDTH : BOOK_STAGE_WIDTH
-  const stageHeight = isMobileScreen ? MOBILE_STAGE_HEIGHT : BOOK_STAGE_HEIGHT
+  const pageAspectRatio = useMemo(() => {
+    const sample = pages.find((p) => (p.width ?? 0) > 0 && (p.height ?? 0) > 0)
+    if (!sample || !sample.width || !sample.height) return FALLBACK_PAGE_ASPECT
+    const ratio = sample.width / sample.height
+    return Number.isFinite(ratio) && ratio > 0 ? ratio : FALLBACK_PAGE_ASPECT
+  }, [pages])
+
+  const stageHeight = isMobileScreen ? MOBILE_STAGE_BASE_HEIGHT : DESKTOP_STAGE_BASE_HEIGHT
+  // Desktop render spread 2 halaman; mobile 1 halaman.
+  const stageWidth = (isMobileScreen ? 1 : 2) * pageAspectRatio * stageHeight
 
   const flipbookKey = useMemo(() => pages.map(p => p.id).join('-'), [pages])
 
@@ -429,6 +440,42 @@ export default function ManualFlipbookViewer({ pages, onPlayVideo, className = '
     }
   }, [pages, checkMobile])
 
+  // Warm browser cache for page images so flip preview doesn't show white placeholders.
+  useEffect(() => {
+    if (!pages?.length) return
+    const urls = pages
+      .map((p) => p.image_url)
+      .filter((u): u is string => typeof u === 'string' && u.length > 0)
+      .filter((u) => !preloadedImageUrlsRef.current.has(u))
+    if (!urls.length) return
+
+    let cancelled = false
+    const MAX_CONCURRENCY = 4
+
+    const loadOne = (url: string) =>
+      new Promise<void>((resolve) => {
+        const img = new Image()
+        img.decoding = 'async'
+        img.onload = () => resolve()
+        img.onerror = () => resolve()
+        img.src = url
+      })
+
+    const run = async () => {
+      for (let i = 0; i < urls.length; i += MAX_CONCURRENCY) {
+        if (cancelled) return
+        const batch = urls.slice(i, i + MAX_CONCURRENCY)
+        await Promise.all(batch.map(async (url) => {
+          await loadOne(url)
+          preloadedImageUrlsRef.current.add(url)
+        }))
+      }
+    }
+
+    void run()
+    return () => { cancelled = true }
+  }, [pages])
+
   // Saat Inspect → toggle device: matchMedia, visualViewport, ResizeObserver, + poll fallback
   useEffect(() => {
     const mq = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`)
@@ -498,13 +545,13 @@ export default function ManualFlipbookViewer({ pages, onPlayVideo, className = '
     if (w <= 0 || h <= 0) return
 
     const mobile = isMobileScreenRef.current
-    const stageW = mobile ? MOBILE_STAGE_WIDTH : BOOK_STAGE_WIDTH
-    const stageH = mobile ? MOBILE_STAGE_HEIGHT : BOOK_STAGE_HEIGHT
+    const stageH = mobile ? MOBILE_STAGE_BASE_HEIGHT : DESKTOP_STAGE_BASE_HEIGHT
+    const stageW = (mobile ? 1 : 2) * pageAspectRatio * stageH
     const paddingX = mobile ? 16 : 32
     const paddingY = mobile ? 24 : 48
 
     setScale(Math.min(Math.max((w - paddingX) / stageW, 0), Math.max((h - paddingY) / stageH, 0)))
-  }, [])
+  }, [pageAspectRatio])
 
   useEffect(() => {
     if (!isReady || !pages?.length) return
@@ -523,6 +570,26 @@ export default function ManualFlipbookViewer({ pages, onPlayVideo, className = '
       window.removeEventListener('resize', throttledUpdate)
     }
   }, [isReady, pages?.length, updateScale, isMobileScreen])
+
+  // When preview panel is toggled from hidden -> visible, force recalc layout
+  // so first render doesn't use stale size from hidden container.
+  useEffect(() => {
+    if (!isVisible || !isReady || !pages?.length) return
+    const raf1 = requestAnimationFrame(() => {
+      updateScale()
+      requestAnimationFrame(() => {
+        book.current?.pageFlip()?.update()
+      })
+    })
+    const t = setTimeout(() => {
+      updateScale()
+      book.current?.pageFlip()?.update()
+    }, RESIZE_THROTTLE_MS + 120)
+    return () => {
+      cancelAnimationFrame(raf1)
+      clearTimeout(t)
+    }
+  }, [isVisible, isReady, pages?.length, updateScale])
 
   // Refined Logic: isCoverOnly and isBackCoverOnly for Layout Centering
   const isCoverOnly = (currentPage === 0 && !coverFlipStarted) || (currentPage === 1 && coverCloseStarted) || coverJustClosed
@@ -670,11 +737,11 @@ export default function ManualFlipbookViewer({ pages, onPlayVideo, className = '
   return (
     <div
       ref={wrapperRef}
-      className={`flip-book-wrapper flex flex-col w-full h-full bg-white dark:bg-slate-950 ${className} transition-opacity duration-700 ${isReady ? 'opacity-100' : 'opacity-0'} ${isCoverOnly ? 'flip-book-wrapper--cover-only' : ''} ${isBackCoverOnly ? 'flip-book-wrapper--back-cover-only' : ''} ${isFullscreen ? 'flip-book-wrapper--fullscreen' : ''} ${sectionFlipDir ? `is-flipping-${sectionFlipDir}` : ''}`}
+      className={`flip-book-wrapper flex flex-col w-full h-full min-h-0 bg-white dark:bg-slate-950 ${className} transition-opacity duration-700 ${isReady ? 'opacity-100' : 'opacity-0'} ${isCoverOnly ? 'flip-book-wrapper--cover-only' : ''} ${isBackCoverOnly ? 'flip-book-wrapper--back-cover-only' : ''} ${isFullscreen ? 'flip-book-wrapper--fullscreen' : ''} ${sectionFlipDir ? `is-flipping-${sectionFlipDir}` : ''}`}
     >
       <div
         ref={stageContainerRef}
-        className={`relative flex-1 min-h-0 w-full flex items-center justify-center overflow-visible ${isMobileScreen ? 'p-2' : 'p-4'}`}
+        className={`relative flex-1 min-h-0 w-full flex items-center justify-center overflow-hidden ${isMobileScreen ? 'p-2' : 'p-4'}`}
         onPointerDown={handleStagePointerDown}
       >
         <div
@@ -746,7 +813,7 @@ export default function ManualFlipbookViewer({ pages, onPlayVideo, className = '
       </div>
 
       {/* Bottom Navigation Bar — editor: tombol lebih kecil + jarak longgar; public: tetap */}
-      <div className={`shrink-0 w-full flex items-center bg-white dark:bg-slate-900 border-t border-slate-900 dark:border-slate-700 shadow-[0_-1px_0_0_rgba(15,23,42,0.06)] dark:shadow-[0_-1px_0_0_rgba(51,65,85,0.4)] z-50 ${isEditorView ? 'px-2 py-1' : 'px-1.5 py-0.5'}`}>
+      <div className={`mt-auto shrink-0 w-full flex items-center bg-white dark:bg-slate-900 border-t border-slate-900 dark:border-slate-700 shadow-[0_-1px_0_0_rgba(15,23,42,0.06)] dark:shadow-[0_-1px_0_0_rgba(51,65,85,0.4)] z-50 sticky bottom-0 ${isEditorView ? 'px-2 py-1' : 'px-1.5 py-0.5'}`}>
         {/* Kiri: sound + flip */}
         <div className={`flex-1 flex items-center justify-start ${isEditorView ? 'gap-1.5' : 'gap-0.5'}`}>
           <button
@@ -922,14 +989,11 @@ const Hotspot = React.memo(function Hotspot({ h, onPlay }: { h: VideoHotspot; on
       onMouseUp={(e) => e.stopPropagation()}
       onTouchStart={(e) => e.stopPropagation()}
       onTouchEnd={(e) => e.stopPropagation()}
-      className="absolute cursor-pointer z-[100] group/hotspot transition-all"
+      className="absolute cursor-pointer z-[100]"
       style={{ left: `${h.x}%`, top: `${h.y}%`, width: `${h.width}%`, height: `${h.height}%` }}
+      aria-label="Video hotspot"
     >
-      <div className="absolute inset-0 border-4 border-transparent group-hover/hotspot:border-amber-400 group-hover/hotspot:bg-amber-400/10 transition-all rounded-sm">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 p-2 bg-indigo-400 border-2 border-slate-900 rounded-xl text-white opacity-0 group-hover/hotspot:opacity-100 shadow-[2px_2px_0_0_#0f172a] transition-all">
-          <Play className="w-4 h-4 fill-current" />
-        </div>
-      </div>
+      <div className="absolute inset-0" />
     </div>
   )
 })

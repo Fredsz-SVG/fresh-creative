@@ -87,7 +87,7 @@ export function Hero() {
     <section id="hero" className="relative h-dvh w-full overflow-x-hidden bg-slate-100 dark:bg-slate-950 transition-colors duration-500">
       {isLoading && (
         <div className="flex-center absolute z-[100] h-dvh w-full overflow-hidden bg-white dark:bg-slate-950 transition-colors duration-500">
-          <img src="/img/logo.png" alt="Loading..." className="w-24 sm:w-32 animate-logo-pulse !opacity-100" />
+          <img src="/img/logo.png" alt="Loading..." className="w-24 sm:w-32 animate-logo-pulse !opacity-100" loading="eager" fetchPriority="high" decoding="async" />
         </div>
       )}
 
@@ -98,6 +98,7 @@ export function Hero() {
         <div className="relative size-full">
           <video
             src={VIDEO_LINKS.hero1}
+            preload="auto"
             autoPlay
             loop
             muted
@@ -111,6 +112,7 @@ export function Hero() {
           />
           <video
             src={VIDEO_LINKS.hero2}
+            preload="auto"
             autoPlay
             loop
             muted

@@ -25,6 +25,7 @@ function BentoCard({ media, src, title, description }: BentoCardProps) {
       {media === "video" ? (
         <video
           src={src}
+          preload="metadata"
           loop
           muted
           autoPlay
@@ -37,6 +38,8 @@ function BentoCard({ media, src, title, description }: BentoCardProps) {
             src={src}
             alt=""
             className="size-full object-cover object-center transition-transform duration-700 group-hover:scale-105"
+            loading="lazy"
+            decoding="async"
             onError={(e) => {
               e.currentTarget.style.display = "none";
               const next = e.currentTarget.nextElementSibling as HTMLElement;

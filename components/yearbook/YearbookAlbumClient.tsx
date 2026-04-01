@@ -25,6 +25,7 @@ import { useCurrentUserId } from './hooks/useCurrentUserId'
 import { useYearbookSearchState } from './hooks/useYearbookSearchState'
 import { useYearbookSyncLifecycle } from './hooks/useYearbookSyncLifecycle'
 import { useYearbookTeamCounts } from './hooks/useYearbookTeamCounts'
+import FastImage from '@/components/ui/FastImage'
 
 export type YearbookAlbumClientProps = {
   backHref?: string
@@ -252,13 +253,9 @@ export default function YearbookAlbumClient({
   const originalBackHref = useAdminBack ? '/admin/albums' : backHref
   const originalBackLabel = useAdminBack ? 'Ke Manajemen Album' : backLabel
 
-  const effectiveBackHref = (sectionMode === 'preview' && lastEditorSection && id)
-    ? getYearbookSectionQueryUrl(id, lastEditorSection as any, pathname)
-    : originalBackHref
-
-  const effectiveBackLabel = (sectionMode === 'preview' && lastEditorSection)
-    ? 'Kembali ke Editor'
-    : originalBackLabel
+  // Force back destination to albums management/list for instant predictable exit flow.
+  const effectiveBackHref = originalBackHref
+  const effectiveBackLabel = originalBackLabel
 
   // Optimized: Fetch ALL class members in one request
   const fetchAllClassMembers = useCallback(async () => {
@@ -331,6 +328,11 @@ export default function YearbookAlbumClient({
     fetchAllAccess,
     fetchAllClassMembers,
   })
+
+  useEffect(() => {
+    if (!id) return
+    void fetchFeatureUnlocks()
+  }, [id, fetchFeatureUnlocks])
 
   // (Realtime removed)
 
@@ -1353,7 +1355,8 @@ export default function YearbookAlbumClient({
     )
   }
 
-  if (loading) {
+  // If cached album already exists, keep UI visible and refresh silently in background.
+  if (loading && !album) {
     const sectionParam = searchParams.get('section')
     const skeletonSection = isValidYearbookSection(sectionParam)
       ? sectionParam
@@ -1733,6 +1736,7 @@ export default function YearbookAlbumClient({
                 <video
                   src={apiUrl(`/api/albums/${id}/video-play?url=${encodeURIComponent(videoPopupUrl)}`)}
                   autoPlay
+                  preload="metadata"
                   playsInline
                   className="w-full h-full object-contain"
                   onError={() => setVideoPopupError('Video tidak dapat dimuat')}
@@ -1894,7 +1898,7 @@ export default function YearbookAlbumClient({
               >
                 <ChevronLeft className="w-8 h-8" />
               </button>
-              <img src={currentPhoto?.file_url} alt="" className="max-w-full max-h-full object-contain" />
+              <FastImage src={currentPhoto?.file_url} alt="" className="max-w-full max-h-full object-contain" priority />
               <button
                 type="button"
                 onClick={() => setPhotoIndex((i) => Math.min(photos.length - 1, i + 1))}

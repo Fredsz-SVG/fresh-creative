@@ -40,6 +40,7 @@ interface ApprovalViewProps {
   classes: AlbumClass[]
   inviteToken: string | null
   inviteExpiresAt: string | null
+  inviteTokenLoaded?: boolean
   generatingInvite: boolean
   onGenerateInvite: () => Promise<void>
   savingLimit: boolean
@@ -65,6 +66,7 @@ export default function ApprovalView({
   classes,
   inviteToken,
   inviteExpiresAt,
+  inviteTokenLoaded = true,
   generatingInvite,
   onGenerateInvite,
   savingLimit,
@@ -106,6 +108,7 @@ export default function ApprovalView({
     memberName: string
   } | null>(null)
   const [removeConfirm, setRemoveConfirm] = useState<{ userId: string; memberName: string } | null>(null)
+  const statsLoading = !joinStats
 
   // Fetch pricing packages when editing limit
   useEffect(() => {
@@ -347,14 +350,19 @@ export default function ApprovalView({
       )}
 
       <div className="mb-3 sm:mb-5">
-        {joinStats && (
-          <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 sm:gap-4 mb-4 sm:mb-8 p-3 sm:p-6 bg-white dark:bg-slate-900 border-2 sm:border-4 border-slate-900 dark:border-slate-700 rounded-2xl sm:rounded-[32px] shadow-[6px_6px_0_0_#0f172a] dark:shadow-[10px_10px_0_0_#334155]">
+        <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 sm:gap-4 mb-4 sm:mb-8 p-3 sm:p-6 bg-white dark:bg-slate-900 border-2 sm:border-4 border-slate-900 dark:border-slate-700 rounded-2xl sm:rounded-[32px] shadow-[6px_6px_0_0_#0f172a] dark:shadow-[10px_10px_0_0_#334155]">
             <div className="flex flex-col items-center px-2 sm:px-4 border-r-2 border-slate-100 dark:border-slate-700">
               <span className="text-[9px] sm:text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-0.5">Terisi</span>
               <div className="flex items-center gap-1.5">
-                <span className="text-lg sm:text-2xl font-black text-slate-900 dark:text-white">{joinStats.approved_count}</span>
-                <span className="text-slate-400 dark:text-slate-500 font-bold text-xs sm:text-sm">/ {joinStats.limit_count || '∞'}</span>
-                {canManage && !editingLimit && (
+                {statsLoading ? (
+                  <span className="inline-block h-7 sm:h-8 w-20 rounded-md bg-slate-200 dark:bg-slate-700 animate-pulse" />
+                ) : (
+                  <>
+                    <span className="text-lg sm:text-2xl font-black text-slate-900 dark:text-white">{joinStats.approved_count}</span>
+                    <span className="text-slate-400 dark:text-slate-500 font-bold text-xs sm:text-sm">/ {joinStats.limit_count || '∞'}</span>
+                  </>
+                )}
+                {canManage && !editingLimit && !statsLoading && (
                   <button
                     type="button"
                     onClick={() => {
@@ -373,17 +381,24 @@ export default function ApprovalView({
 
             <div className="flex flex-col items-center px-2 sm:px-4 border-r-2 border-slate-100 dark:border-slate-700">
               <span className="text-[9px] sm:text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-0.5">Menunggu</span>
-              <span className="text-lg sm:text-2xl font-black text-amber-500 dark:text-amber-400">{joinStats.pending_count}</span>
+              {statsLoading ? (
+                <span className="inline-block h-7 sm:h-8 w-12 rounded-md bg-slate-200 dark:bg-slate-700 animate-pulse" />
+              ) : (
+                <span className="text-lg sm:text-2xl font-black text-amber-500 dark:text-amber-400">{joinStats.pending_count}</span>
+              )}
             </div>
 
-            {joinStats.available_slots !== 999999 && (
-              <div className="flex flex-col items-center px-2 sm:px-4">
-                <span className="text-[9px] sm:text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-0.5">Sisa Slot</span>
-                <span className="text-lg sm:text-2xl font-black text-indigo-500 dark:text-indigo-400">{joinStats.available_slots}</span>
-              </div>
-            )}
+            <div className="flex flex-col items-center px-2 sm:px-4">
+              <span className="text-[9px] sm:text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-0.5">Sisa Slot</span>
+              {statsLoading ? (
+                <span className="inline-block h-7 sm:h-8 w-12 rounded-md bg-slate-200 dark:bg-slate-700 animate-pulse" />
+              ) : (
+                <span className="text-lg sm:text-2xl font-black text-indigo-500 dark:text-indigo-400">
+                  {joinStats.available_slots === 999999 ? '∞' : joinStats.available_slots}
+                </span>
+              )}
+            </div>
           </div>
-        )}
 
         {editingLimit && (
           <div className="mt-3 sm:mt-4 p-4 sm:p-6 rounded-2xl sm:rounded-[24px] bg-white dark:bg-slate-900 border-2 sm:border-4 border-slate-900 dark:border-slate-700 shadow-[6px_6px_0_0_#0f172a] dark:shadow-[6px_6px_0_0_#334155] animate-in zoom-in-95 duration-200">
@@ -526,7 +541,12 @@ export default function ApprovalView({
           <div className="flex flex-wrap items-center gap-2 mb-3 sm:mb-4">
             <LinkIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-900 dark:text-white" strokeWidth={3} />
             <span className="text-[10px] sm:text-xs font-black text-slate-900 dark:text-white uppercase tracking-widest">Akses Registrasi Siswa</span>
-            {inviteToken && inviteExpiresAt && (
+            {!inviteTokenLoaded ? (
+              <div className="ml-auto flex flex-col items-end gap-1">
+                <span className="inline-block h-3 w-12 rounded bg-slate-200 dark:bg-slate-700 animate-pulse" />
+                <span className="inline-block h-3 w-28 rounded bg-slate-200 dark:bg-slate-700 animate-pulse" />
+              </div>
+            ) : inviteToken && inviteExpiresAt ? (
               <div className="ml-auto flex flex-col items-end">
                 {new Date(inviteExpiresAt) > new Date() ? (
                   <span className="text-[10px] font-black uppercase tracking-widest text-emerald-500">Active</span>
@@ -537,9 +557,17 @@ export default function ApprovalView({
                   Berakhir: {new Date(inviteExpiresAt).toLocaleString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}
                 </span>
               </div>
-            )}
+            ) : null}
           </div>
-          {inviteToken ? (
+          {!inviteTokenLoaded ? (
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="flex-1 min-w-0 h-11 sm:h-14 rounded-lg sm:rounded-xl bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 animate-pulse" />
+                <div className="shrink-0 h-11 sm:h-14 w-20 sm:w-24 rounded-lg sm:rounded-xl bg-slate-300 dark:bg-slate-700 border-2 border-slate-900 dark:border-slate-600 animate-pulse" />
+              </div>
+              <div className="w-full h-9 rounded-lg bg-slate-200 dark:bg-slate-700 animate-pulse" />
+            </div>
+          ) : inviteToken ? (
               <div className="flex flex-col gap-4">
               <div className="flex items-center gap-2 sm:gap-3">
                 <div className="flex-1 min-w-0 font-mono font-black text-slate-900 dark:text-white text-xs sm:text-lg px-3 py-2 sm:px-4 sm:py-3 rounded-lg sm:rounded-xl bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 truncate sm:truncate-none">
@@ -590,8 +618,12 @@ export default function ApprovalView({
         >
           <Clock className="w-3 h-3 sm:w-5 sm:h-5 shrink-0" strokeWidth={3} />
           <span className="truncate w-full text-center sm:truncate-none">Menunggu</span>
-          <span className={`px-1 py-0.5 rounded text-[8px] sm:text-[10px] shrink-0 ${approvalTab === 'pending' ? 'bg-slate-900 dark:bg-slate-700 text-amber-400' : 'bg-slate-200 dark:bg-slate-700 text-slate-400 dark:text-slate-500'}`}>
-            {joinStats?.pending_count || 0}
+          <span className={`inline-flex items-center justify-center min-w-7 px-1 py-0.5 rounded text-[8px] sm:text-[10px] shrink-0 ${approvalTab === 'pending' ? 'bg-slate-900 dark:bg-slate-700 text-amber-400' : 'bg-slate-200 dark:bg-slate-700 text-slate-400 dark:text-slate-500'}`}>
+            {statsLoading ? (
+              <span className="inline-block h-2 w-4 rounded bg-slate-500/40 animate-pulse" />
+            ) : (
+              joinStats?.pending_count || 0
+            )}
           </span>
         </button>
         <button
@@ -604,8 +636,12 @@ export default function ApprovalView({
         >
           <Check className="w-3 h-3 sm:w-5 sm:h-5 shrink-0" strokeWidth={3} />
           <span className="truncate w-full text-center sm:truncate-none">Disetujui</span>
-          <span className={`px-1 py-0.5 rounded text-[8px] sm:text-[10px] shrink-0 ${approvalTab === 'approved' ? 'bg-white dark:bg-slate-800 text-indigo-500 dark:text-indigo-400' : 'bg-slate-200 dark:bg-slate-700 text-slate-400 dark:text-slate-500'}`}>
-            {joinStats?.approved_count || 0}
+          <span className={`inline-flex items-center justify-center min-w-7 px-1 py-0.5 rounded text-[8px] sm:text-[10px] shrink-0 ${approvalTab === 'approved' ? 'bg-white dark:bg-slate-800 text-indigo-500 dark:text-indigo-400' : 'bg-slate-200 dark:bg-slate-700 text-slate-400 dark:text-slate-500'}`}>
+            {statsLoading ? (
+              <span className="inline-block h-2 w-4 rounded bg-slate-500/40 animate-pulse" />
+            ) : (
+              joinStats?.approved_count || 0
+            )}
           </span>
         </button>
       </div>

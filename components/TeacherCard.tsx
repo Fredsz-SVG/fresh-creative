@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { Edit3, Trash2, ImagePlus, Video, Play, Briefcase, MessageSquare, X, ChevronLeft, ChevronRight, Quote } from 'lucide-react'
+import FastImage from '@/components/ui/FastImage'
 
 /** Strip surrounding quote characters (straight & curly) so the UI can add its own consistently */
 function stripQuotes(s: string): string {
@@ -223,14 +224,14 @@ export default function TeacherCard({
             </div>
 
             <div className="w-full flex items-center justify-center mb-4 bg-gray-50 dark:bg-slate-800 rounded-xl overflow-hidden border border-gray-100 dark:border-slate-700" style={{ minHeight: '300px' }}>
-              <img src={(allDisplayPhotos[viewerIndex] && allDisplayPhotos[viewerIndex].file_url) || teacher.photo_url || ''} alt={`${teacher.name} ${viewerIndex + 1}`} className="max-h-[60vh] object-contain w-full" />
+              <FastImage src={(allDisplayPhotos[viewerIndex] && allDisplayPhotos[viewerIndex].file_url) || teacher.photo_url || ''} alt={`${teacher.name} ${viewerIndex + 1}`} className="max-h-[60vh] object-contain w-full" priority />
             </div>
 
             {allDisplayPhotos.length > 1 && (
               <div className="flex gap-2 mx-auto justify-center overflow-x-auto p-1">
                 {allDisplayPhotos.map((p, i) => (
                   <button key={p.id} onClick={() => setViewerIndex(i)} className={`w-14 h-14 rounded-xl overflow-hidden border-2 transition-all ${i === viewerIndex ? 'border-violet-500 shadow-[1px_1px_0_0_rgba(124,58,237,0.22)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.32)] scale-105' : 'border-transparent hover:border-violet-200 opacity-70 hover:opacity-100'}`}>
-                    <img src={p.file_url} alt={`thumb-${i}`} className="w-full h-full object-cover" />
+                    <FastImage src={p.file_url} alt={`thumb-${i}`} className="w-full h-full object-cover" />
                   </button>
                 ))}
               </div>
@@ -258,10 +259,11 @@ export default function TeacherCard({
             {/* Photo section */}
             <div className="relative aspect-[4/5] overflow-hidden bg-slate-50 dark:bg-slate-800 flex-shrink-0 border-b-4 border-slate-900 dark:border-slate-700">
               {(teacher.photos && teacher.photos.length > 0 || teacher.photo_url) ? (
-                <img
+                <FastImage
                   src={teacher.photos && teacher.photos.length > 0 ? teacher.photos[0].file_url : teacher.photo_url}
                   alt={teacher.name}
                   className="w-full h-full object-cover cursor-pointer transition-transform duration-700"
+                  priority
                   onClick={() => {
                     if (teacher.photos && teacher.photos.length > 0) {
                       setViewerIndex(0)
@@ -405,7 +407,7 @@ export default function TeacherCard({
                         {photo.isPending && (
                           <div className="absolute -top-2 -left-2 bg-emerald-400 text-slate-900 text-[8px] font-black px-1.5 py-0.5 rounded-lg border-2 border-slate-900 z-10 shadow-[1px_1px_0_0_rgba(15,23,42,0.14)] uppercase">BARU</div>
                         )}
-                        <img
+                        <FastImage
                           src={photo.file_url}
                           alt={`${teacher.name} ${idx + 1}`}
                           className="w-full h-full object-cover rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
@@ -447,7 +449,7 @@ export default function TeacherCard({
                 )}
                 {pendingVideo && (
                   <div className="mb-3 rounded-xl overflow-hidden border-2 border-slate-900 dark:border-slate-600 bg-black shadow-[1px_1px_0_0_rgba(15,23,42,0.13)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.36)]">
-                    <video src={pendingVideo.previewUrl} controls className="w-full max-h-40 object-contain bg-black" playsInline />
+                    <video src={pendingVideo.previewUrl} controls preload="metadata" className="w-full max-h-40 object-contain bg-black" playsInline />
                   </div>
                 )}
 

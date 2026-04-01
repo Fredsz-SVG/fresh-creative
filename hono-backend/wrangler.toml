@@ -23,11 +23,13 @@ binding = "DB"
 database_name = "fresh-creative"
 database_id = "5113454c-f2cb-4010-9fdc-73235535ee98"
 migrations_dir = "d1/migrations"
+remote = true
 
 # R2 — binding "ASSETS" (bucket sudah dibuat: fresh-creative-assets)
 [[r2_buckets]]
 binding = "ASSETS"
 bucket_name = "fresh-creative-assets"
+remote = true
 
 [[durable_objects.bindings]]
 name = "REALTIME_HUB"

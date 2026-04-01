@@ -34,6 +34,10 @@ type VideoHotspot = {
     height: number
 }
 
+const TEMP_HOTSPOT_ID_PREFIX = 'temp-hotspot-'
+const PDF_RENDER_SCALE = 1.2
+const PDF_UPLOAD_CONCURRENCY = 3
+
 export default function FlipbookLayoutEditor({ album, onPlayVideo, onUpdateAlbum, canManage = false }: FlipbookViewProps) {
     // Manual Mode is now the only mode
     const isManualMode = true
@@ -58,20 +62,12 @@ export default function FlipbookLayoutEditor({ album, onPlayVideo, onUpdateAlbum
 
     useEffect(() => { manualPagesRef.current = manualPages }, [manualPages])
 
-    // Sync state to prevent 1-frame flash when switching pages
-    if (selectedManualPageId !== lastSelectedId) {
-        setIsPageReady(false)
-        setLastSelectedId(selectedManualPageId)
-    }
-
     useEffect(() => {
-        if (!selectedManualPageId) return
-
-        setIsPageReady(false)
-        const timer = setTimeout(() => {
+        if (selectedManualPageId !== lastSelectedId) {
+            // Remove forced 300ms delay; show selected page immediately.
             setIsPageReady(true)
-        }, 300)
-        return () => clearTimeout(timer)
+            setLastSelectedId(selectedManualPageId)
+        }
     }, [selectedManualPageId])
 
     const fetchManualPages = async () => {
@@ -151,6 +147,14 @@ export default function FlipbookLayoutEditor({ album, onPlayVideo, onUpdateAlbum
     }
 
     const handleSaveHotspot = async (hotspotId: string, updates: Partial<VideoHotspot>) => {
+        if (hotspotId.startsWith(TEMP_HOTSPOT_ID_PREFIX)) {
+            setManualPages(prev => prev.map(p => ({
+                ...p,
+                flipbook_video_hotspots: p.flipbook_video_hotspots?.map(h => h.id === hotspotId ? { ...h, ...updates } : h)
+            })))
+            return
+        }
+
         const res = await fetchWithAuth(`/api/albums/${album.id}/flipbook/hotspots/${hotspotId}`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
@@ -168,15 +172,56 @@ export default function FlipbookLayoutEditor({ album, onPlayVideo, onUpdateAlbum
     }
 
     const handleDeleteHotspot = async (hotspotId: string) => {
-        const res = await fetchWithAuth(`/api/albums/${album.id}/flipbook/hotspots/${hotspotId}`, {
-            method: 'DELETE',
-        })
-        if (res.ok) {
-            setManualPages(prev => prev.map(p => ({
+        let deletedHotspot: VideoHotspot | null = null
+        let deletedFromPageId: string | null = null
+
+        setManualPages(prev => prev.map(p => {
+            const hotspots = p.flipbook_video_hotspots || []
+            const found = hotspots.find(h => h.id === hotspotId)
+            if (found) {
+                deletedHotspot = found
+                deletedFromPageId = p.id
+            }
+            return {
                 ...p,
-                flipbook_video_hotspots: p.flipbook_video_hotspots?.filter(h => h.id !== hotspotId)
-            })))
+                flipbook_video_hotspots: hotspots.filter(h => h.id !== hotspotId)
+            }
+        }))
+
+        if (!deletedHotspot || !deletedFromPageId) return
+
+        if (hotspotId.startsWith(TEMP_HOTSPOT_ID_PREFIX)) {
             toast.success('Hotspot dihapus')
+            return
+        }
+        try {
+            const res = await fetchWithAuth(`/api/albums/${album.id}/flipbook/hotspots/${hotspotId}`, {
+                method: 'DELETE',
+            })
+            if (res.ok) {
+                toast.success('Hotspot dihapus')
+                return
+            }
+
+            // Rollback if delete failed.
+            setManualPages(prev => prev.map(p => {
+                if (p.id !== deletedFromPageId) return p
+                return {
+                    ...p,
+                    flipbook_video_hotspots: [...(p.flipbook_video_hotspots || []), deletedHotspot as VideoHotspot]
+                }
+            }))
+            toast.error('Gagal menghapus hotspot')
+        } catch (error) {
+            // Rollback when request throws (network/auth), so UI doesn't lie.
+            setManualPages(prev => prev.map(p => {
+                if (p.id !== deletedFromPageId) return p
+                return {
+                    ...p,
+                    flipbook_video_hotspots: [...(p.flipbook_video_hotspots || []), deletedHotspot as VideoHotspot]
+                }
+            }))
+            toast.error('Gagal menghapus hotspot (koneksi/server)')
         }
     }
 
@@ -222,30 +267,97 @@ export default function FlipbookLayoutEditor({ album, onPlayVideo, onUpdateAlbum
 
         if (width < 1 || height < 1) return
 
+        const currentHotspotCount = manualPages.find(p => p.id === selectedManualPageId)?.flipbook_video_hotspots?.length || 0
+        const optimisticHotspotId = `${TEMP_HOTSPOT_ID_PREFIX}${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+        const optimisticHotspot: VideoHotspot = {
+            id: optimisticHotspotId,
+            page_id: selectedManualPageId,
+            video_url: '',
+            label: `Hotspot #${currentHotspotCount + 1}`,
+            x,
+            y,
+            width,
+            height,
+        }
+
+        // Optimistic insert so form appears instantly after releasing hold.
+        setManualPages(prev => prev.map(p =>
+            p.id === selectedManualPageId
+                ? { ...p, flipbook_video_hotspots: [...(p.flipbook_video_hotspots || []), optimisticHotspot] }
+                : p
+        ))
+
         const res = await fetchWithAuth(`/api/albums/${album.id}/flipbook/hotspots`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 page_id: selectedManualPageId,
                 video_url: '',
-                label: `Hotspot #${(manualPages.find(p => p.id === selectedManualPageId)?.flipbook_video_hotspots?.length || 0) + 1}`,
-                x: x,
-                y: y,
-                width: width,
-                height: height
+                label: optimisticHotspot.label,
+                x,
+                y,
+                width,
+                height,
             }),
         })
         const data = asObject(await res.json().catch(() => ({})))
         if (res.ok && asString(data.id)) {
+            const serverId = asString(data.id) as string
+            let localHotspotSnapshot: VideoHotspot | null = null
             setManualPages(prev => prev.map(p =>
                 p.id === selectedManualPageId
-                    ? { ...p, flipbook_video_hotspots: [...(p.flipbook_video_hotspots || []), data as VideoHotspot] }
+                    ? {
+                        ...p,
+                        flipbook_video_hotspots: (p.flipbook_video_hotspots || []).map(h =>
+                            h.id === optimisticHotspotId
+                                ? (() => {
+                                    localHotspotSnapshot = h
+                                    return {
+                                        ...(data as VideoHotspot),
+                                        ...h,
+                                        id: serverId,
+                                        page_id: selectedManualPageId,
+                                    }
+                                })()
+                                : h
+                        )
+                    }
                     : p
             ))
+
+            if (localHotspotSnapshot && (
+                localHotspotSnapshot.label !== asString(data.label) ||
+                localHotspotSnapshot.video_url !== asString(data.video_url)
+            )) {
+                fetchWithAuth(`/api/albums/${album.id}/flipbook/hotspots/${serverId}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        label: localHotspotSnapshot.label,
+                        video_url: localHotspotSnapshot.video_url,
+                    }),
+                }).catch(() => {
+                    // Keep UI responsive; user can re-save manually if needed.
+                })
+            }
+            return
         }
+
+        // Rollback optimistic hotspot if server create failed.
+        setManualPages(prev => prev.map(p => ({
+            ...p,
+            flipbook_video_hotspots: (p.flipbook_video_hotspots || []).filter(h => h.id !== optimisticHotspotId)
+        })))
+        toast.error(getErrorMessage(data, 'Gagal menambah hotspot'))
     }
 
     const handleHotspotVideoUpload = async (hotspotId: string, e: React.ChangeEvent<HTMLInputElement>) => {
+        if (hotspotId.startsWith(TEMP_HOTSPOT_ID_PREFIX)) {
+            toast.info('Tunggu sebentar, hotspot masih disimpan...')
+            if (e.target) e.target.value = ''
+            return
+        }
+
         const file = e.target.files?.[0]
         if (!file || !album?.id) return
 
@@ -309,52 +421,61 @@ export default function FlipbookLayoutEditor({ album, onPlayVideo, onUpdateAlbum
             const arrayBuffer = await file.arrayBuffer()
             const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise
             const numPages = pdf.numPages
-            const newPages = []
+            const newPages: ManualFlipbookPage[] = []
             // Nomor halaman PDF dimulai setelah halaman yang sudah ada (supaya tidak bentrok dengan cover = 1)
             const startPageNumber = manualPages.length > 0
                 ? Math.max(...manualPages.map(p => p.page_number)) + 1
                 : 1
 
-            for (let i = 1; i <= numPages; i++) {
-                toast.loading(`Memproses halaman ${i} dari ${numPages}...`, { id: toastId })
+            let progress = 0
+            const pageNumbers = Array.from({ length: numPages }, (_, idx) => idx + 1)
+            const uploadPage = async (i: number) => {
                 const page = await pdf.getPage(i)
-                const viewport = page.getViewport({ scale: 1.5 })
+                const viewport = page.getViewport({ scale: PDF_RENDER_SCALE })
                 const canvas = document.createElement('canvas')
                 const context = canvas.getContext('2d')
+                if (!context) throw new Error(`Canvas context tidak tersedia (halaman ${i})`)
+
                 canvas.height = viewport.height
                 canvas.width = viewport.width
 
-                if (context) {
-                    await page.render({ canvasContext: context, viewport }).promise
-                    const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.8))
+                await page.render({ canvasContext: context, viewport }).promise
+                const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/webp', 0.76))
+                if (!blob) throw new Error(`Gagal encode halaman ${i}`)
 
-                    if (blob) {
-                        const publicUrl = await uploadFlipbookAsset(blob, 'pages')
-                        const pageNumber = startPageNumber + (i - 1)
+                const publicUrl = await uploadFlipbookAsset(blob, 'pages')
+                const pageNumber = startPageNumber + (i - 1)
+                const pageRes = await fetchWithAuth(`/api/albums/${album.id}/flipbook/pages`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        album_id: album.id,
+                        page_number: pageNumber,
+                        image_url: publicUrl,
+                        width: Math.round(viewport.width),
+                        height: Math.round(viewport.height)
+                    }),
+                })
+                const pageData = asObject(await pageRes.json().catch(() => ({})))
+                if (!pageRes.ok) {
+                    throw new Error(`Gagal menyimpan halaman ${i}: ${getErrorMessage(pageData, 'Unknown error')}`)
+                }
 
-                        const pageRes = await fetchWithAuth(`/api/albums/${album.id}/flipbook/pages`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                album_id: album.id,
-                                page_number: pageNumber,
-                                image_url: publicUrl,
-                                width: Math.round(viewport.width),
-                                height: Math.round(viewport.height)
-                            }),
-                        })
-                        const pageData = asObject(await pageRes.json().catch(() => ({})))
-                        if (!pageRes.ok) {
-                            throw new Error(`Gagal menyimpan halaman ${i}: ${getErrorMessage(pageData, 'Unknown error')}`)
-                        }
-
-                        newPages.push({ ...(pageData as ManualFlipbookPage), flipbook_video_hotspots: [] })
-                    }
+                newPages.push({ ...(pageData as ManualFlipbookPage), flipbook_video_hotspots: [] })
+                progress += 1
+                if (progress === 1 || progress % 3 === 0 || progress === numPages) {
+                    toast.loading(`Memproses halaman ${progress} dari ${numPages}...`, { id: toastId })
                 }
             }
 
+            for (let start = 0; start < pageNumbers.length; start += PDF_UPLOAD_CONCURRENCY) {
+                const batch = pageNumbers.slice(start, start + PDF_UPLOAD_CONCURRENCY)
+                await Promise.all(batch.map(uploadPage))
+            }
+
             if (newPages.length > 0) {
-                setManualPages(prev => [...prev, ...newPages])
+                const sortedNewPages = [...newPages].sort((a, b) => a.page_number - b.page_number)
+                setManualPages(prev => [...prev, ...sortedNewPages])
                 fetchManualPages()
                 toast.success(`Berhasil mengunggah ${newPages.length} halaman!`, { id: toastId })
             } else {
@@ -751,7 +872,7 @@ export default function FlipbookLayoutEditor({ album, onPlayVideo, onUpdateAlbum
                                     className="flex flex-1 min-w-0 flex-col lg:flex-row gap-1.5 lg:gap-3 p-0 rounded-lg border-0 bg-transparent text-left lg:items-center"
                                 >
                                     <div className="w-full lg:w-14 aspect-[3/4] lg:h-[76px] bg-slate-100 dark:bg-slate-800 rounded-md overflow-hidden flex-shrink-0 border-2 border-slate-900 dark:border-slate-600 relative lg:group-hover:shadow-[2px_2px_0_0_#0f172a] dark:group-hover:shadow-[2px_2px_0_0_#334155] transition-all">
-                                        <img src={page.image_url} loading="lazy" decoding="async" className="w-full h-full object-cover" alt={label} />
+                                        <img src={page.image_url} loading="lazy" decoding="async" className="w-full h-full object-fill" alt={label} />
                                         <div className="absolute top-0 right-0 bg-slate-900 dark:bg-slate-600 px-1 py-0.5 text-[7px] font-black text-white rounded-bl-md">
                                             {displayNum}
                                         </div>
@@ -790,7 +911,8 @@ export default function FlipbookLayoutEditor({ album, onPlayVideo, onUpdateAlbum
 
                 {selectedPage?.flipbook_video_hotspots && selectedPage.flipbook_video_hotspots.length > 0 ? (
                     <div className="flex-1 overflow-y-auto min-h-0 no-scrollbar pr-1 space-y-4">
-                        {selectedPage.flipbook_video_hotspots.map((h, i) => (
+                        {selectedPage.flipbook_video_hotspots.map((h, i) => {
+                            return (
                             <div key={h.id} className={`p-4 bg-white dark:bg-slate-800 border-4 border-slate-900 dark:border-slate-700 rounded-2xl space-y-4 shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155] ${!canManage ? 'opacity-80' : ''}`}>
                                 <div className="flex items-center justify-between gap-2">
                                     {canManage ? (
@@ -798,6 +920,12 @@ export default function FlipbookLayoutEditor({ album, onPlayVideo, onUpdateAlbum
                                             type="text"
                                             defaultValue={h.label || `Hotspot #${i + 1}`}
                                             onBlur={(e) => handleSaveHotspot(h.id, { label: e.target.value })}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter') {
+                                                    e.preventDefault()
+                                                    ;(e.currentTarget as HTMLInputElement).blur()
+                                                }
+                                            }}
                                             className="bg-transparent border-b-2 border-slate-100 dark:border-slate-600 hover:border-indigo-400 dark:hover:border-indigo-500 focus:border-indigo-400 focus:outline-none text-[10px] font-black uppercase tracking-widest text-slate-900 dark:text-white w-full transition-all"
                                             placeholder="NAMA HOTSPOT"
                                         />
@@ -825,6 +953,12 @@ export default function FlipbookLayoutEditor({ album, onPlayVideo, onUpdateAlbum
                                                     defaultValue={h.video_url}
                                                     placeholder="HTTPS://YOUTUBE.COM/WATCH?V=..."
                                                     onBlur={(e) => handleSaveHotspot(h.id, { video_url: e.target.value })}
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === 'Enter') {
+                                                            e.preventDefault()
+                                                            ;(e.currentTarget as HTMLInputElement).blur()
+                                                        }
+                                                    }}
                                                     className="w-full bg-slate-50 dark:bg-slate-800 border-4 border-slate-900 dark:border-slate-600 rounded-xl px-3 py-2 text-[10px] font-black text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-700 focus:outline-none placeholder:text-slate-300 dark:placeholder:text-slate-500 font-mono"
                                                 />
                                                 <div className="relative">
@@ -861,7 +995,8 @@ export default function FlipbookLayoutEditor({ album, onPlayVideo, onUpdateAlbum
                                     </button>
                                 )}
                             </div>
-                        ))}
+                            )
+                        })}
                     </div>
                 ) : (
                     <div className="flex-1 flex flex-col items-center justify-center text-center p-8 bg-slate-50 dark:bg-slate-800 border-4 border-dashed border-slate-200 dark:border-slate-600 rounded-2xl">
@@ -894,7 +1029,7 @@ export default function FlipbookLayoutEditor({ album, onPlayVideo, onUpdateAlbum
                         >
                             <img
                                 src={selectedPage.image_url}
-                                className="block w-full h-full object-cover select-none pointer-events-none"
+                                className="block w-full h-full object-fill select-none pointer-events-none"
                                 alt={`Page ${selectedPage.page_number}`}
                             />
 

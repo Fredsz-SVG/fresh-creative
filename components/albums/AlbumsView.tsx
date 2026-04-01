@@ -9,6 +9,7 @@ import { getYearbookSectionQueryUrl } from '../yearbook/lib/yearbook-paths'
 import { apiUrl } from '../../lib/api-url'
 import { fetchWithAuth } from '../../lib/api-client'
 import { asObject, asString, getErrorMessage } from '@/components/yearbook/utils/response-narrowing'
+import FastImage from '@/components/ui/FastImage'
 
 /** Extract token from URL atau kode (alphanumeric + - _, 6–80 char; support token lama yang panjang). */
 function parseInviteToken(input: string): { token: string; type: 'join' | 'invite' | 'code' } | null {
@@ -77,6 +78,8 @@ function AlbumCard({
   onInvite,
   onPay,
   loadingId,
+  navigatingAlbumId,
+  setNavigatingAlbumId,
   onYearbookPublicChoice,
 }: {
   album: AlbumRow
@@ -88,6 +91,8 @@ function AlbumCard({
   onInvite?: (album: AlbumRow) => void
   onPay?: (album: AlbumRow) => void
   loadingId?: string | null
+  navigatingAlbumId?: string | null
+  setNavigatingAlbumId?: (id: string | null) => void
   pathname?: string | null
   onYearbookPublicChoice?: (album: AlbumRow) => void
 }) {
@@ -112,24 +117,34 @@ function AlbumCard({
   const displayStatus = statusLabel as string
   const displayPaymentStatus = album.payment_status || 'unpaid'
   const isLoading = loadingId === album.id
+  const isNavigatingToEditor = navigatingAlbumId === album.id
 
   const CardContent = () => (
     <div
       onClick={(e) => {
         if (isClickable && !isLoading) {
+          try { router.prefetch(destinationUrl) } catch { }
           if (album.type === 'yearbook' && onYearbookPublicChoice) {
             onYearbookPublicChoice(album)
             return
           }
-          router.push(destinationUrl)
+          router.push(destinationUrl, { scroll: false })
         }
+      }}
+      onMouseEnter={() => {
+        if (!isClickable) return
+        try { router.prefetch(destinationUrl) } catch { }
+      }}
+      onTouchStart={() => {
+        if (!isClickable) return
+        try { router.prefetch(destinationUrl) } catch { }
       }}
       className={`relative border-2 border-slate-900 dark:border-slate-700 rounded-3xl p-4 sm:p-5 flex flex-col h-full transition-all duration-200 min-h-[120px] shadow-[5px_5px_0_0_#0f172a] dark:shadow-[5px_5px_0_0_#334155] bg-white dark:bg-slate-900 ${isClickable ? 'cursor-pointer hover:shadow-none hover:translate-x-1 hover:translate-y-1' : 'cursor-default opacity-80'
         }`}>
       {/* Album Cover - Main Primary Visual */}
       <div className="aspect-[4/3] w-full bg-slate-100 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 rounded-2xl mb-4 overflow-hidden relative shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155]">
         {album.cover_image_url ? (
-          <img
+          <FastImage
             src={album.cover_image_url}
             alt={album.name}
             className="w-full h-full object-cover"
@@ -292,7 +307,10 @@ function AlbumCard({
           {album.type === 'yearbook' && isApproved && (isPaid || isAdmin) && editorUrl && (
             <Link
               href={editorUrl}
-              onClick={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.stopPropagation()
+                setNavigatingAlbumId?.(album.id)
+              }}
               prefetch
               scroll={false}
               onMouseEnter={() => {
@@ -301,9 +319,26 @@ function AlbumCard({
               onMouseDown={() => {
                 try { router.prefetch(editorUrl) } catch { /* ignore */ }
               }}
-              className="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-black rounded-xl bg-indigo-300 dark:bg-indigo-900 border-2 border-slate-900 shadow-[3px_3px_0_0_#0f172a] text-slate-900 dark:text-slate-100 hover:translate-y-1 hover:translate-x-1 hover:shadow-none transition-all"
+              onTouchStart={() => {
+                try { router.prefetch(editorUrl) } catch { /* ignore */ }
+              }}
+              className={`inline-flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-black rounded-xl border-2 border-slate-900 shadow-[3px_3px_0_0_#0f172a] transition-all ${
+                isNavigatingToEditor
+                  ? 'bg-slate-300 dark:bg-slate-700 text-slate-700 dark:text-slate-200 pointer-events-none'
+                  : 'bg-indigo-300 dark:bg-indigo-900 text-slate-900 dark:text-slate-100 hover:translate-y-1 hover:translate-x-1 hover:shadow-none'
+              }`}
             >
-              <LayoutDashboard className="w-3.5 h-3.5" /> Edit Album
+              {isNavigatingToEditor ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  Membuka...
+                </>
+              ) : (
+                <>
+                  <LayoutDashboard className="w-3.5 h-3.5" />
+                  Edit Album
+                </>
+              )}
             </Link>
           )}
           <p className="text-xs text-muted text-center dark:text-slate-400">
@@ -329,6 +364,7 @@ function AlbumCard({
 
 export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albums', linkContext, active = true }: AlbumsViewProps) {
   const [loadingId, setLoadingId] = useState<string | null>(null)
+  const [navigatingAlbumId, setNavigatingAlbumId] = useState<string | null>(null)
   const [inviteLoading, setInviteLoading] = useState<string | null>(null)
   const [inviteModal, setInviteModal] = useState<{ link: string; code: string; albumName: string } | null>(null)
   const [inviteLinkInput, setInviteLinkInput] = useState('')
@@ -638,6 +674,24 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
       : `${linkBasePath}/album/yearbook/${album.album_id ?? album.id}`
     router.push(destinationUrl)
   }
+
+  // Prefetch likely destinations so opening editor feels instant.
+  useEffect(() => {
+    if (!active || albums.length === 0) return
+    const topAlbums = albums.slice(0, 24)
+    for (const album of topAlbums) {
+      const albumId = album.album_id ?? album.id
+      const destinationUrl = album.type === 'public'
+        ? `${linkBasePath}/album/public/${album.id}`
+        : `${linkBasePath}/album/yearbook/${albumId}`
+      try { router.prefetch(destinationUrl) } catch { }
+
+      if (album.type === 'yearbook') {
+        const editorUrl = getYearbookSectionQueryUrl(albumId, 'cover', pathname || null)
+        try { router.prefetch(editorUrl) } catch { }
+      }
+    }
+  }, [active, albums, linkBasePath, pathname, router])
 
   const handleOpenInviteLink = async () => {
     setJoinError(null)
@@ -1185,6 +1239,8 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
               onInvite={!isAdmin ? handleInvite : undefined}
               onPay={!isAdmin ? handlePay : undefined}
               loadingId={loadingId ?? inviteLoading}
+              navigatingAlbumId={navigatingAlbumId}
+              setNavigatingAlbumId={setNavigatingAlbumId}
               onYearbookPublicChoice={beginYearbookPublicChoice}
             />
           ))}

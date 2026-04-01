@@ -65,6 +65,9 @@ export function About() {
             key={activeItem.id}
             src={activeItem.img}
             alt={activeItem.title}
+            loading="eager"
+            fetchPriority="high"
+            decoding="async"
             initial={{ opacity: 0, scale: 1.1 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0 }}
@@ -129,6 +132,8 @@ export function About() {
                   src={item.img}
                   alt={item.title}
                   className="absolute inset-0 size-full object-cover"
+                  loading="lazy"
+                  decoding="async"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
                 

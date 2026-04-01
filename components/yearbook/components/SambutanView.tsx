@@ -3,6 +3,7 @@
 import React, { useState } from 'react'
 import { Plus, Users, X, ChevronLeft, ChevronRight } from 'lucide-react'
 import TeacherCard from '@/components/TeacherCard'
+import FastImage from '@/components/ui/FastImage'
 
 export type Teacher = {
   id: string
@@ -64,10 +65,11 @@ export default function SambutanView({
               <ChevronLeft className="w-8 h-8" />
             </button>
           )}
-          <img
+          <FastImage
             src={currentPhoto?.file_url}
             alt={teacher.name}
             className="max-w-full max-h-full object-contain cursor-pointer"
+            priority
             onClick={() => setTeacherPhotoViewer(null)}
           />
           {photos.length > 1 && (

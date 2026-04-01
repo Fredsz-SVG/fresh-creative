@@ -2,6 +2,7 @@
 
 import { useRef } from 'react'
 import { ChevronLeft, ChevronRight, ImagePlus } from 'lucide-react'
+import FastImage from '@/components/ui/FastImage'
 
 type Photo = { id: string; file_url: string; student_name: string; created_at?: string }
 
@@ -78,7 +79,7 @@ export default function GalleryView({
                         >
                             <ChevronLeft className="w-8 h-8" />
                         </button>
-                        <img src={currentPhoto?.file_url} alt="" className="max-w-full max-h-full object-contain" />
+                        <FastImage src={currentPhoto?.file_url} alt="" className="max-w-full max-h-full object-contain" priority />
                         <button
                             type="button"
                             onClick={() => setPhotoIndex((i) => Math.min(photos.length - 1, i + 1))}

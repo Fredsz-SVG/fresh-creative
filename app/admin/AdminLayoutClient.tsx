@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useLayoutEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { getRole } from '@/lib/auth'
@@ -78,7 +78,8 @@ export default function AdminLayoutClient({
     const [userName, setUserName] = useState<string>('')
     const [userEmail, setUserEmail] = useState<string>('')
 
-    useLayoutEffect(() => {
+    // Hydrate client-side cached gate after mount (avoid SSR/client mismatch).
+    useEffect(() => {
         if (readAdminGate()) setOk(true)
     }, [])
 

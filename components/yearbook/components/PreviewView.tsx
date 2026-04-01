@@ -10,6 +10,7 @@ import {
     PanInfo,
 } from 'framer-motion'
 import { BookOpen, MessageSquare, Users, Play, X, Instagram, Cake, Mail } from 'lucide-react'
+import FastImage from '@/components/ui/FastImage'
 
 function stripQuotes(s: string): string {
     return s.replace(/^["""\u201C\u201D]+/, '').replace(/["""\u201C\u201D]+$/, '').trim()
@@ -225,6 +226,7 @@ export default function PreviewView({
     onClose,
     hideCloseButton,
 }: PreviewViewProps) {
+    const warmedImageUrlsRef = useRef<Set<string>>(new Set())
     const sections: Section[] = useMemo(() => [
         { type: 'cover', label: 'Cover', icon: <BookOpen className="w-4 h-4" /> },
         ...(teachers.length > 0 ? [{ type: 'sambutan' as const, label: 'Sambutan', icon: <MessageSquare className="w-4 h-4" /> }] : []),
@@ -305,6 +307,39 @@ export default function PreviewView({
         allCards.filter(c => !removedIds.has(c.id)),
         [allCards, removedIds]
     )
+
+    // Warm cache for current section images to avoid white blank delay.
+    useEffect(() => {
+        const urls = allCards
+            .map((c) => c.imageUrl)
+            .filter((u): u is string => typeof u === 'string' && u.length > 0)
+            .filter((u) => !warmedImageUrlsRef.current.has(u))
+        if (!urls.length) return
+
+        let cancelled = false
+        const MAX_CONCURRENCY = 4
+        const loadOne = (url: string) => new Promise<void>((resolve) => {
+            const img = new Image()
+            img.decoding = 'async'
+            img.onload = () => resolve()
+            img.onerror = () => resolve()
+            img.src = url
+        })
+
+        const run = async () => {
+            for (let i = 0; i < urls.length; i += MAX_CONCURRENCY) {
+                if (cancelled) return
+                const batch = urls.slice(i, i + MAX_CONCURRENCY)
+                await Promise.all(batch.map(async (url) => {
+                    await loadOne(url)
+                    warmedImageUrlsRef.current.add(url)
+                }))
+            }
+        }
+
+        void run()
+        return () => { cancelled = true }
+    }, [allCards])
 
     // Reset when section changes
     useEffect(() => {
@@ -408,7 +443,7 @@ export default function PreviewView({
             {/* Background Image / Placeholder */}
             <div className="absolute inset-0">
                 {card.imageUrl ? (
-                    <img src={card.imageUrl} alt={card.title} className="h-full w-full object-cover" draggable={false} />
+                    <FastImage src={card.imageUrl} alt={card.title} className="h-full w-full object-cover bg-slate-100 dark:bg-slate-800" draggable={false} priority />
                 ) : (
                     <div className="w-full h-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
                         <Users className="w-12 h-12 sm:w-20 sm:h-20 text-slate-300 dark:text-slate-500" />
@@ -691,6 +726,7 @@ export default function PreviewView({
                                 src={videoPopupUrl}
                                 controls
                                 autoPlay
+                                preload="metadata"
                                 playsInline
                                 className="w-full h-full object-contain"
                             >

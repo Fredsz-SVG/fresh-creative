@@ -115,7 +115,8 @@ albumFlipbookRoute.post('/upload', async (c) => {
   try {
     await putAlbumPhoto(bucket, relPath, fileData, {
       contentType: mimetype,
-      cacheControl: 'public, max-age=3600',
+      // Key selalu random UUID, aman di-cache lama untuk percepat repeat preview.
+      cacheControl: 'public, max-age=31536000, immutable',
     })
   } catch (e: unknown) {
     return c.json({ error: e instanceof Error ? e.message : 'Upload gagal' }, 500)

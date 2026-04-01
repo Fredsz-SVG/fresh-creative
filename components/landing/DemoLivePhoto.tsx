@@ -57,6 +57,7 @@ export function DemoLivePhoto() {
               <div className="story-img-content">
                 <video
                   src="/videos/livevideo.webm"
+                  preload="auto"
                   className="object-contain object-center story-img-hover h-full w-full"
                   autoPlay
                   loop
@@ -89,6 +90,8 @@ export function DemoLivePhoto() {
                   src="/img/livephotos.svg"
                   alt="LivePhoto"
                   className="h-10 md:h-12 w-auto dark:brightness-0 dark:invert nav-icon-stroke"
+                  loading="lazy"
+                  decoding="async"
                 />
               </a>
             </div>

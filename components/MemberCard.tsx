@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { Edit3, Trash2, ImagePlus, Video, Play, X, ChevronLeft, ChevronRight, Mail, Calendar, Instagram, Quote } from 'lucide-react'
+import FastImage from '@/components/ui/FastImage'
 
 /** Strip surrounding quote characters (straight & curly) so the UI can add its own consistently */
 function stripQuotes(s: string): string {
@@ -274,14 +275,14 @@ export default function MemberCard({
             </div>
 
             <div className="w-full flex items-center justify-center mb-6 bg-slate-50 dark:bg-slate-800 rounded-[24px] overflow-hidden border-4 border-slate-900 dark:border-slate-700 shadow-inner" style={{ minHeight: '320px' }}>
-              <img src={(displayPreviewPhotos[viewerIndex] && displayPreviewPhotos[viewerIndex].file_url) || firstPhoto || ''} alt={`${member.student_name} ${viewerIndex + 1}`} className="max-h-[60vh] object-contain w-full" />
+              <FastImage src={(displayPreviewPhotos[viewerIndex] && displayPreviewPhotos[viewerIndex].file_url) || firstPhoto || ''} alt={`${member.student_name} ${viewerIndex + 1}`} className="max-h-[60vh] object-contain w-full" priority />
             </div>
 
             {displayPreviewPhotos.length > 1 && (
               <div className="flex gap-3 mx-auto justify-center overflow-x-auto p-1 pb-2">
                 {displayPreviewPhotos.map((p, i) => (
                   <button key={p.id} onClick={() => setViewerIndex(i)} className={`w-16 h-16 rounded-xl overflow-hidden border-4 transition-all flex-shrink-0 ${i === viewerIndex ? 'border-indigo-500 dark:border-indigo-400 shadow-[1px_1px_0_0_rgba(67,56,202,0.3)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.36)] -translate-y-1' : 'border-slate-200 dark:border-slate-600 hover:border-slate-400 dark:hover:border-slate-500 opacity-60 hover:opacity-100 shadow-[1px_1px_0_0_rgba(203,213,225,0.55)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.32)]'}`}>
-                    <img src={p.file_url} alt={`thumb-${i}`} className="w-full h-full object-cover" />
+                    <FastImage src={p.file_url} alt={`thumb-${i}`} className="w-full h-full object-cover" />
                   </button>
                 ))}
               </div>
@@ -317,10 +318,11 @@ export default function MemberCard({
             {/* Photo Section */}
             <div className="relative aspect-[4/5] overflow-hidden bg-slate-50 dark:bg-slate-800 flex-shrink-0 border-b-4 border-slate-900 dark:border-slate-700">
               {photos.length > 0 || firstPhoto ? (
-                <img
+                <FastImage
                   src={photos.length > 0 ? photos[0].file_url : firstPhoto || ''}
                   alt={member.student_name}
                   className="w-full h-full object-cover cursor-pointer transition-transform duration-700"
+                  priority
                   onClick={() => {
                     if (photos.length > 0) { setViewerIndex(0); setViewerOpen(true) }
                     else if (onOpenGallery) onOpenGallery(classId, member.student_name)
@@ -485,7 +487,7 @@ export default function MemberCard({
                         {photo.isPending && (
                           <div className="absolute -top-2 -left-2 bg-emerald-400 dark:bg-emerald-600 text-slate-900 dark:text-white text-[8px] font-black px-1.5 py-0.5 rounded-lg border-2 border-slate-900 dark:border-slate-600 z-10 shadow-[1px_1px_0_0_rgba(15,23,42,0.13)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.36)] uppercase">BARU</div>
                         )}
-                        <img
+                        <FastImage
                           src={photo.file_url}
                           alt={`preview-${idx}`}
                           className="w-full h-full object-cover rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
@@ -524,7 +526,7 @@ export default function MemberCard({
                 )}
                 {pendingVideo && (
                   <div className="mb-3 rounded-xl overflow-hidden border-2 border-slate-900 dark:border-slate-600 bg-black shadow-[1px_1px_0_0_rgba(15,23,42,0.13)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.36)]">
-                    <video src={pendingVideo.previewUrl} controls className="w-full max-h-40 object-contain bg-black" playsInline />
+                    <video src={pendingVideo.previewUrl} controls preload="metadata" className="w-full max-h-40 object-contain bg-black" playsInline />
                   </div>
                 )}
 
@@ -631,7 +633,7 @@ export default function MemberCard({
                     {displayPreviewPhotos.map((photo, idx) => (
                       <div key={photo.id} className="relative w-14 h-14 bg-slate-100 dark:bg-slate-800 rounded-xl flex-shrink-0 border-2 border-slate-900 dark:border-slate-600 shadow-[1px_1px_0_0_rgba(15,23,42,0.13)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.36)]">
                         {photo.isPending && <div className="absolute -top-2 -left-2 bg-emerald-400 dark:bg-emerald-600 text-slate-900 dark:text-white text-[8px] font-black px-1.5 py-0.5 rounded-lg border-2 border-slate-900 dark:border-slate-600 z-10 shadow-[1px_1px_0_0_rgba(15,23,42,0.13)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.36)] uppercase">BARU</div>}
-                        <img src={photo.file_url} alt={`preview-${idx}`} className="w-full h-full object-cover rounded-lg cursor-pointer hover:opacity-80 transition-opacity" onClick={() => { setViewerIndex(idx); setViewerOpen(true) }} />
+                        <FastImage src={photo.file_url} alt={`preview-${idx}`} className="w-full h-full object-cover rounded-lg cursor-pointer hover:opacity-80 transition-opacity" onClick={() => { setViewerIndex(idx); setViewerOpen(true) }} />
                         <button type="button" onClick={(e) => { e.stopPropagation(); if (photo.isPending) removePendingPhoto(idx - basePhotos.length); else setLocalConfirm({ title: 'Hapus Foto', message: 'Hapus foto ini?', onConfirm: () => onDeletePhoto?.(photo.id, classId, member.student_name) }) }} className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center shadow-[1px_1px_0_0_rgba(15,23,42,0.13)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.36)] hover:bg-red-600 transition-all z-20 border-2 border-slate-900 dark:border-slate-600 active:shadow-none active:translate-x-0.5 active:translate-y-0.5"><X className="w-3.5 h-3.5" /></button>
                       </div>
                     ))}
@@ -650,7 +652,7 @@ export default function MemberCard({
                 )}
                 {pendingVideo && (
                   <div className="mb-3 rounded-xl overflow-hidden border-2 border-slate-900 dark:border-slate-600 bg-black shadow-[1px_1px_0_0_rgba(15,23,42,0.13)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.36)]">
-                    <video src={pendingVideo.previewUrl} controls className="w-full max-h-40 object-contain bg-black" playsInline />
+                    <video src={pendingVideo.previewUrl} controls preload="metadata" className="w-full max-h-40 object-contain bg-black" playsInline />
                   </div>
                 )}
                 <div className="flex gap-2.5">
