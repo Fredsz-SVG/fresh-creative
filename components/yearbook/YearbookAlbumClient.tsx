@@ -15,6 +15,8 @@ import { apiUrl } from '../../lib/api-url'
 import { fetchWithAuth } from '../../lib/api-client'
 import type { Album, ClassAccess, ClassMember, ClassRequest, Photo } from './types'
 import { asString, asObject, asStringArray, asNumberRecord, getErrorMessage } from './utils/response-narrowing'
+import { useYearbookUIState } from './hooks/useYearbookUIState'
+import { useYearbookAlbumData } from './hooks/useYearbookAlbumData'
 
 export type YearbookAlbumClientProps = {
   backHref?: string
@@ -40,23 +42,12 @@ export default function YearbookAlbumClient({
   const id = params?.id as string | undefined
   const toolParam = searchParams.get('tool')
   const aiLabsTool = (toolParam && AI_LABS_TOOLS.includes(toolParam as any)) ? toolParam : null
-  const [album, setAlbum] = useState<Album | null>(initialAlbum || null)
-  const [loading, setLoading] = useState(!initialAlbum)
-  const [error, setError] = useState<string | null>(null)
-  const [view, setView] = useState<'cover' | 'classes' | 'gallery'>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem(`yearbook-view-${id}`)
-      return (saved as 'cover' | 'classes' | 'gallery') || 'cover'
-    }
-    return 'cover'
-  })
-  const [classIndex, setClassIndex] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem(`yearbook-classIndex-${id}`)
-      return saved ? parseInt(saved, 10) : 0
-    }
-    return 0
-  })
+  
+  // Album Data: album state, loading, error, and fetch callback
+  const { album, setAlbum, loading, error, fetchAlbum, handleUpdateAlbum, albumRef } = useYearbookAlbumData(id, initialAlbum)
+  
+  // UI State: view, classIndex, sidebarMode, classViewMode, personalIndex, etc. with localStorage persistence
+  const { view, setView, classIndex, setClassIndex, sidebarMode, setSidebarMode, classViewMode, setClassViewMode, personalIndex, setPersonalIndex, flipbookPreviewMode, setFlipbookPreviewMode, mobileMenuOpen, setMobileMenuOpen, lastEditorSection, setLastEditorSection } = useYearbookUIState(id)
 
   const [photos, setPhotos] = useState<Photo[]>([])
   const [galleryStudent, setGalleryStudent] = useState<{ classId: string; studentName: string; className: string } | null>(null)
@@ -68,23 +59,9 @@ export default function YearbookAlbumClient({
   const [accessDataLoaded, setAccessDataLoaded] = useState(!!initialAccess?.access && Object.keys(initialAccess.access).length > 0)
   const [requestsByClass, setRequestsByClass] = useState<Record<string, ClassRequest[]>>({})
   const [selectedRequestId, setSelectedRequestId] = useState<string | null>(null)
-  const [sidebarMode, setSidebarMode] = useState<'classes' | 'approval' | 'team' | 'sambutan' | 'ai-labs' | 'flipbook' | 'preview'>('classes')
   const [requestForm, setRequestForm] = useState<{ student_name: string; email: string }>({ student_name: '', email: '' })
   const [membersByClass, setMembersByClass] = useState<Record<string, ClassMember[]>>(initialMembers || {})
-  const [classViewMode, setClassViewMode] = useState<'list' | 'personal'>(() => {
-    if (typeof window !== 'undefined' && id) {
-      const saved = localStorage.getItem(`yearbook-classViewMode-${id}`)
-      return (saved as 'list' | 'personal') || 'personal'
-    }
-    return 'personal'
-  })
-  const [personalIndex, setPersonalIndex] = useState(() => {
-    if (typeof window !== 'undefined' && id) {
-      const saved = localStorage.getItem(`yearbook-personalIndex-${id}`)
-      return saved ? parseInt(saved, 10) : 0
-    }
-    return 0
-  })
+  
   const [editingProfileClassId, setEditingProfileClassId] = useState<string | null>(null)
   const [editingMemberUserId, setEditingMemberUserId] = useState<string | null>(null)
   const [editProfileName, setEditProfileName] = useState('')
@@ -120,21 +97,16 @@ export default function YearbookAlbumClient({
 
   // Use refs for stable access in callbacks without triggering recreations
   const [realtimeCounter, setRealtimeCounter] = useState(0)
-  const albumRef = useRef(album)
-  const [flipbookPreviewMode, setFlipbookPreviewMode] = useState(false)
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [featureUnlocks, setFeatureUnlocks] = useState<string[]>([])
   const [flipbookEnabledByPackage, setFlipbookEnabledByPackage] = useState(false)
   const [aiLabsFeaturesByPackage, setAiLabsFeaturesByPackage] = useState<string[]>([])
   const [featureCreditCosts, setFeatureCreditCosts] = useState<Record<string, number>>({})
   const [featureUnlocksLoaded, setFeatureUnlocksLoaded] = useState(false)
-  const [lastEditorSection, setLastEditorSection] = useState<string | null>(null)
   const [teacherSearchQuery, setTeacherSearchQuery] = useState('')
   const [showTeacherSearch, setShowTeacherSearch] = useState(false)
   const [classMemberSearchQuery, setClassMemberSearchQuery] = useState('')
   const [showClassMemberSearch, setShowClassMemberSearch] = useState(false)
   const [deleteCoverConfirm, setDeleteCoverConfirm] = useState<'image' | 'video' | null>(null)
-  useEffect(() => { albumRef.current = album }, [album])
 
   const isFetchingMembersRef = useRef(false)
   const isFetchingAccessRef = useRef(false)
@@ -147,35 +119,6 @@ export default function YearbookAlbumClient({
     }
     fetchCurrentUser()
   }, [])
-
-  const fetchAlbum = useCallback(async (silent = false) => {
-    if (!id) return
-    if (!silent) {
-      setLoading(true)
-      setError(null)
-    }
-    try {
-      const res = await fetchWithAuth(`/api/albums/${id}`, { credentials: 'include', cache: 'no-store' })
-      const data = asObject(await res.json().catch(() => ({})))
-      if (!res.ok) {
-        setError(getErrorMessage(data, 'Album tidak ditemukan'))
-        setAlbum(null)
-        return
-      }
-      if (asString(data.type) !== 'yearbook') {
-        setError('Bukan album yearbook')
-        setAlbum(null)
-        return
-      }
-      setAlbum(data as Album)
-    } finally {
-      if (!silent) setLoading(false)
-    }
-  }, [id])
-
-  useEffect(() => {
-    if (!initialAlbum) fetchAlbum()
-  }, [fetchAlbum, initialAlbum])
 
   // Fetch feature unlocks for this album
   const fetchFeatureUnlocks = useCallback(async () => {
@@ -199,20 +142,6 @@ export default function YearbookAlbumClient({
   useEffect(() => {
     if (id) fetchFeatureUnlocks()
   }, [id, fetchFeatureUnlocks])
-
-  // Simpan view ke localStorage ketika berubah
-  useEffect(() => {
-    if (typeof window !== 'undefined' && id) {
-      localStorage.setItem(`yearbook-view-${id}`, view)
-    }
-  }, [view, id])
-
-  // Simpan classIndex ke localStorage ketika berubah
-  useEffect(() => {
-    if (typeof window !== 'undefined' && id) {
-      localStorage.setItem(`yearbook-classIndex-${id}`, String(classIndex))
-    }
-  }, [classIndex, id])
 
   // Section dari URL: path segment atau query ?section=
   const sectionMode = getSectionModeFromUrl(pathname, searchParams.get('section'), id ?? '')
@@ -275,20 +204,6 @@ export default function YearbookAlbumClient({
       router.replace(getYearbookSectionQueryUrl(id, 'ai-labs', pathname) + (searchParams.toString() ? `&${searchParams.toString()}` : ''), { scroll: false })
     }
   }, [aiLabsTool, id, sectionMode, router, searchParams])
-
-  // Simpan classViewMode ke localStorage ketika berubah
-  useEffect(() => {
-    if (typeof window !== 'undefined' && id) {
-      localStorage.setItem(`yearbook-classViewMode-${id}`, classViewMode)
-    }
-  }, [classViewMode, id])
-
-  // Simpan personalIndex ke localStorage ketika berubah
-  useEffect(() => {
-    if (typeof window !== 'undefined' && id) {
-      localStorage.setItem(`yearbook-personalIndex-${id}`, String(personalIndex))
-    }
-  }, [personalIndex, id])
 
   const currentClassId = album?.classes?.[classIndex]?.id
   const isOwner = album?.isOwner === true
@@ -646,35 +561,6 @@ export default function YearbookAlbumClient({
       const len = (album?.classes?.length ?? 1) - 1
       if (len <= 0) return 0
       return Math.min(i, len - 1)
-    })
-  }
-
-  const handleUpdateAlbum = async (updates: { description?: string; cover_image_url?: string; students_count?: number; flipbook_mode?: 'manual'; total_estimated_price?: number }) => {
-    if (!id) return
-
-    // Optimistic update
-    setAlbum((prev) => {
-      if (!prev) return prev
-      return { ...prev, ...updates }
-    })
-
-    // Background API call
-    return fetchWithAuth(`/api/albums/${id}`, {
-      method: 'PATCH',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(updates),
-    }).then(res => {
-      if (!res.ok) {
-        // Revert on error
-        fetchAlbum(true)
-        return null
-      }
-      return res.json()
-    }).catch(() => {
-      // Revert on error
-      fetchAlbum(true)
-      return null
     })
   }
 
