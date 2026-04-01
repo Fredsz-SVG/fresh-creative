@@ -83,7 +83,7 @@ creditsSyncInvoice.post('/', async (c) => {
           // Keep Supabase `public.users.credits` in sync so ensureUserInD1() doesn't overwrite D1 credits back to 0.
           try {
             const admin = getAdminSupabaseClient(c?.env as Record<string, string>)
-            await admin.from('users').update({ credits: newCredits }).eq('id', userId)
+            await (admin as any).from('users').update({ credits: newCredits }).eq('id', userId)
           } catch {
             // ignore if env missing
           }

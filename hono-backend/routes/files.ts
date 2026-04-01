@@ -27,12 +27,12 @@ files.get('*', async (c) => {
   if (!obj) return c.notFound()
 
   const headers = new Headers()
-  obj.writeHttpMetadata(headers)
+  obj.writeHttpMetadata(headers as any)
   if (!headers.has('Content-Type')) {
     headers.set('Content-Type', 'application/octet-stream')
   }
   headers.set('Cache-Control', 'public, max-age=3600')
-  return new Response(obj.body, { headers })
+  return new Response(obj.body as unknown as BodyInit, { headers })
 })
 
 export default files

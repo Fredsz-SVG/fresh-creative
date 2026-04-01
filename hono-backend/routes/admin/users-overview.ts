@@ -151,7 +151,7 @@ overview.put('/', async (c) => {
   if (typeof isSuspended === 'boolean') supaUpdate.is_suspended = isSuspended
 
   if (Object.keys(supaUpdate).length > 0) {
-    const { error: supaError } = await adminAuth.from('users').update(supaUpdate).eq('id', id)
+    const { error: supaError } = await (adminAuth as any).from('users').update(supaUpdate).eq('id', id)
     if (supaError) return c.json({ error: supaError.message }, 500)
   }
 

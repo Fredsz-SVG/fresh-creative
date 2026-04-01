@@ -6,6 +6,7 @@ import Link from "next/link";
 import { ArrowLeft, AlertTriangle } from "lucide-react";
 import { apiUrl } from '../../lib/api-url'
 import { fetchWithAuth } from '../../lib/api-client'
+import { asObject } from '@/components/yearbook/utils/response-narrowing'
 
 type Province = { id: string; name: string };
 type City = { id: string; province_id: string; name: string; kind: "kota" | "kabupaten" };
@@ -84,8 +85,13 @@ export default function ShowroomForm({ backHref, pricingPath, draftKey, source }
     setCheckingDup(true);
     try {
       const res = await fetchWithAuth(`/api/albums/check-name?name=${encodeURIComponent(trimmed)}`);
-      const data = await res.json();
-      setDupCheck(data);
+      const data = asObject(await res.json().catch(() => ({})));
+      setDupCheck({
+        exists: data.exists === true,
+        matched_name: typeof data.matched_name === 'string' ? data.matched_name : undefined,
+        pic_name: typeof data.pic_name === 'string' ? data.pic_name : undefined,
+        wa_e164: typeof data.wa_e164 === 'string' ? data.wa_e164 : undefined,
+      });
     } catch {
       setDupCheck(null);
     } finally {
@@ -136,8 +142,8 @@ export default function ShowroomForm({ backHref, pricingPath, draftKey, source }
     (async () => {
       try {
         const res = await fetchWithAuth("/api/select-area?type=provinces");
-        const json = await res.json();
-        if (!cancelled) setProvinces(json?.data ?? []);
+        const json = asObject(await res.json().catch(() => ({})));
+        if (!cancelled) setProvinces(Array.isArray(json.data) ? (json.data as Province[]) : []);
       } catch {
         if (!cancelled) setProvinces([]);
       } finally {
@@ -165,7 +171,10 @@ export default function ShowroomForm({ backHref, pricingPath, draftKey, source }
     setCityKind("");
     fetchWithAuth(`/api/select-area?type=cities&province_id=${encodeURIComponent(provinceId)}&limit=300`)
       .then((res) => res.json())
-      .then((json) => { if (!cancelled) setCities(json?.data ?? []); })
+      .then((json) => {
+        const parsed = asObject(json)
+        if (!cancelled) setCities(Array.isArray(parsed.data) ? (parsed.data as City[]) : [])
+      })
       .catch(() => { if (!cancelled) setCities([]); })
       .finally(() => { if (!cancelled) setLoadingCity(false); });
     return () => { cancelled = true; };

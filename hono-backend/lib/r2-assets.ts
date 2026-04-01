@@ -14,7 +14,7 @@ export async function putAlbumPhoto(
   options?: { contentType?: string; cacheControl?: string }
 ): Promise<{ key: string }> {
   const key = r2ObjectKeyFromAlbumPath(relativePathInsideAlbumBucket)
-  await bucket.put(key, body, {
+  await (bucket as any).put(key, body as any, {
     httpMetadata: options?.contentType
       ? { contentType: options.contentType, cacheControl: options.cacheControl ?? 'public, max-age=3600' }
       : { cacheControl: options?.cacheControl ?? 'public, max-age=3600' },

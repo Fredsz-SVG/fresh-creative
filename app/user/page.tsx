@@ -11,6 +11,7 @@ import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import { apiUrl } from '../../lib/api-url'
 import { fetchWithAuth } from '../../lib/api-client'
+import { asObject, asString, getErrorMessage } from '@/components/yearbook/utils/response-narrowing'
 
 /** Extract token from URL atau kode */
 function parseInviteToken(input: string): { token: string; type: 'join' | 'invite' | 'code' } | null {
@@ -107,14 +108,15 @@ export default function UserPage() {
     if (!silent) setShowcaseLoading(true)
     try {
       const res = await fetch(apiUrl('/api/showcase'), { cache: 'no-store' })
-      const data = await res.json().catch(() => ({}))
+      const data = asObject(await res.json().catch(() => ({})))
       if (res.ok && data) {
         const previews = Array.isArray(data.albumPreviews) ? data.albumPreviews : []
+        const flipbookUrl = asString(data.flipbookPreviewUrl) ?? ''
         setAlbumPreviews(previews)
-        setFlipbookPreviewUrl(typeof data.flipbookPreviewUrl === 'string' ? data.flipbookPreviewUrl : '')
+        setFlipbookPreviewUrl(flipbookUrl)
         if (typeof window !== 'undefined') {
           try {
-            window.sessionStorage.setItem(showcaseCacheKey, JSON.stringify({ ts: Date.now(), data: { albumPreviews: previews, flipbookPreviewUrl: typeof data.flipbookPreviewUrl === 'string' ? data.flipbookPreviewUrl : '' } }))
+            window.sessionStorage.setItem(showcaseCacheKey, JSON.stringify({ ts: Date.now(), data: { albumPreviews: previews, flipbookPreviewUrl: flipbookUrl } }))
           } catch {
             // ignore
           }
@@ -168,13 +170,14 @@ export default function UserPage() {
         method: 'POST',
         credentials: 'include',
       })
-      const data = await res.json().catch(() => ({}))
+      const data = asObject(await res.json().catch(() => ({})))
       if (res.ok) {
-        if (data?.redirectTo) {
-          router.push(data.redirectTo)
+        const redirectTo = asString(data.redirectTo)
+        if (redirectTo) {
+          router.push(redirectTo)
           return
         }
-        const albumId = data?.albumId
+        const albumId = asString(data.albumId)
         if (albumId) {
           router.push(`/user/album/yearbook/${albumId}`)
         } else {
@@ -182,7 +185,7 @@ export default function UserPage() {
         }
         return
       }
-      setJoinError(typeof data?.error === 'string' ? data.error : 'Gagal bergabung.')
+      setJoinError(getErrorMessage(data, 'Gagal bergabung.'))
     } catch {
       setJoinError('Gagal bergabung. Coba lagi.')
     } finally {

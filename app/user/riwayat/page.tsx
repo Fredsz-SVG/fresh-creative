@@ -5,6 +5,7 @@ import { History, ExternalLink, Loader2, CreditCard, X } from 'lucide-react'
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react'
 import { supabase } from '@/lib/supabase'
 import { fetchWithAuth } from '../../../lib/api-client'
+import { asObject } from '@/components/yearbook/utils/response-narrowing'
 
 type Transaction = {
   id: string
@@ -114,8 +115,8 @@ export default function UserRiwayatPage() {
             for (let i = 0; i <= retries; i++) {
               try {
                 const res = await fetchWithAuth('/api/credits/sync-invoice', { method: 'POST' })
-                const data = await res.json().catch(() => ({}))
-                synced = data.synced ?? 0
+                const data = asObject(await res.json().catch(() => ({})))
+                synced = typeof data.synced === 'number' ? data.synced : 0
                 if (synced > 0) break
                 if (i < retries) await new Promise((r) => setTimeout(r, 2500))
               } catch {

@@ -111,7 +111,7 @@ albumFlipbookRoute.post('/pages', async (c) => {
   const albumId = c.req.param('id')
   if (!albumId) return c.json({ error: 'Album ID required' }, 400)
   const perm = await canManageFlipbook(c, albumId)
-  if (!perm.ok) return c.json({ error: perm.error }, perm.status)
+  if (!perm.ok) return c.json({ error: perm.error }, { status: perm.status as any })
   const body = await c.req.json<Record<string, unknown>>()
   const pageNumber = Number(body.page_number ?? 0)
   const imageUrl = String(body.image_url ?? '')
@@ -140,7 +140,7 @@ albumFlipbookRoute.patch('/pages/:pageId', async (c) => {
   const pageId = c.req.param('pageId')
   if (!albumId || !pageId) return c.json({ error: 'Album ID and page ID required' }, 400)
   const perm = await canManageFlipbook(c, albumId)
-  if (!perm.ok) return c.json({ error: perm.error }, perm.status)
+  if (!perm.ok) return c.json({ error: perm.error }, { status: perm.status as any })
   const body = await c.req.json<Record<string, unknown>>()
   const sets: string[] = []
   const vals: unknown[] = []
@@ -167,7 +167,7 @@ albumFlipbookRoute.post('/pages/reorder', async (c) => {
   const albumId = c.req.param('id')
   if (!albumId) return c.json({ error: 'Album ID required' }, 400)
   const perm = await canManageFlipbook(c, albumId)
-  if (!perm.ok) return c.json({ error: perm.error }, perm.status)
+  if (!perm.ok) return c.json({ error: perm.error }, { status: perm.status as any })
   const body = await c.req.json<Record<string, unknown>>()
   const pageIds = Array.isArray(body.page_ids) ? (body.page_ids as unknown[]).map((v) => String(v)) : []
   if (!pageIds.length) return c.json({ error: 'page_ids required' }, 400)
@@ -185,7 +185,7 @@ albumFlipbookRoute.post('/hotspots', async (c) => {
   const albumId = c.req.param('id')
   if (!albumId) return c.json({ error: 'Album ID required' }, 400)
   const perm = await canManageFlipbook(c, albumId)
-  if (!perm.ok) return c.json({ error: perm.error }, perm.status)
+  if (!perm.ok) return c.json({ error: perm.error }, { status: perm.status as any })
   const body = await c.req.json<Record<string, unknown>>()
   const pageId = String(body.page_id ?? '')
   if (!pageId) return c.json({ error: 'page_id required' }, 400)
@@ -217,7 +217,7 @@ albumFlipbookRoute.patch('/hotspots/:hotspotId', async (c) => {
   const hotspotId = c.req.param('hotspotId')
   if (!albumId || !hotspotId) return c.json({ error: 'Album ID and hotspot ID required' }, 400)
   const perm = await canManageFlipbook(c, albumId)
-  if (!perm.ok) return c.json({ error: perm.error }, perm.status)
+  if (!perm.ok) return c.json({ error: perm.error }, { status: perm.status as any })
   const body = await c.req.json<Record<string, unknown>>()
   const sets: string[] = []
   const vals: unknown[] = []
@@ -247,7 +247,7 @@ albumFlipbookRoute.delete('/hotspots/:hotspotId', async (c) => {
   const hotspotId = c.req.param('hotspotId')
   if (!albumId || !hotspotId) return c.json({ error: 'Album ID and hotspot ID required' }, 400)
   const perm = await canManageFlipbook(c, albumId)
-  if (!perm.ok) return c.json({ error: perm.error }, perm.status)
+  if (!perm.ok) return c.json({ error: perm.error }, { status: perm.status as any })
   const del = await perm.db
     .prepare(`DELETE FROM flipbook_video_hotspots WHERE id = ?`)
     .bind(hotspotId)

@@ -9,6 +9,7 @@ import { AI_LABS_FEATURES_USER } from '@/lib/dashboard-nav'
 import { toast } from 'sonner'
 import { apiUrl } from '../../../lib/api-url'
 import { fetchWithAuth } from '../../../lib/api-client'
+import { asObject, getErrorMessage } from '@/components/yearbook/utils/response-narrowing'
 
 // Map feature labels to feature_type slugs for unlocking
 const FEATURE_SLUG_MAP: Record<string, string> = {
@@ -92,17 +93,17 @@ export default function AILabsView({ album, aiLabsTool, aiLabsFeaturesByPackage 
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ feature_type: featureType }),
             })
-            const data = await res.json().catch(() => ({}))
+            const data = asObject(await res.json().catch(() => ({})))
             if (res.ok) {
                 toast.success(`Fitur berhasil dibuka! 🎉`)
                 onFeatureUnlocked?.()
             } else if (res.status === 402) {
-                toast.error(data.error || 'Credit tidak cukup. Silakan top up terlebih dahulu.')
+                toast.error(getErrorMessage(data, 'Credit tidak cukup. Silakan top up terlebih dahulu.'))
             } else if (res.status === 409) {
                 toast.info('Fitur sudah dibuka sebelumnya.')
                 onFeatureUnlocked?.()
             } else {
-                toast.error(data.error || 'Gagal membuka fitur.')
+                toast.error(getErrorMessage(data, 'Gagal membuka fitur.'))
             }
         } catch (err) {
             toast.error('Terjadi kesalahan. Silakan coba lagi.')

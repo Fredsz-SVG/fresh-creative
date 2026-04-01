@@ -5,6 +5,7 @@ import { Play, Image as ImageIcon, ImagePlus, Trash2, Loader2, BookOpen, BookMar
 import { toast } from 'sonner'
 import { apiUrl } from '../../../lib/api-url'
 import { fetchWithAuth } from '../../../lib/api-client'
+import { asObject, asString, getErrorMessage } from '@/components/yearbook/utils/response-narrowing'
 
 type FlipbookViewProps = {
     album: any
@@ -105,11 +106,12 @@ export default function FlipbookLayoutEditor({ album, onPlayVideo, onUpdateAlbum
             method: 'POST',
             body: formData,
         })
-        const payload = await res.json().catch(() => ({} as { file_url?: string; error?: string }))
-        if (!res.ok || !payload?.file_url) {
-            throw new Error(payload?.error || 'Upload file gagal')
+        const payload = asObject(await res.json().catch(() => ({})))
+        const fileUrl = asString(payload.file_url)
+        if (!res.ok || !fileUrl) {
+            throw new Error(getErrorMessage(payload, 'Upload file gagal'))
         }
-        return payload.file_url
+        return fileUrl
     }
 
     // Initial Fetch
@@ -132,8 +134,8 @@ export default function FlipbookLayoutEditor({ album, onPlayVideo, onUpdateAlbum
             })
 
             if (!res.ok) {
-                const error = await res.json().catch(() => ({}))
-                throw new Error(error.error || 'Gagal membersihkan flipbook')
+                const error = asObject(await res.json().catch(() => ({})))
+                throw new Error(getErrorMessage(error, 'Gagal membersihkan flipbook'))
             }
 
             setManualPages([])
@@ -233,11 +235,11 @@ export default function FlipbookLayoutEditor({ album, onPlayVideo, onUpdateAlbum
                 height: height
             }),
         })
-        const data = await res.json().catch(() => null)
-        if (res.ok && data) {
+        const data = asObject(await res.json().catch(() => ({})))
+        if (res.ok && asString(data.id)) {
             setManualPages(prev => prev.map(p =>
                 p.id === selectedManualPageId
-                    ? { ...p, flipbook_video_hotspots: [...(p.flipbook_video_hotspots || []), data] }
+                    ? { ...p, flipbook_video_hotspots: [...(p.flipbook_video_hotspots || []), data as VideoHotspot] }
                     : p
             ))
         }
@@ -259,8 +261,8 @@ export default function FlipbookLayoutEditor({ album, onPlayVideo, onUpdateAlbum
                 body: JSON.stringify({ video_url: publicUrl }),
             })
             if (!updateRes.ok) {
-                const err = await updateRes.json().catch(() => ({} as { error?: string }))
-                throw new Error(err.error || 'Gagal menyimpan video hotspot')
+                const err = asObject(await updateRes.json().catch(() => ({})))
+                throw new Error(getErrorMessage(err, 'Gagal menyimpan video hotspot'))
             }
 
             setManualPages(prev => prev.map(p => ({
@@ -341,15 +343,12 @@ export default function FlipbookLayoutEditor({ album, onPlayVideo, onUpdateAlbum
                                 height: Math.round(viewport.height)
                             }),
                         })
-                        const pageData = await pageRes.json().catch(() => null)
+                        const pageData = asObject(await pageRes.json().catch(() => ({})))
                         if (!pageRes.ok) {
-                            const err = (pageData || {}) as { error?: string }
-                            throw new Error(`Gagal menyimpan halaman ${i}: ${err.error || 'Unknown error'}`)
+                            throw new Error(`Gagal menyimpan halaman ${i}: ${getErrorMessage(pageData, 'Unknown error')}`)
                         }
 
-                        if (pageData) {
-                            newPages.push({ ...pageData, flipbook_video_hotspots: [] })
-                        }
+                        newPages.push({ ...(pageData as ManualFlipbookPage), flipbook_video_hotspots: [] })
                     }
                 }
             }
@@ -392,8 +391,8 @@ export default function FlipbookLayoutEditor({ album, onPlayVideo, onUpdateAlbum
                     body: JSON.stringify({ image_url: publicUrl }),
                 })
                 if (!updateRes.ok) {
-                    const err = await updateRes.json().catch(() => ({} as { error?: string }))
-                    throw new Error(err.error || 'Gagal update cover')
+                    const err = asObject(await updateRes.json().catch(() => ({})))
+                    throw new Error(getErrorMessage(err, 'Gagal update cover'))
                 }
             } else {
                 // Shift all existing pages +1 then insert cover at page_number 1
@@ -404,8 +403,8 @@ export default function FlipbookLayoutEditor({ album, onPlayVideo, onUpdateAlbum
                         body: JSON.stringify({ page_number: p.page_number + 1 }),
                     })
                     if (!shiftRes.ok) {
-                        const err = await shiftRes.json().catch(() => ({} as { error?: string }))
-                        throw new Error(err.error || 'Gagal menggeser halaman')
+                        const err = asObject(await shiftRes.json().catch(() => ({})))
+                        throw new Error(getErrorMessage(err, 'Gagal menggeser halaman'))
                     }
                 }
                 const insertRes = await fetchWithAuth(`/api/albums/${album.id}/flipbook/pages`, {
@@ -414,8 +413,8 @@ export default function FlipbookLayoutEditor({ album, onPlayVideo, onUpdateAlbum
                     body: JSON.stringify({ album_id: album.id, page_number: 1, image_url: publicUrl }),
                 })
                 if (!insertRes.ok) {
-                    const err = await insertRes.json().catch(() => ({} as { error?: string }))
-                    throw new Error(err.error || 'Gagal menambah cover')
+                    const err = asObject(await insertRes.json().catch(() => ({})))
+                    throw new Error(getErrorMessage(err, 'Gagal menambah cover'))
                 }
             }
 
@@ -451,8 +450,8 @@ export default function FlipbookLayoutEditor({ album, onPlayVideo, onUpdateAlbum
                 body: JSON.stringify({ album_id: album.id, page_number: lastPageNumber, image_url: publicUrl }),
             })
             if (!insertRes.ok) {
-                const err = await insertRes.json().catch(() => ({} as { error?: string }))
-                throw new Error(err.error || 'Gagal menambah back cover')
+                const err = asObject(await insertRes.json().catch(() => ({})))
+                throw new Error(getErrorMessage(err, 'Gagal menambah back cover'))
             }
 
             await fetchManualPages()

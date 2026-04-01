@@ -5,6 +5,7 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { ChevronLeft, Loader2, X } from 'lucide-react'
 import ManualFlipbookViewer from '@/components/yearbook/components/ManualFlipbookViewer'
 import { apiUrl } from '@/lib/api-url'
+import { asObject, asString, getErrorMessage } from '@/components/yearbook/utils/response-narrowing'
 
 type ManualFlipbookPage = {
   id: string
@@ -32,9 +33,9 @@ export default function PublicFlipbookPage() {
     setError(null)
     try {
       const res = await fetch(apiUrl(`/api/albums/${id}/flipbook/public`), { cache: 'no-store' })
-      const data = await res.json().catch(() => null)
+      const data = asObject(await res.json().catch(() => ({})))
       if (!res.ok) {
-        setError((data && data.error) ? data.error : 'Gagal memuat flipbook.')
+        setError(getErrorMessage(data, 'Gagal memuat flipbook.'))
         setPages([])
         return
       }
@@ -42,9 +43,10 @@ export default function PublicFlipbookPage() {
       let fetchedPages = []
       if (Array.isArray(data)) {
         fetchedPages = data
-      } else if (data && Array.isArray(data.pages)) {
+      } else if (Array.isArray(data.pages)) {
         fetchedPages = data.pages
-        if (data.albumName) setAlbumName(data.albumName)
+        const fetchedAlbumName = asString(data.albumName)
+        if (fetchedAlbumName) setAlbumName(fetchedAlbumName)
       }
 
       setPages(fetchedPages)

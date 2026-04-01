@@ -8,6 +8,7 @@ import { getRole } from '@/lib/auth'
 import { Eye, EyeOff } from 'lucide-react'
 import { toast } from 'sonner'
 import { fetchWithAuth } from '../../lib/api-client'
+import { asObject } from '@/components/yearbook/utils/response-narrowing'
 
 function LoginContent() {
   const [checkingSession, setCheckingSession] = useState(true)
@@ -105,7 +106,7 @@ function LoginContent() {
         return;
       }
       const res = await fetchWithAuth('/api/auth/otp-status');
-      const data = await res.json().catch(() => ({}));
+      const data = asObject(await res.json().catch(() => ({})));
       if (data.verified) {
         const safeNext = nextPath.startsWith('/') && !nextPath.startsWith('//') ? nextPath : '';
         const role = await getRole(supabase, session.user);
@@ -174,7 +175,7 @@ function LoginContent() {
         }
 
         const statusRes = await fetchWithAuth('/api/auth/otp-status')
-        const statusData = await statusRes.json().catch(() => ({}))
+        const statusData = asObject(await statusRes.json().catch(() => ({})))
         if (statusData.suspended) {
           await supabase.auth.signOut()
           setSuspended(true)

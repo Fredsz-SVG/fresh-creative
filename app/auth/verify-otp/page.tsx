@@ -4,6 +4,7 @@ import { Suspense, useState, useEffect, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { fetchWithAuth } from '../../../lib/api-client'
+import { asObject, asString, getErrorMessage } from '@/components/yearbook/utils/response-narrowing'
 
 const OTP_COOLDOWN_KEY = 'otp_cooldown_by_email'
 /** Debounce: jangan kirim OTP otomatis lagi ke email yang sama dalam jangka waktu ini (Strict Mode / remount) */
@@ -112,7 +113,7 @@ function VerifyOtpContent() {
         return
       }
       const res = await fetchWithAuth('/api/auth/otp-status')
-      const data = await res.json().catch(() => ({}))
+      const data = asObject(await res.json().catch(() => ({})))
       if (data.suspended) {
         await fetchWithAuth('/api/auth/logout')
         await supabase.auth.signOut()
@@ -160,10 +161,10 @@ function VerifyOtpContent() {
           method: 'POST',
           signal,
         })
-        const sendData = await sendRes.json().catch(() => ({}))
+        const sendData = asObject(await sendRes.json().catch(() => ({})))
         if (!sendRes.ok) {
           delete lastInitialSendAtByEmail[userEmail]
-          const msg = typeof sendData?.error === 'string' ? sendData.error : 'Gagal mengirim OTP'
+          const msg = getErrorMessage(sendData, 'Gagal mengirim OTP')
           const status429 = sendRes.status === 429
           const isRateLimit = /rate limit|already sent|60|wait|429|too many requests/i.test(msg)
           const isEmailQuota = status429 || /email|2\s*\/\s*h|per hour|per jam/i.test(msg)
@@ -209,14 +210,14 @@ function VerifyOtpContent() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ code, next: nextPath || undefined }),
       })
-      const data = await res.json().catch(() => ({}))
+      const data = asObject(await res.json().catch(() => ({})))
       if (!res.ok) {
-        setError(typeof data?.error === 'string' ? data.error : 'Kode OTP tidak valid')
+        setError(getErrorMessage(data, 'Kode OTP tidak valid'))
         setLoading(false)
         return
       }
       router.refresh()
-      router.push(data.redirectTo || '/user')
+      router.push(asString(data.redirectTo) || '/user')
     } catch {
       setError('Terjadi kesalahan')
       setLoading(false)
@@ -246,9 +247,9 @@ function VerifyOtpContent() {
       const res = await fetchWithAuth('/api/auth/send-login-otp', {
         method: 'POST',
       })
-      const data = await res.json().catch(() => ({}))
+      const data = asObject(await res.json().catch(() => ({})))
       if (!res.ok) {
-        const msg = typeof data?.error === 'string' ? data.error : 'Gagal mengirim ulang OTP'
+        const msg = getErrorMessage(data, 'Gagal mengirim ulang OTP')
         const status429 = res.status === 429
         const isRateLimit = /rate limit|already sent|60|wait|429|too many requests/i.test(msg)
         const isEmailQuota = status429 || /email|2\s*\/\s*h|per hour|per jam/i.test(msg)

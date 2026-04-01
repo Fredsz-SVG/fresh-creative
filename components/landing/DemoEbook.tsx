@@ -7,6 +7,7 @@ import { AnimatedCarouselMockup, AnimatedFlipbookMockup } from '../dashboard/Ani
 import { AnimatedTitle } from './AnimatedTitle';
 import Link from 'next/link';
 import { apiUrl } from '@/lib/api-url';
+import { asObject, asString } from '@/components/yearbook/utils/response-narrowing';
 
 type ShowcaseAlbumPreview = {
   title: string
@@ -25,10 +26,10 @@ export function DemoEbook() {
     setShowcaseLoading(true);
     try {
       const res = await fetch(apiUrl('/api/showcase'), { cache: 'no-store' });
-      const data = await res.json().catch(() => ({}));
+      const data = asObject(await res.json().catch(() => ({})));
       if (res.ok && data) {
         setAlbumPreviews(Array.isArray(data.albumPreviews) ? data.albumPreviews : []);
-        setFlipbookPreviewUrl(typeof data.flipbookPreviewUrl === 'string' ? data.flipbookPreviewUrl : '');
+        setFlipbookPreviewUrl(asString(data.flipbookPreviewUrl) ?? '');
       }
     } catch (error) {
       console.error('Failed to fetch showcase:', error);

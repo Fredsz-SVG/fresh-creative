@@ -4,6 +4,7 @@ import React, { useState } from 'react'
 import { Book, Lock, Coins, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { fetchWithAuth } from '../../../lib/api-client'
+import { asObject, getErrorMessage } from '@/components/yearbook/utils/response-narrowing'
 
 interface FlipbookLockedViewProps {
   albumId?: string
@@ -25,17 +26,17 @@ export default function FlipbookLockedView({ albumId, isOwner, creditCost, onUnl
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ feature_type: 'flipbook' }),
       })
-      const data = await res.json().catch(() => ({}))
+      const data = asObject(await res.json().catch(() => ({})))
       if (res.ok) {
         toast.success('Flipbook berhasil dibuka! 🎉')
         onUnlocked?.()
       } else if (res.status === 402) {
-        toast.error(data.error || 'Credit tidak cukup. Silakan top up terlebih dahulu.')
+        toast.error(getErrorMessage(data, 'Credit tidak cukup. Silakan top up terlebih dahulu.'))
       } else if (res.status === 409) {
         toast.info('Flipbook sudah dibuka sebelumnya.')
         onUnlocked?.()
       } else {
-        toast.error(data.error || 'Gagal membuka flipbook.')
+        toast.error(getErrorMessage(data, 'Gagal membuka flipbook.'))
       }
     } catch (err) {
       toast.error('Terjadi kesalahan. Silakan coba lagi.')

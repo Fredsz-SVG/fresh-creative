@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
 import { fetchWithAuth } from '../../lib/api-client'
+import { asObject, asString } from '@/components/yearbook/utils/response-narrowing'
 
 type TopUpModalProps = {
     isOpen: boolean
@@ -50,15 +51,16 @@ export default function TopUpModal({ isOpen, onClose, currentCredit = 0, onCredi
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ action: 'redeem', code: redeemCode.trim() }),
             })
-            const data = await res.json()
-            if (res.ok && data.ok) {
-                toast.success(`🎉 Berhasil! +${data.credits_received} credit ditambahkan.`)
+            const data = asObject(await res.json().catch(() => ({})))
+            if (res.ok && data.ok === true) {
+                const creditsReceived = typeof data.credits_received === 'number' ? data.credits_received : 0
+                toast.success(`🎉 Berhasil! +${creditsReceived} credit ditambahkan.`)
                 setRedeemCode('')
                 setShowRedeem(false)
                 handleCloseModal()
                 if (onCreditChange) onCreditChange()
             } else {
-                toast.error(data.error || 'Kode tidak valid.')
+                toast.error(asString(data.error) || 'Kode tidak valid.')
             }
         } catch {
             toast.error('Gagal redeem. Coba lagi.')
@@ -76,12 +78,13 @@ export default function TopUpModal({ isOpen, onClose, currentCredit = 0, onCredi
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ packageId: selectedPkg })
             })
-            const data = await res.json()
-            if (res.ok && data.invoiceUrl) {
+            const data = asObject(await res.json().catch(() => ({})))
+            const invoiceUrl = asString(data.invoiceUrl)
+            if (res.ok && invoiceUrl) {
                 toast.success('Faktur pembayaran berhasil dibuat! Selesaikan pembayaran di bawah.')
-                setCheckoutInvoiceUrl(data.invoiceUrl)
+                setCheckoutInvoiceUrl(invoiceUrl)
             } else {
-                toast.error(data.error || 'Terjadi kesalahan saat memproses pembayaran')
+                toast.error(asString(data.error) || 'Terjadi kesalahan saat memproses pembayaran')
             }
         } catch (error) {
             toast.error('Gagal membuat tagihan pembayaran')

@@ -5,6 +5,7 @@ import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { fetchWithAuth } from '../../../lib/api-client'
+import { asObject, asString, getErrorMessage } from '@/components/yearbook/utils/response-narrowing'
 
 export default function JoinAlbumPage() {
   const router = useRouter()
@@ -25,8 +26,9 @@ export default function JoinAlbumPage() {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session?.user) {
         const res = await fetchWithAuth(`/api/albums/invite/${encodeURIComponent(token)}`)
-        const data = await res.json().catch(() => ({}))
-        if (res.ok && data.name) setAlbumName(data.name)
+        const data = asObject(await res.json().catch(() => ({})))
+        const name = asString(data.name)
+        if (res.ok && name) setAlbumName(name)
         setStatus('login_required')
         return
       }
@@ -36,16 +38,16 @@ export default function JoinAlbumPage() {
         method: 'POST',
         credentials: 'include',
       })
-      const data = await res.json().catch(() => ({}))
+      const data = asObject(await res.json().catch(() => ({})))
 
       if (!res.ok) {
         setStatus('error')
-        setErrorMessage(typeof data?.error === 'string' ? data.error : 'Gagal bergabung.')
+        setErrorMessage(getErrorMessage(data, 'Gagal bergabung.'))
         return
       }
 
       setStatus('success')
-      const albumId = data?.albumId
+      const albumId = asString(data.albumId)
       if (albumId) {
         router.replace(`/user/album/yearbook/${albumId}`)
       } else {

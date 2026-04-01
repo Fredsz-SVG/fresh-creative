@@ -8,6 +8,7 @@ import { supabase } from '@/lib/supabase'
 import { getYearbookSectionQueryUrl } from '../yearbook/lib/yearbook-paths'
 import { apiUrl } from '../../lib/api-url'
 import { fetchWithAuth } from '../../lib/api-client'
+import { asObject, asString, getErrorMessage } from '@/components/yearbook/utils/response-narrowing'
 
 /** Extract token from URL atau kode (alphanumeric + - _, 6–80 char; support token lama yang panjang). */
 function parseInviteToken(input: string): { token: string; type: 'join' | 'invite' | 'code' } | null {
@@ -451,7 +452,7 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
       const res = await fetchWithAuth(fetchUrl, { credentials: 'include', cache: 'no-store' })
       if (!res.ok) throw new Error('Failed to fetch albums')
       const data = await res.json()
-      setAlbums(data)
+      setAlbums(Array.isArray(data) ? (data as AlbumRow[]) : [])
       if (typeof window !== 'undefined') {
         try {
           window.sessionStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), data }))
@@ -518,8 +519,8 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
         body: JSON.stringify({ id: album.id, status: 'approved' }),
       })
       if (!res.ok) {
-        const err = await res.json().catch(() => ({}))
-        alert(err?.error ?? 'Gagal approve')
+        const err = asObject(await res.json().catch(() => ({})))
+        alert(getErrorMessage(err, 'Gagal approve'))
         return
       }
       await fetchAlbums(true)
@@ -539,8 +540,8 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
         body: JSON.stringify({ id: album.id, status: 'declined' }),
       })
       if (!res.ok) {
-        const err = await res.json().catch(() => ({}))
-        alert(err?.error ?? 'Gagal decline')
+        const err = asObject(await res.json().catch(() => ({})))
+        alert(getErrorMessage(err, 'Gagal decline'))
         return
       }
       await fetchAlbums(true)
@@ -564,14 +565,14 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
         method: 'POST',
         credentials: 'include',
       })
-      const data = await res.json().catch(() => ({}))
+      const data = asObject(await res.json().catch(() => ({})))
       if (!res.ok) {
-        alert(data?.error ?? 'Gagal membuat link undangan')
+        alert(getErrorMessage(data, 'Gagal membuat link undangan'))
         return
       }
       const origin = typeof window !== 'undefined' ? window.location.origin : ''
-      const link = data.inviteLink ?? `${origin}/join/${data.token}`
-      const code = data.token ?? ''
+      const code = asString(data.token) ?? ''
+      const link = asString(data.inviteLink) ?? `${origin}/join/${code}`
       setInviteModal({ link, code, albumName: album.name })
     } catch {
       alert('Gagal membuat link undangan')
@@ -592,8 +593,8 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
         body: JSON.stringify({ id: album.id }),
       })
       if (!res.ok) {
-        const err = await res.json().catch(() => ({}))
-        alert(err?.error ?? 'Gagal hapus')
+        const err = asObject(await res.json().catch(() => ({})))
+        alert(getErrorMessage(err, 'Gagal hapus'))
         return
       }
       await fetchAlbums(true)
@@ -614,13 +615,14 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
         method: 'POST',
         credentials: 'include',
       })
-      const data = await res.json().catch(() => ({}))
+      const data = asObject(await res.json().catch(() => ({})))
       if (!res.ok) {
-        alert(data?.error ?? 'Gagal memproses pembayaran')
+        alert(getErrorMessage(data, 'Gagal memproses pembayaran'))
         return
       }
-      if (data.invoiceUrl) {
-        setInvoicePopupUrl(data.invoiceUrl)
+      const invoiceUrl = asString(data.invoiceUrl)
+      if (invoiceUrl) {
+        setInvoicePopupUrl(invoiceUrl)
         fetchAlbums(true) // Refresh data untuk simpan payment_url
       }
     } catch {
@@ -655,14 +657,15 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
         method: 'POST',
         credentials: 'include',
       })
-      const data = await res.json().catch(() => ({}))
+      const data = asObject(await res.json().catch(() => ({})))
       if (res.ok) {
-        if (data?.redirectTo) {
+        const redirectTo = asString(data.redirectTo)
+        if (redirectTo) {
           setJoinError('')
-          router.push(data.redirectTo)
+          router.push(redirectTo)
           return
         }
-        const albumId = data?.albumId
+        const albumId = asString(data.albumId)
         if (albumId) {
           router.push(`${linkBasePath}/album/yearbook/${albumId}`)
         } else {
@@ -672,9 +675,10 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
         return
       }
       if (type === 'code' && res.status === 404) {
-        if (data?.redirectTo) {
+        const redirectTo = asString(data.redirectTo)
+        if (redirectTo) {
           setJoinError('')
-          router.push(data.redirectTo)
+          router.push(redirectTo)
           return
         }
         const checkRes = await fetchWithAuth(`/api/albums/invite/${encodeURIComponent(token)}`)
@@ -684,7 +688,7 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
           return
         }
       }
-      setJoinError(typeof data?.error === 'string' ? data.error : 'Gagal bergabung.')
+      setJoinError(getErrorMessage(data, 'Gagal bergabung.'))
     } catch {
       setJoinError('Gagal bergabung. Coba lagi.')
     } finally {

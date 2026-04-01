@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { fetchWithAuth } from '../../../lib/api-client'
+import { asObject } from '@/components/yearbook/utils/response-narrowing'
 
 // Interface for Yearbook orders in the admin management context
 interface YearbookOrder {
@@ -32,7 +33,8 @@ export default function YearbookManagementPage() {
       if (!res.ok) throw new Error('Failed to fetch data')
       const allAlbums = await res.json()
       // We filter for 'yearbook' type on the client-side
-      const yearbookOrders = allAlbums.filter((album: any) => album.type === 'yearbook')
+      const list = Array.isArray(allAlbums) ? allAlbums : []
+      const yearbookOrders = list.filter((album: any) => asObject(album).type === 'yearbook')
       setOrders(yearbookOrders)
     } catch (err) {
       console.error(err)

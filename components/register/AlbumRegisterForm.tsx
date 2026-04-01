@@ -7,6 +7,7 @@ import { Check, Loader2, X, ChevronDown } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { apiUrl } from '../../lib/api-url'
 import { fetchWithAuth } from '../../lib/api-client'
+import { asObject, asString, getErrorMessage } from '@/components/yearbook/utils/response-narrowing'
 
 export type AlbumRegisterFormProps = {
   /** Langsung pakai albumId (halaman /register/[id]) */
@@ -55,8 +56,10 @@ export default function AlbumRegisterForm({ albumId: albumIdProp, token, loginRe
     fetchWithAuth(`/api/albums/invite/${token}`)
       .then((res) => res.json())
       .then((result) => {
-        if (result.error) throw new Error(result.error)
-        setResolvedAlbumId(result.albumId)
+        const parsed = asObject(result)
+        const inviteError = asString(parsed.error)
+        if (inviteError) throw new Error(inviteError)
+        setResolvedAlbumId(asString(parsed.albumId) ?? null)
       })
       .catch((err) => {
         setInviteError(err.message)
@@ -87,7 +90,7 @@ export default function AlbumRegisterForm({ albumId: albumIdProp, token, loginRe
         ])
 
         if (checkRes.ok) {
-          const checkData = await checkRes.json()
+          const checkData = asObject(await checkRes.json().catch(() => ({})))
           if (checkData.hasRequest) {
             if (checkData.status === 'pending') {
               toast.error('Anda sudah mendaftar dan menunggu persetujuan')
@@ -103,10 +106,10 @@ export default function AlbumRegisterForm({ albumId: albumIdProp, token, loginRe
         }
 
         if (albumRes.ok) {
-          const albumData = await albumRes.json()
+          const albumData = asObject(await albumRes.json().catch(() => ({})))
           setAlbumInfo(albumData)
           if (albumData.classes && Array.isArray(albumData.classes)) {
-            setAlbumClasses(albumData.classes)
+            setAlbumClasses(albumData.classes as { id: string; name: string; sort_order?: number }[])
           }
         } else {
           toast.error('Album tidak ditemukan')
@@ -115,7 +118,7 @@ export default function AlbumRegisterForm({ albumId: albumIdProp, token, loginRe
         }
 
         if (statsRes.ok) {
-          const statsData = await statsRes.json()
+          const statsData = asObject(await statsRes.json().catch(() => ({})))
           setStats(statsData)
         }
       } catch (error) {
@@ -151,14 +154,14 @@ export default function AlbumRegisterForm({ albumId: albumIdProp, token, loginRe
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
       })
-      const data = await res.json()
+      const data = asObject(await res.json().catch(() => ({})))
 
       if (!res.ok) {
-        toast.error(data.error || 'Gagal mendaftar')
+        toast.error(getErrorMessage(data, 'Gagal mendaftar'))
         return
       }
 
-      toast.success(data.message || 'Pendaftaran berhasil!')
+      toast.success(asString(data.message) || 'Pendaftaran berhasil!')
       setSuccess(true)
       setTimeout(() => router.push('/user'), 2000)
     } catch (error) {

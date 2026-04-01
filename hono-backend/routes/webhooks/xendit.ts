@@ -79,7 +79,7 @@ webhooksXendit.post('/', async (c) => {
           // Mirror to Supabase `public.users.credits` (source of truth)
           try {
             const admin = getAdminSupabaseClient(c?.env as Record<string, string>)
-            await admin.from('users').update({ credits: nextCredits }).eq('id', userId.user_id)
+            await (admin as any).from('users').update({ credits: nextCredits }).eq('id', userId.user_id)
           } catch {
             // ignore
           }

@@ -21,6 +21,7 @@ import { supabase } from '@/lib/supabase'
 import { apiUrl } from '../../lib/api-url'
 import { fetchWithAuth } from '../../lib/api-client'
 import { ThemeContext } from '@/app/providers/ThemeProvider'
+import { asObject } from '@/components/yearbook/utils/response-narrowing'
 
 export type NavSection = {
   title: string
@@ -69,7 +70,8 @@ export default function DashboardShell({
     fetchWithAuth('/api/user/me')
       .then((res) => res.json())
       .then((data) => {
-        if (typeof data.credits === 'number') setCredits(data.credits)
+        const parsed = asObject(data)
+        if (typeof parsed.credits === 'number') setCredits(parsed.credits)
       })
       .catch(() => { })
   }
@@ -95,7 +97,7 @@ export default function DashboardShell({
     const init = async () => {
       try {
         const res = await fetchWithAuth('/api/user/me')
-        const data = await res.json()
+        const data = asObject(await res.json().catch(() => ({})))
         if (typeof data.credits === 'number') setCredits(data.credits)
       } catch (e) {
         // ignore
@@ -116,7 +118,8 @@ export default function DashboardShell({
       fetchWithAuth('/api/user/me')
         .then((res) => res.json())
         .then((data) => {
-          if (typeof data.credits === 'number') setCredits(data.credits)
+          const parsed = asObject(data)
+          if (typeof parsed.credits === 'number') setCredits(parsed.credits)
         })
         .catch(() => { })
     }
@@ -305,7 +308,9 @@ export default function DashboardShell({
                     <Link
                       href={item.href}
                       prefetch
-                      onClick={() => setDrawerOpen(false)}
+                      onClick={() => {
+                        setDrawerOpen(false)
+                      }}
                       className={navLinkClass(isActive)}
                     >
                       <Icon className={`w-4 h-4 shrink-0 transition-colors ${isActive ? 'text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white'}`} />

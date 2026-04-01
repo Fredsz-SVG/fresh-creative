@@ -5,6 +5,7 @@ import { Coins } from 'lucide-react'
 import TopUpModal from '@/components/dashboard/TopUpModal'
 import { apiUrl } from '../../../lib/api-url'
 import { fetchWithAuth } from '../../../lib/api-client'
+import { asObject } from '@/components/yearbook/utils/response-narrowing'
 
 export default function CreditBadgeTop() {
     const [credits, setCredits] = useState(0)
@@ -14,7 +15,7 @@ export default function CreditBadgeTop() {
         const init = async () => {
             try {
                 const res = await fetchWithAuth('/api/user/me')
-                const data = await res.json()
+                const data = asObject(await res.json().catch(() => ({})))
                 if (typeof data.credits === 'number') setCredits(data.credits)
             } catch (e) {
                 // ignore
@@ -27,7 +28,8 @@ export default function CreditBadgeTop() {
             fetchWithAuth('/api/user/me')
                 .then((res) => res.json())
                 .then((data) => {
-                    if (typeof data.credits === 'number') setCredits(data.credits)
+                    const parsed = asObject(data)
+                    if (typeof parsed.credits === 'number') setCredits(parsed.credits)
                 })
                 .catch(() => { })
         }
@@ -43,9 +45,10 @@ export default function CreditBadgeTop() {
         fetchWithAuth('/api/user/me')
             .then((res) => res.json())
             .then((data) => {
-                if (typeof data.credits === 'number') setCredits(data.credits)
+                const parsed = asObject(data)
+                if (typeof parsed.credits === 'number') setCredits(parsed.credits)
                 // Debug log
-                console.log('[CreditBadgeTop] Credits refreshed after redeem:', data.credits)
+                console.log('[CreditBadgeTop] Credits refreshed after redeem:', parsed.credits)
                 // Dispatch event for any listeners
                 window.dispatchEvent(new Event('credits-updated'))
             })

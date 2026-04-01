@@ -5,6 +5,7 @@ import { Edit3, Plus, Minus, Check, X, Clock, ClipboardList, Copy, Link as LinkI
 import { toast } from 'sonner'
 import { apiUrl } from '../../../lib/api-url'
 import { fetchWithAuth } from '../../../lib/api-client'
+import { asObject, asString } from '@/components/yearbook/utils/response-narrowing'
 
 type AlbumClass = { id: string; name: string; sort_order?: number; student_count?: number }
 type JoinRequest = {
@@ -173,13 +174,14 @@ export default function ApprovalView({
           new_students_count: newLimitVal,
         }),
       })
-      const data = await res.json()
-      if (res.ok && data.invoiceUrl) {
+      const data = asObject(await res.json().catch(() => ({})))
+      const invoiceUrl = asString(data.invoiceUrl)
+      if (res.ok && invoiceUrl) {
         toast.success('Faktur pembayaran berhasil dibuat!')
-        setCheckoutInvoiceUrl(data.invoiceUrl)
+        setCheckoutInvoiceUrl(invoiceUrl)
         setEditingLimit(false)
       } else {
-        toast.error(data.error || 'Gagal membuat tagihan pembayaran')
+        toast.error(asString(data.error) || 'Gagal membuat tagihan pembayaran')
       }
     } catch {
       toast.error('Gagal memproses pembayaran')
