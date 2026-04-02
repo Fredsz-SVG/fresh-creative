@@ -1,9 +1,9 @@
 import { Hono } from 'hono'
-import { getSupabaseClient } from '../../lib/supabase'
 import { getRole } from '../../lib/auth'
 import { getD1 } from '../../lib/edge-env'
 import { ensureUserInD1, honoEnvForSupabasePublicSync } from '../../lib/d1-users'
 import { isSimilarSchoolName } from '../../lib/school-name-utils'
+import { requireAuthJwt, getAuthUserId } from '../../middleware'
 
 const albumColsUser =
   `a.id, a.user_id, a.name, a.type, a.status, a.created_at, a.cover_image_url, a.pricing_package_id, a.payment_status, a.payment_url, a.total_estimated_price, p.name as pricing_pkg_name`
@@ -17,25 +17,22 @@ function mapAlbumRow(r: Record<string, unknown>) {
   return { ...rest, pricing_packages: pkg }
 }
 
-const getAlbumId = (album: Record<string, unknown>): string =>
-  typeof album.id === 'string' ? album.id : ''
-
 const albumsRoute = new Hono()
+albumsRoute.use('*', requireAuthJwt)
 
 albumsRoute.get('/', async (c) => {
   try {
-    const supabase = getSupabaseClient(c)
     const db = getD1(c)
     if (!db) return c.json({ error: 'Database not configured' }, 503)
 
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
+    const userId = await getAuthUserId(c)
+    if (!userId) {
       return c.json([])
     }
 
     let role: 'admin' | 'user' = 'user'
     try {
-      role = await getRole(c, user)
+      role = await getRole(c, { id: userId })
     } catch {
       /* ignore */
     }
@@ -62,84 +59,55 @@ albumsRoute.get('/', async (c) => {
       return c.json(result)
     }
 
-    const owned = await db
+    const rows = await db
       .prepare(
-        `SELECT ${albumColsUser}
-         FROM albums a
-         LEFT JOIN pricing_packages p ON a.pricing_package_id = p.id
-         WHERE a.user_id = ?
-         ORDER BY a.created_at DESC`
+        `SELECT ${albumColsUser},
+            CASE WHEN a.user_id = ? THEN 1 ELSE 0 END AS is_owner,
+            CASE
+              WHEN a.user_id = ? THEN 0
+              WHEN EXISTS (
+                SELECT 1 FROM album_members am
+                WHERE am.album_id = a.id AND am.user_id = ?
+              ) THEN 1
+              WHEN EXISTS (
+                SELECT 1 FROM album_class_access aca
+                WHERE aca.album_id = a.id AND aca.user_id = ? AND aca.status = 'approved'
+              ) THEN 2
+              ELSE 3
+            END AS access_rank
+          FROM albums a
+          LEFT JOIN pricing_packages p ON a.pricing_package_id = p.id
+          WHERE a.user_id = ?
+             OR EXISTS (
+               SELECT 1 FROM album_members am
+               WHERE am.album_id = a.id AND am.user_id = ?
+             )
+             OR EXISTS (
+               SELECT 1 FROM album_class_access aca
+               WHERE aca.album_id = a.id AND aca.user_id = ? AND aca.status = 'approved'
+             )
+          ORDER BY a.created_at DESC`
       )
-      .bind(user.id)
+      .bind(userId, userId, userId, userId, userId, userId, userId)
       .all<Record<string, unknown>>()
 
-    const ownedAlbums: Record<string, unknown>[] = (owned.results ?? []).map(mapAlbumRow)
-    const ownedIds = new Set(ownedAlbums.map(getAlbumId).filter(Boolean))
-
-    const memberRows = await db
-      .prepare(`SELECT album_id FROM album_members WHERE user_id = ?`)
-      .bind(user.id)
-      .all<{ album_id: string }>()
-    const memberAlbumIds = (memberRows.results ?? [])
-      .map((r) => r.album_id)
-      .filter(Boolean)
-
-    let memberAlbums: Record<string, unknown>[] = []
-    if (memberAlbumIds.length > 0) {
-      const ph = memberAlbumIds.map(() => '?').join(',')
-      const mr = await db
-        .prepare(
-          `SELECT ${albumColsUser}
-           FROM albums a
-           LEFT JOIN pricing_packages p ON a.pricing_package_id = p.id
-           WHERE a.id IN (${ph})`
-        )
-        .bind(...memberAlbumIds)
-        .all<Record<string, unknown>>()
-      memberAlbums = (mr.results ?? []).map(mapAlbumRow)
-    }
-
-    const approvedRows = await db
-      .prepare(
-        `SELECT DISTINCT album_id FROM album_class_access WHERE user_id = ? AND status = 'approved'`
-      )
-      .bind(user.id)
-      .all<{ album_id: string }>()
-    const approvedAlbumIds = (approvedRows.results ?? [])
-      .map((r) => r.album_id)
-      .filter((id) => id && !ownedIds.has(id))
-
-    let approvedClassAccessAlbums: Record<string, unknown>[] = []
-    if (approvedAlbumIds.length > 0) {
-      const ph = approvedAlbumIds.map(() => '?').join(',')
-      const ar = await db
-        .prepare(
-          `SELECT ${albumColsUser}
-           FROM albums a
-           LEFT JOIN pricing_packages p ON a.pricing_package_id = p.id
-           WHERE a.id IN (${ph})`
-        )
-        .bind(...approvedAlbumIds)
-        .all<Record<string, unknown>>()
-      approvedClassAccessAlbums = (ar.results ?? []).map(mapAlbumRow)
-    }
-
-    const memberSet = new Set(memberAlbums.map(getAlbumId).filter(Boolean))
-    const finalAlbums: Array<Record<string, unknown> & { isOwner: boolean }> = [
-      ...ownedAlbums.map((a) => ({ ...a, isOwner: true })),
-      ...memberAlbums.filter((a) => !ownedIds.has(getAlbumId(a))).map((a) => ({ ...a, isOwner: false })),
-      ...approvedClassAccessAlbums
-        .filter((a) => !ownedIds.has(getAlbumId(a)) && !memberSet.has(getAlbumId(a)))
-        .map((a) => ({ ...a, isOwner: false, status: 'approved' })),
-    ]
-
-    finalAlbums.sort((a, b) => {
-      const bTime = new Date(String(b['created_at'] ?? '')).getTime()
-      const aTime = new Date(String(a['created_at'] ?? '')).getTime()
-      return bTime - aTime
+    const result = (rows.results ?? []).map((raw) => {
+      const mapped = mapAlbumRow(raw)
+      const isOwner = Number(raw.is_owner ?? 0) === 1
+      const accessRank = Number(raw.access_rank ?? 3)
+      const response: Record<string, unknown> & { isOwner: boolean } = {
+        ...mapped,
+        isOwner,
+      }
+      if (!isOwner && accessRank === 2) {
+        response.status = 'approved'
+      }
+      delete (response as Record<string, unknown>).is_owner
+      delete (response as Record<string, unknown>).access_rank
+      return response
     })
 
-    return c.json(finalAlbums)
+    return c.json(result)
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
     console.error('[GET /api/albums]', err)
@@ -148,16 +116,15 @@ albumsRoute.get('/', async (c) => {
 })
 
 albumsRoute.post('/', async (c) => {
-  const supabase = getSupabaseClient(c)
   const db = getD1(c)
   if (!db) return c.json({ error: 'Database not configured' }, 503)
 
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) {
+  const userId = await getAuthUserId(c)
+  if (!userId) {
     return c.json({ error: 'Unauthorized. Please login.' }, 401)
   }
 
-  await ensureUserInD1(db, user, honoEnvForSupabasePublicSync(c.env))
+  await ensureUserInD1(db, { id: userId, email: '' }, honoEnvForSupabasePublicSync(c.env))
 
   let body: Record<string, unknown>
   try {
@@ -175,7 +142,7 @@ albumsRoute.post('/', async (c) => {
 
   const baseInsert: Record<string, unknown> = {
     id,
-    user_id: user.id,
+    user_id: userId,
     type,
     status: 'pending',
     created_at: now,
@@ -256,15 +223,14 @@ albumsRoute.post('/', async (c) => {
 // Admin approve/decline album
 // Frontend (AlbumsView) memanggil: PUT /api/albums { id, status: 'approved'|'declined' }
 albumsRoute.put('/', async (c) => {
-  const supabase = getSupabaseClient(c)
   const db = getD1(c)
   if (!db) return c.json({ error: 'Database not configured' }, 503)
 
-  const { data: { user }, error: authError } = await supabase.auth.getUser()
-  if (authError || !user) return c.json({ error: 'Unauthorized' }, 401)
+  const userId = await getAuthUserId(c)
+  if (!userId) return c.json({ error: 'Unauthorized' }, 401)
 
-  await ensureUserInD1(db, user, honoEnvForSupabasePublicSync(c.env))
-  if ((await getRole(c, user)) !== 'admin') return c.json({ error: 'Forbidden' }, 403)
+  await ensureUserInD1(db, { id: userId, email: '' }, honoEnvForSupabasePublicSync(c.env))
+  if ((await getRole(c, { id: userId })) !== 'admin') return c.json({ error: 'Forbidden' }, 403)
 
   const body = await c.req.json().catch(() => ({}))
   const { id, status } = body as Record<string, unknown>
@@ -286,18 +252,17 @@ albumsRoute.put('/', async (c) => {
 })
 
 albumsRoute.delete('/', async (c) => {
-  const supabase = getSupabaseClient(c)
   const db = getD1(c)
   if (!db) return c.json({ error: 'Database not configured' }, 503)
 
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return c.json({ error: 'Unauthorized' }, 401)
+  const userId = await getAuthUserId(c)
+  if (!userId) return c.json({ error: 'Unauthorized' }, 401)
 
   const body = await c.req.json().catch(() => ({}))
   const { id } = body
   if (!id) return c.json({ error: 'Album ID is required' }, 400)
 
-  const role = await getRole(c, user)
+  const role = await getRole(c, { id: userId })
 
   if (role === 'admin') {
     const r = await db.prepare(`DELETE FROM albums WHERE id = ?`).bind(id).run()
@@ -305,7 +270,7 @@ albumsRoute.delete('/', async (c) => {
   } else {
     const r = await db
       .prepare(`DELETE FROM albums WHERE id = ? AND user_id = ?`)
-      .bind(id, user.id)
+      .bind(id, userId)
       .run()
     if (!r.success || r.meta.changes === 0) {
       return c.json({ error: 'Album not found or forbidden' }, 403)

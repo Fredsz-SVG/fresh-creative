@@ -354,7 +354,7 @@ export function Pricing() {
                     <p className="hidden sm:block text-sm font-bold text-slate-700 mt-1">Siap untuk diproses sekarang juga.</p>
                   </div>
                   <a
-                    href="/login?next=/admin/showroom"
+                    href="/login?next=/user/showroom"
                     className="group inline-flex items-center gap-2 rounded-xl sm:rounded-2xl border-2 sm:border border-slate-900 bg-white px-5 sm:px-8 sm:px-10 py-3 sm:py-3.5 sm:py-4 text-[11px] sm:text-sm sm:text-base font-black text-slate-900 transition-all hover:-translate-y-0.5 hover:-translate-x-0.5 hover:shadow-[3px_3px_0_0_#0f172a] active:translate-x-0 active:translate-y-0 active:shadow-none whitespace-nowrap"
                   >
                     Lanjut <span className="hidden sm:inline">Sekarang</span> <TiLocationArrow className="h-4 w-4 sm:h-5 sm:w-5 transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />

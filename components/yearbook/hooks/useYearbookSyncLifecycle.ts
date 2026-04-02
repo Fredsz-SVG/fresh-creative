@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import type { ClassAccess, ClassRequest } from '../types'
 
 type InitialAccess = {
@@ -26,6 +26,8 @@ export function useYearbookSyncLifecycle(params: {
     fetchAllAccess,
     fetchAllClassMembers,
   } = params
+  const lastVisibleSyncRef = useRef(0)
+  const VISIBLE_SYNC_COOLDOWN_MS = 30000
 
   useEffect(() => {
     if ((view !== 'classes' && view !== 'cover') || !id) return
@@ -38,6 +40,9 @@ export function useYearbookSyncLifecycle(params: {
     if (!id) return
     const onVisible = () => {
       if (document.visibilityState === 'hidden') return
+      const now = Date.now()
+      if (now - lastVisibleSyncRef.current < VISIBLE_SYNC_COOLDOWN_MS) return
+      lastVisibleSyncRef.current = now
       void fetchAlbum(true)
       void fetchAllAccess()
       void fetchAllClassMembers()

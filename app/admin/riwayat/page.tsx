@@ -24,7 +24,7 @@ type Transaction = {
 type ViewMode = 'mine' | 'all'
 
 export default function AdminRiwayatPage() {
-  const [loading, setLoading] = useState(true)
+  const [loadingMap, setLoadingMap] = useState<{ mine: boolean, all: boolean }>({ mine: true, all: true })
   const [invoicePopupUrl, setInvoicePopupUrl] = useState<string | null>(null)
   const [viewMode, setViewModeState] = useState<ViewMode>(() => {
     if (typeof window !== 'undefined') {
@@ -46,7 +46,7 @@ export default function AdminRiwayatPage() {
 
   const [transactionsMap, setTransactionsMap] = useState<{ mine: Transaction[] | null, all: Transaction[] | null }>({ mine: null, all: null })
   const transactions = transactionsMap[viewMode] || []
-  const currentLoading = loading && transactionsMap[viewMode] === null
+  const currentLoading = loadingMap[viewMode] && transactionsMap[viewMode] === null
 
   // Cache per tab so switching sidebar doesn't re-skeleton.
   const cacheKeyMine = 'admin_transactions_v1:mine'
@@ -61,7 +61,7 @@ export default function AdminRiwayatPage() {
       const all = allRaw ? (JSON.parse(allRaw) as { ts: number; data: Transaction[] }).data : null
       if (mine || all) {
         setTransactionsMap({ mine: mine ?? null, all: all ?? null })
-        setLoading(false)
+        setLoadingMap({ mine: mine == null, all: all == null })
       }
     } catch {
       // ignore
@@ -70,7 +70,7 @@ export default function AdminRiwayatPage() {
 
   const fetchTransactions = useCallback(async (mode: ViewMode, skipLoading = false) => {
     if (!skipLoading) {
-      setLoading(true)
+      setLoadingMap(prev => ({ ...prev, [mode]: true }))
     }
     try {
       const ts = Date.now()
@@ -95,7 +95,7 @@ export default function AdminRiwayatPage() {
       setTransactionsMap(prev => ({ ...prev, [mode]: [] }))
     } finally {
       if (!skipLoading) {
-        setLoading(false)
+        setLoadingMap(prev => ({ ...prev, [mode]: false }))
       }
     }
   }, [])

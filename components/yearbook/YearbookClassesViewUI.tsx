@@ -22,7 +22,6 @@ import ClassesEmptyView from './components/ClassesEmptyView'
 import YearbookMobileNav from './components/YearbookMobileNav'
 import { apiUrl } from '../../lib/api-url'
 import { fetchWithAuth } from '../../lib/api-client'
-import FastImage from '@/components/ui/FastImage'
 import type { AlbumClass, ClassAccess, ClassMember, ClassRequest, Photo, Teacher, TeacherPhoto } from './types'
 
 type StudentInClass = { student_name: string; photo_count: number }
@@ -182,37 +181,8 @@ export default function YearbookClassesViewUI(props: any) {
   const [joinStats, setJoinStats] = useState<any>(null)
   const [savingLimit, setSavingLimit] = useState(false)
   const [approvalTab, setApprovalTab] = useState<'pending' | 'approved' | 'team'>('pending')
-  const inviteStorageKey = album?.id ? `yearbook-invite-token-${album.id}` : null
-  const [inviteToken, setInviteToken] = useState<string | null>(() => {
-    if (typeof window === 'undefined' || !album?.id) return null
-    try {
-      const raw = sessionStorage.getItem(`yearbook-invite-token-${album.id}`)
-      if (!raw) return null
-      const parsed = JSON.parse(raw) as { token?: string }
-      return typeof parsed.token === 'string' ? parsed.token : null
-    } catch {
-      return null
-    }
-  })
-  const [inviteExpiresAt, setInviteExpiresAt] = useState<string | null>(() => {
-    if (typeof window === 'undefined' || !album?.id) return null
-    try {
-      const raw = sessionStorage.getItem(`yearbook-invite-token-${album.id}`)
-      if (!raw) return null
-      const parsed = JSON.parse(raw) as { expiresAt?: string }
-      return typeof parsed.expiresAt === 'string' ? parsed.expiresAt : null
-    } catch {
-      return null
-    }
-  })
-  const [inviteTokenLoaded, setInviteTokenLoaded] = useState<boolean>(() => {
-    if (typeof window === 'undefined' || !album?.id) return false
-    try {
-      return !!sessionStorage.getItem(`yearbook-invite-token-${album.id}`)
-    } catch {
-      return false
-    }
-  })
+  const [inviteToken, setInviteToken] = useState<string | null>(null)
+  const [inviteExpiresAt, setInviteExpiresAt] = useState<string | null>(null)
   const [generatingInvite, setGeneratingInvite] = useState(false)
   const [deleteClassConfirm, setDeleteClassConfirm] = useState<{ classId: string; className: string } | null>(null)
   const [deleteMemberConfirm, setDeleteMemberConfirm] = useState<{ classId: string; userId?: string; memberName: string } | null>(null)
@@ -321,7 +291,7 @@ export default function YearbookClassesViewUI(props: any) {
     if (sidebarMode === 'flipbook' && album?.id) {
       fetchManualPages()
     }
-  }, [sidebarMode, album?.id, flipbookPreviewMode])
+  }, [sidebarMode, album?.id])
 
   // Supabase auth-only: no Realtime. View is refreshed on demand (after actions) and when the user revisits the tab.
 
@@ -332,26 +302,11 @@ export default function YearbookClassesViewUI(props: any) {
       const res = await fetchWithAuth(`/api/albums/${album.id}/invite-token`, { credentials: 'include' })
       if (res.ok) {
         const data = asApiObject(await res.json().catch(() => ({})))
-        const token = typeof data.token === 'string' ? data.token : null
-        const expiresAt = typeof data.expiresAt === 'string' ? data.expiresAt : null
-        setInviteToken(token)
-        setInviteExpiresAt(expiresAt)
-        if (typeof window !== 'undefined' && inviteStorageKey) {
-          try {
-            if (token) {
-              sessionStorage.setItem(inviteStorageKey, JSON.stringify({ token, expiresAt }))
-            } else {
-              sessionStorage.removeItem(inviteStorageKey)
-            }
-          } catch {
-            // ignore storage error
-          }
-        }
+        setInviteToken(typeof data.token === 'string' ? data.token : null)
+        setInviteExpiresAt(typeof data.expiresAt === 'string' ? data.expiresAt : null)
       }
     } catch (error) {
       console.error('Error fetching invite token:', error)
-    } finally {
-      setInviteTokenLoaded(true)
     }
   }
 
@@ -368,18 +323,8 @@ export default function YearbookClassesViewUI(props: any) {
       })
       if (res.ok) {
         const data = asApiObject(await res.json().catch(() => ({})))
-        const token = typeof data.token === 'string' ? data.token : null
-        const expiresAt = typeof data.expiresAt === 'string' ? data.expiresAt : null
-        setInviteToken(token)
-        setInviteExpiresAt(expiresAt)
-        setInviteTokenLoaded(true)
-        if (typeof window !== 'undefined' && inviteStorageKey && token) {
-          try {
-            sessionStorage.setItem(inviteStorageKey, JSON.stringify({ token, expiresAt }))
-          } catch {
-            // ignore storage error
-          }
-        }
+        setInviteToken(typeof data.token === 'string' ? data.token : null)
+        setInviteExpiresAt(typeof data.expiresAt === 'string' ? data.expiresAt : null)
         toast.success('Link undangan berhasil dibuat!')
       } else {
         toast.error('Gagal membuat link undangan')
@@ -1141,7 +1086,7 @@ export default function YearbookClassesViewUI(props: any) {
                       <div className="w-full max-w-[240px] sm:max-w-xs shrink-0">
                         <div className="relative aspect-[3/4] bg-white dark:bg-slate-900 border-4 border-slate-900 dark:border-slate-700 rounded-[32px] overflow-hidden shadow-[8px_8px_0_0_#0f172a] dark:shadow-[8px_8px_0_0_#334155] lg:shadow-[12px_12px_0_0_#0f172a] lg:dark:shadow-[12px_12px_0_0_#334155] group rotate-1">
                           {album?.cover_image_url ? (
-                            <FastImage
+                            <img
                               src={(() => {
                                 const u = String(album.cover_image_url || '')
                                 // Jika URL tersimpan absolute (origin worker), pakai path saja agar lewat Next rewrites.
@@ -1149,7 +1094,6 @@ export default function YearbookClassesViewUI(props: any) {
                               })()}
                               alt={album.name}
                               className="w-full h-full object-cover"
-                              priority
                               style={album.cover_image_position ? { objectPosition: `${album.cover_image_position}` } : undefined}
                             />
                           ) : (
@@ -1349,11 +1293,10 @@ export default function YearbookClassesViewUI(props: any) {
                               }
                             }}
                           >
-                            <FastImage
+                            <img
                               src={coverPreview.dataUrl}
                               alt="Preview cover"
                               className="absolute inset-0 w-full h-full object-cover pointer-events-none transition-transform duration-75"
-                              priority
                               style={{ objectPosition: `${coverPosition.x}% ${coverPosition.y}%` }}
                             />
                             <div className="absolute inset-0 border-[16px] border-slate-900/10 pointer-events-none" />
@@ -1409,7 +1352,6 @@ export default function YearbookClassesViewUI(props: any) {
                   classes={classes}
                   inviteToken={inviteToken}
                   inviteExpiresAt={inviteExpiresAt}
-                  inviteTokenLoaded={inviteTokenLoaded}
                   generatingInvite={generatingInvite}
                   onGenerateInvite={handleGenerateInviteToken}
                   savingLimit={savingLimit}
@@ -1474,7 +1416,7 @@ export default function YearbookClassesViewUI(props: any) {
               <div
                 className={
                   !isCoverView && sidebarMode === 'flipbook'
-                    ? `block w-full min-h-0 ${flipbookPreviewMode ? 'h-[calc(100dvh-3.5rem)] lg:h-[calc(100dvh-3.5rem)]' : 'h-full'}`
+                    ? `block w-full min-h-0 ${flipbookPreviewMode ? 'h-[calc(100dvh-3.5rem)] lg:h-full' : 'h-full'}`
                     : 'hidden'
                 }
               >
@@ -1595,11 +1537,10 @@ export default function YearbookClassesViewUI(props: any) {
                                 className="relative group aspect-[3/4] lg:max-w-md lg:mx-auto rounded-[40px] border-4 border-slate-900 dark:border-slate-700 overflow-hidden bg-slate-100 dark:bg-slate-800 shadow-[12px_12px_0_0_#0f172a] dark:shadow-[12px_12px_0_0_#334155] hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all duration-500"
                                 onClick={() => setViewingBatchPhotoClass(currentClass)}
                               >
-                                <FastImage
+                                <img
                                   src={currentClass.batch_photo_url}
                                   alt={`Foto Angkatan ${currentClass.name}`}
                                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                                  priority
                                 />
                                 <div className="absolute inset-0 bg-slate-900/40 dark:bg-slate-950/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                                   <div className="px-8 py-4 bg-white dark:bg-slate-800 border-4 border-slate-900 dark:border-slate-600 rounded-2xl shadow-[8px_8px_0_0_#0f172a] dark:shadow-[8px_8px_0_0_#334155] flex items-center gap-3 active:scale-95 transition-all">
@@ -1934,11 +1875,10 @@ export default function YearbookClassesViewUI(props: any) {
                     </div>
                     <div className="flex-1 flex items-center justify-center overflow-hidden w-full max-w-7xl mx-auto">
                       <div className="relative p-2 bg-white dark:bg-slate-900 border-4 border-slate-900 dark:border-slate-700 rounded-[32px] shadow-[20px_20px_0_0_rgba(0,0,0,0.3)] dark:shadow-[20px_20px_0_0_#334155] max-h-full">
-                        <FastImage
+                        <img
                           src={viewingBatchPhotoClass.batch_photo_url}
                           alt={`Foto Angkatan ${viewingBatchPhotoClass.name}`}
                           className="max-w-full max-h-[70vh] object-contain rounded-[24px]"
-                          priority
                         />
                       </div>
                     </div>

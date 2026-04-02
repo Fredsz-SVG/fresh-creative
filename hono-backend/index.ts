@@ -88,6 +88,7 @@ import files from './routes/files';
 
 // ── User ──
 import userJoinRequests from './routes/user/join-requests';
+import userBootstrap from './routes/user/bootstrap';
 import userMe from './routes/user/me';
 import userNotifications from './routes/user/notifications/index';
 import userNotificationsId from './routes/user/notifications/[id]';
@@ -246,6 +247,7 @@ app.route('/api/files', files);
 
 // User
 app.route('/api/user/join-requests', userJoinRequests);
+app.route('/api/user/bootstrap', userBootstrap);
 app.route('/api/user/me', userMe);
 app.route('/api/user/notifications/:id', userNotificationsId);
 app.route('/api/user/notifications', userNotifications);

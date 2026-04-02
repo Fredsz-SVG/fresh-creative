@@ -55,7 +55,11 @@ verifyLoginOtp.post('/', async (c) => {
   if (row) {
     await db.prepare(`DELETE FROM login_otps WHERE user_id = ?`).bind(user.id).run()
     const role = await getRole(c, user)
-    const redirectTo = role === 'admin' ? '/admin' : '/user'
+    let finalNext = safeNext
+    if (role === 'admin' && finalNext.startsWith('/user')) {
+      finalNext = finalNext.replace('/user', '/admin')
+    }
+    const redirectTo = finalNext || (role === 'admin' ? '/admin' : '/user')
     const isProduction = (c.env as AuthEnv).NODE_ENV === 'production'
     setCookie(c, OTP_COOKIE_NAME, '1', {
       path: '/',
@@ -85,7 +89,11 @@ verifyLoginOtp.post('/', async (c) => {
   const verifiedUser = data?.user ?? user
   await ensureUserInD1(db, verifiedUser, honoEnvForSupabasePublicSync(c.env))
   const role = await getRole(c, verifiedUser)
-  const redirectTo = safeNext || (role === 'admin' ? '/admin' : '/user')
+  let finalNext = safeNext
+  if (role === 'admin' && finalNext.startsWith('/user')) {
+    finalNext = finalNext.replace('/user', '/admin')
+  }
+  const redirectTo = finalNext || (role === 'admin' ? '/admin' : '/user')
   const isProduction = (c.env as AuthEnv).NODE_ENV === 'production'
 
   setCookie(c, OTP_COOKIE_NAME, '1', {

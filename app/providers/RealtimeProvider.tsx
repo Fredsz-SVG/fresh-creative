@@ -1,7 +1,6 @@
 "use client"
 
 import { type ReactNode, useEffect, useRef } from 'react'
-import { useRouter } from 'next/navigation'
 
 type RealtimeEvent = {
   type?: string
@@ -22,32 +21,12 @@ function getRealtimeWsUrl(): string {
 }
 
 export default function RealtimeProvider({ children }: { children: ReactNode }) {
-  const router = useRouter()
   const reconnectAttemptRef = useRef(0)
-  const lastRefreshAtRef = useRef(0)
-  const refreshTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     let socket: WebSocket | null = null
     let reconnectTimeout: ReturnType<typeof setTimeout> | null = null
     let closedByEffect = false
-
-    const refreshSoon = () => {
-      const now = Date.now()
-      const elapsed = now - lastRefreshAtRef.current
-      if (elapsed >= 750) {
-        lastRefreshAtRef.current = now
-        router.refresh()
-        return
-      }
-      if (!refreshTimeoutRef.current) {
-        refreshTimeoutRef.current = setTimeout(() => {
-          refreshTimeoutRef.current = null
-          lastRefreshAtRef.current = Date.now()
-          router.refresh()
-        }, 800 - elapsed)
-      }
-    }
 
     const connect = () => {
       socket = new WebSocket(getRealtimeWsUrl())
@@ -69,7 +48,6 @@ export default function RealtimeProvider({ children }: { children: ReactNode }) 
         }
 
         window.dispatchEvent(new CustomEvent('fresh:realtime', { detail: parsed }))
-        refreshSoon()
       }
 
       socket.onclose = () => {
@@ -89,16 +67,12 @@ export default function RealtimeProvider({ children }: { children: ReactNode }) 
 
     return () => {
       closedByEffect = true
-      if (refreshTimeoutRef.current) {
-        clearTimeout(refreshTimeoutRef.current)
-        refreshTimeoutRef.current = null
-      }
       if (reconnectTimeout) {
         clearTimeout(reconnectTimeout)
       }
       socket?.close()
     }
-  }, [router])
+  }, [])
 
   return <>{children}</>
 }

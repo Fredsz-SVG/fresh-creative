@@ -142,9 +142,9 @@ var init_tslib_es6 = __esm({
 var resolveFetch;
 var init_helper = __esm({
   "node_modules/@supabase/functions-js/dist/module/helper.js"() {
-    resolveFetch = /* @__PURE__ */ __name((customFetch) => {
-      if (customFetch) {
-        return (...args) => customFetch(...args);
+    resolveFetch = /* @__PURE__ */ __name((customFetch2) => {
+      if (customFetch2) {
+        return (...args) => customFetch2(...args);
       }
       return (...args) => fetch(...args);
     }, "resolveFetch");
@@ -159,8 +159,8 @@ var init_types = __esm({
       static {
         __name(this, "FunctionsError");
       }
-      constructor(message, name2 = "FunctionsError", context) {
-        super(message);
+      constructor(message2, name2 = "FunctionsError", context) {
+        super(message2);
         this.name = name2;
         this.context = context;
       }
@@ -245,11 +245,11 @@ var init_FunctionsClient = __esm({
        * })
        * ```
        */
-      constructor(url, { headers = {}, customFetch, region = FunctionRegion.Any } = {}) {
+      constructor(url, { headers = {}, customFetch: customFetch2, region = FunctionRegion.Any } = {}) {
         this.url = url;
         this.headers = headers;
         this.region = region;
-        this.fetch = resolveFetch(customFetch);
+        this.fetch = resolveFetch(customFetch2);
       }
       /**
        * Updates the authorization header
@@ -5434,33 +5434,33 @@ var init_serializer = __esm({
         let payload = [msg.join_ref, msg.ref, msg.topic, msg.event, msg.payload];
         return callback(JSON.stringify(payload));
       }
-      _binaryEncodeUserBroadcastPush(message) {
+      _binaryEncodeUserBroadcastPush(message2) {
         var _a4;
-        if (this._isArrayBuffer((_a4 = message.payload) === null || _a4 === void 0 ? void 0 : _a4.payload)) {
-          return this._encodeBinaryUserBroadcastPush(message);
+        if (this._isArrayBuffer((_a4 = message2.payload) === null || _a4 === void 0 ? void 0 : _a4.payload)) {
+          return this._encodeBinaryUserBroadcastPush(message2);
         } else {
-          return this._encodeJsonUserBroadcastPush(message);
+          return this._encodeJsonUserBroadcastPush(message2);
         }
       }
-      _encodeBinaryUserBroadcastPush(message) {
+      _encodeBinaryUserBroadcastPush(message2) {
         var _a4, _b;
-        const userPayload = (_b = (_a4 = message.payload) === null || _a4 === void 0 ? void 0 : _a4.payload) !== null && _b !== void 0 ? _b : new ArrayBuffer(0);
-        return this._encodeUserBroadcastPush(message, this.BINARY_ENCODING, userPayload);
+        const userPayload = (_b = (_a4 = message2.payload) === null || _a4 === void 0 ? void 0 : _a4.payload) !== null && _b !== void 0 ? _b : new ArrayBuffer(0);
+        return this._encodeUserBroadcastPush(message2, this.BINARY_ENCODING, userPayload);
       }
-      _encodeJsonUserBroadcastPush(message) {
+      _encodeJsonUserBroadcastPush(message2) {
         var _a4, _b;
-        const userPayload = (_b = (_a4 = message.payload) === null || _a4 === void 0 ? void 0 : _a4.payload) !== null && _b !== void 0 ? _b : {};
-        const encoder = new TextEncoder();
-        const encodedUserPayload = encoder.encode(JSON.stringify(userPayload)).buffer;
-        return this._encodeUserBroadcastPush(message, this.JSON_ENCODING, encodedUserPayload);
+        const userPayload = (_b = (_a4 = message2.payload) === null || _a4 === void 0 ? void 0 : _a4.payload) !== null && _b !== void 0 ? _b : {};
+        const encoder2 = new TextEncoder();
+        const encodedUserPayload = encoder2.encode(JSON.stringify(userPayload)).buffer;
+        return this._encodeUserBroadcastPush(message2, this.JSON_ENCODING, encodedUserPayload);
       }
-      _encodeUserBroadcastPush(message, encodingType, encodedPayload) {
+      _encodeUserBroadcastPush(message2, encodingType, encodedPayload) {
         var _a4, _b;
-        const topic = message.topic;
-        const ref = (_a4 = message.ref) !== null && _a4 !== void 0 ? _a4 : "";
-        const joinRef = (_b = message.join_ref) !== null && _b !== void 0 ? _b : "";
-        const userEvent = message.payload.event;
-        const rest = this.allowedMetadataKeys ? this._pick(message.payload, this.allowedMetadataKeys) : {};
+        const topic = message2.topic;
+        const ref = (_a4 = message2.ref) !== null && _a4 !== void 0 ? _a4 : "";
+        const joinRef = (_b = message2.join_ref) !== null && _b !== void 0 ? _b : "";
+        const userEvent = message2.payload.event;
+        const rest = this.allowedMetadataKeys ? this._pick(message2.payload, this.allowedMetadataKeys) : {};
         const metadata = Object.keys(rest).length === 0 ? "" : JSON.stringify(rest);
         if (joinRef.length > 255) {
           throw new Error(`joinRef length ${joinRef.length} exceeds maximum of 255`);
@@ -5513,26 +5513,26 @@ var init_serializer = __esm({
       _binaryDecode(buffer) {
         const view = new DataView(buffer);
         const kind = view.getUint8(0);
-        const decoder2 = new TextDecoder();
+        const decoder3 = new TextDecoder();
         switch (kind) {
           case this.KINDS.userBroadcast:
-            return this._decodeUserBroadcast(buffer, view, decoder2);
+            return this._decodeUserBroadcast(buffer, view, decoder3);
         }
       }
-      _decodeUserBroadcast(buffer, view, decoder2) {
+      _decodeUserBroadcast(buffer, view, decoder3) {
         const topicSize = view.getUint8(1);
         const userEventSize = view.getUint8(2);
         const metadataSize = view.getUint8(3);
         const payloadEncoding = view.getUint8(4);
         let offset = this.HEADER_LENGTH + 4;
-        const topic = decoder2.decode(buffer.slice(offset, offset + topicSize));
+        const topic = decoder3.decode(buffer.slice(offset, offset + topicSize));
         offset = offset + topicSize;
-        const userEvent = decoder2.decode(buffer.slice(offset, offset + userEventSize));
+        const userEvent = decoder3.decode(buffer.slice(offset, offset + userEventSize));
         offset = offset + userEventSize;
-        const metadata = decoder2.decode(buffer.slice(offset, offset + metadataSize));
+        const metadata = decoder3.decode(buffer.slice(offset, offset + metadataSize));
         offset = offset + metadataSize;
         const payload = buffer.slice(offset, buffer.byteLength);
-        const parsedPayload = payloadEncoding === this.JSON_ENCODING ? JSON.parse(decoder2.decode(payload)) : payload;
+        const parsedPayload = payloadEncoding === this.JSON_ENCODING ? JSON.parse(decoder3.decode(payload)) : payload;
         const data = {
           type: this.BROADCAST_EVENT,
           event: userEvent,
@@ -6753,8 +6753,8 @@ var init_phoenix = __esm({
         }
       },
       /** @private */
-      binaryEncode(message) {
-        let { join_ref, ref, event, topic, payload } = message;
+      binaryEncode(message2) {
+        let { join_ref, ref, event, topic, payload } = message2;
         let metaLength = this.META_LENGTH + join_ref.length + ref.length + topic.length + event.length;
         let header = new ArrayBuffer(this.HEADER_LENGTH + metaLength);
         let view = new DataView(header);
@@ -6779,58 +6779,58 @@ var init_phoenix = __esm({
       binaryDecode(buffer) {
         let view = new DataView(buffer);
         let kind = view.getUint8(0);
-        let decoder2 = new TextDecoder();
+        let decoder3 = new TextDecoder();
         switch (kind) {
           case this.KINDS.push:
-            return this.decodePush(buffer, view, decoder2);
+            return this.decodePush(buffer, view, decoder3);
           case this.KINDS.reply:
-            return this.decodeReply(buffer, view, decoder2);
+            return this.decodeReply(buffer, view, decoder3);
           case this.KINDS.broadcast:
-            return this.decodeBroadcast(buffer, view, decoder2);
+            return this.decodeBroadcast(buffer, view, decoder3);
         }
       },
       /** @private */
-      decodePush(buffer, view, decoder2) {
+      decodePush(buffer, view, decoder3) {
         let joinRefSize = view.getUint8(1);
         let topicSize = view.getUint8(2);
         let eventSize = view.getUint8(3);
         let offset = this.HEADER_LENGTH + this.META_LENGTH - 1;
-        let joinRef = decoder2.decode(buffer.slice(offset, offset + joinRefSize));
+        let joinRef = decoder3.decode(buffer.slice(offset, offset + joinRefSize));
         offset = offset + joinRefSize;
-        let topic = decoder2.decode(buffer.slice(offset, offset + topicSize));
+        let topic = decoder3.decode(buffer.slice(offset, offset + topicSize));
         offset = offset + topicSize;
-        let event = decoder2.decode(buffer.slice(offset, offset + eventSize));
+        let event = decoder3.decode(buffer.slice(offset, offset + eventSize));
         offset = offset + eventSize;
         let data = buffer.slice(offset, buffer.byteLength);
         return { join_ref: joinRef, ref: null, topic, event, payload: data };
       },
       /** @private */
-      decodeReply(buffer, view, decoder2) {
+      decodeReply(buffer, view, decoder3) {
         let joinRefSize = view.getUint8(1);
         let refSize = view.getUint8(2);
         let topicSize = view.getUint8(3);
         let eventSize = view.getUint8(4);
         let offset = this.HEADER_LENGTH + this.META_LENGTH;
-        let joinRef = decoder2.decode(buffer.slice(offset, offset + joinRefSize));
+        let joinRef = decoder3.decode(buffer.slice(offset, offset + joinRefSize));
         offset = offset + joinRefSize;
-        let ref = decoder2.decode(buffer.slice(offset, offset + refSize));
+        let ref = decoder3.decode(buffer.slice(offset, offset + refSize));
         offset = offset + refSize;
-        let topic = decoder2.decode(buffer.slice(offset, offset + topicSize));
+        let topic = decoder3.decode(buffer.slice(offset, offset + topicSize));
         offset = offset + topicSize;
-        let event = decoder2.decode(buffer.slice(offset, offset + eventSize));
+        let event = decoder3.decode(buffer.slice(offset, offset + eventSize));
         offset = offset + eventSize;
         let data = buffer.slice(offset, buffer.byteLength);
         let payload = { status: event, response: data };
         return { join_ref: joinRef, ref, topic, event: CHANNEL_EVENTS2.reply, payload };
       },
       /** @private */
-      decodeBroadcast(buffer, view, decoder2) {
+      decodeBroadcast(buffer, view, decoder3) {
         let topicSize = view.getUint8(1);
         let eventSize = view.getUint8(2);
         let offset = this.HEADER_LENGTH + 2;
-        let topic = decoder2.decode(buffer.slice(offset, offset + topicSize));
+        let topic = decoder3.decode(buffer.slice(offset, offset + topicSize));
         offset = offset + topicSize;
-        let event = decoder2.decode(buffer.slice(offset, offset + eventSize));
+        let event = decoder3.decode(buffer.slice(offset, offset + eventSize));
         offset = offset + eventSize;
         let data = buffer.slice(offset, buffer.byteLength);
         return { join_ref: null, ref: null, topic, event, payload: data };
@@ -8665,9 +8665,9 @@ var init_RealtimeClient = __esm({
         this._authPromise = null;
         this._workerHeartbeatTimer = void 0;
         this._pendingWorkerHeartbeatRef = null;
-        this._resolveFetch = (customFetch) => {
-          if (customFetch) {
-            return (...args) => customFetch(...args);
+        this._resolveFetch = (customFetch2) => {
+          if (customFetch2) {
+            return (...args) => customFetch2(...args);
           }
           return (...args) => fetch(...args);
         };
@@ -9004,8 +9004,8 @@ Option 2: Install and provide the "ws" package:
             this._terminateWorker();
           }
         });
-        this.socketAdapter.onMessage((message) => {
-          if (message.ref && message.ref === this._pendingWorkerHeartbeatRef) {
+        this.socketAdapter.onMessage((message2) => {
+          if (message2.ref && message2.ref === this._pendingWorkerHeartbeatRef) {
             this._pendingWorkerHeartbeatRef = null;
           }
         });
@@ -9227,8 +9227,8 @@ var init_dist2 = __esm({
       static {
         __name(this, "IcebergError");
       }
-      constructor(message, opts) {
-        super(message);
+      constructor(message2, opts) {
+        super(message2);
         this.name = "IcebergError";
         this.status = opts.status;
         this.icebergType = opts.icebergType;
@@ -9797,8 +9797,8 @@ var init_dist3 = __esm({
       static {
         __name(this, "StorageError");
       }
-      constructor(message, namespace = "storage", status, statusCode) {
-        super(message);
+      constructor(message2, namespace = "storage", status, statusCode) {
+        super(message2);
         this.__isStorageError = true;
         this.namespace = namespace;
         this.name = namespace === "vectors" ? "StorageVectorsError" : "StorageError";
@@ -9811,8 +9811,8 @@ var init_dist3 = __esm({
       static {
         __name(this, "StorageApiError");
       }
-      constructor(message, status, statusCode, namespace = "storage") {
-        super(message, namespace, status, statusCode);
+      constructor(message2, status, statusCode, namespace = "storage") {
+        super(message2, namespace, status, statusCode);
         this.name = namespace === "vectors" ? "StorageVectorsApiError" : "StorageApiError";
         this.status = status;
         this.statusCode = statusCode;
@@ -9830,14 +9830,14 @@ var init_dist3 = __esm({
       static {
         __name(this, "StorageUnknownError");
       }
-      constructor(message, originalError, namespace = "storage") {
-        super(message, namespace);
+      constructor(message2, originalError, namespace = "storage") {
+        super(message2, namespace);
         this.name = namespace === "vectors" ? "StorageVectorsUnknownError" : "StorageUnknownError";
         this.originalError = originalError;
       }
     };
-    resolveFetch2 = /* @__PURE__ */ __name((customFetch) => {
-      if (customFetch) return (...args) => customFetch(...args);
+    resolveFetch2 = /* @__PURE__ */ __name((customFetch2) => {
+      if (customFetch2) return (...args) => customFetch2(...args);
       return (...args) => fetch(...args);
     }, "resolveFetch");
     isPlainObject = /* @__PURE__ */ __name((value) => {
@@ -12359,8 +12359,8 @@ var init_errors = __esm({
       static {
         __name(this, "AuthError");
       }
-      constructor(message, status, code) {
-        super(message);
+      constructor(message2, status, code) {
+        super(message2);
         this.__isAuthError = true;
         this.name = "AuthError";
         this.status = status;
@@ -12372,8 +12372,8 @@ var init_errors = __esm({
       static {
         __name(this, "AuthApiError");
       }
-      constructor(message, status, code) {
-        super(message, status, code);
+      constructor(message2, status, code) {
+        super(message2, status, code);
         this.name = "AuthApiError";
         this.status = status;
         this.code = code;
@@ -12384,8 +12384,8 @@ var init_errors = __esm({
       static {
         __name(this, "AuthUnknownError");
       }
-      constructor(message, originalError) {
-        super(message);
+      constructor(message2, originalError) {
+        super(message2);
         this.name = "AuthUnknownError";
         this.originalError = originalError;
       }
@@ -12394,8 +12394,8 @@ var init_errors = __esm({
       static {
         __name(this, "CustomAuthError");
       }
-      constructor(message, name2, status, code) {
-        super(message, status, code);
+      constructor(message2, name2, status, code) {
+        super(message2, status, code);
         this.name = name2;
         this.status = status;
       }
@@ -12421,16 +12421,16 @@ var init_errors = __esm({
       static {
         __name(this, "AuthInvalidCredentialsError");
       }
-      constructor(message) {
-        super(message, "AuthInvalidCredentialsError", 400, void 0);
+      constructor(message2) {
+        super(message2, "AuthInvalidCredentialsError", 400, void 0);
       }
     };
     AuthImplicitGrantRedirectError = class extends CustomAuthError {
       static {
         __name(this, "AuthImplicitGrantRedirectError");
       }
-      constructor(message, details = null) {
-        super(message, "AuthImplicitGrantRedirectError", 500, void 0);
+      constructor(message2, details = null) {
+        super(message2, "AuthImplicitGrantRedirectError", 500, void 0);
         this.details = null;
         this.details = details;
       }
@@ -12448,8 +12448,8 @@ var init_errors = __esm({
       static {
         __name(this, "AuthPKCEGrantCodeExchangeError");
       }
-      constructor(message, details = null) {
-        super(message, "AuthPKCEGrantCodeExchangeError", 500, void 0);
+      constructor(message2, details = null) {
+        super(message2, "AuthPKCEGrantCodeExchangeError", 500, void 0);
         this.details = null;
         this.details = details;
       }
@@ -12475,8 +12475,8 @@ var init_errors = __esm({
       static {
         __name(this, "AuthRetryableFetchError");
       }
-      constructor(message, status) {
-        super(message, "AuthRetryableFetchError", status, void 0);
+      constructor(message2, status) {
+        super(message2, "AuthRetryableFetchError", status, void 0);
       }
     };
     __name(isAuthRetryableFetchError, "isAuthRetryableFetchError");
@@ -12484,8 +12484,8 @@ var init_errors = __esm({
       static {
         __name(this, "AuthWeakPasswordError");
       }
-      constructor(message, status, reasons) {
-        super(message, "AuthWeakPasswordError", status, "weak_password");
+      constructor(message2, status, reasons) {
+        super(message2, "AuthWeakPasswordError", status, "weak_password");
         this.reasons = reasons;
       }
     };
@@ -12494,8 +12494,8 @@ var init_errors = __esm({
       static {
         __name(this, "AuthInvalidJwtError");
       }
-      constructor(message) {
-        super(message, "AuthInvalidJwtError", 400, "invalid_jwt");
+      constructor(message2) {
+        super(message2, "AuthInvalidJwtError", 400, "invalid_jwt");
       }
     };
   }
@@ -12770,8 +12770,8 @@ function generatePKCEVerifier() {
   return Array.from(array, dec2hex).join("");
 }
 async function sha256(randomString) {
-  const encoder = new TextEncoder();
-  const encodedData = encoder.encode(randomString);
+  const encoder2 = new TextEncoder();
+  const encodedData = encoder2.encode(randomString);
   const hash = await crypto.subtle.digest("SHA-256", encodedData);
   const bytes = new Uint8Array(hash);
   return Array.from(bytes).map((c2) => String.fromCharCode(c2)).join("");
@@ -12928,9 +12928,9 @@ var init_helpers = __esm({
       return localStorageWriteTests.writable;
     }, "supportsLocalStorage");
     __name(parseParametersFromURL, "parseParametersFromURL");
-    resolveFetch3 = /* @__PURE__ */ __name((customFetch) => {
-      if (customFetch) {
-        return (...args) => customFetch(...args);
+    resolveFetch3 = /* @__PURE__ */ __name((customFetch2) => {
+      if (customFetch2) {
+        return (...args) => customFetch2(...args);
       }
       return (...args) => fetch(...args);
     }, "resolveFetch");
@@ -14362,8 +14362,8 @@ var init_locks = __esm({
       static {
         __name(this, "LockAcquireTimeoutError");
       }
-      constructor(message) {
-        super(message);
+      constructor(message2) {
+        super(message2);
         this.isAcquireTimeout = true;
       }
     };
@@ -14639,9 +14639,9 @@ var init_webauthn_errors = __esm({
       static {
         __name(this, "WebAuthnError");
       }
-      constructor({ message, code, cause, name: name2 }) {
+      constructor({ message: message2, code, cause, name: name2 }) {
         var _a4;
-        super(message, { cause });
+        super(message2, { cause });
         this.__isWebAuthnError = true;
         this.name = (_a4 = name2 !== null && name2 !== void 0 ? name2 : cause instanceof Error ? cause.name : void 0) !== null && _a4 !== void 0 ? _a4 : "Unknown Error";
         this.code = code;
@@ -14651,11 +14651,11 @@ var init_webauthn_errors = __esm({
       static {
         __name(this, "WebAuthnUnknownError");
       }
-      constructor(message, originalError) {
+      constructor(message2, originalError) {
         super({
           code: "ERROR_PASSTHROUGH_SEE_CAUSE_PROPERTY",
           cause: originalError,
-          message
+          message: message2
         });
         this.name = "WebAuthnUnknownError";
         this.originalError = originalError;
@@ -14840,7 +14840,7 @@ async function getCredential(options) {
   }
 }
 function deepMerge(...sources) {
-  const isObject = /* @__PURE__ */ __name((val) => val !== null && typeof val === "object" && !Array.isArray(val), "isObject");
+  const isObject2 = /* @__PURE__ */ __name((val) => val !== null && typeof val === "object" && !Array.isArray(val), "isObject");
   const isArrayBufferLike = /* @__PURE__ */ __name((val) => val instanceof ArrayBuffer || ArrayBuffer.isView(val), "isArrayBufferLike");
   const result = {};
   for (const source of sources) {
@@ -14854,9 +14854,9 @@ function deepMerge(...sources) {
         result[key] = value;
       } else if (isArrayBufferLike(value)) {
         result[key] = value;
-      } else if (isObject(value)) {
+      } else if (isObject2(value)) {
         const existing = result[key];
-        if (isObject(existing)) {
+        if (isObject2(existing)) {
           result[key] = deepMerge(existing, value);
         } else {
           result[key] = deepMerge(value);
@@ -15314,10 +15314,10 @@ var init_GoTrueClient = __esm({
           this.logger = settings.debug;
         }
         if (this.instanceID > 0 && isBrowser()) {
-          const message = `${this._logPrefix()} Multiple GoTrueClient instances detected in the same browser context. It is not an error, but this should be avoided as it may produce undefined behavior when used concurrently under the same storage key.`;
-          console.warn(message);
+          const message2 = `${this._logPrefix()} Multiple GoTrueClient instances detected in the same browser context. It is not an error, but this should be avoided as it may produce undefined behavior when used concurrently under the same storage key.`;
+          console.warn(message2);
           if (this.logDebugMessages) {
-            console.trace(message);
+            console.trace(message2);
           }
         }
         this.persistSession = settings.persistSession;
@@ -16376,10 +16376,10 @@ var init_GoTrueClient = __esm({
       }
       async signInWithEthereum(credentials) {
         var _a4, _b, _c, _d, _e3, _f, _g, _h, _j, _k, _l2;
-        let message;
+        let message2;
         let signature;
         if ("message" in credentials) {
-          message = credentials.message;
+          message2 = credentials.message;
           signature = credentials.signature;
         } else {
           const { chain: chain2, wallet, statement, options } = credentials;
@@ -16430,10 +16430,10 @@ var init_GoTrueClient = __esm({
             requestId: (_h = options === null || options === void 0 ? void 0 : options.signInWithEthereum) === null || _h === void 0 ? void 0 : _h.requestId,
             resources: (_j = options === null || options === void 0 ? void 0 : options.signInWithEthereum) === null || _j === void 0 ? void 0 : _j.resources
           };
-          message = createSiweMessage(siweMessage);
+          message2 = createSiweMessage(siweMessage);
           signature = await resolvedWallet.request({
             method: "personal_sign",
-            params: [toHex(message), address]
+            params: [toHex(message2), address]
           });
         }
         try {
@@ -16441,7 +16441,7 @@ var init_GoTrueClient = __esm({
             headers: this.headers,
             body: Object.assign({
               chain: "ethereum",
-              message,
+              message: message2,
               signature
             }, ((_k = credentials.options) === null || _k === void 0 ? void 0 : _k.captchaToken) ? { gotrue_meta_security: { captcha_token: (_l2 = credentials.options) === null || _l2 === void 0 ? void 0 : _l2.captchaToken } } : null),
             xform: _sessionResponse
@@ -16467,10 +16467,10 @@ var init_GoTrueClient = __esm({
       }
       async signInWithSolana(credentials) {
         var _a4, _b, _c, _d, _e3, _f, _g, _h, _j, _k, _l2, _m;
-        let message;
+        let message2;
         let signature;
         if ("message" in credentials) {
-          message = credentials.message;
+          message2 = credentials.message;
           signature = credentials.signature;
         } else {
           const { chain: chain2, wallet, statement, options } = credentials;
@@ -16507,7 +16507,7 @@ var init_GoTrueClient = __esm({
               throw new Error("@supabase/auth-js: Wallet method signIn() returned unrecognized value");
             }
             if ("signedMessage" in outputToProcess && "signature" in outputToProcess && (typeof outputToProcess.signedMessage === "string" || outputToProcess.signedMessage instanceof Uint8Array) && outputToProcess.signature instanceof Uint8Array) {
-              message = typeof outputToProcess.signedMessage === "string" ? outputToProcess.signedMessage : new TextDecoder().decode(outputToProcess.signedMessage);
+              message2 = typeof outputToProcess.signedMessage === "string" ? outputToProcess.signedMessage : new TextDecoder().decode(outputToProcess.signedMessage);
               signature = outputToProcess.signature;
             } else {
               throw new Error("@supabase/auth-js: Wallet method signIn() API returned object without signedMessage and signature fields");
@@ -16516,7 +16516,7 @@ var init_GoTrueClient = __esm({
             if (!("signMessage" in resolvedWallet) || typeof resolvedWallet.signMessage !== "function" || !("publicKey" in resolvedWallet) || typeof resolvedWallet !== "object" || !resolvedWallet.publicKey || !("toBase58" in resolvedWallet.publicKey) || typeof resolvedWallet.publicKey.toBase58 !== "function") {
               throw new Error("@supabase/auth-js: Wallet does not have a compatible signMessage() and publicKey.toBase58() API");
             }
-            message = [
+            message2 = [
               `${url.host} wants you to sign in with your Solana account:`,
               resolvedWallet.publicKey.toBase58(),
               ...statement ? ["", statement, ""] : [""],
@@ -16533,7 +16533,7 @@ var init_GoTrueClient = __esm({
                 ...options.signInWithSolana.resources.map((resource) => `- ${resource}`)
               ] : []
             ].join("\n");
-            const maybeSignature = await resolvedWallet.signMessage(new TextEncoder().encode(message), "utf8");
+            const maybeSignature = await resolvedWallet.signMessage(new TextEncoder().encode(message2), "utf8");
             if (!maybeSignature || !(maybeSignature instanceof Uint8Array)) {
               throw new Error("@supabase/auth-js: Wallet signMessage() API returned an recognized value");
             }
@@ -16543,7 +16543,7 @@ var init_GoTrueClient = __esm({
         try {
           const { data, error } = await _request(this.fetch, "POST", `${this.url}/token?grant_type=web3`, {
             headers: this.headers,
-            body: Object.assign({ chain: "solana", message, signature: bytesToBase64URL(signature) }, ((_l2 = credentials.options) === null || _l2 === void 0 ? void 0 : _l2.captchaToken) ? { gotrue_meta_security: { captcha_token: (_m = credentials.options) === null || _m === void 0 ? void 0 : _m.captchaToken } } : null),
+            body: Object.assign({ chain: "solana", message: message2, signature: bytesToBase64URL(signature) }, ((_l2 = credentials.options) === null || _l2 === void 0 ? void 0 : _l2.captchaToken) ? { gotrue_meta_security: { captcha_token: (_m = credentials.options) === null || _m === void 0 ? void 0 : _m.captchaToken } } : null),
             xform: _sessionResponse
           });
           if (error) {
@@ -19983,15 +19983,15 @@ var init_dist4 = __esm({
     __name(_defineProperty3, "_defineProperty");
     __name(ownKeys3, "ownKeys");
     __name(_objectSpread23, "_objectSpread2");
-    resolveFetch4 = /* @__PURE__ */ __name((customFetch) => {
-      if (customFetch) return (...args) => customFetch(...args);
+    resolveFetch4 = /* @__PURE__ */ __name((customFetch2) => {
+      if (customFetch2) return (...args) => customFetch2(...args);
       return (...args) => fetch(...args);
     }, "resolveFetch");
     resolveHeadersConstructor = /* @__PURE__ */ __name(() => {
       return Headers;
     }, "resolveHeadersConstructor");
-    fetchWithAuth = /* @__PURE__ */ __name((supabaseKey, getAccessToken, customFetch) => {
-      const fetch$1 = resolveFetch4(customFetch);
+    fetchWithAuth = /* @__PURE__ */ __name((supabaseKey, getAccessToken, customFetch2) => {
+      const fetch$1 = resolveFetch4(customFetch2);
       const HeadersConstructor = resolveHeadersConstructor();
       return async (input, init2) => {
         var _await$getAccessToken;
@@ -20422,6 +20422,12 @@ var init_dist4 = __esm({
 });
 
 // lib/supabase.ts
+var supabase_exports = {};
+__export(supabase_exports, {
+  default: () => supabase_default,
+  getAdminSupabaseClient: () => getAdminSupabaseClient,
+  getSupabaseClient: () => getSupabaseClient
+});
 function getSupabaseClient(c2) {
   const token2 = getAccessTokenFromContext(c2);
   return createClient(
@@ -20446,11 +20452,13 @@ function getAdminSupabaseClient(env) {
   });
   return adminClientCache;
 }
-var adminClientCache;
+var supabaseModule, supabase_default, adminClientCache;
 var init_supabase = __esm({
   "lib/supabase.ts"() {
     init_dist4();
     init_get_access_token();
+    supabaseModule = {};
+    supabase_default = supabaseModule;
     __name(getSupabaseClient, "getSupabaseClient");
     adminClientCache = null;
     __name(getAdminSupabaseClient, "getAdminSupabaseClient");
@@ -20472,8 +20480,8 @@ var require_error = __commonJS({
        * @param {Response} response - HTTP response
        * @returns {ApiError} - An instance of ApiError
        */
-      constructor(message, request, response) {
-        super(message);
+      constructor(message2, request, response) {
+        super(message2);
         this.name = "ApiError";
         this.request = request;
         this.response = response;
@@ -20675,7 +20683,7 @@ var require_util = __commonJS({
     }
     __name(validateWebhook, "validateWebhook");
     async function createHMACSHA256(secret, data, crypto2) {
-      const encoder = new TextEncoder();
+      const encoder2 = new TextEncoder();
       const key = await crypto2.subtle.importKey(
         "raw",
         base64ToBytes(secret),
@@ -20683,7 +20691,7 @@ var require_util = __commonJS({
         false,
         ["sign"]
       );
-      const signature = await crypto2.subtle.sign("HMAC", key, encoder.encode(data));
+      const signature = await crypto2.subtle.sign("HMAC", key, encoder2.encode(data));
       return bytesToBase64(signature);
     }
     __name(createHMACSHA256, "createHMACSHA256");
@@ -20814,8 +20822,8 @@ var require_util = __commonJS({
     }
     __name(isTypedArray, "isTypedArray");
     function isPlainObject2(value) {
-      const isObjectLike = typeof value === "object" && value !== null;
-      if (!isObjectLike || String(value) !== "[object Object]") {
+      const isObjectLike2 = typeof value === "object" && value !== null;
+      if (!isObjectLike2 || String(value) !== "[object Object]") {
         return false;
       }
       const proto = Object.getPrototypeOf(value);
@@ -21079,8 +21087,8 @@ var require_text_decoder_stream = __commonJS({
       static {
         __name(this, "TextDecodeTransformer");
       }
-      constructor(decoder2) {
-        this.decoder_ = decoder2;
+      constructor(decoder3) {
+        this.decoder_ = decoder3;
       }
       transform(chunk, controller) {
         if (!(chunk instanceof ArrayBuffer || ArrayBuffer.isView(chunk))) {
@@ -21103,9 +21111,9 @@ var require_text_decoder_stream = __commonJS({
         __name(this, "TextDecoderStream");
       }
       constructor(label, options) {
-        const decoder2 = new TextDecoder(label || "utf-8", options || {});
-        this[decDecoder] = decoder2;
-        this[decTransform] = new TransformStream(new TextDecodeTransformer(decoder2));
+        const decoder3 = new TextDecoder(label || "utf-8", options || {});
+        this[decDecoder] = decoder3;
+        this[decTransform] = new TransformStream(new TextDecodeTransformer(decoder3));
       }
       get encoding() {
         return this[decDecoder].encoding;
@@ -23708,20 +23716,20 @@ function isEntityInAttributeInvalidEnd(code) {
 }
 function getDecoder(decodeTree) {
   let ret = "";
-  const decoder2 = new EntityDecoder(decodeTree, (str) => ret += fromCodePoint(str));
+  const decoder3 = new EntityDecoder(decodeTree, (str) => ret += fromCodePoint(str));
   return /* @__PURE__ */ __name(function decodeWithTrie(str, decodeMode) {
     let lastIndex = 0;
     let offset = 0;
     while ((offset = str.indexOf("&", offset)) >= 0) {
       ret += str.slice(lastIndex, offset);
-      decoder2.startEntity(decodeMode);
-      const len = decoder2.write(
+      decoder3.startEntity(decodeMode);
+      const len = decoder3.write(
         str,
         // Skip the "&"
         offset + 1
       );
       if (len < 0) {
-        lastIndex = offset + decoder2.end();
+        lastIndex = offset + decoder3.end();
         break;
       }
       lastIndex = offset + len;
@@ -25557,7 +25565,7 @@ function formatAttributes(attributes, opts) {
   var _a4;
   if (!attributes)
     return;
-  const encode = ((_a4 = opts.encodeEntities) !== null && _a4 !== void 0 ? _a4 : opts.decodeEntities) === false ? replaceQuotes : opts.xmlMode || opts.encodeEntities !== "utf8" ? encodeXML : escapeAttribute;
+  const encode2 = ((_a4 = opts.encodeEntities) !== null && _a4 !== void 0 ? _a4 : opts.decodeEntities) === false ? replaceQuotes : opts.xmlMode || opts.encodeEntities !== "utf8" ? encodeXML : escapeAttribute;
   return Object.keys(attributes).map((key) => {
     var _a5, _b;
     const value = (_a5 = attributes[key]) !== null && _a5 !== void 0 ? _a5 : "";
@@ -25567,7 +25575,7 @@ function formatAttributes(attributes, opts) {
     if (!opts.emptyAttrs && !opts.xmlMode && value === "") {
       return key;
     }
-    return `${key}="${encode(value)}"`;
+    return `${key}="${encode2(value)}"`;
   }).join(" ");
 }
 function render(node, options = {}) {
@@ -25609,10 +25617,10 @@ function renderTag(elem, opts) {
   if (!opts.xmlMode && foreignElements.has(elem.name)) {
     opts = { ...opts, xmlMode: "foreign" };
   }
-  let tag = `<${elem.name}`;
+  let tag2 = `<${elem.name}`;
   const attribs = formatAttributes(elem.attribs, opts);
   if (attribs) {
-    tag += ` ${attribs}`;
+    tag2 += ` ${attribs}`;
   }
   if (elem.children.length === 0 && (opts.xmlMode ? (
     // In XML mode or foreign mode, and user hasn't explicitly turned off self-closing tags
@@ -25622,18 +25630,18 @@ function renderTag(elem, opts) {
     opts.selfClosingTags && singleTag.has(elem.name)
   ))) {
     if (!opts.xmlMode)
-      tag += " ";
-    tag += "/>";
+      tag2 += " ";
+    tag2 += "/>";
   } else {
-    tag += ">";
+    tag2 += ">";
     if (elem.children.length > 0) {
-      tag += render(elem.children, opts);
+      tag2 += render(elem.children, opts);
     }
     if (opts.xmlMode || !singleTag.has(elem.name)) {
-      tag += `</${elem.name}>`;
+      tag2 += `</${elem.name}>`;
     }
   }
-  return tag;
+  return tag2;
 }
 function renderDirective(elem) {
   return `<${elem.data}>`;
@@ -35308,8 +35316,8 @@ var require_react_dom_server_edge_production = __commonJS({
       return "" + prefix2 + ("s" === s2 ? "\\73 " : "\\53 ") + suffix2;
     }
     __name(styleReplacer, "styleReplacer");
-    function pushSelfClosing(target, props, tag) {
-      target.push(startChunkForTag(tag));
+    function pushSelfClosing(target, props, tag2) {
+      target.push(startChunkForTag(tag2));
       for (var propKey in props)
         if (hasOwnProperty.call(props, propKey)) {
           var propValue = props[propKey];
@@ -35318,7 +35326,7 @@ var require_react_dom_server_edge_production = __commonJS({
               case "children":
               case "dangerouslySetInnerHTML":
                 throw Error(
-                  tag + " is a self-closing tag and must neither have `children` nor use `dangerouslySetInnerHTML`."
+                  tag2 + " is a self-closing tag and must neither have `children` nor use `dangerouslySetInnerHTML`."
                 );
               default:
                 pushAttribute(target, propKey, propValue);
@@ -35384,16 +35392,16 @@ var require_react_dom_server_edge_production = __commonJS({
       return null;
     }
     __name(pushScriptImpl, "pushScriptImpl");
-    function pushStartSingletonElement(target, props, tag) {
-      target.push(startChunkForTag(tag));
-      var innerHTML = tag = null, propKey;
+    function pushStartSingletonElement(target, props, tag2) {
+      target.push(startChunkForTag(tag2));
+      var innerHTML = tag2 = null, propKey;
       for (propKey in props)
         if (hasOwnProperty.call(props, propKey)) {
           var propValue = props[propKey];
           if (null != propValue)
             switch (propKey) {
               case "children":
-                tag = propValue;
+                tag2 = propValue;
                 break;
               case "dangerouslySetInnerHTML":
                 innerHTML = propValue;
@@ -35403,20 +35411,20 @@ var require_react_dom_server_edge_production = __commonJS({
             }
         }
       target.push(endOfStartTag);
-      pushInnerHTML(target, innerHTML, tag);
-      return tag;
+      pushInnerHTML(target, innerHTML, tag2);
+      return tag2;
     }
     __name(pushStartSingletonElement, "pushStartSingletonElement");
-    function pushStartGenericElement(target, props, tag) {
-      target.push(startChunkForTag(tag));
-      var innerHTML = tag = null, propKey;
+    function pushStartGenericElement(target, props, tag2) {
+      target.push(startChunkForTag(tag2));
+      var innerHTML = tag2 = null, propKey;
       for (propKey in props)
         if (hasOwnProperty.call(props, propKey)) {
           var propValue = props[propKey];
           if (null != propValue)
             switch (propKey) {
               case "children":
-                tag = propValue;
+                tag2 = propValue;
                 break;
               case "dangerouslySetInnerHTML":
                 innerHTML = propValue;
@@ -35426,19 +35434,19 @@ var require_react_dom_server_edge_production = __commonJS({
             }
         }
       target.push(endOfStartTag);
-      pushInnerHTML(target, innerHTML, tag);
-      return "string" === typeof tag ? (target.push(stringToChunk(escapeTextForBrowser(tag))), null) : tag;
+      pushInnerHTML(target, innerHTML, tag2);
+      return "string" === typeof tag2 ? (target.push(stringToChunk(escapeTextForBrowser(tag2))), null) : tag2;
     }
     __name(pushStartGenericElement, "pushStartGenericElement");
     var leadingNewline = stringToPrecomputedChunk("\n");
     var VALID_TAG_REGEX = /^[a-zA-Z][a-zA-Z:_\.\-\d]*$/;
     var validatedTagCache = /* @__PURE__ */ new Map();
-    function startChunkForTag(tag) {
-      var tagStartChunk = validatedTagCache.get(tag);
+    function startChunkForTag(tag2) {
+      var tagStartChunk = validatedTagCache.get(tag2);
       if (void 0 === tagStartChunk) {
-        if (!VALID_TAG_REGEX.test(tag)) throw Error("Invalid tag: " + tag);
-        tagStartChunk = stringToPrecomputedChunk("<" + tag);
-        validatedTagCache.set(tag, tagStartChunk);
+        if (!VALID_TAG_REGEX.test(tag2)) throw Error("Invalid tag: " + tag2);
+        tagStartChunk = stringToPrecomputedChunk("<" + tag2);
+        validatedTagCache.set(tag2, tagStartChunk);
       }
       return tagStartChunk;
     }
@@ -36226,9 +36234,9 @@ var require_react_dom_server_edge_production = __commonJS({
     }
     __name(pushStartInstance, "pushStartInstance");
     var endTagCache = /* @__PURE__ */ new Map();
-    function endChunkForTag(tag) {
-      var chunk = endTagCache.get(tag);
-      void 0 === chunk && (chunk = stringToPrecomputedChunk("</" + tag + ">"), endTagCache.set(tag, chunk));
+    function endChunkForTag(tag2) {
+      var chunk = endTagCache.get(tag2);
+      void 0 === chunk && (chunk = stringToPrecomputedChunk("</" + tag2 + ">"), endTagCache.set(tag2, chunk));
       return chunk;
     }
     __name(endChunkForTag, "endChunkForTag");
@@ -40818,8 +40826,8 @@ var require_react_dom_server_legacy_browser_production = __commonJS({
       return "" + prefix2 + ("s" === s2 ? "\\73 " : "\\53 ") + suffix2;
     }
     __name(styleReplacer, "styleReplacer");
-    function pushSelfClosing(target, props, tag) {
-      target.push(startChunkForTag(tag));
+    function pushSelfClosing(target, props, tag2) {
+      target.push(startChunkForTag(tag2));
       for (var propKey in props)
         if (hasOwnProperty.call(props, propKey)) {
           var propValue = props[propKey];
@@ -40827,7 +40835,7 @@ var require_react_dom_server_legacy_browser_production = __commonJS({
             switch (propKey) {
               case "children":
               case "dangerouslySetInnerHTML":
-                throw Error(formatProdErrorMessage(399, tag));
+                throw Error(formatProdErrorMessage(399, tag2));
               default:
                 pushAttribute(target, propKey, propValue);
             }
@@ -40887,16 +40895,16 @@ var require_react_dom_server_legacy_browser_production = __commonJS({
       return null;
     }
     __name(pushScriptImpl, "pushScriptImpl");
-    function pushStartSingletonElement(target, props, tag) {
-      target.push(startChunkForTag(tag));
-      var innerHTML = tag = null, propKey;
+    function pushStartSingletonElement(target, props, tag2) {
+      target.push(startChunkForTag(tag2));
+      var innerHTML = tag2 = null, propKey;
       for (propKey in props)
         if (hasOwnProperty.call(props, propKey)) {
           var propValue = props[propKey];
           if (null != propValue)
             switch (propKey) {
               case "children":
-                tag = propValue;
+                tag2 = propValue;
                 break;
               case "dangerouslySetInnerHTML":
                 innerHTML = propValue;
@@ -40906,20 +40914,20 @@ var require_react_dom_server_legacy_browser_production = __commonJS({
             }
         }
       target.push(">");
-      pushInnerHTML(target, innerHTML, tag);
-      return tag;
+      pushInnerHTML(target, innerHTML, tag2);
+      return tag2;
     }
     __name(pushStartSingletonElement, "pushStartSingletonElement");
-    function pushStartGenericElement(target, props, tag) {
-      target.push(startChunkForTag(tag));
-      var innerHTML = tag = null, propKey;
+    function pushStartGenericElement(target, props, tag2) {
+      target.push(startChunkForTag(tag2));
+      var innerHTML = tag2 = null, propKey;
       for (propKey in props)
         if (hasOwnProperty.call(props, propKey)) {
           var propValue = props[propKey];
           if (null != propValue)
             switch (propKey) {
               case "children":
-                tag = propValue;
+                tag2 = propValue;
                 break;
               case "dangerouslySetInnerHTML":
                 innerHTML = propValue;
@@ -40929,19 +40937,19 @@ var require_react_dom_server_legacy_browser_production = __commonJS({
             }
         }
       target.push(">");
-      pushInnerHTML(target, innerHTML, tag);
-      return "string" === typeof tag ? (target.push(escapeTextForBrowser(tag)), null) : tag;
+      pushInnerHTML(target, innerHTML, tag2);
+      return "string" === typeof tag2 ? (target.push(escapeTextForBrowser(tag2)), null) : tag2;
     }
     __name(pushStartGenericElement, "pushStartGenericElement");
     var VALID_TAG_REGEX = /^[a-zA-Z][a-zA-Z:_\.\-\d]*$/;
     var validatedTagCache = /* @__PURE__ */ new Map();
-    function startChunkForTag(tag) {
-      var tagStartChunk = validatedTagCache.get(tag);
+    function startChunkForTag(tag2) {
+      var tagStartChunk = validatedTagCache.get(tag2);
       if (void 0 === tagStartChunk) {
-        if (!VALID_TAG_REGEX.test(tag))
-          throw Error(formatProdErrorMessage(65, tag));
-        tagStartChunk = "<" + tag;
-        validatedTagCache.set(tag, tagStartChunk);
+        if (!VALID_TAG_REGEX.test(tag2))
+          throw Error(formatProdErrorMessage(65, tag2));
+        tagStartChunk = "<" + tag2;
+        validatedTagCache.set(tag2, tagStartChunk);
       }
       return tagStartChunk;
     }
@@ -41698,9 +41706,9 @@ var require_react_dom_server_legacy_browser_production = __commonJS({
     }
     __name(pushStartInstance, "pushStartInstance");
     var endTagCache = /* @__PURE__ */ new Map();
-    function endChunkForTag(tag) {
-      var chunk = endTagCache.get(tag);
-      void 0 === chunk && (chunk = "</" + tag + ">", endTagCache.set(tag, chunk));
+    function endChunkForTag(tag2) {
+      var chunk = endTagCache.get(tag2);
+      void 0 === chunk && (chunk = "</" + tag2 + ">", endTagCache.set(tag2, chunk));
       return chunk;
     }
     __name(endChunkForTag, "endChunkForTag");
@@ -45259,7 +45267,7 @@ function recursivelyMapDoc(doc, callback) {
   }
   return callback(doc);
 }
-var import_react, import_jsx_runtime, __defProp2, __defProps, __getOwnPropDescs, __getOwnPropSymbols, __hasOwnProp2, __propIsEnum, __defNormalProp, __spreadValues, __spreadProps, __async, plainTextSelectors, modifiedHtml, defaults, pretty, decoder, readStream, render2, renderAsync;
+var import_react, import_jsx_runtime, __defProp2, __defProps, __getOwnPropDescs, __getOwnPropSymbols, __hasOwnProp2, __propIsEnum, __defNormalProp, __spreadValues, __spreadProps, __async, plainTextSelectors, modifiedHtml, defaults, pretty, decoder2, readStream, render2, renderAsync;
 var init_browser = __esm({
   "node_modules/@react-email/render/dist/browser/index.mjs"() {
     init_html_to_text();
@@ -45343,7 +45351,7 @@ var init_browser = __esm({
     pretty = /* @__PURE__ */ __name((str, options = {}) => {
       return Jn2(str.replaceAll("\0", ""), __spreadValues(__spreadValues({}, defaults), options));
     }, "pretty");
-    decoder = new TextDecoder("utf-8");
+    decoder2 = new TextDecoder("utf-8");
     readStream = /* @__PURE__ */ __name((stream) => __async(void 0, null, function* () {
       const chunks = [];
       if ("pipeTo" in stream) {
@@ -45373,7 +45381,7 @@ var init_browser = __esm({
         mergedChunks.set(item, offset);
         offset += item.length;
       });
-      return decoder.decode(mergedChunks);
+      return decoder2.decode(mergedChunks);
     }), "readStream");
     render2 = /* @__PURE__ */ __name((node, options) => __async(void 0, null, function* () {
       const suspendedElement = /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_react.Suspense, { children: node });
@@ -46225,13 +46233,13 @@ var getPattern = /* @__PURE__ */ __name((label, next) => {
   }
   return null;
 }, "getPattern");
-var tryDecode = /* @__PURE__ */ __name((str, decoder2) => {
+var tryDecode = /* @__PURE__ */ __name((str, decoder3) => {
   try {
-    return decoder2(str);
+    return decoder3(str);
   } catch {
     return str.replace(/(?:%[0-9A-Fa-f]{2})+/g, (match2) => {
       try {
-        return decoder2(match2);
+        return decoder3(match2);
       } catch {
         return match2;
       }
@@ -48236,6 +48244,1625 @@ var cors = /* @__PURE__ */ __name((options) => {
 
 // middleware.ts
 init_get_access_token();
+
+// node_modules/jose/dist/webapi/lib/buffer_utils.js
+var encoder = new TextEncoder();
+var decoder = new TextDecoder();
+var MAX_INT32 = 2 ** 32;
+function concat(...buffers) {
+  const size = buffers.reduce((acc, { length }) => acc + length, 0);
+  const buf = new Uint8Array(size);
+  let i = 0;
+  for (const buffer of buffers) {
+    buf.set(buffer, i);
+    i += buffer.length;
+  }
+  return buf;
+}
+__name(concat, "concat");
+function encode(string) {
+  const bytes = new Uint8Array(string.length);
+  for (let i = 0; i < string.length; i++) {
+    const code = string.charCodeAt(i);
+    if (code > 127) {
+      throw new TypeError("non-ASCII string encountered in encode()");
+    }
+    bytes[i] = code;
+  }
+  return bytes;
+}
+__name(encode, "encode");
+
+// node_modules/jose/dist/webapi/lib/base64.js
+function decodeBase64(encoded) {
+  if (Uint8Array.fromBase64) {
+    return Uint8Array.fromBase64(encoded);
+  }
+  const binary = atob(encoded);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return bytes;
+}
+__name(decodeBase64, "decodeBase64");
+
+// node_modules/jose/dist/webapi/util/base64url.js
+function decode(input) {
+  if (Uint8Array.fromBase64) {
+    return Uint8Array.fromBase64(typeof input === "string" ? input : decoder.decode(input), {
+      alphabet: "base64url"
+    });
+  }
+  let encoded = input;
+  if (encoded instanceof Uint8Array) {
+    encoded = decoder.decode(encoded);
+  }
+  encoded = encoded.replace(/-/g, "+").replace(/_/g, "/");
+  try {
+    return decodeBase64(encoded);
+  } catch {
+    throw new TypeError("The input to be decoded is not correctly encoded.");
+  }
+}
+__name(decode, "decode");
+
+// node_modules/jose/dist/webapi/lib/crypto_key.js
+var unusable = /* @__PURE__ */ __name((name2, prop = "algorithm.name") => new TypeError(`CryptoKey does not support this operation, its ${prop} must be ${name2}`), "unusable");
+var isAlgorithm = /* @__PURE__ */ __name((algorithm, name2) => algorithm.name === name2, "isAlgorithm");
+function getHashLength(hash) {
+  return parseInt(hash.name.slice(4), 10);
+}
+__name(getHashLength, "getHashLength");
+function checkHashLength(algorithm, expected) {
+  const actual = getHashLength(algorithm.hash);
+  if (actual !== expected)
+    throw unusable(`SHA-${expected}`, "algorithm.hash");
+}
+__name(checkHashLength, "checkHashLength");
+function getNamedCurve(alg) {
+  switch (alg) {
+    case "ES256":
+      return "P-256";
+    case "ES384":
+      return "P-384";
+    case "ES512":
+      return "P-521";
+    default:
+      throw new Error("unreachable");
+  }
+}
+__name(getNamedCurve, "getNamedCurve");
+function checkUsage(key, usage) {
+  if (usage && !key.usages.includes(usage)) {
+    throw new TypeError(`CryptoKey does not support this operation, its usages must include ${usage}.`);
+  }
+}
+__name(checkUsage, "checkUsage");
+function checkSigCryptoKey(key, alg, usage) {
+  switch (alg) {
+    case "HS256":
+    case "HS384":
+    case "HS512": {
+      if (!isAlgorithm(key.algorithm, "HMAC"))
+        throw unusable("HMAC");
+      checkHashLength(key.algorithm, parseInt(alg.slice(2), 10));
+      break;
+    }
+    case "RS256":
+    case "RS384":
+    case "RS512": {
+      if (!isAlgorithm(key.algorithm, "RSASSA-PKCS1-v1_5"))
+        throw unusable("RSASSA-PKCS1-v1_5");
+      checkHashLength(key.algorithm, parseInt(alg.slice(2), 10));
+      break;
+    }
+    case "PS256":
+    case "PS384":
+    case "PS512": {
+      if (!isAlgorithm(key.algorithm, "RSA-PSS"))
+        throw unusable("RSA-PSS");
+      checkHashLength(key.algorithm, parseInt(alg.slice(2), 10));
+      break;
+    }
+    case "Ed25519":
+    case "EdDSA": {
+      if (!isAlgorithm(key.algorithm, "Ed25519"))
+        throw unusable("Ed25519");
+      break;
+    }
+    case "ML-DSA-44":
+    case "ML-DSA-65":
+    case "ML-DSA-87": {
+      if (!isAlgorithm(key.algorithm, alg))
+        throw unusable(alg);
+      break;
+    }
+    case "ES256":
+    case "ES384":
+    case "ES512": {
+      if (!isAlgorithm(key.algorithm, "ECDSA"))
+        throw unusable("ECDSA");
+      const expected = getNamedCurve(alg);
+      const actual = key.algorithm.namedCurve;
+      if (actual !== expected)
+        throw unusable(expected, "algorithm.namedCurve");
+      break;
+    }
+    default:
+      throw new TypeError("CryptoKey does not support this operation");
+  }
+  checkUsage(key, usage);
+}
+__name(checkSigCryptoKey, "checkSigCryptoKey");
+
+// node_modules/jose/dist/webapi/lib/invalid_key_input.js
+function message(msg, actual, ...types) {
+  types = types.filter(Boolean);
+  if (types.length > 2) {
+    const last = types.pop();
+    msg += `one of type ${types.join(", ")}, or ${last}.`;
+  } else if (types.length === 2) {
+    msg += `one of type ${types[0]} or ${types[1]}.`;
+  } else {
+    msg += `of type ${types[0]}.`;
+  }
+  if (actual == null) {
+    msg += ` Received ${actual}`;
+  } else if (typeof actual === "function" && actual.name) {
+    msg += ` Received function ${actual.name}`;
+  } else if (typeof actual === "object" && actual != null) {
+    if (actual.constructor?.name) {
+      msg += ` Received an instance of ${actual.constructor.name}`;
+    }
+  }
+  return msg;
+}
+__name(message, "message");
+var invalidKeyInput = /* @__PURE__ */ __name((actual, ...types) => message("Key must be ", actual, ...types), "invalidKeyInput");
+var withAlg = /* @__PURE__ */ __name((alg, actual, ...types) => message(`Key for the ${alg} algorithm must be `, actual, ...types), "withAlg");
+
+// node_modules/jose/dist/webapi/util/errors.js
+var JOSEError = class extends Error {
+  static {
+    __name(this, "JOSEError");
+  }
+  static code = "ERR_JOSE_GENERIC";
+  code = "ERR_JOSE_GENERIC";
+  constructor(message2, options) {
+    super(message2, options);
+    this.name = this.constructor.name;
+    Error.captureStackTrace?.(this, this.constructor);
+  }
+};
+var JWTClaimValidationFailed = class extends JOSEError {
+  static {
+    __name(this, "JWTClaimValidationFailed");
+  }
+  static code = "ERR_JWT_CLAIM_VALIDATION_FAILED";
+  code = "ERR_JWT_CLAIM_VALIDATION_FAILED";
+  claim;
+  reason;
+  payload;
+  constructor(message2, payload, claim = "unspecified", reason = "unspecified") {
+    super(message2, { cause: { claim, reason, payload } });
+    this.claim = claim;
+    this.reason = reason;
+    this.payload = payload;
+  }
+};
+var JWTExpired = class extends JOSEError {
+  static {
+    __name(this, "JWTExpired");
+  }
+  static code = "ERR_JWT_EXPIRED";
+  code = "ERR_JWT_EXPIRED";
+  claim;
+  reason;
+  payload;
+  constructor(message2, payload, claim = "unspecified", reason = "unspecified") {
+    super(message2, { cause: { claim, reason, payload } });
+    this.claim = claim;
+    this.reason = reason;
+    this.payload = payload;
+  }
+};
+var JOSEAlgNotAllowed = class extends JOSEError {
+  static {
+    __name(this, "JOSEAlgNotAllowed");
+  }
+  static code = "ERR_JOSE_ALG_NOT_ALLOWED";
+  code = "ERR_JOSE_ALG_NOT_ALLOWED";
+};
+var JOSENotSupported = class extends JOSEError {
+  static {
+    __name(this, "JOSENotSupported");
+  }
+  static code = "ERR_JOSE_NOT_SUPPORTED";
+  code = "ERR_JOSE_NOT_SUPPORTED";
+};
+var JWSInvalid = class extends JOSEError {
+  static {
+    __name(this, "JWSInvalid");
+  }
+  static code = "ERR_JWS_INVALID";
+  code = "ERR_JWS_INVALID";
+};
+var JWTInvalid = class extends JOSEError {
+  static {
+    __name(this, "JWTInvalid");
+  }
+  static code = "ERR_JWT_INVALID";
+  code = "ERR_JWT_INVALID";
+};
+var JWKSInvalid = class extends JOSEError {
+  static {
+    __name(this, "JWKSInvalid");
+  }
+  static code = "ERR_JWKS_INVALID";
+  code = "ERR_JWKS_INVALID";
+};
+var JWKSNoMatchingKey = class extends JOSEError {
+  static {
+    __name(this, "JWKSNoMatchingKey");
+  }
+  static code = "ERR_JWKS_NO_MATCHING_KEY";
+  code = "ERR_JWKS_NO_MATCHING_KEY";
+  constructor(message2 = "no applicable key found in the JSON Web Key Set", options) {
+    super(message2, options);
+  }
+};
+var JWKSMultipleMatchingKeys = class extends JOSEError {
+  static {
+    __name(this, "JWKSMultipleMatchingKeys");
+  }
+  [Symbol.asyncIterator];
+  static code = "ERR_JWKS_MULTIPLE_MATCHING_KEYS";
+  code = "ERR_JWKS_MULTIPLE_MATCHING_KEYS";
+  constructor(message2 = "multiple matching keys found in the JSON Web Key Set", options) {
+    super(message2, options);
+  }
+};
+var JWKSTimeout = class extends JOSEError {
+  static {
+    __name(this, "JWKSTimeout");
+  }
+  static code = "ERR_JWKS_TIMEOUT";
+  code = "ERR_JWKS_TIMEOUT";
+  constructor(message2 = "request timed out", options) {
+    super(message2, options);
+  }
+};
+var JWSSignatureVerificationFailed = class extends JOSEError {
+  static {
+    __name(this, "JWSSignatureVerificationFailed");
+  }
+  static code = "ERR_JWS_SIGNATURE_VERIFICATION_FAILED";
+  code = "ERR_JWS_SIGNATURE_VERIFICATION_FAILED";
+  constructor(message2 = "signature verification failed", options) {
+    super(message2, options);
+  }
+};
+
+// node_modules/jose/dist/webapi/lib/is_key_like.js
+var isCryptoKey = /* @__PURE__ */ __name((key) => {
+  if (key?.[Symbol.toStringTag] === "CryptoKey")
+    return true;
+  try {
+    return key instanceof CryptoKey;
+  } catch {
+    return false;
+  }
+}, "isCryptoKey");
+var isKeyObject = /* @__PURE__ */ __name((key) => key?.[Symbol.toStringTag] === "KeyObject", "isKeyObject");
+var isKeyLike = /* @__PURE__ */ __name((key) => isCryptoKey(key) || isKeyObject(key), "isKeyLike");
+
+// node_modules/jose/dist/webapi/lib/helpers.js
+function decodeBase64url(value, label, ErrorClass) {
+  try {
+    return decode(value);
+  } catch {
+    throw new ErrorClass(`Failed to base64url decode the ${label}`);
+  }
+}
+__name(decodeBase64url, "decodeBase64url");
+
+// node_modules/jose/dist/webapi/lib/type_checks.js
+var isObjectLike = /* @__PURE__ */ __name((value) => typeof value === "object" && value !== null, "isObjectLike");
+function isObject(input) {
+  if (!isObjectLike(input) || Object.prototype.toString.call(input) !== "[object Object]") {
+    return false;
+  }
+  if (Object.getPrototypeOf(input) === null) {
+    return true;
+  }
+  let proto = input;
+  while (Object.getPrototypeOf(proto) !== null) {
+    proto = Object.getPrototypeOf(proto);
+  }
+  return Object.getPrototypeOf(input) === proto;
+}
+__name(isObject, "isObject");
+function isDisjoint(...headers) {
+  const sources = headers.filter(Boolean);
+  if (sources.length === 0 || sources.length === 1) {
+    return true;
+  }
+  let acc;
+  for (const header of sources) {
+    const parameters = Object.keys(header);
+    if (!acc || acc.size === 0) {
+      acc = new Set(parameters);
+      continue;
+    }
+    for (const parameter of parameters) {
+      if (acc.has(parameter)) {
+        return false;
+      }
+      acc.add(parameter);
+    }
+  }
+  return true;
+}
+__name(isDisjoint, "isDisjoint");
+var isJWK = /* @__PURE__ */ __name((key) => isObject(key) && typeof key.kty === "string", "isJWK");
+var isPrivateJWK = /* @__PURE__ */ __name((key) => key.kty !== "oct" && (key.kty === "AKP" && typeof key.priv === "string" || typeof key.d === "string"), "isPrivateJWK");
+var isPublicJWK = /* @__PURE__ */ __name((key) => key.kty !== "oct" && key.d === void 0 && key.priv === void 0, "isPublicJWK");
+var isSecretJWK = /* @__PURE__ */ __name((key) => key.kty === "oct" && typeof key.k === "string", "isSecretJWK");
+
+// node_modules/jose/dist/webapi/lib/signing.js
+function checkKeyLength(alg, key) {
+  if (alg.startsWith("RS") || alg.startsWith("PS")) {
+    const { modulusLength } = key.algorithm;
+    if (typeof modulusLength !== "number" || modulusLength < 2048) {
+      throw new TypeError(`${alg} requires key modulusLength to be 2048 bits or larger`);
+    }
+  }
+}
+__name(checkKeyLength, "checkKeyLength");
+function subtleAlgorithm(alg, algorithm) {
+  const hash = `SHA-${alg.slice(-3)}`;
+  switch (alg) {
+    case "HS256":
+    case "HS384":
+    case "HS512":
+      return { hash, name: "HMAC" };
+    case "PS256":
+    case "PS384":
+    case "PS512":
+      return { hash, name: "RSA-PSS", saltLength: parseInt(alg.slice(-3), 10) >> 3 };
+    case "RS256":
+    case "RS384":
+    case "RS512":
+      return { hash, name: "RSASSA-PKCS1-v1_5" };
+    case "ES256":
+    case "ES384":
+    case "ES512":
+      return { hash, name: "ECDSA", namedCurve: algorithm.namedCurve };
+    case "Ed25519":
+    case "EdDSA":
+      return { name: "Ed25519" };
+    case "ML-DSA-44":
+    case "ML-DSA-65":
+    case "ML-DSA-87":
+      return { name: alg };
+    default:
+      throw new JOSENotSupported(`alg ${alg} is not supported either by JOSE or your javascript runtime`);
+  }
+}
+__name(subtleAlgorithm, "subtleAlgorithm");
+async function getSigKey(alg, key, usage) {
+  if (key instanceof Uint8Array) {
+    if (!alg.startsWith("HS")) {
+      throw new TypeError(invalidKeyInput(key, "CryptoKey", "KeyObject", "JSON Web Key"));
+    }
+    return crypto.subtle.importKey("raw", key, { hash: `SHA-${alg.slice(-3)}`, name: "HMAC" }, false, [usage]);
+  }
+  checkSigCryptoKey(key, alg, usage);
+  return key;
+}
+__name(getSigKey, "getSigKey");
+async function verify(alg, key, signature, data) {
+  const cryptoKey = await getSigKey(alg, key, "verify");
+  checkKeyLength(alg, cryptoKey);
+  const algorithm = subtleAlgorithm(alg, cryptoKey.algorithm);
+  try {
+    return await crypto.subtle.verify(algorithm, cryptoKey, signature, data);
+  } catch {
+    return false;
+  }
+}
+__name(verify, "verify");
+
+// node_modules/jose/dist/webapi/lib/jwk_to_key.js
+var unsupportedAlg = 'Invalid or unsupported JWK "alg" (Algorithm) Parameter value';
+function subtleMapping(jwk) {
+  let algorithm;
+  let keyUsages;
+  switch (jwk.kty) {
+    case "AKP": {
+      switch (jwk.alg) {
+        case "ML-DSA-44":
+        case "ML-DSA-65":
+        case "ML-DSA-87":
+          algorithm = { name: jwk.alg };
+          keyUsages = jwk.priv ? ["sign"] : ["verify"];
+          break;
+        default:
+          throw new JOSENotSupported(unsupportedAlg);
+      }
+      break;
+    }
+    case "RSA": {
+      switch (jwk.alg) {
+        case "PS256":
+        case "PS384":
+        case "PS512":
+          algorithm = { name: "RSA-PSS", hash: `SHA-${jwk.alg.slice(-3)}` };
+          keyUsages = jwk.d ? ["sign"] : ["verify"];
+          break;
+        case "RS256":
+        case "RS384":
+        case "RS512":
+          algorithm = { name: "RSASSA-PKCS1-v1_5", hash: `SHA-${jwk.alg.slice(-3)}` };
+          keyUsages = jwk.d ? ["sign"] : ["verify"];
+          break;
+        case "RSA-OAEP":
+        case "RSA-OAEP-256":
+        case "RSA-OAEP-384":
+        case "RSA-OAEP-512":
+          algorithm = {
+            name: "RSA-OAEP",
+            hash: `SHA-${parseInt(jwk.alg.slice(-3), 10) || 1}`
+          };
+          keyUsages = jwk.d ? ["decrypt", "unwrapKey"] : ["encrypt", "wrapKey"];
+          break;
+        default:
+          throw new JOSENotSupported(unsupportedAlg);
+      }
+      break;
+    }
+    case "EC": {
+      switch (jwk.alg) {
+        case "ES256":
+        case "ES384":
+        case "ES512":
+          algorithm = {
+            name: "ECDSA",
+            namedCurve: { ES256: "P-256", ES384: "P-384", ES512: "P-521" }[jwk.alg]
+          };
+          keyUsages = jwk.d ? ["sign"] : ["verify"];
+          break;
+        case "ECDH-ES":
+        case "ECDH-ES+A128KW":
+        case "ECDH-ES+A192KW":
+        case "ECDH-ES+A256KW":
+          algorithm = { name: "ECDH", namedCurve: jwk.crv };
+          keyUsages = jwk.d ? ["deriveBits"] : [];
+          break;
+        default:
+          throw new JOSENotSupported(unsupportedAlg);
+      }
+      break;
+    }
+    case "OKP": {
+      switch (jwk.alg) {
+        case "Ed25519":
+        case "EdDSA":
+          algorithm = { name: "Ed25519" };
+          keyUsages = jwk.d ? ["sign"] : ["verify"];
+          break;
+        case "ECDH-ES":
+        case "ECDH-ES+A128KW":
+        case "ECDH-ES+A192KW":
+        case "ECDH-ES+A256KW":
+          algorithm = { name: jwk.crv };
+          keyUsages = jwk.d ? ["deriveBits"] : [];
+          break;
+        default:
+          throw new JOSENotSupported(unsupportedAlg);
+      }
+      break;
+    }
+    default:
+      throw new JOSENotSupported('Invalid or unsupported JWK "kty" (Key Type) Parameter value');
+  }
+  return { algorithm, keyUsages };
+}
+__name(subtleMapping, "subtleMapping");
+async function jwkToKey(jwk) {
+  if (!jwk.alg) {
+    throw new TypeError('"alg" argument is required when "jwk.alg" is not present');
+  }
+  const { algorithm, keyUsages } = subtleMapping(jwk);
+  const keyData = { ...jwk };
+  if (keyData.kty !== "AKP") {
+    delete keyData.alg;
+  }
+  delete keyData.use;
+  return crypto.subtle.importKey("jwk", keyData, algorithm, jwk.ext ?? (jwk.d || jwk.priv ? false : true), jwk.key_ops ?? keyUsages);
+}
+__name(jwkToKey, "jwkToKey");
+
+// node_modules/jose/dist/webapi/lib/normalize_key.js
+var unusableForAlg = "given KeyObject instance cannot be used for this algorithm";
+var cache;
+var handleJWK = /* @__PURE__ */ __name(async (key, jwk, alg, freeze = false) => {
+  cache ||= /* @__PURE__ */ new WeakMap();
+  let cached = cache.get(key);
+  if (cached?.[alg]) {
+    return cached[alg];
+  }
+  const cryptoKey = await jwkToKey({ ...jwk, alg });
+  if (freeze)
+    Object.freeze(key);
+  if (!cached) {
+    cache.set(key, { [alg]: cryptoKey });
+  } else {
+    cached[alg] = cryptoKey;
+  }
+  return cryptoKey;
+}, "handleJWK");
+var handleKeyObject = /* @__PURE__ */ __name((keyObject, alg) => {
+  cache ||= /* @__PURE__ */ new WeakMap();
+  let cached = cache.get(keyObject);
+  if (cached?.[alg]) {
+    return cached[alg];
+  }
+  const isPublic = keyObject.type === "public";
+  const extractable = isPublic ? true : false;
+  let cryptoKey;
+  if (keyObject.asymmetricKeyType === "x25519") {
+    switch (alg) {
+      case "ECDH-ES":
+      case "ECDH-ES+A128KW":
+      case "ECDH-ES+A192KW":
+      case "ECDH-ES+A256KW":
+        break;
+      default:
+        throw new TypeError(unusableForAlg);
+    }
+    cryptoKey = keyObject.toCryptoKey(keyObject.asymmetricKeyType, extractable, isPublic ? [] : ["deriveBits"]);
+  }
+  if (keyObject.asymmetricKeyType === "ed25519") {
+    if (alg !== "EdDSA" && alg !== "Ed25519") {
+      throw new TypeError(unusableForAlg);
+    }
+    cryptoKey = keyObject.toCryptoKey(keyObject.asymmetricKeyType, extractable, [
+      isPublic ? "verify" : "sign"
+    ]);
+  }
+  switch (keyObject.asymmetricKeyType) {
+    case "ml-dsa-44":
+    case "ml-dsa-65":
+    case "ml-dsa-87": {
+      if (alg !== keyObject.asymmetricKeyType.toUpperCase()) {
+        throw new TypeError(unusableForAlg);
+      }
+      cryptoKey = keyObject.toCryptoKey(keyObject.asymmetricKeyType, extractable, [
+        isPublic ? "verify" : "sign"
+      ]);
+    }
+  }
+  if (keyObject.asymmetricKeyType === "rsa") {
+    let hash;
+    switch (alg) {
+      case "RSA-OAEP":
+        hash = "SHA-1";
+        break;
+      case "RS256":
+      case "PS256":
+      case "RSA-OAEP-256":
+        hash = "SHA-256";
+        break;
+      case "RS384":
+      case "PS384":
+      case "RSA-OAEP-384":
+        hash = "SHA-384";
+        break;
+      case "RS512":
+      case "PS512":
+      case "RSA-OAEP-512":
+        hash = "SHA-512";
+        break;
+      default:
+        throw new TypeError(unusableForAlg);
+    }
+    if (alg.startsWith("RSA-OAEP")) {
+      return keyObject.toCryptoKey({
+        name: "RSA-OAEP",
+        hash
+      }, extractable, isPublic ? ["encrypt"] : ["decrypt"]);
+    }
+    cryptoKey = keyObject.toCryptoKey({
+      name: alg.startsWith("PS") ? "RSA-PSS" : "RSASSA-PKCS1-v1_5",
+      hash
+    }, extractable, [isPublic ? "verify" : "sign"]);
+  }
+  if (keyObject.asymmetricKeyType === "ec") {
+    const nist = /* @__PURE__ */ new Map([
+      ["prime256v1", "P-256"],
+      ["secp384r1", "P-384"],
+      ["secp521r1", "P-521"]
+    ]);
+    const namedCurve = nist.get(keyObject.asymmetricKeyDetails?.namedCurve);
+    if (!namedCurve) {
+      throw new TypeError(unusableForAlg);
+    }
+    const expectedCurve = { ES256: "P-256", ES384: "P-384", ES512: "P-521" };
+    if (expectedCurve[alg] && namedCurve === expectedCurve[alg]) {
+      cryptoKey = keyObject.toCryptoKey({
+        name: "ECDSA",
+        namedCurve
+      }, extractable, [isPublic ? "verify" : "sign"]);
+    }
+    if (alg.startsWith("ECDH-ES")) {
+      cryptoKey = keyObject.toCryptoKey({
+        name: "ECDH",
+        namedCurve
+      }, extractable, isPublic ? [] : ["deriveBits"]);
+    }
+  }
+  if (!cryptoKey) {
+    throw new TypeError(unusableForAlg);
+  }
+  if (!cached) {
+    cache.set(keyObject, { [alg]: cryptoKey });
+  } else {
+    cached[alg] = cryptoKey;
+  }
+  return cryptoKey;
+}, "handleKeyObject");
+async function normalizeKey(key, alg) {
+  if (key instanceof Uint8Array) {
+    return key;
+  }
+  if (isCryptoKey(key)) {
+    return key;
+  }
+  if (isKeyObject(key)) {
+    if (key.type === "secret") {
+      return key.export();
+    }
+    if ("toCryptoKey" in key && typeof key.toCryptoKey === "function") {
+      try {
+        return handleKeyObject(key, alg);
+      } catch (err) {
+        if (err instanceof TypeError) {
+          throw err;
+        }
+      }
+    }
+    let jwk = key.export({ format: "jwk" });
+    return handleJWK(key, jwk, alg);
+  }
+  if (isJWK(key)) {
+    if (key.k) {
+      return decode(key.k);
+    }
+    return handleJWK(key, key, alg, true);
+  }
+  throw new Error("unreachable");
+}
+__name(normalizeKey, "normalizeKey");
+
+// node_modules/jose/dist/webapi/key/import.js
+async function importJWK(jwk, alg, options) {
+  if (!isObject(jwk)) {
+    throw new TypeError("JWK must be an object");
+  }
+  let ext;
+  alg ??= jwk.alg;
+  ext ??= options?.extractable ?? jwk.ext;
+  switch (jwk.kty) {
+    case "oct":
+      if (typeof jwk.k !== "string" || !jwk.k) {
+        throw new TypeError('missing "k" (Key Value) Parameter value');
+      }
+      return decode(jwk.k);
+    case "RSA":
+      if ("oth" in jwk && jwk.oth !== void 0) {
+        throw new JOSENotSupported('RSA JWK "oth" (Other Primes Info) Parameter value is not supported');
+      }
+      return jwkToKey({ ...jwk, alg, ext });
+    case "AKP": {
+      if (typeof jwk.alg !== "string" || !jwk.alg) {
+        throw new TypeError('missing "alg" (Algorithm) Parameter value');
+      }
+      if (alg !== void 0 && alg !== jwk.alg) {
+        throw new TypeError("JWK alg and alg option value mismatch");
+      }
+      return jwkToKey({ ...jwk, ext });
+    }
+    case "EC":
+    case "OKP":
+      return jwkToKey({ ...jwk, alg, ext });
+    default:
+      throw new JOSENotSupported('Unsupported "kty" (Key Type) Parameter value');
+  }
+}
+__name(importJWK, "importJWK");
+
+// node_modules/jose/dist/webapi/lib/validate_crit.js
+function validateCrit(Err, recognizedDefault, recognizedOption, protectedHeader, joseHeader) {
+  if (joseHeader.crit !== void 0 && protectedHeader?.crit === void 0) {
+    throw new Err('"crit" (Critical) Header Parameter MUST be integrity protected');
+  }
+  if (!protectedHeader || protectedHeader.crit === void 0) {
+    return /* @__PURE__ */ new Set();
+  }
+  if (!Array.isArray(protectedHeader.crit) || protectedHeader.crit.length === 0 || protectedHeader.crit.some((input) => typeof input !== "string" || input.length === 0)) {
+    throw new Err('"crit" (Critical) Header Parameter MUST be an array of non-empty strings when present');
+  }
+  let recognized;
+  if (recognizedOption !== void 0) {
+    recognized = new Map([...Object.entries(recognizedOption), ...recognizedDefault.entries()]);
+  } else {
+    recognized = recognizedDefault;
+  }
+  for (const parameter of protectedHeader.crit) {
+    if (!recognized.has(parameter)) {
+      throw new JOSENotSupported(`Extension Header Parameter "${parameter}" is not recognized`);
+    }
+    if (joseHeader[parameter] === void 0) {
+      throw new Err(`Extension Header Parameter "${parameter}" is missing`);
+    }
+    if (recognized.get(parameter) && protectedHeader[parameter] === void 0) {
+      throw new Err(`Extension Header Parameter "${parameter}" MUST be integrity protected`);
+    }
+  }
+  return new Set(protectedHeader.crit);
+}
+__name(validateCrit, "validateCrit");
+
+// node_modules/jose/dist/webapi/lib/validate_algorithms.js
+function validateAlgorithms(option2, algorithms) {
+  if (algorithms !== void 0 && (!Array.isArray(algorithms) || algorithms.some((s2) => typeof s2 !== "string"))) {
+    throw new TypeError(`"${option2}" option must be an array of strings`);
+  }
+  if (!algorithms) {
+    return void 0;
+  }
+  return new Set(algorithms);
+}
+__name(validateAlgorithms, "validateAlgorithms");
+
+// node_modules/jose/dist/webapi/lib/check_key_type.js
+var tag = /* @__PURE__ */ __name((key) => key?.[Symbol.toStringTag], "tag");
+var jwkMatchesOp = /* @__PURE__ */ __name((alg, key, usage) => {
+  if (key.use !== void 0) {
+    let expected;
+    switch (usage) {
+      case "sign":
+      case "verify":
+        expected = "sig";
+        break;
+      case "encrypt":
+      case "decrypt":
+        expected = "enc";
+        break;
+    }
+    if (key.use !== expected) {
+      throw new TypeError(`Invalid key for this operation, its "use" must be "${expected}" when present`);
+    }
+  }
+  if (key.alg !== void 0 && key.alg !== alg) {
+    throw new TypeError(`Invalid key for this operation, its "alg" must be "${alg}" when present`);
+  }
+  if (Array.isArray(key.key_ops)) {
+    let expectedKeyOp;
+    switch (true) {
+      case (usage === "sign" || usage === "verify"):
+      case alg === "dir":
+      case alg.includes("CBC-HS"):
+        expectedKeyOp = usage;
+        break;
+      case alg.startsWith("PBES2"):
+        expectedKeyOp = "deriveBits";
+        break;
+      case /^A\d{3}(?:GCM)?(?:KW)?$/.test(alg):
+        if (!alg.includes("GCM") && alg.endsWith("KW")) {
+          expectedKeyOp = usage === "encrypt" ? "wrapKey" : "unwrapKey";
+        } else {
+          expectedKeyOp = usage;
+        }
+        break;
+      case (usage === "encrypt" && alg.startsWith("RSA")):
+        expectedKeyOp = "wrapKey";
+        break;
+      case usage === "decrypt":
+        expectedKeyOp = alg.startsWith("RSA") ? "unwrapKey" : "deriveBits";
+        break;
+    }
+    if (expectedKeyOp && key.key_ops?.includes?.(expectedKeyOp) === false) {
+      throw new TypeError(`Invalid key for this operation, its "key_ops" must include "${expectedKeyOp}" when present`);
+    }
+  }
+  return true;
+}, "jwkMatchesOp");
+var symmetricTypeCheck = /* @__PURE__ */ __name((alg, key, usage) => {
+  if (key instanceof Uint8Array)
+    return;
+  if (isJWK(key)) {
+    if (isSecretJWK(key) && jwkMatchesOp(alg, key, usage))
+      return;
+    throw new TypeError(`JSON Web Key for symmetric algorithms must have JWK "kty" (Key Type) equal to "oct" and the JWK "k" (Key Value) present`);
+  }
+  if (!isKeyLike(key)) {
+    throw new TypeError(withAlg(alg, key, "CryptoKey", "KeyObject", "JSON Web Key", "Uint8Array"));
+  }
+  if (key.type !== "secret") {
+    throw new TypeError(`${tag(key)} instances for symmetric algorithms must be of type "secret"`);
+  }
+}, "symmetricTypeCheck");
+var asymmetricTypeCheck = /* @__PURE__ */ __name((alg, key, usage) => {
+  if (isJWK(key)) {
+    switch (usage) {
+      case "decrypt":
+      case "sign":
+        if (isPrivateJWK(key) && jwkMatchesOp(alg, key, usage))
+          return;
+        throw new TypeError(`JSON Web Key for this operation must be a private JWK`);
+      case "encrypt":
+      case "verify":
+        if (isPublicJWK(key) && jwkMatchesOp(alg, key, usage))
+          return;
+        throw new TypeError(`JSON Web Key for this operation must be a public JWK`);
+    }
+  }
+  if (!isKeyLike(key)) {
+    throw new TypeError(withAlg(alg, key, "CryptoKey", "KeyObject", "JSON Web Key"));
+  }
+  if (key.type === "secret") {
+    throw new TypeError(`${tag(key)} instances for asymmetric algorithms must not be of type "secret"`);
+  }
+  if (key.type === "public") {
+    switch (usage) {
+      case "sign":
+        throw new TypeError(`${tag(key)} instances for asymmetric algorithm signing must be of type "private"`);
+      case "decrypt":
+        throw new TypeError(`${tag(key)} instances for asymmetric algorithm decryption must be of type "private"`);
+    }
+  }
+  if (key.type === "private") {
+    switch (usage) {
+      case "verify":
+        throw new TypeError(`${tag(key)} instances for asymmetric algorithm verifying must be of type "public"`);
+      case "encrypt":
+        throw new TypeError(`${tag(key)} instances for asymmetric algorithm encryption must be of type "public"`);
+    }
+  }
+}, "asymmetricTypeCheck");
+function checkKeyType(alg, key, usage) {
+  switch (alg.substring(0, 2)) {
+    case "A1":
+    case "A2":
+    case "di":
+    case "HS":
+    case "PB":
+      symmetricTypeCheck(alg, key, usage);
+      break;
+    default:
+      asymmetricTypeCheck(alg, key, usage);
+  }
+}
+__name(checkKeyType, "checkKeyType");
+
+// node_modules/jose/dist/webapi/jws/flattened/verify.js
+async function flattenedVerify(jws, key, options) {
+  if (!isObject(jws)) {
+    throw new JWSInvalid("Flattened JWS must be an object");
+  }
+  if (jws.protected === void 0 && jws.header === void 0) {
+    throw new JWSInvalid('Flattened JWS must have either of the "protected" or "header" members');
+  }
+  if (jws.protected !== void 0 && typeof jws.protected !== "string") {
+    throw new JWSInvalid("JWS Protected Header incorrect type");
+  }
+  if (jws.payload === void 0) {
+    throw new JWSInvalid("JWS Payload missing");
+  }
+  if (typeof jws.signature !== "string") {
+    throw new JWSInvalid("JWS Signature missing or incorrect type");
+  }
+  if (jws.header !== void 0 && !isObject(jws.header)) {
+    throw new JWSInvalid("JWS Unprotected Header incorrect type");
+  }
+  let parsedProt = {};
+  if (jws.protected) {
+    try {
+      const protectedHeader = decode(jws.protected);
+      parsedProt = JSON.parse(decoder.decode(protectedHeader));
+    } catch {
+      throw new JWSInvalid("JWS Protected Header is invalid");
+    }
+  }
+  if (!isDisjoint(parsedProt, jws.header)) {
+    throw new JWSInvalid("JWS Protected and JWS Unprotected Header Parameter names must be disjoint");
+  }
+  const joseHeader = {
+    ...parsedProt,
+    ...jws.header
+  };
+  const extensions = validateCrit(JWSInvalid, /* @__PURE__ */ new Map([["b64", true]]), options?.crit, parsedProt, joseHeader);
+  let b64 = true;
+  if (extensions.has("b64")) {
+    b64 = parsedProt.b64;
+    if (typeof b64 !== "boolean") {
+      throw new JWSInvalid('The "b64" (base64url-encode payload) Header Parameter must be a boolean');
+    }
+  }
+  const { alg } = joseHeader;
+  if (typeof alg !== "string" || !alg) {
+    throw new JWSInvalid('JWS "alg" (Algorithm) Header Parameter missing or invalid');
+  }
+  const algorithms = options && validateAlgorithms("algorithms", options.algorithms);
+  if (algorithms && !algorithms.has(alg)) {
+    throw new JOSEAlgNotAllowed('"alg" (Algorithm) Header Parameter value not allowed');
+  }
+  if (b64) {
+    if (typeof jws.payload !== "string") {
+      throw new JWSInvalid("JWS Payload must be a string");
+    }
+  } else if (typeof jws.payload !== "string" && !(jws.payload instanceof Uint8Array)) {
+    throw new JWSInvalid("JWS Payload must be a string or an Uint8Array instance");
+  }
+  let resolvedKey = false;
+  if (typeof key === "function") {
+    key = await key(parsedProt, jws);
+    resolvedKey = true;
+  }
+  checkKeyType(alg, key, "verify");
+  const data = concat(jws.protected !== void 0 ? encode(jws.protected) : new Uint8Array(), encode("."), typeof jws.payload === "string" ? b64 ? encode(jws.payload) : encoder.encode(jws.payload) : jws.payload);
+  const signature = decodeBase64url(jws.signature, "signature", JWSInvalid);
+  const k3 = await normalizeKey(key, alg);
+  const verified = await verify(alg, k3, signature, data);
+  if (!verified) {
+    throw new JWSSignatureVerificationFailed();
+  }
+  let payload;
+  if (b64) {
+    payload = decodeBase64url(jws.payload, "payload", JWSInvalid);
+  } else if (typeof jws.payload === "string") {
+    payload = encoder.encode(jws.payload);
+  } else {
+    payload = jws.payload;
+  }
+  const result = { payload };
+  if (jws.protected !== void 0) {
+    result.protectedHeader = parsedProt;
+  }
+  if (jws.header !== void 0) {
+    result.unprotectedHeader = jws.header;
+  }
+  if (resolvedKey) {
+    return { ...result, key: k3 };
+  }
+  return result;
+}
+__name(flattenedVerify, "flattenedVerify");
+
+// node_modules/jose/dist/webapi/jws/compact/verify.js
+async function compactVerify(jws, key, options) {
+  if (jws instanceof Uint8Array) {
+    jws = decoder.decode(jws);
+  }
+  if (typeof jws !== "string") {
+    throw new JWSInvalid("Compact JWS must be a string or Uint8Array");
+  }
+  const { 0: protectedHeader, 1: payload, 2: signature, length } = jws.split(".");
+  if (length !== 3) {
+    throw new JWSInvalid("Invalid Compact JWS");
+  }
+  const verified = await flattenedVerify({ payload, protected: protectedHeader, signature }, key, options);
+  const result = { payload: verified.payload, protectedHeader: verified.protectedHeader };
+  if (typeof key === "function") {
+    return { ...result, key: verified.key };
+  }
+  return result;
+}
+__name(compactVerify, "compactVerify");
+
+// node_modules/jose/dist/webapi/lib/jwt_claims_set.js
+var epoch = /* @__PURE__ */ __name((date) => Math.floor(date.getTime() / 1e3), "epoch");
+var minute = 60;
+var hour = minute * 60;
+var day = hour * 24;
+var week = day * 7;
+var year = day * 365.25;
+var REGEX = /^(\+|\-)? ?(\d+|\d+\.\d+) ?(seconds?|secs?|s|minutes?|mins?|m|hours?|hrs?|h|days?|d|weeks?|w|years?|yrs?|y)(?: (ago|from now))?$/i;
+function secs(str) {
+  const matched = REGEX.exec(str);
+  if (!matched || matched[4] && matched[1]) {
+    throw new TypeError("Invalid time period format");
+  }
+  const value = parseFloat(matched[2]);
+  const unit = matched[3].toLowerCase();
+  let numericDate;
+  switch (unit) {
+    case "sec":
+    case "secs":
+    case "second":
+    case "seconds":
+    case "s":
+      numericDate = Math.round(value);
+      break;
+    case "minute":
+    case "minutes":
+    case "min":
+    case "mins":
+    case "m":
+      numericDate = Math.round(value * minute);
+      break;
+    case "hour":
+    case "hours":
+    case "hr":
+    case "hrs":
+    case "h":
+      numericDate = Math.round(value * hour);
+      break;
+    case "day":
+    case "days":
+    case "d":
+      numericDate = Math.round(value * day);
+      break;
+    case "week":
+    case "weeks":
+    case "w":
+      numericDate = Math.round(value * week);
+      break;
+    default:
+      numericDate = Math.round(value * year);
+      break;
+  }
+  if (matched[1] === "-" || matched[4] === "ago") {
+    return -numericDate;
+  }
+  return numericDate;
+}
+__name(secs, "secs");
+var normalizeTyp = /* @__PURE__ */ __name((value) => {
+  if (value.includes("/")) {
+    return value.toLowerCase();
+  }
+  return `application/${value.toLowerCase()}`;
+}, "normalizeTyp");
+var checkAudiencePresence = /* @__PURE__ */ __name((audPayload, audOption) => {
+  if (typeof audPayload === "string") {
+    return audOption.includes(audPayload);
+  }
+  if (Array.isArray(audPayload)) {
+    return audOption.some(Set.prototype.has.bind(new Set(audPayload)));
+  }
+  return false;
+}, "checkAudiencePresence");
+function validateClaimsSet(protectedHeader, encodedPayload, options = {}) {
+  let payload;
+  try {
+    payload = JSON.parse(decoder.decode(encodedPayload));
+  } catch {
+  }
+  if (!isObject(payload)) {
+    throw new JWTInvalid("JWT Claims Set must be a top-level JSON object");
+  }
+  const { typ } = options;
+  if (typ && (typeof protectedHeader.typ !== "string" || normalizeTyp(protectedHeader.typ) !== normalizeTyp(typ))) {
+    throw new JWTClaimValidationFailed('unexpected "typ" JWT header value', payload, "typ", "check_failed");
+  }
+  const { requiredClaims = [], issuer, subject, audience, maxTokenAge } = options;
+  const presenceCheck = [...requiredClaims];
+  if (maxTokenAge !== void 0)
+    presenceCheck.push("iat");
+  if (audience !== void 0)
+    presenceCheck.push("aud");
+  if (subject !== void 0)
+    presenceCheck.push("sub");
+  if (issuer !== void 0)
+    presenceCheck.push("iss");
+  for (const claim of new Set(presenceCheck.reverse())) {
+    if (!(claim in payload)) {
+      throw new JWTClaimValidationFailed(`missing required "${claim}" claim`, payload, claim, "missing");
+    }
+  }
+  if (issuer && !(Array.isArray(issuer) ? issuer : [issuer]).includes(payload.iss)) {
+    throw new JWTClaimValidationFailed('unexpected "iss" claim value', payload, "iss", "check_failed");
+  }
+  if (subject && payload.sub !== subject) {
+    throw new JWTClaimValidationFailed('unexpected "sub" claim value', payload, "sub", "check_failed");
+  }
+  if (audience && !checkAudiencePresence(payload.aud, typeof audience === "string" ? [audience] : audience)) {
+    throw new JWTClaimValidationFailed('unexpected "aud" claim value', payload, "aud", "check_failed");
+  }
+  let tolerance;
+  switch (typeof options.clockTolerance) {
+    case "string":
+      tolerance = secs(options.clockTolerance);
+      break;
+    case "number":
+      tolerance = options.clockTolerance;
+      break;
+    case "undefined":
+      tolerance = 0;
+      break;
+    default:
+      throw new TypeError("Invalid clockTolerance option type");
+  }
+  const { currentDate } = options;
+  const now = epoch(currentDate || /* @__PURE__ */ new Date());
+  if ((payload.iat !== void 0 || maxTokenAge) && typeof payload.iat !== "number") {
+    throw new JWTClaimValidationFailed('"iat" claim must be a number', payload, "iat", "invalid");
+  }
+  if (payload.nbf !== void 0) {
+    if (typeof payload.nbf !== "number") {
+      throw new JWTClaimValidationFailed('"nbf" claim must be a number', payload, "nbf", "invalid");
+    }
+    if (payload.nbf > now + tolerance) {
+      throw new JWTClaimValidationFailed('"nbf" claim timestamp check failed', payload, "nbf", "check_failed");
+    }
+  }
+  if (payload.exp !== void 0) {
+    if (typeof payload.exp !== "number") {
+      throw new JWTClaimValidationFailed('"exp" claim must be a number', payload, "exp", "invalid");
+    }
+    if (payload.exp <= now - tolerance) {
+      throw new JWTExpired('"exp" claim timestamp check failed', payload, "exp", "check_failed");
+    }
+  }
+  if (maxTokenAge) {
+    const age = now - payload.iat;
+    const max = typeof maxTokenAge === "number" ? maxTokenAge : secs(maxTokenAge);
+    if (age - tolerance > max) {
+      throw new JWTExpired('"iat" claim timestamp check failed (too far in the past)', payload, "iat", "check_failed");
+    }
+    if (age < 0 - tolerance) {
+      throw new JWTClaimValidationFailed('"iat" claim timestamp check failed (it should be in the past)', payload, "iat", "check_failed");
+    }
+  }
+  return payload;
+}
+__name(validateClaimsSet, "validateClaimsSet");
+
+// node_modules/jose/dist/webapi/jwt/verify.js
+async function jwtVerify(jwt, key, options) {
+  const verified = await compactVerify(jwt, key, options);
+  if (verified.protectedHeader.crit?.includes("b64") && verified.protectedHeader.b64 === false) {
+    throw new JWTInvalid("JWTs MUST NOT use unencoded payload");
+  }
+  const payload = validateClaimsSet(verified.protectedHeader, verified.payload, options);
+  const result = { payload, protectedHeader: verified.protectedHeader };
+  if (typeof key === "function") {
+    return { ...result, key: verified.key };
+  }
+  return result;
+}
+__name(jwtVerify, "jwtVerify");
+
+// node_modules/jose/dist/webapi/jwks/local.js
+function getKtyFromAlg(alg) {
+  switch (typeof alg === "string" && alg.slice(0, 2)) {
+    case "RS":
+    case "PS":
+      return "RSA";
+    case "ES":
+      return "EC";
+    case "Ed":
+      return "OKP";
+    case "ML":
+      return "AKP";
+    default:
+      throw new JOSENotSupported('Unsupported "alg" value for a JSON Web Key Set');
+  }
+}
+__name(getKtyFromAlg, "getKtyFromAlg");
+function isJWKSLike(jwks) {
+  return jwks && typeof jwks === "object" && Array.isArray(jwks.keys) && jwks.keys.every(isJWKLike);
+}
+__name(isJWKSLike, "isJWKSLike");
+function isJWKLike(key) {
+  return isObject(key);
+}
+__name(isJWKLike, "isJWKLike");
+var LocalJWKSet = class {
+  static {
+    __name(this, "LocalJWKSet");
+  }
+  #jwks;
+  #cached = /* @__PURE__ */ new WeakMap();
+  constructor(jwks) {
+    if (!isJWKSLike(jwks)) {
+      throw new JWKSInvalid("JSON Web Key Set malformed");
+    }
+    this.#jwks = structuredClone(jwks);
+  }
+  jwks() {
+    return this.#jwks;
+  }
+  async getKey(protectedHeader, token2) {
+    const { alg, kid } = { ...protectedHeader, ...token2?.header };
+    const kty = getKtyFromAlg(alg);
+    const candidates = this.#jwks.keys.filter((jwk2) => {
+      let candidate = kty === jwk2.kty;
+      if (candidate && typeof kid === "string") {
+        candidate = kid === jwk2.kid;
+      }
+      if (candidate && (typeof jwk2.alg === "string" || kty === "AKP")) {
+        candidate = alg === jwk2.alg;
+      }
+      if (candidate && typeof jwk2.use === "string") {
+        candidate = jwk2.use === "sig";
+      }
+      if (candidate && Array.isArray(jwk2.key_ops)) {
+        candidate = jwk2.key_ops.includes("verify");
+      }
+      if (candidate) {
+        switch (alg) {
+          case "ES256":
+            candidate = jwk2.crv === "P-256";
+            break;
+          case "ES384":
+            candidate = jwk2.crv === "P-384";
+            break;
+          case "ES512":
+            candidate = jwk2.crv === "P-521";
+            break;
+          case "Ed25519":
+          case "EdDSA":
+            candidate = jwk2.crv === "Ed25519";
+            break;
+        }
+      }
+      return candidate;
+    });
+    const { 0: jwk, length } = candidates;
+    if (length === 0) {
+      throw new JWKSNoMatchingKey();
+    }
+    if (length !== 1) {
+      const error = new JWKSMultipleMatchingKeys();
+      const _cached = this.#cached;
+      error[Symbol.asyncIterator] = async function* () {
+        for (const jwk2 of candidates) {
+          try {
+            yield await importWithAlgCache(_cached, jwk2, alg);
+          } catch {
+          }
+        }
+      };
+      throw error;
+    }
+    return importWithAlgCache(this.#cached, jwk, alg);
+  }
+};
+async function importWithAlgCache(cache2, jwk, alg) {
+  const cached = cache2.get(jwk) || cache2.set(jwk, {}).get(jwk);
+  if (cached[alg] === void 0) {
+    const key = await importJWK({ ...jwk, ext: true }, alg);
+    if (key instanceof Uint8Array || key.type !== "public") {
+      throw new JWKSInvalid("JSON Web Key Set members must be public keys");
+    }
+    cached[alg] = key;
+  }
+  return cached[alg];
+}
+__name(importWithAlgCache, "importWithAlgCache");
+function createLocalJWKSet(jwks) {
+  const set = new LocalJWKSet(jwks);
+  const localJWKSet = /* @__PURE__ */ __name(async (protectedHeader, token2) => set.getKey(protectedHeader, token2), "localJWKSet");
+  Object.defineProperties(localJWKSet, {
+    jwks: {
+      value: /* @__PURE__ */ __name(() => structuredClone(set.jwks()), "value"),
+      enumerable: false,
+      configurable: false,
+      writable: false
+    }
+  });
+  return localJWKSet;
+}
+__name(createLocalJWKSet, "createLocalJWKSet");
+
+// node_modules/jose/dist/webapi/jwks/remote.js
+function isCloudflareWorkers() {
+  return typeof WebSocketPair !== "undefined" || typeof navigator !== "undefined" && true || typeof EdgeRuntime !== "undefined" && EdgeRuntime === "vercel";
+}
+__name(isCloudflareWorkers, "isCloudflareWorkers");
+var USER_AGENT;
+if (typeof navigator === "undefined" || !"Cloudflare-Workers"?.startsWith?.("Mozilla/5.0 ")) {
+  const NAME = "jose";
+  const VERSION = "v6.2.2";
+  USER_AGENT = `${NAME}/${VERSION}`;
+}
+var customFetch = /* @__PURE__ */ Symbol();
+async function fetchJwks(url, headers, signal, fetchImpl = fetch) {
+  const response = await fetchImpl(url, {
+    method: "GET",
+    signal,
+    redirect: "manual",
+    headers
+  }).catch((err) => {
+    if (err.name === "TimeoutError") {
+      throw new JWKSTimeout();
+    }
+    throw err;
+  });
+  if (response.status !== 200) {
+    throw new JOSEError("Expected 200 OK from the JSON Web Key Set HTTP response");
+  }
+  try {
+    return await response.json();
+  } catch {
+    throw new JOSEError("Failed to parse the JSON Web Key Set HTTP response as JSON");
+  }
+}
+__name(fetchJwks, "fetchJwks");
+var jwksCache = /* @__PURE__ */ Symbol();
+function isFreshJwksCache(input, cacheMaxAge) {
+  if (typeof input !== "object" || input === null) {
+    return false;
+  }
+  if (!("uat" in input) || typeof input.uat !== "number" || Date.now() - input.uat >= cacheMaxAge) {
+    return false;
+  }
+  if (!("jwks" in input) || !isObject(input.jwks) || !Array.isArray(input.jwks.keys) || !Array.prototype.every.call(input.jwks.keys, isObject)) {
+    return false;
+  }
+  return true;
+}
+__name(isFreshJwksCache, "isFreshJwksCache");
+var RemoteJWKSet = class {
+  static {
+    __name(this, "RemoteJWKSet");
+  }
+  #url;
+  #timeoutDuration;
+  #cooldownDuration;
+  #cacheMaxAge;
+  #jwksTimestamp;
+  #pendingFetch;
+  #headers;
+  #customFetch;
+  #local;
+  #cache;
+  constructor(url, options) {
+    if (!(url instanceof URL)) {
+      throw new TypeError("url must be an instance of URL");
+    }
+    this.#url = new URL(url.href);
+    this.#timeoutDuration = typeof options?.timeoutDuration === "number" ? options?.timeoutDuration : 5e3;
+    this.#cooldownDuration = typeof options?.cooldownDuration === "number" ? options?.cooldownDuration : 3e4;
+    this.#cacheMaxAge = typeof options?.cacheMaxAge === "number" ? options?.cacheMaxAge : 6e5;
+    this.#headers = new Headers(options?.headers);
+    if (USER_AGENT && !this.#headers.has("User-Agent")) {
+      this.#headers.set("User-Agent", USER_AGENT);
+    }
+    if (!this.#headers.has("accept")) {
+      this.#headers.set("accept", "application/json");
+      this.#headers.append("accept", "application/jwk-set+json");
+    }
+    this.#customFetch = options?.[customFetch];
+    if (options?.[jwksCache] !== void 0) {
+      this.#cache = options?.[jwksCache];
+      if (isFreshJwksCache(options?.[jwksCache], this.#cacheMaxAge)) {
+        this.#jwksTimestamp = this.#cache.uat;
+        this.#local = createLocalJWKSet(this.#cache.jwks);
+      }
+    }
+  }
+  pendingFetch() {
+    return !!this.#pendingFetch;
+  }
+  coolingDown() {
+    return typeof this.#jwksTimestamp === "number" ? Date.now() < this.#jwksTimestamp + this.#cooldownDuration : false;
+  }
+  fresh() {
+    return typeof this.#jwksTimestamp === "number" ? Date.now() < this.#jwksTimestamp + this.#cacheMaxAge : false;
+  }
+  jwks() {
+    return this.#local?.jwks();
+  }
+  async getKey(protectedHeader, token2) {
+    if (!this.#local || !this.fresh()) {
+      await this.reload();
+    }
+    try {
+      return await this.#local(protectedHeader, token2);
+    } catch (err) {
+      if (err instanceof JWKSNoMatchingKey) {
+        if (this.coolingDown() === false) {
+          await this.reload();
+          return this.#local(protectedHeader, token2);
+        }
+      }
+      throw err;
+    }
+  }
+  async reload() {
+    if (this.#pendingFetch && isCloudflareWorkers()) {
+      this.#pendingFetch = void 0;
+    }
+    this.#pendingFetch ||= fetchJwks(this.#url.href, this.#headers, AbortSignal.timeout(this.#timeoutDuration), this.#customFetch).then((json) => {
+      this.#local = createLocalJWKSet(json);
+      if (this.#cache) {
+        this.#cache.uat = Date.now();
+        this.#cache.jwks = json;
+      }
+      this.#jwksTimestamp = Date.now();
+      this.#pendingFetch = void 0;
+    }).catch((err) => {
+      this.#pendingFetch = void 0;
+      throw err;
+    });
+    await this.#pendingFetch;
+  }
+};
+function createRemoteJWKSet(url, options) {
+  const set = new RemoteJWKSet(url, options);
+  const remoteJWKSet = /* @__PURE__ */ __name(async (protectedHeader, token2) => set.getKey(protectedHeader, token2), "remoteJWKSet");
+  Object.defineProperties(remoteJWKSet, {
+    coolingDown: {
+      get: /* @__PURE__ */ __name(() => set.coolingDown(), "get"),
+      enumerable: true,
+      configurable: false
+    },
+    fresh: {
+      get: /* @__PURE__ */ __name(() => set.fresh(), "get"),
+      enumerable: true,
+      configurable: false
+    },
+    reload: {
+      value: /* @__PURE__ */ __name(() => set.reload(), "value"),
+      enumerable: true,
+      configurable: false,
+      writable: false
+    },
+    reloading: {
+      get: /* @__PURE__ */ __name(() => set.pendingFetch(), "get"),
+      enumerable: true,
+      configurable: false
+    },
+    jwks: {
+      value: /* @__PURE__ */ __name(() => set.jwks(), "value"),
+      enumerable: true,
+      configurable: false,
+      writable: false
+    }
+  });
+  return remoteJWKSet;
+}
+__name(createRemoteJWKSet, "createRemoteJWKSet");
+
+// node_modules/jose/dist/webapi/util/decode_protected_header.js
+function decodeProtectedHeader(token2) {
+  let protectedB64u;
+  if (typeof token2 === "string") {
+    const parts = token2.split(".");
+    if (parts.length === 3 || parts.length === 5) {
+      ;
+      [protectedB64u] = parts;
+    }
+  } else if (typeof token2 === "object" && token2) {
+    if ("protected" in token2) {
+      protectedB64u = token2.protected;
+    } else {
+      throw new TypeError("Token does not contain a Protected Header");
+    }
+  }
+  try {
+    if (typeof protectedB64u !== "string" || !protectedB64u) {
+      throw new Error();
+    }
+    const result = JSON.parse(decoder.decode(decode(protectedB64u)));
+    if (!isObject(result)) {
+      throw new Error();
+    }
+    return result;
+  } catch {
+    throw new TypeError("Invalid Token or Protected Header formatting");
+  }
+}
+__name(decodeProtectedHeader, "decodeProtectedHeader");
+
+// lib/verify-supabase-jwt.ts
+var jwksByOrigin = /* @__PURE__ */ new Map();
+function getJwks(supabaseUrl) {
+  const base = supabaseUrl.replace(/\/$/, "");
+  const jwksUrl = `${base}/auth/v1/.well-known/jwks.json`;
+  let jwks = jwksByOrigin.get(jwksUrl);
+  if (!jwks) {
+    jwks = createRemoteJWKSet(new URL(jwksUrl));
+    jwksByOrigin.set(jwksUrl, jwks);
+  }
+  return jwks;
+}
+__name(getJwks, "getJwks");
+function authIssuer(supabaseUrl) {
+  return `${supabaseUrl.replace(/\/$/, "")}/auth/v1`;
+}
+__name(authIssuer, "authIssuer");
+function payloadOk(payload) {
+  return typeof payload.sub === "string" && payload.sub.length > 0;
+}
+__name(payloadOk, "payloadOk");
+async function verifySupabaseAccessToken(accessToken, options) {
+  const { supabaseUrl, jwtSecret } = options;
+  if (!supabaseUrl?.trim()) {
+    return { error: "Missing supabaseUrl" };
+  }
+  let header;
+  try {
+    header = decodeProtectedHeader(accessToken);
+  } catch {
+    return { error: "Invalid token" };
+  }
+  const issuer = authIssuer(supabaseUrl);
+  const alg = header.alg;
+  try {
+    if (alg === "HS256") {
+      if (!jwtSecret) {
+        return { error: "HS256 token requires SUPABASE_JWT_SECRET (legacy JWT secret)" };
+      }
+      const key = new TextEncoder().encode(jwtSecret);
+      const { payload: payload2 } = await jwtVerify(accessToken, key, {
+        algorithms: ["HS256"],
+        issuer
+      });
+      if (!payloadOk(payload2)) return { error: "Invalid token: missing sub" };
+      return { payload: payload2 };
+    }
+    const jwks = getJwks(supabaseUrl);
+    const { payload } = await jwtVerify(accessToken, jwks, { issuer });
+    if (!payloadOk(payload)) return { error: "Invalid token: missing sub" };
+    return { payload };
+  } catch (e2) {
+    const msg = e2 instanceof Error ? e2.message : "JWT verification failed";
+    return { error: msg };
+  }
+}
+__name(verifySupabaseAccessToken, "verifySupabaseAccessToken");
+
+// middleware.ts
+async function requireAuthJwt(c2, next) {
+  const token2 = getAccessTokenFromContext(c2);
+  if (!token2) return c2.json({ error: "Unauthorized" }, 401);
+  const env = c2.env;
+  const supabaseUrl = env?.NEXT_PUBLIC_SUPABASE_URL;
+  if (supabaseUrl) {
+    const result = await verifySupabaseAccessToken(token2, {
+      supabaseUrl,
+      jwtSecret: env?.SUPABASE_JWT_SECRET
+    });
+    if (!("error" in result)) {
+      c2.set("userId", result.payload.sub);
+      await next();
+      return;
+    }
+  }
+  const { getSupabaseClient: getSupabaseClient2 } = await Promise.resolve().then(() => (init_supabase(), supabase_exports));
+  const supabase = getSupabaseClient2(c2);
+  const { data: { user }, error } = await supabase.auth.getUser();
+  if (error || !user) return c2.json({ error: "Unauthorized" }, 401);
+  c2.set("userId", user.id);
+  await next();
+}
+__name(requireAuthJwt, "requireAuthJwt");
+async function getAuthUserId(c2) {
+  const fromVar = c2.get("userId");
+  if (fromVar) return fromVar;
+  const token2 = getAccessTokenFromContext(c2);
+  const env = c2.env;
+  const url = env?.NEXT_PUBLIC_SUPABASE_URL;
+  if (token2 && url) {
+    const result = await verifySupabaseAccessToken(token2, {
+      supabaseUrl: url,
+      jwtSecret: env?.SUPABASE_JWT_SECRET
+    });
+    if (!("error" in result) && result.payload.sub) return result.payload.sub;
+  }
+  const { getSupabaseClient: getSupabaseClient2 } = await Promise.resolve().then(() => (init_supabase(), supabase_exports));
+  const supabase = getSupabaseClient2(c2);
+  const { data: { user } } = await supabase.auth.getUser();
+  return user?.id ?? null;
+}
+__name(getAuthUserId, "getAuthUserId");
 async function logger(c2, next) {
   const start = Date.now();
   await next();
@@ -48243,6 +49870,33 @@ async function logger(c2, next) {
   console.log(`${c2.req.method} ${c2.req.path} - ${ms2}ms`);
 }
 __name(logger, "logger");
+
+// lib/realtime.ts
+function getRealtimeHub(env) {
+  return env?.REALTIME_HUB ?? null;
+}
+__name(getRealtimeHub, "getRealtimeHub");
+async function publishRealtimeEvent(env, event) {
+  const hub = getRealtimeHub(env);
+  if (!hub) return;
+  const id = hub.idFromName("global");
+  const stub = hub.get(id);
+  await stub.fetch("https://realtime-hub/publish", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(event)
+  });
+}
+__name(publishRealtimeEvent, "publishRealtimeEvent");
+async function publishRealtimeEventFromContext(c2, event) {
+  await publishRealtimeEvent(c2.env, event);
+}
+__name(publishRealtimeEventFromContext, "publishRealtimeEventFromContext");
+async function publishRealtimeEventFromGlobal(event) {
+  const runtimeGlobal = globalThis;
+  await publishRealtimeEvent(runtimeGlobal.env, event);
+}
+__name(publishRealtimeEventFromGlobal, "publishRealtimeEventFromGlobal");
 
 // routes/admin/ai-edit.ts
 init_supabase();
@@ -48299,6 +49953,14 @@ async function fetchPublicUsersRow(userId, url, serviceKey) {
   return data;
 }
 __name(fetchPublicUsersRow, "fetchPublicUsersRow");
+function parseD1TimestampToMs(value) {
+  if (!value) return null;
+  const iso = value.includes("T") ? value : value.replace(" ", "T");
+  const withZone = /Z$|[+-]\d\d:\d\d$/.test(iso) ? iso : `${iso}Z`;
+  const ms2 = Date.parse(withZone);
+  return Number.isFinite(ms2) ? ms2 : null;
+}
+__name(parseD1TimestampToMs, "parseD1TimestampToMs");
 async function ensureUserInD1(db, user, sync) {
   const email = user.email ?? "";
   const fullNameFromJwt = user.user_metadata?.full_name || user.user_metadata?.name || null;
@@ -48306,9 +49968,15 @@ async function ensureUserInD1(db, user, sync) {
   let fullName = fullNameFromJwt;
   let creditsBind = null;
   let suspendedBind = null;
+  const existing = await db.prepare(
+    `SELECT role, full_name, credits, is_suspended, updated_at FROM users WHERE id = ?`
+  ).bind(user.id).first();
   const url = sync?.NEXT_PUBLIC_SUPABASE_URL;
   const sk = sync?.SUPABASE_SERVICE_ROLE_KEY;
-  if (url && sk) {
+  const PUBLIC_SYNC_TTL_MS = 5 * 60 * 1e3;
+  const existingUpdatedAtMs = parseD1TimestampToMs(existing?.updated_at);
+  const needsPublicSync = !!(url && sk) && (!existing || !existingUpdatedAtMs || Date.now() - existingUpdatedAtMs > PUBLIC_SYNC_TTL_MS);
+  if (needsPublicSync && url && sk) {
     const pg = await fetchPublicUsersRow(user.id, url, sk);
     if (pg) {
       if (pg.role === "admin" || pg.role === "user") metaRole = pg.role;
@@ -48319,7 +49987,7 @@ async function ensureUserInD1(db, user, sync) {
       }
     }
   }
-  const insertRole = metaRole ?? "user";
+  const insertRole = metaRole ?? (existing?.role === "admin" ? "admin" : "user");
   await db.batch([
     db.prepare(
       `INSERT OR IGNORE INTO users (id, email, role, full_name) VALUES (?, ?, ?, ?)`
@@ -48351,6 +50019,13 @@ async function getUserRow(db, userId) {
   return row ?? null;
 }
 __name(getUserRow, "getUserRow");
+async function ensureUserStubInD1(db, userId) {
+  await db.prepare(
+    `INSERT OR IGNORE INTO users (id, email, role, full_name)
+       VALUES (?, '', 'user', NULL)`
+  ).bind(userId).run();
+}
+__name(ensureUserStubInD1, "ensureUserStubInD1");
 async function isUserSuspendedD1(db, userId) {
   const row = await getUserRow(db, userId);
   return (row?.is_suspended ?? 0) === 1;
@@ -48496,6 +50171,12 @@ adminShowcase.put("/", async (c2) => {
   const payload = { albumPreviews, flipbookPreviewUrl };
   try {
     await saveShowcaseToD1(db, payload);
+    await publishRealtimeEventFromContext(c2, {
+      type: "showcase.updated",
+      channel: "showcase",
+      payload: { action: "replace" },
+      ts: (/* @__PURE__ */ new Date()).toISOString()
+    });
     return c2.json(payload);
   } catch (e2) {
     const msg = e2 instanceof Error ? e2.message : "save failed";
@@ -48690,8 +50371,8 @@ overview.put("/", async (c2) => {
         is_suspended: typeof isSuspended === "boolean" ? isSuspended : void 0
       });
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Supabase mirror update failed";
-      return c2.json({ error: message }, 500);
+      const message2 = err instanceof Error ? err.message : "Supabase mirror update failed";
+      return c2.json({ error: message2 }, 500);
     }
   }
   const update = [];
@@ -48972,14 +50653,11 @@ tryon.post("/", async (c2) => {
     return c2.json({ ok: true, results });
   } catch (err) {
     console.error("Try-on error:", err);
-    const message = err instanceof Error ? err.message : "Gagal";
-    return c2.json({ ok: false, error: message }, 500);
+    const message2 = err instanceof Error ? err.message : "Gagal";
+    return c2.json({ ok: false, error: message2 }, 500);
   }
 });
 var tryon_default = tryon;
-
-// routes/albums/albums.ts
-init_supabase();
 
 // lib/school-name-utils.ts
 function normalizeName(s2) {
@@ -49027,20 +50705,19 @@ function mapAlbumRow(r2) {
   return { ...rest, pricing_packages: pkg };
 }
 __name(mapAlbumRow, "mapAlbumRow");
-var getAlbumId = /* @__PURE__ */ __name((album) => typeof album.id === "string" ? album.id : "", "getAlbumId");
 var albumsRoute = new Hono2();
+albumsRoute.use("*", requireAuthJwt);
 albumsRoute.get("/", async (c2) => {
   try {
-    const supabase = getSupabaseClient(c2);
     const db = getD1(c2);
     if (!db) return c2.json({ error: "Database not configured" }, 503);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
+    const userId = await getAuthUserId(c2);
+    if (!userId) {
       return c2.json([]);
     }
     let role = "user";
     try {
-      role = await getRole(c2, user);
+      role = await getRole(c2, { id: userId });
     } catch {
     }
     const isAdmin = role === "admin";
@@ -49054,77 +50731,71 @@ albumsRoute.get("/", async (c2) => {
            LEFT JOIN pricing_packages p ON a.pricing_package_id = p.id
            ORDER BY a.created_at DESC`
       ).all();
-      const rows = results ?? [];
-      const result = rows.map((a) => {
+      const rows2 = results ?? [];
+      const result2 = rows2.map((a) => {
         const m = mapAlbumRow(a);
         return { ...m, isOwner: false };
       });
-      return c2.json(result);
+      return c2.json(result2);
     }
-    const owned = await db.prepare(
-      `SELECT ${albumColsUser}
-         FROM albums a
-         LEFT JOIN pricing_packages p ON a.pricing_package_id = p.id
-         WHERE a.user_id = ?
-         ORDER BY a.created_at DESC`
-    ).bind(user.id).all();
-    const ownedAlbums = (owned.results ?? []).map(mapAlbumRow);
-    const ownedIds = new Set(ownedAlbums.map(getAlbumId).filter(Boolean));
-    const memberRows = await db.prepare(`SELECT album_id FROM album_members WHERE user_id = ?`).bind(user.id).all();
-    const memberAlbumIds = (memberRows.results ?? []).map((r2) => r2.album_id).filter(Boolean);
-    let memberAlbums = [];
-    if (memberAlbumIds.length > 0) {
-      const ph = memberAlbumIds.map(() => "?").join(",");
-      const mr3 = await db.prepare(
-        `SELECT ${albumColsUser}
-           FROM albums a
-           LEFT JOIN pricing_packages p ON a.pricing_package_id = p.id
-           WHERE a.id IN (${ph})`
-      ).bind(...memberAlbumIds).all();
-      memberAlbums = (mr3.results ?? []).map(mapAlbumRow);
-    }
-    const approvedRows = await db.prepare(
-      `SELECT DISTINCT album_id FROM album_class_access WHERE user_id = ? AND status = 'approved'`
-    ).bind(user.id).all();
-    const approvedAlbumIds = (approvedRows.results ?? []).map((r2) => r2.album_id).filter((id) => id && !ownedIds.has(id));
-    let approvedClassAccessAlbums = [];
-    if (approvedAlbumIds.length > 0) {
-      const ph = approvedAlbumIds.map(() => "?").join(",");
-      const ar3 = await db.prepare(
-        `SELECT ${albumColsUser}
-           FROM albums a
-           LEFT JOIN pricing_packages p ON a.pricing_package_id = p.id
-           WHERE a.id IN (${ph})`
-      ).bind(...approvedAlbumIds).all();
-      approvedClassAccessAlbums = (ar3.results ?? []).map(mapAlbumRow);
-    }
-    const memberSet = new Set(memberAlbums.map(getAlbumId).filter(Boolean));
-    const finalAlbums = [
-      ...ownedAlbums.map((a) => ({ ...a, isOwner: true })),
-      ...memberAlbums.filter((a) => !ownedIds.has(getAlbumId(a))).map((a) => ({ ...a, isOwner: false })),
-      ...approvedClassAccessAlbums.filter((a) => !ownedIds.has(getAlbumId(a)) && !memberSet.has(getAlbumId(a))).map((a) => ({ ...a, isOwner: false, status: "approved" }))
-    ];
-    finalAlbums.sort((a, b3) => {
-      const bTime = new Date(String(b3["created_at"] ?? "")).getTime();
-      const aTime = new Date(String(a["created_at"] ?? "")).getTime();
-      return bTime - aTime;
+    const rows = await db.prepare(
+      `SELECT ${albumColsUser},
+            CASE WHEN a.user_id = ? THEN 1 ELSE 0 END AS is_owner,
+            CASE
+              WHEN a.user_id = ? THEN 0
+              WHEN EXISTS (
+                SELECT 1 FROM album_members am
+                WHERE am.album_id = a.id AND am.user_id = ?
+              ) THEN 1
+              WHEN EXISTS (
+                SELECT 1 FROM album_class_access aca
+                WHERE aca.album_id = a.id AND aca.user_id = ? AND aca.status = 'approved'
+              ) THEN 2
+              ELSE 3
+            END AS access_rank
+          FROM albums a
+          LEFT JOIN pricing_packages p ON a.pricing_package_id = p.id
+          WHERE a.user_id = ?
+             OR EXISTS (
+               SELECT 1 FROM album_members am
+               WHERE am.album_id = a.id AND am.user_id = ?
+             )
+             OR EXISTS (
+               SELECT 1 FROM album_class_access aca
+               WHERE aca.album_id = a.id AND aca.user_id = ? AND aca.status = 'approved'
+             )
+          ORDER BY a.created_at DESC`
+    ).bind(userId, userId, userId, userId, userId, userId, userId).all();
+    const result = (rows.results ?? []).map((raw2) => {
+      const mapped = mapAlbumRow(raw2);
+      const isOwner = Number(raw2.is_owner ?? 0) === 1;
+      const accessRank = Number(raw2.access_rank ?? 3);
+      const response = {
+        ...mapped,
+        isOwner
+      };
+      if (!isOwner && accessRank === 2) {
+        response.status = "approved";
+      }
+      delete response.is_owner;
+      delete response.access_rank;
+      return response;
     });
-    return c2.json(finalAlbums);
+    return c2.json(result);
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
+    const message2 = err instanceof Error ? err.message : String(err);
     console.error("[GET /api/albums]", err);
-    return c2.json({ error: message });
+    return c2.json({ error: message2 });
   }
 });
 albumsRoute.post("/", async (c2) => {
-  const supabase = getSupabaseClient(c2);
   const db = getD1(c2);
   if (!db) return c2.json({ error: "Database not configured" }, 503);
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
+  const userId = await getAuthUserId(c2);
+  if (!userId) {
     return c2.json({ error: "Unauthorized. Please login." }, 401);
   }
-  await ensureUserInD1(db, user, honoEnvForSupabasePublicSync(c2.env));
+  await ensureUserInD1(db, { id: userId, email: "" }, honoEnvForSupabasePublicSync(c2.env));
   let body;
   try {
     const parsed = await c2.req.json().catch(() => null);
@@ -49139,7 +50810,7 @@ albumsRoute.post("/", async (c2) => {
   const now = (/* @__PURE__ */ new Date()).toISOString();
   const baseInsert = {
     id,
-    user_id: user.id,
+    user_id: userId,
     type,
     status: "pending",
     created_at: now,
@@ -49207,13 +50878,12 @@ albumsRoute.post("/", async (c2) => {
   return c2.json(row);
 });
 albumsRoute.put("/", async (c2) => {
-  const supabase = getSupabaseClient(c2);
   const db = getD1(c2);
   if (!db) return c2.json({ error: "Database not configured" }, 503);
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  if (authError || !user) return c2.json({ error: "Unauthorized" }, 401);
-  await ensureUserInD1(db, user, honoEnvForSupabasePublicSync(c2.env));
-  if (await getRole(c2, user) !== "admin") return c2.json({ error: "Forbidden" }, 403);
+  const userId = await getAuthUserId(c2);
+  if (!userId) return c2.json({ error: "Unauthorized" }, 401);
+  await ensureUserInD1(db, { id: userId, email: "" }, honoEnvForSupabasePublicSync(c2.env));
+  if (await getRole(c2, { id: userId }) !== "admin") return c2.json({ error: "Forbidden" }, 403);
   const body = await c2.req.json().catch(() => ({}));
   const { id, status } = body;
   if (!id || typeof id !== "string") return c2.json({ error: "Album ID is required" }, 400);
@@ -49227,20 +50897,19 @@ albumsRoute.put("/", async (c2) => {
   return c2.json(row);
 });
 albumsRoute.delete("/", async (c2) => {
-  const supabase = getSupabaseClient(c2);
   const db = getD1(c2);
   if (!db) return c2.json({ error: "Database not configured" }, 503);
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return c2.json({ error: "Unauthorized" }, 401);
+  const userId = await getAuthUserId(c2);
+  if (!userId) return c2.json({ error: "Unauthorized" }, 401);
   const body = await c2.req.json().catch(() => ({}));
   const { id } = body;
   if (!id) return c2.json({ error: "Album ID is required" }, 400);
-  const role = await getRole(c2, user);
+  const role = await getRole(c2, { id: userId });
   if (role === "admin") {
     const r2 = await db.prepare(`DELETE FROM albums WHERE id = ?`).bind(id).run();
     if (!r2.success) return c2.json({ error: "Delete failed" }, 500);
   } else {
-    const r2 = await db.prepare(`DELETE FROM albums WHERE id = ? AND user_id = ?`).bind(id, user.id).run();
+    const r2 = await db.prepare(`DELETE FROM albums WHERE id = ? AND user_id = ?`).bind(id, userId).run();
     if (!r2.success || r2.meta.changes === 0) {
       return c2.json({ error: "Album not found or forbidden" }, 403);
     }
@@ -49751,6 +51420,12 @@ async function putAlbumPhoto(bucket, relativePathInsideAlbumBucket, body, option
   await bucket.put(key, normalized, {
     httpMetadata: options?.contentType ? { contentType: options.contentType, cacheControl: options.cacheControl ?? "public, max-age=3600" } : { cacheControl: options?.cacheControl ?? "public, max-age=3600" }
   });
+  await publishRealtimeEventFromGlobal({
+    type: "r2.object.put",
+    channel: "assets",
+    payload: { key },
+    ts: (/* @__PURE__ */ new Date()).toISOString()
+  });
   return { key };
 }
 __name(putAlbumPhoto, "putAlbumPhoto");
@@ -49762,6 +51437,12 @@ __name(getAlbumObject, "getAlbumObject");
 async function deleteAlbumObject(bucket, relativePathInsideAlbumBucket) {
   const key = r2ObjectKeyFromAlbumPath(relativePathInsideAlbumBucket);
   await bucket.delete(key);
+  await publishRealtimeEventFromGlobal({
+    type: "r2.object.delete",
+    channel: "assets",
+    payload: { key },
+    ts: (/* @__PURE__ */ new Date()).toISOString()
+  });
 }
 __name(deleteAlbumObject, "deleteAlbumObject");
 
@@ -49827,8 +51508,8 @@ albumCoverRoute.post("/", async (c2) => {
   try {
     await putAlbumPhoto(bucket, relPath, fileData, { contentType: mimetype });
   } catch (e2) {
-    const message = e2 instanceof Error ? e2.message : "Upload gagal";
-    return c2.json({ error: message }, 500);
+    const message2 = e2 instanceof Error ? e2.message : "Upload gagal";
+    return c2.json({ error: message2 }, 500);
   }
   const coverUrl = publicAlbumAssetUrl(c2, relPath);
   const r2 = await db.prepare(
@@ -50003,7 +51684,8 @@ albumFlipbookRoute.post("/upload", async (c2) => {
   try {
     await putAlbumPhoto(bucket, relPath, fileData, {
       contentType: mimetype,
-      cacheControl: "public, max-age=3600"
+      // Key selalu random UUID, aman di-cache lama untuk percepat repeat preview.
+      cacheControl: "public, max-age=31536000, immutable"
     });
   } catch (e2) {
     return c2.json({ error: e2 instanceof Error ? e2.message : "Upload gagal" }, 500);
@@ -51730,9 +53412,9 @@ classMemberUserRoute.patch("/", async (c2) => {
   const email = body?.email !== void 0 ? typeof body.email === "string" ? body.email.trim() || null : null : void 0;
   const date_of_birth = body?.date_of_birth !== void 0 ? typeof body.date_of_birth === "string" ? body.date_of_birth.trim() || null : null : void 0;
   const instagram = body?.instagram !== void 0 ? typeof body.instagram === "string" ? body.instagram.trim() || null : null : void 0;
-  const message = body?.message !== void 0 ? typeof body.message === "string" ? body.message.trim() || null : null : void 0;
+  const message2 = body?.message !== void 0 ? typeof body.message === "string" ? body.message.trim() || null : null : void 0;
   const video_url = body?.video_url !== void 0 ? typeof body.video_url === "string" ? body.video_url.trim() || null : null : void 0;
-  if (student_name === void 0 && email === void 0 && date_of_birth === void 0 && instagram === void 0 && message === void 0 && video_url === void 0) {
+  if (student_name === void 0 && email === void 0 && date_of_birth === void 0 && instagram === void 0 && message2 === void 0 && video_url === void 0) {
     return c2.json({ error: "Minimal satu field required" }, 400);
   }
   const sets = [];
@@ -51753,9 +53435,9 @@ classMemberUserRoute.patch("/", async (c2) => {
     sets.push("instagram = ?");
     vals.push(instagram);
   }
-  if (message !== void 0) {
+  if (message2 !== void 0) {
     sets.push("message = ?");
-    vals.push(message);
+    vals.push(message2);
   }
   if (video_url !== void 0) {
     sets.push("video_url = ?");
@@ -51807,9 +53489,9 @@ myAccessRoute.patch("/", async (c2) => {
   const email = body?.email !== void 0 ? typeof body.email === "string" ? body.email.trim() || null : null : void 0;
   const date_of_birth = body?.date_of_birth !== void 0 ? typeof body.date_of_birth === "string" ? body.date_of_birth.trim() || null : null : void 0;
   const instagram = body?.instagram !== void 0 ? typeof body.instagram === "string" ? body.instagram.trim() || null : null : void 0;
-  const message = body?.message !== void 0 ? typeof body.message === "string" ? body.message.trim() || null : null : void 0;
+  const message2 = body?.message !== void 0 ? typeof body.message === "string" ? body.message.trim() || null : null : void 0;
   const video_url = body?.video_url !== void 0 ? typeof body.video_url === "string" ? body.video_url.trim() || null : null : void 0;
-  if (student_name === void 0 && email === void 0 && date_of_birth === void 0 && instagram === void 0 && message === void 0 && video_url === void 0) {
+  if (student_name === void 0 && email === void 0 && date_of_birth === void 0 && instagram === void 0 && message2 === void 0 && video_url === void 0) {
     return c2.json(
       {
         error: "Minimal satu field required (student_name, email, date_of_birth, instagram, message, video_url)"
@@ -51835,9 +53517,9 @@ myAccessRoute.patch("/", async (c2) => {
     sets.push("instagram = ?");
     vals.push(instagram);
   }
-  if (message !== void 0) {
+  if (message2 !== void 0) {
     sets.push("message = ?");
-    vals.push(message);
+    vals.push(message2);
   }
   if (video_url !== void 0) {
     sets.push("video_url = ?");
@@ -52368,7 +54050,7 @@ albumsIdTeachersTeacherId.patch("/", async (c2) => {
     const albumId = c2.req.param("id");
     const teacherId = c2.req.param("teacherId");
     const body = await c2.req.json();
-    const { name: name2, title, message, video_url } = body;
+    const { name: name2, title, message: message2, video_url } = body;
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
       return c2.json({ error: "Unauthorized" }, 401);
@@ -52380,7 +54062,7 @@ albumsIdTeachersTeacherId.patch("/", async (c2) => {
     const updateData = {};
     if (name2 !== void 0) updateData.name = name2.trim();
     if (title !== void 0) updateData.title = title?.trim() || null;
-    if (message !== void 0) updateData.message = message?.trim() || null;
+    if (message2 !== void 0) updateData.message = message2?.trim() || null;
     if (video_url !== void 0) updateData.video_url = video_url?.trim() || null;
     if (Object.keys(updateData).length === 0) {
       return c2.json({ error: "No fields to update" }, 400);
@@ -52947,7 +54629,6 @@ var setCookie = /* @__PURE__ */ __name((c2, name2, value, opt) => {
 }, "setCookie");
 
 // routes/auth/otp-status.ts
-init_supabase();
 var OTP_COOKIE_NAME = "otp_verified";
 function getSkipOtp(env) {
   const v3 = (env?.SKIP_OTP || env?.SKIP_LOGIN_OTP || "").trim().toLowerCase().replace(/^"|"$/g, "");
@@ -52956,16 +54637,15 @@ function getSkipOtp(env) {
 __name(getSkipOtp, "getSkipOtp");
 var authOtpStatus = new Hono2();
 authOtpStatus.get("/", async (c2) => {
-  const supabase = getSupabaseClient(c2);
-  const { data: { user } } = await supabase.auth.getUser();
+  const userId = await getAuthUserId(c2);
   let suspended = false;
-  if (user) {
+  if (userId) {
     const db = getD1(c2);
-    if (db) suspended = await isUserSuspendedD1(db, user.id);
+    if (db) suspended = await isUserSuspendedD1(db, userId);
   }
   const skipOtp = getSkipOtp(c2.env);
   const cookieVerified = getCookie(c2, OTP_COOKIE_NAME) === "1";
-  const verified = !suspended && (skipOtp ? !!user : !!(user && cookieVerified));
+  const verified = !suspended && (skipOtp ? !!userId : !!(userId && cookieVerified));
   return c2.json({ verified: !!verified, suspended });
 });
 var otp_status_default = authOtpStatus;
@@ -53014,8 +54694,8 @@ sendLoginOtp.post("/", async (c2) => {
       });
       if (resendError) {
         console.error("Resend API error:", resendError);
-        const message = resendError.message || "Gagal mengirim email OTP";
-        return c2.json({ error: message }, 500);
+        const message2 = resendError.message || "Gagal mengirim email OTP";
+        return c2.json({ error: message2 }, 500);
       }
     } catch (err) {
       console.error("Resend send error:", err);
@@ -53069,7 +54749,11 @@ verifyLoginOtp.post("/", async (c2) => {
   if (row) {
     await db.prepare(`DELETE FROM login_otps WHERE user_id = ?`).bind(user.id).run();
     const role2 = await getRole(c2, user);
-    const redirectTo2 = role2 === "admin" ? "/admin" : "/user";
+    let finalNext2 = safeNext;
+    if (role2 === "admin" && finalNext2.startsWith("/user")) {
+      finalNext2 = finalNext2.replace("/user", "/admin");
+    }
+    const redirectTo2 = finalNext2 || (role2 === "admin" ? "/admin" : "/user");
     const isProduction2 = c2.env.NODE_ENV === "production";
     setCookie(c2, OTP_COOKIE_NAME2, "1", {
       path: "/",
@@ -53092,7 +54776,11 @@ verifyLoginOtp.post("/", async (c2) => {
   const verifiedUser = data?.user ?? user;
   await ensureUserInD1(db, verifiedUser, honoEnvForSupabasePublicSync(c2.env));
   const role = await getRole(c2, verifiedUser);
-  const redirectTo = safeNext || (role === "admin" ? "/admin" : "/user");
+  let finalNext = safeNext;
+  if (role === "admin" && finalNext.startsWith("/user")) {
+    finalNext = finalNext.replace("/user", "/admin");
+  }
+  const redirectTo = finalNext || (role === "admin" ? "/admin" : "/user");
   const isProduction = c2.env.NODE_ENV === "production";
   setCookie(c2, OTP_COOKIE_NAME2, "1", {
     path: "/",
@@ -53503,6 +55191,14 @@ var sync_invoice_default = creditsSyncInvoice;
 
 // routes/pricing.ts
 var pricing = new Hono2();
+var PRICING_CACHE_TTL_MS = 3e4;
+var pricingCache = null;
+var pricingCacheExpiresAt = 0;
+function resetPricingCache() {
+  pricingCache = null;
+  pricingCacheExpiresAt = 0;
+}
+__name(resetPricingCache, "resetPricingCache");
 function parsePkg(row) {
   let features = [];
   let aiLabs = [];
@@ -53534,9 +55230,20 @@ __name(parsePkg, "parsePkg");
 pricing.get("/", async (c2) => {
   const db = getD1(c2);
   if (!db) return c2.json({ error: "D1 tidak terkonfigurasi" }, 503);
+  const now = Date.now();
+  if (pricingCache && now < pricingCacheExpiresAt) {
+    c2.header("Cache-Control", "public, max-age=30, stale-while-revalidate=120");
+    c2.header("X-Cache", "HIT");
+    return c2.json(pricingCache);
+  }
   try {
     const { results } = await db.prepare("SELECT * FROM pricing_packages ORDER BY id").all();
-    return c2.json((results ?? []).map(parsePkg));
+    const parsed = (results ?? []).map(parsePkg);
+    pricingCache = parsed;
+    pricingCacheExpiresAt = now + PRICING_CACHE_TTL_MS;
+    c2.header("Cache-Control", "public, max-age=30, stale-while-revalidate=120");
+    c2.header("X-Cache", "MISS");
+    return c2.json(parsed);
   } catch (err) {
     const msg = err instanceof Error ? err.message : "error";
     console.error("Pricing Error:", err);
@@ -53563,6 +55270,13 @@ pricing.post("/", async (c2) => {
       `INSERT INTO pricing_packages (id, name, price_per_student, min_students, features, is_active, flipbook_enabled, ai_labs_features, is_popular)
          VALUES (?, ?, ?, ?, ?, 1, ?, ?, ?)`
     ).bind(id, name2, price_per_student, min_students, features, flipbook_enabled, ai_labs_features, is_popular).run();
+    resetPricingCache();
+    await publishRealtimeEventFromContext(c2, {
+      type: "pricing.updated",
+      channel: "pricing",
+      payload: { action: "create", id },
+      ts: (/* @__PURE__ */ new Date()).toISOString()
+    });
     const row = await db.prepare("SELECT * FROM pricing_packages WHERE id = ?").bind(id).first();
     return c2.json(row ? parsePkg(row) : { id });
   } catch (err) {
@@ -53589,6 +55303,13 @@ pricing.put("/", async (c2) => {
          flipbook_enabled = ?, ai_labs_features = ?, is_popular = ?, updated_at = datetime('now') WHERE id = ?`
     ).bind(name2, price_per_student, min_students, features, flipbook_enabled, ai_labs_features, is_popular, id).run();
     if (r2.meta.changes === 0) return c2.json({ error: "Package not found" }, 404);
+    resetPricingCache();
+    await publishRealtimeEventFromContext(c2, {
+      type: "pricing.updated",
+      channel: "pricing",
+      payload: { action: "update", id },
+      ts: (/* @__PURE__ */ new Date()).toISOString()
+    });
     const row = await db.prepare("SELECT * FROM pricing_packages WHERE id = ?").bind(id).first();
     return c2.json(row ? [parsePkg(row)] : []);
   } catch (err) {
@@ -53605,6 +55326,13 @@ pricing.delete("/", async (c2) => {
   try {
     const r2 = await db.prepare("DELETE FROM pricing_packages WHERE id = ?").bind(id).run();
     if (r2.meta.changes === 0) return c2.json({ error: "Not found" }, 404);
+    resetPricingCache();
+    await publishRealtimeEventFromContext(c2, {
+      type: "pricing.updated",
+      channel: "pricing",
+      payload: { action: "delete", id },
+      ts: (/* @__PURE__ */ new Date()).toISOString()
+    });
     return c2.json({ message: "Package deleted successfully" });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "error";
@@ -53637,6 +55365,27 @@ proxyImage.get("/", async (c2) => {
   }
 });
 var proxy_image_default = proxyImage;
+
+// routes/realtime.ts
+var realtime = new Hono2();
+var wsHandler = /* @__PURE__ */ __name(async (c2) => {
+  const hub = c2.env.REALTIME_HUB;
+  if (!hub) {
+    return c2.json({ error: "Realtime hub is not configured" }, 503);
+  }
+  const upgrade = c2.req.header("Upgrade");
+  if (!upgrade || upgrade.toLowerCase() !== "websocket") {
+    return c2.json({ error: "Expected websocket upgrade" }, 426);
+  }
+  const id = hub.idFromName("global");
+  const stub = hub.get(id);
+  return stub.fetch("https://realtime-hub/ws", {
+    method: "GET",
+    headers: c2.req.raw.headers
+  });
+}, "wsHandler");
+realtime.get("/ws", wsHandler);
+var realtime_default = realtime;
 
 // routes/select-area.ts
 var selectArea = new Hono2();
@@ -53680,6 +55429,7 @@ selectArea.get("/", async (c2) => {
     if (type === "provinces") {
       const qRaw = (q3?.q ?? "").trim().toLowerCase();
       const data = await provincesFromD1(db, qRaw);
+      c2.header("Cache-Control", "public, max-age=60, stale-while-revalidate=300");
       return c2.json({ ok: true, data });
     }
     if (type === "cities") {
@@ -53690,6 +55440,7 @@ selectArea.get("/", async (c2) => {
       const limit = Math.min(Number(q3?.limit ?? "100") || 100, 300);
       const cleanQ = qRaw.replace(/^kota\s+/, "").replace(/^kabupaten\s+/, "").replace(/^kab\s+/, "").trim();
       const data = await citiesFromD1(db, province_id, kind, cleanQ, limit);
+      c2.header("Cache-Control", "public, max-age=60, stale-while-revalidate=300");
       return c2.json({ ok: true, data });
     }
     return c2.json({ ok: false, error: 'type parameter required: "provinces" or "cities"' }, 400);
@@ -53702,13 +55453,27 @@ var select_area_default = selectArea;
 
 // routes/showcase.ts
 var showcase = new Hono2();
+var SHOWCASE_CACHE_TTL_MS = 2e4;
+var showcaseCache = null;
+var showcaseCacheExpiresAt = 0;
 showcase.get("/", async (c2) => {
   const db = c2.env.DB;
   if (!db) return c2.json(defaultShowcase);
+  const now = Date.now();
+  if (showcaseCache && now < showcaseCacheExpiresAt) {
+    c2.header("Cache-Control", "public, max-age=20, stale-while-revalidate=60");
+    c2.header("X-Cache", "HIT");
+    return c2.json(showcaseCache);
+  }
   try {
     const base = await getShowcaseFromD1(db);
     const enrichedPreviews = await enrichShowcasePreviewsWithAlbumCovers(db, base.albumPreviews);
-    return c2.json({ albumPreviews: enrichedPreviews, flipbookPreviewUrl: base.flipbookPreviewUrl });
+    const payload = { albumPreviews: enrichedPreviews, flipbookPreviewUrl: base.flipbookPreviewUrl };
+    showcaseCache = payload;
+    showcaseCacheExpiresAt = now + SHOWCASE_CACHE_TTL_MS;
+    c2.header("Cache-Control", "public, max-age=20, stale-while-revalidate=60");
+    c2.header("X-Cache", "MISS");
+    return c2.json(payload);
   } catch {
     return c2.json(defaultShowcase);
   }
@@ -53746,7 +55511,7 @@ files.get("*", async (c2) => {
     headers.set("Content-Type", "application/octet-stream");
   }
   if (!headers.has("Cache-Control")) {
-    headers.set("Cache-Control", "public, max-age=3600");
+    headers.set("Cache-Control", "public, max-age=31536000, immutable");
   }
   return new Response(obj.body, { headers });
 });
@@ -53803,95 +55568,222 @@ userJoinRequests.get("/", async (c2) => {
 });
 var join_requests_default2 = userJoinRequests;
 
+// lib/user-response-cache.ts
+var userMeCache = /* @__PURE__ */ new Map();
+var userBootstrapCache = /* @__PURE__ */ new Map();
+var userNotificationsCache = /* @__PURE__ */ new Map();
+function readCache(store, key) {
+  const cached = store.get(key);
+  if (!cached) return null;
+  if (cached.expiresAt <= Date.now()) {
+    store.delete(key);
+    return null;
+  }
+  return cached.value;
+}
+__name(readCache, "readCache");
+function writeCache(store, key, value, ttlMs) {
+  if (ttlMs <= 0) return;
+  store.set(key, { value, expiresAt: Date.now() + ttlMs });
+}
+__name(writeCache, "writeCache");
+function getUserMeCache(userId) {
+  return readCache(userMeCache, userId);
+}
+__name(getUserMeCache, "getUserMeCache");
+function setUserMeCache(userId, value, ttlMs) {
+  writeCache(userMeCache, userId, value, ttlMs);
+}
+__name(setUserMeCache, "setUserMeCache");
+function getUserBootstrapCache(userId) {
+  return readCache(userBootstrapCache, userId);
+}
+__name(getUserBootstrapCache, "getUserBootstrapCache");
+function setUserBootstrapCache(userId, value, ttlMs) {
+  writeCache(userBootstrapCache, userId, value, ttlMs);
+}
+__name(setUserBootstrapCache, "setUserBootstrapCache");
+function getUserNotificationsCache(userId) {
+  return readCache(userNotificationsCache, userId);
+}
+__name(getUserNotificationsCache, "getUserNotificationsCache");
+function setUserNotificationsCache(userId, value, ttlMs) {
+  writeCache(userNotificationsCache, userId, value, ttlMs);
+}
+__name(setUserNotificationsCache, "setUserNotificationsCache");
+function invalidateUserResponseCaches(userId) {
+  userMeCache.delete(userId);
+  userBootstrapCache.delete(userId);
+  userNotificationsCache.delete(userId);
+}
+__name(invalidateUserResponseCaches, "invalidateUserResponseCaches");
+
+// routes/user/bootstrap.ts
+var OTP_COOKIE_NAME3 = "otp_verified";
+function getSkipOtp2(env) {
+  const v3 = (env?.SKIP_OTP || env?.SKIP_LOGIN_OTP || "").trim().toLowerCase().replace(/^"|"$/g, "");
+  return v3 === "true" || v3 === "1" || v3 === "yes";
+}
+__name(getSkipOtp2, "getSkipOtp");
+var userBootstrap = new Hono2();
+userBootstrap.use("*", requireAuthJwt);
+var USER_BOOTSTRAP_CACHE_TTL_MS = 2e3;
+userBootstrap.get("/", async (c2) => {
+  const db = getD1(c2);
+  if (!db) return c2.json({ error: "Database not configured" }, 503);
+  const userId = await getAuthUserId(c2);
+  if (!userId) return c2.json({ error: "Unauthorized" }, 401);
+  const cached = getUserBootstrapCache(userId);
+  if (cached) {
+    c2.header("Cache-Control", "private, max-age=2, stale-while-revalidate=10");
+    c2.header("X-Cache", "HIT");
+    return c2.json(cached);
+  }
+  await ensureUserStubInD1(db, userId);
+  const me3 = await getUserRow(db, userId);
+  const suspended = (me3?.is_suspended ?? 0) === 1;
+  const skipOtp = getSkipOtp2(c2.env);
+  const cookieVerified = getCookie(c2, OTP_COOKIE_NAME3) === "1";
+  const otpVerified = !suspended && (skipOtp ? true : cookieVerified);
+  const notificationsRes = await db.prepare(`SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT 20`).bind(userId).all();
+  const notifications = notificationsRes.results ?? [];
+  const unreadCount = notifications.filter((n2) => n2.is_read !== 1).length;
+  const payload = {
+    me: {
+      id: userId,
+      credits: me3?.credits ?? 0,
+      isSuspended: suspended,
+      role: me3?.role ?? "user"
+    },
+    otp: {
+      verified: otpVerified,
+      suspended
+    },
+    notifications: {
+      items: notifications,
+      unreadCount
+    }
+  };
+  setUserBootstrapCache(userId, payload, USER_BOOTSTRAP_CACHE_TTL_MS);
+  c2.header("Cache-Control", "private, max-age=2, stale-while-revalidate=10");
+  c2.header("X-Cache", "MISS");
+  return c2.json(payload);
+});
+var bootstrap_default = userBootstrap;
+
 // routes/user/me.ts
-init_supabase();
 var userMe = new Hono2();
+userMe.use("*", requireAuthJwt);
+var USER_ME_CACHE_TTL_MS = 2500;
 userMe.get("/", async (c2) => {
-  const supabase = getSupabaseClient(c2);
   const db = getD1(c2);
   if (!db) {
     return c2.json({ error: "Database not configured" }, 503);
   }
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  if (authError || !user) {
+  const userId = await getAuthUserId(c2);
+  if (!userId) {
     return c2.json({ error: "Not authenticated" }, 401);
   }
-  await ensureUserInD1(db, user, honoEnvForSupabasePublicSync(c2.env));
-  const row = await getUserRow(db, user.id);
-  if (!row) {
-    return c2.json({ id: user.id, credits: 0, isSuspended: false });
+  const cached = getUserMeCache(userId);
+  if (cached) {
+    c2.header("Cache-Control", "private, max-age=2, stale-while-revalidate=10");
+    c2.header("X-Cache", "HIT");
+    return c2.json(cached);
   }
-  return c2.json({
-    id: user.id,
+  await ensureUserStubInD1(db, userId);
+  const row = await getUserRow(db, userId);
+  if (!row) {
+    const payload2 = { id: userId, credits: 0, isSuspended: false };
+    setUserMeCache(userId, payload2, USER_ME_CACHE_TTL_MS);
+    c2.header("Cache-Control", "private, max-age=2, stale-while-revalidate=10");
+    c2.header("X-Cache", "MISS");
+    return c2.json(payload2);
+  }
+  const payload = {
+    id: userId,
     credits: row.credits ?? 0,
     isSuspended: (row.is_suspended ?? 0) === 1
-  });
+  };
+  setUserMeCache(userId, payload, USER_ME_CACHE_TTL_MS);
+  c2.header("Cache-Control", "private, max-age=2, stale-while-revalidate=10");
+  c2.header("X-Cache", "MISS");
+  return c2.json(payload);
 });
 var me_default = userMe;
 
 // routes/user/notifications/index.ts
-init_supabase();
 var userNotifications = new Hono2();
+userNotifications.use("*", requireAuthJwt);
+var USER_NOTIFICATIONS_CACHE_TTL_MS = 2e3;
 userNotifications.get("/", async (c2) => {
-  const supabase = getSupabaseClient(c2);
   const db = getD1(c2);
   if (!db) return c2.json({ error: "Database not configured" }, 503);
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return c2.json({ error: "Unauthorized" }, 401);
-  const { results } = await db.prepare(`SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC`).bind(user.id).all();
-  return c2.json(results ?? []);
+  const userId = await getAuthUserId(c2);
+  if (!userId) return c2.json({ error: "Unauthorized" }, 401);
+  const cached = getUserNotificationsCache(userId);
+  if (cached) {
+    c2.header("Cache-Control", "private, max-age=2, stale-while-revalidate=10");
+    c2.header("X-Cache", "HIT");
+    return c2.json(cached);
+  }
+  const { results } = await db.prepare(`SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC`).bind(userId).all();
+  const payload = results ?? [];
+  setUserNotificationsCache(userId, payload, USER_NOTIFICATIONS_CACHE_TTL_MS);
+  c2.header("Cache-Control", "private, max-age=2, stale-while-revalidate=10");
+  c2.header("X-Cache", "MISS");
+  return c2.json(payload);
 });
 userNotifications.post("/", async (c2) => {
-  const supabase = getSupabaseClient(c2);
   const db = getD1(c2);
   if (!db) return c2.json({ error: "Database not configured" }, 503);
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return c2.json({ error: "Unauthorized" }, 401);
+  const userId = await getAuthUserId(c2);
+  if (!userId) return c2.json({ error: "Unauthorized" }, 401);
   const body = await c2.req.json();
-  const { title, message, type, action_url, metadata } = body || {};
+  const { title, message: message2, type, action_url, metadata } = body || {};
   const id = crypto.randomUUID();
   const metaStr = metadata !== void 0 && metadata !== null ? JSON.stringify(metadata) : null;
   const ins = await db.prepare(
     `INSERT INTO notifications (id, user_id, title, message, type, action_url, metadata, created_at)
        VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))`
-  ).bind(id, user.id, title, message, type || "info", action_url ?? null, metaStr).run();
+  ).bind(id, userId, title, message2, type || "info", action_url ?? null, metaStr).run();
   if (!ins.success) return c2.json({ error: "Insert failed" }, 500);
+  invalidateUserResponseCaches(userId);
   const row = await db.prepare(`SELECT * FROM notifications WHERE id = ?`).bind(id).first();
   return c2.json(row);
 });
 userNotifications.patch("/", async (c2) => {
-  const supabase = getSupabaseClient(c2);
   const db = getD1(c2);
   if (!db) return c2.json({ error: "Database not configured" }, 503);
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return c2.json({ error: "Unauthorized" }, 401);
-  await db.prepare(`UPDATE notifications SET is_read = 1 WHERE user_id = ?`).bind(user.id).run();
+  const userId = await getAuthUserId(c2);
+  if (!userId) return c2.json({ error: "Unauthorized" }, 401);
+  await db.prepare(`UPDATE notifications SET is_read = 1 WHERE user_id = ?`).bind(userId).run();
+  invalidateUserResponseCaches(userId);
   return c2.json({ success: true });
 });
 userNotifications.delete("/", async (c2) => {
-  const supabase = getSupabaseClient(c2);
   const db = getD1(c2);
   if (!db) return c2.json({ error: "Database not configured" }, 503);
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return c2.json({ error: "Unauthorized" }, 401);
-  await db.prepare(`DELETE FROM notifications WHERE user_id = ?`).bind(user.id).run();
+  const userId = await getAuthUserId(c2);
+  if (!userId) return c2.json({ error: "Unauthorized" }, 401);
+  await db.prepare(`DELETE FROM notifications WHERE user_id = ?`).bind(userId).run();
+  invalidateUserResponseCaches(userId);
   return c2.json({ success: true });
 });
 var notifications_default = userNotifications;
 
 // routes/user/notifications/[id].ts
-init_supabase();
 var userNotificationsId = new Hono2();
+userNotificationsId.use("*", requireAuthJwt);
 userNotificationsId.patch("/:id", async (c2) => {
-  const supabase = getSupabaseClient(c2);
   const db = getD1(c2);
   if (!db) return c2.json({ error: "Database not configured" }, 503);
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return c2.json({ error: "Unauthorized" }, 401);
+  const userId = await getAuthUserId(c2);
+  if (!userId) return c2.json({ error: "Unauthorized" }, 401);
   const { id } = c2.req.param();
-  const r2 = await db.prepare(`UPDATE notifications SET is_read = 1 WHERE id = ? AND user_id = ?`).bind(id, user.id).run();
+  const r2 = await db.prepare(`UPDATE notifications SET is_read = 1 WHERE id = ? AND user_id = ?`).bind(id, userId).run();
   if (!r2.success) return c2.json({ error: "Update failed" }, 500);
-  const row = await db.prepare(`SELECT * FROM notifications WHERE id = ? AND user_id = ?`).bind(id, user.id).first();
+  invalidateUserResponseCaches(userId);
+  const row = await db.prepare(`SELECT * FROM notifications WHERE id = ? AND user_id = ?`).bind(id, userId).first();
   return c2.json(row);
 });
 var id_default2 = userNotificationsId;
@@ -54025,6 +55917,24 @@ app.use("*", cors({
   credentials: true,
   maxAge: 86400
 }));
+app.use("*", async (c2, next) => {
+  await next();
+  const method = c2.req.method.toUpperCase();
+  const isMutation = method === "POST" || method === "PUT" || method === "PATCH" || method === "DELETE";
+  if (!isMutation) return;
+  if (c2.res.status >= 400) return;
+  if (c2.req.path.startsWith("/api/realtime")) return;
+  await publishRealtimeEventFromContext(c2, {
+    type: "api.mutated",
+    channel: "global",
+    payload: {
+      method,
+      path: c2.req.path,
+      status: c2.res.status
+    },
+    ts: (/* @__PURE__ */ new Date()).toISOString()
+  });
+});
 app.route("/api/admin/ai-edit", ai_edit_default);
 app.route("/api/admin/showcase", showcase_default);
 app.route("/api/admin/transactions", transactions_default);
@@ -54086,21 +55996,73 @@ app.route("/api/credits/redeem", redeem_default);
 app.route("/api/credits/sync-invoice", sync_invoice_default);
 app.route("/api/pricing", pricing_default);
 app.route("/api/proxy-image", proxy_image_default);
+app.route("/api/realtime", realtime_default);
 app.route("/api/select-area", select_area_default);
 app.route("/api/showcase", showcase_default2);
 app.route("/api/files", files_default);
 app.route("/api/user/join-requests", join_requests_default2);
+app.route("/api/user/bootstrap", bootstrap_default);
 app.route("/api/user/me", me_default);
 app.route("/api/user/notifications/:id", id_default2);
 app.route("/api/user/notifications", notifications_default);
 app.route("/api/user/transactions", transactions_default2);
 app.route("/api/webhooks/xendit", xendit_default);
 app.get("/", (c2) => c2.json({ status: "\u{1F7E2} API is running (Hono)" }));
+var RealtimeHubDurableObject = class {
+  constructor(state) {
+    this.state = state;
+  }
+  static {
+    __name(this, "RealtimeHubDurableObject");
+  }
+  async fetch(request) {
+    const url = new URL(request.url);
+    if (url.pathname === "/ws") {
+      if (request.headers.get("Upgrade")?.toLowerCase() !== "websocket") {
+        return new Response("Expected websocket upgrade", { status: 426 });
+      }
+      const pair = new WebSocketPair();
+      const client = pair[0];
+      const server = pair[1];
+      this.state.acceptWebSocket(server);
+      this.state.setWebSocketAutoResponse(new WebSocketRequestResponsePair("ping", "pong"));
+      server.serializeAttachment({ connectedAt: (/* @__PURE__ */ new Date()).toISOString() });
+      return new Response(null, { status: 101, webSocket: client });
+    }
+    if (url.pathname === "/publish") {
+      if (request.method !== "POST") {
+        return new Response("Method not allowed", { status: 405 });
+      }
+      const payload = await request.text();
+      for (const ws3 of this.state.getWebSockets()) {
+        try {
+          ws3.send(payload);
+        } catch {
+        }
+      }
+      return new Response(null, { status: 204 });
+    }
+    return new Response("Not found", { status: 404 });
+  }
+  webSocketClose(ws3) {
+    try {
+      ws3.close(1e3, "closed");
+    } catch {
+    }
+  }
+  webSocketError(ws3) {
+    try {
+      ws3.close(1011, "error");
+    } catch {
+    }
+  }
+};
 var index_default = app;
 
 // worker.ts
 var worker_default = index_default;
 export {
+  RealtimeHubDurableObject,
   worker_default as default
 };
 /*! Bundled license information:

@@ -1,8 +1,8 @@
 import { Hono } from 'hono'
 import { getCookie } from 'hono/cookie'
-import { getSupabaseClient } from '../../lib/supabase'
 import { getD1 } from '../../lib/edge-env'
 import { isUserSuspendedD1 } from '../../lib/d1-users'
+import { getAuthUserId } from '../../middleware'
 
 const OTP_COOKIE_NAME = 'otp_verified'
 
@@ -20,16 +20,15 @@ const authOtpStatus = new Hono()
 
 // GET /api/auth/otp-status
 authOtpStatus.get('/', async (c) => {
-  const supabase = getSupabaseClient(c)
-  const { data: { user } } = await supabase.auth.getUser()
+  const userId = await getAuthUserId(c)
   let suspended = false
-  if (user) {
+  if (userId) {
     const db = getD1(c)
-    if (db) suspended = await isUserSuspendedD1(db, user.id)
+    if (db) suspended = await isUserSuspendedD1(db, userId)
   }
   const skipOtp = getSkipOtp(c.env)
   const cookieVerified = getCookie(c, OTP_COOKIE_NAME) === '1'
-  const verified = !suspended && (skipOtp ? !!user : !!(user && cookieVerified))
+  const verified = !suspended && (skipOtp ? !!userId : !!(userId && cookieVerified))
 
   return c.json({ verified: !!verified, suspended })
 })

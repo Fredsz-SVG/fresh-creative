@@ -192,7 +192,8 @@ function LoginContent() {
           }
           router.replace(finalNext || (role === 'admin' ? '/admin' : '/user'))
         } else {
-          router.push('/auth/verify-otp')
+          const q = nextPath ? `?next=${encodeURIComponent(nextPath)}` : ''
+          router.push(`/auth/verify-otp${q}`)
         }
       }
     } catch {

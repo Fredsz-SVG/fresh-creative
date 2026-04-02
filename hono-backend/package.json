@@ -15,6 +15,7 @@
     "typecheck": "tsc --noEmit",
     "format": "prettier --write .",
     "test": "vitest run",
+    "release:perf-check": "node scripts/release-perf-check.mjs",
     "d1:seed-wilayah": "node scripts/build-d1-ref-wilayah.mjs",
     "d1:sync-users-from-supabase": "node scripts/sync-supabase-users-to-d1.mjs",
     "d1:sync-users-from-supabase:local": "node scripts/sync-supabase-users-to-d1.mjs --local"

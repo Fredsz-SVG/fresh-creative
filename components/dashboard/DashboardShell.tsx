@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation'
 import {
   X,
   Bell,
+  Inbox,
   User,
   Home,
   Sparkles,
@@ -18,7 +19,6 @@ import {
 } from 'lucide-react'
 import TopUpModal from './TopUpModal'
 import { supabase } from '@/lib/supabase'
-import { apiUrl } from '../../lib/api-url'
 import { fetchWithAuth } from '../../lib/api-client'
 import { ThemeContext } from '@/app/providers/ThemeProvider'
 import { asObject } from '@/components/yearbook/utils/response-narrowing'
@@ -65,6 +65,8 @@ export default function DashboardShell({
   // Notifications state
   const [notifications, setNotifications] = useState<any[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
+  const lastForegroundRefreshRef = useRef(0)
+  const FOREGROUND_REFRESH_COOLDOWN_MS = 30000
 
   const refreshCredits = () => {
     fetchWithAuth('/api/user/me')
@@ -107,6 +109,10 @@ export default function DashboardShell({
     init()
 
     const onVisible = () => {
+      if (document.visibilityState === 'hidden') return
+      const now = Date.now()
+      if (now - lastForegroundRefreshRef.current < FOREGROUND_REFRESH_COOLDOWN_MS) return
+      lastForegroundRefreshRef.current = now
       refreshCredits()
       // Only refresh notifications when drawer is open or page regains focus
       fetchNotifications()
@@ -125,10 +131,24 @@ export default function DashboardShell({
     }
     window.addEventListener('credits-updated', onCreditsUpdated)
 
+    const onRealtime = (event: Event) => {
+      const detail = (event as CustomEvent<{ type?: string; channel?: string; payload?: Record<string, unknown> }>).detail
+      if (!detail?.type || detail.channel !== 'global') return
+      const path = typeof detail.payload?.path === 'string' ? detail.payload.path : ''
+      if (path.startsWith('/api/user/') || path.startsWith('/api/credits/')) {
+        refreshCredits()
+      }
+      if (path.startsWith('/api/user/notifications') || path.startsWith('/api/credits/') || path.startsWith('/api/admin/transactions')) {
+        fetchNotifications()
+      }
+    }
+    window.addEventListener('fresh:realtime', onRealtime)
+
     return () => {
       window.removeEventListener('focus', onVisible)
       document.removeEventListener('visibilitychange', onVisible)
       window.removeEventListener('credits-updated', onCreditsUpdated)
+      window.removeEventListener('fresh:realtime', onRealtime)
     }
   }, [])
 
@@ -493,10 +513,14 @@ export default function DashboardShell({
                 <div className="max-h-[350px] overflow-y-auto no-scrollbar">
                   {notifications.length === 0 ? (
                     <div className="p-10 text-center">
-                      <div className="w-16 h-16 rounded-2xl bg-slate-50 dark:bg-slate-700 border-2 border-slate-900 dark:border-white/20 flex items-center justify-center mx-auto mb-4 text-slate-300 dark:text-slate-500">
-                        <Bell className="w-8 h-8 opacity-20" />
+                      <div className="relative w-20 h-20 rounded-[28px] bg-indigo-100 dark:bg-indigo-500/15 border-2 border-slate-900 dark:border-white/20 flex items-center justify-center mx-auto mb-4 text-indigo-600 dark:text-indigo-300 shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_rgba(255,255,255,0.08)]">
+                        <Inbox className="w-9 h-9" strokeWidth={2.5} />
+                        <span className="absolute -right-1 -top-1 w-5 h-5 rounded-full bg-pink-500 border-2 border-slate-900 dark:border-white/20" />
                       </div>
-                      <p className="text-[14px] font-black text-slate-400 dark:text-slate-500">Kosong melompong</p>
+                      <p className="text-[15px] font-black text-slate-900 dark:text-white">Kosong melompong</p>
+                      <p className="mt-2 text-[12px] font-bold text-slate-500 dark:text-slate-400 leading-snug max-w-[220px] mx-auto">
+                        Notifikasi baru akan muncul otomatis di sini.
+                      </p>
                     </div>
                   ) : (
                     notifications.map((n) => (

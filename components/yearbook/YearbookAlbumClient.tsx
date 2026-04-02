@@ -334,6 +334,46 @@ export default function YearbookAlbumClient({
     void fetchFeatureUnlocks()
   }, [id, fetchFeatureUnlocks])
 
+  useEffect(() => {
+    if (!id) return
+
+    const onRealtime = (event: Event) => {
+      const detail = (event as CustomEvent<{ type?: string; channel?: string; payload?: Record<string, unknown>; ts?: string }>).detail
+      if (!detail?.type) return
+      if (detail.channel !== 'global') return
+
+      const path = typeof detail.payload?.path === 'string' ? detail.payload.path : ''
+      const matchesAlbum = path.includes(`/api/albums/${id}`)
+      const matchesUser = path.startsWith('/api/user/')
+
+      if (!matchesAlbum && !matchesUser) return
+
+      if (path.includes('/unlock-feature')) {
+        void fetchFeatureUnlocks()
+        return
+      }
+
+      if (path.includes('/my-access-all') || path.includes('/join-requests') || path.includes('/classes/') || path.endsWith(`/api/albums/${id}`)) {
+        void fetchAllAccess()
+        void fetchAllClassMembers()
+        void fetchAlbum(true)
+        return
+      }
+
+      if (path.includes('/flipbook') || path.includes('/teachers') || path.includes('/photos') || path.includes('/cover')) {
+        void fetchAlbum(true)
+        return
+      }
+
+      if (matchesUser) {
+        window.dispatchEvent(new Event('credits-updated'))
+      }
+    }
+
+    window.addEventListener('fresh:realtime', onRealtime)
+    return () => window.removeEventListener('fresh:realtime', onRealtime)
+  }, [id, fetchAlbum, fetchAllAccess, fetchAllClassMembers, fetchFeatureUnlocks])
+
   // (Realtime removed)
 
   useEffect(() => {

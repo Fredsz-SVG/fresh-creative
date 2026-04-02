@@ -61,6 +61,22 @@ async function fetchPublicUsersRow(
   return data as PublicUserRow
 }
 
+type LocalUserSyncRow = {
+  role: string | null
+  full_name: string | null
+  credits: number | null
+  is_suspended: number | null
+  updated_at: string | null
+}
+
+function parseD1TimestampToMs(value: string | null | undefined): number | null {
+  if (!value) return null
+  const iso = value.includes('T') ? value : value.replace(' ', 'T')
+  const withZone = /Z$|[+-]\d\d:\d\d$/.test(iso) ? iso : `${iso}Z`
+  const ms = Date.parse(withZone)
+  return Number.isFinite(ms) ? ms : null
+}
+
 export type EnsureUserInD1User = Pick<User, 'id' | 'email'> & {
   user_metadata?: Record<string, unknown>
   app_metadata?: Record<string, unknown>
@@ -87,9 +103,22 @@ export async function ensureUserInD1(
   let creditsBind: number | null = null
   let suspendedBind: number | null = null
 
+  const existing = await db
+    .prepare(
+      `SELECT role, full_name, credits, is_suspended, updated_at FROM users WHERE id = ?`
+    )
+    .bind(user.id)
+    .first<LocalUserSyncRow>()
+
   const url = sync?.NEXT_PUBLIC_SUPABASE_URL
   const sk = sync?.SUPABASE_SERVICE_ROLE_KEY
-  if (url && sk) {
+  const PUBLIC_SYNC_TTL_MS = 5 * 60 * 1000
+  const existingUpdatedAtMs = parseD1TimestampToMs(existing?.updated_at)
+  const needsPublicSync =
+    !!(url && sk) &&
+    (!existing || !existingUpdatedAtMs || Date.now() - existingUpdatedAtMs > PUBLIC_SYNC_TTL_MS)
+
+  if (needsPublicSync && url && sk) {
     const pg = await fetchPublicUsersRow(user.id, url, sk)
     if (pg) {
       if (pg.role === 'admin' || pg.role === 'user') metaRole = pg.role
@@ -101,7 +130,7 @@ export async function ensureUserInD1(
     }
   }
 
-  const insertRole = metaRole ?? 'user'
+  const insertRole = metaRole ?? (existing?.role === 'admin' ? 'admin' : 'user')
 
   await db.batch([
     db
@@ -139,6 +168,20 @@ export async function getUserRow(db: D1Database, userId: string): Promise<D1User
     .bind(userId)
     .first<D1UserRow>()
   return row ?? null
+}
+
+/**
+ * Ensure row minimal user exists in D1 without remote Supabase sync.
+ * Safe for hot-path endpoints to avoid extra network latency.
+ */
+export async function ensureUserStubInD1(db: D1Database, userId: string): Promise<void> {
+  await db
+    .prepare(
+      `INSERT OR IGNORE INTO users (id, email, role, full_name)
+       VALUES (?, '', 'user', NULL)`
+    )
+    .bind(userId)
+    .run()
 }
 
 export async function isUserSuspendedD1(db: D1Database, userId: string): Promise<boolean> {

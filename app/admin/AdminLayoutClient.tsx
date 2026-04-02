@@ -95,9 +95,12 @@ export default function AdminLayoutClient({
             }
 
             try {
-                const resMe = await fetchWithAuth('/api/user/me')
-                const me = (await resMe.json().catch(() => ({}))) as { isSuspended?: boolean }
-                if (resMe.ok && me?.isSuspended) {
+                const resBootstrap = await fetchWithAuth('/api/user/bootstrap')
+                const bootstrap = (await resBootstrap.json().catch(() => ({}))) as {
+                    me?: { isSuspended?: boolean; role?: 'admin' | 'user' }
+                    otp?: { verified?: boolean }
+                }
+                if (resBootstrap.ok && bootstrap?.me?.isSuspended) {
                     clearAdminGate()
                     if (!unsubscribed) setOk(false)
                     await fetchWithAuth('/api/auth/logout')
@@ -105,17 +108,15 @@ export default function AdminLayoutClient({
                     if (!unsubscribed) router.replace('/login?error=account_suspended')
                     return
                 }
+                if (!bootstrap?.otp?.verified) {
+                    clearAdminGate()
+                    if (!unsubscribed) setOk(false)
+                    if (!unsubscribed) router.replace('/auth/verify-otp')
+                    return
+                }
             } catch {
             }
 
-            const res = await fetchWithAuth('/api/auth/otp-status')
-            const data = (await res.json().catch(() => ({}))) as { verified?: boolean }
-            if (!data.verified) {
-                clearAdminGate()
-                if (!unsubscribed) setOk(false)
-                if (!unsubscribed) router.replace('/auth/verify-otp')
-                return
-            }
             const role = await getRole(supabase, session.user)
             if (role !== 'admin') {
                 clearAdminGate()

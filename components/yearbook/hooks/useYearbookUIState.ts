@@ -37,7 +37,13 @@ export function useYearbookUIState(id: string | undefined) {
     return 0
   })
 
-  const [flipbookPreviewMode, setFlipbookPreviewMode] = useState(false)
+  const [flipbookPreviewMode, setFlipbookPreviewMode] = useState(() => {
+    if (typeof window !== 'undefined' && id) {
+      const saved = localStorage.getItem(`yearbook-flipbookPreviewMode-${id}`)
+      return saved === 'true'
+    }
+    return false
+  })
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [lastEditorSection, setLastEditorSection] = useState<string | null>(null)
 
@@ -75,6 +81,21 @@ export function useYearbookUIState(id: string | undefined) {
       localStorage.setItem(`yearbook-sidebarMode-${id}`, sidebarMode)
     }
   }, [sidebarMode, id])
+
+  // Sync flipbook preview mode from localStorage when album id changes
+  useEffect(() => {
+    if (typeof window !== 'undefined' && id) {
+      const saved = localStorage.getItem(`yearbook-flipbookPreviewMode-${id}`)
+      setFlipbookPreviewMode(saved === 'true')
+    }
+  }, [id])
+
+  // Persist flipbook preview mode to localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined' && id) {
+      localStorage.setItem(`yearbook-flipbookPreviewMode-${id}`, String(flipbookPreviewMode))
+    }
+  }, [flipbookPreviewMode, id])
 
   return {
     view,

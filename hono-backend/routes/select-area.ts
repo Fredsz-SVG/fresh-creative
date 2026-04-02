@@ -65,6 +65,7 @@ selectArea.get('/', async (c) => {
     if (type === 'provinces') {
       const qRaw = (q?.q ?? '').trim().toLowerCase()
       const data = await provincesFromD1(db, qRaw)
+      c.header('Cache-Control', 'public, max-age=60, stale-while-revalidate=300')
       return c.json({ ok: true, data })
     }
 
@@ -81,6 +82,7 @@ selectArea.get('/', async (c) => {
         .trim()
 
       const data = await citiesFromD1(db, province_id, kind, cleanQ, limit)
+      c.header('Cache-Control', 'public, max-age=60, stale-while-revalidate=300')
       return c.json({ ok: true, data })
     }
 

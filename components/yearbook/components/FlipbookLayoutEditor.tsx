@@ -191,38 +191,26 @@ export default function FlipbookLayoutEditor({ album, onPlayVideo, onUpdateAlbum
         if (!deletedHotspot || !deletedFromPageId) return
 
         if (hotspotId.startsWith(TEMP_HOTSPOT_ID_PREFIX)) {
+            return
+        }
+
+        const res = await fetchWithAuth(`/api/albums/${album.id}/flipbook/hotspots/${hotspotId}`, {
+            method: 'DELETE',
+        })
+        if (res.ok) {
             toast.success('Hotspot dihapus')
             return
         }
-        try {
-            const res = await fetchWithAuth(`/api/albums/${album.id}/flipbook/hotspots/${hotspotId}`, {
-                method: 'DELETE',
-            })
-            if (res.ok) {
-                toast.success('Hotspot dihapus')
-                return
-            }
 
-            // Rollback if delete failed.
-            setManualPages(prev => prev.map(p => {
-                if (p.id !== deletedFromPageId) return p
-                return {
-                    ...p,
-                    flipbook_video_hotspots: [...(p.flipbook_video_hotspots || []), deletedHotspot as VideoHotspot]
-                }
-            }))
-            toast.error('Gagal menghapus hotspot')
-        } catch (error) {
-            // Rollback when request throws (network/auth), so UI doesn't lie.
-            setManualPages(prev => prev.map(p => {
-                if (p.id !== deletedFromPageId) return p
-                return {
-                    ...p,
-                    flipbook_video_hotspots: [...(p.flipbook_video_hotspots || []), deletedHotspot as VideoHotspot]
-                }
-            }))
-            toast.error('Gagal menghapus hotspot (koneksi/server)')
-        }
+        // Rollback if delete failed.
+        setManualPages(prev => prev.map(p => {
+            if (p.id !== deletedFromPageId) return p
+            return {
+                ...p,
+                flipbook_video_hotspots: [...(p.flipbook_video_hotspots || []), deletedHotspot as VideoHotspot]
+            }
+        }))
+        toast.error('Gagal menghapus hotspot')
     }
 
     const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -440,7 +428,7 @@ export default function FlipbookLayoutEditor({ album, onPlayVideo, onUpdateAlbum
                 canvas.width = viewport.width
 
                 await page.render({ canvasContext: context, viewport }).promise
-                const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/webp', 0.76))
+                const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.82))
                 if (!blob) throw new Error(`Gagal encode halaman ${i}`)
 
                 const publicUrl = await uploadFlipbookAsset(blob, 'pages')
@@ -872,7 +860,7 @@ export default function FlipbookLayoutEditor({ album, onPlayVideo, onUpdateAlbum
                                     className="flex flex-1 min-w-0 flex-col lg:flex-row gap-1.5 lg:gap-3 p-0 rounded-lg border-0 bg-transparent text-left lg:items-center"
                                 >
                                     <div className="w-full lg:w-14 aspect-[3/4] lg:h-[76px] bg-slate-100 dark:bg-slate-800 rounded-md overflow-hidden flex-shrink-0 border-2 border-slate-900 dark:border-slate-600 relative lg:group-hover:shadow-[2px_2px_0_0_#0f172a] dark:group-hover:shadow-[2px_2px_0_0_#334155] transition-all">
-                                        <img src={page.image_url} loading="lazy" decoding="async" className="w-full h-full object-fill" alt={label} />
+                                        <img src={page.image_url} loading="lazy" decoding="async" className="w-full h-full object-cover" alt={label} />
                                         <div className="absolute top-0 right-0 bg-slate-900 dark:bg-slate-600 px-1 py-0.5 text-[7px] font-black text-white rounded-bl-md">
                                             {displayNum}
                                         </div>
@@ -1029,7 +1017,7 @@ export default function FlipbookLayoutEditor({ album, onPlayVideo, onUpdateAlbum
                         >
                             <img
                                 src={selectedPage.image_url}
-                                className="block w-full h-full object-fill select-none pointer-events-none"
+                                className="block w-full h-full object-cover select-none pointer-events-none"
                                 alt={`Page ${selectedPage.page_number}`}
                             />
 

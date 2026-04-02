@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react'
 import { Coins } from 'lucide-react'
 import TopUpModal from '@/components/dashboard/TopUpModal'
-import { apiUrl } from '../../../lib/api-url'
 import { fetchWithAuth } from '../../../lib/api-client'
 import { asObject } from '@/components/yearbook/utils/response-narrowing'
 
