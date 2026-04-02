@@ -35,6 +35,7 @@ function parseInviteToken(input: string): { token: string; type: 'join' | 'invit
 export type AlbumRow = {
   id: string
   name: string
+  description?: string | null
   type: 'public' | 'yearbook'
   status?: 'pending' | 'approved' | 'declined'
   created_at?: string
@@ -166,6 +167,11 @@ function AlbumCard({
       <div className="flex justify-between items-start gap-2">
         <div className="flex-grow min-w-0">
           <h2 className="text-base font-black text-slate-900 dark:text-slate-100 truncate" title={album.name}>{album.name}</h2>
+          {album.description && (
+            <p className="mt-1 text-xs font-bold text-slate-600 dark:text-slate-300 line-clamp-2">
+              {album.description}
+            </p>
+          )}
         </div>
         {!isAdmin && (
           <button

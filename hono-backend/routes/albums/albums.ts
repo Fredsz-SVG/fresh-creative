@@ -6,7 +6,7 @@ import { isSimilarSchoolName } from '../../lib/school-name-utils'
 import { requireAuthJwt, getAuthUserId } from '../../middleware'
 
 const albumColsUser =
-  `a.id, a.user_id, a.name, a.type, a.status, a.created_at, a.cover_image_url, a.pricing_package_id, a.payment_status, a.payment_url, a.total_estimated_price, p.name as pricing_pkg_name`
+  `a.id, a.user_id, a.name, a.type, a.status, a.created_at, a.description, a.cover_image_url, a.cover_image_position, a.pricing_package_id, a.payment_status, a.payment_url, a.total_estimated_price, p.name as pricing_pkg_name`
 
 function mapAlbumRow(r: Record<string, unknown>) {
   const pkg = r.pricing_pkg_name
@@ -43,7 +43,7 @@ albumsRoute.get('/', async (c) => {
     if (shouldUseAdminScope) {
       const { results } = await db
         .prepare(
-          `SELECT a.id, a.name, a.type, a.status, a.created_at, a.pricing_package_id, a.school_city, a.kab_kota, a.wa_e164, a.province_id, a.province_name, a.pic_name, a.students_count, a.source, a.total_estimated_price, a.payment_status, a.payment_url,
+          `SELECT a.id, a.name, a.type, a.status, a.created_at, a.description, a.cover_image_url, a.cover_image_position, a.pricing_package_id, a.school_city, a.kab_kota, a.wa_e164, a.province_id, a.province_name, a.pic_name, a.students_count, a.source, a.total_estimated_price, a.payment_status, a.payment_url,
             p.name as pricing_pkg_name
            FROM albums a
            LEFT JOIN pricing_packages p ON a.pricing_package_id = p.id
