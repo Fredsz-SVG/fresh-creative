@@ -65,6 +65,7 @@ export function useYearbookProfileEditState() {
 
 export function useYearbookGalleryState() {
   const [photos, setPhotos] = useState<any[]>([])
+  const [galleryPhotosLoading, setGalleryPhotosLoading] = useState(false)
   const [galleryStudent, setGalleryStudent] = useState<{ classId: string; studentName: string; className: string } | null>(null)
   const [photoIndex, setPhotoIndex] = useState(0)
   const [touchStartX, setTouchStartX] = useState<number | null>(null)
@@ -73,6 +74,8 @@ export function useYearbookGalleryState() {
   return {
     photos,
     setPhotos,
+    galleryPhotosLoading,
+    setGalleryPhotosLoading,
     galleryStudent,
     setGalleryStudent,
     photoIndex,

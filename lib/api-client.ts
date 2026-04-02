@@ -13,6 +13,16 @@ type CachedResponse = {
 const inflightGetRequests = new Map<string, Promise<Response>>()
 const getResponseCache = new Map<string, CachedResponse>()
 
+function hashString(input: string): string {
+  // Simple non-crypto hash for cache key scoping.
+  // (We only need to prevent accidental cross-request sharing.)
+  let hash = 5381
+  for (let i = 0; i < input.length; i++) {
+    hash = (hash * 33) ^ input.charCodeAt(i)
+  }
+  return String(hash >>> 0)
+}
+
 const DEFAULT_GET_TTL_MS_BY_PATH: Record<string, number> = {
   '/api/user/me': 3000,
   '/api/user/notifications': 3000,
@@ -75,10 +85,21 @@ export async function fetchWithAuth(
   const { skipAuth, cacheTtlMs, dedupeKey, ...rest } = init ?? {}
   const method = (rest.method ?? 'GET').toUpperCase()
   const fullUrl = apiUrl(path)
-  const requestKey = dedupeKey ?? buildRequestKey(method, fullUrl)
   const shouldProcessGet = method === 'GET'
   const resolvedTtlMs =
     typeof cacheTtlMs === 'number' ? cacheTtlMs : getDefaultGetTtlMs(path)
+
+  // Pre-resolve auth headers so cache/dedupe keys are scoped per token.
+  const authHeaders = skipAuth ? {} : await getAuthHeaders()
+  const authToken = authHeaders.Authorization?.startsWith('Bearer ')
+    ? authHeaders.Authorization.slice('Bearer '.length)
+    : ''
+  const authFingerprint = authToken ? hashString(authToken) : 'anon'
+
+  const baseKey = dedupeKey ?? buildRequestKey(method, fullUrl)
+  // If caller didn't provide dedupeKey explicitly, scope by auth token to avoid
+  // sharing cached/inflight responses across token lifecycle.
+  const requestKey = skipAuth || dedupeKey ? baseKey : `${baseKey}::auth:${authFingerprint}`
 
   if (shouldProcessGet && resolvedTtlMs > 0) {
     const cached = getResponseCache.get(requestKey)
@@ -100,10 +121,7 @@ export async function fetchWithAuth(
 
   const requestPromise = (async () => {
     const headers = new Headers(rest.headers)
-    if (!skipAuth) {
-      const auth = await getAuthHeaders()
-      Object.entries(auth).forEach(([k, v]) => headers.set(k, v))
-    }
+    Object.entries(authHeaders).forEach(([k, v]) => headers.set(k, v))
     const response = await fetch(fullUrl, {
       ...rest,
       credentials: rest.credentials ?? 'include',

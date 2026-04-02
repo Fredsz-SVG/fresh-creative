@@ -67,8 +67,6 @@ export default function MemberCard({
   editPhotos
 }: MemberCardProps) {
   const [localConfirm, setLocalConfirm] = useState<{ title: string; message: string; onConfirm: () => void } | null>(null)
-  const [viewerOpen, setViewerOpen] = useState(false)
-  const [viewerIndex, setViewerIndex] = useState(0)
   const [showFormOverlay, setShowFormOverlay] = useState(false)
   const flipOverlayTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -261,37 +259,6 @@ export default function MemberCard({
         document.body
       )}
 
-      {/* Photo Viewer Modal */}
-      {typeof document !== 'undefined' && viewerOpen && createPortal(
-        <div className="fixed inset-0 bg-slate-900/90 backdrop-blur-md flex items-center justify-center z-[110] p-4" onClick={() => setViewerOpen(false)}>
-          <div className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-[32px] p-6 max-w-[560px] w-full shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] transform transition-all animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
-            <div className="flex items-start justify-between mb-5 border-b-4 border-slate-100 dark:border-slate-700 pb-5">
-              <div className="flex gap-3 items-center">
-                <button type="button" onClick={() => setViewerIndex(i => Math.max(0, i - 1))} className="p-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white border-2 border-slate-900 dark:border-slate-600 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all shadow-[1px_1px_0_0_rgba(15,23,42,0.13)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.36)] active:shadow-none active:translate-x-0.5 active:translate-y-0.5" title="Prev"><ChevronLeft className="w-6 h-6" /></button>
-                <div className="px-5 py-2.5 bg-indigo-100 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 font-black text-sm rounded-xl border-2 border-indigo-700 dark:border-indigo-600 shadow-[1px_1px_0_0_rgba(67,56,202,0.28)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.36)]">{viewerIndex + 1} / {displayPreviewPhotos.length}</div>
-                <button type="button" onClick={() => setViewerIndex(i => Math.min(i + 1, displayPreviewPhotos.length - 1))} className="p-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white border-2 border-slate-900 dark:border-slate-600 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all shadow-[1px_1px_0_0_rgba(15,23,42,0.13)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.36)] active:shadow-none active:translate-x-0.5 active:translate-y-0.5" title="Next"><ChevronRight className="w-6 h-6" /></button>
-              </div>
-              <button type="button" onClick={() => setViewerOpen(false)} className="p-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white border-2 border-slate-900 dark:border-slate-600 hover:bg-red-500 hover:text-white transition-all shadow-[1px_1px_0_0_rgba(15,23,42,0.13)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.36)] active:shadow-none active:translate-x-0.5 active:translate-y-0.5"><X className="w-6 h-6" /></button>
-            </div>
-
-            <div className="w-full flex items-center justify-center mb-6 bg-slate-50 dark:bg-slate-800 rounded-[24px] overflow-hidden border-4 border-slate-900 dark:border-slate-700 shadow-inner" style={{ minHeight: '320px' }}>
-              <FastImage src={(displayPreviewPhotos[viewerIndex] && displayPreviewPhotos[viewerIndex].file_url) || firstPhoto || ''} alt={`${member.student_name} ${viewerIndex + 1}`} className="max-h-[60vh] object-contain w-full" priority />
-            </div>
-
-            {displayPreviewPhotos.length > 1 && (
-              <div className="flex gap-3 mx-auto justify-center overflow-x-auto p-1 pb-2">
-                {displayPreviewPhotos.map((p, i) => (
-                  <button key={p.id} onClick={() => setViewerIndex(i)} className={`w-16 h-16 rounded-xl overflow-hidden border-4 transition-all flex-shrink-0 ${i === viewerIndex ? 'border-indigo-500 dark:border-indigo-400 shadow-[1px_1px_0_0_rgba(67,56,202,0.3)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.36)] -translate-y-1' : 'border-slate-200 dark:border-slate-600 hover:border-slate-400 dark:hover:border-slate-500 opacity-60 hover:opacity-100 shadow-[1px_1px_0_0_rgba(203,213,225,0.55)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.32)]'}`}>
-                    <FastImage src={p.file_url} alt={`thumb-${i}`} className="w-full h-full object-cover" />
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>,
-        document.body
-      )}
-
       {/* Card Container: perspective di parent agar animasi flip (putar Y), bukan tekuk. */}
       <div className="relative w-full aspect-[1/2] min-h-0 group" style={{ perspective: '1200px', perspectiveOrigin: '50% 50%', transformStyle: 'preserve-3d' }}>
         <div
@@ -324,8 +291,7 @@ export default function MemberCard({
                   className="w-full h-full object-cover cursor-pointer transition-transform duration-700"
                   priority
                   onClick={() => {
-                    if (photos.length > 0) { setViewerIndex(0); setViewerOpen(true) }
-                    else if (onOpenGallery) onOpenGallery(classId, member.student_name)
+                    if (onOpenGallery) onOpenGallery(classId, member.student_name)
                   }}
                 />
               ) : (
@@ -491,7 +457,7 @@ export default function MemberCard({
                           src={photo.file_url}
                           alt={`preview-${idx}`}
                           className="w-full h-full object-cover rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
-                          onClick={() => { setViewerIndex(idx); setViewerOpen(true) }}
+                          onClick={() => { if (onOpenGallery) onOpenGallery(classId, member.student_name) }}
                         />
                         <button
                           type="button"
@@ -633,7 +599,7 @@ export default function MemberCard({
                     {displayPreviewPhotos.map((photo, idx) => (
                       <div key={photo.id} className="relative w-14 h-14 bg-slate-100 dark:bg-slate-800 rounded-xl flex-shrink-0 border-2 border-slate-900 dark:border-slate-600 shadow-[1px_1px_0_0_rgba(15,23,42,0.13)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.36)]">
                         {photo.isPending && <div className="absolute -top-2 -left-2 bg-emerald-400 dark:bg-emerald-600 text-slate-900 dark:text-white text-[8px] font-black px-1.5 py-0.5 rounded-lg border-2 border-slate-900 dark:border-slate-600 z-10 shadow-[1px_1px_0_0_rgba(15,23,42,0.13)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.36)] uppercase">BARU</div>}
-                        <FastImage src={photo.file_url} alt={`preview-${idx}`} className="w-full h-full object-cover rounded-lg cursor-pointer hover:opacity-80 transition-opacity" onClick={() => { setViewerIndex(idx); setViewerOpen(true) }} />
+                        <FastImage src={photo.file_url} alt={`preview-${idx}`} className="w-full h-full object-cover rounded-lg cursor-pointer hover:opacity-80 transition-opacity" onClick={() => { if (onOpenGallery) onOpenGallery(classId, member.student_name) }} />
                         <button type="button" onClick={(e) => { e.stopPropagation(); if (photo.isPending) removePendingPhoto(idx - basePhotos.length); else setLocalConfirm({ title: 'Hapus Foto', message: 'Hapus foto ini?', onConfirm: () => onDeletePhoto?.(photo.id, classId, member.student_name) }) }} className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center shadow-[1px_1px_0_0_rgba(15,23,42,0.13)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.36)] hover:bg-red-600 transition-all z-20 border-2 border-slate-900 dark:border-slate-600 active:shadow-none active:translate-x-0.5 active:translate-y-0.5"><X className="w-3.5 h-3.5" /></button>
                       </div>
                     ))}

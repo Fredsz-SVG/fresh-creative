@@ -9,7 +9,7 @@ import {
     AnimatePresence,
     PanInfo,
 } from 'framer-motion'
-import { BookOpen, MessageSquare, Users, Play, X, Instagram, Cake, Mail } from 'lucide-react'
+import { BookOpen, MessageSquare, Users, Play, X, Instagram, Cake } from 'lucide-react'
 import FastImage from '@/components/ui/FastImage'
 
 function stripQuotes(s: string): string {
@@ -69,6 +69,7 @@ type Section = {
 type CardItem = {
     id: string
     imageUrl?: string | null
+    photoUrls?: string[]
     title: string
     subtitle?: string
     badges?: { label: string; color?: string }[]
@@ -77,7 +78,7 @@ type CardItem = {
     meta?: { icon: React.ReactNode; text: string }[]
 }
 
-// ─── Framer-motion Tinder Card (swiparr FrameTinderCard pattern) ───
+// ─── Framer-motion Tinder Card ───
 interface TinderCardProps {
     children: React.ReactNode
     onSwipe?: (direction: 'left' | 'right' | 'up' | 'down') => void
@@ -85,8 +86,8 @@ interface TinderCardProps {
     onDragStart?: () => void
     onDrag?: (offset: { x: number; y: number }) => void
     onDragEnd?: () => void
-    onFlyOffStart?: (direction: 'left' | 'right' | 'up') => void
-    index: number  // 0 = front, 1+ = behind
+    onFlyOffStart?: (direction: 'left' | 'right' | 'up' | 'down') => void
+    index: number
     preventSwipe?: ('left' | 'right' | 'up' | 'down')[]
 }
 
@@ -97,14 +98,16 @@ function TinderCard({ children, onSwipe, onCardLeftScreen, onDragStart, onDrag, 
     const isAnimating = useRef(false)
     const isFront = index === 0
 
-    // Rotation & opacity transforms (swiparr FrameTinderCard)
     const rotate = useTransform(x, [-200, 200], [-25, 25])
     const opacity = useTransform(x, [-200, -170, 0, 170, 200], [0, 1, 1, 1, 0])
 
-    // Reset motion values when this card becomes the front card
     const prevIndexRef = useRef(index)
     useEffect(() => {
         if (prevIndexRef.current !== 0 && index === 0) {
+            controls.set({ x: 0, y: 0, rotate: 0, opacity: 1 })
+        }
+        // Kalau kartu pindah posisi stack (mis. jadi kartu belakang), pastikan tidak bawa sisa x/y dari interaksi sebelumnya.
+        if (prevIndexRef.current !== index && index !== 0) {
             controls.set({ x: 0, y: 0, rotate: 0, opacity: 1 })
         }
         prevIndexRef.current = index
@@ -135,51 +138,32 @@ function TinderCard({ children, onSwipe, onCardLeftScreen, onDragStart, onDrag, 
         }
 
         if (direction) {
-            // For 'down' (go back): don't fly off, snap back and notify parent immediately
-            if (direction === 'down') {
-                onSwipe?.(direction)
-                controls.start({
-                    x: 0,
-                    y: 0,
-                    rotate: 0,
-                    transition: { type: 'spring', stiffness: 300, damping: 25 },
-                })
-                return
-            }
-
             isAnimating.current = true
             onSwipe?.(direction)
             onFlyOffStart?.(direction)
 
             const flyVal = 300
             let targetX = 0, targetY = 0, targetRotate = 0
-
             switch (direction) {
                 case 'left': targetX = -flyVal; targetRotate = -20; break
                 case 'right': targetX = flyVal; targetRotate = 20; break
                 case 'up': targetY = -flyVal; break
+                case 'down': targetY = flyVal; break
             }
-
             if (direction === 'left' || direction === 'right') {
                 targetY = y.get() + (velocityY * 2)
             }
 
             await controls.start({
-                x: targetX,
-                y: targetY,
-                rotate: targetRotate,
-                opacity: 0,
+                x: targetX, y: targetY, rotate: targetRotate, opacity: 0,
                 transition: { duration: 0.25, ease: 'easeOut' },
             })
 
             onCardLeftScreen?.(direction)
             isAnimating.current = false
         } else {
-            // Snap back (swiparr spring)
             controls.start({
-                x: 0,
-                y: 0,
-                rotate: 0,
+                x: 0, y: 0, rotate: 0,
                 transition: { type: 'spring', stiffness: 300, damping: 25 },
             })
         }
@@ -191,7 +175,7 @@ function TinderCard({ children, onSwipe, onCardLeftScreen, onDragStart, onDrag, 
             style={{ zIndex: 3 - index }}
         >
             <motion.div
-                className={`absolute w-full h-full rounded-2xl ${isFront ? 'cursor-grab active:cursor-grabbing pointer-events-auto' : ''}`}
+                className={`absolute w-full h-full rounded-3xl ${isFront ? 'cursor-grab active:cursor-grabbing pointer-events-auto' : ''}`}
                 style={{ x, y, rotate, opacity }}
                 animate={controls}
                 drag={isFront}
@@ -203,7 +187,7 @@ function TinderCard({ children, onSwipe, onCardLeftScreen, onDragStart, onDrag, 
                 whileTap={isFront ? { cursor: 'grabbing' } : undefined}
             >
                 <motion.div
-                    className="w-full h-full rounded-2xl"
+                    className="w-full h-full rounded-3xl"
                     initial={{ scale: 0.85, opacity: 0 }}
                     animate={{ scale: isFront ? 1 : 0.95, opacity: 1 }}
                     transition={{ type: 'spring', stiffness: 350, damping: 28 }}
@@ -241,21 +225,20 @@ export default function PreviewView({
 
     const [sectionIndex, setSectionIndex] = useState(0)
     const [removedIds, setRemovedIds] = useState<Set<string>>(new Set())
-    // Track direction for section transition animation
-    const [sectionDirection, setSectionDirection] = useState(0) // -1 = left, 1 = right
+    const [sectionDirection, setSectionDirection] = useState(0)
     const [isTransitioning, setIsTransitioning] = useState(false)
     const sectionTransitioning = useRef(false)
     const [videoPopupUrl, setVideoPopupUrl] = useState<string | null>(null)
-    // Deck belakang hanya kelihatan saat swipe naik/turun (satu tab), tidak saat swipe kiri/kanan (pindah tab)
     const [showDeckBehind, setShowDeckBehind] = useState(false)
-    // Kartu yang sedang terbang (swipe off) taruh di belakang agar tidak menimpa kartu baru
     const [exitingCardId, setExitingCardId] = useState<string | null>(null)
-    // Arah fly-off: hanya swipe UP yang boleh tampilkan deck belakang (bukan kiri/kanan)
-    const [exitingDirection, setExitingDirection] = useState<'left' | 'right' | 'up' | null>(null)
+    const [exitingDirection, setExitingDirection] = useState<'left' | 'right' | 'up' | 'down' | null>(null)
+    const [photoIndexByCardId, setPhotoIndexByCardId] = useState<Record<string, number>>({})
+    const photoTapRef = useRef<{ x: number; y: number; cardId: string | null }>({ x: 0, y: 0, cardId: null })
+    // Progress swipe ke atas (0..1) untuk reveal kartu belakang dengan smooth.
+    const [upRevealProgress, setUpRevealProgress] = useState(0)
 
     const currentSection = sections[sectionIndex] || sections[0]
 
-    // Build all cards for current section
     const allCards: CardItem[] = useMemo(() => {
         if (currentSection.type === 'cover') {
             return [{
@@ -267,14 +250,23 @@ export default function PreviewView({
             }]
         }
         if (currentSection.type === 'sambutan') {
-            return teachers.map(t => ({
-                id: t.id,
-                imageUrl: t.photo_url || t.photos?.[0]?.file_url || null,
-                title: t.name,
-                subtitle: t.title || '',
-                description: t.message ? stripQuotes(t.message) : undefined,
-                videoUrl: t.video_url,
-            }))
+            return teachers.map(t => {
+                const ordered = (t.photos || [])
+                    .slice()
+                    .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+                    .map((p) => p.file_url)
+                    .filter(Boolean) as string[]
+                const photoUrls = (ordered.length > 0 ? ordered : (t.photo_url ? [t.photo_url] : [])).slice(0, 4)
+                return {
+                    id: t.id,
+                    imageUrl: photoUrls[0] ?? null,
+                    photoUrls: photoUrls.length > 0 ? photoUrls : undefined,
+                    title: t.name,
+                    subtitle: t.title || '',
+                    description: t.message ? stripQuotes(t.message) : undefined,
+                    videoUrl: t.video_url,
+                }
+            })
         }
         if (currentSection.type === 'class' && currentSection.classId) {
             const classObj = classes[currentSection.classIndex!]
@@ -285,35 +277,47 @@ export default function PreviewView({
                 title: classObj?.name || 'Kelas',
                 subtitle: `${members.length} Anggota`,
             }
-            const memberCards: CardItem[] = members.map(m => ({
-                id: `${currentSection.classId}-${m.user_id}`,
-                imageUrl: m.photos?.[0] || firstPhotoByStudent?.[m.student_name] || null,
-                title: m.student_name,
-                subtitle: classObj?.name || '',
-                videoUrl: m.video_url,
-                description: m.message ? stripQuotes(m.message) : undefined,
-                meta: [
-                    ...(m.date_of_birth ? [{ icon: <Cake className="w-3.5 h-3.5" />, text: m.date_of_birth }] : []),
-                    ...(m.instagram ? [{ icon: <Instagram className="w-3.5 h-3.5" />, text: m.instagram }] : []),
-                ],
-            }))
+            const memberCards: CardItem[] = members.map(m => {
+                const fromMember = (m.photos || []).filter(Boolean).slice(0, 4) as string[]
+                const photoUrls =
+                    fromMember.length > 0
+                        ? fromMember
+                        : firstPhotoByStudent?.[m.student_name]
+                          ? [firstPhotoByStudent[m.student_name]]
+                          : []
+                return {
+                    id: `${currentSection.classId}-${m.user_id}`,
+                    imageUrl: photoUrls[0] ?? null,
+                    photoUrls: photoUrls.length > 0 ? photoUrls : undefined,
+                    title: m.student_name,
+                    subtitle: undefined,
+                    videoUrl: m.video_url,
+                    description: m.message ? stripQuotes(m.message) : undefined,
+                    meta: [
+                        ...(m.date_of_birth ? [{ icon: <Cake className="w-3.5 h-3.5" />, text: m.date_of_birth }] : []),
+                        ...(m.instagram ? [{ icon: <Instagram className="w-3.5 h-3.5" />, text: m.instagram }] : []),
+                    ],
+                }
+            })
             return [classCover, ...memberCards]
         }
         return []
     }, [currentSection, album, teachers, classes, membersByClass, firstPhotoByStudent])
 
-    // Active deck = cards not yet swiped away
     const activeDeck = useMemo(() =>
         allCards.filter(c => !removedIds.has(c.id)),
         [allCards, removedIds]
     )
 
-    // Warm cache for current section images to avoid white blank delay.
     useEffect(() => {
-        const urls = allCards
-            .map((c) => c.imageUrl)
-            .filter((u): u is string => typeof u === 'string' && u.length > 0)
-            .filter((u) => !warmedImageUrlsRef.current.has(u))
+        const urlSet = new Set<string>()
+        for (const c of allCards) {
+            for (const u of c.photoUrls || []) {
+                if (typeof u === 'string' && u.length > 0) urlSet.add(u)
+            }
+            if (typeof c.imageUrl === 'string' && c.imageUrl.length > 0) urlSet.add(c.imageUrl)
+        }
+        const urls = [...urlSet].filter((u) => !warmedImageUrlsRef.current.has(u))
         if (!urls.length) return
 
         let cancelled = false
@@ -325,7 +329,6 @@ export default function PreviewView({
             img.onerror = () => resolve()
             img.src = url
         })
-
         const run = async () => {
             for (let i = 0; i < urls.length; i += MAX_CONCURRENCY) {
                 if (cancelled) return
@@ -336,67 +339,46 @@ export default function PreviewView({
                 }))
             }
         }
-
         void run()
         return () => { cancelled = true }
     }, [allCards])
 
-    // Reset when section changes
     useEffect(() => {
         setRemovedIds(new Set())
+        setPhotoIndexByCardId({})
     }, [sectionIndex])
 
     const itemIndex = allCards.length - activeDeck.length
     const totalItems = allCards.length
 
-    // ─── Swipe boundary prevention ───
     const preventSwipe = useMemo(() => {
         const prevent: ('left' | 'right' | 'up' | 'down')[] = []
-        // Prevent swipe up when at last card
         if (activeDeck.length <= 1) prevent.push('up')
-        // Prevent swipe down when no cards have been removed (nothing to go back to)
         if (removedIds.size === 0) prevent.push('down')
-        // Prevent swipe left when at last section
         if (sectionIndex >= sections.length - 1) prevent.push('left')
-        // Prevent swipe right when at first section
         if (sectionIndex === 0) prevent.push('right')
         return prevent
     }, [activeDeck.length, removedIds.size, sectionIndex, sections.length])
 
-    // ─── Section transition (smooth slide) ───
     const goSection = useCallback((dir: 1 | -1) => {
         const next = sectionIndex + dir
         if (next < 0 || next >= sections.length || sectionTransitioning.current) return
-
-        // Instant transition
         sectionTransitioning.current = true
         setIsTransitioning(true)
         setSectionDirection(dir)
         setSectionIndex(next)
-
-        // Reset transitioning flag after animation completes (approx duration)
-        // Match with transition duration in motion.div (0.3s)
         setTimeout(() => {
             sectionTransitioning.current = false
             setIsTransitioning(false)
         }, 350)
     }, [sectionIndex, sections.length])
 
-    // Handle card swipe (called immediately when threshold is met)
     const handleSwipe = useCallback((_id: string, direction: 'left' | 'right' | 'up' | 'down') => {
-        if (direction === 'down') {
-            // Go back: restore last removed card (card snaps back, previous card appears in front)
-            setRemovedIds(prev => {
-                const arr = Array.from(prev)
-                if (arr.length > 0) arr.pop()
-                return new Set(arr)
-            })
-        } else if (direction === 'left' || direction === 'right') {
+        if (direction === 'left' || direction === 'right') {
             setIsTransitioning(true)
         }
     }, [])
 
-    // Handle card leaving screen (called after fly-off animation completes)
     const handleCardLeftScreen = useCallback((id: string, direction: 'left' | 'right' | 'up' | 'down') => {
         setExitingCardId(null)
         setExitingDirection(null)
@@ -406,10 +388,16 @@ export default function PreviewView({
             goSection(-1)
         } else if (direction === 'up') {
             setRemovedIds(prev => new Set(prev).add(id))
+        } else if (direction === 'down') {
+            // Go back: restore last removed card after animation completes
+            setRemovedIds(prev => {
+                const arr = Array.from(prev)
+                if (arr.length > 0) arr.pop()
+                return new Set(arr)
+            })
         }
     }, [goSection])
 
-    // Keyboard navigation
     useEffect(() => {
         const onKey = (e: KeyboardEvent) => {
             if (e.key === 'ArrowLeft') goSection(-1)
@@ -422,7 +410,6 @@ export default function PreviewView({
             }
             if (e.key === 'ArrowDown') {
                 e.preventDefault()
-                // Restore last removed card
                 setRemovedIds(prev => {
                     const arr = Array.from(prev)
                     if (arr.length > 0) arr.pop()
@@ -435,177 +422,232 @@ export default function PreviewView({
         return () => window.removeEventListener('keydown', onKey)
     }, [goSection, activeDeck, onClose])
 
-    const currentCard = activeDeck[0]
+    const cycleCardPhoto = useCallback((card: CardItem) => {
+        const urls = card.photoUrls?.filter(Boolean) ?? []
+        if (urls.length <= 1) return
+        setPhotoIndexByCardId((prev) => {
+            const cur = prev[card.id] ?? 0
+            return { ...prev, [card.id]: (cur + 1) % urls.length }
+        })
+    }, [])
 
-    // ─── Card content renderer (neo-brutalist, sama dengan AI Labs / Edit) ───
-    const renderCardContent = (card: CardItem) => (
-        <div className="relative w-full h-full rounded-2xl overflow-hidden border-4 border-slate-900 dark:border-slate-700 shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155] select-none isolate transform-gpu bg-white dark:bg-slate-900">
-            {/* Background Image / Placeholder */}
-            <div className="absolute inset-0">
-                {card.imageUrl ? (
-                    <FastImage src={card.imageUrl} alt={card.title} className="h-full w-full object-cover bg-slate-100 dark:bg-slate-800" draggable={false} priority />
+    // ─── Card content renderer ───
+    const renderCardContent = (card: CardItem, isFrontCard: boolean) => {
+        const galleryUrls = (card.photoUrls?.filter(Boolean).length
+            ? card.photoUrls!.filter(Boolean)
+            : card.imageUrl
+              ? [card.imageUrl]
+              : []) as string[]
+        const gLen = galleryUrls.length
+        const photoIdx = gLen > 0 ? (photoIndexByCardId[card.id] ?? 0) % gLen : 0
+        const displayUrl = gLen > 0 ? galleryUrls[photoIdx] : null
+        const showDots = gLen > 1
+
+        return (
+        <div className="relative w-full h-full rounded-3xl overflow-hidden select-none isolate transform-gpu bg-white dark:bg-black ring-2 ring-slate-900 dark:ring-white/80">
+            {/* ── Photo ── */}
+            <div
+                className={`absolute inset-0 ${isFrontCard && showDots ? 'cursor-pointer' : ''}`}
+                onPointerDown={
+                    isFrontCard && showDots
+                        ? (e) => { photoTapRef.current = { x: e.clientX, y: e.clientY, cardId: card.id } }
+                        : undefined
+                }
+                onPointerUp={
+                    isFrontCard && showDots
+                        ? (e) => {
+                              const t = photoTapRef.current
+                              if (t.cardId !== card.id) return
+                              const dx = e.clientX - t.x
+                              const dy = e.clientY - t.y
+                              if (dx * dx + dy * dy < 100) cycleCardPhoto(card)
+                              photoTapRef.current = { ...photoTapRef.current, cardId: null }
+                          }
+                        : undefined
+                }
+            >
+                {displayUrl ? (
+                    <FastImage src={displayUrl} alt={card.title} className="h-full w-full object-cover" draggable={false} priority />
                 ) : (
-                    <div className="w-full h-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
-                        <Users className="w-12 h-12 sm:w-20 sm:h-20 text-slate-300 dark:text-slate-500" />
+                    <div className="w-full h-full bg-slate-100 dark:bg-zinc-800 flex items-center justify-center">
+                        <Users className="w-16 h-16 text-slate-300 dark:text-zinc-600" />
                     </div>
                 )}
-                <div className="absolute inset-0 bg-transparent" />
             </div>
 
-            {/* Content Overlay */}
-            <div className="absolute inset-x-0 bottom-0 z-20 pointer-events-none">
-                <div className="absolute inset-0 bg-gradient-to-t from-white via-white/95 via-45% to-transparent dark:from-slate-900 dark:via-slate-900/95 dark:via-45% dark:to-transparent h-[150%] -top-[50%]" />
+            {/* ── Photo dots ── */}
+            {showDots && (
+                <div className="absolute top-2 left-0 right-0 z-30 flex justify-center gap-1.5 pointer-events-none">
+                    {galleryUrls.map((_, i) => (
+                        <span
+                            key={i}
+                            className={`h-1.5 rounded-full transition-all duration-300 ${
+                                i === photoIdx
+                                    ? 'bg-slate-900 dark:bg-white w-6 shadow-[0_0_6px_rgba(0,0,0,0.3)] dark:shadow-[0_0_6px_rgba(255,255,255,0.5)]'
+                                    : 'bg-slate-900/30 dark:bg-white/40 w-1.5'
+                            }`}
+                        />
+                    ))}
+                </div>
+            )}
 
-                <div className="relative px-4 pb-4 sm:px-6 sm:pb-6 flex flex-col gap-1.5 pt-12">
+            {/* ── Bottom gradient: light = white, dark = black ── */}
+            <div
+                className="absolute inset-x-0 z-10 pointer-events-none dark:hidden"
+                style={{
+                    bottom: '-1px',
+                    height: 'calc(70% + 1px)',
+                    backgroundImage: 'linear-gradient(to top, rgba(255,255,255,1) 0%, rgba(255,255,255,0.95) 20%, rgba(255,255,255,0.7) 40%, rgba(255,255,255,0.3) 60%, rgba(255,255,255,0) 100%)',
+                }}
+            />
+            <div
+                className="absolute inset-x-0 z-10 pointer-events-none hidden dark:block"
+                style={{
+                    bottom: '-1px',
+                    height: 'calc(70% + 1px)',
+                    backgroundImage: 'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0.95) 20%, rgba(0,0,0,0.7) 40%, rgba(0,0,0,0.3) 60%, rgba(0,0,0,0) 100%)',
+                }}
+            />
 
-                    <div className="flex flex-col">
-                        <h2 className="text-xl sm:text-3xl font-black text-slate-900 dark:text-white leading-tight tracking-tight uppercase">
-                            {card.title}
-                        </h2>
+            {/* ── Text content ── */}
+            <div className="absolute inset-x-0 bottom-0 z-20 pointer-events-none px-5 pb-5 sm:px-6 sm:pb-6 flex flex-col gap-2">
+                {/* Name */}
+                <h2
+                    className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white leading-tight tracking-tight uppercase drop-shadow-lg"
+                    style={{ textShadow: '0 2px 12px rgba(0,0,0,0.15)' }}
+                >
+                    {card.title}
+                </h2>
 
-                        <div className="flex flex-wrap items-center gap-2 mt-1">
-                            {card.subtitle && (
-                                <p className="text-slate-600 dark:text-slate-300 font-black text-xs sm:text-sm tracking-wide">
-                                    {card.subtitle}
-                                </p>
-                            )}
+                {/* Subtitle */}
+                {card.subtitle && (
+                    <p className="text-sm font-semibold text-slate-600 dark:text-white/80 tracking-wide">
+                        {card.subtitle}
+                    </p>
+                )}
 
-                            {card.badges && card.badges.length > 0 && (
-                                <div className="flex flex-wrap gap-1">
-                                    {card.badges.map((b, i) => (
-                                        <span key={i} className="text-[9px] sm:text-[10px] font-black px-2 py-0.5 rounded-lg uppercase tracking-wide bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 text-slate-900 dark:text-white shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155]">
-                                            {b.label}
-                                        </span>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
+                {/* Badges */}
+                {card.badges && card.badges.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5">
+                        {card.badges.map((b, i) => (
+                            <span key={i} className="text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wide bg-slate-900/10 dark:bg-white/15 backdrop-blur-sm text-slate-900 dark:text-white ring-1 ring-slate-900/15 dark:ring-white/20">
+                                {b.label}
+                            </span>
+                        ))}
                     </div>
+                )}
 
-                    {card.description && (
-                        <div className="relative pl-3 border-l-4 border-slate-900 dark:border-slate-600 my-1">
-                            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 font-bold italic line-clamp-3 leading-relaxed">
-                                "{card.description}"
-                            </p>
-                        </div>
-                    )}
+                {/* Description / message */}
+                {card.description && (
+                    <div className="relative pl-3 border-l-2 border-slate-400 dark:border-white/40 mt-1">
+                        <p className="text-sm text-slate-600 dark:text-white/85 font-medium italic line-clamp-3 leading-relaxed">
+                            &ldquo;{card.description}&rdquo;
+                        </p>
+                    </div>
+                )}
 
-                    <div className="flex flex-wrap gap-2 mt-2 w-full">
-                        {card.meta && card.meta.map((m, i) => {
-                            const isIg = typeof m.text === 'string' && m.text.startsWith('@');
-                            const Wrapper = isIg ? 'a' : 'div';
-                            const props = isIg ? {
+                {/* Meta: birthday, instagram */}
+                {card.meta && card.meta.length > 0 && (
+                    <div className="grid gap-2 mt-1" style={{ gridTemplateColumns: `repeat(${card.meta.length}, 1fr)` }}>
+                        {card.meta.map((m, i) => {
+                            const isIg = typeof m.text === 'string' && m.text.startsWith('@')
+                            const Wrapper = isIg ? 'a' : 'div'
+                            const wrapperProps = isIg ? {
                                 href: `https://instagram.com/${m.text.substring(1)}`,
                                 target: '_blank',
                                 rel: 'noopener noreferrer',
                                 onClick: (e: React.MouseEvent) => e.stopPropagation(),
-                                className: "pointer-events-auto group flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-white hover:bg-amber-200 border-2 border-slate-900 text-slate-900 transition-all active:scale-95 cursor-pointer flex-initial w-auto min-w-0 max-w-full shadow-[2px_2px_0_0_#0f172a]"
+                                className: 'pointer-events-auto flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-full bg-slate-900/10 dark:bg-white/15 backdrop-blur-sm text-slate-900 dark:text-white ring-1 ring-slate-900 dark:ring-white/80 transition-all hover:bg-slate-900/20 dark:hover:bg-white/25 active:scale-95 cursor-pointer min-w-0',
                             } : {
-                                className: "flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 border-2 border-slate-900 text-slate-700 font-black flex-1 w-auto min-w-[40%] max-w-full"
-                            };
-
+                                className: 'flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-full bg-slate-900/10 dark:bg-white/15 backdrop-blur-sm text-slate-700 dark:text-white/80 ring-1 ring-slate-900 dark:ring-white/80 min-w-0',
+                            }
                             return (
-                                <Wrapper key={i} {...props}>
-                                    <span className={`flex-shrink-0 ${isIg ? "text-pink-600 group-hover:text-pink-700" : "text-slate-500"}`}>
-                                        {React.cloneElement(m.icon as React.ReactElement<{ size?: number }>, { size: 14 })}
+                                <Wrapper key={i} {...wrapperProps}>
+                                    <span className={`flex-shrink-0 ${isIg ? 'text-pink-500 dark:text-pink-300' : 'text-slate-400 dark:text-white/60'}`}>
+                                        {React.cloneElement(m.icon as React.ReactElement<{ size?: number }>, { size: 13 })}
                                     </span>
-                                    <span className={`text-[10px] sm:text-[11px] font-black tracking-wide truncate ${isIg ? 'text-slate-900 group-hover:text-slate-800' : 'text-slate-600'}`}>
+                                    <span className="text-[11px] font-semibold tracking-wide truncate">
                                         {m.text}
                                     </span>
                                 </Wrapper>
                             )
                         })}
                     </div>
+                )}
 
-                    {card.videoUrl && (
-                        <div className="mt-2 w-full">
-                            <button
-                                type="button"
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    if (onPlayVideo) {
-                                        onPlayVideo(card.videoUrl!);
-                                    } else {
-                                        setVideoPopupUrl(card.videoUrl!);
-                                    }
-                                }}
-                                className="pointer-events-auto flex items-center justify-center gap-2 w-full px-4 py-3 rounded-xl bg-slate-900 dark:bg-slate-700 hover:bg-slate-800 dark:hover:bg-slate-600 text-white text-[11px] sm:text-xs font-black tracking-wider transition-all active:scale-95 border-2 border-slate-900 dark:border-slate-600 shadow-[3px_3px_0_0_#0f172a] dark:shadow-[3px_3px_0_0_#334155]"
-                            >
-                                <Play className="w-4 h-4 fill-white" />
-                                <span>PLAY VIDEO</span>
-                            </button>
-                        </div>
-                    )}
-                </div>
+                {/* Video button */}
+                {card.videoUrl && (
+                    <button
+                        type="button"
+                        onClick={(e) => {
+                            e.stopPropagation()
+                            if (onPlayVideo) onPlayVideo(card.videoUrl!)
+                            else setVideoPopupUrl(card.videoUrl!)
+                        }}
+                        className="pointer-events-auto mt-1 flex items-center justify-center gap-2 w-full px-4 py-3 rounded-2xl bg-slate-900/10 dark:bg-white/15 backdrop-blur-md text-slate-900 dark:text-white text-xs font-bold tracking-widest uppercase ring-1 ring-slate-900 dark:ring-white/80 transition-all hover:bg-slate-900/20 dark:hover:bg-white/25 active:scale-[0.97]"
+                    >
+                        <Play className="w-4 h-4 fill-slate-900 dark:fill-white" />
+                        <span>Play Video</span>
+                    </button>
+                )}
             </div>
         </div>
-    )
+        )
+    }
 
-    // Section transition: section yang keluar di belakang (zIndex 0) agar gambar lama tidak keliatan
     const sectionVariants = {
         enter: (dir: number) => ({
             x: dir > 0 ? '100%' : '-100%',
-            opacity: 0,
-            scale: 0.95,
-            zIndex: 10,
+            opacity: 0, scale: 0.95, zIndex: 10,
         }),
-        center: {
-            x: 0,
-            opacity: 1,
-            scale: 1,
-            zIndex: 10,
-        },
+        center: { x: 0, opacity: 1, scale: 1, zIndex: 10 },
         exit: (dir: number) => ({
             x: dir > 0 ? '-100%' : '100%',
-            opacity: 0,
-            scale: 0.95,
-            zIndex: 0,
+            opacity: 0, scale: 0.95, zIndex: 0,
         }),
     }
 
     return (
-        <div className="fixed inset-0 z-[90] bg-slate-100 dark:bg-slate-950 flex flex-col">
-            {/* Header - neo-brutalist, tanpa garis (bg nyatu) */}
-            <div className="flex-shrink-0 flex items-center justify-between px-4 py-3 sm:px-6 sm:py-4 bg-slate-100 dark:bg-slate-950 z-20">
-                <div className="flex items-center gap-3 sm:gap-4">
-                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 text-slate-900 dark:text-white shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155]">
-                        {React.cloneElement(currentSection.icon as React.ReactElement<{ className?: string }>, { className: "w-4 h-4" })}
-                        <span className="text-xs sm:text-sm font-black uppercase truncate max-w-[120px] sm:max-w-none">{currentSection.label}</span>
+        <div className="fixed inset-0 z-[90] bg-slate-100 dark:bg-zinc-950 flex flex-col">
+            {/* ── Floating top bar: label left, close right ── */}
+            <div
+                className="absolute z-[60] flex items-center justify-between pointer-events-none"
+                style={{
+                    top: 'calc(env(safe-area-inset-top) + 10px)',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    width: 'min(92vw, 420px)',
+                }}
+            >
+                <div className="flex items-center gap-2">
+                    <div
+                        className="flex items-center gap-1.5 px-3 rounded-full bg-white/85 dark:bg-black/55 backdrop-blur-md text-slate-900 dark:text-white ring-1 ring-slate-900/10 dark:ring-white/15 leading-none shadow-sm"
+                        style={{ height: 32, fontSize: 12, fontWeight: 650 }}
+                    >
+                        {React.cloneElement(currentSection.icon as React.ReactElement<{ className?: string }>, { className: 'w-4 h-4 opacity-70' })}
+                        <span className="truncate max-w-[140px] sm:max-w-none tracking-wide">{currentSection.label}</span>
                     </div>
                     {totalItems > 1 && (
-                        <span className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 font-black tabular-nums bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 px-2 py-0.5 rounded-lg shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155]">
-                            {itemIndex + 1} / {totalItems}
-                        </span>
-                    )}
-                </div>
-                <div className="flex items-center gap-3">
-                    <div className="hidden sm:flex items-center gap-1.5">
-                        {sections.map((s, i) => (
-                            <button
-                                key={i}
-                                onClick={() => { if (i !== sectionIndex) { setSectionDirection(i > sectionIndex ? 1 : -1); setSectionIndex(i) } }}
-                                className={`h-2 rounded-full transition-all duration-300 ${i === sectionIndex ? 'bg-slate-900 dark:bg-slate-600 w-6 shadow-[2px_0_0_0_#0f172a] dark:shadow-[2px_0_0_0_#334155]' : 'bg-slate-300 dark:bg-slate-600 w-2 hover:bg-slate-400 dark:hover:bg-slate-500'}`}
-                                title={s.label}
-                            />
-                        ))}
-                    </div>
-                    {hideCloseButton ? (
-                        <button
-                          onClick={onClose}
-                          className="w-8 h-8 bg-yellow-300 hover:bg-yellow-400 rounded-full flex items-center justify-center text-black border-2 border-slate-900 transition-all active:scale-95"
+                        <div
+                            className="flex items-center tabular-nums px-3 rounded-full bg-white/85 dark:bg-black/55 backdrop-blur-md text-slate-600 dark:text-white/75 ring-1 ring-slate-900/10 dark:ring-white/15 leading-none shadow-sm"
+                            style={{ height: 32, fontSize: 12, fontWeight: 650 }}
                         >
-                          <X className="w-5 h-5" strokeWidth={3} />
-                        </button>
-                    ) : (
-                        <button type="button" onClick={onClose} className="p-2 rounded-xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-amber-200 dark:hover:bg-slate-700 border-2 border-transparent hover:border-slate-900 dark:hover:border-slate-600 transition-all">
-                            <X className="w-5 h-5 sm:w-6 sm:h-6" />
-                        </button>
+                            {itemIndex + 1}/{totalItems}
+                        </div>
                     )}
                 </div>
+                <button
+                    type="button"
+                    onClick={onClose}
+                    className="pointer-events-auto rounded-full flex items-center justify-center bg-white/85 dark:bg-black/55 backdrop-blur-md text-slate-700 dark:text-white/85 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-black/70 transition-all ring-1 ring-slate-900/10 dark:ring-white/15 p-0 m-0 border-0 shadow-sm"
+                    style={{ height: 32, width: 32 }}
+                >
+                    <X style={{ width: 18, height: 18 }} strokeWidth={2.75} />
+                </button>
             </div>
 
-            {/* Main Card Area - overflow-hidden + bg supaya gambar section lama tidak keliatan saat swipe */}
-            <div className="flex-1 relative flex items-center justify-center px-4 sm:px-8 py-4 sm:py-6 z-50 overflow-hidden bg-slate-100 dark:bg-slate-950">
+            {/* ── Card Area (full height) ── */}
+            <div className="flex-1 relative flex items-center justify-center px-3 sm:px-6 pt-2 pb-2 z-50 overflow-hidden bg-slate-100 dark:bg-zinc-950">
                 <AnimatePresence custom={sectionDirection} initial={false}>
                     <motion.div
                         key={sectionIndex}
@@ -619,9 +661,8 @@ export default function PreviewView({
                             opacity: { duration: 0.15 },
                             scale: { duration: 0.15 },
                         }}
-                        className="absolute w-[88%] sm:w-full max-w-[380px] h-[66svh] sm:h-[68svh] select-none"
+                        className="absolute w-[92%] sm:w-full max-w-[420px] h-[calc(100%-8px)] select-none"
                     >
-                        {/* Kartu depan selalu terlihat; deck belakang hanya kelihatan saat swipe naik/turun (bukan kiri/kanan) */}
                         {activeDeck.slice(0, 3).reverse().map((card, i, arr) => {
                             const cardIndex = arr.length - 1 - i
                             const isFrontCard = cardIndex === 0
@@ -629,13 +670,27 @@ export default function PreviewView({
                             const isHorizontalExit = exitingDirection === 'left' || exitingDirection === 'right'
                             const deckOpacity = isFrontCard ? 1 : (isNextCardDuringFlyOff ? 1 : (isHorizontalExit ? 0 : (showDeckBehind ? 0.85 : 0)))
                             const isExiting = exitingCardId === card.id
+                            const shouldAnimateDeckOpacity =
+                                isFrontCard ||
+                                isNextCardDuringFlyOff ||
+                                // Saat swipe ke ATAS (reveal deck), fade-in kartu belakang harus smooth (tidak pop).
+                                (showDeckBehind && !isHorizontalExit)
+
+                            // Reveal kartu belakang secara progresif supaya tidak “loncat”.
+                            const behindProgress = cardIndex === 1 ? upRevealProgress : 0
+                            const behindY = cardIndex === 1 ? (10 * (1 - behindProgress)) : 0
+                            const behindScale = cardIndex === 1 ? (0.975 + 0.025 * behindProgress) : 1
                             return (
                                 <motion.div
                                     key={card.id}
                                     className="absolute inset-0 w-full h-full"
-                                    initial={{ opacity: isFrontCard ? 1 : 0 }}
-                                    animate={{ opacity: deckOpacity }}
-                                    transition={{ duration: (isFrontCard || isNextCardDuringFlyOff) ? 0.2 : 0 }}
+                                    initial={{ opacity: isFrontCard ? 1 : 0, y: 0, scale: 1 }}
+                                    animate={{ opacity: deckOpacity, y: behindY, scale: behindScale }}
+                                    transition={{
+                                        opacity: { duration: shouldAnimateDeckOpacity ? 0.16 : 0 },
+                                        y: { type: 'spring', stiffness: 260, damping: 26 },
+                                        scale: { type: 'spring', stiffness: 260, damping: 26 },
+                                    }}
                                     style={{ zIndex: isExiting ? 0 : 3 - cardIndex }}
                                 >
                                     <TinderCard
@@ -643,21 +698,29 @@ export default function PreviewView({
                                         preventSwipe={preventSwipe}
                                         onSwipe={(dir) => handleSwipe(card.id, dir)}
                                         onCardLeftScreen={(dir) => handleCardLeftScreen(card.id, dir)}
-                                        onDragStart={() => setShowDeckBehind(false)}
+                                        onDragStart={() => { setShowDeckBehind(false); setUpRevealProgress(0) }}
                                         onDrag={({ x, y }) => {
                                             const absX = Math.abs(x)
                                             const absY = Math.abs(y)
                                             const threshold = 20
-                                            setShowDeckBehind(absY > absX && absY > threshold)
+                                            // Deck belakang hanya boleh muncul saat gesture ke ATAS (next). Swipe bawah (back) jangan bocorin deck.
+                                            const isUp = absY > absX && absY > threshold && y < 0
+                                            setShowDeckBehind(isUp)
+                                            if (isUp) {
+                                                const p = Math.max(0, Math.min(1, (-y) / 120))
+                                                setUpRevealProgress(p)
+                                            } else {
+                                                setUpRevealProgress(0)
+                                            }
                                         }}
-                                        onDragEnd={() => setShowDeckBehind(false)}
+                                        onDragEnd={() => { setShowDeckBehind(false); setUpRevealProgress(0) }}
                                         onFlyOffStart={isFrontCard ? (dir) => {
                                             setExitingCardId(card.id)
                                             setExitingDirection(dir)
                                             if (dir === 'left' || dir === 'right') setShowDeckBehind(false)
                                         } : undefined}
                                     >
-                                        {renderCardContent(card)}
+                                        {renderCardContent(card, isFrontCard)}
                                     </TinderCard>
                                 </motion.div>
                             )
@@ -666,10 +729,10 @@ export default function PreviewView({
                 </AnimatePresence>
             </div>
 
-            {/* Bottom Navigation - bg nyatu dengan halaman */}
-            <div className="flex-shrink-0 pt-3 pb-4 sm:px-6 sm:py-5 bg-slate-100 dark:bg-slate-950 z-20 w-full overflow-hidden">
+            {/* ── Bottom Navigation ── */}
+            <div className="flex-shrink-0 pb-4 pt-3 sm:pb-5 sm:pt-4 z-20 w-full">
                 <div className="flex justify-start sm:justify-center w-full">
-                    <div className="flex items-start sm:gap-6 overflow-x-auto pt-1 pb-2 no-scrollbar snap-x max-w-full w-full sm:w-auto px-2">
+                    <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar snap-x max-w-full w-full sm:w-auto px-4 py-1">
                         {sections.map((s, i) => (
                             <button
                                 key={i}
@@ -680,15 +743,16 @@ export default function PreviewView({
                                         setSectionIndex(i)
                                     }
                                 }}
-                                className="flex flex-col items-center gap-2 w-[22vw] flex-shrink-0 sm:w-auto sm:min-w-[80px] sm:px-2 snap-center group transition-all"
+                                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full flex-shrink-0 snap-center transition-all duration-200 ring-1 ${
+                                    i === sectionIndex
+                                        ? 'bg-slate-900 dark:bg-white text-white dark:text-zinc-900 shadow-lg shadow-slate-900/20 dark:shadow-white/10 ring-slate-900 dark:ring-white'
+                                        : 'bg-slate-200 dark:bg-white/8 text-slate-500 dark:text-zinc-400 hover:bg-slate-300 dark:hover:bg-white/15 hover:text-slate-700 dark:hover:text-zinc-200 ring-slate-900/30 dark:ring-white/30'
+                                }`}
                             >
-                                <div className={`w-12 h-12 sm:w-16 sm:h-16 flex-shrink-0 rounded-2xl flex items-center justify-center border-2 transition-all duration-300 ${i === sectionIndex
-                                    ? 'border-slate-900 dark:border-slate-600 bg-slate-900 dark:bg-slate-600 text-white scale-105 shadow-[3px_3px_0_0_#0f172a] dark:shadow-[3px_3px_0_0_#334155]'
-                                    : 'border-slate-900 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-amber-200 dark:hover:bg-slate-700'
-                                    }`}>
-                                    {React.cloneElement(s.icon as React.ReactElement<{ className?: string }>, { className: 'w-5 h-5 sm:w-7 sm:h-7' })}
-                                </div>
-                                <span className={`text-[11px] sm:text-xs text-center truncate w-full px-1 sm:max-w-[88px] font-black transition-colors ${i === sectionIndex ? 'text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white'}`}>
+                                {React.cloneElement(s.icon as React.ReactElement<{ className?: string }>, {
+                                    className: `w-3.5 h-3.5 ${i === sectionIndex ? '' : 'opacity-60'}`,
+                                })}
+                                <span className={`text-[11px] font-semibold truncate max-w-[60px] sm:max-w-[80px] ${i === sectionIndex ? 'font-bold' : ''}`}>
                                     {s.label}
                                 </span>
                             </button>
@@ -697,30 +761,29 @@ export default function PreviewView({
                 </div>
             </div>
 
-            {/* Fullscreen Video Modal - neo-brutalist */}
+            {/* ── Video Modal ── */}
             <AnimatePresence>
                 {videoPopupUrl && (
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-[100] bg-slate-900/95 flex flex-col items-center justify-center p-4"
+                        className="fixed inset-0 z-[100] bg-black/90 dark:bg-black/95 flex flex-col items-center justify-center p-4"
                     >
                         <div className="absolute top-4 right-4 z-10">
                             <button
                                 onClick={() => setVideoPopupUrl(null)}
-                                className="p-3 bg-white dark:bg-slate-800 hover:bg-amber-200 dark:hover:bg-slate-700 rounded-xl text-slate-900 dark:text-white border-2 border-slate-900 dark:border-slate-600 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] transition-all"
+                                className="w-10 h-10 rounded-full flex items-center justify-center bg-white/20 text-white hover:bg-white/30 transition-all backdrop-blur-sm"
                             >
-                                <X className="w-6 h-6" />
+                                <X className="w-5 h-5" />
                             </button>
                         </div>
-
                         <motion.div
                             initial={{ scale: 0.95, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
                             exit={{ scale: 0.95, opacity: 0 }}
-                            transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                            className="w-full max-w-4xl max-h-[85vh] aspect-video rounded-2xl overflow-hidden bg-black border-4 border-slate-900 dark:border-slate-700 relative"
+                            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                            className="w-full max-w-4xl max-h-[85vh] aspect-video rounded-2xl overflow-hidden bg-black ring-1 ring-white/10 relative"
                         >
                             <video
                                 src={videoPopupUrl}

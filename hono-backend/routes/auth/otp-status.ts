@@ -20,13 +20,24 @@ const authOtpStatus = new Hono()
 
 // GET /api/auth/otp-status
 authOtpStatus.get('/', async (c) => {
+  const skipOtp = getSkipOtp(c.env)
   const userId = await getAuthUserId(c)
+
+  // Dev / local: kalau OTP di-skip, jangan sentuh D1 sama sekali (hindari 500 saat binding/table belum siap).
+  if (skipOtp) {
+    return c.json({ verified: !!userId, suspended: false })
+  }
+
   let suspended = false
   if (userId) {
-    const db = getD1(c)
-    if (db) suspended = await isUserSuspendedD1(db, userId)
+    try {
+      const db = getD1(c)
+      if (db) suspended = await isUserSuspendedD1(db, userId)
+    } catch (err) {
+      console.error('otp-status: failed to check suspension', err)
+      suspended = false
+    }
   }
-  const skipOtp = getSkipOtp(c.env)
   const cookieVerified = getCookie(c, OTP_COOKIE_NAME) === '1'
   const verified = !suspended && (skipOtp ? !!userId : !!(userId && cookieVerified))
 

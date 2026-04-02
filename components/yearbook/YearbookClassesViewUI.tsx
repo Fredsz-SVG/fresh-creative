@@ -191,6 +191,15 @@ export default function YearbookClassesViewUI(props: any) {
   // Manual Flipbook Pages state
   const [manualPages, setManualPages] = useState<any[]>([])
 
+  const [coverShortDescription, setCoverShortDescription] = useState<string>('')
+  const [savingCoverShortDescription, setSavingCoverShortDescription] = useState(false)
+  const coverDescDirtyRef = useRef(false)
+
+  useEffect(() => {
+    if (coverDescDirtyRef.current) return
+    setCoverShortDescription(typeof album?.description === 'string' ? album.description : '')
+  }, [album?.description])
+
 
   const searchParams = useSearchParams()
   const aiLabsTool = searchParams.get('tool')
@@ -773,7 +782,7 @@ export default function YearbookClassesViewUI(props: any) {
   }
 
   return (
-    <div className={`flex flex-col w-full lg:max-w-full ${sidebarMode === 'flipbook' && flipbookPreviewMode ? 'flex-1 min-h-0' : 'min-h-screen'}`}>
+    <div className={`flex flex-col w-full lg:max-w-full ${sidebarMode === 'flipbook' && flipbookPreviewMode ? 'h-[calc(100dvh-3.5rem)] min-h-[calc(100dvh-3.5rem)]' : 'min-h-screen'}`}>
       <YearbookMobileNav
         pathname={pathname}
         effectiveAlbumId={effectiveAlbumId ?? ''}
@@ -811,7 +820,7 @@ export default function YearbookClassesViewUI(props: any) {
 
         <div className={`flex flex-col lg:flex-row gap-0 flex-1 ${(sidebarMode === 'flipbook' && flipbookPreviewMode) ? 'lg:pl-0' : 'lg:pl-16'} lg:px-0 lg:py-0`}>
           {/* Icon Sidebar untuk desktop - Fixed di kiri (disembunyikan saat fitur AI Labs aktif atau flipbook preview aktif) */}
-          {!isAiLabsToolActive && !flipbookPreviewMode && (
+          {!isAiLabsToolActive && !(sidebarMode === 'flipbook' && flipbookPreviewMode) && (
             <IconSidebar
               pathname={pathname}
               albumId={effectiveAlbumId}
@@ -1188,6 +1197,46 @@ export default function YearbookClassesViewUI(props: any) {
                           <p className="text-slate-500 dark:text-slate-400 text-[10px] lg:text-lg font-bold leading-relaxed max-w-xl">
                             {album?.description || "Selamat datang di yearbook digital Anda. Kelola sampul dan media utama album di sini."}
                           </p>
+
+                          {canManage && (
+                            <div className="mt-4 lg:mt-6 max-w-xl">
+                              <div className="flex items-center justify-between gap-3 mb-2">
+                                <p className="text-[10px] lg:text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">
+                                  Deskripsi singkat
+                                </p>
+                                <button
+                                  type="button"
+                                  disabled={savingCoverShortDescription}
+                                  onClick={async () => {
+                                    if (!props.handleUpdateAlbum) return
+                                    try {
+                                      setSavingCoverShortDescription(true)
+                                      coverDescDirtyRef.current = false
+                                      await props.handleUpdateAlbum({ description: coverShortDescription.trim() })
+                                      toast.success('Deskripsi disimpan')
+                                    } catch (e) {
+                                      toast.error((e as Error)?.message || 'Gagal menyimpan deskripsi')
+                                    } finally {
+                                      setSavingCoverShortDescription(false)
+                                    }
+                                  }}
+                                  className="px-3 py-1.5 rounded-xl bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 text-slate-900 dark:text-white text-[10px] font-black uppercase tracking-widest shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all disabled:opacity-60"
+                                >
+                                  {savingCoverShortDescription ? 'Menyimpan…' : 'Simpan'}
+                                </button>
+                              </div>
+                              <textarea
+                                value={coverShortDescription}
+                                onChange={(e) => {
+                                  coverDescDirtyRef.current = true
+                                  setCoverShortDescription(e.target.value)
+                                }}
+                                rows={3}
+                                placeholder="Contoh: Angkatan 2026 — kenangan terbaik kita."
+                                className="w-full rounded-2xl bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 px-4 py-3 text-sm font-bold text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600 shadow-[3px_3px_0_0_#0f172a] dark:shadow-[3px_3px_0_0_#334155] focus:outline-none focus:ring-0"
+                              />
+                            </div>
+                          )}
                         </div>
 
                         {/* Desktop Controls (Aligned with Bottom of Image) */}
@@ -1416,7 +1465,7 @@ export default function YearbookClassesViewUI(props: any) {
               <div
                 className={
                   !isCoverView && sidebarMode === 'flipbook'
-                    ? `block w-full min-h-0 ${flipbookPreviewMode ? 'h-[calc(100dvh-3.5rem)] lg:h-full' : 'h-full'}`
+                    ? `block w-full min-h-0 ${flipbookPreviewMode ? 'h-[calc(100dvh-3.5rem)]' : 'h-full'}`
                     : 'hidden'
                 }
               >

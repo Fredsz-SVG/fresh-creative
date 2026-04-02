@@ -92,6 +92,8 @@ export default function YearbookAlbumClient({
   const {
     photos,
     setPhotos,
+    galleryPhotosLoading,
+    setGalleryPhotosLoading,
     galleryStudent,
     setGalleryStudent,
     photoIndex,
@@ -499,18 +501,67 @@ export default function YearbookAlbumClient({
     }
   }, [album?.classes?.length, fetchAllClassMembers, fetchAllAccess])
 
-  const openGallery = useCallback(async (classId: string, studentName: string, className: string) => {
-    setGalleryStudent({ classId, studentName, className })
-    setView('gallery')
-    setPhotoIndex(0)
-    try {
-      const res = await fetchWithAuth(`/api/albums/${id}/photos?class_id=${encodeURIComponent(classId)}&student_name=${encodeURIComponent(studentName)}`, { credentials: 'include', cache: 'no-store' })
-      const data = await res.json().catch(() => [])
-      setPhotos(Array.isArray(data) ? data : [])
-    } catch {
-      setPhotos([])
-    }
-  }, [id])
+  const buildOptimisticGalleryPhotos = useCallback(
+    (classId: string, studentName: string): Photo[] => {
+      const members = membersByClass[classId] ?? []
+      const member = members.find((m) => m.student_name === studentName)
+      const urls = member?.photos?.filter(Boolean) ?? []
+      if (urls.length > 0) {
+        return urls.map((file_url, i) => ({
+          id: `optimistic-${classId}-${studentName}-${i}`,
+          file_url,
+          student_name: studentName,
+        }))
+      }
+      const first = firstPhotoByStudentByClass[classId]?.[studentName]
+      if (first) {
+        return [
+          {
+            id: `optimistic-${classId}-${studentName}-0`,
+            file_url: first,
+            student_name: studentName,
+          },
+        ]
+      }
+      return []
+    },
+    [membersByClass, firstPhotoByStudentByClass]
+  )
+
+  const openGallery = useCallback(
+    async (classId: string, studentName: string, className: string) => {
+      const optimistic = buildOptimisticGalleryPhotos(classId, studentName)
+      setGalleryStudent({ classId, studentName, className })
+      setView('gallery')
+      setPhotoIndex(0)
+      setPhotos(optimistic)
+      setGalleryPhotosLoading(true)
+      try {
+        const res = await fetchWithAuth(
+          `/api/albums/${id}/photos?class_id=${encodeURIComponent(classId)}&student_name=${encodeURIComponent(studentName)}`,
+          {
+            credentials: 'include',
+            cacheTtlMs: 12_000,
+          }
+        )
+        const data = await res.json().catch(() => [])
+        setPhotos(Array.isArray(data) ? data : [])
+      } catch {
+        if (optimistic.length === 0) setPhotos([])
+      } finally {
+        setGalleryPhotosLoading(false)
+      }
+    },
+    [id, buildOptimisticGalleryPhotos, setGalleryPhotosLoading]
+  )
+
+  useEffect(() => {
+    if (view !== 'gallery') return
+    setPhotoIndex((i) => {
+      if (photos.length === 0) return 0
+      return Math.min(i, photos.length - 1)
+    })
+  }, [view, photos.length, setPhotoIndex])
 
   const goPrevClass = () => setClassIndex((i) => Math.max(0, i - 1))
   const goNextClass = () => setClassIndex((i) => Math.min((album?.classes?.length ?? 1) - 1, i + 1))
@@ -1887,79 +1938,125 @@ export default function YearbookAlbumClient({
 
   if (view === 'gallery' && galleryStudent) {
     const hasPhotos = photos.length > 0
-    const currentPhoto = hasPhotos ? photos[photoIndex] : null
-    const isOwnGallery = myAccessByClass[galleryStudent.classId]?.student_name === galleryStudent.studentName
-    const canUpload = isOwnGallery || isOwner
+    const safeIdx = hasPhotos ? Math.min(photoIndex, photos.length - 1) : 0
+    const currentPhoto = hasPhotos ? photos[safeIdx] : null
+    const canUpload =
+      myAccessByClass[galleryStudent.classId]?.student_name === galleryStudent.studentName || isOwner
+    const showLoadingShell = galleryPhotosLoading && !hasPhotos
     return (
-      <div className="fixed inset-0 z-50 bg-black flex flex-col">
-        <div className="flex items-center justify-between gap-2 p-3 border-b border-gray-200 dark:border-slate-700 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm flex-wrap shadow-sm">
+      <div className="fixed inset-0 z-50 flex flex-col bg-zinc-950 pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]">
+        {canUpload && (
+          <input
+            ref={galleryUploadInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            aria-hidden
+            onChange={(e) => {
+              const file = e.target.files?.[0]
+              if (file && galleryStudent) {
+                handleUploadPhoto(galleryStudent.classId, galleryStudent.studentName, galleryStudent.className, file)
+              }
+              e.target.value = ''
+            }}
+          />
+        )}
+        <div className="flex shrink-0 items-center gap-3 border-b border-white/10 bg-zinc-900/85 px-3 py-2.5 backdrop-blur-md">
           <button
             type="button"
-            onClick={() => { setView('classes'); setGalleryStudent(null); setPhotos([]) }}
-            className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-gray-700 dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-800 font-semibold transition-colors"
+            onClick={() => {
+              setView('classes')
+              setGalleryStudent(null)
+              setPhotos([])
+              setGalleryPhotosLoading(false)
+            }}
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-white/10"
           >
-            <ChevronLeft className="w-5 h-5" /> Kembali
+            <ChevronLeft className="h-5 w-5" /> Kembali
           </button>
-          <span className="text-gray-800 dark:text-white font-bold truncate max-w-[40%]">{galleryStudent.studentName} — {galleryStudent.className}</span>
-          <span className="text-gray-400 dark:text-slate-400 text-sm font-semibold">{hasPhotos ? `${photoIndex + 1}/${photos.length}` : '0'}</span>
-          {isOwnGallery && (
-            <>
-              <input
-                ref={galleryUploadInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={(e) => {
-                  const file = e.target.files?.[0]
-                  if (file && galleryStudent) {
-                    handleUploadPhoto(galleryStudent.classId, galleryStudent.studentName, galleryStudent.className, file)
-                  }
-                  e.target.value = ''
-                }}
-              />
-              <button
-                type="button"
-                onClick={() => galleryUploadInputRef.current?.click()}
-                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-violet-500 text-white text-sm font-bold hover:bg-violet-600 transition-all shadow-sm"
-              >
-                <ImagePlus className="w-4 h-4" /> Upload foto
-              </button>
-            </>
-          )}
+          <div className="min-w-0 flex-1 text-center">
+            <p className="truncate text-sm font-bold text-white">{galleryStudent.studentName}</p>
+            <p className="truncate text-xs text-zinc-400">{galleryStudent.className}</p>
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
+            <span className="tabular-nums text-xs font-semibold text-zinc-400">
+              {hasPhotos ? `${safeIdx + 1} / ${photos.length}` : galleryPhotosLoading ? '…' : '0'}
+            </span>
+          </div>
         </div>
-        <div className="flex-1 flex items-center justify-center overflow-hidden bg-black relative">
-          {hasPhotos ? (
-            <>
-              <button
-                type="button"
-                onClick={() => setPhotoIndex((i) => Math.max(0, i - 1))}
-                disabled={photoIndex === 0}
-                className="absolute left-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/50 text-white disabled:opacity-40 z-10"
-              >
-                <ChevronLeft className="w-8 h-8" />
-              </button>
-              <FastImage src={currentPhoto?.file_url} alt="" className="max-w-full max-h-full object-contain" priority />
-              <button
-                type="button"
-                onClick={() => setPhotoIndex((i) => Math.min(photos.length - 1, i + 1))}
-                disabled={photoIndex >= photos.length - 1}
-                className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/50 text-white disabled:opacity-40 z-10"
-              >
-                <ChevronRight className="w-8 h-8" />
-              </button>
-            </>
-          ) : (
-            <div className="text-center text-muted p-6">
-              <p>Belum ada foto untuk siswa ini.</p>
-              {canUpload && (
+
+        <div className="relative flex min-h-0 flex-1 flex-col">
+          <div className="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden px-2 py-3 md:px-6">
+            {showLoadingShell ? (
+              <div className="flex w-full max-w-3xl flex-col items-center gap-4 px-6">
+                <div className="aspect-[3/4] w-full max-h-[min(72vh,calc(100dvh-10rem))] animate-pulse rounded-2xl bg-zinc-800 ring-1 ring-white/10" />
+                <p className="text-sm text-zinc-500">Memuat foto…</p>
+              </div>
+            ) : hasPhotos ? (
+              <>
                 <button
                   type="button"
-                  onClick={() => galleryUploadInputRef.current?.click()}
-                  className="inline-flex items-center gap-2 mt-4 px-4 py-2 rounded-xl bg-violet-500 text-white text-sm font-bold hover:bg-violet-600 transition-all shadow-sm"
+                  onClick={() => setPhotoIndex((i) => Math.max(0, i - 1))}
+                  disabled={safeIdx === 0}
+                  className="absolute left-1 top-1/2 z-10 -translate-y-1/2 rounded-full bg-black/55 p-2.5 text-white shadow-lg backdrop-blur-sm transition-opacity disabled:opacity-25 md:left-4"
+                  aria-label="Foto sebelumnya"
                 >
-                  <ImagePlus className="w-4 h-4" /> Upload foto
+                  <ChevronLeft className="h-7 w-7 md:h-8 md:w-8" />
                 </button>
-              )}
+                <div className="flex max-h-[min(78vh,calc(100dvh-9rem))] w-full max-w-5xl items-center justify-center">
+                  <div className="relative max-h-full max-w-full overflow-hidden rounded-2xl shadow-2xl ring-1 ring-white/10">
+                    <FastImage
+                      src={currentPhoto?.file_url}
+                      alt=""
+                      className="max-h-[min(78vh,calc(100dvh-9rem))] w-auto max-w-full object-contain"
+                      priority
+                      fetchPriority="high"
+                      decoding="async"
+                    />
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setPhotoIndex((i) => Math.min(photos.length - 1, i + 1))}
+                  disabled={safeIdx >= photos.length - 1}
+                  className="absolute right-1 top-1/2 z-10 -translate-y-1/2 rounded-full bg-black/55 p-2.5 text-white shadow-lg backdrop-blur-sm transition-opacity disabled:opacity-25 md:right-4"
+                  aria-label="Foto berikutnya"
+                >
+                  <ChevronRight className="h-7 w-7 md:h-8 md:w-8" />
+                </button>
+              </>
+            ) : (
+              <div className="max-w-sm px-6 text-center">
+                <p className="text-sm text-zinc-400">Belum ada foto untuk siswa ini.</p>
+                {canUpload && (
+                  <button
+                    type="button"
+                    onClick={() => galleryUploadInputRef.current?.click()}
+                    className="mt-4 inline-flex items-center gap-2 rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-violet-500"
+                  >
+                    <ImagePlus className="h-4 w-4" /> Upload foto
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+
+          {hasPhotos && photos.length > 1 && (
+            <div className="shrink-0 border-t border-white/10 bg-black/50 px-3 py-3 backdrop-blur-md">
+              <div className="mx-auto flex max-w-5xl gap-2 overflow-x-auto pb-1 [scrollbar-width:thin]">
+                {photos.map((p, i) => (
+                  <button
+                    key={p.id ?? `${p.file_url}-${i}`}
+                    type="button"
+                    onClick={() => setPhotoIndex(i)}
+                    className={`relative h-14 w-14 shrink-0 overflow-hidden rounded-xl ring-2 transition-all md:h-16 md:w-16 ${
+                      i === safeIdx ? 'ring-violet-400 opacity-100' : 'ring-white/15 opacity-60 hover:opacity-100'
+                    }`}
+                  >
+                    <FastImage src={p.file_url} alt="" className="h-full w-full object-cover" loading={i === safeIdx ? 'eager' : 'lazy'} />
+                  </button>
+                ))}
+              </div>
             </div>
           )}
         </div>

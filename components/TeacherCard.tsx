@@ -61,8 +61,6 @@ export default function TeacherCard({
   const [editMessage, setEditMessage] = useState(teacher.message || '')
   const [editVideoUrl, setEditVideoUrl] = useState(teacher.video_url || '')
   const [localConfirm, setLocalConfirm] = useState<{ title: string; message: string; onConfirm: () => void } | null>(null)
-  const [viewerOpen, setViewerOpen] = useState(false)
-  const [viewerIndex, setViewerIndex] = useState(0)
 
   // Pending (staged) files - not uploaded until Save
   const [pendingPhotos, setPendingPhotos] = useState<{ file: File; previewUrl: string }[]>([])
@@ -211,36 +209,6 @@ export default function TeacherCard({
         document.body
       )}
 
-      {typeof document !== 'undefined' && viewerOpen && createPortal(
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-[110] p-4" onClick={() => setViewerOpen(false)}>
-          <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 max-w-[520px] w-full shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] dark:border-4 dark:border-slate-700" onClick={e => e.stopPropagation()}>
-            <div className="flex items-start justify-between mb-3 border-b border-gray-100 dark:border-slate-700 pb-3">
-              <div className="flex gap-2 items-center">
-                <button type="button" onClick={() => setViewerIndex(i => Math.max(0, i - 1))} className="p-2 rounded-xl bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors" title="Prev"><ChevronLeft className="w-5 h-5" /></button>
-                <div className="px-3 py-1.5 bg-violet-50 dark:bg-violet-950/50 text-violet-600 dark:text-violet-400 font-bold text-xs rounded-lg">{viewerIndex + 1} / {allDisplayPhotos.length}</div>
-                <button type="button" onClick={() => setViewerIndex(i => Math.min(i + 1, allDisplayPhotos.length - 1))} className="p-2 rounded-xl bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors" title="Next"><ChevronRight className="w-5 h-5" /></button>
-              </div>
-              <button type="button" onClick={() => setViewerOpen(false)} className="p-2 rounded-xl bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-slate-400 hover:bg-gray-200 dark:hover:bg-slate-700 hover:text-gray-800 dark:hover:text-white transition-colors"><X className="w-5 h-5" /></button>
-            </div>
-
-            <div className="w-full flex items-center justify-center mb-4 bg-gray-50 dark:bg-slate-800 rounded-xl overflow-hidden border border-gray-100 dark:border-slate-700" style={{ minHeight: '300px' }}>
-              <FastImage src={(allDisplayPhotos[viewerIndex] && allDisplayPhotos[viewerIndex].file_url) || teacher.photo_url || ''} alt={`${teacher.name} ${viewerIndex + 1}`} className="max-h-[60vh] object-contain w-full" priority />
-            </div>
-
-            {allDisplayPhotos.length > 1 && (
-              <div className="flex gap-2 mx-auto justify-center overflow-x-auto p-1">
-                {allDisplayPhotos.map((p, i) => (
-                  <button key={p.id} onClick={() => setViewerIndex(i)} className={`w-14 h-14 rounded-xl overflow-hidden border-2 transition-all ${i === viewerIndex ? 'border-violet-500 shadow-[1px_1px_0_0_rgba(124,58,237,0.22)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.32)] scale-105' : 'border-transparent hover:border-violet-200 opacity-70 hover:opacity-100'}`}>
-                    <FastImage src={p.file_url} alt={`thumb-${i}`} className="w-full h-full object-cover" />
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>,
-        document.body
-      )}
-
       {/* Tighter card container - Height adapts to content to prevent truncation */}
       <div className="relative h-full w-full group" style={{ perspective: '1200px' }}>
         <div
@@ -265,12 +233,7 @@ export default function TeacherCard({
                   className="w-full h-full object-cover cursor-pointer transition-transform duration-700"
                   priority
                   onClick={() => {
-                    if (teacher.photos && teacher.photos.length > 0) {
-                      setViewerIndex(0)
-                      setViewerOpen(true)
-                    } else {
-                      onClickPhoto && onClickPhoto(teacher, 0)
-                    }
+                    onClickPhoto && onClickPhoto(teacher, 0)
                   }}
                 />
               ) : (
@@ -412,8 +375,7 @@ export default function TeacherCard({
                           alt={`${teacher.name} ${idx + 1}`}
                           className="w-full h-full object-cover rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
                           onClick={() => {
-                            setViewerIndex(idx)
-                            setViewerOpen(true)
+                            if (!photo.isPending) onClickPhoto && onClickPhoto(teacher, idx)
                           }}
                         />
                         <button

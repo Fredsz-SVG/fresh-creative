@@ -5,6 +5,19 @@ import { ensureUserInD1, honoEnvForSupabasePublicSync } from '../../lib/d1-users
 
 const OTP_EXPIRY_MINUTES = 5
 
+type OtpSkipEnv = {
+  SKIP_OTP?: string
+  SKIP_LOGIN_OTP?: string
+}
+
+function getSkipOtp(env: OtpSkipEnv): boolean {
+  const v = (env?.SKIP_OTP || env?.SKIP_LOGIN_OTP || '')
+    .trim()
+    .toLowerCase()
+    .replace(/^"|"$/g, '')
+  return v === 'true' || v === '1' || v === 'yes'
+}
+
 type ResendEnv = {
   RESEND_API_KEY?: string
   RESEND_FROM_EMAIL?: string
@@ -21,6 +34,11 @@ function generateOtp(): string {
 const sendLoginOtp = new Hono()
 
 sendLoginOtp.post('/', async (c) => {
+  // Dev mode: benar-benar skip OTP flow (hindari 500 saat tabel/login_otps belum siap).
+  if (getSkipOtp(c.env as OtpSkipEnv)) {
+    return c.json({ ok: true, skipped: true })
+  }
+
   const supabase = getSupabaseClient(c)
   const { data: { user }, error: authError } = await supabase.auth.getUser()
 

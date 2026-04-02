@@ -35,6 +35,8 @@ type ManualFlipbookViewerProps = {
   albumId?: string
   /** true = dipakai di halaman editor user (navbar lebih kecil & jarak longgar agar tidak mepet) */
   isEditorView?: boolean
+  /** Dipakai parent saat panel preview hide/show agar ukuran flipbook selalu tersinkron. */
+  isVisible?: boolean
 }
 
 /* Efek tekukan buku (spine): garis vertikal + lekukan 3D di tepi jilid */
@@ -311,7 +313,7 @@ const FlipBookInner = React.memo(({ flipbookKey, pageElements, isMobileScreen, b
 })
 FlipBookInner.displayName = 'FlipBookInner'
 
-export default function ManualFlipbookViewer({ pages, onPlayVideo, className = '', albumId, isEditorView = false }: ManualFlipbookViewerProps) {
+export default function ManualFlipbookViewer({ pages, onPlayVideo, className = '', albumId, isEditorView = false, isVisible = true }: ManualFlipbookViewerProps) {
   const book = useRef<any>(null)
   const stageContainerRef = useRef<HTMLDivElement>(null)
   const wrapperRef = useRef<HTMLDivElement>(null)
@@ -490,6 +492,23 @@ export default function ManualFlipbookViewer({ pages, onPlayVideo, className = '
     }, RESIZE_THROTTLE_MS + 50)
     return () => clearTimeout(t)
   }, [isMobileScreen, isReady, pages?.length])
+
+  // Saat panel preview baru terlihat, paksa recalc layout untuk cegah blank first-render.
+  useEffect(() => {
+    if (!isVisible || !isReady || !pages?.length) return
+    const t1 = setTimeout(() => {
+      updateScaleRef.current()
+      book.current?.pageFlip()?.update()
+    }, 0)
+    const t2 = setTimeout(() => {
+      updateScaleRef.current()
+      book.current?.pageFlip()?.update()
+    }, 120)
+    return () => {
+      clearTimeout(t1)
+      clearTimeout(t2)
+    }
+  }, [isVisible, isReady, pages?.length])
 
   const updateScale = useCallback(() => {
     const container = stageContainerRef.current
@@ -698,7 +717,7 @@ export default function ManualFlipbookViewer({ pages, onPlayVideo, className = '
   return (
     <div
       ref={wrapperRef}
-      className={`flip-book-wrapper flex flex-col w-full h-full min-h-0 bg-white dark:bg-slate-950 ${className} transition-opacity duration-700 ${isReady ? 'opacity-100' : 'opacity-0'} ${isCoverOnly ? 'flip-book-wrapper--cover-only' : ''} ${isBackCoverOnly ? 'flip-book-wrapper--back-cover-only' : ''} ${isFullscreen ? 'flip-book-wrapper--fullscreen' : ''} ${sectionFlipDir ? `is-flipping-${sectionFlipDir}` : ''}`}
+      className={`flip-book-wrapper relative overflow-hidden flex flex-col w-full h-full min-h-0 bg-white dark:bg-slate-950 pb-[calc(2.75rem+env(safe-area-inset-bottom))] md:pb-0 ${className} transition-opacity duration-700 ${isReady ? 'opacity-100' : 'opacity-0'} ${isCoverOnly ? 'flip-book-wrapper--cover-only' : ''} ${isBackCoverOnly ? 'flip-book-wrapper--back-cover-only' : ''} ${isFullscreen ? 'flip-book-wrapper--fullscreen' : ''} ${sectionFlipDir ? `is-flipping-${sectionFlipDir}` : ''}`}
     >
       <div
         ref={stageContainerRef}
@@ -774,7 +793,7 @@ export default function ManualFlipbookViewer({ pages, onPlayVideo, className = '
       </div>
 
       {/* Bottom Navigation Bar — editor: tombol lebih kecil + jarak longgar; public: tetap */}
-      <div className={`shrink-0 w-full flex items-center bg-white dark:bg-slate-900 border-t border-slate-900 dark:border-slate-700 shadow-[0_-1px_0_0_rgba(15,23,42,0.06)] dark:shadow-[0_-1px_0_0_rgba(51,65,85,0.4)] z-50 ${isEditorView ? 'px-2 py-1' : 'px-1.5 py-0.5'}`}>
+      <div className={`mt-auto shrink-0 w-full flex items-center bg-white dark:bg-slate-900 border-t border-slate-900 dark:border-slate-700 shadow-[0_-1px_0_0_rgba(15,23,42,0.06)] dark:shadow-[0_-1px_0_0_rgba(51,65,85,0.4)] z-50 md:sticky md:bottom-0 max-md:fixed max-md:bottom-0 max-md:left-0 max-md:right-0 max-md:pb-[env(safe-area-inset-bottom)] ${isEditorView ? 'px-2 py-1' : 'px-1.5 py-0.5'}`}>
         {/* Kiri: sound + flip */}
         <div className={`flex-1 flex items-center justify-start ${isEditorView ? 'gap-1.5' : 'gap-0.5'}`}>
           <button
