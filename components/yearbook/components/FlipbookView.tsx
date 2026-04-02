@@ -29,7 +29,7 @@ export default function FlipbookView({
   return (
     <div className="flex flex-col h-full min-h-0 overflow-hidden relative bg-white dark:bg-slate-950">
       <div className={`${showPreview ? 'flex' : 'hidden'} flex-1 min-h-0 flex-col p-0`}>
-          <ManualFlipbookViewer pages={manualPages} onPlayVideo={onPlayVideo} className="w-full h-full" albumId={album?.id} isEditorView isVisible={showPreview} />
+          <ManualFlipbookViewer pages={manualPages} onPlayVideo={onPlayVideo} className="w-full h-full" albumId={album?.id} isEditorView />
       </div>
       <div className={`${showEditor && !flipbookPreviewMode ? 'flex' : 'hidden'} flex-1 min-h-0`}>
         <LayoutEditor
