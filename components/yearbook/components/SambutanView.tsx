@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import { Plus, Users, X, ChevronLeft, ChevronRight } from 'lucide-react'
 import TeacherCard from '@/components/TeacherCard'
 import FastImage from '@/components/ui/FastImage'
@@ -26,6 +26,10 @@ interface SambutanViewProps {
   onPlayVideo?: (videoUrl: string) => void
 }
 
+function sortTeachersByName<T extends { name: string }>(list: T[]): T[] {
+  return [...list].sort((a, b) => a.name.localeCompare(b.name, 'id', { sensitivity: 'base' }))
+}
+
 export default function SambutanView({
   teachers,
   canManage,
@@ -39,6 +43,8 @@ export default function SambutanView({
   const [newTeacherName, setNewTeacherName] = useState('')
   const [editingTeacherId, setEditingTeacherId] = useState<string | null>(null)
   const [teacherPhotoViewer, setTeacherPhotoViewer] = useState<{ teacher: Teacher; photoIndex: number } | null>(null)
+
+  const teachersSorted = useMemo(() => sortTeachersByName(teachers), [teachers])
 
   // Teacher Photo Viewer — satu layer, gaya sama dengan galeri siswa (dark + thumbnail strip)
   if (teacherPhotoViewer) {
@@ -234,7 +240,7 @@ export default function SambutanView({
         </>
       )}
 
-      {teachers.length === 0 ? (
+      {teachersSorted.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 min-h-[50vh] w-full bg-slate-50/50 dark:bg-slate-800/30 rounded-[40px] border-4 border-dashed border-slate-200 dark:border-slate-700">
           <div className="w-20 h-20 rounded-3xl bg-white border-4 border-slate-900 shadow-[8px_8px_0_0_#e2e8f0] flex items-center justify-center mb-6">
             <Users className="w-10 h-10 text-slate-300" strokeWidth={1.5} />
@@ -244,7 +250,7 @@ export default function SambutanView({
         </div>
       ) : (
         <div className="grid gap-2 sm:grid-cols-2 lg:gap-3 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-          {teachers.map((teacher) => (
+          {teachersSorted.map((teacher) => (
             <TeacherCard
               key={teacher.id}
               teacher={teacher}

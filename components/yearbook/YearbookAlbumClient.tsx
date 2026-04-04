@@ -355,20 +355,18 @@ export default function YearbookAlbumClient({
         return
       }
 
-      if (path.includes('/my-access-all') || path.includes('/join-requests') || path.includes('/classes/') || path.endsWith(`/api/albums/${id}`)) {
-        void fetchAllAccess()
-        void fetchAllClassMembers()
-        void fetchAlbum(true)
-        return
-      }
-
-      if (path.includes('/flipbook') || path.includes('/teachers') || path.includes('/photos') || path.includes('/cover')) {
-        void fetchAlbum(true)
-        return
-      }
-
       if (matchesUser) {
         window.dispatchEvent(new Event('credits-updated'))
+        return
+      }
+
+      // Semua mutasi album → refresh data + naikkan counter agar child components refresh
+      void fetchAlbum(true)
+      setRealtimeCounter(prev => prev + 1)
+
+      if (path.includes('/classes/') || path.includes('/join-requests') || path.includes('/my-access-all') || path.endsWith(`/api/albums/${id}`)) {
+        void fetchAllAccess()
+        void fetchAllClassMembers()
       }
     }
 
@@ -1469,36 +1467,38 @@ export default function YearbookAlbumClient({
 
   if (view === 'cover' || view === 'classes') {
     const isCoverView = activeSection === 'cover'
+    /** Sama dengan prop ke YearbookClassesView — dari activeSection, bukan sidebarMode state (yang di-sync lewat useEffect +1 frame). */
+    const uiSection = activeSection === 'cover' ? 'classes' : activeSection
     const showBackLink = true
     const currentClass = album?.classes?.[classIndex]
     const aiLabsToolLabel: Record<string, string> = { tryon: 'Virtual Try On', pose: 'Pose', 'image-editor': 'Image Editor', photogroup: 'Photo Group', phototovideo: 'Photo to Video' }
-    const isAiLabsToolActive = sidebarMode === 'ai-labs' && !!aiLabsTool
+    const isAiLabsToolActive = uiSection === 'ai-labs' && !!aiLabsTool
     const aiLabsBackHref = album?.id ? (useAdminBack ? `/admin/album/yearbook/${album.id}?section=ai-labs` : `/user/album/yearbook/${album.id}?section=ai-labs`) : effectiveBackHref
     const sectionTitle =
       isCoverView ? 'Cover'
-        : sidebarMode === 'ai-labs' ? (aiLabsTool ? (aiLabsToolLabel[aiLabsTool] ?? 'AI Labs') : 'AI Labs')
-          : sidebarMode === 'sambutan' ? 'Sambutan'
-            : sidebarMode === 'classes' ? (currentClass?.name ?? 'Kelas')
-              : sidebarMode === 'approval' ? 'Approval'
-                : sidebarMode === 'flipbook' ? 'Flipbook'
-                  : sidebarMode === 'preview' ? 'Preview'
+        : uiSection === 'ai-labs' ? (aiLabsTool ? (aiLabsToolLabel[aiLabsTool] ?? 'AI Labs') : 'AI Labs')
+          : uiSection === 'sambutan' ? 'Sambutan'
+            : uiSection === 'classes' ? (currentClass?.name ?? 'Kelas')
+              : uiSection === 'approval' ? 'Approval'
+                : uiSection === 'flipbook' ? 'Flipbook'
+                  : uiSection === 'preview' ? 'Preview'
                     : ''
     const sectionSubtitle =
       isCoverView ? 'Tampilan cover dan pengaturan cover album.'
-        : sidebarMode === 'ai-labs' ? (aiLabsTool ? '' : 'Pilih fitur yang ingin digunakan. Semua fitur AI tersedia di sini.')
-          : sidebarMode === 'sambutan' ? 'Kartu sambutan dan profil.'
-            : sidebarMode === 'classes' ? (currentClass ? 'Profil dan foto anggota kelas.' : 'Daftar kelas dan anggota.')
-              : sidebarMode === 'approval' ? 'Persetujuan siswa & manajemen tim album.'
-                : sidebarMode === 'flipbook' ? 'Editor dan preview flipbook.'
-                  : sidebarMode === 'preview' ? 'Preview tampilan album yearbook.'
+        : uiSection === 'ai-labs' ? (aiLabsTool ? '' : 'Pilih fitur yang ingin digunakan. Semua fitur AI tersedia di sini.')
+          : uiSection === 'sambutan' ? 'Kartu sambutan dan profil.'
+            : uiSection === 'classes' ? (currentClass ? 'Profil dan foto anggota kelas.' : 'Daftar kelas dan anggota.')
+              : uiSection === 'approval' ? 'Persetujuan siswa & manajemen tim album.'
+                : uiSection === 'flipbook' ? 'Editor dan preview flipbook.'
+                  : uiSection === 'preview' ? 'Preview tampilan album yearbook.'
                     : ''
 
     const headerCount =
-      sidebarMode === 'classes' && !isCoverView && currentClass
+      uiSection === 'classes' && !isCoverView && currentClass
         ? (membersByClass[currentClass.id]?.length ?? currentClass.student_count ?? 0)
-        : sidebarMode === 'sambutan'
+        : uiSection === 'sambutan'
           ? teacherCount
-          : sidebarMode === 'team'
+          : uiSection === 'team'
             ? teamMemberCount
             : null
 
@@ -1543,11 +1543,11 @@ export default function YearbookAlbumClient({
             {/* Header Actions (Right) */}
             <div className="ml-auto flex items-center gap-2 pr-1 lg:pr-2">
               {/* Credits badge: keep mounted to avoid resetting to 0 on tab switch */}
-              <div className={(sidebarMode === 'ai-labs' || (sidebarMode === 'flipbook' && featureUnlocksLoaded && !(flipbookEnabledByPackage || featureUnlocks.includes('flipbook')))) ? '' : 'invisible pointer-events-none'}>
+              <div className={(uiSection === 'ai-labs' || (uiSection === 'flipbook' && featureUnlocksLoaded && !(flipbookEnabledByPackage || featureUnlocks.includes('flipbook')))) ? '' : 'invisible pointer-events-none'}>
                 <CreditBadgeTop />
               </div>
               {/* Flipbook Controls (Mobile & Desktop) */}
-              {sidebarMode === 'flipbook' && (isOwner || isAlbumAdmin) && (featureUnlocksLoaded ? (flipbookEnabledByPackage || featureUnlocks.includes('flipbook')) : true) && (
+              {uiSection === 'flipbook' && (isOwner || isAlbumAdmin) && (featureUnlocksLoaded ? (flipbookEnabledByPackage || featureUnlocks.includes('flipbook')) : true) && (
                 <div className="flex bg-white dark:bg-slate-800 p-0.5 sm:p-1 rounded-lg sm:rounded-xl border-2 border-slate-900 dark:border-slate-600 gap-0.5 sm:gap-1 items-center shadow-[3px_3px_0_0_#0f172a] dark:shadow-[3px_3px_0_0_#334155]">
                   <button
                     onClick={() => setFlipbookPreviewMode(false)}
@@ -1564,21 +1564,21 @@ export default function YearbookAlbumClient({
                 </div>
               )}
               {/* Sambutan & Classes: Search Toggle */}
-              {(sidebarMode === 'sambutan' || (sidebarMode === 'classes' && activeSection !== 'cover')) && (
+              {(uiSection === 'sambutan' || (uiSection === 'classes' && activeSection !== 'cover')) && (
                 <>
-                  {isSearchOpen(sidebarMode === 'sambutan' ? 'sambutan' : 'classes') ? (
-                    <div className={`absolute left-[52px] ${sidebarMode === 'classes' ? 'right-[52px]' : 'right-2'} top-2 bottom-2 bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 rounded-xl px-3 flex items-center shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] lg:static lg:w-auto lg:h-9 lg:px-2 lg:py-1 animate-in slide-in-from-right-2 duration-200 z-[60]`}>
+                  {isSearchOpen(uiSection === 'sambutan' ? 'sambutan' : 'classes') ? (
+                    <div className={`absolute left-[52px] ${uiSection === 'classes' ? 'right-[52px]' : 'right-2'} top-2 bottom-2 bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 rounded-xl px-3 flex items-center shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] lg:static lg:w-auto lg:h-9 lg:px-2 lg:py-1 animate-in slide-in-from-right-2 duration-200 z-[60]`}>
                       <Search className="w-4 h-4 text-slate-400 dark:text-slate-500 mr-2 flex-shrink-0" />
                       <input
                         type="text"
                         placeholder="Cari..."
-                        value={getSearchValue(sidebarMode === 'sambutan' ? 'sambutan' : 'classes')}
-                        onChange={(e) => setSearchValue(sidebarMode === 'sambutan' ? 'sambutan' : 'classes', e.target.value)}
+                        value={getSearchValue(uiSection === 'sambutan' ? 'sambutan' : 'classes')}
+                        onChange={(e) => setSearchValue(uiSection === 'sambutan' ? 'sambutan' : 'classes', e.target.value)}
                         className="flex-1 bg-transparent border-none outline-none text-[11px] font-black uppercase tracking-tight text-slate-900 dark:text-white min-w-0 dark:placeholder:text-slate-500"
                         autoFocus
                       />
                       <button
-                        onClick={() => closeSearch(sidebarMode === 'sambutan' ? 'sambutan' : 'classes')}
+                        onClick={() => closeSearch(uiSection === 'sambutan' ? 'sambutan' : 'classes')}
                         className="ml-1 p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors flex-shrink-0"
                       >
                         <SearchX className="w-4 h-4 text-slate-500 dark:text-slate-400" strokeWidth={3} />
@@ -1586,7 +1586,7 @@ export default function YearbookAlbumClient({
                     </div>
                   ) : (
                     <button
-                      onClick={() => openSearch(sidebarMode === 'sambutan' ? 'sambutan' : 'classes')}
+                      onClick={() => openSearch(uiSection === 'sambutan' ? 'sambutan' : 'classes')}
                       className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 rounded-lg sm:rounded-xl text-slate-900 dark:text-white shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all"
                     >
                       <Search className="w-3.5 h-3.5 sm:w-4 sm:h-4" strokeWidth={3} />
@@ -1595,7 +1595,7 @@ export default function YearbookAlbumClient({
                 </>
               )}
 
-              {sidebarMode === 'classes' && activeSection !== 'cover' && (
+              {uiSection === 'classes' && activeSection !== 'cover' && (
                 <button
                   type="button"
                   onClick={(e) => {
@@ -1639,7 +1639,7 @@ export default function YearbookAlbumClient({
         )}
 
         {/* Mobile Persistent Edit Navigation - Cover, Sambutan, Kelas saja; Flipbook ada di bottom nav */}
-        {((['classes', 'sambutan'].includes(sidebarMode) || activeSection === 'cover')) && !isAiLabsToolActive && (
+        {((['classes', 'sambutan'].includes(uiSection) || activeSection === 'cover')) && !isAiLabsToolActive && (
           <div className="lg:hidden sticky top-14 z-40 bg-transparent px-3 sm:px-4 pt-0 pb-0">
             <div className="flex gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar py-1.5 sm:py-2">
               <button
@@ -1651,16 +1651,16 @@ export default function YearbookAlbumClient({
               </button>
               <button
                 onClick={() => handleSectionChange('sambutan')}
-                className={`flex-shrink-0 flex items-center gap-1.5 sm:gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg sm:rounded-xl border-2 transition-all ${sidebarMode === 'sambutan' ? 'bg-slate-900 dark:bg-slate-700 border-slate-900 dark:border-slate-600 text-white shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155]' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-500 hover:text-slate-900 dark:hover:text-white'}`}
+                className={`flex-shrink-0 flex items-center gap-1.5 sm:gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg sm:rounded-xl border-2 transition-all ${uiSection === 'sambutan' ? 'bg-slate-900 dark:bg-slate-700 border-slate-900 dark:border-slate-600 text-white shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155]' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-500 hover:text-slate-900 dark:hover:text-white'}`}
               >
-                <MessageSquare className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${sidebarMode === 'sambutan' ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`} />
+                <MessageSquare className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${uiSection === 'sambutan' ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`} />
                 <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest whitespace-nowrap">Sambutan</span>
               </button>
               <button
                 onClick={() => handleSectionChange('classes')}
-                className={`flex-shrink-0 flex items-center gap-1.5 sm:gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg sm:rounded-xl border-2 transition-all ${sidebarMode === 'classes' && activeSection !== 'cover' ? 'bg-slate-900 dark:bg-slate-700 border-slate-900 dark:border-slate-600 text-white shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155]' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-500 hover:text-slate-900 dark:hover:text-white'}`}
+                className={`flex-shrink-0 flex items-center gap-1.5 sm:gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg sm:rounded-xl border-2 transition-all ${uiSection === 'classes' && activeSection !== 'cover' ? 'bg-slate-900 dark:bg-slate-700 border-slate-900 dark:border-slate-600 text-white shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155]' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-500 hover:text-slate-900 dark:hover:text-white'}`}
               >
-                <Users className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${sidebarMode === 'classes' && activeSection !== 'cover' ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`} />
+                <Users className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${uiSection === 'classes' && activeSection !== 'cover' ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`} />
                 <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest whitespace-nowrap">Kelas</span>
               </button>
             </div>

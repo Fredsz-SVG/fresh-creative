@@ -14,18 +14,22 @@ function getServerOrigin(): string {
     return 'http://localhost:3001'
 }
 
-async function fetchApiJson(path: string): Promise<{ ok: boolean; status: number; json: Json }> {
-    const cookieStore = await cookies()
-    const cookieHeader = cookieStore
-        .getAll()
-        .map((c) => `${c.name}=${c.value}`)
-        .join('; ')
+async function fetchApiJson(path: string, options: { isPublic?: boolean } = {}): Promise<{ ok: boolean; status: number; json: Json }> {
+    let cookieHeader: string | undefined
+    
+    if (!options.isPublic) {
+        const cookieStore = await cookies()
+        cookieHeader = cookieStore
+            .getAll()
+            .map((c) => `${c.name}=${c.value}`)
+            .join('; ')
+    }
 
     const origin = getServerOrigin()
     const url = path.startsWith('http') ? path : `${origin}${path.startsWith('/') ? '' : '/'}${path}`
 
     const res = await fetch(url, {
-        // Server-side fetch: forward cookies so Hono can read Supabase auth token from cookie.
+        // Server-side fetch: forward cookies only if NOT a public request.
         headers: cookieHeader ? { cookie: cookieHeader } : undefined,
         cache: 'no-store',
     })
@@ -36,23 +40,28 @@ async function fetchApiJson(path: string): Promise<{ ok: boolean; status: number
 /**
  * Fetch Album Overview (incl. classes & counts) with Redis Cache.
  * Used by GET /api/albums/[id] and SSR page.
+ * @param isPublic — jika true, request tanpa cookie (publik). Bukan user id.
  */
-export async function getAlbumOverview(albumId: string, userId?: string) {
-    // D1 source: Hono endpoint already does permission checks using cookies/JWT.
-    // Note: `userId` retained for backward compatibility, but not needed here.
-    const { ok, status, json } = await fetchApiJson(`/api/albums/${encodeURIComponent(albumId)}`)
-    if (!ok) {
-        // 401/403 => no access; 404 => not found
-        return null
-    }
+export async function getAlbumOverview(albumId: string, isPublic: boolean = false) {
+    const { ok, json } = await fetchApiJson(`/api/albums/${encodeURIComponent(albumId)}`, { isPublic })
+    if (!ok) return null
     return json as any
 }
 
 /**
  * Fetch All Class Members (for directory) with Redis Cache.
  */
-export async function getAlbumAllMembers(albumId: string) {
-    const { ok, json } = await fetchApiJson(`/api/albums/${encodeURIComponent(albumId)}/all-class-members`)
+export async function getAlbumAllMembers(albumId: string, isPublic: boolean = false) {
+    const { ok, json } = await fetchApiJson(`/api/albums/${encodeURIComponent(albumId)}/all-class-members`, { isPublic })
+    if (!ok) return []
+    return (Array.isArray(json) ? json : []) as any[]
+}
+
+/**
+ * Sambutan (teachers) disimpan di D1; GET ini tidak memerlukan auth — sama dengan editor yearbook.
+ */
+export async function getAlbumTeachers(albumId: string, isPublic: boolean = false) {
+    const { ok, json } = await fetchApiJson(`/api/albums/${encodeURIComponent(albumId)}/teachers`, { isPublic })
     if (!ok) return []
     return (Array.isArray(json) ? json : []) as any[]
 }

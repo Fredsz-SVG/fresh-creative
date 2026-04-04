@@ -142,6 +142,7 @@ export default function YearbookClassesViewUI(props: any) {
     onFeatureUnlocked,
     teacherSearchQuery = '',
     classMemberSearchQuery = '',
+    realtimeCounter = 0,
   } = props
 
   const router = useRouter()
@@ -191,7 +192,9 @@ export default function YearbookClassesViewUI(props: any) {
   // Manual Flipbook Pages state
   const [manualPages, setManualPages] = useState<any[]>([])
 
-  const [coverShortDescription, setCoverShortDescription] = useState<string>('')
+  const [coverShortDescription, setCoverShortDescription] = useState<string>(() =>
+    typeof album?.description === 'string' ? album.description : ''
+  )
   const [savingCoverShortDescription, setSavingCoverShortDescription] = useState(false)
   const coverDescDirtyRef = useRef(false)
 
@@ -346,12 +349,6 @@ export default function YearbookClassesViewUI(props: any) {
     }
   }
 
-  useEffect(() => {
-    if (sidebarMode === 'approval' && canManage && album?.id) {
-      fetchInviteToken()
-    }
-  }, [sidebarMode, canManage, album?.id])
-
   // Fetch join requests for one status only (backend: pending from album_join_requests, approved from album_class_access)
   const fetchJoinRequests = async (status: 'pending' | 'approved') => {
     if (!album?.id || !canManage) return
@@ -382,12 +379,12 @@ export default function YearbookClassesViewUI(props: any) {
     }
   }
 
-  // Approval section: load stats + invite once
+  // Prefetch join-stats + token undangan begitu album & hak kelola diketahui (jangan tunggu buka tab Approval/Cover selesai navigasi)
   useEffect(() => {
-    if (sidebarMode !== 'approval' || !canManage || !album?.id) return
-    fetchJoinStats()
-    fetchInviteToken()
-  }, [sidebarMode, canManage, album?.id])
+    if (!album?.id || !canManage) return
+    void fetchJoinStats()
+    void fetchInviteToken()
+  }, [album?.id, canManage])
 
   // Prefetch semua tab approval saat masuk section "approval"
   // Agar jumlah & isi tab langsung muncul dan switching tab terasa instan.
@@ -421,6 +418,23 @@ export default function YearbookClassesViewUI(props: any) {
       setTeamLoaded(true)
     }
   }, [sidebarMode, canManage, album?.id, approvalTab, pendingLoaded, approvedLoaded, teamLoaded])
+
+  // Realtime: semua mutasi album dari device lain → refresh semua data lokal komponen ini
+  const prevRealtimeCounterRef = useRef(realtimeCounter)
+  useEffect(() => {
+    if (realtimeCounter === prevRealtimeCounterRef.current) return
+    prevRealtimeCounterRef.current = realtimeCounter
+    if (!album?.id) return
+    // Refresh data yang di-manage lokal oleh komponen ini (tidak lewat parent props)
+    void fetchJoinStats()
+    void fetchTeachers()
+    void fetchManualPages()
+    if (canManage) {
+      void fetchJoinRequests('pending')
+      void fetchJoinRequests('approved')
+      void fetchMembers()
+    }
+  }, [realtimeCounter, canManage, album?.id])
 
   // Reset loaded flags when leaving approval section so next time we fetch fresh
   useEffect(() => {
@@ -1079,10 +1093,12 @@ export default function YearbookClassesViewUI(props: any) {
             {/* Mobile Sambutan View - Removed, using grid layout */}
 
             {/* Main content - scrollable container */}
-            <main className={`flex-1 ${sidebarMode === 'flipbook' ? 'overflow-hidden pb-0' : 'overflow-y-auto pb-40 lg:pb-0'} rounded-t-none transition-all duration-300 relative
+            <main
+              className={`flex-1 ${sidebarMode === 'flipbook' ? 'overflow-hidden pb-0' : 'overflow-y-auto pb-40 lg:pb-0'} rounded-t-none relative
               ${(['classes', 'sambutan'].includes(sidebarMode) || isCoverView) ? 'lg:ml-[20rem]' : sidebarMode === 'flipbook' ? (flipbookPreviewMode ? 'lg:ml-0' : 'lg:ml-16') : 'lg:ml-0'}
               bg-white dark:bg-slate-950
-            `}>
+            `}
+            >
               {/* Show different content based on sidebarMode - Pre-rendered components to avoid re-mounting via hidden class */}
               <div className={isCoverView ? 'block w-full h-full' : 'hidden'}>
                 <div className="max-w-4xl mx-auto px-4 pt-0 pb-4 lg:py-12 relative">
@@ -1495,9 +1511,14 @@ export default function YearbookClassesViewUI(props: any) {
                   const access = myAccessByClass[currentClass.id]
                   const hasApprovedAccess = access?.status === 'approved'
                   const rawClassMembers = membersByClass[currentClass.id] ?? []
-                  const classMembers = classMemberSearchQuery
-                    ? rawClassMembers.filter(m => m.student_name.toLowerCase().includes(classMemberSearchQuery.toLowerCase()))
-                    : rawClassMembers
+                  const classMembers = (() => {
+                    const base = classMemberSearchQuery
+                      ? rawClassMembers.filter(m => m.student_name.toLowerCase().includes(classMemberSearchQuery.toLowerCase()))
+                      : rawClassMembers
+                    return [...base].sort((a, b) =>
+                      a.student_name.localeCompare(b.student_name, 'id', { sensitivity: 'base' })
+                    )
+                  })()
 
                   return (
                     <div className="flex flex-col gap-4 pt-0 pb-6 lg:gap-8">

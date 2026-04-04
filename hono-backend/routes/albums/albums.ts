@@ -18,9 +18,9 @@ function mapAlbumRow(r: Record<string, unknown>) {
 }
 
 const albumsRoute = new Hono()
-albumsRoute.use('*', requireAuthJwt)
+// Middleware only applied to root methods now to avoid blocking public sub-routes registered in index.ts
 
-albumsRoute.get('/', async (c) => {
+albumsRoute.get('/', requireAuthJwt, async (c) => {
   try {
     const db = getD1(c)
     if (!db) return c.json({ error: 'Database not configured' }, 503)
@@ -115,7 +115,7 @@ albumsRoute.get('/', async (c) => {
   }
 })
 
-albumsRoute.post('/', async (c) => {
+albumsRoute.post('/', requireAuthJwt, async (c) => {
   const db = getD1(c)
   if (!db) return c.json({ error: 'Database not configured' }, 503)
 
@@ -222,7 +222,7 @@ albumsRoute.post('/', async (c) => {
 
 // Admin approve/decline album
 // Frontend (AlbumsView) memanggil: PUT /api/albums { id, status: 'approved'|'declined' }
-albumsRoute.put('/', async (c) => {
+albumsRoute.put('/', requireAuthJwt, async (c) => {
   const db = getD1(c)
   if (!db) return c.json({ error: 'Database not configured' }, 503)
 
@@ -251,7 +251,7 @@ albumsRoute.put('/', async (c) => {
   return c.json(row)
 })
 
-albumsRoute.delete('/', async (c) => {
+albumsRoute.delete('/', requireAuthJwt, async (c) => {
   const db = getD1(c)
   if (!db) return c.json({ error: 'Database not configured' }, 503)
 

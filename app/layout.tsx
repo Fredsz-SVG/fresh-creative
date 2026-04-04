@@ -35,8 +35,19 @@ export default function RootLayout({
             __html: `
               (function() {
                 try {
+                  var urlParams = new URLSearchParams(window.location.search);
+                  var urlTheme = urlParams.get('theme');
                   var saved = localStorage.getItem('theme');
-                  var isDark = saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches);
+                  var isDark = false;
+                  
+                  if (urlTheme === 'dark' || urlTheme === 'light') {
+                    isDark = urlTheme === 'dark';
+                  } else if (saved === 'dark' || saved === 'light') {
+                    isDark = saved === 'dark';
+                  } else {
+                    isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                  }
+
                   if (isDark) {
                     document.documentElement.classList.add('dark');
                     document.documentElement.setAttribute('data-theme', 'dark');

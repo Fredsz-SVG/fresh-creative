@@ -12,8 +12,8 @@ allClassMembersRoute.get('/', async (c) => {
     const supabase = getSupabaseClient(c)
     const db = getD1(c)
     if (!db) return c.json({ error: 'Database not configured' }, 503)
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return c.json({ error: 'Unauthorized' }, 401)
+    const { data: authRes } = await supabase.auth.getUser()
+    const user = authRes?.user || null
 
     const album = await db
       .prepare(`SELECT user_id FROM albums WHERE id = ?`)
@@ -21,25 +21,22 @@ allClassMembersRoute.get('/', async (c) => {
       .first<{ user_id: string }>()
     if (!album) return c.json({ error: 'Album not found' }, 404)
 
-    const roleRes = await getRole(c, user)
-    const memberRow = await db
+    const roleRes = user ? await getRole(c, user) : 'user'
+    const memberRow = user ? await db
       .prepare(`SELECT role FROM album_members WHERE album_id = ? AND user_id = ?`)
       .bind(albumId, user.id)
-      .first<{ role: string }>()
-    const studentRow = await db
+      .first<{ role: string }>() : null
+    const studentRow = user ? await db
       .prepare(
         `SELECT id FROM album_class_access WHERE album_id = ? AND user_id = ? AND status = 'approved'`
       )
       .bind(albumId, user.id)
-      .first<{ id: string }>()
+      .first<{ id: string }>() : null
 
     const isGlobalAdmin = roleRes === 'admin'
-    const isOwner = album.user_id === user.id || isGlobalAdmin
+    const isOwner = user ? (album.user_id === user.id || isGlobalAdmin) : false
     const isAlbumAdmin = memberRow?.role === 'admin'
-    if (!isOwner && !memberRow && !studentRow) {
-      return c.json({ error: 'Forbidden' }, 403)
-    }
-    const canSeePending = isOwner || isAlbumAdmin
+    const canSeePending = user ? (isOwner || isAlbumAdmin) : false
 
     const { results: data } = await db
       .prepare(
@@ -64,7 +61,7 @@ allClassMembersRoute.get('/', async (c) => {
         video_url: r.video_url,
         photos: parseJsonArray(r.photos as string) || [],
         status: r.status,
-        is_me: r.user_id === user.id,
+        is_me: user ? r.user_id === user.id : false,
       }))
 
     return c.json(result)

@@ -135,10 +135,23 @@ export default function DashboardShell({
       const detail = (event as CustomEvent<{ type?: string; channel?: string; payload?: Record<string, unknown> }>).detail
       if (!detail?.type || detail.channel !== 'global') return
       const path = typeof detail.payload?.path === 'string' ? detail.payload.path : ''
+      const method = typeof detail.payload?.method === 'string' ? detail.payload.method : ''
+
       if (path.startsWith('/api/user/') || path.startsWith('/api/credits/')) {
         refreshCredits()
       }
-      if (path.startsWith('/api/user/notifications') || path.startsWith('/api/credits/') || path.startsWith('/api/admin/transactions')) {
+
+      // Jangan refresh notifikasi untuk aksi notifikasi milik user sendiri
+      // (sudah di-handle optimistically di handleMarkRead / handleClearNotifications)
+      const isSelfNotifMutation = path.startsWith('/api/user/notifications') &&
+        (method === 'DELETE' || method === 'PATCH')
+
+      if (!isSelfNotifMutation && (
+        path.startsWith('/api/credits/') ||
+        path.startsWith('/api/admin/transactions') ||
+        path.includes('/join-requests') ||
+        (path.includes('/classes/') && path.includes('/request'))
+      )) {
         fetchNotifications()
       }
     }
@@ -153,53 +166,59 @@ export default function DashboardShell({
   }, [])
 
   const handleMarkRead = async (id: string) => {
-    try {
-      // Optimistic update
-      setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n))
-      const notif = notifications.find(n => n.id === id)
-      if (notif && !notif.is_read) {
-        setUnreadCount(prev => Math.max(0, prev - 1))
-      }
-
-      await fetchWithAuth(`/api/user/notifications/${id}`, { method: 'PATCH' }).catch(() => { })
-    } catch (e) {
-      fetchNotifications()
+    const prev = notifications.find(n => n.id === id)
+    if (!prev || prev.is_read) return
+    // Optimistic
+    setNotifications(ns => ns.map(n => n.id === id ? { ...n, is_read: true } : n))
+    setUnreadCount(c => Math.max(0, c - 1))
+    const res = await fetchWithAuth(`/api/user/notifications/${id}`, { method: 'PATCH' })
+    if (!res.ok) {
+      // Rollback
+      setNotifications(ns => ns.map(n => n.id === id ? { ...n, is_read: false } : n))
+      setUnreadCount(c => c + 1)
     }
   }
 
   const handleDeleteNotification = async (e: React.MouseEvent, id: string) => {
-    e.stopPropagation() // Prevent marking as read when deleting
-    try {
-      const notif = notifications.find(n => n.id === id)
-      setNotifications(prev => prev.filter(n => n.id !== id))
-      if (notif && !notif.is_read) {
-        setUnreadCount(prev => Math.max(0, prev - 1))
-      }
-      await fetchWithAuth(`/api/user/notifications/${id}`, { method: 'DELETE' }).catch(() => { })
-    } catch (e) {
-      fetchNotifications()
+    e.stopPropagation()
+    const snapshot = notifications
+    const notif = snapshot.find(n => n.id === id)
+    // Optimistic
+    setNotifications(ns => ns.filter(n => n.id !== id))
+    if (notif && !notif.is_read) setUnreadCount(c => Math.max(0, c - 1))
+    const res = await fetchWithAuth(`/api/user/notifications/${id}`, { method: 'DELETE' })
+    if (!res.ok) {
+      // Rollback
+      setNotifications(snapshot)
+      if (notif && !notif.is_read) setUnreadCount(c => c + 1)
     }
   }
 
   const handleMarkAllRead = async () => {
     if (unreadCount === 0) return
-    try {
-      setNotifications(prev => prev.map(n => ({ ...n, is_read: true })))
-      setUnreadCount(0)
-      await fetchWithAuth('/api/user/notifications', { method: 'PATCH' }).catch(() => { })
-    } catch (e) {
-      fetchNotifications()
+    const snapshot = notifications
+    // Optimistic
+    setNotifications(ns => ns.map(n => ({ ...n, is_read: true })))
+    setUnreadCount(0)
+    const res = await fetchWithAuth('/api/user/notifications', { method: 'PATCH' })
+    if (!res.ok) {
+      setNotifications(snapshot)
+      setUnreadCount(snapshot.filter(n => !n.is_read).length)
     }
   }
 
   const handleClearNotifications = async () => {
     if (!confirm('Hapus semua notifikasi?')) return
-    try {
-      setNotifications([])
-      setUnreadCount(0)
-      await fetchWithAuth('/api/user/notifications', { method: 'DELETE' }).catch(() => { })
-    } catch (e) {
-      fetchNotifications()
+    const snapshot = notifications
+    const prevUnread = unreadCount
+    // Optimistic
+    setNotifications([])
+    setUnreadCount(0)
+    const res = await fetchWithAuth('/api/user/notifications', { method: 'DELETE' })
+    if (!res.ok) {
+      // Rollback jika API gagal
+      setNotifications(snapshot)
+      setUnreadCount(prevUnread)
     }
   }
 
@@ -523,48 +542,74 @@ export default function DashboardShell({
                       </p>
                     </div>
                   ) : (
-                    notifications.map((n) => (
-                      <div
-                        key={n.id}
-                        onClick={() => !n.is_read && handleMarkRead(n.id)}
-                        className={`p-4 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 transition-colors cursor-pointer border-b-2 border-slate-100 dark:border-white/10 last:border-0 relative group/item ${n.is_read ? 'opacity-60 grayscale-[0.5]' : 'bg-white dark:bg-slate-800'}`}
-                      >
-                        {!n.is_read && <div className="absolute left-0 top-0 bottom-0 w-1 bg-indigo-500" />}
-                        <div className="flex items-start gap-3 sm:gap-4">
-                          <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl border-2 border-slate-900 dark:border-white/30 flex items-center justify-center shrink-0 shadow-[2px_2px_0_0_#0f172a] dark:shadow-none ${n.type === 'error' ? 'bg-red-400 text-white' : 'bg-indigo-300 dark:bg-indigo-500/30 text-slate-900 dark:text-white'}`}>
-                            <Bell className="w-4 h-4 sm:w-5 sm:h-5" />
-                          </div>
-                          <div className="space-y-1 min-w-0 flex-1">
-                            <div className="flex justify-between items-start gap-2">
-                              <p className="text-[13px] font-black text-slate-900 dark:text-white leading-tight pr-6">{n.title}</p>
-                              <div className="flex items-center gap-2">
-                                {!n.is_read && <span className="w-2 h-2 rounded-full bg-pink-500 border border-slate-900 dark:border-pink-400/50 shrink-0 mt-1 animate-pulse" />}
-                                <button
-                                  type="button"
-                                  onClick={(e) => handleDeleteNotification(e, n.id)}
-                                  className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-all absolute right-3 top-3"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
-                              </div>
+                    notifications.map((n) => {
+                      // metadata dari D1 disimpan sebagai JSON string, parse dulu
+                      const meta: Record<string, string> | null = (() => {
+                        if (!n.metadata) return null
+                        if (typeof n.metadata === 'object') return n.metadata as Record<string, string>
+                        try { return JSON.parse(n.metadata as string) } catch { return null }
+                      })()
+                      const status = meta?.status as string | undefined
+                      const statusLower = status?.toLowerCase()
+                      const statusBadge = status
+                        ? statusLower === 'disetujui' || statusLower === 'approved'
+                          ? { label: status, cls: 'bg-emerald-500 text-white border-emerald-700' }
+                          : statusLower === 'ditolak' || statusLower === 'rejected'
+                            ? { label: status, cls: 'bg-red-500 text-white border-red-700' }
+                            : { label: status, cls: 'bg-amber-400 text-slate-900 border-amber-600' }
+                        : null
+                      const iconBg = n.type === 'error'
+                        ? 'bg-red-400 text-white'
+                        : n.type === 'success'
+                          ? 'bg-emerald-400 text-white'
+                          : n.type === 'warning'
+                            ? 'bg-amber-400 text-slate-900'
+                            : 'bg-indigo-300 dark:bg-indigo-500/30 text-slate-900 dark:text-white'
+                      const msgLines = typeof n.message === 'string' ? n.message.split('\n') : [n.message]
+                      return (
+                        <div
+                          key={n.id}
+                          onClick={() => !n.is_read && handleMarkRead(n.id)}
+                          className={`p-4 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 transition-colors cursor-pointer border-b-2 border-slate-100 dark:border-white/10 last:border-0 relative group/item ${n.is_read ? 'opacity-60 grayscale-[0.5]' : 'bg-white dark:bg-slate-800'}`}
+                        >
+                          {!n.is_read && <div className="absolute left-0 top-0 bottom-0 w-1 bg-indigo-500" />}
+                          <div className="flex items-start gap-3 sm:gap-4">
+                            <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl border-2 border-slate-900 dark:border-white/30 flex items-center justify-center shrink-0 shadow-[2px_2px_0_0_#0f172a] dark:shadow-none ${iconBg}`}>
+                              <Bell className="w-4 h-4 sm:w-5 sm:h-5" />
                             </div>
-                            <p className="text-[12px] font-bold text-slate-600 dark:text-slate-400 leading-snug">
-                              {n.message}
-                            </p>
-                            <div className="flex items-center justify-between pt-2">
-                              <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">
-                                {new Date(n.created_at).toLocaleDateString()} {new Date(n.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                              </p>
-                              {n.metadata?.status && (
-                                <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-700 border border-slate-900 dark:border-white/20 text-slate-900 dark:text-white uppercase">
-                                  {n.metadata.status}
+                            <div className="space-y-1 min-w-0 flex-1">
+                              <div className="flex justify-between items-start gap-2">
+                                <p className="text-[13px] font-black text-slate-900 dark:text-white leading-tight pr-6">{n.title}</p>
+                                <div className="flex items-center gap-2">
+                                  {!n.is_read && <span className="w-2 h-2 rounded-full bg-pink-500 border border-slate-900 dark:border-pink-400/50 shrink-0 mt-1 animate-pulse" />}
+                                  <button
+                                    type="button"
+                                    onClick={(e) => handleDeleteNotification(e, n.id)}
+                                    className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-all absolute right-3 top-3"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              </div>
+                              {statusBadge && (
+                                <span className={`inline-flex items-center text-[10px] font-black px-2 py-0.5 rounded-full border uppercase tracking-wide ${statusBadge.cls}`}>
+                                  {statusBadge.label}
                                 </span>
                               )}
+                              <div className="text-[12px] font-bold text-slate-600 dark:text-slate-400 leading-snug space-y-0.5">
+                                {msgLines.map((line, i) => (
+                                  <p key={i}>{line}</p>
+                                ))}
+                              </div>
+                              <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider pt-1">
+                                {new Date(n.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}{' '}
+                                {new Date(n.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                              </p>
                             </div>
                           </div>
                         </div>
-                      </div>
-                    ))
+                      )
+                    })
                   )}
                 </div>
               </div>

@@ -113,7 +113,7 @@ export default function PublicFlipbookPage() {
     return (
       <div className="min-h-[100dvh] bg-amber-300 flex flex-col items-center justify-center p-4">
         <div className="bg-white border-4 border-slate-900 shadow-[8px_8px_0_0_#0f172a] rounded-2xl p-8 max-w-sm w-full flex flex-col items-center">
-          <Loader2 className="w-12 h-12 animate-spin text-indigo-500 mb-4 items-center" />
+          <Loader2 className="w-12 h-12 animate-spin text-indigo-600 mb-4" />
           <p className="text-slate-900 font-black uppercase tracking-widest text-sm text-center">Memuat Flipbook...</p>
         </div>
       </div>
@@ -144,7 +144,7 @@ export default function PublicFlipbookPage() {
           <button
             type="button"
             onClick={() => window.parent.postMessage('CLOSE_YEARBOOK_PREVIEW', '*')}
-            className="flex items-center justify-center w-8 h-8 bg-yellow-300 hover:bg-yellow-400 rounded-full border-2 border-slate-900 shadow-[2px_2px_0_0_#0f172a] transition-all active:scale-95"
+            className="flex items-center justify-center w-8 h-8 bg-yellow-300 hover:bg-yellow-400 rounded-full border-2 border-slate-900 text-slate-900 transition-all active:scale-95"
           >
             <X className="w-4 h-4" strokeWidth={3} />
           </button>
@@ -159,8 +159,8 @@ export default function PublicFlipbookPage() {
           </button>
         )}
         <span className="flex-1 text-sm sm:text-base font-black text-slate-900 dark:text-white uppercase tracking-tight truncate text-center">{albumName}</span>
-        <div className="w-8 lg:w-10 flex justify-end">
-          {isEmbedded && <div className="w-8 h-8" />}
+        <div className="flex-shrink-0 flex items-center justify-end w-8 lg:w-10">
+          <img src="/img/logo.png" alt="Logo" className="w-6 h-6 object-contain opacity-80" />
         </div>
       </header>
       <main className="flex-1 min-h-0 flex flex-col p-0 bg-transparent">

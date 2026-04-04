@@ -16,6 +16,14 @@ function stripQuotes(s: string): string {
     return s.replace(/^["""\u201C\u201D]+/, '').replace(/["""\u201C\u201D]+$/, '').trim()
 }
 
+function sortNameAsc<T extends { name: string }>(arr: T[]): T[] {
+    return [...arr].sort((a, b) => a.name.localeCompare(b.name, 'id', { sensitivity: 'base' }))
+}
+
+function sortStudentNameAsc<T extends { student_name: string }>(arr: T[]): T[] {
+    return [...arr].sort((a, b) => a.student_name.localeCompare(b.student_name, 'id', { sensitivity: 'base' }))
+}
+
 type Teacher = {
     id: string
     name: string
@@ -211,17 +219,20 @@ export default function PreviewView({
     hideCloseButton,
 }: PreviewViewProps) {
     const warmedImageUrlsRef = useRef<Set<string>>(new Set())
+    const sortedTeachers = useMemo(() => sortNameAsc(teachers), [teachers])
+    const sortedClasses = useMemo(() => sortNameAsc(classes), [classes])
+
     const sections: Section[] = useMemo(() => [
         { type: 'cover', label: 'Cover', icon: <BookOpen className="w-4 h-4" /> },
-        ...(teachers.length > 0 ? [{ type: 'sambutan' as const, label: 'Sambutan', icon: <MessageSquare className="w-4 h-4" /> }] : []),
-        ...classes.map((c, i) => ({
+        ...(sortedTeachers.length > 0 ? [{ type: 'sambutan' as const, label: 'Sambutan', icon: <MessageSquare className="w-4 h-4" /> }] : []),
+        ...sortedClasses.map((c, i) => ({
             type: 'class' as const,
             label: c.name,
             icon: <Users className="w-4 h-4" />,
             classId: c.id,
             classIndex: i,
         })),
-    ], [teachers.length, classes])
+    ], [sortedTeachers.length, sortedClasses])
 
     const [sectionIndex, setSectionIndex] = useState(0)
     const [removedIds, setRemovedIds] = useState<Set<string>>(new Set())
@@ -237,6 +248,40 @@ export default function PreviewView({
     // Progress swipe ke atas (0..1) untuk reveal kartu belakang dengan smooth.
     const [upRevealProgress, setUpRevealProgress] = useState(0)
 
+    // ── Navbar scroll ref (desktop wheel + drag-to-scroll) ──
+    const navScrollRef = useRef<HTMLDivElement>(null)
+    const navDragRef = useRef<{ isDragging: boolean; startX: number; scrollLeft: number }>({ isDragging: false, startX: 0, scrollLeft: 0 })
+
+    const handleNavWheel = useCallback((e: React.WheelEvent<HTMLDivElement>) => {
+        const el = navScrollRef.current
+        if (!el) return
+        const canScrollH = el.scrollWidth > el.clientWidth
+        if (!canScrollH) return
+        e.preventDefault()
+        el.scrollLeft += e.deltaY + e.deltaX
+    }, [])
+
+    const handleNavMouseDown = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+        const el = navScrollRef.current
+        if (!el) return
+        navDragRef.current = { isDragging: true, startX: e.pageX - el.offsetLeft, scrollLeft: el.scrollLeft }
+        el.style.cursor = 'grabbing'
+    }, [])
+
+    const handleNavMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+        const el = navScrollRef.current
+        if (!el || !navDragRef.current.isDragging) return
+        e.preventDefault()
+        const x = e.pageX - el.offsetLeft
+        const walk = x - navDragRef.current.startX
+        el.scrollLeft = navDragRef.current.scrollLeft - walk
+    }, [])
+
+    const handleNavMouseUp = useCallback(() => {
+        navDragRef.current.isDragging = false
+        if (navScrollRef.current) navScrollRef.current.style.cursor = 'grab'
+    }, [])
+
     const currentSection = sections[sectionIndex] || sections[0]
 
     const allCards: CardItem[] = useMemo(() => {
@@ -250,7 +295,7 @@ export default function PreviewView({
             }]
         }
         if (currentSection.type === 'sambutan') {
-            return teachers.map(t => {
+            return sortedTeachers.map(t => {
                 const ordered = (t.photos || [])
                     .slice()
                     .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
@@ -269,8 +314,8 @@ export default function PreviewView({
             })
         }
         if (currentSection.type === 'class' && currentSection.classId) {
-            const classObj = classes[currentSection.classIndex!]
-            const members = membersByClass[currentSection.classId] || []
+            const classObj = sortedClasses[currentSection.classIndex!]
+            const members = sortStudentNameAsc(membersByClass[currentSection.classId] || [])
             const classCover: CardItem = {
                 id: `class-cover-${currentSection.classId}`,
                 imageUrl: classObj?.batch_photo_url || null,
@@ -283,8 +328,8 @@ export default function PreviewView({
                     fromMember.length > 0
                         ? fromMember
                         : firstPhotoByStudent?.[m.student_name]
-                          ? [firstPhotoByStudent[m.student_name]]
-                          : []
+                            ? [firstPhotoByStudent[m.student_name]]
+                            : []
                 return {
                     id: `${currentSection.classId}-${m.user_id}`,
                     imageUrl: photoUrls[0] ?? null,
@@ -302,7 +347,7 @@ export default function PreviewView({
             return [classCover, ...memberCards]
         }
         return []
-    }, [currentSection, album, teachers, classes, membersByClass, firstPhotoByStudent])
+    }, [currentSection, album, sortedTeachers, sortedClasses, membersByClass, firstPhotoByStudent])
 
     const activeDeck = useMemo(() =>
         allCards.filter(c => !removedIds.has(c.id)),
@@ -436,162 +481,161 @@ export default function PreviewView({
         const galleryUrls = (card.photoUrls?.filter(Boolean).length
             ? card.photoUrls!.filter(Boolean)
             : card.imageUrl
-              ? [card.imageUrl]
-              : []) as string[]
+                ? [card.imageUrl]
+                : []) as string[]
         const gLen = galleryUrls.length
         const photoIdx = gLen > 0 ? (photoIndexByCardId[card.id] ?? 0) % gLen : 0
         const displayUrl = gLen > 0 ? galleryUrls[photoIdx] : null
         const showDots = gLen > 1
 
         return (
-        <div className="relative w-full h-full rounded-3xl overflow-hidden select-none isolate transform-gpu bg-white dark:bg-black ring-2 ring-slate-900 dark:ring-white/80">
-            {/* ── Photo ── */}
-            <div
-                className={`absolute inset-0 ${isFrontCard && showDots ? 'cursor-pointer' : ''}`}
-                onPointerDown={
-                    isFrontCard && showDots
-                        ? (e) => { photoTapRef.current = { x: e.clientX, y: e.clientY, cardId: card.id } }
-                        : undefined
-                }
-                onPointerUp={
-                    isFrontCard && showDots
-                        ? (e) => {
-                              const t = photoTapRef.current
-                              if (t.cardId !== card.id) return
-                              const dx = e.clientX - t.x
-                              const dy = e.clientY - t.y
-                              if (dx * dx + dy * dy < 100) cycleCardPhoto(card)
-                              photoTapRef.current = { ...photoTapRef.current, cardId: null }
-                          }
-                        : undefined
-                }
-            >
-                {displayUrl ? (
-                    <FastImage src={displayUrl} alt={card.title} className="h-full w-full object-cover" draggable={false} priority />
-                ) : (
-                    <div className="w-full h-full bg-slate-100 dark:bg-zinc-800 flex items-center justify-center">
-                        <Users className="w-16 h-16 text-slate-300 dark:text-zinc-600" />
-                    </div>
-                )}
-            </div>
-
-            {/* ── Photo dots ── */}
-            {showDots && (
-                <div className="absolute top-2 left-0 right-0 z-30 flex justify-center gap-1.5 pointer-events-none">
-                    {galleryUrls.map((_, i) => (
-                        <span
-                            key={i}
-                            className={`h-1.5 rounded-full transition-all duration-300 ${
-                                i === photoIdx
-                                    ? 'bg-slate-900 dark:bg-white w-6 shadow-[0_0_6px_rgba(0,0,0,0.3)] dark:shadow-[0_0_6px_rgba(255,255,255,0.5)]'
-                                    : 'bg-slate-900/30 dark:bg-white/40 w-1.5'
-                            }`}
-                        />
-                    ))}
-                </div>
-            )}
-
-            {/* ── Bottom gradient: light = white, dark = black ── */}
-            <div
-                className="absolute inset-x-0 z-10 pointer-events-none dark:hidden"
-                style={{
-                    bottom: '-1px',
-                    height: 'calc(70% + 1px)',
-                    backgroundImage: 'linear-gradient(to top, rgba(255,255,255,1) 0%, rgba(255,255,255,0.95) 20%, rgba(255,255,255,0.7) 40%, rgba(255,255,255,0.3) 60%, rgba(255,255,255,0) 100%)',
-                }}
-            />
-            <div
-                className="absolute inset-x-0 z-10 pointer-events-none hidden dark:block"
-                style={{
-                    bottom: '-1px',
-                    height: 'calc(70% + 1px)',
-                    backgroundImage: 'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0.95) 20%, rgba(0,0,0,0.7) 40%, rgba(0,0,0,0.3) 60%, rgba(0,0,0,0) 100%)',
-                }}
-            />
-
-            {/* ── Text content ── */}
-            <div className="absolute inset-x-0 bottom-0 z-20 pointer-events-none px-5 pb-5 sm:px-6 sm:pb-6 flex flex-col gap-2">
-                {/* Name */}
-                <h2
-                    className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white leading-tight tracking-tight uppercase drop-shadow-lg"
-                    style={{ textShadow: '0 2px 12px rgba(0,0,0,0.15)' }}
+            <div className="relative w-full h-full rounded-3xl overflow-hidden select-none isolate transform-gpu bg-white dark:bg-black ring-2 ring-slate-900 dark:ring-white/80">
+                {/* ── Photo ── */}
+                <div
+                    className={`absolute inset-0 ${isFrontCard && showDots ? 'cursor-pointer' : ''}`}
+                    onPointerDown={
+                        isFrontCard && showDots
+                            ? (e) => { photoTapRef.current = { x: e.clientX, y: e.clientY, cardId: card.id } }
+                            : undefined
+                    }
+                    onPointerUp={
+                        isFrontCard && showDots
+                            ? (e) => {
+                                const t = photoTapRef.current
+                                if (t.cardId !== card.id) return
+                                const dx = e.clientX - t.x
+                                const dy = e.clientY - t.y
+                                if (dx * dx + dy * dy < 100) cycleCardPhoto(card)
+                                photoTapRef.current = { ...photoTapRef.current, cardId: null }
+                            }
+                            : undefined
+                    }
                 >
-                    {card.title}
-                </h2>
+                    {displayUrl ? (
+                        <FastImage src={displayUrl} alt={card.title} className="h-full w-full object-cover" draggable={false} priority />
+                    ) : (
+                        <div className="w-full h-full bg-slate-100 dark:bg-zinc-800 flex items-center justify-center">
+                            <Users className="w-16 h-16 text-slate-300 dark:text-zinc-600" />
+                        </div>
+                    )}
+                </div>
 
-                {/* Subtitle */}
-                {card.subtitle && (
-                    <p className="text-sm font-semibold text-slate-600 dark:text-white/80 tracking-wide">
-                        {card.subtitle}
-                    </p>
-                )}
-
-                {/* Badges */}
-                {card.badges && card.badges.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5">
-                        {card.badges.map((b, i) => (
-                            <span key={i} className="text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wide bg-slate-900/10 dark:bg-white/15 backdrop-blur-sm text-slate-900 dark:text-white ring-1 ring-slate-900/15 dark:ring-white/20">
-                                {b.label}
-                            </span>
+                {/* ── Photo dots ── */}
+                {showDots && (
+                    <div className="absolute top-2 left-0 right-0 z-30 flex justify-center gap-1.5 pointer-events-none">
+                        {galleryUrls.map((_, i) => (
+                            <span
+                                key={i}
+                                className={`h-1.5 rounded-full transition-all duration-300 ${i === photoIdx
+                                        ? 'bg-slate-900 dark:bg-white w-6 shadow-[0_0_6px_rgba(0,0,0,0.3)] dark:shadow-[0_0_6px_rgba(255,255,255,0.5)]'
+                                        : 'bg-slate-900/30 dark:bg-white/40 w-1.5'
+                                    }`}
+                            />
                         ))}
                     </div>
                 )}
 
-                {/* Description / message */}
-                {card.description && (
-                    <div className="relative pl-3 border-l-2 border-slate-400 dark:border-white/40 mt-1">
-                        <p className="text-sm text-slate-600 dark:text-white/85 font-medium italic line-clamp-3 leading-relaxed">
-                            &ldquo;{card.description}&rdquo;
-                        </p>
-                    </div>
-                )}
+                {/* ── Bottom gradient: light = white, dark = black ── */}
+                <div
+                    className="absolute inset-x-0 z-10 pointer-events-none dark:hidden"
+                    style={{
+                        bottom: '-1px',
+                        height: 'calc(70% + 1px)',
+                        backgroundImage: 'linear-gradient(to top, rgba(255,255,255,1) 0%, rgba(255,255,255,0.95) 20%, rgba(255,255,255,0.7) 40%, rgba(255,255,255,0.3) 60%, rgba(255,255,255,0) 100%)',
+                    }}
+                />
+                <div
+                    className="absolute inset-x-0 z-10 pointer-events-none hidden dark:block"
+                    style={{
+                        bottom: '-1px',
+                        height: 'calc(70% + 1px)',
+                        backgroundImage: 'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0.95) 20%, rgba(0,0,0,0.7) 40%, rgba(0,0,0,0.3) 60%, rgba(0,0,0,0) 100%)',
+                    }}
+                />
 
-                {/* Meta: birthday, instagram */}
-                {card.meta && card.meta.length > 0 && (
-                    <div className="grid gap-2 mt-1" style={{ gridTemplateColumns: `repeat(${card.meta.length}, 1fr)` }}>
-                        {card.meta.map((m, i) => {
-                            const isIg = typeof m.text === 'string' && m.text.startsWith('@')
-                            const Wrapper = isIg ? 'a' : 'div'
-                            const wrapperProps = isIg ? {
-                                href: `https://instagram.com/${m.text.substring(1)}`,
-                                target: '_blank',
-                                rel: 'noopener noreferrer',
-                                onClick: (e: React.MouseEvent) => e.stopPropagation(),
-                                className: 'pointer-events-auto flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-full bg-slate-900/10 dark:bg-white/15 backdrop-blur-sm text-slate-900 dark:text-white ring-1 ring-slate-900 dark:ring-white/80 transition-all hover:bg-slate-900/20 dark:hover:bg-white/25 active:scale-95 cursor-pointer min-w-0',
-                            } : {
-                                className: 'flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-full bg-slate-900/10 dark:bg-white/15 backdrop-blur-sm text-slate-700 dark:text-white/80 ring-1 ring-slate-900 dark:ring-white/80 min-w-0',
-                            }
-                            return (
-                                <Wrapper key={i} {...wrapperProps}>
-                                    <span className={`flex-shrink-0 ${isIg ? 'text-pink-500 dark:text-pink-300' : 'text-slate-400 dark:text-white/60'}`}>
-                                        {React.cloneElement(m.icon as React.ReactElement<{ size?: number }>, { size: 13 })}
-                                    </span>
-                                    <span className="text-[11px] font-semibold tracking-wide truncate">
-                                        {m.text}
-                                    </span>
-                                </Wrapper>
-                            )
-                        })}
-                    </div>
-                )}
-
-                {/* Video button */}
-                {card.videoUrl && (
-                    <button
-                        type="button"
-                        onClick={(e) => {
-                            e.stopPropagation()
-                            if (onPlayVideo) onPlayVideo(card.videoUrl!)
-                            else setVideoPopupUrl(card.videoUrl!)
-                        }}
-                        className="pointer-events-auto mt-1 flex items-center justify-center gap-2 w-full px-4 py-3 rounded-2xl bg-slate-900/10 dark:bg-white/15 backdrop-blur-md text-slate-900 dark:text-white text-xs font-bold tracking-widest uppercase ring-1 ring-slate-900 dark:ring-white/80 transition-all hover:bg-slate-900/20 dark:hover:bg-white/25 active:scale-[0.97]"
+                {/* ── Text content ── */}
+                <div className="absolute inset-x-0 bottom-0 z-20 pointer-events-none px-5 pb-5 sm:px-6 sm:pb-6 flex flex-col gap-2">
+                    {/* Name */}
+                    <h2
+                        className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white leading-tight tracking-tight uppercase drop-shadow-lg"
+                        style={{ textShadow: '0 2px 12px rgba(0,0,0,0.15)' }}
                     >
-                        <Play className="w-4 h-4 fill-slate-900 dark:fill-white" />
-                        <span>Play Video</span>
-                    </button>
-                )}
+                        {card.title}
+                    </h2>
+
+                    {/* Subtitle */}
+                    {card.subtitle && (
+                        <p className="text-sm font-semibold text-slate-600 dark:text-white/80 tracking-wide">
+                            {card.subtitle}
+                        </p>
+                    )}
+
+                    {/* Badges */}
+                    {card.badges && card.badges.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5">
+                            {card.badges.map((b, i) => (
+                                <span key={i} className="text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wide bg-slate-900/10 dark:bg-white/15 backdrop-blur-sm text-slate-900 dark:text-white ring-1 ring-slate-900/15 dark:ring-white/20">
+                                    {b.label}
+                                </span>
+                            ))}
+                        </div>
+                    )}
+
+                    {/* Description / message */}
+                    {card.description && (
+                        <div className="relative pl-3 border-l-2 border-slate-400 dark:border-white/40 mt-1">
+                            <p className="text-sm text-slate-600 dark:text-white/85 font-medium italic line-clamp-3 leading-relaxed">
+                                &ldquo;{card.description}&rdquo;
+                            </p>
+                        </div>
+                    )}
+
+                    {/* Meta: birthday, instagram */}
+                    {card.meta && card.meta.length > 0 && (
+                        <div className="grid gap-2 mt-1" style={{ gridTemplateColumns: `repeat(${card.meta.length}, 1fr)` }}>
+                            {card.meta.map((m, i) => {
+                                const isIg = typeof m.text === 'string' && m.text.startsWith('@')
+                                const Wrapper = isIg ? 'a' : 'div'
+                                const wrapperProps = isIg ? {
+                                    href: `https://instagram.com/${m.text.substring(1)}`,
+                                    target: '_blank',
+                                    rel: 'noopener noreferrer',
+                                    onClick: (e: React.MouseEvent) => e.stopPropagation(),
+                                    className: 'pointer-events-auto flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-full bg-slate-900/10 dark:bg-white/15 backdrop-blur-sm text-slate-900 dark:text-white ring-1 ring-slate-900 dark:ring-white/80 transition-all hover:bg-slate-900/20 dark:hover:bg-white/25 active:scale-95 cursor-pointer min-w-0',
+                                } : {
+                                    className: 'flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-full bg-slate-900/10 dark:bg-white/15 backdrop-blur-sm text-slate-700 dark:text-white/80 ring-1 ring-slate-900 dark:ring-white/80 min-w-0',
+                                }
+                                return (
+                                    <Wrapper key={i} {...wrapperProps}>
+                                        <span className={`flex-shrink-0 ${isIg ? 'text-pink-500 dark:text-pink-300' : 'text-slate-400 dark:text-white/60'}`}>
+                                            {React.cloneElement(m.icon as React.ReactElement<{ size?: number }>, { size: 13 })}
+                                        </span>
+                                        <span className="text-[11px] font-semibold tracking-wide truncate">
+                                            {m.text}
+                                        </span>
+                                    </Wrapper>
+                                )
+                            })}
+                        </div>
+                    )}
+
+                    {/* Video button */}
+                    {card.videoUrl && (
+                        <button
+                            type="button"
+                            onClick={(e) => {
+                                e.stopPropagation()
+                                if (onPlayVideo) onPlayVideo(card.videoUrl!)
+                                else setVideoPopupUrl(card.videoUrl!)
+                            }}
+                            className="pointer-events-auto mt-1 flex items-center justify-center gap-2 w-full px-4 py-3 rounded-2xl bg-slate-900/10 dark:bg-white/15 backdrop-blur-md text-slate-900 dark:text-white text-xs font-bold tracking-widest uppercase ring-1 ring-slate-900 dark:ring-white/80 transition-all hover:bg-slate-900/20 dark:hover:bg-white/25 active:scale-[0.97]"
+                        >
+                            <Play className="w-4 h-4 fill-slate-900 dark:fill-white" />
+                            <span>Play Video</span>
+                        </button>
+                    )}
+                </div>
             </div>
-        </div>
         )
     }
 
@@ -636,14 +680,17 @@ export default function PreviewView({
                         </div>
                     )}
                 </div>
-                <button
-                    type="button"
-                    onClick={onClose}
-                    className="pointer-events-auto rounded-full flex items-center justify-center bg-white/85 dark:bg-black/55 backdrop-blur-md text-slate-700 dark:text-white/85 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-black/70 transition-all ring-1 ring-slate-900/10 dark:ring-white/15 p-0 m-0 border-0 shadow-sm"
-                    style={{ height: 32, width: 32 }}
-                >
-                    <X style={{ width: 18, height: 18 }} strokeWidth={2.75} />
-                </button>
+                <div className="flex items-center gap-3">
+                    <img src="/img/logo.png" alt="Logo" className="w-5 h-5 object-contain opacity-70" />
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="pointer-events-auto rounded-full flex items-center justify-center bg-white/85 dark:bg-black/75 backdrop-blur-md text-slate-900 dark:text-white hover:bg-white dark:hover:bg-black transition-all ring-1 ring-slate-900/15 dark:ring-white/30 p-0 m-0 border-0"
+                        style={{ height: 32, width: 32 }}
+                    >
+                        <X style={{ width: 18, height: 18 }} strokeWidth={3} />
+                    </button>
+                </div>
             </div>
 
             {/* ── Card Area (full height) ── */}
@@ -730,34 +777,64 @@ export default function PreviewView({
             </div>
 
             {/* ── Bottom Navigation ── */}
-            <div className="flex-shrink-0 pb-4 pt-3 sm:pb-5 sm:pt-4 z-20 w-full">
-                <div className="flex justify-start sm:justify-center w-full">
-                    <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar snap-x max-w-full w-full sm:w-auto px-4 py-1">
-                        {sections.map((s, i) => (
-                            <button
-                                key={i}
-                                type="button"
-                                onClick={() => {
-                                    if (i !== sectionIndex) {
-                                        setSectionDirection(i > sectionIndex ? 1 : -1)
-                                        setSectionIndex(i)
-                                    }
-                                }}
-                                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full flex-shrink-0 snap-center transition-all duration-200 ring-1 ${
-                                    i === sectionIndex
-                                        ? 'bg-slate-900 dark:bg-white text-white dark:text-zinc-900 shadow-lg shadow-slate-900/20 dark:shadow-white/10 ring-slate-900 dark:ring-white'
-                                        : 'bg-slate-200 dark:bg-white/8 text-slate-500 dark:text-zinc-400 hover:bg-slate-300 dark:hover:bg-white/15 hover:text-slate-700 dark:hover:text-zinc-200 ring-slate-900/30 dark:ring-white/30'
-                                }`}
-                            >
-                                {React.cloneElement(s.icon as React.ReactElement<{ className?: string }>, {
-                                    className: `w-3.5 h-3.5 ${i === sectionIndex ? '' : 'opacity-60'}`,
-                                })}
-                                <span className={`text-[11px] font-semibold truncate max-w-[60px] sm:max-w-[80px] ${i === sectionIndex ? 'font-bold' : ''}`}>
-                                    {s.label}
-                                </span>
-                            </button>
-                        ))}
-                    </div>
+            <div
+                className="flex-shrink-0 z-20 w-full flex justify-center"
+                style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 14px)', paddingTop: 8 }}
+            >
+                <div
+                    ref={navScrollRef}
+                    className="flex items-center gap-0.5 px-1.5 py-1.5 rounded-2xl bg-white/92 dark:bg-zinc-900/92 backdrop-blur-2xl shadow-2xl shadow-black/15 dark:shadow-black/50 ring-1 ring-black/8 dark:ring-white/10 overflow-x-auto no-scrollbar max-w-[92vw] sm:max-w-[480px] select-none"
+                    style={{ cursor: 'grab' }}
+                    onWheel={handleNavWheel}
+                    onMouseDown={handleNavMouseDown}
+                    onMouseMove={handleNavMouseMove}
+                    onMouseUp={handleNavMouseUp}
+                    onMouseLeave={handleNavMouseUp}
+                >
+                    {sections.map((s, i) => {
+                        const isActive = i === sectionIndex
+                        const isClassType = s.type === 'class'
+                        const prevIsClassType = i > 0 && sections[i - 1]?.type === 'class'
+                        const showDivider = isClassType && !prevIsClassType
+                        return (
+                            <React.Fragment key={i}>
+                                {showDivider && (
+                                    <span className="flex-shrink-0 w-px h-5 rounded-full bg-slate-900/12 dark:bg-white/12 mx-0.5" />
+                                )}
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        if (!isActive) {
+                                            setSectionDirection(i > sectionIndex ? 1 : -1)
+                                            setSectionIndex(i)
+                                        }
+                                    }}
+                                    className="relative flex items-center gap-1.5 flex-shrink-0 rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-slate-900/50 dark:focus-visible:ring-white/50 transition-colors duration-150"
+                                    style={{ padding: '6px 10px', minWidth: 0 }}
+                                    aria-current={isActive ? 'page' : undefined}
+                                >
+                                    {isActive && (
+                                        <motion.span
+                                            layoutId="nav-pill"
+                                            className="absolute inset-0 rounded-xl bg-slate-900 dark:bg-white shadow-md shadow-slate-900/20 dark:shadow-white/10"
+                                            transition={{ type: 'spring', stiffness: 420, damping: 38, mass: 0.9 }}
+                                        />
+                                    )}
+                                    <span className={`relative z-10 flex items-center gap-1.5 transition-colors duration-150 ${isActive ? 'text-white dark:text-zinc-900' : 'text-slate-400 dark:text-zinc-500 hover:text-slate-700 dark:hover:text-zinc-200'}`}>
+                                        {React.cloneElement(s.icon as React.ReactElement<{ className?: string }>, {
+                                            className: 'w-3.5 h-3.5 flex-shrink-0',
+                                        })}
+                                        <span
+                                            className="text-[11px] font-bold tracking-wide truncate"
+                                            style={{ maxWidth: isActive ? 72 : 52 }}
+                                        >
+                                            {s.label}
+                                        </span>
+                                    </span>
+                                </button>
+                            </React.Fragment>
+                        )
+                    })}
                 </div>
             </div>
 

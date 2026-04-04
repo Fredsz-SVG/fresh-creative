@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 
 export function AnimatedCarouselMockup({ imageUrl }: { imageUrl?: string }) {
     return (
-        <div className="relative w-full h-full max-w-[200px] sm:max-w-[280px] aspect-[4/5] mx-auto flex items-center justify-center p-2 sm:p-3 perspective-[1000px]">
+        <div className="relative w-full h-full max-w-[95px] sm:max-w-[250px] aspect-[4/5] mx-auto flex items-center justify-center p-0 sm:p-3 perspective-[1000px]">
 
             {/* Animated Swiping Card Container */}
             <div className="relative w-full h-full overflow-visible">

@@ -1,6 +1,7 @@
 import { Hono } from 'hono'
 import { getSupabaseClient } from '../../../lib/supabase'
 import { getD1 } from '../../../lib/edge-env'
+import { publishRealtimeEventFromContext } from '../../../lib/realtime'
 
 const joinRequestsRequestId = new Hono()
 
@@ -129,6 +130,14 @@ joinRequestsRequestId.patch('/', async (c) => {
           )
           .run()
 
+        // Broadcast approve ke semua device
+        void publishRealtimeEventFromContext(c, {
+          type: 'api.mutated',
+          channel: 'global',
+          payload: { path: `/api/albums/${albumId}/join-requests`, action: 'approve' },
+          ts: new Date().toISOString(),
+        })
+
         return c.json({
           success: true,
           message: 'Request disetujui dan user ditambahkan ke kelas',
@@ -167,6 +176,14 @@ joinRequestsRequestId.patch('/', async (c) => {
         )
         .run()
     }
+
+    // Broadcast reject ke semua device
+    void publishRealtimeEventFromContext(c, {
+      type: 'api.mutated',
+      channel: 'global',
+      payload: { path: `/api/albums/${albumId}/join-requests`, action: 'reject' },
+      ts: new Date().toISOString(),
+    })
 
     return c.json({
       success: true,

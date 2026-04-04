@@ -16,47 +16,57 @@ albumsIdUnlockFeature.get('/', async (c) => {
   }
   const albumId = c.req.param('id')
 
-  const { results: unlocks } = await db
-    .prepare(
-      `SELECT feature_type, credits_spent, unlocked_at FROM feature_unlocks WHERE user_id = ? AND album_id = ?`
-    )
-    .bind(user.id, albumId)
-    .all<{ feature_type: string; credits_spent: number; unlocked_at: string }>()
+  // Satu query untuk baris user + album, plus baris flipbook tingkat album (OR); paket & pricing global dijalankan paralel.
+  const [unlockBlock, albumRow, fpRowsResult] = await Promise.all([
+    db
+      .prepare(
+        `SELECT feature_type, credits_spent, unlocked_at, user_id FROM feature_unlocks
+         WHERE album_id = ? AND (user_id = ? OR feature_type = 'flipbook')`
+      )
+      .bind(albumId, user.id)
+      .all<{ feature_type: string; credits_spent: number; unlocked_at: string; user_id: string }>(),
+    db
+      .prepare(
+        `SELECT a.pricing_package_id, a.user_id, p.flipbook_enabled, p.ai_labs_features
+         FROM albums a
+         LEFT JOIN pricing_packages p ON p.id = a.pricing_package_id
+         WHERE a.id = ?`
+      )
+      .bind(albumId)
+      .first<{
+        pricing_package_id: string | null
+        user_id: string
+        flipbook_enabled: number | null
+        ai_labs_features: string | null
+      }>(),
+    db
+      .prepare(`SELECT feature_slug, credits_per_unlock FROM ai_feature_pricing`)
+      .all<{ feature_slug: string; credits_per_unlock: number }>(),
+  ])
 
-  const album = await db
-    .prepare(`SELECT pricing_package_id, user_id FROM albums WHERE id = ?`)
-    .bind(albumId)
-    .first<{ pricing_package_id: string | null; user_id: string }>()
+  const raw = unlockBlock.results ?? []
+  const u = raw
+    .filter((r) => r.user_id === user.id)
+    .map(({ feature_type, credits_spent, unlocked_at }) => ({
+      feature_type,
+      credits_spent,
+      unlocked_at,
+    }))
+  const unlockedFeatures = u.map((x) => x.feature_type)
+  const flipbook_unlocked_on_album = raw.some((r) => r.feature_type === 'flipbook')
 
+  const album = albumRow
   let flipbookEnabledByPackage = false
   let aiLabsFeaturesByPackage: string[] = []
   if (album?.pricing_package_id) {
-    const pkg = await db
-      .prepare(`SELECT flipbook_enabled, ai_labs_features FROM pricing_packages WHERE id = ?`)
-      .bind(album.pricing_package_id)
-      .first<{ flipbook_enabled: number; ai_labs_features: string }>()
-    flipbookEnabledByPackage = (pkg?.flipbook_enabled ?? 0) === 1
-    aiLabsFeaturesByPackage = parseJsonArray(pkg?.ai_labs_features) as string[]
+    flipbookEnabledByPackage = (album?.flipbook_enabled ?? 0) === 1
+    aiLabsFeaturesByPackage = parseJsonArray(album?.ai_labs_features) as string[]
   }
 
-  const { results: fpRows } = await db
-    .prepare(`SELECT feature_slug, credits_per_unlock FROM ai_feature_pricing`)
-    .all<{ feature_slug: string; credits_per_unlock: number }>()
   const creditCosts: Record<string, number> = {}
-  for (const fp of fpRows ?? []) {
+  for (const fp of fpRowsResult.results ?? []) {
     creditCosts[fp.feature_slug] = fp.credits_per_unlock
   }
-
-  const u = unlocks ?? []
-  const unlockedFeatures = u.map((x) => x.feature_type)
-
-  const flipOnAlbumRow = await db
-    .prepare(
-      `SELECT 1 as x FROM feature_unlocks WHERE album_id = ? AND feature_type = 'flipbook' LIMIT 1`
-    )
-    .bind(albumId)
-    .first<{ x: number }>()
-  const flipbook_unlocked_on_album = !!flipOnAlbumRow
 
   return c.json({
     unlocks: u,

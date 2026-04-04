@@ -14,12 +14,19 @@ export default function ThemeProvider({ children }: { children: ReactNode }) {
   const [isDark, setIsDark] = useState<boolean>(false)
 
   useEffect(() => {
-    const saved = typeof window !== 'undefined' ? localStorage.getItem('theme') : null
-    if (saved) {
-      const dark = saved === 'dark'
-      setIsDark(dark)
-      applyTheme(dark)
-    } else if (typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+    const urlParams = new URL(window.location.href).searchParams
+    const urlTheme = urlParams.get('theme')
+    const saved = localStorage.getItem('theme')
+    
+    if (urlTheme === 'dark' || urlTheme === 'light') {
+      const isUrlDark = urlTheme === 'dark'
+      setIsDark(isUrlDark)
+      applyTheme(isUrlDark)
+    } else if (saved === 'dark' || saved === 'light') {
+      const isSavedDark = saved === 'dark'
+      setIsDark(isSavedDark)
+      applyTheme(isSavedDark)
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
       setIsDark(true)
       applyTheme(true)
     }

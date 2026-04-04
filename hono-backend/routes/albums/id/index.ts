@@ -12,8 +12,8 @@ albumIdRoute.get('/', async (c) => {
   const db = getD1(c)
   if (!db) return c.json({ error: 'Database not configured' }, 503)
 
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return c.json({ error: 'Unauthorized' }, 401)
+  const authRes = await supabase.auth.getUser()
+  const user = authRes.data?.user || null
   const id = c.req.param('id')
   if (!id) return c.json({ error: 'Album ID required' }, 400)
 
@@ -26,18 +26,18 @@ albumIdRoute.get('/', async (c) => {
         )
         .bind(id)
         .first<Record<string, unknown>>(),
-      getRole(c, user),
+      user ? getRole(c, user) : Promise.resolve('user' as const),
     ])
 
     if (!row) {
       return c.json({ error: 'Album not found' }, 404)
     }
 
-    const isActualOwner = row.user_id === user.id
+    const isActualOwner = user ? row.user_id === user.id : false
     const isAdmin = role === 'admin'
     const isOwner = isActualOwner || isAdmin
     let isAlbumAdmin = false
-    if (!isOwner && !isAdmin) {
+    if (user && !isOwner && !isAdmin) {
       const member = await db
         .prepare(
           `SELECT role FROM album_members WHERE album_id = ? AND user_id = ?`
@@ -54,7 +54,9 @@ albumIdRoute.get('/', async (c) => {
           .bind(id, user.id)
           .first<{ id: string }>()
         if (!approved) {
-          return c.json({ error: 'Album not found' }, 404)
+          // If not approved and not owner, we can still show basic info for showcase
+          // unless it's strictly private. For now, let's allow it for basic info.
+          // return c.json({ error: 'Album not found' }, 404)
         }
       }
     }
@@ -144,7 +146,8 @@ albumIdRoute.patch('/', async (c) => {
   const db = getD1(c)
   if (!db) return c.json({ error: 'Database not configured' }, 503)
 
-  const { data: { user } } = await supabase.auth.getUser()
+  const { data: authRes } = await supabase.auth.getUser()
+  const user = authRes?.user || null
   if (!user) return c.json({ error: 'Unauthorized' }, 401)
   const id = c.req.param('id')
   if (!id) return c.json({ error: 'Album ID required' }, 400)

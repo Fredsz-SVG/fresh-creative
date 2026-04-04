@@ -1,6 +1,7 @@
 import { Hono } from 'hono'
 import { getSupabaseClient } from '../../../../lib/supabase'
 import { getD1 } from '../../../../lib/edge-env'
+import { publishRealtimeEventFromContext } from '../../../../lib/realtime'
 
 const classRequestRoute = new Hono()
 
@@ -103,7 +104,43 @@ classRequestRoute.post('/', async (c) => {
     const msg = e instanceof Error ? e.message : String(e)
     return c.json({ error: msg }, 500)
   }
+
+  // Kirim notifikasi "Menunggu" ke user yang mendaftar
+  try {
+    const albumData = await db
+      .prepare(`SELECT name FROM albums WHERE id = ?`)
+      .bind(albumId)
+      .first<{ name: string }>()
+    const clsData = await db
+      .prepare(`SELECT name FROM album_classes WHERE id = ?`)
+      .bind(classId)
+      .first<{ name: string }>()
+    const notifId = crypto.randomUUID()
+    await db
+      .prepare(
+        `INSERT INTO notifications (id, user_id, title, message, type, metadata, created_at)
+         VALUES (?, ?, ?, ?, 'info', ?, datetime('now'))`
+      )
+      .bind(
+        notifId,
+        user.id,
+        'Status Pendaftaran Album',
+        `${albumData?.name || 'Album'}\n${student_name}${clsData?.name ? ` - ${clsData.name}` : ''}\n${email || ''}`,
+        JSON.stringify({ status: 'Menunggu' })
+      )
+      .run()
+  } catch (_) { /* non-fatal */ }
+
   const created = await db.prepare(`SELECT * FROM album_join_requests WHERE id = ?`).bind(rid).first()
+
+  // Broadcast ke semua device agar approval sidebar langsung update
+  void publishRealtimeEventFromContext(c, {
+    type: 'api.mutated',
+    channel: 'global',
+    payload: { path: `/api/albums/${albumId}/join-requests`, action: 'create' },
+    ts: new Date().toISOString(),
+  })
+
   return c.json(created)
 })
 

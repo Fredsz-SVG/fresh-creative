@@ -18,7 +18,7 @@ export default async function YearbookAlbumPage(props: { params: Promise<{ id: s
   // But getAlbumOverview handles permission check internally and returns null if no access.
 
   const [album, accessData] = await Promise.all([
-    getAlbumOverview(id, user.id),
+    getAlbumOverview(id),
     getMyAccessAndRequests(id, user.id)
   ])
 

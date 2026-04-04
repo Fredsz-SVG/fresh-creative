@@ -386,7 +386,8 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
   const [previewInput, setPreviewInput] = useState('')
   const [previewError, setPreviewError] = useState<string | null>(null)
   const [yearbookOpenChoice, setYearbookOpenChoice] = useState<AlbumRow | null>(null)
-  const [yearbookChoiceLoading, setYearbookChoiceLoading] = useState(false)
+  /** True sampai GET unlock-feature selesai — hanya mengatur tombol Flipbook, bukan Kartu. */
+  const [yearbookChoiceFlipbookPending, setYearbookChoiceFlipbookPending] = useState(false)
   const [yearbookChoiceFlipbook, setYearbookChoiceFlipbook] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 10
@@ -395,7 +396,16 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
   const isAdmin = variant === 'admin'
   const resolvedLinkContext = linkContext ?? (isAdmin ? 'admin' : 'user')
   const linkBasePath = resolvedLinkContext === 'admin' ? '/admin' : '/user'
-  const hasFetchedRef = useRef<boolean>(!!initialData)
+  const hasFetchedRef = useRef<boolean>((() => {
+    if (initialData) return true
+    if (typeof window === 'undefined') return false
+    try {
+      const raw = window.sessionStorage.getItem(`albums_v1:${variant}:${linkContext ?? (variant === 'admin' ? 'admin' : 'user')}:${fetchUrl}`)
+      if (!raw) return false
+      const parsed = JSON.parse(raw) as { ts: number; data: AlbumRow[] }
+      return Array.isArray(parsed?.data)
+    } catch { return false }
+  })())
   const isFetchingRef = useRef(false)
   const lastRealtimeFetchRef = useRef(0)
 
@@ -437,13 +447,13 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
   const closeYearbookPublicChoice = useCallback(() => {
     setYearbookOpenChoice(null)
     setYearbookChoiceFlipbook(false)
-    setYearbookChoiceLoading(false)
+    setYearbookChoiceFlipbookPending(false)
   }, [])
 
   const beginYearbookPublicChoice = useCallback((album: AlbumRow) => {
     const aid = album.album_id ?? album.id
     setYearbookOpenChoice(album)
-    setYearbookChoiceLoading(true)
+    setYearbookChoiceFlipbookPending(true)
     setYearbookChoiceFlipbook(false)
     void (async () => {
       try {
@@ -463,7 +473,7 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
       } catch {
         setYearbookChoiceFlipbook(false)
       } finally {
-        setYearbookChoiceLoading(false)
+        setYearbookChoiceFlipbookPending(false)
       }
     })()
   }, [])
@@ -533,8 +543,6 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
   }, [active, fetchUrl, initialData, fetchAlbums])
 
   useEffect(() => {
-    // Supabase auth-only: no Realtime, no polling.
-    // Refetch when tab/window becomes visible again.
     if (!active) return
     const onVisible = () => {
       const now = Date.now()
@@ -544,9 +552,24 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
     }
     window.addEventListener('focus', onVisible)
     document.addEventListener('visibilitychange', onVisible)
+
+    // Realtime: refresh daftar album saat ada mutasi album dari device lain
+    const onRealtime = (event: Event) => {
+      const detail = (event as CustomEvent<{ type?: string; channel?: string; payload?: Record<string, unknown> }>).detail
+      if (!detail?.type || detail.channel !== 'global') return
+      const path = typeof detail.payload?.path === 'string' ? detail.payload.path : ''
+      if (!path.startsWith('/api/albums')) return
+      const now = Date.now()
+      if (now - lastRealtimeFetchRef.current < 2000) return // throttle 2s
+      lastRealtimeFetchRef.current = now
+      fetchAlbums(true)
+    }
+    window.addEventListener('fresh:realtime', onRealtime)
+
     return () => {
       window.removeEventListener('focus', onVisible)
       document.removeEventListener('visibilitychange', onVisible)
+      window.removeEventListener('fresh:realtime', onRealtime)
     }
   }, [fetchAlbums, fetchUrl, resolvedLinkContext, variant, active])
 
@@ -868,7 +891,7 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
             className="flex-1 min-w-0 md:flex-initial inline-flex items-center justify-center gap-1 sm:gap-2 px-2 py-2 sm:px-4 sm:py-2 text-[10px] sm:text-sm font-black rounded-lg sm:rounded-xl bg-emerald-400 border-2 border-slate-900 dark:border-slate-700 shadow-[3px_3px_0_0_#0f172a] dark:shadow-[3px_3px_0_0_#334155] text-slate-900 dark:text-white hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all active:scale-95"
           >
             <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-            <span className="whitespace-nowrap truncate">Create</span>
+            <span className="whitespace-nowrap truncate">Buat</span>
           </button>
 
           {/* Join Project Button */}
@@ -1302,9 +1325,14 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
             <p className="text-sm font-bold text-slate-600 dark:text-slate-300 mb-6 line-clamp-2">
               {yearbookOpenChoice.name}
             </p>
-            {yearbookChoiceLoading ? (
-              <div className="flex justify-center py-8">
+            {yearbookChoiceFlipbookPending ? (
+              <div
+                className="flex flex-col items-center justify-center gap-3 py-10 min-h-[200px]"
+                aria-live="polite"
+                aria-busy="true"
+              >
                 <Loader2 className="w-10 h-10 text-indigo-500 animate-spin" aria-hidden />
+                <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Menyiapkan album…</p>
               </div>
             ) : (
               <div className="flex flex-col gap-3">
@@ -1351,8 +1379,7 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
       {confirmModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 dark:bg-black/50 backdrop-blur-md" onClick={() => setConfirmModal(null)}>
           <div className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-[32px] p-6 sm:p-8 max-w-sm w-full shadow-[6px_6px_0_0_#0f172a] dark:shadow-[6px_6px_0_0_#334155] text-center" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-xl font-black text-slate-900 dark:text-white mb-2 uppercase tracking-tight">Buat Project Baru?</h3>
-            <p className="text-sm font-bold text-slate-500 dark:text-slate-400 mb-6">Mau buat project baru?</p>
+            <h3 className="text-xl font-black text-slate-900 dark:text-white mb-6 uppercase tracking-tight">Mulai Project Baru</h3>
             <div className="flex gap-3">
               <button
                 type="button"

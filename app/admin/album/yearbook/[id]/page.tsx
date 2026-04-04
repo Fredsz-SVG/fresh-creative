@@ -11,7 +11,7 @@ export default async function AdminYearbookAlbumPage({ params }: { params: Promi
     redirect('/login')
   }
   const [album, accessData] = await Promise.all([
-    getAlbumOverview(id, user.id),
+    getAlbumOverview(id),
     getMyAccessAndRequests(id, user.id)
   ])
   if (!album) {

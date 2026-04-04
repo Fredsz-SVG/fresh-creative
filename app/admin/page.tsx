@@ -377,7 +377,7 @@ export default function AdminPage() {
   ]
 
   return (
-    <div className="max-w-7xl mx-auto">
+    <div className="w-full">
       <div className="flex flex-col gap-2 mb-10 px-4 md:px-0">
         <h1 className="text-3xl font-black text-slate-900 dark:text-white sm:text-4xl tracking-tight">
           Admin Dashboard
@@ -516,26 +516,26 @@ export default function AdminPage() {
                     <button
                       onClick={() => handleChangeRole(u.id, u.role === 'admin' ? 'user' : 'admin')}
                       disabled={savingId === u.id}
-                      className="px-3 py-2 bg-slate-100 border-2 border-slate-900 rounded-xl text-[10px] font-black uppercase hover:bg-slate-200 transition-colors disabled:opacity-50"
+                      className="px-3 py-2 bg-slate-100 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 rounded-xl text-[10px] font-black uppercase hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-900 dark:text-white transition-colors disabled:opacity-50"
                     >
                       {u.role === 'admin' ? 'Remove Admin' : 'Make Admin'}
                     </button>
                     <button
                       onClick={() => handleSuspendUser(u.id, !!u.is_suspended)}
                       disabled={savingId === u.id}
-                      className={`px-3 py-2 border-2 border-slate-900 rounded-xl text-[10px] font-black uppercase transition-colors disabled:opacity-50 ${u.is_suspended ? 'bg-emerald-300 text-slate-900' : 'bg-amber-300 text-slate-900'}`}
+                      className={`px-3 py-2 border-2 border-slate-900 dark:border-slate-700 rounded-xl text-[10px] font-black uppercase transition-colors disabled:opacity-50 ${u.is_suspended ? 'bg-emerald-300 dark:bg-emerald-700 text-slate-900 dark:text-white' : 'bg-amber-300 dark:bg-amber-700 text-slate-900 dark:text-white'}`}
                     >
                       {u.is_suspended ? 'Unsuspend' : 'Suspend'}
                     </button>
+                    <button
+                      onClick={() => handleDeleteUser(u.id)}
+                      disabled={deletingId === u.id}
+                      className="col-span-2 px-3 py-2 bg-red-400 border-2 border-slate-900 dark:border-slate-700 text-white rounded-xl text-[10px] font-black uppercase hover:bg-red-500 transition-all disabled:opacity-50"
+                    >
+                      {deletingId === u.id ? 'Deleting...' : 'Delete User'}
+                    </button>
                   </>
                 )}
-                <button
-                  onClick={() => handleDeleteUser(u.id)}
-                  disabled={deletingId === u.id}
-                  className="col-span-2 px-3 py-2 bg-red-400 border-2 border-slate-900 text-white rounded-xl text-[10px] font-black uppercase hover:bg-red-500 transition-colors disabled:opacity-50"
-                >
-                  {deletingId === u.id ? 'Deleting...' : 'Delete User'}
-                </button>
               </div>
             </div>
           ))}
@@ -644,21 +644,23 @@ export default function AdminPage() {
                   <td className="px-5 py-4 text-right">
                     <div className="flex items-center justify-end gap-2">
                       {!(currentAdminId && u.id === currentAdminId) && (
-                        <button
-                          onClick={() => handleSuspendUser(u.id, !!u.is_suspended)}
-                          className={`p-2 rounded-xl border-2 border-slate-900 shadow-[2px_2px_0_0_#0f172a] hover:shadow-none transition-all ${u.is_suspended ? 'bg-emerald-300 text-slate-900' : 'bg-amber-300 text-slate-900'}`}
-                          title={u.is_suspended ? 'Unsuspend User' : 'Suspend User'}
-                        >
-                          {u.is_suspended ? <Sparkles size={16} strokeWidth={3} /> : <X size={16} strokeWidth={3} />}
-                        </button>
+                        <>
+                          <button
+                            onClick={() => handleSuspendUser(u.id, !!u.is_suspended)}
+                            className={`p-2 rounded-xl border-2 border-slate-900 shadow-[2px_2px_0_0_#0f172a] hover:shadow-none transition-all ${u.is_suspended ? 'bg-emerald-300 text-slate-900' : 'bg-amber-300 text-slate-900'}`}
+                            title={u.is_suspended ? 'Unsuspend User' : 'Suspend User'}
+                          >
+                            {u.is_suspended ? <Sparkles size={16} strokeWidth={3} /> : <X size={16} strokeWidth={3} />}
+                          </button>
+                          <button
+                            onClick={() => handleDeleteUser(u.id)}
+                            className="p-2 bg-red-400 text-white rounded-xl border-2 border-slate-900 shadow-[2px_2px_0_0_#0f172a] hover:shadow-none transition-all"
+                            title="Delete Account"
+                          >
+                            <Trash2 size={16} strokeWidth={3} />
+                          </button>
+                        </>
                       )}
-                      <button
-                        onClick={() => handleDeleteUser(u.id)}
-                        className="p-2 bg-red-400 text-white rounded-xl border-2 border-slate-900 shadow-[2px_2px_0_0_#0f172a] hover:shadow-none transition-all"
-                        title="Delete Account"
-                      >
-                        <Trash2 size={16} strokeWidth={3} />
-                      </button>
                     </div>
                   </td>
                 </tr>

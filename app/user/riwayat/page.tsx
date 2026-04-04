@@ -85,21 +85,39 @@ export default function UserRiwayatPage() {
     }
   }, [])
 
+  const hasCacheRef = useRef(!loading)
+
   useEffect(() => {
-    fetchTransactions()
+    fetchTransactions(hasCacheRef.current)
   }, [fetchTransactions])
 
   useEffect(() => {
-    // Supabase auth-only: no Realtime, no polling.
-    // Refetch when user returns to tab.
-    const onVisible = () => {
-      fetchTransactions(true)
-    }
+    const onVisible = () => fetchTransactions(true)
     window.addEventListener('focus', onVisible)
     document.addEventListener('visibilitychange', onVisible)
+
+    // Realtime: refresh saat ada transaksi baru / status berubah
+    const lastFetchRef = { ts: 0 }
+    const onRealtime = (event: Event) => {
+      const detail = (event as CustomEvent<{ type?: string; channel?: string; payload?: Record<string, unknown> }>).detail
+      if (!detail?.type || detail.channel !== 'global') return
+      const path = typeof detail.payload?.path === 'string' ? detail.payload.path : ''
+      const isTransactionEvent =
+        path.startsWith('/api/credits/') ||
+        path.startsWith('/api/webhooks/xendit') ||
+        (path.startsWith('/api/albums') && path.includes('/checkout'))
+      if (!isTransactionEvent) return
+      const now = Date.now()
+      if (now - lastFetchRef.ts < 3000) return
+      lastFetchRef.ts = now
+      fetchTransactions(true)
+    }
+    window.addEventListener('fresh:realtime', onRealtime)
+
     return () => {
       window.removeEventListener('focus', onVisible)
       document.removeEventListener('visibilitychange', onVisible)
+      window.removeEventListener('fresh:realtime', onRealtime)
     }
   }, [fetchTransactions])
 

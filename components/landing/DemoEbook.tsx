@@ -8,6 +8,8 @@ import { AnimatedTitle } from './AnimatedTitle';
 import Link from 'next/link';
 import { apiUrl } from '@/lib/api-url';
 import { asObject, asString } from '@/components/yearbook/utils/response-narrowing';
+import { useContext } from 'react';
+import { ThemeContext } from '@/app/providers/ThemeProvider';
 
 type ShowcaseAlbumPreview = {
   title: string
@@ -21,6 +23,7 @@ export function DemoEbook() {
   const [flipbookPreviewUrl, setFlipbookPreviewUrl] = useState('');
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [previewTitle, setPreviewTitle] = useState('');
+  const theme = useContext(ThemeContext);
 
   const fetchShowcase = useCallback(async () => {
     setShowcaseLoading(true);
@@ -137,7 +140,12 @@ export function DemoEbook() {
                   const baseUrl = (idMatch && !isFlipbook) 
                     ? `/album/${idMatch[1]}/preview` 
                     : previewUrl;
-                  const embedUrl = baseUrl.includes('?') ? `${baseUrl}&embedded=true` : `${baseUrl}?embedded=true`;
+                  
+                  // Append theme to the URL
+                  const currentTheme = theme?.isDark ? 'dark' : 'light';
+                  const connector = baseUrl.includes('?') ? '&' : '?';
+                  const embedUrl = `${baseUrl}${connector}embedded=true&theme=${currentTheme}`;
+                  
                   return (
                     <iframe
                       src={embedUrl}

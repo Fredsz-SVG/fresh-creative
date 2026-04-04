@@ -136,16 +136,35 @@ export default function AdminRiwayatPage() {
     }
   }, [viewMode, fetchTransactions])
 
-  // Supabase auth-only: no Realtime, no polling. Use manual refresh button + refetch on tab focus.
   useEffect(() => {
-    const onVisible = () => {
-      fetchTransactions(viewMode, true)
-    }
+    const onVisible = () => fetchTransactions(viewMode, true)
     window.addEventListener('focus', onVisible)
     document.addEventListener('visibilitychange', onVisible)
+
+    // Realtime: refresh saat ada transaksi baru / status berubah di device/user lain
+    const lastFetchRef = { ts: 0 }
+    const onRealtime = (event: Event) => {
+      const detail = (event as CustomEvent<{ type?: string; channel?: string; payload?: Record<string, unknown> }>).detail
+      if (!detail?.type || detail.channel !== 'global') return
+      const path = typeof detail.payload?.path === 'string' ? detail.payload.path : ''
+      const isTransactionEvent =
+        path.startsWith('/api/credits/') ||
+        path.startsWith('/api/admin/transactions') ||
+        path.startsWith('/api/webhooks/xendit') ||
+        path.startsWith('/api/albums') && path.includes('/checkout')
+      if (!isTransactionEvent) return
+      const now = Date.now()
+      if (now - lastFetchRef.ts < 3000) return // throttle 3s
+      lastFetchRef.ts = now
+      fetchTransactions('mine', true)
+      fetchTransactions('all', true)
+    }
+    window.addEventListener('fresh:realtime', onRealtime)
+
     return () => {
       window.removeEventListener('focus', onVisible)
       document.removeEventListener('visibilitychange', onVisible)
+      window.removeEventListener('fresh:realtime', onRealtime)
     }
   }, [viewMode, fetchTransactions])
 
