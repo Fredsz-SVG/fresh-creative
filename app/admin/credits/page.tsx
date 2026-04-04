@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Edit, Plus, Save, Trash2, X, Loader2, Check, Copy, Gift, ToggleLeft, ToggleRight, Clock, ChevronRight, Layout, Zap, Hash, Calendar, AlertCircle, Users, Star } from 'lucide-react'
 import { toast } from 'sonner'
 import { fetchWithAuth } from '../../../lib/api-client'
@@ -134,7 +134,7 @@ export default function AdminCreditSettingsPage() {
     const hasCachePackagesRef = useRef(false)
     const hasCacheRedeemRef = useRef(false)
 
-    useEffect(() => {
+    useLayoutEffect(() => {
         if (typeof window === 'undefined') return
         try {
             const pkgRaw = window.sessionStorage.getItem(cacheKeyPackages)

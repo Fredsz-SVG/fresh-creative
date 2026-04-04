@@ -1,7 +1,7 @@
 'use client'
 
 import { History, ExternalLink, Loader2, CreditCard, X, Users, User, Search, RefreshCw, ChevronLeft, ChevronRight, Calendar } from 'lucide-react'
-import { useEffect, useState, useCallback, useRef, useMemo } from 'react'
+import { useEffect, useLayoutEffect, useState, useCallback, useRef, useMemo } from 'react'
 import { fetchWithAuth } from '../../../lib/api-client'
 import Link from 'next/link'
 
@@ -52,7 +52,7 @@ export default function AdminRiwayatPage() {
   const cacheKeyMine = 'admin_transactions_v1:mine'
   const cacheKeyAll = 'admin_transactions_v1:all'
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (typeof window === 'undefined') return
     try {
       const mineRaw = window.sessionStorage.getItem(cacheKeyMine)
@@ -196,26 +196,26 @@ export default function AdminRiwayatPage() {
           Riwayat Transaksi
         </h1>
         <p className="text-slate-600 dark:text-slate-300 font-bold text-sm sm:text-base">
-          {viewMode === 'mine' ? 'Daftar riwayat transaksi Top Up Anda.' : 'Monitor semua transaksi Top Up dari seluruh pengguna.'}
+          {viewMode === 'mine' ? 'Daftar riwayat transaksi Top Up Anda.' : 'Monitor semua transaksi dari pengguna.'}
         </p>
       </div>
 
-      <div className="flex flex-wrap gap-3 mb-8">
+      <div className="grid grid-cols-2 gap-2 sm:gap-3 mb-8">
         <button
           type="button"
           onClick={() => { setViewMode('mine'); setCurrentPage(1); }}
-          className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-sm font-black border-4 border-slate-900 transition-all active:scale-95 ${viewMode === 'mine' ? 'bg-violet-400 text-slate-900 shadow-[4px_4px_0_0_#0f172a]' : 'bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-none'}`}
+          className={`flex min-w-0 items-center justify-center gap-1.5 sm:gap-2 px-2 py-2.5 sm:px-6 sm:py-3 rounded-2xl text-xs sm:text-sm font-black border-4 border-slate-900 transition-all active:scale-95 whitespace-nowrap ${viewMode === 'mine' ? 'bg-violet-400 text-slate-900 shadow-[4px_4px_0_0_#0f172a]' : 'bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-none'}`}
         >
-          <User className="w-5 h-5" strokeWidth={3} />
-          Riwayat Saya
+          <User className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" strokeWidth={3} />
+          <span className="truncate"><span className="sm:hidden">Saya</span><span className="hidden sm:inline">Riwayat Saya</span></span>
         </button>
         <button
           type="button"
           onClick={() => { setViewMode('all'); setCurrentPage(1); }}
-          className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-sm font-black border-4 border-slate-900 transition-all active:scale-95 ${viewMode === 'all' ? 'bg-sky-400 text-slate-900 shadow-[4px_4px_0_0_#0f172a]' : 'bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-none'}`}
+          className={`flex min-w-0 items-center justify-center gap-1.5 sm:gap-2 px-2 py-2.5 sm:px-6 sm:py-3 rounded-2xl text-xs sm:text-sm font-black border-4 border-slate-900 transition-all active:scale-95 whitespace-nowrap ${viewMode === 'all' ? 'bg-sky-400 text-slate-900 shadow-[4px_4px_0_0_#0f172a]' : 'bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-none'}`}
         >
-          <Users className="w-5 h-5" strokeWidth={3} />
-          Riwayat Semua User
+          <Users className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" strokeWidth={3} />
+          <span className="truncate"><span className="sm:hidden">Semua user</span><span className="hidden sm:inline">Riwayat Semua User</span></span>
         </button>
       </div>
 

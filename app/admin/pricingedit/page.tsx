@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Edit, Plus, Save, Trash2, X, Book, Sparkles, Star, ChevronRight, Layout, Zap, RefreshCw } from 'lucide-react'
 import { fetchWithAuth } from '../../../lib/api-client'
 
@@ -222,8 +222,8 @@ export default function PricingEditPage() {
   const cacheKeyPackages = 'admin_pricing_packages_v1'
   const cacheKeyAi = 'admin_ai_pricing_v1'
 
-  // Instant render from cache to avoid skeleton when switching sidebar.
-  useEffect(() => {
+  // Instant render from cache to avoid skeleton when switching sidebar (before paint).
+  useLayoutEffect(() => {
     if (typeof window === 'undefined') return
     try {
       const pkgRaw = window.sessionStorage.getItem(cacheKeyPackages)

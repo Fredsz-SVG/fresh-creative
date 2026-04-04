@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Pencil, X, Sparkles, Trash2, ShieldCheck, UserCheck, LayoutDashboard } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { apiUrl } from '../../lib/api-url'
@@ -56,8 +56,8 @@ export default function AdminPage() {
     }
   }, [])
 
-  // Instant render from cache to avoid skeleton on back/side nav.
-  useEffect(() => {
+  // Instant render from cache to avoid skeleton on back/side nav (layout effect = before paint).
+  useLayoutEffect(() => {
     if (typeof window === 'undefined') return
     try {
       const raw = window.sessionStorage.getItem(cacheKey)

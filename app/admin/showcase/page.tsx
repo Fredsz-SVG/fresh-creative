@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { fetchWithAuth } from '../../../lib/api-client'
 import { toast } from 'sonner'
 import { Loader2, Eye, BookOpen, Save, ExternalLink } from 'lucide-react'
@@ -16,8 +16,8 @@ export default function AdminShowcasePage() {
 
   const cacheKey = 'admin_showcase_v1'
 
-  // Instant render from cache to avoid skeleton when switching sidebar.
-  useEffect(() => {
+  // Instant render from cache to avoid skeleton when switching sidebar (before paint).
+  useLayoutEffect(() => {
     if (typeof window === 'undefined') return
     try {
       const raw = window.sessionStorage.getItem(cacheKey)
