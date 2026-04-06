@@ -46,9 +46,7 @@ export default function FlipbookLayoutEditor({ album, onPlayVideo, onUpdateAlbum
     const [selectedManualPageId, setSelectedManualPageId] = useState<string | null>(null)
     const [drawingHotspot, setDrawingHotspot] = useState<{ startX: number; startY: number; currentX: number; currentY: number } | null>(null)
     const [deleteHotspotConfirm, setDeleteHotspotConfirm] = useState<string | null>(null)
-    const [deleteSelectedHotspotsConfirm, setDeleteSelectedHotspotsConfirm] = useState(false)
     const [uploadingHotspotId, setUploadingHotspotId] = useState<string | null>(null)
-    const [selectedHotspotIds, setSelectedHotspotIds] = useState<string[]>([])
     const [deleteAllPagesConfirm, setDeleteAllPagesConfirm] = useState(false)
     const [isDeletingAll, setIsDeletingAll] = useState(false)
     const [isPageReady, setIsPageReady] = useState(false)
@@ -70,10 +68,6 @@ export default function FlipbookLayoutEditor({ album, onPlayVideo, onUpdateAlbum
             setIsPageReady(true)
             setLastSelectedId(selectedManualPageId)
         }
-    }, [selectedManualPageId])
-
-    useEffect(() => {
-        setSelectedHotspotIds([])
     }, [selectedManualPageId])
 
     const fetchManualPages = async () => {
@@ -177,92 +171,46 @@ export default function FlipbookLayoutEditor({ album, onPlayVideo, onUpdateAlbum
         }
     }
 
-    const handleDeleteHotspots = async (hotspotIds: string[]) => {
-        if (!hotspotIds.length) return
-        const pagesSnapshot = manualPagesRef.current
-        const deletedById = new Map<string, { pageId: string; hotspot: VideoHotspot }>()
-
-        for (const hotspotId of hotspotIds) {
-            for (const p of pagesSnapshot) {
-                const hotspots = p.flipbook_video_hotspots || []
-                const found = hotspots.find((h) => h.id === hotspotId)
-                if (found) {
-                    deletedById.set(hotspotId, { pageId: p.id, hotspot: found })
-                    break
-                }
-            }
-        }
-
-        if (!deletedById.size) {
-            toast.error('Hotspot tidak ditemukan. Silakan refresh halaman.')
-            return
-        }
-
-        const targetIds = hotspotIds.filter((id) => deletedById.has(id))
-        setManualPages((prev) =>
-            prev.map((p) => ({
-                ...p,
-                flipbook_video_hotspots: (p.flipbook_video_hotspots || []).filter((h) => !targetIds.includes(h.id)),
-            }))
-        )
-        setSelectedHotspotIds((prev) => prev.filter((id) => !targetIds.includes(id)))
-
-        const localOnlyIds = targetIds.filter((id) => id.startsWith(TEMP_HOTSPOT_ID_PREFIX))
-        const serverIds = targetIds.filter((id) => !id.startsWith(TEMP_HOTSPOT_ID_PREFIX))
-        if (!serverIds.length) {
-            toast.success(localOnlyIds.length > 1 ? `${localOnlyIds.length} hotspot lokal dihapus` : 'Hotspot lokal dihapus')
-            return
-        }
-
-        const toastId = toast.loading(serverIds.length > 1 ? `Menghapus ${serverIds.length} hotspot...` : 'Menghapus hotspot...')
-        const rollbackForIds = (ids: string[]) => {
-            setManualPages((prev) =>
-                prev.map((p) => {
-                    const addBack = ids
-                        .map((id) => deletedById.get(id))
-                        .filter((v): v is { pageId: string; hotspot: VideoHotspot } => !!v && v.pageId === p.id)
-                        .map((v) => v.hotspot)
-                    if (!addBack.length) return p
-                    return {
-                        ...p,
-                        flipbook_video_hotspots: [...(p.flipbook_video_hotspots || []), ...addBack],
-                    }
-                })
-            )
-        }
-
-        try {
-            const results = await Promise.allSettled(
-                serverIds.map((hotspotId) =>
-                    fetchWithAuth(`/api/albums/${album.id}/flipbook/hotspots/${hotspotId}`, { method: 'DELETE' })
-                )
-            )
-            const failedIds: string[] = []
-            results.forEach((result, idx) => {
-                const hotspotId = serverIds[idx]
-                if (result.status === 'fulfilled' && result.value.ok) return
-                failedIds.push(hotspotId)
-            })
-            if (failedIds.length) rollbackForIds(failedIds)
-
-            const successCount = serverIds.length - failedIds.length
-            if (successCount > 0 && failedIds.length === 0) {
-                toast.success(successCount > 1 ? `${successCount} hotspot berhasil dihapus` : 'Hotspot berhasil dihapus', { id: toastId })
-                return
-            }
-            if (successCount > 0) {
-                toast.error(`${successCount} berhasil, ${failedIds.length} gagal dihapus.`, { id: toastId })
-                return
-            }
-            toast.error('Gagal menghapus hotspot', { id: toastId })
-        } catch {
-            rollbackForIds(serverIds)
-            toast.error('Gagal sinkron hapus hotspot', { id: toastId })
-        }
-    }
-
     const handleDeleteHotspot = async (hotspotId: string) => {
-        await handleDeleteHotspots([hotspotId])
+        let deletedHotspot: VideoHotspot | null = null
+        let deletedFromPageId: string | null = null
+
+        setManualPages(prev => prev.map(p => {
+            const hotspots = p.flipbook_video_hotspots || []
+            const found = hotspots.find(h => h.id === hotspotId)
+            if (found) {
+                deletedHotspot = found
+                deletedFromPageId = p.id
+            }
+            return {
+                ...p,
+                flipbook_video_hotspots: hotspots.filter(h => h.id !== hotspotId)
+            }
+        }))
+
+        if (!deletedHotspot || !deletedFromPageId) return
+
+        if (hotspotId.startsWith(TEMP_HOTSPOT_ID_PREFIX)) {
+            return
+        }
+
+        const res = await fetchWithAuth(`/api/albums/${album.id}/flipbook/hotspots/${hotspotId}`, {
+            method: 'DELETE',
+        })
+        if (res.ok) {
+            toast.success('Hotspot dihapus')
+            return
+        }
+
+        // Rollback if delete failed.
+        setManualPages(prev => prev.map(p => {
+            if (p.id !== deletedFromPageId) return p
+            return {
+                ...p,
+                flipbook_video_hotspots: [...(p.flipbook_video_hotspots || []), deletedHotspot as VideoHotspot]
+            }
+        }))
+        toast.error('Gagal menghapus hotspot')
     }
 
     const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -951,47 +899,10 @@ export default function FlipbookLayoutEditor({ album, onPlayVideo, onUpdateAlbum
 
                 {selectedPage?.flipbook_video_hotspots && selectedPage.flipbook_video_hotspots.length > 0 ? (
                     <div className="flex-1 overflow-y-auto min-h-0 no-scrollbar pr-1 space-y-4">
-                        {canManage && (
-                            <div className="p-3 bg-slate-50 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 rounded-xl">
-                                <div className="flex items-center justify-between gap-2">
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            const ids = (selectedPage.flipbook_video_hotspots || []).map((h) => h.id)
-                                            const allSelected = ids.length > 0 && ids.every((id) => selectedHotspotIds.includes(id))
-                                            setSelectedHotspotIds(allSelected ? [] : ids)
-                                        }}
-                                        className="px-2 py-1 text-[9px] font-black uppercase tracking-widest rounded-lg border-2 border-slate-900 dark:border-slate-600 text-slate-900 dark:text-white bg-white dark:bg-slate-700"
-                                    >
-                                        Pilih Semua
-                                    </button>
-                                    <button
-                                        type="button"
-                                        disabled={selectedHotspotIds.length === 0}
-                                        onClick={() => setDeleteSelectedHotspotsConfirm(true)}
-                                        className="px-2 py-1 text-[9px] font-black uppercase tracking-widest rounded-lg border-2 border-slate-900 dark:border-slate-600 text-white bg-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                                    >
-                                        Hapus Terpilih ({selectedHotspotIds.length})
-                                    </button>
-                                </div>
-                            </div>
-                        )}
                         {selectedPage.flipbook_video_hotspots.map((h, i) => {
                             return (
                             <div key={h.id} className={`p-4 bg-white dark:bg-slate-800 border-4 border-slate-900 dark:border-slate-700 rounded-2xl space-y-4 shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155] ${!canManage ? 'opacity-80' : ''}`}>
                                 <div className="flex items-center justify-between gap-2">
-                                    {canManage && (
-                                        <input
-                                            type="checkbox"
-                                            checked={selectedHotspotIds.includes(h.id)}
-                                            onChange={(e) => {
-                                                setSelectedHotspotIds((prev) =>
-                                                    e.target.checked ? [...new Set([...prev, h.id])] : prev.filter((id) => id !== h.id)
-                                                )
-                                            }}
-                                            className="w-4 h-4 accent-indigo-500"
-                                        />
-                                    )}
                                     {canManage ? (
                                         <input
                                             type="text"
@@ -1180,43 +1091,13 @@ export default function FlipbookLayoutEditor({ album, onPlayVideo, onUpdateAlbum
                                 Batal
                             </button>
                             <button
-                                onClick={async () => {
+                                onClick={() => {
                                     if (deleteHotspotConfirm) {
-                                        const hotspotId = deleteHotspotConfirm
+                                        handleDeleteHotspot(deleteHotspotConfirm)
                                         setDeleteHotspotConfirm(null)
-                                        await handleDeleteHotspot(hotspotId)
                                     }
                                 }}
                                 className="flex-1 py-4 px-6 bg-red-500 text-white border-2 border-slate-900 dark:border-slate-700 font-black rounded-2xl uppercase tracking-widest text-xs shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
-                            >
-                                Ya, Hapus
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {deleteSelectedHotspotsConfirm && (
-                <div className="fixed inset-0 bg-slate-900/40 dark:bg-black/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
-                    <div className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-[32px] p-8 max-w-md w-full shadow-[6px_6px_0_0_#0f172a] dark:shadow-[6px_6px_0_0_#334155]">
-                        <h3 className="text-xl font-black text-slate-900 dark:text-white mb-2 uppercase tracking-tight">Hapus Hotspot Terpilih</h3>
-                        <p className="text-xs font-bold text-slate-400 dark:text-slate-500 mb-8 uppercase tracking-wide leading-relaxed">
-                            Hapus {selectedHotspotIds.length} hotspot terpilih?
-                        </p>
-                        <div className="flex gap-4">
-                            <button
-                                onClick={() => setDeleteSelectedHotspotsConfirm(false)}
-                                className="flex-1 py-4 px-6 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white border-2 border-slate-900 dark:border-slate-600 font-black rounded-2xl uppercase tracking-widest text-xs"
-                            >
-                                Batal
-                            </button>
-                            <button
-                                onClick={async () => {
-                                    const ids = [...selectedHotspotIds]
-                                    setDeleteSelectedHotspotsConfirm(false)
-                                    await handleDeleteHotspots(ids)
-                                }}
-                                className="flex-1 py-4 px-6 bg-red-500 text-white border-2 border-slate-900 dark:border-slate-700 font-black rounded-2xl uppercase tracking-widest text-xs"
                             >
                                 Ya, Hapus
                             </button>

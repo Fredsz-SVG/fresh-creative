@@ -109,7 +109,7 @@ export function DemoEbook() {
                 </div>
               ) : (
                 <div className="relative z-10 w-full transform group-hover:scale-105 transition-all duration-500 flex justify-center">
-                  <AnimatedCarouselMockup imageUrl={albumPreviews[0]?.imageUrl} />
+                  <AnimatedCarouselMockup imageUrl={albumPreviews[0]?.imageUrl} mobileMaxWidthClass="max-w-[170px]" />
                   {/* Desktop Hover Hint */}
                   {albumPreviews.length > 0 && (
                     <div className="absolute inset-0 hidden sm:flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300">
@@ -189,7 +189,7 @@ export function DemoEbook() {
                 >
                   <div className="relative w-full flex justify-center">
                     <AnimatedFlipbookMockup />
-                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300">
+                    <div className="absolute inset-0 hidden sm:flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300">
                       <div className="px-6 py-3 bg-slate-900/90 dark:bg-slate-800/90 backdrop-blur-md rounded-full text-white text-sm font-black flex items-center gap-2 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300 border-2 border-slate-900 dark:border-slate-700">
                         <BookMarked className="w-4 h-4 text-emerald-400" />
                         <span>Buka Flipbook</span>

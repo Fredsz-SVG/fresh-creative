@@ -50129,6 +50129,28 @@ async function enrichShowcasePreviewsWithAlbumCovers(db, albumPreviews) {
 }
 __name(enrichShowcasePreviewsWithAlbumCovers, "enrichShowcasePreviewsWithAlbumCovers");
 
+// lib/fonnte-config-d1.ts
+var FONNTE_CONFIG_KEY = "fonnte_config";
+var defaultFonnteConfig = {
+  target: ""
+};
+async function getFonnteConfigFromD1(db) {
+  const row = await db.prepare("SELECT value FROM site_settings WHERE key = ?").bind(FONNTE_CONFIG_KEY).first();
+  if (!row?.value) return defaultFonnteConfig;
+  try {
+    const raw2 = JSON.parse(row.value);
+    const target = typeof raw2.target === "string" ? raw2.target : defaultFonnteConfig.target;
+    return { target };
+  } catch {
+    return defaultFonnteConfig;
+  }
+}
+__name(getFonnteConfigFromD1, "getFonnteConfigFromD1");
+async function saveFonnteConfigToD1(db, payload) {
+  await db.prepare("INSERT OR REPLACE INTO site_settings (key, value) VALUES (?, ?)").bind(FONNTE_CONFIG_KEY, JSON.stringify(payload)).run();
+}
+__name(saveFonnteConfigToD1, "saveFonnteConfigToD1");
+
 // routes/admin/showcase.ts
 init_supabase();
 var adminShowcase = new Hono2();
@@ -50145,8 +50167,11 @@ adminShowcase.get("/", async (c2) => {
   await ensureUserInD1(db, user, honoEnvForSupabasePublicSync(c2.env));
   if (await getRole(c2, user) !== "admin") return c2.json({ error: "Forbidden" }, 403);
   try {
-    const payload = await getShowcaseFromD1(db);
-    return c2.json(payload);
+    const [showcase2, fonnte] = await Promise.all([
+      getShowcaseFromD1(db),
+      getFonnteConfigFromD1(db)
+    ]);
+    return c2.json({ ...showcase2, ...fonnte });
   } catch {
     return c2.json({ error: "Failed to load showcase" }, 500);
   }
@@ -50168,16 +50193,21 @@ adminShowcase.put("/", async (c2) => {
     link: x3.link
   })) : [];
   const flipbookPreviewUrl = typeof body?.flipbookPreviewUrl === "string" ? body.flipbookPreviewUrl : "";
-  const payload = { albumPreviews, flipbookPreviewUrl };
+  const showcasePayload = { albumPreviews, flipbookPreviewUrl };
+  const target = typeof body?.target === "string" ? body.target.trim() : "";
+  const fonntPayload = { target };
   try {
-    await saveShowcaseToD1(db, payload);
+    await Promise.all([
+      saveShowcaseToD1(db, showcasePayload),
+      saveFonnteConfigToD1(db, fonntPayload)
+    ]);
     await publishRealtimeEventFromContext(c2, {
       type: "showcase.updated",
       channel: "showcase",
       payload: { action: "replace" },
       ts: (/* @__PURE__ */ new Date()).toISOString()
     });
-    return c2.json(payload);
+    return c2.json({ ...showcasePayload, ...fonntPayload });
   } catch (e2) {
     const msg = e2 instanceof Error ? e2.message : "save failed";
     return c2.json({ error: msg }, 500);
@@ -50697,7 +50727,7 @@ function isSimilarSchoolName(a, b3) {
 __name(isSimilarSchoolName, "isSimilarSchoolName");
 
 // routes/albums/albums.ts
-var albumColsUser = `a.id, a.user_id, a.name, a.type, a.status, a.created_at, a.cover_image_url, a.pricing_package_id, a.payment_status, a.payment_url, a.total_estimated_price, p.name as pricing_pkg_name`;
+var albumColsUser = `a.id, a.user_id, a.name, a.type, a.status, a.created_at, a.description, a.cover_image_url, a.cover_image_position, a.pricing_package_id, a.payment_status, a.payment_url, a.total_estimated_price, p.name as pricing_pkg_name`;
 function mapAlbumRow(r2) {
   const pkg = r2.pricing_pkg_name ? { name: r2.pricing_pkg_name } : null;
   const rest = { ...r2 };
@@ -50706,8 +50736,7 @@ function mapAlbumRow(r2) {
 }
 __name(mapAlbumRow, "mapAlbumRow");
 var albumsRoute = new Hono2();
-albumsRoute.use("*", requireAuthJwt);
-albumsRoute.get("/", async (c2) => {
+albumsRoute.get("/", requireAuthJwt, async (c2) => {
   try {
     const db = getD1(c2);
     if (!db) return c2.json({ error: "Database not configured" }, 503);
@@ -50725,7 +50754,7 @@ albumsRoute.get("/", async (c2) => {
     const shouldUseAdminScope = isAdmin && scope !== "mine";
     if (shouldUseAdminScope) {
       const { results } = await db.prepare(
-        `SELECT a.id, a.name, a.type, a.status, a.created_at, a.pricing_package_id, a.school_city, a.kab_kota, a.wa_e164, a.province_id, a.province_name, a.pic_name, a.students_count, a.source, a.total_estimated_price, a.payment_status, a.payment_url,
+        `SELECT a.id, a.name, a.type, a.status, a.created_at, a.description, a.cover_image_url, a.cover_image_position, a.pricing_package_id, a.school_city, a.kab_kota, a.wa_e164, a.province_id, a.province_name, a.pic_name, a.students_count, a.source, a.total_estimated_price, a.payment_status, a.payment_url,
             p.name as pricing_pkg_name
            FROM albums a
            LEFT JOIN pricing_packages p ON a.pricing_package_id = p.id
@@ -50788,7 +50817,7 @@ albumsRoute.get("/", async (c2) => {
     return c2.json({ error: message2 });
   }
 });
-albumsRoute.post("/", async (c2) => {
+albumsRoute.post("/", requireAuthJwt, async (c2) => {
   const db = getD1(c2);
   if (!db) return c2.json({ error: "Database not configured" }, 503);
   const userId = await getAuthUserId(c2);
@@ -50877,7 +50906,7 @@ albumsRoute.post("/", async (c2) => {
   const row = await db.prepare(`SELECT * FROM albums WHERE id = ?`).bind(id).first();
   return c2.json(row);
 });
-albumsRoute.put("/", async (c2) => {
+albumsRoute.put("/", requireAuthJwt, async (c2) => {
   const db = getD1(c2);
   if (!db) return c2.json({ error: "Database not configured" }, 503);
   const userId = await getAuthUserId(c2);
@@ -50896,7 +50925,7 @@ albumsRoute.put("/", async (c2) => {
   const row = await db.prepare(`SELECT * FROM albums WHERE id = ?`).bind(id).first();
   return c2.json(row);
 });
-albumsRoute.delete("/", async (c2) => {
+albumsRoute.delete("/", requireAuthJwt, async (c2) => {
   const db = getD1(c2);
   if (!db) return c2.json({ error: "Database not configured" }, 503);
   const userId = await getAuthUserId(c2);
@@ -51052,8 +51081,8 @@ albumIdRoute.get("/", async (c2) => {
   const supabase = getSupabaseClient(c2);
   const db = getD1(c2);
   if (!db) return c2.json({ error: "Database not configured" }, 503);
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return c2.json({ error: "Unauthorized" }, 401);
+  const authRes = await supabase.auth.getUser();
+  const user = authRes.data?.user || null;
   const id = c2.req.param("id");
   if (!id) return c2.json({ error: "Album ID required" }, 400);
   try {
@@ -51062,16 +51091,16 @@ albumIdRoute.get("/", async (c2) => {
         `SELECT id, name, type, status, cover_image_url, cover_image_position, cover_video_url, description, user_id, created_at, flipbook_mode, payment_status, payment_url, total_estimated_price, pricing_package_id
            FROM albums WHERE id = ?`
       ).bind(id).first(),
-      getRole(c2, user)
+      user ? getRole(c2, user) : Promise.resolve("user")
     ]);
     if (!row) {
       return c2.json({ error: "Album not found" }, 404);
     }
-    const isActualOwner = row.user_id === user.id;
+    const isActualOwner = user ? row.user_id === user.id : false;
     const isAdmin = role === "admin";
     const isOwner = isActualOwner || isAdmin;
     let isAlbumAdmin = false;
-    if (!isOwner && !isAdmin) {
+    if (user && !isOwner && !isAdmin) {
       const member = await db.prepare(
         `SELECT role FROM album_members WHERE album_id = ? AND user_id = ?`
       ).bind(id, user.id).first();
@@ -51082,7 +51111,6 @@ albumIdRoute.get("/", async (c2) => {
           `SELECT id FROM album_class_access WHERE album_id = ? AND user_id = ? AND status = 'approved'`
         ).bind(id, user.id).first();
         if (!approved) {
-          return c2.json({ error: "Album not found" }, 404);
         }
       }
     }
@@ -51151,7 +51179,8 @@ albumIdRoute.patch("/", async (c2) => {
   const supabase = getSupabaseClient(c2);
   const db = getD1(c2);
   if (!db) return c2.json({ error: "Database not configured" }, 503);
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: authRes } = await supabase.auth.getUser();
+  const user = authRes?.user || null;
   if (!user) return c2.json({ error: "Unauthorized" }, 401);
   const id = c2.req.param("id");
   if (!id) return c2.json({ error: "Album ID required" }, 400);
@@ -51204,22 +51233,19 @@ allClassMembersRoute.get("/", async (c2) => {
     const supabase = getSupabaseClient(c2);
     const db = getD1(c2);
     if (!db) return c2.json({ error: "Database not configured" }, 503);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return c2.json({ error: "Unauthorized" }, 401);
+    const { data: authRes } = await supabase.auth.getUser();
+    const user = authRes?.user || null;
     const album = await db.prepare(`SELECT user_id FROM albums WHERE id = ?`).bind(albumId).first();
     if (!album) return c2.json({ error: "Album not found" }, 404);
-    const roleRes = await getRole(c2, user);
-    const memberRow = await db.prepare(`SELECT role FROM album_members WHERE album_id = ? AND user_id = ?`).bind(albumId, user.id).first();
-    const studentRow = await db.prepare(
+    const roleRes = user ? await getRole(c2, user) : "user";
+    const memberRow = user ? await db.prepare(`SELECT role FROM album_members WHERE album_id = ? AND user_id = ?`).bind(albumId, user.id).first() : null;
+    const studentRow = user ? await db.prepare(
       `SELECT id FROM album_class_access WHERE album_id = ? AND user_id = ? AND status = 'approved'`
-    ).bind(albumId, user.id).first();
+    ).bind(albumId, user.id).first() : null;
     const isGlobalAdmin = roleRes === "admin";
-    const isOwner = album.user_id === user.id || isGlobalAdmin;
+    const isOwner = user ? album.user_id === user.id || isGlobalAdmin : false;
     const isAlbumAdmin = memberRow?.role === "admin";
-    if (!isOwner && !memberRow && !studentRow) {
-      return c2.json({ error: "Forbidden" }, 403);
-    }
-    const canSeePending = isOwner || isAlbumAdmin;
+    const canSeePending = user ? isOwner || isAlbumAdmin : false;
     const { results: data } = await db.prepare(
       `SELECT class_id, user_id, student_name, email, date_of_birth, instagram, message, video_url, photos, status
          FROM album_class_access WHERE album_id = ? AND status IN ('approved', 'pending') ORDER BY student_name ASC`
@@ -51236,7 +51262,7 @@ allClassMembersRoute.get("/", async (c2) => {
       video_url: r2.video_url,
       photos: parseJsonArray(r2.photos) || [],
       status: r2.status,
-      is_me: r2.user_id === user.id
+      is_me: user ? r2.user_id === user.id : false
     }));
     return c2.json(result);
   } catch (err) {
@@ -52285,6 +52311,12 @@ ${joinRequest.student_name}${joinRequest.class_name ? ` - ${joinRequest.class_na
 ${joinRequest.email}`,
           JSON.stringify({ status: "Disetujui" })
         ).run();
+        void publishRealtimeEventFromContext(c2, {
+          type: "api.mutated",
+          channel: "global",
+          payload: { path: `/api/albums/${albumId}/join-requests`, action: "approve" },
+          ts: (/* @__PURE__ */ new Date()).toISOString()
+        });
         return c2.json({
           success: true,
           message: "Request disetujui dan user ditambahkan ke kelas"
@@ -52314,6 +52346,12 @@ ${joinRequest.email}`,
         JSON.stringify({ status: "Ditolak", reason: rejected_reason })
       ).run();
     }
+    void publishRealtimeEventFromContext(c2, {
+      type: "api.mutated",
+      channel: "global",
+      payload: { path: `/api/albums/${albumId}/join-requests`, action: "reject" },
+      ts: (/* @__PURE__ */ new Date()).toISOString()
+    });
     return c2.json({
       success: true,
       message: "Request ditolak"
@@ -52882,28 +52920,38 @@ albumsIdUnlockFeature.get("/", async (c2) => {
     return c2.json({ error: "Unauthorized" }, 401);
   }
   const albumId = c2.req.param("id");
-  const { results: unlocks } = await db.prepare(
-    `SELECT feature_type, credits_spent, unlocked_at FROM feature_unlocks WHERE user_id = ? AND album_id = ?`
-  ).bind(user.id, albumId).all();
-  const album = await db.prepare(`SELECT pricing_package_id, user_id FROM albums WHERE id = ?`).bind(albumId).first();
+  const [unlockBlock, albumRow, fpRowsResult] = await Promise.all([
+    db.prepare(
+      `SELECT feature_type, credits_spent, unlocked_at, user_id FROM feature_unlocks
+         WHERE album_id = ? AND (user_id = ? OR feature_type = 'flipbook')`
+    ).bind(albumId, user.id).all(),
+    db.prepare(
+      `SELECT a.pricing_package_id, a.user_id, p.flipbook_enabled, p.ai_labs_features
+         FROM albums a
+         LEFT JOIN pricing_packages p ON p.id = a.pricing_package_id
+         WHERE a.id = ?`
+    ).bind(albumId).first(),
+    db.prepare(`SELECT feature_slug, credits_per_unlock FROM ai_feature_pricing`).all()
+  ]);
+  const raw2 = unlockBlock.results ?? [];
+  const u = raw2.filter((r2) => r2.user_id === user.id).map(({ feature_type, credits_spent, unlocked_at }) => ({
+    feature_type,
+    credits_spent,
+    unlocked_at
+  }));
+  const unlockedFeatures = u.map((x3) => x3.feature_type);
+  const flipbook_unlocked_on_album = raw2.some((r2) => r2.feature_type === "flipbook");
+  const album = albumRow;
   let flipbookEnabledByPackage = false;
   let aiLabsFeaturesByPackage = [];
   if (album?.pricing_package_id) {
-    const pkg = await db.prepare(`SELECT flipbook_enabled, ai_labs_features FROM pricing_packages WHERE id = ?`).bind(album.pricing_package_id).first();
-    flipbookEnabledByPackage = (pkg?.flipbook_enabled ?? 0) === 1;
-    aiLabsFeaturesByPackage = parseJsonArray(pkg?.ai_labs_features);
+    flipbookEnabledByPackage = (album?.flipbook_enabled ?? 0) === 1;
+    aiLabsFeaturesByPackage = parseJsonArray(album?.ai_labs_features);
   }
-  const { results: fpRows } = await db.prepare(`SELECT feature_slug, credits_per_unlock FROM ai_feature_pricing`).all();
   const creditCosts = {};
-  for (const fp of fpRows ?? []) {
+  for (const fp of fpRowsResult.results ?? []) {
     creditCosts[fp.feature_slug] = fp.credits_per_unlock;
   }
-  const u = unlocks ?? [];
-  const unlockedFeatures = u.map((x3) => x3.feature_type);
-  const flipOnAlbumRow = await db.prepare(
-    `SELECT 1 as x FROM feature_unlocks WHERE album_id = ? AND feature_type = 'flipbook' LIMIT 1`
-  ).bind(albumId).first();
-  const flipbook_unlocked_on_album = !!flipOnAlbumRow;
   return c2.json({
     unlocks: u,
     unlocked_features: unlockedFeatures,
@@ -53730,7 +53778,31 @@ classRequestRoute.post("/", async (c2) => {
     const msg = e2 instanceof Error ? e2.message : String(e2);
     return c2.json({ error: msg }, 500);
   }
+  try {
+    const albumData = await db.prepare(`SELECT name FROM albums WHERE id = ?`).bind(albumId).first();
+    const clsData = await db.prepare(`SELECT name FROM album_classes WHERE id = ?`).bind(classId).first();
+    const notifId = crypto.randomUUID();
+    await db.prepare(
+      `INSERT INTO notifications (id, user_id, title, message, type, metadata, created_at)
+         VALUES (?, ?, ?, ?, 'info', ?, datetime('now'))`
+    ).bind(
+      notifId,
+      user.id,
+      "Status Pendaftaran Album",
+      `${albumData?.name || "Album"}
+${student_name}${clsData?.name ? ` - ${clsData.name}` : ""}
+${email || ""}`,
+      JSON.stringify({ status: "Menunggu" })
+    ).run();
+  } catch (_3) {
+  }
   const created = await db.prepare(`SELECT * FROM album_join_requests WHERE id = ?`).bind(rid).first();
+  void publishRealtimeEventFromContext(c2, {
+    type: "api.mutated",
+    channel: "global",
+    payload: { path: `/api/albums/${albumId}/join-requests`, action: "create" },
+    ts: (/* @__PURE__ */ new Date()).toISOString()
+  });
   return c2.json(created);
 });
 var classId_request_default = classRequestRoute;
@@ -54637,13 +54709,21 @@ function getSkipOtp(env) {
 __name(getSkipOtp, "getSkipOtp");
 var authOtpStatus = new Hono2();
 authOtpStatus.get("/", async (c2) => {
+  const skipOtp = getSkipOtp(c2.env);
   const userId = await getAuthUserId(c2);
+  if (skipOtp) {
+    return c2.json({ verified: !!userId, suspended: false });
+  }
   let suspended = false;
   if (userId) {
-    const db = getD1(c2);
-    if (db) suspended = await isUserSuspendedD1(db, userId);
+    try {
+      const db = getD1(c2);
+      if (db) suspended = await isUserSuspendedD1(db, userId);
+    } catch (err) {
+      console.error("otp-status: failed to check suspension", err);
+      suspended = false;
+    }
   }
-  const skipOtp = getSkipOtp(c2.env);
   const cookieVerified = getCookie(c2, OTP_COOKIE_NAME) === "1";
   const verified = !suspended && (skipOtp ? !!userId : !!(userId && cookieVerified));
   return c2.json({ verified: !!verified, suspended });
@@ -54653,12 +54733,20 @@ var otp_status_default = authOtpStatus;
 // routes/auth/send-login-otp.ts
 init_supabase();
 var OTP_EXPIRY_MINUTES = 5;
+function getSkipOtp2(env) {
+  const v3 = (env?.SKIP_OTP || env?.SKIP_LOGIN_OTP || "").trim().toLowerCase().replace(/^"|"$/g, "");
+  return v3 === "true" || v3 === "1" || v3 === "yes";
+}
+__name(getSkipOtp2, "getSkipOtp");
 function generateOtp() {
   return Math.floor(1e5 + Math.random() * 9e5).toString();
 }
 __name(generateOtp, "generateOtp");
 var sendLoginOtp = new Hono2();
 sendLoginOtp.post("/", async (c2) => {
+  if (getSkipOtp2(c2.env)) {
+    return c2.json({ ok: true, skipped: true });
+  }
   const supabase = getSupabaseClient(c2);
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if (authError || !user?.email) {
@@ -55189,6 +55277,24 @@ creditsSyncInvoice.post("/", async (c2) => {
 });
 var sync_invoice_default = creditsSyncInvoice;
 
+// routes/landing/config.ts
+var fonnteLanding = new Hono2();
+function requireDb2(c2) {
+  return c2.env.DB ?? null;
+}
+__name(requireDb2, "requireDb");
+fonnteLanding.get("/config", async (c2) => {
+  const db = requireDb2(c2);
+  if (!db) return c2.json({ target: "" });
+  try {
+    const config = await getFonnteConfigFromD1(db);
+    return c2.json(config);
+  } catch {
+    return c2.json({ target: "" });
+  }
+});
+var config_default = fonnteLanding;
+
 // routes/pricing.ts
 var pricing = new Hono2();
 var PRICING_CACHE_TTL_MS = 3e4;
@@ -55620,11 +55726,11 @@ __name(invalidateUserResponseCaches, "invalidateUserResponseCaches");
 
 // routes/user/bootstrap.ts
 var OTP_COOKIE_NAME3 = "otp_verified";
-function getSkipOtp2(env) {
+function getSkipOtp3(env) {
   const v3 = (env?.SKIP_OTP || env?.SKIP_LOGIN_OTP || "").trim().toLowerCase().replace(/^"|"$/g, "");
   return v3 === "true" || v3 === "1" || v3 === "yes";
 }
-__name(getSkipOtp2, "getSkipOtp");
+__name(getSkipOtp3, "getSkipOtp");
 var userBootstrap = new Hono2();
 userBootstrap.use("*", requireAuthJwt);
 var USER_BOOTSTRAP_CACHE_TTL_MS = 2e3;
@@ -55642,7 +55748,7 @@ userBootstrap.get("/", async (c2) => {
   await ensureUserStubInD1(db, userId);
   const me3 = await getUserRow(db, userId);
   const suspended = (me3?.is_suspended ?? 0) === 1;
-  const skipOtp = getSkipOtp2(c2.env);
+  const skipOtp = getSkipOtp3(c2.env);
   const cookieVerified = getCookie(c2, OTP_COOKIE_NAME3) === "1";
   const otpVerified = !suspended && (skipOtp ? true : cookieVerified);
   const notificationsRes = await db.prepare(`SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT 20`).bind(userId).all();
@@ -55774,17 +55880,28 @@ var notifications_default = userNotifications;
 // routes/user/notifications/[id].ts
 var userNotificationsId = new Hono2();
 userNotificationsId.use("*", requireAuthJwt);
-userNotificationsId.patch("/:id", async (c2) => {
+userNotificationsId.patch("/", async (c2) => {
   const db = getD1(c2);
   if (!db) return c2.json({ error: "Database not configured" }, 503);
   const userId = await getAuthUserId(c2);
   if (!userId) return c2.json({ error: "Unauthorized" }, 401);
-  const { id } = c2.req.param();
+  const id = c2.req.param("id");
   const r2 = await db.prepare(`UPDATE notifications SET is_read = 1 WHERE id = ? AND user_id = ?`).bind(id, userId).run();
   if (!r2.success) return c2.json({ error: "Update failed" }, 500);
   invalidateUserResponseCaches(userId);
   const row = await db.prepare(`SELECT * FROM notifications WHERE id = ? AND user_id = ?`).bind(id, userId).first();
   return c2.json(row);
+});
+userNotificationsId.delete("/", async (c2) => {
+  const db = getD1(c2);
+  if (!db) return c2.json({ error: "Database not configured" }, 503);
+  const userId = await getAuthUserId(c2);
+  if (!userId) return c2.json({ error: "Unauthorized" }, 401);
+  const id = c2.req.param("id");
+  const r2 = await db.prepare(`DELETE FROM notifications WHERE id = ? AND user_id = ?`).bind(id, userId).run();
+  if (!r2.success) return c2.json({ error: "Delete failed" }, 500);
+  invalidateUserResponseCaches(userId);
+  return c2.json({ success: true });
 });
 var id_default2 = userNotificationsId;
 
@@ -55994,6 +56111,7 @@ app.route("/api/credits/checkout", checkout_default2);
 app.route("/api/credits/packages", packages_default);
 app.route("/api/credits/redeem", redeem_default);
 app.route("/api/credits/sync-invoice", sync_invoice_default);
+app.route("/api/landing", config_default);
 app.route("/api/pricing", pricing_default);
 app.route("/api/proxy-image", proxy_image_default);
 app.route("/api/realtime", realtime_default);

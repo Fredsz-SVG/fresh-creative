@@ -3,16 +3,18 @@
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { fetchWithAuth } from '../../../lib/api-client'
 import { toast } from 'sonner'
-import { Loader2, Eye, BookOpen, Save, ExternalLink } from 'lucide-react'
+import { Loader2, Eye, BookOpen, Save, ExternalLink, MessageCircle } from 'lucide-react'
 
 export default function AdminShowcasePage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [albumCarouselLink, setAlbumCarouselLink] = useState('')
   const [flipbookPreviewUrl, setFlipbookPreviewUrl] = useState('')
+  const [fonnteTarget, setFonnteTarget] = useState('')
   const hasCacheRef = React.useRef(false)
   const albumInputRef = useRef<HTMLInputElement | null>(null)
   const flipbookInputRef = useRef<HTMLInputElement | null>(null)
+  const fonnteInputRef = useRef<HTMLInputElement | null>(null)
 
   const cacheKey = 'admin_showcase_v1'
 
@@ -22,10 +24,11 @@ export default function AdminShowcasePage() {
     try {
       const raw = window.sessionStorage.getItem(cacheKey)
       if (!raw) return
-      const parsed = JSON.parse(raw) as { ts: number; data: { albumCarouselLink: string; flipbookPreviewUrl: string } }
+      const parsed = JSON.parse(raw) as { ts: number; data: { albumCarouselLink: string; flipbookPreviewUrl: string; target: string } }
       if (parsed?.data) {
         setAlbumCarouselLink(parsed.data.albumCarouselLink || '')
         setFlipbookPreviewUrl(parsed.data.flipbookPreviewUrl || '')
+        setFonnteTarget(parsed.data.target || '')
         setLoading(false)
         hasCacheRef.current = true
       }
@@ -44,11 +47,13 @@ export default function AdminShowcasePage() {
         const list = Array.isArray(obj.albumPreviews) ? obj.albumPreviews : []
         const albumLink = list[0]?.link ? String(list[0].link) : ''
         const flipbookLink = typeof obj.flipbookPreviewUrl === 'string' ? obj.flipbookPreviewUrl : ''
+        const target = typeof obj.target === 'string' ? obj.target : ''
         setAlbumCarouselLink(albumLink)
         setFlipbookPreviewUrl(flipbookLink)
+        setFonnteTarget(target)
         if (typeof window !== 'undefined') {
           try {
-            window.sessionStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), data: { albumCarouselLink: albumLink, flipbookPreviewUrl: flipbookLink } }))
+            window.sessionStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), data: { albumCarouselLink: albumLink, flipbookPreviewUrl: flipbookLink, target } }))
           } catch {
             // ignore
           }
@@ -71,9 +76,11 @@ export default function AdminShowcasePage() {
   const handleSave = async () => {
     const latestAlbumLink = (albumInputRef.current?.value ?? albumCarouselLink).trim()
     const latestFlipbookLink = (flipbookInputRef.current?.value ?? flipbookPreviewUrl).trim()
+    const latestFonnteTarget = (fonnteInputRef.current?.value ?? fonnteTarget).trim()
     // Keep state synced with actual input DOM values before sending.
     setAlbumCarouselLink(latestAlbumLink)
     setFlipbookPreviewUrl(latestFlipbookLink)
+    setFonnteTarget(latestFonnteTarget)
 
     setSaving(true)
     try {
@@ -83,6 +90,7 @@ export default function AdminShowcasePage() {
         body: JSON.stringify({
           albumPreviews: latestAlbumLink ? [{ title: '', imageUrl: '', link: latestAlbumLink }] : [],
           flipbookPreviewUrl: latestFlipbookLink,
+          target: latestFonnteTarget,
         }),
       })
       const data = (await res.json().catch(() => ({}))) as unknown
@@ -108,7 +116,7 @@ export default function AdminShowcasePage() {
           <div className="h-4 bg-slate-100 dark:bg-slate-800 rounded-lg w-96" />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
-          {[1, 2].map(i => (
+          {[1, 2, 3].map(i => (
             <div key={i} className="rounded-3xl border-4 border-slate-900 dark:border-slate-700 bg-white dark:bg-slate-900 p-6 md:p-8 shadow-[8px_8px_0_0_#0f172a] dark:shadow-[8px_8px_0_0_#334155]">
               <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-32 mb-4" />
               <div className="h-4 bg-slate-100 dark:bg-slate-800 rounded w-full mb-2" />
@@ -182,6 +190,33 @@ export default function AdminShowcasePage() {
                 onChange={(e) => setAlbumCarouselLink(e.target.value)}
                 placeholder="/album/uuid/preview"
                 className="w-full px-5 py-4 text-sm font-bold rounded-2xl bg-white dark:bg-slate-900 border-4 border-slate-900 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-4 focus:ring-sky-200 dark:focus:ring-sky-900 transition-all shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155] focus:shadow-none"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Fonnte WhatsApp Target */}
+        <div className="rounded-3xl border-4 border-slate-900 dark:border-slate-700 bg-green-50 dark:bg-slate-800 p-6 md:p-8 shadow-[8px_8px_0_0_#0f172a] dark:shadow-[8px_8px_0_0_#334155] relative overflow-hidden group">
+          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+            <MessageCircle className="w-16 h-16 text-green-300 dark:text-green-900" />
+          </div>
+          <div className="relative">
+            <h3 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+              <MessageCircle className="w-4 h-4" />
+              Fonnte WhatsApp Target
+            </h3>
+            <p className="text-[13px] font-bold text-slate-600 dark:text-slate-300 mb-4 leading-relaxed">
+              Nomor WhatsApp penerima notifikasi saat user mengisi form Cetak Fisik. Format: <br />
+              <code className="text-green-700 dark:text-green-300 bg-white/60 dark:bg-slate-900/60 px-1.5 py-0.5 rounded border border-green-200 dark:border-green-700">62xxxxxxxxxx</code>
+            </p>
+            <div className="relative">
+              <input
+                ref={fonnteInputRef}
+                type="text"
+                value={fonnteTarget}
+                onChange={(e) => setFonnteTarget(e.target.value)}
+                placeholder="6285865913347"
+                className="w-full px-5 py-4 text-sm font-bold rounded-2xl bg-white dark:bg-slate-900 border-4 border-slate-900 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-4 focus:ring-green-200 dark:focus:ring-green-900 transition-all shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155] focus:shadow-none"
               />
             </div>
           </div>

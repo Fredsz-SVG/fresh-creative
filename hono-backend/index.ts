@@ -78,6 +78,9 @@ import creditsPackages from './routes/credits/packages';
 import creditsRedeem from './routes/credits/redeem';
 import creditsSyncInvoice from './routes/credits/sync-invoice';
 
+// ── Landing ──
+import landingConfig from './routes/landing/config';
+
 // ── Misc ──
 import pricing from './routes/pricing';
 import proxyImage from './routes/proxy-image';
@@ -236,6 +239,9 @@ app.route('/api/credits/checkout', creditsCheckout);
 app.route('/api/credits/packages', creditsPackages);
 app.route('/api/credits/redeem', creditsRedeem);
 app.route('/api/credits/sync-invoice', creditsSyncInvoice);
+
+// Landing
+app.route('/api/landing', landingConfig);
 
 // Misc
 app.route('/api/pricing', pricing);

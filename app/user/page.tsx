@@ -365,7 +365,7 @@ export default function UserPage() {
                       <div className="sm:hidden absolute bottom-4 left-1/2 -translate-x-1/2 z-30 px-2 py-0.5 bg-yellow-400 border-[1.5px] border-slate-900 rounded-md text-slate-900 text-[8px] font-black shadow-[2px_2px_0_0_#0f172a] whitespace-nowrap animate-float tracking-tighter">
                         Klik untuk Demo
                       </div>
-                      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300">
+                      <div className="absolute inset-0 hidden sm:flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300">
                         {/* Desktop: Original Button */}
                         <div className="hidden sm:flex px-5 py-3 bg-slate-900/90 backdrop-blur-md rounded-full text-white text-sm font-black shadow-xl items-center gap-2 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300">
                           <GalleryHorizontal className="w-4 h-4 text-orange-400" />
@@ -405,7 +405,7 @@ export default function UserPage() {
                       <div className="sm:hidden absolute bottom-4 left-1/2 -translate-x-1/2 z-30 px-2 py-0.5 bg-yellow-400 border-[1.5px] border-slate-900 rounded-md text-slate-900 text-[8px] font-black shadow-[2px_2px_0_0_#0f172a] whitespace-nowrap animate-float tracking-tighter">
                         Klik untuk Demo
                       </div>
-                      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300">
+                      <div className="absolute inset-0 hidden sm:flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300">
                         {/* Desktop: Original Button */}
                         <div className="hidden sm:flex px-5 py-3 bg-slate-900/90 backdrop-blur-md rounded-full text-white text-sm font-black shadow-xl items-center gap-2 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300">
                           <BookMarked className="w-4 h-4 text-emerald-400" />
@@ -420,7 +420,7 @@ export default function UserPage() {
                       <div className="sm:hidden absolute bottom-4 left-1/2 -translate-x-1/2 z-30 px-2 py-0.5 bg-yellow-400 border-[1.5px] border-slate-900 rounded-md text-slate-900 text-[8px] font-black shadow-[2px_2px_0_0_#0f172a] whitespace-nowrap animate-float tracking-tighter">
                         Klik untuk Demo
                       </div>
-                      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300">
+                      <div className="absolute inset-0 hidden sm:flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300">
                         {/* Desktop: Original Button */}
                         <div className="hidden sm:flex px-5 py-3 bg-slate-900/90 backdrop-blur-md rounded-full text-white text-sm font-black shadow-xl items-center gap-2 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300">
                           <BookMarked className="w-4 h-4 text-emerald-400" />

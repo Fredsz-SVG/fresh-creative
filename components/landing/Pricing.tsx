@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect } from "react";
-import { Check, Book, Sparkles, Star } from "lucide-react";
+import { Check, Book, BookOpen, Sparkles, Star } from "lucide-react";
 import { TiLocationArrow } from "react-icons/ti";
 import { apiUrl } from "@/lib/api-url";
 import { AnimatedTitle } from "./AnimatedTitle";
@@ -54,6 +54,19 @@ function formatRupiah(n: number) {
   return `Rp ${n.toLocaleString("id-ID")}`;
 }
 
+function normalizeWhatsappForDedupe(value: string): string {
+  const digits = value.replace(/\D/g, "");
+  if (!digits) return "";
+  // International prefix 00xx -> xx
+  if (digits.startsWith("00")) return digits.slice(2);
+  // Indonesia local variants -> canonical 62xxxx
+  if (digits.startsWith("0")) return `62${digits.slice(1)}`;
+  if (digits.startsWith("62")) return digits;
+  if (digits.startsWith("8")) return `62${digits}`;
+  // Other countries keep digits as-is (e.g. +44 -> 44)
+  return digits;
+}
+
 export function Pricing() {
   const [tab, setTab] = useState<TabType>("digital");
   const [digitalPackages, setDigitalPackages] = useState<DigitalPackage[]>([]);
@@ -88,6 +101,110 @@ export function Pricing() {
   const [packaging, setPackaging] = useState<(typeof PACKAGING_OPTIONS)[number]["id"]>("tas");
   const [videoCinematic, setVideoCinematic] = useState(false);
   const [fotografer, setFotografer] = useState<(typeof FOTOGRAFER_OPTIONS)[number]["id"]>("tidak");
+  const [showFisikEstimator, setShowFisikEstimator] = useState(false);
+  const [fisikIntro, setFisikIntro] = useState({
+    schoolName: "",
+    whatsapp: "",
+    contactName: "",
+  });
+  const [fisikIntroError, setFisikIntroError] = useState<string | null>(null);
+
+  const handleLanjutFisik = () => {
+    const schoolName = fisikIntro.schoolName.trim();
+    const whatsapp = fisikIntro.whatsapp.trim();
+    const contactName = fisikIntro.contactName.trim();
+
+    if (!schoolName || !whatsapp || !contactName) {
+      setFisikIntroError("Semua field wajib diisi sebelum lanjut ke perhitungan.");
+      return;
+    }
+
+    const normalizedWhatsapp = whatsapp.replace(/[\s\-().]/g, "");
+    const dedupeWhatsappKey = normalizeWhatsappForDedupe(normalizedWhatsapp);
+    const isValidWhatsapp = /^\+?[0-9]{9,20}$/.test(normalizedWhatsapp);
+    if (!isValidWhatsapp) {
+      setFisikIntroError("Format nomor WhatsApp tidak valid. Contoh: 081234567890, 6281234567890, atau +447911123456.");
+      return;
+    }
+
+    setFisikIntroError(null);
+    try {
+      const sentKey = `landing:fisik:intro:sent:wa:${dedupeWhatsappKey || normalizedWhatsapp}`;
+      const alreadySent = localStorage.getItem(sentKey) === "1";
+      if (!alreadySent) {
+        localStorage.setItem(sentKey, "1");
+        void fetch(apiUrl("/api/landing/physical-intro-notify"), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ schoolName, whatsapp: normalizedWhatsapp, contactName }),
+          keepalive: true,
+        }).catch(() => {
+          localStorage.removeItem(sentKey);
+        });
+      }
+    } catch {
+      // If storage is unavailable, continue UX and still try sending once.
+      void fetch(apiUrl("/api/landing/physical-intro-notify"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ schoolName, whatsapp: normalizedWhatsapp, contactName }),
+        keepalive: true,
+      }).catch(() => {});
+    }
+    
+    setShowFisikEstimator(true);
+  };
+
+  const handleAmbilPenawaran = async () => {
+    try {
+      // Get cover and packaging labels
+      const coverLabel = COVER_OPTIONS.find((c) => c.id === cover)?.label || cover;
+      const packagingLabel = PACKAGING_OPTIONS.find((p) => p.id === packaging)?.label || packaging;
+      const fotograferLabel = FOTOGRAFER_OPTIONS.find((f) => f.id === fotografer)?.label || fotografer;
+
+      // Build message
+      const messageLines = [
+        "Halo, saya mau tanya tentang cetak fisik untuk angkatan.",
+        "",
+        "*Data Pengirim*",
+        `Sekolah: ${fisikIntro.schoolName}`,
+        `Nama Panitia: ${fisikIntro.contactName}`,
+        `WhatsApp: ${fisikIntro.whatsapp}`,
+        "",
+        "*Estimasi Budget Angkatan*",
+        "",
+        `Siswa: ${jumlahSiswa}`,
+        `Kelas: ${jumlahKelas}`,
+        `Tebal Buku: ${tebalBuku} Halaman`,
+        "",
+        `Tipe Cover: ${coverLabel}`,
+        `Packaging: ${packagingLabel}`,
+        "",
+        "*Add-ons & Services*",
+        videoCinematic ? "- Video Cinematic: Ya (+Rp 3.000.000)" : "- Video Cinematic: Tidak",
+        `- Fotografer: ${fotograferLabel}`,
+        "",
+        `Estimasi Per Siswa: ${formatRupiah(estimasi.perSiswa)}`,
+        `Estimasi Total: ${formatRupiah(estimasi.perSiswa * jumlahSiswa)}`,
+        "",
+        "Bisa bantu saya dengan penawaran lengkapnya?",
+      ];
+      const message = messageLines.join("\n");
+
+      const configRes = await fetch(apiUrl("/api/landing/config"));
+      if (configRes.ok) {
+        const config = (await configRes.json().catch(() => ({}))) as { target?: string };
+        const target = config.target?.trim();
+        if (target) {
+          // Open WhatsApp with pre-filled message
+          const encodedMessage = encodeURIComponent(message);
+          window.open(`https://wa.me/${target}?text=${encodedMessage}`, "_blank");
+        }
+      }
+    } catch {
+      // Silently fail if config fetch fails
+    }
+  };
 
   useEffect(() => {
     fetch(apiUrl("/api/pricing"))
@@ -115,20 +232,43 @@ export function Pricing() {
   const estimasi = useMemo(() => {
     const coverOpt = COVER_OPTIONS.find((c) => c.id === cover)!;
     const packOpt = PACKAGING_OPTIONS.find((p) => p.id === packaging)!;
-    const printBinding = 254000;
-    const coverPack = coverOpt.add + packOpt.add;
+    const fotograferOpt = FOTOGRAFER_OPTIONS.find((f) => f.id === fotografer)!;
+    
+    // Base cost per book
+    const basePrice = 254000;
+    const coverPackSubtotal = coverOpt.add + packOpt.add;
+    
+    // Thickness adjustment (tebalBuku affects print cost)
+    // Assuming base is ~102 pages, adjust from there
+    const thicknessAdjustment = Math.max(0, (tebalBuku - 102) * 1000); // Rp1000 per page difference
+    
+    // Shared costs (per siswa, divided by number of students)
     let sharedCost = 0;
-    if (videoCinematic) sharedCost += 3000000 / Math.max(1, jumlahSiswa);
+    if (videoCinematic) sharedCost += 3000000;
+    sharedCost += fotograferOpt.add; // Fotografer cost shared by all students
+    const sharedPerStudent = sharedCost / Math.max(1, jumlahSiswa);
+    
+    // Cashback
     const cashback = 29000;
-    const perSiswa = Math.round(printBinding + coverPack / Math.max(1, jumlahSiswa) + sharedCost - cashback);
+    
+    // Per student calculation
+    const perSiswa = Math.round(
+      basePrice + 
+      thicknessAdjustment + 
+      (coverPackSubtotal / Math.max(1, jumlahSiswa)) + 
+      sharedPerStudent - 
+      cashback
+    );
+    
     return {
-      printBinding,
-      coverPack: Math.round(coverPack / Math.max(1, jumlahSiswa)),
-      sharedCost: Math.round(sharedCost),
+      printBinding: basePrice,
+      thicknessAdjustment: Math.round(thicknessAdjustment),
+      coverPack: Math.round(coverPackSubtotal / Math.max(1, jumlahSiswa)),
+      sharedCost: Math.round(sharedPerStudent),
       cashback,
       perSiswa: Math.max(0, perSiswa),
     };
-  }, [cover, packaging, videoCinematic, jumlahSiswa]);
+  }, [cover, packaging, videoCinematic, fotografer, tebalBuku, jumlahSiswa]);
 
   return (
     <section id="pricing" className="w-full bg-slate-100 dark:bg-slate-950 py-16 md:py-24 transition-colors duration-500">
@@ -259,17 +399,21 @@ export function Pricing() {
                             <div className="flex flex-wrap gap-2">
                               {pkg.flipbook_enabled &&
                                 !pkg.ai_labs_features.includes("flipbook_unlock") && (
-                                  <span className="inline-flex items-center gap-1.5 rounded-md border border-slate-900 dark:border-white bg-lime-400 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-slate-900 shadow-[1px_1px_0_0_#0f172a] dark:shadow-[#a3e635]">
+                                  <span className="inline-flex items-center gap-1.5 rounded-md border border-amber-700 dark:border-amber-300 bg-amber-300 dark:bg-amber-400 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-amber-950 shadow-[1px_1px_0_0_#0f172a] dark:shadow-amber-300/80">
                                     <Book className="h-3 w-3" /> Flipbook
                                   </span>
                                 )}
                               {pkg.ai_labs_features.map((slug) => (
                                 <span
                                   key={slug}
-                                  className="inline-flex items-center gap-1.5 rounded-md border border-slate-900 dark:border-white bg-cyan-400 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-slate-900 shadow-[1px_1px_0_0_#0f172a] dark:shadow-[#a3e635]"
+                                  className={`inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[10px] font-black uppercase tracking-wider shadow-[1px_1px_0_0_#0f172a] ${
+                                    slug === "flipbook_unlock"
+                                      ? "border border-amber-700 dark:border-amber-300 bg-amber-300 dark:bg-amber-400 text-amber-950 dark:shadow-amber-300/80"
+                                      : "border border-slate-900 dark:border-white bg-cyan-400 text-slate-900 dark:shadow-[#a3e635]"
+                                  }`}
                                 >
                                   {slug === "flipbook_unlock" ? (
-                                    <Book className="h-3 w-3" />
+                                    <BookOpen className="h-3 w-3" />
                                   ) : (
                                     <Sparkles className="h-3 w-3" />
                                   )}
@@ -366,9 +510,94 @@ export function Pricing() {
           </div>
         )}
 
-        {/* Fisik: estimasi budget angkatan (kodingan yang sudah ada) */}
+        {/* Fisik: form awal lalu estimasi budget angkatan */}
         {tab === "fisik" && (
+        <>
+        {!showFisikEstimator ? (
+          <div className="mx-auto max-w-3xl rounded-[1.5rem] sm:rounded-[2.5rem] border-2 border-slate-900 dark:border-white bg-white dark:bg-slate-900 shadow-[3px_3px_0_0_#0f172a] dark:shadow-[#a3e635] p-5 sm:p-8 md:p-12">
+            <h3 className="font-sans text-lg sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white mb-2 sm:mb-3 flex items-center gap-3">
+              <span className="h-6 sm:h-8 w-2 bg-lime-500" /> Data Awal Cetak Fisik
+            </h3>
+            <p className="text-xs sm:text-sm text-slate-600 dark:text-white/70 mb-6 sm:mb-8">
+              Lengkapi data berikut terlebih dulu untuk melanjutkan ke perhitungan estimasi.
+            </p>
+
+            <div className="space-y-4 sm:space-y-5">
+              <div>
+                <label className="block text-[11px] sm:text-sm font-medium text-slate-700 dark:text-white/90 mb-1.5 sm:mb-2">
+                  Nama Sekolah / Organisasi
+                </label>
+                <input
+                  type="text"
+                  value={fisikIntro.schoolName}
+                  onChange={(e) => {
+                    setFisikIntro((prev) => ({ ...prev, schoolName: e.target.value }));
+                    if (fisikIntroError) setFisikIntroError(null);
+                  }}
+                  placeholder="Contoh: SMA Negeri 1 Jakarta"
+                  className="w-full rounded-xl border border-slate-900 dark:border-white bg-slate-50 dark:bg-slate-800 px-3 sm:px-4 py-2.5 sm:py-3 text-slate-900 dark:text-white text-xs sm:text-sm font-bold focus:shadow-[2px_2px_0_0_#0f172a] dark:focus:shadow-[#a3e635] focus:outline-none transition-all shadow-[1px_1px_0_0_#0f172a] dark:shadow-[#a3e635]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] sm:text-sm font-medium text-slate-700 dark:text-white/90 mb-1.5 sm:mb-2">
+                  Nomor WhatsApp
+                </label>
+                <input
+                  type="tel"
+                  value={fisikIntro.whatsapp}
+                  onChange={(e) => {
+                    setFisikIntro((prev) => ({ ...prev, whatsapp: e.target.value }));
+                    if (fisikIntroError) setFisikIntroError(null);
+                  }}
+                  placeholder="Contoh: 081234567890"
+                  className="w-full rounded-xl border border-slate-900 dark:border-white bg-slate-50 dark:bg-slate-800 px-3 sm:px-4 py-2.5 sm:py-3 text-slate-900 dark:text-white text-xs sm:text-sm font-bold focus:shadow-[2px_2px_0_0_#0f172a] dark:focus:shadow-[#a3e635] focus:outline-none transition-all shadow-[1px_1px_0_0_#0f172a] dark:shadow-[#a3e635]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] sm:text-sm font-medium text-slate-700 dark:text-white/90 mb-1.5 sm:mb-2">
+                  Nama Panitia
+                </label>
+                <input
+                  type="text"
+                  value={fisikIntro.contactName}
+                  onChange={(e) => {
+                    setFisikIntro((prev) => ({ ...prev, contactName: e.target.value }));
+                    if (fisikIntroError) setFisikIntroError(null);
+                  }}
+                  placeholder="Contoh: Budi Prasetyo"
+                  className="w-full rounded-xl border border-slate-900 dark:border-white bg-slate-50 dark:bg-slate-800 px-3 sm:px-4 py-2.5 sm:py-3 text-slate-900 dark:text-white text-xs sm:text-sm font-bold focus:shadow-[2px_2px_0_0_#0f172a] dark:focus:shadow-[#a3e635] focus:outline-none transition-all shadow-[1px_1px_0_0_#0f172a] dark:shadow-[#a3e635]"
+                />
+              </div>
+
+              {fisikIntroError && (
+                <p className="text-xs sm:text-sm font-semibold text-red-600 dark:text-red-400">{fisikIntroError}</p>
+              )}
+
+              <button
+                type="button"
+                onClick={handleLanjutFisik}
+                className="group w-full rounded-[1.2rem] sm:rounded-[1.5rem] border border-slate-900 bg-lime-400 px-5 sm:px-8 py-3.5 sm:py-4 text-sm sm:text-base font-black text-slate-900 transition-all hover:-translate-y-0.5 hover:-translate-x-0.5 hover:shadow-[3px_3px_0_0_#0f172a] active:translate-x-0 active:translate-y-0 active:shadow-none"
+              >
+                Lanjutkan <TiLocationArrow className="inline-block ml-1 sm:ml-2 group-hover:translate-x-1" />
+              </button>
+            </div>
+          </div>
+        ) : (
         <div className="mx-auto max-w-6xl rounded-[1.5rem] sm:rounded-[2.5rem] border-2 border-slate-900 dark:border-white bg-white dark:bg-slate-900 shadow-[3px_3px_0_0_#0f172a] dark:shadow-[#a3e635] p-5 sm:p-8 md:p-12">
+          <div className="mb-5 sm:mb-6 rounded-xl border border-cyan-300 dark:border-cyan-500/50 bg-cyan-50 dark:bg-cyan-900/20 p-3 sm:p-4 text-xs sm:text-sm text-cyan-900 dark:text-cyan-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <span>
+              <strong>{fisikIntro.schoolName}</strong> • {fisikIntro.contactName} ({fisikIntro.whatsapp})
+            </span>
+            <button
+              type="button"
+              onClick={() => setShowFisikEstimator(false)}
+              className="w-fit rounded-lg border border-cyan-700 dark:border-cyan-300 px-2.5 py-1 font-bold hover:bg-cyan-100 dark:hover:bg-cyan-800/40"
+            >
+              Ubah Data
+            </button>
+          </div>
           <h3 className="font-sans text-lg sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white mb-6 sm:mb-10 flex items-center gap-3">
             <span className="h-6 sm:h-8 w-2 bg-lime-500" /> Estimasi Budget Angkatan
           </h3>
@@ -530,17 +759,23 @@ export function Pricing() {
                   <span>Print &amp; Binding:</span>
                   <span>{formatRupiah(estimasi.printBinding)}</span>
                 </div>
+                {estimasi.thicknessAdjustment > 0 && (
+                  <div className="flex justify-between text-slate-600 dark:text-white/80">
+                    <span>Adj. Tebal Buku:</span>
+                    <span>+{formatRupiah(estimasi.thicknessAdjustment)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between text-slate-600 dark:text-white/80">
                   <span>Cover &amp; Pack:</span>
                   <span>{formatRupiah(estimasi.coverPack)}</span>
                 </div>
                 <div className="flex justify-between text-cyan-600 dark:text-cyan-400/90 font-medium">
-                  <span>Shared Cost:</span>
+                  <span>Add-ons (Video + Fotografer):</span>
                   <span>{formatRupiah(estimasi.sharedCost)}</span>
                 </div>
                 <div className="flex justify-between text-lime-600 dark:text-lime-400 font-bold">
                   <span>Cashback:</span>
-                  <span>{formatRupiah(estimasi.cashback)}</span>
+                  <span>-{formatRupiah(estimasi.cashback)}</span>
                 </div>
               </div>
 
@@ -555,6 +790,7 @@ export function Pricing() {
 
               <button
                 type="button"
+                onClick={handleAmbilPenawaran}
                 className="group w-full rounded-[1.2rem] sm:rounded-[1.5rem] border border-slate-900 bg-lime-400 px-5 sm:px-8 py-3.5 sm:py-5 text-base sm:text-xl font-black text-slate-900 transition-all hover:-translate-y-0.5 hover:-translate-x-0.5 hover:shadow-[3px_3px_0_0_#0f172a] active:translate-x-0 active:translate-y-0 active:shadow-none"
               >
                 Ambil Penawaran <TiLocationArrow className="inline-block ml-1 sm:ml-2 group-hover:translate-x-1" />
@@ -562,6 +798,8 @@ export function Pricing() {
             </div>
           </div>
         </div>
+        )}
+        </>
         )}
       </div>
     </section>

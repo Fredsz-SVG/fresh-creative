@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Check, Book, Sparkles, Star } from "lucide-react";
+import { ArrowLeft, Check, Book, BookOpen, Sparkles, Star } from "lucide-react";
 import DashboardTitle from "@/components/dashboard/DashboardTitle";
 import { apiUrl } from '../../lib/api-url'
 import { fetchWithAuth } from '../../lib/api-client'
@@ -343,17 +343,17 @@ export default function PricingView({
                       <p className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-3">Termasuk</p>
                       <div className="flex flex-wrap gap-2">
                         {pkg.flipbook_enabled && !pkg.ai_labs_features.includes('flipbook_unlock') && (
-                          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-orange-200 dark:bg-orange-900/50 text-slate-900 dark:text-slate-100 text-[12px] font-black uppercase tracking-wider border-2 border-slate-900 dark:border-slate-600 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155]">
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-300 dark:bg-amber-400 text-amber-950 text-[12px] font-black uppercase tracking-wider border-2 border-amber-700 dark:border-amber-300 shadow-[2px_2px_0_0_#0f172a] dark:shadow-amber-300/80">
                             <Book className="w-3.5 h-3.5" /> Flipbook
                           </span>
                         )}
                         {pkg.ai_labs_features.map((slug) => (
                           <span
                             key={slug}
-                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[12px] font-black uppercase tracking-wider border-2 border-slate-900 dark:border-slate-600 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] ${slug === 'flipbook_unlock' ? 'bg-orange-200 dark:bg-orange-900/50 text-slate-900 dark:text-slate-100' : 'bg-indigo-300 dark:bg-indigo-900/50 text-slate-900 dark:text-slate-100'
+                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[12px] font-black uppercase tracking-wider border-2 shadow-[2px_2px_0_0_#0f172a] ${slug === 'flipbook_unlock' ? 'border-amber-700 dark:border-amber-300 bg-amber-300 dark:bg-amber-400 text-amber-950 dark:shadow-amber-300/80' : 'border-slate-900 dark:border-slate-600 bg-indigo-300 dark:bg-indigo-900/50 text-slate-900 dark:text-slate-100 dark:shadow-[2px_2px_0_0_#334155]'
                               }`}
                           >
-                            {slug === 'flipbook_unlock' ? <Book className="w-3.5 h-3.5" /> : <Sparkles className="w-3.5 h-3.5" />}
+                            {slug === 'flipbook_unlock' ? <BookOpen className="w-3.5 h-3.5" /> : <Sparkles className="w-3.5 h-3.5" />}
                             {AI_FEATURE_LABELS[slug] ?? slug}
                           </span>
                         ))}

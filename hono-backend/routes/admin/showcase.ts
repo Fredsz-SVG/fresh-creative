@@ -1,6 +1,7 @@
 import type { D1Database } from '@cloudflare/workers-types'
 import { Hono } from 'hono'
 import { getShowcaseFromD1, saveShowcaseToD1, type ShowcasePayload } from '../../lib/showcase-d1'
+import { getFonnteConfigFromD1, saveFonnteConfigToD1, type FonnteConfigPayload } from '../../lib/fonnte-config-d1'
 import { getSupabaseClient } from '../../lib/supabase'
 import { getRole } from '../../lib/auth'
 import { ensureUserInD1, honoEnvForSupabasePublicSync } from '../../lib/d1-users'
@@ -23,8 +24,11 @@ adminShowcase.get('/', async (c) => {
   await ensureUserInD1(db, user, honoEnvForSupabasePublicSync(c.env))
   if ((await getRole(c, user)) !== 'admin') return c.json({ error: 'Forbidden' }, 403)
   try {
-    const payload = await getShowcaseFromD1(db)
-    return c.json(payload)
+    const [showcase, fonnte] = await Promise.all([
+      getShowcaseFromD1(db),
+      getFonnteConfigFromD1(db),
+    ])
+    return c.json({ ...showcase, ...fonnte })
   } catch {
     return c.json({ error: 'Failed to load showcase' }, 500)
   }
@@ -42,6 +46,8 @@ adminShowcase.put('/', async (c) => {
   if ((await getRole(c, user)) !== 'admin') return c.json({ error: 'Forbidden' }, 403)
 
   const body = await c.req.json().catch(() => ({}))
+  
+  // Showcase payload
   const albumPreviews = Array.isArray(body?.albumPreviews)
     ? body.albumPreviews
         .filter(
@@ -58,17 +64,24 @@ adminShowcase.put('/', async (c) => {
         }))
     : []
   const flipbookPreviewUrl = typeof body?.flipbookPreviewUrl === 'string' ? body.flipbookPreviewUrl : ''
+  const showcasePayload: ShowcasePayload = { albumPreviews, flipbookPreviewUrl }
 
-  const payload: ShowcasePayload = { albumPreviews, flipbookPreviewUrl }
+  // Fonnte config payload
+  const target = typeof body?.target === 'string' ? body.target.trim() : ''
+  const fonntPayload: FonnteConfigPayload = { target }
+
   try {
-    await saveShowcaseToD1(db, payload)
+    await Promise.all([
+      saveShowcaseToD1(db, showcasePayload),
+      saveFonnteConfigToD1(db, fonntPayload),
+    ])
     await publishRealtimeEventFromContext(c, {
       type: 'showcase.updated',
       channel: 'showcase',
       payload: { action: 'replace' },
       ts: new Date().toISOString(),
     })
-    return c.json(payload)
+    return c.json({ ...showcasePayload, ...fonntPayload })
   } catch (e) {
     const msg = e instanceof Error ? e.message : 'save failed'
     return c.json({ error: msg }, 500)
