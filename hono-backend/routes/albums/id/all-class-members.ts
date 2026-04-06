@@ -26,12 +26,6 @@ allClassMembersRoute.get('/', async (c) => {
       .prepare(`SELECT role FROM album_members WHERE album_id = ? AND user_id = ?`)
       .bind(albumId, user.id)
       .first<{ role: string }>() : null
-    const studentRow = user ? await db
-      .prepare(
-        `SELECT id FROM album_class_access WHERE album_id = ? AND user_id = ? AND status = 'approved'`
-      )
-      .bind(albumId, user.id)
-      .first<{ id: string }>() : null
 
     const isGlobalAdmin = roleRes === 'admin'
     const isOwner = user ? (album.user_id === user.id || isGlobalAdmin) : false

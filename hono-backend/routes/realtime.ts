@@ -1,4 +1,5 @@
 import type { DurableObjectNamespace } from '@cloudflare/workers-types'
+import type { Context } from 'hono'
 import { Hono } from 'hono'
 
 type RealtimeEnv = {
@@ -7,7 +8,7 @@ type RealtimeEnv = {
 
 const realtime = new Hono<{ Bindings: RealtimeEnv }>()
 
-const wsHandler = async (c: any) => {
+const wsHandler = async (c: Context<{ Bindings: RealtimeEnv }>) => {
   const hub = (c.env as RealtimeEnv).REALTIME_HUB
   if (!hub) {
     return c.json({ error: 'Realtime hub is not configured' }, 503)

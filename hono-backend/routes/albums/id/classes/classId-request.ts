@@ -129,7 +129,7 @@ classRequestRoute.post('/', async (c) => {
         JSON.stringify({ status: 'Menunggu' })
       )
       .run()
-  } catch (_) { /* non-fatal */ }
+  } catch { /* non-fatal */ }
 
   const created = await db.prepare(`SELECT * FROM album_join_requests WHERE id = ?`).bind(rid).first()
 
