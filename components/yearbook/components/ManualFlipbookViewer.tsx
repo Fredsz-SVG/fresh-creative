@@ -2,7 +2,7 @@ import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react'
 import { flushSync } from 'react-dom'
 import HTMLFlipBook from 'react-pageflip'
 import { Play, ChevronLeft, ChevronRight, Volume2, VolumeX, Maximize2, Minimize2, FlipHorizontal2, Share2, Copy, X } from 'lucide-react'
-import { toast } from 'sonner'
+import { toast } from '@/lib/toast'
 
 const RESIZE_THROTTLE_MS = 150
 const FLIP_UPDATE_DELAY_MS = 1200

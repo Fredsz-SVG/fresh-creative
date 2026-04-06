@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react'
 import { Book, Lock, Coins, Loader2 } from 'lucide-react'
-import { toast } from 'sonner'
+import { toast } from '@/lib/toast'
 import { fetchWithAuth } from '../../../lib/api-client'
 import { asObject, getErrorMessage } from '@/components/yearbook/utils/response-narrowing'
 

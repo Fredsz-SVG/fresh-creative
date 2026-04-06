@@ -490,16 +490,16 @@ export function Pricing() {
               </div>
 
               {selectedDigitalId && (
-                <div className="fixed sm:relative bottom-0 left-0 right-0 z-[100] sm:z-auto sm:mt-12 sm:mt-16 flex flex-col sm:flex-row items-center justify-between sm:justify-center gap-3 sm:gap-6 rounded-t-[1.5rem] sm:rounded-[2rem] border-t-4 sm:border-2 border-slate-900 dark:border-white bg-lime-400 p-4 sm:p-6 sm:p-8 text-center shadow-[0_-8px_30px_-15px_rgba(0,0,0,0.3)] sm:shadow-[3px_3px_0_0_#0f172a] dark:sm:shadow-[3px_3px_0_0_#fff] animate-in slide-in-from-bottom-full sm:animate-none duration-300">
+                <div className="fixed sm:relative bottom-0 left-0 right-0 z-[100] sm:z-auto sm:mt-16 flex flex-col sm:flex-row items-center justify-between sm:justify-center gap-3 sm:gap-6 rounded-t-[1.5rem] sm:rounded-[2rem] border-t-4 sm:border-2 border-slate-900 dark:border-white bg-lime-400 p-4 sm:p-8 text-center shadow-[0_-8px_30px_-15px_rgba(0,0,0,0.3)] sm:shadow-[3px_3px_0_0_#0f172a] dark:sm:shadow-[3px_3px_0_0_#fff] animate-in slide-in-from-bottom-full sm:animate-none duration-300">
                   <div className="flex-1 text-left sm:text-center">
-                    <p className="text-xs sm:text-base sm:text-lg font-black text-slate-900 tracking-tight leading-tight">
+                    <p className="text-xs sm:text-lg font-black text-slate-900 tracking-tight leading-tight">
                       🔥 Paket <span className="underline decoration-2">{digitalPackages.find((p) => p.id === selectedDigitalId)?.name}</span> dipilih.
                     </p>
                     <p className="hidden sm:block text-sm font-bold text-slate-700 mt-1">Siap untuk diproses sekarang juga.</p>
                   </div>
                   <a
                     href="/login?next=/user/showroom"
-                    className="group inline-flex items-center gap-2 rounded-xl sm:rounded-2xl border-2 sm:border border-slate-900 bg-white px-5 sm:px-8 sm:px-10 py-3 sm:py-3.5 sm:py-4 text-[11px] sm:text-sm sm:text-base font-black text-slate-900 transition-all hover:-translate-y-0.5 hover:-translate-x-0.5 hover:shadow-[3px_3px_0_0_#0f172a] active:translate-x-0 active:translate-y-0 active:shadow-none whitespace-nowrap"
+                    className="group inline-flex items-center gap-2 rounded-xl sm:rounded-2xl border-2 sm:border border-slate-900 bg-white px-5 sm:px-10 py-3 sm:py-4 text-[11px] sm:text-base font-black text-slate-900 transition-all hover:-translate-y-0.5 hover:-translate-x-0.5 hover:shadow-[3px_3px_0_0_#0f172a] active:translate-x-0 active:translate-y-0 active:shadow-none whitespace-nowrap"
                   >
                     Lanjut <span className="hidden sm:inline">Sekarang</span> <TiLocationArrow className="h-4 w-4 sm:h-5 sm:w-5 transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />
                   </a>

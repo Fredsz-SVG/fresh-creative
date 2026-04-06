@@ -164,7 +164,7 @@ export default function SambutanView({
               <div className="relative w-full max-w-md bg-white dark:bg-slate-900 border-4 border-slate-900 dark:border-slate-700 rounded-[32px] shadow-[12px_12px_0_0_#0f172a] dark:shadow-[12px_12px_0_0_#334155] overflow-hidden animate-in zoom-in-95 duration-200 z-[101]">
                 <div className="p-6">
                   <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Tambah Guru</h3>
+                    <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Tambah Profil</h3>
                     <button
                       onClick={() => { setAddingTeacher(false); setNewTeacherName('') }}
                       className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
@@ -175,7 +175,7 @@ export default function SambutanView({
 
                   <div className="flex flex-col gap-6">
                     <div>
-                      <label className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2 block">Nama Lengkap Guru</label>
+                      <label className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2 block">Nama Lengkap</label>
                       <input
                         type="text"
                         value={newTeacherName}
@@ -232,7 +232,7 @@ export default function SambutanView({
               type="button"
               onClick={() => setAddingTeacher(true)}
               className="fixed bottom-24 right-6 lg:bottom-10 lg:right-10 z-[60] flex items-center justify-center w-14 h-14 lg:w-16 lg:h-16 rounded-full bg-amber-400 dark:bg-amber-600 border-2 border-slate-900 dark:border-slate-600 shadow-[3px_3px_0_0_#0f172a] dark:shadow-[3px_3px_0_0_#334155] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all active:scale-90 group"
-              title="Tambah Guru"
+              title="Tambah Profil"
             >
               <Plus className="w-8 h-8 text-slate-900 dark:text-white transition-transform group-hover:rotate-90" strokeWidth={2.5} />
             </button>

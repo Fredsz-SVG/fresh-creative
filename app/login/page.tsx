@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { getRole } from '@/lib/auth'
 import { Eye, EyeOff } from 'lucide-react'
-import { toast } from 'sonner'
+import { toast } from '@/lib/toast'
 import { fetchWithAuth } from '../../lib/api-client'
 import { asObject } from '@/components/yearbook/utils/response-narrowing'
 

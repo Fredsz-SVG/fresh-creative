@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { toast } from 'sonner'
+import { toast } from '@/lib/toast'
 import { Check, Loader2, X, ChevronDown } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { apiUrl } from '../../lib/api-url'

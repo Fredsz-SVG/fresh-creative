@@ -34,15 +34,20 @@ const AI_FEATURE_LABELS: Record<string, string> = {
 // Slugs yang punya biaya generate (bukan unlock-only)
 const GENERATE_SLUGS = new Set(['tryon', 'pose', 'photogroup', 'phototovideo', 'image_remove_bg'])
 
+const DEFAULT_PACKAGE_FORM: Partial<PricingPackage> = {
+  name: '',
+  price_per_student: 0,
+  min_students: 0,
+  features: [],
+  flipbook_enabled: false,
+  ai_labs_features: [],
+  is_popular: false,
+}
+
 const PackageForm = ({ pkg, onSave, onCancel }: { pkg: Partial<PricingPackage> | null, onSave: (p: Partial<PricingPackage>) => void, onCancel: () => void }) => {
-  const [formData, setFormData] = useState<Partial<PricingPackage>>(pkg || {
-    name: '',
-    price_per_student: 0,
-    min_students: 0,
-    features: [],
-    flipbook_enabled: false,
-    ai_labs_features: [],
-    is_popular: false,
+  const [formData, setFormData] = useState<Partial<PricingPackage>>({
+    ...DEFAULT_PACKAGE_FORM,
+    ...(pkg ?? {}),
   })
 
   const [addons, setAddons] = useState<{ name: string, price: number }[]>(() => {
@@ -212,6 +217,8 @@ export default function PricingEditPage() {
   const [packages, setPackages] = useState<PricingPackage[]>([])
   const [loading, setLoading] = useState(true)
   const [editingPackage, setEditingPackage] = useState<Partial<PricingPackage> | null>(null)
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null)
+  const [deleting, setDeleting] = useState(false)
   const [activeTab, setActiveTab] = useState<'yearbook' | 'ai'>('yearbook')
   const [aiPricing, setAiPricing] = useState<AiFeaturePricing[]>([])
   const [loadingAi, setLoadingAi] = useState(true)
@@ -302,6 +309,7 @@ export default function PricingEditPage() {
 
   const handleSave = async (pkg: Partial<PricingPackage>) => {
     const method = pkg.id ? 'PUT' : 'POST'
+    const isEdit = method === 'PUT'
     console.log('[SAVE] method:', method, 'pkg:', JSON.stringify(pkg))
     setSaveStatus('saving')
     try {
@@ -317,7 +325,7 @@ export default function PricingEditPage() {
         alert('Save gagal: ' + responseText)
         return
       }
-      setSaveStatus('success')
+      setSaveStatus(isEdit ? 'update-success' : 'create-success')
       setEditingPackage(null)
       await fetchPackages()
       setTimeout(() => setSaveStatus(null), 3000)
@@ -351,17 +359,30 @@ export default function PricingEditPage() {
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this package?')) return
+    setDeleteTargetId(id)
+  }
+
+  const confirmDelete = async () => {
+    if (!deleteTargetId) return
+    setDeleting(true)
+    setSaveStatus('deleting')
     try {
       const res = await fetchWithAuth('/api/pricing', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id }),
+        body: JSON.stringify({ id: deleteTargetId }),
       })
       if (!res.ok) throw new Error(await res.text())
+      setDeleteTargetId(null)
+      setSaveStatus('delete-success')
       fetchPackages()
+      setTimeout(() => setSaveStatus(null), 3000)
     } catch (err) {
       console.error('Delete failed:', err)
+      const msg = err instanceof Error ? err.message : String(err)
+      setSaveStatus('delete-error: ' + msg)
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -370,15 +391,48 @@ export default function PricingEditPage() {
       {editingPackage && (
         <PackageForm pkg={editingPackage} onSave={handleSave} onCancel={() => setEditingPackage(null)} />
       )}
+      {deleteTargetId && (
+        <div className="fixed inset-0 bg-slate-900/60 dark:bg-black/60 flex items-center justify-center p-2 md:p-4 z-[200] backdrop-blur-md">
+          <div className="bg-white dark:bg-slate-900 border-4 border-slate-900 dark:border-slate-700 rounded-[24px] md:rounded-[32px] shadow-[6px_6px_0_0_#0f172a] dark:shadow-[6px_6px_0_0_#334155] md:shadow-[10px_10px_0_0_#0f172a] dark:md:shadow-[10px_10px_0_0_#334155] p-5 md:p-7 w-full max-w-md">
+            <h3 className="text-lg md:text-2xl font-black text-slate-900 dark:text-white tracking-tight">Hapus Package?</h3>
+            <p className="mt-2 text-xs md:text-sm font-bold text-slate-600 dark:text-slate-300">
+              Aksi ini tidak bisa dibatalkan. Data package yang dipilih akan dihapus permanen.
+            </p>
+            <div className="mt-5 md:mt-6 flex gap-3 md:gap-4">
+              <button
+                type="button"
+                disabled={deleting}
+                onClick={() => setDeleteTargetId(null)}
+                className="flex-1 px-4 py-3 md:px-6 md:py-4 border-4 border-slate-900 dark:border-slate-700 rounded-xl md:rounded-2xl text-slate-900 dark:text-white font-black hover:bg-slate-50 dark:hover:bg-slate-800 transition-all active:scale-95 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] md:shadow-[3px_3px_0_0_#0f172a] dark:md:shadow-[3px_3px_0_0_#334155] active:shadow-none text-xs md:text-base disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                disabled={deleting}
+                onClick={confirmDelete}
+                className="flex-1 px-4 py-3 md:px-6 md:py-4 bg-red-400 dark:bg-red-600 text-white border-4 border-slate-900 dark:border-slate-700 rounded-xl md:rounded-2xl font-black hover:translate-x-1 hover:translate-y-1 transition-all shadow-[3px_3px_0_0_#0f172a] dark:shadow-[3px_3px_0_0_#334155] md:shadow-[5px_5px_0_0_#0f172a] dark:md:shadow-[5px_5px_0_0_#334155] hover:shadow-none text-xs md:text-base disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {deleting ? 'Menghapus...' : 'Hapus'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {saveStatus && (
-        <div className={`fixed bottom-4 md:bottom-8 left-1/2 -translate-x-1/2 z-[200] max-w-[90%] md:max-w-md w-full px-4 py-3 md:px-6 md:py-4 rounded-2xl md:rounded-3xl border-4 border-slate-900 dark:border-slate-700 shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155] md:shadow-[8px_8px_0_0_#0f172a] dark:md:shadow-[8px_8px_0_0_#334155] transform transition-all animate-bounce-subtle ${saveStatus === 'saving' ? 'bg-amber-300 dark:bg-amber-600 text-slate-900 dark:text-white' :
-          saveStatus === 'success' ? 'bg-emerald-400 dark:bg-emerald-600 text-slate-900 dark:text-white' :
+        <div className={`fixed bottom-4 md:bottom-8 left-1/2 -translate-x-1/2 z-[200] max-w-[90%] md:max-w-md w-full px-4 py-3 md:px-6 md:py-4 rounded-2xl md:rounded-3xl border-4 border-slate-900 dark:border-slate-700 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] md:shadow-[4px_4px_0_0_#0f172a] dark:md:shadow-[4px_4px_0_0_#334155] transform transition-all animate-bounce-subtle ${saveStatus === 'saving' ? 'bg-amber-300 dark:bg-amber-600 text-slate-900 dark:text-white' :
+          saveStatus === 'create-success' || saveStatus === 'update-success' || saveStatus === 'delete-success' ? 'bg-emerald-400 dark:bg-emerald-600 text-slate-900 dark:text-white' :
+          saveStatus === 'deleting' ? 'bg-amber-300 dark:bg-amber-600 text-slate-900 dark:text-white' :
             'bg-red-400 dark:bg-red-600 text-white'
           }`}>
           <div className="flex items-center gap-2 md:gap-3 font-black text-xs md:text-sm">
-            {saveStatus === 'saving' ? <RefreshCw className="animate-spin w-4 h-4 md:w-5 md:h-5" /> : null}
+            {saveStatus === 'saving' || saveStatus === 'deleting' ? <RefreshCw className="animate-spin w-4 h-4 md:w-5 md:h-5" /> : null}
             {saveStatus === 'saving' ? 'Processing...' :
-              saveStatus === 'success' ? 'Success!' :
+              saveStatus === 'deleting' ? 'Deleting package...' :
+              saveStatus === 'create-success' ? 'Package berhasil dibuat.' :
+              saveStatus === 'update-success' ? 'Package berhasil diperbarui.' :
+              saveStatus === 'delete-success' ? 'Package berhasil dihapus.' :
+              saveStatus.startsWith('delete-error: ') ? `Error: ${saveStatus.replace('delete-error: ', '')}` :
                 `Error: ${saveStatus}`}
           </div>
         </div>

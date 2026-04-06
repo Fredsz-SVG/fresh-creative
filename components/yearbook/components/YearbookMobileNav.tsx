@@ -19,7 +19,7 @@ import {
   UserCog,
   Trash2,
 } from 'lucide-react'
-import { toast } from 'sonner'
+import { toast } from '@/lib/toast'
 import { getYearbookSectionQueryUrl } from '../lib/yearbook-paths'
 
 type AlbumClass = { id: string; name: string; sort_order?: number; student_count?: number; batch_photo_url?: string | null }

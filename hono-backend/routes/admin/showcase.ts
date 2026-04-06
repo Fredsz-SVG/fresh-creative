@@ -9,6 +9,22 @@ import { publishRealtimeEventFromContext } from '../../lib/realtime'
 
 const adminShowcase = new Hono()
 
+function normalizeShowcaseLink(value: string): string {
+  const trimmed = value.trim()
+  if (!trimmed) return ''
+  if (!/^https?:\/\//i.test(trimmed)) return trimmed
+
+  try {
+    const parsed = new URL(trimmed)
+    if (/(?:^|\/)(album|yearbook)\//i.test(parsed.pathname)) {
+      return `${parsed.pathname}${parsed.search}${parsed.hash}`
+    }
+    return trimmed
+  } catch {
+    return trimmed
+  }
+}
+
 function requireDb(c: { env: unknown }): D1Database | null {
   return (c.env as { DB?: D1Database }).DB ?? null
 }
@@ -60,10 +76,12 @@ adminShowcase.put('/', async (c) => {
         .map((x: { title: string; link: string; imageUrl?: string }) => ({
           title: x.title,
           imageUrl: typeof x.imageUrl === 'string' ? x.imageUrl : '',
-          link: x.link,
+          link: normalizeShowcaseLink(x.link),
         }))
     : []
-  const flipbookPreviewUrl = typeof body?.flipbookPreviewUrl === 'string' ? body.flipbookPreviewUrl : ''
+  const flipbookPreviewUrl = typeof body?.flipbookPreviewUrl === 'string'
+    ? normalizeShowcaseLink(body.flipbookPreviewUrl)
+    : ''
   const showcasePayload: ShowcasePayload = { albumPreviews, flipbookPreviewUrl }
 
   // Fonnte config payload

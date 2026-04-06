@@ -2,7 +2,6 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Edit, Plus, Save, Trash2, X, Loader2, Check, Copy, Gift, ToggleLeft, ToggleRight, Clock, ChevronRight, Layout, Zap, Hash, Calendar, AlertCircle, Users, Star } from 'lucide-react'
-import { toast } from 'sonner'
 import { fetchWithAuth } from '../../../lib/api-client'
 
 interface CreditPackage {
@@ -128,6 +127,7 @@ export default function AdminCreditSettingsPage() {
     const [loadingRedeem, setLoadingRedeem] = useState(true)
     const [showCreateRedeem, setShowCreateRedeem] = useState(false)
     const [newCode, setNewCode] = useState({ code: '', credits: 10, max_uses: 1, expires_at: '' })
+    const [statusBanner, setStatusBanner] = useState<string | null>(null)
 
     const cacheKeyPackages = 'admin_credit_packages_v1'
     const cacheKeyRedeem = 'admin_redeem_codes_v1'
@@ -176,7 +176,8 @@ export default function AdminCreditSettingsPage() {
             }
         } catch (err) {
             console.error(err)
-            toast.error('Gagal memuat paket')
+            setStatusBanner('error: Gagal memuat paket')
+            setTimeout(() => setStatusBanner(null), 3000)
         } finally {
             setLoading(false)
         }
@@ -189,6 +190,8 @@ export default function AdminCreditSettingsPage() {
 
     const handleSave = async (pkg: Partial<CreditPackage>) => {
         const method = pkg.id ? 'PUT' : 'POST'
+        const isEdit = method === 'PUT'
+        setStatusBanner('saving-package')
         try {
             const res = await fetchWithAuth('/api/credits/packages', {
                 method,
@@ -197,11 +200,13 @@ export default function AdminCreditSettingsPage() {
             })
             if (!res.ok) throw new Error(await res.text())
             setEditingPackage(null)
-            toast.success(pkg.id ? 'Paket diperbarui' : 'Paket dibuat')
+            setStatusBanner(isEdit ? 'update-package-success' : 'create-package-success')
             fetchPackages(true)
+            setTimeout(() => setStatusBanner(null), 3000)
         } catch (err) {
             console.error('Save failed:', err)
-            toast.error('Gagal menyimpan paket')
+            setStatusBanner('error: Gagal menyimpan paket')
+            setTimeout(() => setStatusBanner(null), 3000)
         }
     }
 
@@ -246,6 +251,7 @@ export default function AdminCreditSettingsPage() {
 
     const handleCreateRedeem = async () => {
         const code = newCode.code.trim() || generateRandomCode()
+        setStatusBanner('creating-redeem')
 
         let expiresAtISO = null;
         if (newCode.expires_at) {
@@ -265,16 +271,19 @@ export default function AdminCreditSettingsPage() {
             })
             const data = (await res.json().catch(() => ({}))) as { error?: string; code?: string }
             if (!res.ok) throw new Error(data?.error || 'Gagal membuat kode')
-            toast.success(`Kode ${data?.code ?? code} berhasil dibuat!`)
+            setStatusBanner(`create-redeem-success:${data?.code ?? code}`)
             setShowCreateRedeem(false)
             setNewCode({ code: '', credits: 10, max_uses: 1, expires_at: '' })
             fetchRedeemCodes(true)
+            setTimeout(() => setStatusBanner(null), 3000)
         } catch (err) {
-            toast.error(err instanceof Error ? err.message : 'Gagal membuat kode')
+            setStatusBanner(`error: ${err instanceof Error ? err.message : 'Gagal membuat kode'}`)
+            setTimeout(() => setStatusBanner(null), 3000)
         }
     }
 
     const handleToggleRedeem = async (item: RedeemCode) => {
+        setStatusBanner('updating-redeem-status')
         try {
             const res = await fetchWithAuth('/api/credits/redeem', {
                 method: 'PUT',
@@ -282,10 +291,12 @@ export default function AdminCreditSettingsPage() {
                 body: JSON.stringify({ id: item.id, is_active: !item.is_active }),
             })
             if (!res.ok) throw new Error(await res.text())
-            toast.success(item.is_active ? 'Kode dinonaktifkan' : 'Kode diaktifkan')
+            setStatusBanner(item.is_active ? 'redeem-disabled-success' : 'redeem-enabled-success')
             fetchRedeemCodes(true)
+            setTimeout(() => setStatusBanner(null), 3000)
         } catch (err) {
-            toast.error('Gagal mengubah status')
+            setStatusBanner('error: Gagal mengubah status')
+            setTimeout(() => setStatusBanner(null), 3000)
         }
     }
 
@@ -301,6 +312,7 @@ export default function AdminCreditSettingsPage() {
     const executeDelete = async () => {
         if (!deletePrompt) return
         setIsDeleting(true)
+        setStatusBanner('deleting-item')
         try {
             if (deletePrompt.type === 'package') {
                 const res = await fetchWithAuth('/api/credits/packages', {
@@ -309,7 +321,7 @@ export default function AdminCreditSettingsPage() {
                     body: JSON.stringify({ id: deletePrompt.id }),
                 })
                 if (!res.ok) throw new Error(await res.text())
-                toast.success('Paket dihapus')
+                setStatusBanner('delete-package-success')
                 fetchPackages(true)
             } else if (deletePrompt.type === 'redeem') {
                 const res = await fetchWithAuth('/api/credits/redeem', {
@@ -318,12 +330,14 @@ export default function AdminCreditSettingsPage() {
                     body: JSON.stringify({ id: deletePrompt.id }),
                 })
                 if (!res.ok) throw new Error(await res.text())
-                toast.success('Kode dihapus')
+                setStatusBanner('delete-redeem-success')
                 fetchRedeemCodes(true)
             }
+            setTimeout(() => setStatusBanner(null), 3000)
         } catch (err) {
             console.error('Delete failed:', err)
-            toast.error(`Gagal menghapus ${deletePrompt.type === 'package' ? 'paket' : 'kode'}`)
+            setStatusBanner(`error: Gagal menghapus ${deletePrompt.type === 'package' ? 'paket' : 'kode'}`)
+            setTimeout(() => setStatusBanner(null), 3000)
         } finally {
             setIsDeleting(false)
             setDeletePrompt(null)
@@ -332,13 +346,37 @@ export default function AdminCreditSettingsPage() {
 
     const copyCode = (code: string) => {
         navigator.clipboard.writeText(code)
-        toast.success('Kode disalin!')
+        setStatusBanner('copy-success')
+        setTimeout(() => setStatusBanner(null), 2000)
     }
 
     return (
         <div className="p-0 sm:p-0 md:p-0">
             {editingPackage && (
                 <PackageForm pkg={editingPackage} onSave={handleSave} onCancel={() => setEditingPackage(null)} />
+            )}
+
+            {statusBanner && (
+                <div className={`fixed bottom-4 md:bottom-8 left-1/2 -translate-x-1/2 z-[200] max-w-[90%] md:max-w-md w-full px-4 py-3 md:px-6 md:py-4 rounded-2xl md:rounded-3xl border-4 border-slate-900 dark:border-slate-700 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] md:shadow-[4px_4px_0_0_#0f172a] dark:md:shadow-[4px_4px_0_0_#334155] transform transition-all animate-bounce-subtle ${statusBanner.startsWith('error:') ? 'bg-red-400 dark:bg-red-600 text-white' : statusBanner.includes('success') ? 'bg-emerald-400 dark:bg-emerald-600 text-slate-900 dark:text-white' : 'bg-amber-300 dark:bg-amber-600 text-slate-900 dark:text-white'}`}>
+                    <div className="flex items-center gap-2 md:gap-3 font-black text-xs md:text-sm">
+                        {statusBanner === 'saving-package' || statusBanner === 'creating-redeem' || statusBanner === 'updating-redeem-status' || statusBanner === 'deleting-item'
+                            ? <Loader2 className="animate-spin w-4 h-4 md:w-5 md:h-5" />
+                            : null}
+                        {statusBanner === 'saving-package' ? 'Menyimpan package...' :
+                            statusBanner === 'creating-redeem' ? 'Membuat kode redeem...' :
+                                statusBanner === 'updating-redeem-status' ? 'Mengubah status kode...' :
+                                    statusBanner === 'deleting-item' ? 'Menghapus data...' :
+                                        statusBanner === 'create-package-success' ? 'Package berhasil dibuat.' :
+                                            statusBanner === 'update-package-success' ? 'Package berhasil diperbarui.' :
+                                                statusBanner === 'delete-package-success' ? 'Package berhasil dihapus.' :
+                                                    statusBanner === 'delete-redeem-success' ? 'Kode redeem berhasil dihapus.' :
+                                                        statusBanner === 'redeem-enabled-success' ? 'Kode redeem berhasil diaktifkan.' :
+                                                            statusBanner === 'redeem-disabled-success' ? 'Kode redeem berhasil dinonaktifkan.' :
+                                                                statusBanner === 'copy-success' ? 'Kode berhasil disalin.' :
+                                                                    statusBanner.startsWith('create-redeem-success:') ? `Kode ${statusBanner.replace('create-redeem-success:', '')} berhasil dibuat!` :
+                                                                        statusBanner.startsWith('error: ') ? `Error: ${statusBanner.replace('error: ', '')}` : statusBanner}
+                    </div>
+                </div>
             )}
 
             {/* Create Redeem Code Modal */}

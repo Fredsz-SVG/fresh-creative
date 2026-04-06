@@ -5,7 +5,7 @@ import { useParams, useSearchParams, useRouter, usePathname } from 'next/navigat
 import Link from 'next/link'
 import BackLink from '@/components/dashboard/BackLink'
 import { ChevronLeft, ChevronRight, BookOpen, ImagePlus, Video, Play, Users, Layout, Eye, Menu, MessageSquare, Book, Lock, Link as LinkIcon, Search, SearchX, X } from 'lucide-react'
-import { toast } from 'sonner'
+import { toast } from '@/lib/toast'
 import { supabase } from '@/lib/supabase'
 import YearbookClassesView from './YearbookClassesView'
 import YearbookSkeleton, { isValidYearbookSection } from './components/YearbookSkeleton'

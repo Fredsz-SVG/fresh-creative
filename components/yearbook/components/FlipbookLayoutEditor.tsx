@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react'
 import { Play, Image as ImageIcon, ImagePlus, Trash2, Loader2, BookOpen, BookMarked, GripVertical } from 'lucide-react'
-import { toast } from 'sonner'
+import { toast } from '@/lib/toast'
 import { apiUrl } from '../../../lib/api-url'
 import { fetchWithAuth } from '../../../lib/api-client'
 import { asObject, asString, getErrorMessage } from '@/components/yearbook/utils/response-narrowing'

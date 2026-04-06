@@ -2,15 +2,15 @@
 
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { fetchWithAuth } from '../../../lib/api-client'
-import { toast } from 'sonner'
-import { Loader2, Eye, BookOpen, Save, ExternalLink, MessageCircle } from 'lucide-react'
+import { Loader2, Eye, BookOpen, Save, MessageCircle } from 'lucide-react'
 
 export default function AdminShowcasePage() {
   const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
+  const [savingSection, setSavingSection] = useState<'flipbook' | 'album' | 'fonnte' | null>(null)
   const [albumCarouselLink, setAlbumCarouselLink] = useState('')
   const [flipbookPreviewUrl, setFlipbookPreviewUrl] = useState('')
   const [fonnteTarget, setFonnteTarget] = useState('')
+  const [statusBanner, setStatusBanner] = useState<string | null>(null)
   const hasCacheRef = React.useRef(false)
   const albumInputRef = useRef<HTMLInputElement | null>(null)
   const flipbookInputRef = useRef<HTMLInputElement | null>(null)
@@ -60,10 +60,12 @@ export default function AdminShowcasePage() {
         }
       } else {
         const err = (data && typeof data === 'object' && !Array.isArray(data) ? (data as any).error : undefined) as string | undefined
-        toast.error(err || 'Gagal memuat pengaturan preview')
+        setStatusBanner(`error: ${err || 'Gagal memuat pengaturan preview'}`)
+        setTimeout(() => setStatusBanner(null), 3000)
       }
     } catch {
-      toast.error('Gagal memuat pengaturan preview')
+      setStatusBanner('error: Gagal memuat pengaturan preview')
+      setTimeout(() => setStatusBanner(null), 3000)
     } finally {
       if (!silent) setLoading(false)
     }
@@ -73,7 +75,7 @@ export default function AdminShowcasePage() {
     fetchShowcase(hasCacheRef.current)
   }, [fetchShowcase])
 
-  const handleSave = async () => {
+  const handleSaveSection = async (section: 'flipbook' | 'album' | 'fonnte') => {
     const latestAlbumLink = (albumInputRef.current?.value ?? albumCarouselLink).trim()
     const latestFlipbookLink = (flipbookInputRef.current?.value ?? flipbookPreviewUrl).trim()
     const latestFonnteTarget = (fonnteInputRef.current?.value ?? fonnteTarget).trim()
@@ -82,7 +84,8 @@ export default function AdminShowcasePage() {
     setFlipbookPreviewUrl(latestFlipbookLink)
     setFonnteTarget(latestFonnteTarget)
 
-    setSaving(true)
+    setSavingSection(section)
+    setStatusBanner(`saving-${section}`)
     try {
       const res = await fetchWithAuth('/api/admin/showcase', {
         method: 'PUT',
@@ -95,16 +98,19 @@ export default function AdminShowcasePage() {
       })
       const data = (await res.json().catch(() => ({}))) as unknown
       if (res.ok) {
-        toast.success('Pengaturan preview berhasil disimpan.')
+        setStatusBanner(`save-${section}-success`)
         await fetchShowcase(true)
+        setTimeout(() => setStatusBanner(null), 3000)
       } else {
         const err = (data && typeof data === 'object' && !Array.isArray(data) ? (data as any).error : undefined) as string | undefined
-        toast.error(err || 'Gagal menyimpan')
+        setStatusBanner(`error: ${err || 'Gagal menyimpan'}`)
+        setTimeout(() => setStatusBanner(null), 3000)
       }
     } catch {
-      toast.error('Gagal menyimpan')
+      setStatusBanner('error: Gagal menyimpan')
+      setTimeout(() => setStatusBanner(null), 3000)
     } finally {
-      setSaving(false)
+      setSavingSection(null)
     }
   }
 
@@ -131,6 +137,21 @@ export default function AdminShowcasePage() {
 
   return (
     <div className="max-w-4xl pb-12">
+      {statusBanner && (
+        <div className={`fixed bottom-4 md:bottom-8 left-1/2 -translate-x-1/2 z-[200] max-w-[90%] md:max-w-md w-full px-4 py-3 md:px-6 md:py-4 rounded-2xl md:rounded-3xl border-4 border-slate-900 dark:border-slate-700 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] md:shadow-[4px_4px_0_0_#0f172a] dark:md:shadow-[4px_4px_0_0_#334155] transform transition-all animate-bounce-subtle ${statusBanner.startsWith('error:') ? 'bg-red-400 dark:bg-red-600 text-white' : statusBanner.endsWith('-success') ? 'bg-emerald-400 dark:bg-emerald-600 text-slate-900 dark:text-white' : 'bg-amber-300 dark:bg-amber-600 text-slate-900 dark:text-white'}`}>
+          <div className="flex items-center gap-2 md:gap-3 font-black text-xs md:text-sm">
+            {statusBanner.startsWith('saving-') ? <Loader2 className="animate-spin w-4 h-4 md:w-5 md:h-5" /> : null}
+            {statusBanner === 'saving-flipbook' ? 'Menyimpan preview flipbook...' :
+              statusBanner === 'saving-album' ? 'Menyimpan preview album...' :
+                statusBanner === 'saving-fonnte' ? 'Menyimpan target Fonnte...' :
+                  statusBanner === 'save-flipbook-success' ? 'Preview flipbook berhasil disimpan.' :
+                    statusBanner === 'save-album-success' ? 'Preview album berhasil disimpan.' :
+                      statusBanner === 'save-fonnte-success' ? 'Target Fonnte berhasil disimpan.' :
+                statusBanner.startsWith('error: ') ? `Error: ${statusBanner.replace('error: ', '')}` : statusBanner}
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-col gap-2 mb-10">
         <h1 className="text-3xl font-black text-slate-900 dark:text-white sm:text-4xl tracking-tight">
           Showcase Configuration
@@ -165,6 +186,15 @@ export default function AdminShowcasePage() {
                 className="w-full px-5 py-4 text-sm font-bold rounded-2xl bg-white dark:bg-slate-900 border-4 border-slate-900 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-4 focus:ring-emerald-200 dark:focus:ring-emerald-900 transition-all shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155] focus:shadow-none"
               />
             </div>
+            <button
+              type="button"
+              onClick={() => handleSaveSection('flipbook')}
+              disabled={savingSection !== null}
+              className="mt-4 w-full flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-emerald-400 dark:bg-emerald-700 text-slate-900 dark:text-white border-4 border-slate-900 dark:border-slate-700 text-sm font-black hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155] transition-all disabled:opacity-50"
+            >
+              {savingSection === 'flipbook' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+              Simpan Flipbook
+            </button>
           </div>
         </div>
 
@@ -192,6 +222,15 @@ export default function AdminShowcasePage() {
                 className="w-full px-5 py-4 text-sm font-bold rounded-2xl bg-white dark:bg-slate-900 border-4 border-slate-900 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-4 focus:ring-sky-200 dark:focus:ring-sky-900 transition-all shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155] focus:shadow-none"
               />
             </div>
+            <button
+              type="button"
+              onClick={() => handleSaveSection('album')}
+              disabled={savingSection !== null}
+              className="mt-4 w-full flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-sky-400 dark:bg-sky-700 text-slate-900 dark:text-white border-4 border-slate-900 dark:border-slate-700 text-sm font-black hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155] transition-all disabled:opacity-50"
+            >
+              {savingSection === 'album' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+              Simpan Album
+            </button>
           </div>
         </div>
 
@@ -219,20 +258,17 @@ export default function AdminShowcasePage() {
                 className="w-full px-5 py-4 text-sm font-bold rounded-2xl bg-white dark:bg-slate-900 border-4 border-slate-900 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-4 focus:ring-green-200 dark:focus:ring-green-900 transition-all shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155] focus:shadow-none"
               />
             </div>
+            <button
+              type="button"
+              onClick={() => handleSaveSection('fonnte')}
+              disabled={savingSection !== null}
+              className="mt-4 w-full flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-green-400 dark:bg-green-700 text-slate-900 dark:text-white border-4 border-slate-900 dark:border-slate-700 text-sm font-black hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155] transition-all disabled:opacity-50"
+            >
+              {savingSection === 'fonnte' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+              Simpan Target
+            </button>
           </div>
         </div>
-      </div>
-
-      <div className="flex flex-col sm:flex-row items-center gap-4">
-        <button
-          type="button"
-          onClick={handleSave}
-          disabled={saving}
-          className="w-full sm:w-auto flex items-center justify-center gap-3 px-8 py-4 rounded-2xl bg-indigo-400 dark:bg-indigo-700 text-slate-900 dark:text-white border-4 border-slate-900 dark:border-slate-700 text-base font-black hover:translate-x-1 hover:translate-y-1 hover:shadow-none shadow-[6px_6px_0_0_#0f172a] dark:shadow-[6px_6px_0_0_#334155] transition-all disabled:opacity-50"
-        >
-          {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
-          Simpan Pengaturan
-        </button>
       </div>
     </div>
   )

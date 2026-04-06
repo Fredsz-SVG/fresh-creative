@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { getRole } from '@/lib/auth'
-import { toast } from 'sonner'
+import { toast } from '@/lib/toast'
 
 function SignUpContent() {
   const [email, setEmail] = useState('')

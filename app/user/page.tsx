@@ -1,13 +1,12 @@
 'use client'
 
-import Link from 'next/link'
 import { useCallback, useEffect, useState, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { useSearchParams } from 'next/navigation'
-import { toast } from 'sonner'
+import { toast } from '@/lib/toast'
 import DashboardTitle from '@/components/dashboard/DashboardTitle'
 import { AnimatedCarouselMockup, AnimatedFlipbookMockup } from '@/components/dashboard/AnimatedMockups'
-import { GalleryHorizontal, BookMarked, PlusCircle, UserPlus, X, Plus, Loader2, BookOpen } from 'lucide-react'
+import { GalleryHorizontal, BookMarked, PlusCircle, UserPlus, Plus, Loader2, BookOpen } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import { apiUrl } from '../../lib/api-url'
@@ -37,6 +36,11 @@ type ShowcaseAlbumPreview = {
   title: string
   imageUrl?: string
   link: string
+}
+
+type DemoPreview = {
+  title: string
+  url: string
 }
 
 export default function UserPage() {
@@ -88,7 +92,6 @@ export default function UserPage() {
     if (typeof window === 'undefined') return false
     try { return !!window.sessionStorage.getItem('user_display_name') } catch { return false }
   })
-  const [showCarouselPreview, setShowCarouselPreview] = useState(false)
 
   // New States for synced UI
   const [showJoinForm, setShowJoinForm] = useState(false)
@@ -97,21 +100,53 @@ export default function UserPage() {
   const [joinLoading, setJoinLoading] = useState(false)
   const [joinError, setJoinError] = useState<string | null>(null)
   const [confirmModal, setConfirmModal] = useState<string | null>(null)
+  const [activeDemoPreview, setActiveDemoPreview] = useState<DemoPreview | null>(null)
 
   const searchParams = useSearchParams()
   const hasToastedRef = useRef(false)
   const router = useRouter()
 
-  // Listen for postMessage from embedded preview iframe to close overlay
+  const closeDemoPreview = useCallback(() => {
+    setActiveDemoPreview(null)
+  }, [])
+
+  const openPreviewUrl = useCallback((url: string, title: string) => {
+    if (!url) return
+    setActiveDemoPreview({ title, url })
+  }, [])
+
+  const getPreviewEmbedUrl = useCallback((url: string) => {
+    const normalized = url.trim()
+    const isFlipbook = /\/flipbook(?:[/?#]|$)/i.test(normalized)
+    const idMatch = normalized.match(/(?:album|yearbook)\/([^/?#]+)/i)
+    const baseUrl = idMatch
+      ? (isFlipbook ? `/album/${idMatch[1]}/flipbook` : `/album/${idMatch[1]}/preview`)
+      : normalized
+    const isDark = typeof document !== 'undefined' && document.documentElement.classList.contains('dark')
+    const connector = baseUrl.includes('?') ? '&' : '?'
+    return `${baseUrl}${connector}embedded=true&theme=${isDark ? 'dark' : 'light'}`
+  }, [])
+
   useEffect(() => {
-    const handler = (e: MessageEvent) => {
-      if (e.data === 'CLOSE_YEARBOOK_PREVIEW') {
-        setShowCarouselPreview(false)
+    const handler = (event: MessageEvent) => {
+      if (event.data === 'CLOSE_YEARBOOK_PREVIEW') {
+        closeDemoPreview()
       }
     }
     window.addEventListener('message', handler)
     return () => window.removeEventListener('message', handler)
-  }, [])
+  }, [closeDemoPreview])
+
+  useEffect(() => {
+    if (activeDemoPreview) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [activeDemoPreview])
   // Cache is hydrated in state initializers (no skeleton flash).
 
   useEffect(() => {
@@ -356,22 +391,25 @@ export default function UserPage() {
                   const item = albumPreviews[0]; // Hanya satu saja
 
                   return (
-                    <div
-                      className="w-full h-full relative cursor-pointer group flex justify-center"
-                      onClick={() => setShowCarouselPreview(true)}
-                    >
-                      <AnimatedCarouselMockup imageUrl={item.imageUrl} />
-                      {/* Mobile: Neo-Brutalist "Klik untuk Demo" Badge - Floating (Super-compact) */}
-                      <div className="sm:hidden absolute bottom-4 left-1/2 -translate-x-1/2 z-30 px-2 py-0.5 bg-yellow-400 border-[1.5px] border-slate-900 rounded-md text-slate-900 text-[8px] font-black shadow-[2px_2px_0_0_#0f172a] whitespace-nowrap animate-float tracking-tighter">
-                        Klik untuk Demo
-                      </div>
-                      <div className="absolute inset-0 hidden sm:flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300">
-                        {/* Desktop: Original Button */}
-                        <div className="hidden sm:flex px-5 py-3 bg-slate-900/90 backdrop-blur-md rounded-full text-white text-sm font-black shadow-xl items-center gap-2 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300">
-                          <GalleryHorizontal className="w-4 h-4 text-orange-400" />
-                          <span>Buka Carousel</span>
+                    <div className="w-full h-full relative group flex justify-center">
+                      <button
+                        type="button"
+                        className="block w-full relative text-left"
+                        onClick={() => openPreviewUrl(item.link, 'Preview Swipe Album')}
+                      >
+                        <AnimatedCarouselMockup imageUrl={item.imageUrl} />
+                        {/* Mobile: Neo-Brutalist "Klik untuk Demo" Badge - Floating (Super-compact) */}
+                        <div className="sm:hidden absolute bottom-4 left-1/2 -translate-x-1/2 z-30 px-2 py-0.5 bg-yellow-400 border-[1.5px] border-slate-900 rounded-md text-slate-900 text-[8px] font-black shadow-[2px_2px_0_0_#0f172a] whitespace-nowrap animate-float tracking-tighter">
+                          Klik untuk Demo
                         </div>
-                      </div>
+                        <div className="absolute inset-0 hidden sm:flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300">
+                          {/* Desktop: Original Button */}
+                          <div className="hidden sm:flex px-5 py-3 bg-slate-900/90 backdrop-blur-md rounded-full text-white text-sm font-black shadow-xl items-center gap-2 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300">
+                            <GalleryHorizontal className="w-4 h-4 text-orange-400" />
+                            <span>Buka Carousel</span>
+                          </div>
+                        </div>
+                      </button>
                     </div>
                   );
                 })()}
@@ -398,37 +436,24 @@ export default function UserPage() {
             {flipbookPreviewUrl ? (
               <div className="relative z-10 text-center space-y-5 sm:space-y-8 w-full">
                 <div className="relative group cursor-pointer w-full flex justify-center px-1 sm:px-0 hover:-translate-y-1 sm:hover:-translate-y-2 transition-transform duration-500 hover:drop-shadow-2xl">
-                  {flipbookPreviewUrl.startsWith('/') ? (
-                    <Link href={flipbookPreviewUrl} className="block w-full relative">
-                      <AnimatedFlipbookMockup />
-                      {/* Mobile: Neo-Brutalist "Klik untuk Demo" Badge - Floating (Super-compact) */}
-                      <div className="sm:hidden absolute bottom-4 left-1/2 -translate-x-1/2 z-30 px-2 py-0.5 bg-yellow-400 border-[1.5px] border-slate-900 rounded-md text-slate-900 text-[8px] font-black shadow-[2px_2px_0_0_#0f172a] whitespace-nowrap animate-float tracking-tighter">
-                        Klik untuk Demo
+                  <button
+                    type="button"
+                    className="block w-full relative text-left"
+                    onClick={() => openPreviewUrl(flipbookPreviewUrl, 'Preview Flipbook')}
+                  >
+                    <AnimatedFlipbookMockup />
+                    {/* Mobile: Neo-Brutalist "Klik untuk Demo" Badge - Floating (Super-compact) */}
+                    <div className="sm:hidden absolute bottom-4 left-1/2 -translate-x-1/2 z-30 px-2 py-0.5 bg-yellow-400 border-[1.5px] border-slate-900 rounded-md text-slate-900 text-[8px] font-black shadow-[2px_2px_0_0_#0f172a] whitespace-nowrap animate-float tracking-tighter">
+                      Klik untuk Demo
+                    </div>
+                    <div className="absolute inset-0 hidden sm:flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300">
+                      {/* Desktop: Original Button */}
+                      <div className="hidden sm:flex px-5 py-3 bg-slate-900/90 backdrop-blur-md rounded-full text-white text-sm font-black shadow-xl items-center gap-2 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300">
+                        <BookMarked className="w-4 h-4 text-emerald-400" />
+                        <span>Buka Flipbook</span>
                       </div>
-                      <div className="absolute inset-0 hidden sm:flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300">
-                        {/* Desktop: Original Button */}
-                        <div className="hidden sm:flex px-5 py-3 bg-slate-900/90 backdrop-blur-md rounded-full text-white text-sm font-black shadow-xl items-center gap-2 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300">
-                          <BookMarked className="w-4 h-4 text-emerald-400" />
-                          <span>Buka Flipbook</span>
-                        </div>
-                      </div>
-                    </Link>
-                  ) : (
-                    <a href={flipbookPreviewUrl} className="block w-full relative">
-                      <AnimatedFlipbookMockup />
-                      {/* Mobile: Neo-Brutalist "Klik untuk Demo" Badge - Floating (Super-compact) */}
-                      <div className="sm:hidden absolute bottom-4 left-1/2 -translate-x-1/2 z-30 px-2 py-0.5 bg-yellow-400 border-[1.5px] border-slate-900 rounded-md text-slate-900 text-[8px] font-black shadow-[2px_2px_0_0_#0f172a] whitespace-nowrap animate-float tracking-tighter">
-                        Klik untuk Demo
-                      </div>
-                      <div className="absolute inset-0 hidden sm:flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300">
-                        {/* Desktop: Original Button */}
-                        <div className="hidden sm:flex px-5 py-3 bg-slate-900/90 backdrop-blur-md rounded-full text-white text-sm font-black shadow-xl items-center gap-2 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300">
-                          <BookMarked className="w-4 h-4 text-emerald-400" />
-                          <span>Buka Flipbook</span>
-                        </div>
-                      </div>
-                    </a>
-                  )}
+                    </div>
+                  </button>
                 </div>
               </div>
             ) : (
@@ -445,27 +470,21 @@ export default function UserPage() {
         </div>
       </div>
 
-      {/* Fullscreen Carousel Preview Overlay — portalled to document.body to escape all CSS containment */}
-      {showCarouselPreview && albumPreviews.length > 0 && typeof document !== 'undefined' && (() => {
-        const item = albumPreviews[0];
-        const idMatch = item.link.match(/(?:album|yearbook)\/([^/?]+)/);
-        const isDark = document.documentElement.classList.contains('dark');
-        const embedUrl = idMatch ? `/album/${idMatch[1]}/preview?embedded=true&theme=${isDark ? 'dark' : 'light'}` : item.link;
-        return createPortal(
-          <div className="fixed inset-0 z-[9999] bg-black/95 backdrop-blur-md flex flex-col cursor-auto" style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh' }}>
-            <div className="flex-1 w-full h-full relative">
-              <iframe
-                src={embedUrl}
-                className="w-full h-full border-0 absolute inset-0 bg-transparent"
-                allow="fullscreen; autoplay; encrypted-media"
-                allowFullScreen
-                title="Album Carousel Preview"
-              />
-            </div>
-          </div>,
-          document.body
-        );
-      })()}
+      {activeDemoPreview && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 z-[2147483647] bg-black/95 backdrop-blur-md flex flex-col">
+          <div className="flex-1 w-full h-full relative">
+            <iframe
+              src={getPreviewEmbedUrl(activeDemoPreview.url)}
+              className="w-full h-full border-0 absolute inset-0 bg-transparent"
+              allow="fullscreen; autoplay; encrypted-media"
+              allowFullScreen
+              title={activeDemoPreview.title}
+            />
+          </div>
+        </div>,
+        document.body
+      )}
+
     </div>
   )
 }

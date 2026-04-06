@@ -134,12 +134,13 @@ export function DemoEbook() {
             <div className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-md flex flex-col">
               <div className="flex-1 w-full h-full relative">
                 {(() => {
-                  // Only transform to /preview if it's a generic album link AND not already a flipbook link
-                  const isFlipbook = previewUrl.includes('/flipbook');
-                  const idMatch = previewUrl.match(/(?:album|yearbook)\/([^/?]+)/);
-                  const baseUrl = (idMatch && !isFlipbook) 
-                    ? `/album/${idMatch[1]}/preview` 
-                    : previewUrl;
+                  // Normalize album/yearbook URLs so absolute localhost links still resolve on production.
+                  const normalized = previewUrl.trim();
+                  const isFlipbook = /\/flipbook(?:[/?#]|$)/i.test(normalized);
+                  const idMatch = normalized.match(/(?:album|yearbook)\/([^/?#]+)/i);
+                  const baseUrl = idMatch
+                    ? (isFlipbook ? `/album/${idMatch[1]}/flipbook` : `/album/${idMatch[1]}/preview`)
+                    : normalized;
                   
                   // Append theme to the URL
                   const currentTheme = theme?.isDark ? 'dark' : 'light';

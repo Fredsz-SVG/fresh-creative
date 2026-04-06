@@ -1,10 +1,10 @@
 import type { Metadata, Viewport } from 'next'
 import { Nunito } from 'next/font/google'
-import { Toaster } from 'sonner'
 import './globals.css'
 import ThemeProvider from './providers/ThemeProvider'
 import RealtimeProvider from './providers/RealtimeProvider'
 import AuthErrorRedirect from './components/AuthErrorRedirect'
+import { AppToaster } from '@/components/ui/AppToaster'
 
 const nunito = Nunito({
   subsets: ['latin'],
@@ -65,7 +65,7 @@ export default function RootLayout({
         <ThemeProvider>
           <RealtimeProvider>
             <AuthErrorRedirect />
-            <Toaster richColors position="top-center" />
+            <AppToaster />
             {children}
           </RealtimeProvider>
         </ThemeProvider>

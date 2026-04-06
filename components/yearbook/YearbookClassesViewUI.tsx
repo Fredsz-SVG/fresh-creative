@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from 'react'
 import { ChevronLeft, ChevronRight, Plus, Trash2, Check, X, Edit3, ImagePlus, Video, Play, Minus, Instagram, Users, ClipboardList, Menu, Cake, Copy, Link, Clock, BookOpen, MessageSquare, Search, Shirt, UserCircle, ImageIcon, Images, Link as LinkIcon, Sparkles, Book, Layout, Eye, UserCog, LayoutGrid, Zap, ShieldCheck, Lock } from 'lucide-react'
-import { toast } from 'sonner'
+import { toast } from '@/lib/toast'
 import NextLink from 'next/link'
 import { useSearchParams, useRouter, usePathname } from 'next/navigation'
 import { getYearbookSectionQueryUrl } from './lib/yearbook-paths'
@@ -600,7 +600,7 @@ export default function YearbookClassesViewUI(props: any) {
       if (res.ok) {
         setTeachers(prev => prev.filter(t => t.id !== teacherId))
         props.onTeacherCountChange?.(teachers.length - 1)
-        toast.success('Guru berhasil dihapus')
+        toast.success('Data profil berhasil dihapus')
       } else {
         const data = await res.json().catch(() => ({} as unknown))
         toast.error(getApiErrorMessage(data, 'Gagal menghapus guru'))
@@ -1887,9 +1887,12 @@ export default function YearbookClassesViewUI(props: any) {
                         </button>
                         <button
                           onClick={async () => {
-                            const targetUserId = deleteMemberConfirm.userId ?? currentUserId!
-                            await handleDeleteClassMember(deleteMemberConfirm.classId, targetUserId)
+                            const confirmData = deleteMemberConfirm
+                            if (!confirmData) return
+                            const targetUserId = confirmData.userId ?? currentUserId!
+                            // Close modal first so deletion feels immediate, like TeacherCard flow.
                             setDeleteMemberConfirm(null)
+                            void handleDeleteClassMember(confirmData.classId, targetUserId)
                           }}
                           className="flex-1 py-3.5 rounded-xl bg-red-500 border-2 border-slate-900 dark:border-slate-700 text-white text-xs font-black uppercase tracking-widest shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
                         >
