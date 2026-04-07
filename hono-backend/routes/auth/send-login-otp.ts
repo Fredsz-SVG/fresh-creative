@@ -6,11 +6,12 @@ import { ensureUserInD1, honoEnvForSupabasePublicSync } from '../../lib/d1-users
 const OTP_EXPIRY_MINUTES = 5
 
 type OtpSkipEnv = {
-  SKIP_OTP?: string
-  SKIP_LOGIN_OTP?: string
+  SKIP_OTP?: string | boolean
+  SKIP_LOGIN_OTP?: string | boolean
+  [key: string]: unknown
 }
 
-function getSkipOtp(env: any): boolean {
+function getSkipOtp(env: OtpSkipEnv | undefined): boolean {
   const val = env?.SKIP_OTP ?? env?.SKIP_LOGIN_OTP;
   if (val === true) return true;
   if (typeof val === 'string') {

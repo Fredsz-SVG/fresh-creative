@@ -7,11 +7,12 @@ import { getAuthUserId } from '../../middleware'
 const OTP_COOKIE_NAME = 'otp_verified'
 
 type OtpEnv = {
-  SKIP_OTP?: string
-  SKIP_LOGIN_OTP?: string
+  SKIP_OTP?: string | boolean
+  SKIP_LOGIN_OTP?: string | boolean
+  [key: string]: unknown
 }
 
-function getSkipOtp(env: any): boolean {
+function getSkipOtp(env: OtpEnv | undefined): boolean {
   const val = env?.SKIP_OTP ?? env?.SKIP_LOGIN_OTP;
   if (val === true) return true;
   if (typeof val === 'string') {
