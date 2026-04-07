@@ -26,7 +26,7 @@ const authOtpStatus = new Hono()
 
 // GET /api/auth/otp-status
 authOtpStatus.get('/', async (c) => {
-  const skipOtp = getSkipOtp(c.env)
+  const skipOtp = getSkipOtp(c.env as OtpEnv)
   const userId = await getAuthUserId(c)
 
   // Dev / local: kalau OTP di-skip, jangan sentuh D1 sama sekali (hindari 500 saat binding/table belum siap).

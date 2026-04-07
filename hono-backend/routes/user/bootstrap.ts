@@ -46,7 +46,7 @@ userBootstrap.get('/', async (c) => {
   const me = await getUserRow(db, userId)
   const suspended = (me?.is_suspended ?? 0) === 1
 
-  const skipOtp = getSkipOtp(c.env)
+  const skipOtp = getSkipOtp(c.env as OtpEnv)
   const cookieVerified = getCookie(c, OTP_COOKIE_NAME) === '1'
   const otpVerified = !suspended && (skipOtp ? true : cookieVerified)
 
