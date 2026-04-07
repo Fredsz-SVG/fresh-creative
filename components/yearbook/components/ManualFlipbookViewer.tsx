@@ -717,7 +717,7 @@ export default function ManualFlipbookViewer({ pages, onPlayVideo, className = '
   return (
     <div
       ref={wrapperRef}
-      className={`flip-book-wrapper relative overflow-hidden flex flex-col w-full h-full min-h-0 bg-white dark:bg-slate-950 pb-[calc(2.75rem+env(safe-area-inset-bottom))] md:pb-0 ${className} transition-opacity duration-700 ${isReady ? 'opacity-100' : 'opacity-0'} ${isCoverOnly ? 'flip-book-wrapper--cover-only' : ''} ${isBackCoverOnly ? 'flip-book-wrapper--back-cover-only' : ''} ${isFullscreen ? 'flip-book-wrapper--fullscreen' : ''} ${sectionFlipDir ? `is-flipping-${sectionFlipDir}` : ''}`}
+      className={`flip-book-wrapper relative overflow-hidden flex flex-col w-full h-full min-h-0 bg-white dark:bg-slate-950 ${className} transition-opacity duration-700 ${isReady ? 'opacity-100' : 'opacity-0'} ${isCoverOnly ? 'flip-book-wrapper--cover-only' : ''} ${isBackCoverOnly ? 'flip-book-wrapper--back-cover-only' : ''} ${isFullscreen ? 'flip-book-wrapper--fullscreen' : ''} ${sectionFlipDir ? `is-flipping-${sectionFlipDir}` : ''}`}
     >
       <div
         ref={stageContainerRef}
@@ -793,7 +793,7 @@ export default function ManualFlipbookViewer({ pages, onPlayVideo, className = '
       </div>
 
       {/* Bottom Navigation Bar — editor: tombol lebih kecil + jarak longgar; public: tetap */}
-      <div className={`mt-auto shrink-0 w-full flex items-center bg-white dark:bg-slate-900 border-t border-slate-900 dark:border-slate-700 shadow-[0_-1px_0_0_rgba(15,23,42,0.06)] dark:shadow-[0_-1px_0_0_rgba(51,65,85,0.4)] z-50 md:sticky md:bottom-0 max-md:fixed max-md:bottom-0 max-md:left-0 max-md:right-0 max-md:pb-[env(safe-area-inset-bottom)] ${isEditorView ? 'px-2 py-1' : 'px-1.5 py-0.5'}`}>
+      <div className={`mt-auto shrink-0 w-full flex items-center bg-white dark:bg-slate-900 border-t border-slate-900 dark:border-slate-700 shadow-[0_-1px_0_0_rgba(15,23,42,0.06)] dark:shadow-[0_-1px_0_0_rgba(51,65,85,0.4)] z-50 sticky bottom-0 pb-[env(safe-area-inset-bottom)] ${isEditorView ? 'px-2 py-1' : 'px-1.5 py-0.5'}`}>
         {/* Kiri: sound + flip */}
         <div className={`flex-1 flex items-center justify-start ${isEditorView ? 'gap-1.5' : 'gap-0.5'}`}>
           <button

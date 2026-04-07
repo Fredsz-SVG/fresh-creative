@@ -47,10 +47,12 @@ function IconSidebarInner({
 
   return (
     <div className="hidden lg:fixed lg:left-0 lg:top-14 lg:w-16 lg:h-[calc(100vh-3.5rem)] lg:flex flex-col lg:z-40 lg:bg-white lg:dark:bg-slate-900 lg:border-r-2 lg:border-slate-900 lg:dark:border-slate-700 lg:shadow-[2px_0_0_0_#0f172a] lg:dark:shadow-[2px_0_0_0_#334155]">
-      <a href={url('preview')} className={linkClass(sidebarMode === 'preview')} title="Preview Album" onClick={handleClick('preview')}>
-        <Eye className="w-6 h-6" strokeWidth={2.5} />
-        <span>Preview</span>
-      </a>
+      {canManage && (
+        <a href={url('preview')} className={linkClass(sidebarMode === 'preview')} title="Preview Album" onClick={handleClick('preview')}>
+          <Eye className="w-6 h-6" strokeWidth={2.5} />
+          <span>Preview</span>
+        </a>
+      )}
       <a href={url('ai-labs')} className={`relative ${linkClass(sidebarMode === 'ai-labs')}`} title="AI Labs" onClick={handleClick('ai-labs')}>
         <div className="relative">
           <Sparkles className="w-6 h-6" strokeWidth={2.5} />

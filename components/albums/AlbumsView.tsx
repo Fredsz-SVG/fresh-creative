@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { Check, X, Trash2, UserPlus, Loader2, ImagePlus, BookOpen, ChevronRight, Search, Edit, LayoutDashboard, MoreVertical, Calendar, ShieldCheck, CreditCard, Package, Plus, Eye, ClipboardPaste, LayoutGrid } from 'lucide-react'
+import { Check, X, Trash2, UserPlus, User, Loader2, ImagePlus, BookOpen, ChevronRight, Search, Edit, LayoutDashboard, MoreVertical, Calendar, ShieldCheck, CreditCard, Package, Plus, Eye, ClipboardPaste, LayoutGrid } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { getYearbookSectionQueryUrl } from '../yearbook/lib/yearbook-paths'
 import { apiUrl } from '../../lib/api-url'
@@ -187,7 +187,7 @@ function AlbumCard({
       {/* Info Detail Popup */}
       {showInfo && !isAdmin && (
         <div
-          className="absolute top-12 right-4 z-50 w-64 bg-white dark:bg-slate-900 border-4 border-slate-900 dark:border-slate-700 shadow-[6px_6px_0_0_#0f172a] dark:shadow-[6px_6px_0_0_#334155] rounded-2xl p-4 animate-in fade-in zoom-in duration-200 cursor-default"
+          className="absolute top-12 right-4 z-50 w-64 bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 shadow-[3px_3px_0_0_#0f172a] dark:shadow-[3px_3px_0_0_#334155] rounded-2xl p-4 animate-in fade-in zoom-in duration-200 cursor-default"
           onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
         >
           <div className="flex justify-between items-center mb-4 pb-2 border-b-2 border-slate-100 dark:border-slate-800">
@@ -248,6 +248,16 @@ function AlbumCard({
               <div>
                 <p className="text-[10px] font-bold text-slate-400 dark:text-slate-300 uppercase">Tanggal Masukan</p>
                 <p className="text-xs font-black text-slate-900 dark:text-slate-100">{created || '-'}</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-indigo-100 dark:bg-indigo-900 border-2 border-slate-900 dark:border-slate-700 flex items-center justify-center shrink-0">
+                <User className="w-4 h-4 text-indigo-600 dark:text-indigo-300" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] font-bold text-slate-400 dark:text-slate-300 uppercase">Pembuat Album</p>
+                <p className="text-xs font-black text-slate-900 dark:text-slate-100 truncate">{album.pic_name || 'Tidak diketahui'}</p>
               </div>
             </div>
           </div>

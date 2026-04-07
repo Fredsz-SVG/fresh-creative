@@ -6,7 +6,7 @@ import { isSimilarSchoolName } from '../../lib/school-name-utils'
 import { requireAuthJwt, getAuthUserId } from '../../middleware'
 
 const albumColsUser =
-  `a.id, a.user_id, a.name, a.type, a.status, a.created_at, a.description, a.cover_image_url, a.cover_image_position, a.pricing_package_id, a.payment_status, a.payment_url, a.total_estimated_price, p.name as pricing_pkg_name`
+  `a.id, a.user_id, a.name, a.type, a.status, a.created_at, a.description, a.cover_image_url, a.cover_image_position, a.pricing_package_id, a.payment_status, a.payment_url, a.total_estimated_price, a.pic_name, p.name as pricing_pkg_name`
 
 function mapAlbumRow(r: Record<string, unknown>) {
   const pkg = r.pricing_pkg_name

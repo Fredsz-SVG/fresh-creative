@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   BookOpen,
@@ -96,7 +96,42 @@ export default function YearbookMobileNav({
   const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null
   const aiLabsTool = searchParams?.get('tool')
   const isAiLabsToolActive = sidebarMode === 'ai-labs' && !!aiLabsTool
-  const hideBottomNav = isAiLabsToolActive || (sidebarMode === 'flipbook' && flipbookPreviewMode)
+  const hideBottomNav = isAiLabsToolActive || (sidebarMode === 'flipbook' && (flipbookPreviewMode || !canManage))
+
+  const [bottomNavVisible, setBottomNavVisible] = useState(true)
+  const lastScrollY = useRef(0)
+  const scrollEndTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    const scrollThreshold = 60
+    const scrollEndDelay = 400
+
+    const handleScroll = () => {
+      const y = typeof window !== 'undefined' ? window.scrollY : 0
+      const prev = lastScrollY.current
+      lastScrollY.current = y
+
+      if (prev !== undefined) {
+        if (y > prev && y > scrollThreshold) {
+          setBottomNavVisible(false)
+        } else if (y < prev) {
+          setBottomNavVisible(true)
+        }
+      }
+
+      if (scrollEndTimer.current) clearTimeout(scrollEndTimer.current)
+      scrollEndTimer.current = setTimeout(() => {
+        setBottomNavVisible(true)
+        scrollEndTimer.current = null
+      }, scrollEndDelay)
+    }
+
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => {
+      window.removeEventListener('scroll', handleScroll)
+      if (scrollEndTimer.current) clearTimeout(scrollEndTimer.current)
+    }
+  }, [])
 
   const handleNavClick = (mode: any) => {
     if (!effectiveAlbumId) return
@@ -111,14 +146,16 @@ export default function YearbookMobileNav({
     <>
       {/* Mobile Bottom Navigation - Preview & Approval langsung di bar, tidak dibungkus Menu Lainnya */}
       {!hideBottomNav && (
-        <div className="fixed bottom-0 left-0 right-0 z-[60] bg-white dark:bg-slate-900 border-t-4 border-slate-900 dark:border-slate-700 flex lg:hidden items-center justify-around min-h-[3.5rem] sm:min-h-16 pb-safe safe-area-bottom shadow-[0_-4px_10px_0_rgba(0,0,0,0.1)] dark:shadow-[0_-4px_10px_0_rgba(0,0,0,0.3)]">
-          <button
-            onClick={() => handleNavClick('preview')}
-            className={`flex flex-col items-center justify-center flex-1 h-full gap-0.5 active:scale-95 transition-all min-w-0 py-1.5 ${sidebarMode === 'preview' ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white'}`}
-          >
-            <Eye className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" strokeWidth={2.5} />
-            <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest text-center truncate w-full px-0.5">Preview</span>
-          </button>
+        <div className={`fixed bottom-0 left-0 right-0 z-[60] bg-white dark:bg-slate-900 border-t-4 border-slate-900 dark:border-slate-700 flex lg:hidden items-center justify-around min-h-[3.5rem] sm:min-h-16 pb-safe safe-area-bottom shadow-[0_-4px_10px_0_rgba(0,0,0,0.1)] dark:shadow-[0_-4px_10px_0_rgba(0,0,0,0.3)] transform transition-transform duration-300 ease-out ${bottomNavVisible ? 'translate-y-0' : 'translate-y-32'}`}>
+          {canManage && (
+            <button
+              onClick={() => handleNavClick('preview')}
+              className={`flex flex-col items-center justify-center flex-1 h-full gap-0.5 active:scale-95 transition-all min-w-0 py-1.5 ${sidebarMode === 'preview' ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white'}`}
+            >
+              <Eye className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" strokeWidth={2.5} />
+              <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest text-center truncate w-full px-0.5">Preview</span>
+            </button>
+          )}
 
           <button
             onClick={() => handleNavClick('classes')}
@@ -161,7 +198,7 @@ export default function YearbookMobileNav({
             <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest text-center truncate w-full px-0.5">Flipbook</span>
           </button>
 
-          {canManage ? (
+          {canManage && (
             <button
               onClick={() => handleNavClick('approval')}
               className={`flex flex-col items-center justify-center flex-1 h-full gap-0.5 active:scale-95 transition-all relative min-w-0 py-1.5 ${sidebarMode === 'approval' || sidebarMode === 'team' ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white'}`}
@@ -177,8 +214,6 @@ export default function YearbookMobileNav({
               </div>
               <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest truncate w-full px-0.5">Akses</span>
             </button>
-          ) : (
-            <div className="flex-1 min-w-0" aria-hidden />
           )}
         </div>
       )}
@@ -200,6 +235,8 @@ export default function YearbookMobileNav({
 
             <div className="flex-1 overflow-y-auto p-4 space-y-3">
               {classes.map((c, idx) => {
+                const access = myAccessByClass[c.id]
+                if (!canManage && access?.status !== 'approved') return null
                 const req = myRequestByClass[c.id]
                 const hasPendingRequest = req?.status === 'pending'
                 const isEditing = mobileEditingClassId === c.id

@@ -10,12 +10,14 @@ type OtpSkipEnv = {
   SKIP_LOGIN_OTP?: string
 }
 
-function getSkipOtp(env: OtpSkipEnv): boolean {
-  const v = (env?.SKIP_OTP || env?.SKIP_LOGIN_OTP || '')
-    .trim()
-    .toLowerCase()
-    .replace(/^"|"$/g, '')
-  return v === 'true' || v === '1' || v === 'yes'
+function getSkipOtp(env: any): boolean {
+  const val = env?.SKIP_OTP ?? env?.SKIP_LOGIN_OTP;
+  if (val === true) return true;
+  if (typeof val === 'string') {
+    const v = val.trim().toLowerCase().replace(/^"|"$/g, '');
+    return v === 'true' || v === '1' || v === 'yes';
+  }
+  return false;
 }
 
 type ResendEnv = {

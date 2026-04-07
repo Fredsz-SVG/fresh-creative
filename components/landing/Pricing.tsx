@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { Check, Book, BookOpen, Sparkles, Star } from "lucide-react";
 import { TiLocationArrow } from "react-icons/ti";
+import { motion, AnimatePresence } from "framer-motion";
 import { apiUrl } from "@/lib/api-url";
 import { AnimatedTitle } from "./AnimatedTitle";
 
@@ -75,6 +76,7 @@ export function Pricing() {
   /** Untuk paket yang dipilih: addon mana yang di-check (indeks). Hanya addon dengan price > 0 yang opsional. */
   const [selectedAddonIndices, setSelectedAddonIndices] = useState<Record<string, number[]>>({});
   const [activeSwipeIndex, setActiveSwipeIndex] = useState(0);
+  const [openAddonPkgId, setOpenAddonPkgId] = useState<string | null>(null);
 
   const toggleAddon = (pkgId: string, addonIndex: number) => {
     setSelectedAddonIndices((prev) => {
@@ -287,28 +289,42 @@ export function Pricing() {
 
         {/* Tab: Digital | Fisik */}
         <div className="flex justify-center mb-10">
-          <div className="inline-flex flex-wrap justify-center rounded-xl border border-slate-900 dark:border-white bg-white dark:bg-slate-900 p-1 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[#a3e635]">
+          <div className="relative flex items-center rounded-xl border border-slate-900 dark:border-white bg-white dark:bg-slate-900 p-1 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[#a3e635]">
             <button
               type="button"
               onClick={() => setTab("digital")}
-              className={`px-4 sm:px-8 py-2.5 sm:py-3 rounded-lg text-xs sm:text-sm font-black uppercase tracking-wider transition-all ${
+              className={`relative px-4 sm:px-8 py-2.5 sm:py-3 rounded-lg text-xs sm:text-sm font-black uppercase tracking-wider transition-colors duration-200 z-10 ${
                 tab === "digital"
-                  ? "bg-lime-500 text-slate-900 dark:text-black border border-slate-900 dark:border-white translate-x-[1px] translate-y-[1px] shadow-none"
-                  : "text-slate-600 dark:text-white/70 hover:bg-slate-100 dark:hover:bg-white/10"
+                  ? "text-slate-900"
+                  : "text-slate-600 dark:text-white/70 hover:text-slate-900 dark:hover:text-white"
               }`}
             >
-              Digital
+              {tab === "digital" && (
+                <motion.div
+                  layoutId="pricing-active-tab"
+                  className="absolute inset-0 bg-lime-500 rounded-lg border border-slate-900 dark:border-white"
+                  transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                />
+              )}
+              <span className="relative z-20">Digital</span>
             </button>
             <button
               type="button"
               onClick={() => setTab("fisik")}
-              className={`px-4 sm:px-8 py-2.5 sm:py-3 rounded-lg text-xs sm:text-sm font-black uppercase tracking-wider transition-all ${
+              className={`relative px-4 sm:px-8 py-2.5 sm:py-3 rounded-lg text-xs sm:text-sm font-black uppercase tracking-wider transition-colors duration-200 z-10 ${
                 tab === "fisik"
-                  ? "bg-lime-500 text-slate-900 dark:text-black border border-slate-900 dark:border-white translate-x-[1px] translate-y-[1px] shadow-none"
-                  : "text-slate-600 dark:text-white/70 hover:bg-slate-100 dark:hover:bg-white/10"
+                  ? "text-slate-900"
+                  : "text-slate-600 dark:text-white/70 hover:text-slate-900 dark:hover:text-white"
               }`}
             >
-              Cetak Fisik
+              {tab === "fisik" && (
+                <motion.div
+                  layoutId="pricing-active-tab"
+                  className="absolute inset-0 bg-lime-500 rounded-lg border border-slate-900 dark:border-white"
+                  transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                />
+              )}
+              <span className="relative z-20">Cetak Fisik</span>
             </button>
           </div>
         </div>
@@ -413,7 +429,7 @@ export function Pricing() {
                                   }`}
                                 >
                                   {slug === "flipbook_unlock" ? (
-                                    <BookOpen className="h-3 w-3" />
+                                    <Book className="h-3 w-3" />
                                   ) : (
                                     <Sparkles className="h-3 w-3" />
                                   )}
@@ -424,31 +440,25 @@ export function Pricing() {
                           </div>
                         )}
                         {parsedFeatures.some((p) => p.price > 0) && (
-                          <div className="mt-4 pt-4 border-t border-slate-100 dark:border-white/10">
-                            <p className="text-[11px] font-black text-slate-500 dark:text-white/50 uppercase tracking-widest mb-3">Addon</p>
-                            <ul className="space-y-2">
-                              {parsedFeatures.map((parsed, i) => {
-                                if (parsed.price === 0) return null;
-                                const checked = chosenAddons.includes(i);
-                                return (
-                                  <li key={i} className="flex items-center gap-3 text-sm font-bold text-slate-700 dark:text-white/80">
-                                    <label
-                                      onClick={(e) => e.stopPropagation()}
-                                      className="flex items-center gap-3 cursor-pointer flex-1"
-                                    >
-                                      <input
-                                        type="checkbox"
-                                        checked={checked}
-                                        onChange={() => toggleAddon(pkg.id, i)}
-                                        className="h-5 w-5 rounded border-2 border-slate-900 dark:border-white bg-white dark:bg-slate-800 text-lime-500 focus:ring-0 cursor-pointer"
-                                      />
-                                      <span>{parsed.name}</span>
-                                      <span className="text-xs text-cyan-600 dark:text-cyan-400 ml-auto">+{formatRupiah(parsed.price)}</span>
-                                    </label>
-                                  </li>
-                                );
-                              })}
-                            </ul>
+                          <div className="mt-4 pt-4 border-t border-slate-100 dark:border-white/10 group/addon">
+                            <div className="flex items-center justify-between mb-3">
+                              <p className="text-[11px] font-black text-slate-500 dark:text-white/50 uppercase tracking-widest">Addon</p>
+                              {chosenAddons.length > 0 && (
+                                <span className="bg-lime-500 text-black text-[9px] px-2 py-0.5 rounded-full font-black shadow-[1px_1px_0_0_#000]">
+                                  {chosenAddons.length} Dipilih
+                                </span>
+                              )}
+                            </div>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setOpenAddonPkgId(pkg.id);
+                              }}
+                              className="w-full py-2.5 px-4 rounded-xl border border-slate-900 dark:border-white bg-slate-50 dark:bg-slate-800 text-[11px] font-black uppercase text-slate-900 dark:text-white transition-all hover:-translate-y-0.5 hover:-translate-x-0.5 hover:shadow-[3px_3px_0_0_#0f172a] dark:hover:shadow-[#a3e635] shadow-[2px_2px_0_0_#0f172a] dark:shadow-[#a3e635] active:translate-x-0 active:translate-y-0 active:shadow-none"
+                            >
+                              {chosenAddons.length > 0 ? "Ubah Add-on" : "Pilih Add-on"}
+                            </button>
                           </div>
                         )}
                       </div>
@@ -802,6 +812,94 @@ export function Pricing() {
         </>
         )}
       </div>
+      {/* Modal Add-on Digital */}
+      <AnimatePresence>
+        {openAddonPkgId && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setOpenAddonPkgId(null)}
+              className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="relative w-full max-w-md bg-white dark:bg-slate-900 border-4 border-slate-900 dark:border-white p-6 sm:p-8 rounded-[2rem] shadow-[8px_8px_0_0_#000] dark:shadow-[#a3e635]"
+            >
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="font-general text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">
+                  Pilih Add-on
+                </h3>
+                <button
+                  onClick={() => setOpenAddonPkgId(null)}
+                  className="p-2 hover:bg-slate-100 dark:hover:bg-white/10 rounded-full transition-colors text-slate-900 dark:text-white"
+                >
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+              </div>
+
+              <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-3 pb-6 custom-scrollbar">
+                {(() => {
+                  const pkg = digitalPackages.find(p => p.id === openAddonPkgId);
+                  if (!pkg) return null;
+                  const parsedFeatures = pkg.features.map((f) => {
+                    try {
+                      const j = JSON.parse(f);
+                      return { name: j.name || f, price: Number(j.price) || 0 };
+                    } catch {
+                      return { name: f, price: 0 };
+                    }
+                  });
+                  const chosenAddons = selectedAddonIndices[pkg.id] ?? [];
+
+                  return parsedFeatures.map((parsed, i) => {
+                    if (parsed.price === 0) return null;
+                    const checked = chosenAddons.includes(i);
+                    return (
+                      <label
+                        key={i}
+                        className={`flex items-center gap-4 p-4 rounded-2xl border-2 transition-all cursor-pointer ${
+                          checked
+                            ? "border-slate-900 dark:border-white bg-lime-400/10 shadow-none translate-x-[2px] translate-y-[2px]"
+                            : "border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 hover:border-slate-400 shadow-[3px_3px_0_0_#0f172a] dark:shadow-[#a3e635]"
+                        }`}
+                      >
+                        <div className="relative flex items-center">
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => toggleAddon(pkg.id, i)}
+                            className="sr-only"
+                          />
+                          <div className={`h-6 w-6 rounded-lg border-2 flex items-center justify-center transition-all ${
+                            checked ? "bg-lime-500 border-slate-900 dark:border-white" : "bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600"
+                          }`}>
+                            {checked && <Check className="h-4 w-4 text-slate-900" strokeWidth={4} />}
+                          </div>
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm font-black text-slate-900 dark:text-white uppercase leading-tight">{parsed.name}</p>
+                          <p className="text-[11px] font-bold text-cyan-600 dark:text-cyan-400 mt-1">+{formatRupiah(parsed.price)}</p>
+                        </div>
+                      </label>
+                    );
+                  });
+                })()}
+              </div>
+
+              <button
+                onClick={() => setOpenAddonPkgId(null)}
+                className="mt-8 w-full py-4 rounded-2xl border-2 border-slate-900 bg-lime-400 text-slate-900 font-black uppercase tracking-widest shadow-[4px_4px_0_0_#000] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all"
+              >
+                Selesai
+              </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </section>
   );
 }

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Check, Book, BookOpen, Sparkles, Star } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import DashboardTitle from "@/components/dashboard/DashboardTitle";
 import { apiUrl } from '../../lib/api-url'
 import { fetchWithAuth } from '../../lib/api-client'
@@ -82,6 +83,7 @@ export default function PricingView({
   const [packages, setPackages] = useState<PricingPackage[]>(DEFAULT_PACKAGES);
   const [loadingPackages, setLoadingPackages] = useState(true);
   const [activeIdx, setActiveIdx] = useState(0);
+  const [openAddonPkgId, setOpenAddonPkgId] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const toggleAddon = (pkgId: string, addonIndex: number) => {
@@ -353,7 +355,7 @@ export default function PricingView({
                             className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[12px] font-black uppercase tracking-wider border-2 shadow-[2px_2px_0_0_#0f172a] ${slug === 'flipbook_unlock' ? 'border-amber-700 dark:border-amber-300 bg-amber-300 dark:bg-amber-400 text-amber-950 dark:shadow-amber-300/80' : 'border-slate-900 dark:border-slate-600 bg-indigo-300 dark:bg-indigo-900/50 text-slate-900 dark:text-slate-100 dark:shadow-[2px_2px_0_0_#334155]'
                               }`}
                           >
-                            {slug === 'flipbook_unlock' ? <BookOpen className="w-3.5 h-3.5" /> : <Sparkles className="w-3.5 h-3.5" />}
+                            {slug === 'flipbook_unlock' ? <Book className="w-3.5 h-3.5" /> : <Sparkles className="w-3.5 h-3.5" />}
                             {AI_FEATURE_LABELS[slug] ?? slug}
                           </span>
                         ))}
@@ -364,30 +366,28 @@ export default function PricingView({
                   {/* Addon (opsional, di bawah fitur) */}
                   {parsedFeatures.some((p) => p.price > 0) && (
                     <div className="mt-4 pt-4 border-t-2 border-slate-100 dark:border-slate-700 px-1">
-                      <p className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-3">Addon</p>
-                      <ul className="space-y-2">
-                        {parsedFeatures.map((parsed, i) => {
-                          if (parsed.price === 0) return null;
-                          const checked = chosenAddons.includes(i);
-                          return (
-                            <li key={i} className={`flex items-start gap-2 text-[14px] font-bold ${isSelected ? 'text-slate-800 dark:text-slate-200' : 'text-slate-600 dark:text-slate-300'}`}>
-                              <label
-                                onClick={(e) => e.stopPropagation()}
-                                className="flex items-center gap-2 cursor-pointer flex-1"
-                              >
-                                <input
-                                  type="checkbox"
-                                  checked={checked}
-                                  onChange={() => toggleAddon(pkg.id, i)}
-                                  className="h-4 w-4 rounded border-2 border-slate-900 dark:border-slate-500 text-emerald-500 focus:ring-0 cursor-pointer bg-white dark:bg-slate-800"
-                                />
-                                <span>{parsed.name}</span>
-                                <span className="text-[12px] text-indigo-600 dark:text-indigo-400 font-bold ml-auto">+Rp {parsed.price.toLocaleString("id-ID")}</span>
-                              </label>
-                            </li>
-                          );
-                        })}
-                      </ul>
+                      <div className="flex items-center justify-between mb-3">
+                        <p className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Addon</p>
+                        {chosenAddons.length > 0 && (
+                          <span className="bg-emerald-400 dark:bg-emerald-500 text-slate-900 text-[10px] px-2 py-0.5 rounded-full font-black border-2 border-slate-900 dark:border-slate-700 shadow-[2px_2px_0_0_#0f172a]">
+                            {chosenAddons.length} Dipilih
+                          </span>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setOpenAddonPkgId(pkg.id);
+                        }}
+                        className={`w-full py-2.5 px-4 rounded-xl border-2 transition-all font-black uppercase text-[11px] tracking-wider ${
+                          isSelected
+                            ? "bg-white dark:bg-emerald-900/30 border-slate-900 dark:border-slate-600 text-slate-900 dark:text-emerald-300"
+                            : "bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:border-slate-900 dark:hover:border-slate-500 shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155]"
+                        } active:translate-x-0 active:translate-y-0 active:shadow-none`}
+                      >
+                        {chosenAddons.length > 0 ? "Ubah Add-on" : "Pilih Add-on"}
+                      </button>
                     </div>
                   )}
 
@@ -437,6 +437,95 @@ export default function PricingView({
           </p>
         )}
       </div>
+
+      {/* Modal Add-on Digital (Showroom) */}
+      <AnimatePresence>
+        {openAddonPkgId && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setOpenAddonPkgId(null)}
+              className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="relative w-full max-w-md bg-white dark:bg-slate-900 border-4 border-slate-900 dark:border-slate-700 p-6 sm:p-8 rounded-[2.5rem] shadow-[10px_10px_0_0_#0f172a] dark:shadow-[10px_10px_0_0_#334155]"
+            >
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="font-sans text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">
+                  Pilih Add-on
+                </h3>
+                <button
+                  onClick={() => setOpenAddonPkgId(null)}
+                  className="p-2 hover:bg-slate-100 dark:hover:bg-white/10 rounded-full transition-colors text-slate-950 dark:text-white"
+                >
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+              </div>
+
+              <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-3 pb-6 custom-scrollbar">
+                {(() => {
+                  const pkg = packages.find(p => p.id === openAddonPkgId);
+                  if (!pkg) return null;
+                  const parsedFeatures = pkg.features.map((f) => {
+                    try {
+                      const j = JSON.parse(f);
+                      return { name: j.name || f, price: Number(j.price) || 0 };
+                    } catch {
+                      return { name: f, price: 0 };
+                    }
+                  });
+                  const chosenAddons = selectedAddonIndices[pkg.id] ?? [];
+
+                  return parsedFeatures.map((parsed, i) => {
+                    if (parsed.price === 0) return null;
+                    const checked = chosenAddons.includes(i);
+                    return (
+                      <label
+                        key={i}
+                        className={`flex items-center gap-4 p-4 rounded-2xl border-2 transition-all cursor-pointer ${
+                          checked
+                            ? "border-slate-900 dark:border-slate-500 bg-emerald-50 dark:bg-emerald-900/20 shadow-none translate-x-[2px] translate-y-[2px]"
+                            : "border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/30 hover:border-slate-400 shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155]"
+                        }`}
+                      >
+                        <div className="relative flex items-center">
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => toggleAddon(pkg.id, i)}
+                            className="sr-only"
+                          />
+                          <div className={`h-6 w-6 rounded-lg border-2 flex items-center justify-center transition-all ${
+                            checked ? "bg-emerald-500 border-slate-900 dark:border-slate-500" : "bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700"
+                          }`}>
+                            {checked && <Check className="h-4 w-4 text-slate-900" strokeWidth={4} />}
+                          </div>
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm font-black text-slate-900 dark:text-white uppercase leading-tight">{parsed.name}</p>
+                          <p className="text-[12px] font-bold text-indigo-600 dark:text-indigo-400 mt-1.5">+Rp {parsed.price.toLocaleString("id-ID")}</p>
+                        </div>
+                      </label>
+                    );
+                  });
+                })()}
+              </div>
+
+              <button
+                onClick={() => setOpenAddonPkgId(null)}
+                className="mt-8 w-full py-4 rounded-2xl border-4 border-slate-900 bg-indigo-400 dark:bg-indigo-600 text-white font-black uppercase tracking-widest shadow-[6px_6px_0_0_#0f172a] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all"
+              >
+                Selesai
+              </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

@@ -181,13 +181,24 @@ export default function YearbookAlbumClient({
 
   const isFetchingMembersRef = useRef(false)
 
+  const isOwner = album?.isOwner === true
+  const isAlbumAdmin = album?.isAlbumAdmin === true
+  const isGlobalAdminUser = album?.isGlobalAdmin === true
+  const canManage = isOwner || isAlbumAdmin || isGlobalAdminUser
+
   // Section dari URL: path segment atau query ?section=
-  const sectionMode = getSectionModeFromUrl(pathname, searchParams.get('section'), id ?? '')
+  const rawSectionMode = getSectionModeFromUrl(pathname, searchParams.get('section'), id ?? '')
+  // Regular users should not see Cover, Sambutan, or Approval - redirect them to classes
+  const sectionMode = (!canManage && ['cover', 'sambutan', 'approval'].includes(rawSectionMode)) ? 'classes' : rawSectionMode
+  
   const isCoverView = sectionMode === 'cover'
   const sidebarModeFromPath = sectionMode === 'cover' ? 'classes' : sectionMode
 
   // Optimistic section: state-driven agar klik sidebar instan (tanpa tunggu router)
   const [activeSection, setActiveSection] = useState<typeof sectionMode>(sectionMode)
+
+  const uiSection = activeSection === 'cover' ? 'classes' : activeSection
+  const isFlipbookPreview = uiSection === 'flipbook' && (flipbookPreviewMode || !canManage)
   const latestClickedSectionRef = useRef<string | null>(null)
 
   useEffect(() => {
@@ -229,6 +240,33 @@ export default function YearbookAlbumClient({
     [id, pathname]
   )
 
+  // Lock body scroll when in flipbook preview mode (to prevent the whole page from scrolling)
+  useEffect(() => {
+    if (isFlipbookPreview) {
+      document.body.style.overflow = 'hidden'
+      document.body.style.overscrollBehavior = 'none'
+      document.documentElement.style.overflow = 'hidden'
+      document.documentElement.style.overscrollBehavior = 'none'
+      document.documentElement.style.height = '100%'
+      document.body.style.height = '100%'
+    } else {
+      document.body.style.overflow = ''
+      document.body.style.overscrollBehavior = ''
+      document.documentElement.style.overflow = ''
+      document.documentElement.style.overscrollBehavior = ''
+      document.documentElement.style.height = ''
+      document.body.style.height = ''
+    }
+    return () => {
+      document.body.style.overflow = ''
+      document.body.style.overscrollBehavior = ''
+      document.documentElement.style.overflow = ''
+      document.documentElement.style.overscrollBehavior = ''
+      document.documentElement.style.height = ''
+      document.body.style.height = ''
+    }
+  }, [isFlipbookPreview])
+
   // Simpan sidebarMode ke localStorage (untuk fallback)
   useEffect(() => {
     if (typeof window !== 'undefined' && id) {
@@ -244,12 +282,8 @@ export default function YearbookAlbumClient({
   }, [aiLabsTool, id, sectionMode, router, searchParams])
 
   const currentClassId = album?.classes?.[classIndex]?.id
-  const isOwner = album?.isOwner === true
-  const isAlbumAdmin = album?.isAlbumAdmin === true
-
   // Role admin (global): "Kembali" selalu ke dashboard admin (setelah album tersedia)
   const isAdminPath = typeof pathname === 'string' && pathname.startsWith('/admin/')
-  const isGlobalAdminUser = album?.isGlobalAdmin === true
   const useAdminBack = isAdminPath || isGlobalAdminUser
 
   const originalBackHref = useAdminBack ? '/admin/albums' : backHref
@@ -1430,7 +1464,7 @@ export default function YearbookAlbumClient({
     }
   }
 
-  const mobileFirstWrapper = `w-full mx-auto bg-white dark:bg-slate-950 lg:max-w-full flex flex-col ${sidebarModeFromPath === 'flipbook' && flipbookPreviewMode ? 'h-[100dvh]' : 'min-h-screen'}`
+  const mobileFirstWrapper = `w-full mx-auto bg-white dark:bg-slate-950 lg:max-w-full flex flex-col ${isFlipbookPreview ? 'fixed inset-0 overflow-hidden' : 'min-h-screen'}`
   const contentWrapper = 'max-w-[420px] md:max-w-full w-full mx-auto'
 
   if (!id) {
@@ -1563,6 +1597,16 @@ export default function YearbookAlbumClient({
                   </button>
                 </div>
               )}
+
+              {/* Flipbook Controls for Regular User (Exit button instead of Editor/Preview toggle) */}
+              {uiSection === 'flipbook' && !canManage && (
+                <button
+                  onClick={() => handleSectionChange('classes')}
+                  className="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg sm:rounded-xl bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 text-[10px] sm:text-xs font-black uppercase text-slate-900 dark:text-white shadow-[3px_3px_0_0_#0f172a] dark:shadow-[3px_3px_0_0_#334155] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all"
+                >
+                  <X className="w-3 h-3 sm:w-4 sm:h-4" /> <span>Preview</span>
+                </button>
+              )}
               {/* Sambutan & Classes: Search Toggle */}
               {(uiSection === 'sambutan' || (uiSection === 'classes' && activeSection !== 'cover')) && (
                 <>
@@ -1616,22 +1660,24 @@ export default function YearbookAlbumClient({
                   type="button"
                   onClick={(e) => {
                     e.preventDefault();
-                    const url = `${window.location.origin}/album/${album?.id}/preview`;
+                    const url = `${window.location.origin}/album/${album?.id}/view`;
                     navigator.clipboard.writeText(url);
-                    toast.success('Link berhasil disalin');
+                    toast.success('Link public berhasil disalin');
                   }}
-                  className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 rounded-lg sm:rounded-xl text-slate-900 dark:text-white shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all"
+                  className="flex items-center justify-center gap-1.5 px-3 h-8 sm:h-9 bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 rounded-lg sm:rounded-xl text-slate-900 dark:text-white shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all"
                   title="Salin Link"
                 >
                   <LinkIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" strokeWidth={3} />
+                  <span className="text-[10px] font-black uppercase">Salin</span>
                 </button>
                 <Link
-                  href={`/album/${album?.id}/preview`}
+                  href={`/album/${album?.id}/view`}
                   target="_blank"
-                  className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center bg-emerald-400 dark:bg-emerald-600 border-2 border-slate-900 dark:border-slate-600 rounded-lg sm:rounded-xl text-slate-900 dark:text-white shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all"
+                  className="flex items-center justify-center gap-1.5 px-3 h-8 sm:h-9 bg-emerald-400 dark:bg-emerald-600 border-2 border-slate-900 dark:border-slate-600 rounded-lg sm:rounded-xl text-slate-900 dark:text-white shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all"
                   title="Preview"
                 >
                   <Eye className="w-3.5 h-3.5 sm:w-4 sm:h-4" strokeWidth={3} />
+                  <span className="text-[10px] font-black uppercase">Preview</span>
                 </Link>
               </div>
             )}
@@ -1639,14 +1685,14 @@ export default function YearbookAlbumClient({
         )}
 
         {/* Mobile Persistent Edit Navigation - Cover, Sambutan, Kelas saja; Flipbook ada di bottom nav */}
-        {((['classes', 'sambutan'].includes(uiSection) || activeSection === 'cover')) && !isAiLabsToolActive && (
+        {((['classes', 'sambutan'].includes(uiSection) || activeSection === 'cover')) && !isAiLabsToolActive && canManage && (
           <div className="lg:hidden sticky top-14 z-40 bg-transparent px-3 sm:px-4 pt-0 pb-0">
             <div className="flex gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar py-1.5 sm:py-2">
               <button
                 onClick={() => handleSectionChange('cover')}
                 className={`flex-shrink-0 flex items-center gap-1.5 sm:gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg sm:rounded-xl border-2 transition-all ${activeSection === 'cover' ? 'bg-slate-900 dark:bg-slate-700 border-slate-900 dark:border-slate-600 text-white shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155]' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-500 hover:text-slate-900 dark:hover:text-white'}`}
               >
-                <BookOpen className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${activeSection === 'cover' ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`} />
+                <Book className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${activeSection === 'cover' ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`} />
                 <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest whitespace-nowrap">Cover</span>
               </button>
               <button
@@ -1668,7 +1714,7 @@ export default function YearbookAlbumClient({
         )}
 
         {/* Main Content */}
-        <div className={`${contentWrapper} h-full flex flex-col`}>
+        <div className={`${contentWrapper} flex-1 min-h-0 flex flex-col`}>
           <YearbookClassesView
             album={album}
             classIndex={classIndex}

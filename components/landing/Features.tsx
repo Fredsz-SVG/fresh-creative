@@ -119,7 +119,7 @@ export function Features() {
         <div id="nexus" className="grid h-auto md:h-[45vh] grid-cols-1 md:grid-cols-2 grid-rows-2 md:grid-rows-1 gap-5 md:gap-7">
 
           {/* Video & Foto */}
-          <BentoCardWrap className="min-h-[250px] md:min-h-0">
+          <BentoCardWrap className="h-80 md:h-full">
             <BentoCard
               media="image"
               src="/img/sesifoto.jpg"
@@ -129,7 +129,7 @@ export function Features() {
           </BentoCardWrap>
 
           {/* Event Organizer */}
-          <BentoCardWrap className="min-h-[250px] md:min-h-0">
+          <BentoCardWrap className="h-80 md:h-full">
             <BentoCard
               media="image"
               src="/img/organizer.jpg"

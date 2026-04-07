@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { AnimatedTitle } from "./AnimatedTitle";
-import { ChevronRight } from "lucide-react";
+
+
 
 const PORTFOLIO_ITEMS = [
   {
@@ -40,6 +41,38 @@ export function About() {
   const [activeIndex, setActiveIndex] = useState(0);
 
   const activeItem = PORTFOLIO_ITEMS[activeIndex];
+  const total = PORTFOLIO_ITEMS.length;
+
+  const dragStartX = useRef<number | null>(null);
+  const SWIPE_THRESHOLD = 50;
+
+  const goNext = useCallback(() => setActiveIndex(i => (i + 1) % total), [total]);
+  const goPrev = useCallback(() => setActiveIndex(i => (i - 1 + total) % total), [total]);
+
+  // Touch handlers
+  const onTouchStart = (e: React.TouchEvent) => {
+    dragStartX.current = e.touches[0].clientX;
+  };
+  const onTouchEnd = (e: React.TouchEvent) => {
+    if (dragStartX.current === null) return;
+    const delta = e.changedTouches[0].clientX - dragStartX.current;
+    dragStartX.current = null;
+    if (Math.abs(delta) < SWIPE_THRESHOLD) return;
+    delta < 0 ? goNext() : goPrev();
+  };
+
+  // Mouse drag handlers
+  const onMouseDown = (e: React.MouseEvent) => {
+    dragStartX.current = e.clientX;
+  };
+  const onMouseUp = (e: React.MouseEvent) => {
+    if (dragStartX.current === null) return;
+    const delta = e.clientX - dragStartX.current;
+    dragStartX.current = null;
+    if (Math.abs(delta) < SWIPE_THRESHOLD) return;
+    delta < 0 ? goNext() : goPrev();
+  };
+  const onMouseLeave = () => { dragStartX.current = null; };
 
   // Helper unshift array to always show unselected items in the queue
   const queueItems = [
@@ -58,7 +91,14 @@ export function About() {
         </h2>
       </div>
 
-      <div className="relative h-[80vh] sm:h-[85vh] w-full overflow-hidden shadow-[0_-20px_50px_-20px_rgba(0,0,0,0.3)] dark:shadow-[0_-20px_50px_-20px_rgba(0,0,0,0.8)] border-t border-slate-200 dark:border-white/10 bg-slate-950">
+      <div
+        className="group/hero relative h-[80vh] sm:h-[85vh] w-full overflow-hidden shadow-[0_-20px_50px_-20px_rgba(0,0,0,0.3)] dark:shadow-[0_-20px_50px_-20px_rgba(0,0,0,0.8)] border-t border-slate-200 dark:border-white/10 bg-slate-950 select-none"
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
+        onMouseDown={onMouseDown}
+        onMouseUp={onMouseUp}
+        onMouseLeave={onMouseLeave}
+      >
         {/* BACKGROUND IMAGE WITH SMOOTH CROSSFADE */}
         <AnimatePresence initial={false}>
           <motion.img
@@ -82,17 +122,23 @@ export function About() {
 
         {/* MAIN CONTENT AREA */}
         <div className="absolute inset-0 flex flex-col justify-end p-6 sm:p-12 lg:p-16 pb-32 sm:pb-36 lg:pb-16 z-10 w-full lg:w-[65%]">
-          <div className="overflow-hidden mb-2">
+          <div className="pb-3 pr-3 mb-2">
             <motion.div
               key={`subtitle-${activeItem.id}`}
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              className="inline-block rounded-full border border-lime-400/50 bg-black/30 px-4 py-1.5 backdrop-blur-md"
+              initial={{ x: -16, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              transition={{ duration: 0.45, delay: 0.2 }}
+              className="inline-flex items-center -rotate-[1deg] origin-left"
+              style={{ filter: "drop-shadow(2px 0px 0px #000) drop-shadow(-2px 0px 0px #000) drop-shadow(0px 2px 0px #000) drop-shadow(0px -2px 0px #000) drop-shadow(6px 6px 0px #ffffff)" }}
             >
-              <p className="font-general text-[10px] sm:text-xs font-bold uppercase tracking-widest text-lime-400">
-                {activeItem.subtitle}
-              </p>
+              <div
+                className="bg-lime-400 pl-3 pr-5 py-[5px]"
+                style={{ clipPath: "polygon(0 0, 100% 0, calc(100% - 8px) 100%, 0 100%)" }}
+              >
+                <span className="font-general text-[9px] sm:text-[10px] font-black uppercase tracking-[0.28em] text-slate-950">
+                  {activeItem.subtitle}
+                </span>
+              </div>
             </motion.div>
           </div>
 
@@ -143,24 +189,24 @@ export function About() {
                   </p>
                 </div>
 
-                {/* Hover Indicator */}
-                <div className="absolute top-2 right-2 flex size-5 items-center justify-center rounded-full bg-lime-400 text-black opacity-0 transition-opacity group-hover:opacity-100">
-                  <ChevronRight className="size-3" strokeWidth={3} />
-                </div>
+
               </motion.button>
             ))}
           </AnimatePresence>
         </div>
+
+
 
         {/* SLIDER PROGRESS OUTLINE */}
         <div className="absolute bottom-4 sm:bottom-6 left-6 sm:left-12 z-20 flex gap-2">
           {PORTFOLIO_ITEMS.map((_, idx) => (
             <div
               key={idx}
-              className={`transition-all duration-300 h-1 sm:h-1.5 rounded-full ${
+              onClick={() => setActiveIndex(idx)}
+              className={`cursor-pointer transition-all duration-300 h-1 sm:h-1.5 rounded-full ${
                 idx === activeIndex
                   ? "w-8 sm:w-12 bg-lime-400"
-                  : "w-2 sm:w-3 bg-white/30"
+                  : "w-2 sm:w-3 bg-white/30 hover:bg-white/60"
               }`}
             />
           ))}

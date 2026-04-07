@@ -9,7 +9,7 @@ import {
     AnimatePresence,
     PanInfo,
 } from 'framer-motion'
-import { BookOpen, MessageSquare, Users, Play, X, Instagram, Cake } from 'lucide-react'
+import { Book, BookOpen, MessageSquare, Users, Play, X, Instagram, Cake } from 'lucide-react'
 import FastImage from '@/components/ui/FastImage'
 
 function stripQuotes(s: string): string {
@@ -223,7 +223,7 @@ export default function PreviewView({
     const sortedClasses = useMemo(() => sortNameAsc(classes), [classes])
 
     const sections: Section[] = useMemo(() => [
-        { type: 'cover', label: 'Cover', icon: <BookOpen className="w-4 h-4" /> },
+        { type: 'cover', label: 'Cover', icon: <Book className="w-4 h-4" /> },
         ...(sortedTeachers.length > 0 ? [{ type: 'sambutan' as const, label: 'Sambutan', icon: <MessageSquare className="w-4 h-4" /> }] : []),
         ...sortedClasses.map((c, i) => ({
             type: 'class' as const,

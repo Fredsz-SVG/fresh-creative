@@ -828,13 +828,13 @@ export default function YearbookClassesViewUI(props: any) {
         onSectionChange={props.onSectionChange}
       />
       {/* Main Content - Header already sticky in parent (page.tsx) */}
-      <div className={`flex-1 flex flex-col ${sidebarMode === 'flipbook' && flipbookPreviewMode ? 'p-0' : 'p-4 pb-8'}`}>
+      <div className={`flex-1 flex flex-col ${sidebarMode === 'flipbook' && (flipbookPreviewMode || !canManage) ? 'p-0 overflow-hidden' : 'p-4 pb-8'}`}>
 
 
 
-        <div className={`flex flex-col lg:flex-row gap-0 flex-1 ${(sidebarMode === 'flipbook' && flipbookPreviewMode) ? 'lg:pl-0' : 'lg:pl-16'} lg:px-0 lg:py-0`}>
+        <div className={`flex flex-col lg:flex-row gap-0 flex-1 ${(sidebarMode === 'flipbook' && (flipbookPreviewMode || !canManage)) ? 'lg:pl-0' : 'lg:pl-16'} lg:px-0 lg:py-0`}>
           {/* Icon Sidebar untuk desktop - Fixed di kiri (disembunyikan saat fitur AI Labs aktif atau flipbook preview aktif) */}
-          {!isAiLabsToolActive && !(sidebarMode === 'flipbook' && flipbookPreviewMode) && (
+          {!isAiLabsToolActive && !(sidebarMode === 'flipbook' && (flipbookPreviewMode || !canManage)) && (
             <IconSidebar
               pathname={pathname}
               albumId={effectiveAlbumId}
@@ -852,32 +852,34 @@ export default function YearbookClassesViewUI(props: any) {
           {((['classes', 'sambutan'].includes(sidebarMode) || isCoverView)) && (
             <div className="hidden lg:fixed lg:left-16 lg:top-14 lg:w-64 lg:h-[calc(100vh-3.5rem)] lg:flex flex-col lg:z-35 lg:bg-white lg:dark:bg-slate-900 lg:border-r-2 lg:border-slate-900 lg:dark:border-slate-700 shadow-[4px_0_10px_0_rgba(0,0,0,0.05)] dark:shadow-[4px_0_10px_0_rgba(0,0,0,0.2)]">
               {/* Main "Edit" Switcher - Cover, Sambutan, Kelas saja */}
-              <div className="p-3 bg-slate-50 dark:bg-slate-800/50 border-b-2 border-slate-100 dark:border-slate-700 flex flex-col gap-1.5 shrink-0">
-                <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] px-1">Menu Edit</p>
-                <div className="grid grid-cols-2 gap-1.5">
-                  <button
-                    onClick={() => onSectionChange?.('cover')}
-                    className={`flex items-center gap-2 p-2 rounded-xl border-2 transition-all ${isCoverView ? 'bg-white dark:bg-slate-800 border-slate-900 dark:border-slate-600 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] -translate-y-0.5' : 'bg-transparent border-transparent text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-white'}`}
-                  >
-                    <BookOpen className={`w-3.5 h-3.5 ${isCoverView ? 'text-indigo-500 dark:text-indigo-400' : 'text-slate-400 dark:text-slate-500'}`} />
-                    <span className="text-[9px] font-black uppercase tracking-tight">Cover</span>
-                  </button>
-                  <button
-                    onClick={() => onSectionChange?.('sambutan')}
-                    className={`flex items-center gap-2 p-2 rounded-xl border-2 transition-all ${sidebarMode === 'sambutan' ? 'bg-white dark:bg-slate-800 border-slate-900 dark:border-slate-600 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] -translate-y-0.5' : 'bg-transparent border-transparent text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-white'}`}
-                  >
-                    <MessageSquare className={`w-3.5 h-3.5 ${sidebarMode === 'sambutan' ? 'text-violet-500 dark:text-violet-400' : 'text-slate-400 dark:text-slate-500'}`} />
-                    <span className="text-[9px] font-black uppercase tracking-tight">Sambutan</span>
-                  </button>
-                  <button
-                    onClick={() => onSectionChange?.('classes')}
-                    className={`flex items-center gap-2 p-2 rounded-xl border-2 transition-all col-span-2 ${sidebarMode === 'classes' && !isCoverView ? 'bg-white dark:bg-slate-800 border-slate-900 dark:border-slate-600 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] -translate-y-0.5' : 'bg-transparent border-transparent text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-white'}`}
-                  >
-                    <Users className={`w-3.5 h-3.5 ${sidebarMode === 'classes' && !isCoverView ? 'text-emerald-500 dark:text-emerald-400' : 'text-slate-400 dark:text-slate-500'}`} />
-                    <span className="text-[9px] font-black uppercase tracking-tight">Kelas</span>
-                  </button>
+              {canManage && (
+                <div className="p-3 bg-slate-50 dark:bg-slate-800/50 border-b-2 border-slate-100 dark:border-slate-700 flex flex-col gap-1.5 shrink-0">
+                  <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] px-1">Menu Edit</p>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    <button
+                      onClick={() => onSectionChange?.('cover')}
+                      className={`flex items-center gap-2 p-2 rounded-xl border-2 transition-all ${isCoverView ? 'bg-white dark:bg-slate-800 border-slate-900 dark:border-slate-600 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] -translate-y-0.5' : 'bg-transparent border-transparent text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-white'}`}
+                    >
+                      <Book className={`w-3.5 h-3.5 ${isCoverView ? 'text-indigo-500 dark:text-indigo-400' : 'text-slate-400 dark:text-slate-500'}`} />
+                      <span className="text-[9px] font-black uppercase tracking-tight">Cover</span>
+                    </button>
+                    <button
+                      onClick={() => onSectionChange?.('sambutan')}
+                      className={`flex items-center gap-2 p-2 rounded-xl border-2 transition-all ${sidebarMode === 'sambutan' ? 'bg-white dark:bg-slate-800 border-slate-900 dark:border-slate-600 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] -translate-y-0.5' : 'bg-transparent border-transparent text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-white'}`}
+                    >
+                      <MessageSquare className={`w-3.5 h-3.5 ${sidebarMode === 'sambutan' ? 'text-violet-500 dark:text-violet-400' : 'text-slate-400 dark:text-slate-500'}`} />
+                      <span className="text-[9px] font-black uppercase tracking-tight">Sambutan</span>
+                    </button>
+                    <button
+                      onClick={() => onSectionChange?.('classes')}
+                      className={`flex items-center gap-2 p-2 rounded-xl border-2 transition-all col-span-2 ${sidebarMode === 'classes' && !isCoverView ? 'bg-white dark:bg-slate-800 border-slate-900 dark:border-slate-600 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] -translate-y-0.5' : 'bg-transparent border-transparent text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-white'}`}
+                    >
+                      <Users className={`w-3.5 h-3.5 ${sidebarMode === 'classes' && !isCoverView ? 'text-emerald-500 dark:text-emerald-400' : 'text-slate-400 dark:text-slate-500'}`} />
+                      <span className="text-[9px] font-black uppercase tracking-tight">Kelas</span>
+                    </button>
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Header Sidebar Generik */}
               {(sidebarMode === 'classes' || sidebarMode === 'sambutan') && !isCoverView && (
@@ -904,7 +906,7 @@ export default function YearbookClassesViewUI(props: any) {
               )}
 
               {/* Sidebar Content Based on Mode */}
-              <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
+              <div className="flex-1 overflow-y-auto p-4 no-scrollbar">
                 {sidebarMode === 'classes' && !isCoverView && (
                   <div className="space-y-6">
                     {/* Inline Editor for Current Class */}
@@ -996,6 +998,8 @@ export default function YearbookClassesViewUI(props: any) {
                     {/* Compact Class List */}
                     <div className="flex flex-col gap-2">
                       {classes.map((c, idx) => {
+                        const access = myAccessByClass[c.id]
+                        if (!canManage && access?.status !== 'approved') return null
                         const isActive = idx === classIndex && !isCoverView
                         const ownerRegisteredIn = isOwner
                           ? (Object.entries(myAccessByClass) as [string, ClassAccess | null][]).find(
@@ -1095,7 +1099,7 @@ export default function YearbookClassesViewUI(props: any) {
             {/* Main content - scrollable container */}
             <main
               className={`flex-1 ${sidebarMode === 'flipbook' ? 'overflow-hidden pb-0' : 'overflow-y-auto pb-40 lg:pb-0'} rounded-t-none relative
-              ${(['classes', 'sambutan'].includes(sidebarMode) || isCoverView) ? 'lg:ml-[20rem]' : sidebarMode === 'flipbook' ? (flipbookPreviewMode ? 'lg:ml-0' : 'lg:ml-16') : 'lg:ml-0'}
+              ${(['classes', 'sambutan'].includes(sidebarMode) || isCoverView) ? 'lg:ml-[20rem]' : sidebarMode === 'flipbook' ? (flipbookPreviewMode || !canManage ? 'lg:ml-0' : 'lg:ml-16') : 'lg:ml-0'}
               bg-white dark:bg-slate-950
             `}
             >
@@ -1262,9 +1266,9 @@ export default function YearbookClassesViewUI(props: any) {
                               type="button"
                               onClick={(e) => {
                                 e.preventDefault();
-                                const url = `${window.location.origin}/album/${album?.id}/preview`;
+                                const url = `${window.location.origin}/album/${album?.id}/view`;
                                 navigator.clipboard.writeText(url);
-                                toast.success('Link berhasil disalin');
+                                toast.success('Link public berhasil disalin');
                               }}
                               className="px-8 py-4 rounded-2xl bg-white dark:bg-slate-800 border-4 border-slate-900 dark:border-slate-600 text-slate-900 dark:text-white font-black text-sm uppercase tracking-widest shadow-[8px_8px_0_0_#0f172a] dark:shadow-[8px_8px_0_0_#334155] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all active:scale-95 flex items-center justify-center gap-3"
                             >
@@ -1481,7 +1485,7 @@ export default function YearbookClassesViewUI(props: any) {
               <div
                 className={
                   !isCoverView && sidebarMode === 'flipbook'
-                    ? `block w-full min-h-0 ${flipbookPreviewMode ? 'h-[calc(100dvh-3.5rem)]' : 'h-full'}`
+                    ? `block w-full min-h-0 ${flipbookPreviewMode || !canManage ? 'h-[calc(100dvh-3.5rem)]' : 'h-full'}`
                     : 'hidden'
                 }
               >
@@ -1515,13 +1519,46 @@ export default function YearbookClassesViewUI(props: any) {
                     const base = classMemberSearchQuery
                       ? rawClassMembers.filter(m => m.student_name.toLowerCase().includes(classMemberSearchQuery.toLowerCase()))
                       : rawClassMembers
-                    return [...base].sort((a, b) =>
+                    
+                    // Filter members logic
+                    const filtered = canManage ? base : base.filter(m => m.is_me)
+                    
+                    return [...filtered].sort((a, b) =>
                       a.student_name.localeCompare(b.student_name, 'id', { sensitivity: 'base' })
                     )
                   })()
 
                   return (
                     <div className="flex flex-col gap-4 pt-0 pb-6 lg:gap-8">
+                      {/* Floating Action Buttons Area for Ordinary Users */}
+                      {!canManage && (
+                        <div className="fixed top-16 right-4 lg:right-8 space-x-2 z-[45] flex items-center justify-end pointer-events-none">
+                          <button
+                            onClick={() => {
+                              const url = `${window.location.origin}/album/${album?.id}/view`;
+                              navigator.clipboard.writeText(url);
+                              toast.success('Link public berhasil disalin');
+                            }}
+                            className="pointer-events-auto flex items-center justify-center h-9 sm:h-10 px-3 sm:px-4 bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 rounded-xl text-[10px] sm:text-[11px] font-black uppercase text-slate-900 dark:text-white shadow-[2.5px_2.5px_0_0_#0f172a] dark:shadow-[2.5px_2.5px_0_0_#334155] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all text-nowrap"
+                            title="Salin Link Public Album"
+                          >
+                            <LinkIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5" strokeWidth={3} /> Salin Link
+                          </button>
+                          <button
+                            onClick={() => {
+                              if (onSectionChange) {
+                                onSectionChange('preview');
+                              } else if (album?.id) {
+                                router.push(getYearbookSectionQueryUrl(album.id, 'preview', pathname), { scroll: false });
+                              }
+                            }}
+                            className="pointer-events-auto flex items-center justify-center h-9 sm:h-10 px-3 sm:px-4 bg-emerald-400 dark:bg-emerald-600 border-2 border-slate-900 dark:border-slate-700 rounded-xl text-[10px] sm:text-[11px] font-black uppercase text-slate-900 dark:text-white shadow-[2.5px_2.5px_0_0_#0f172a] dark:shadow-[2.5px_2.5px_0_0_#334155] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all text-nowrap"
+                            title="Preview Album"
+                          >
+                            <Eye className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5" strokeWidth={3} /> Preview
+                          </button>
+                        </div>
+                      )}
                       {/* Floating Action Button for Adding Class */}
                       {canManage && !isCoverView && !addingClass && (
                         <button
@@ -1597,9 +1634,11 @@ export default function YearbookClassesViewUI(props: any) {
                       <div className="px-4">
                         {/* Group Photo Section */}
                         <div className="mb-14">
-                          <div className="flex items-center gap-3 mb-6">
-                            <div className="w-2 h-8 bg-indigo-500 dark:bg-indigo-600 rounded-full border-2 border-slate-900 dark:border-slate-600 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155]"></div>
-                            <h3 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-[0.2em]">Foto Angkatan</h3>
+                          <div className="flex items-center justify-between mb-6 gap-3">
+                            <div className="flex items-center gap-3">
+                              <div className="w-2 h-8 bg-indigo-500 dark:bg-indigo-600 rounded-full border-2 border-slate-900 dark:border-slate-600 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155]"></div>
+                              <h3 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-[0.2em]">Foto Angkatan</h3>
+                            </div>
                           </div>
                           <div className="relative">
                             {currentClass.batch_photo_url ? (
@@ -1635,23 +1674,35 @@ export default function YearbookClassesViewUI(props: any) {
                               </div>
                             ) : (
                               canManage ? (
-                                <button
-                                  onClick={() => {
-                                    setUploadingBatchPhotoClassId(currentClass.id)
-                                    batchPhotoInputRef.current?.click()
-                                  }}
-                                  className="w-full flex flex-col items-center justify-center aspect-[3/4] lg:max-w-md lg:mx-auto p-12 rounded-[40px] border-4 border-dashed border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 hover:border-indigo-400 dark:hover:border-indigo-500 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all group"
-                                >
-                                  <div className="w-24 h-24 rounded-3xl bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 flex items-center justify-center mb-8 shadow-[8px_8px_0_0_#0f172a] dark:shadow-[8px_8px_0_0_#334155] group-hover:shadow-none group-hover:translate-x-1 group-hover:translate-y-1 transition-all">
-                                    <ImageIcon className="w-12 h-12 text-indigo-500 dark:text-indigo-400" strokeWidth={2.5} />
-                                  </div>
-                                  <span className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Upload Foto Angkatan</span>
-                                  <span className="text-xs text-slate-400 dark:text-slate-500 font-bold mt-3 uppercase tracking-widest">Pilih file gambar (Maks. 10MB)</span>
+                                  <button
+                                    onClick={() => {
+                                      setUploadingBatchPhotoClassId(currentClass.id)
+                                      batchPhotoInputRef.current?.click()
+                                    }}
+                                    className="w-full aspect-[3/4] lg:max-w-md lg:mx-auto flex flex-col items-center justify-center rounded-[48px] border-4 border-dashed border-slate-300 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/10 hover:border-indigo-400 dark:hover:border-indigo-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-300 group/batch-add"
+                                  >
+                                    <div className="relative mb-8">
+                                      <div className="absolute inset-0 bg-indigo-500/15 blur-2xl rounded-full scale-150 opacity-0 group-hover/batch-add:opacity-100 transition-opacity duration-500" />
+                                      <div className="relative w-24 h-24 rounded-[32px] bg-white dark:bg-slate-800 border-4 border-slate-900 dark:border-slate-700 shadow-[8px_8px_0_0_#0f172a] dark:shadow-[8px_8px_0_0_#334155] flex items-center justify-center transform group-hover/batch-add:-rotate-6 transition-transform duration-500">
+                                        <ImageIcon className="w-12 h-12 text-indigo-500 dark:text-indigo-400" strokeWidth={2.5} />
+                                        <div className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-emerald-400 dark:bg-emerald-600 border-2 border-slate-900 dark:border-slate-700 flex items-center justify-center shadow-[2px_2px_0_0_#0f172a] group-hover/batch-add:scale-110 transition-transform">
+                                          <Plus className="w-5 h-5 text-slate-900 dark:text-white" strokeWidth={3} />
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight text-center px-8 leading-tight">Upload Foto Angkatan</h3>
+                                    <p className="text-[10px] font-black text-slate-400 dark:text-slate-600 mt-4 uppercase tracking-widest text-center px-10 leading-relaxed">Pilih file gambar grup atau kelas (Maks. 10MB)</p>
                                 </button>
                               ) : (
-                                <div className="w-full aspect-[3/4] lg:max-w-md lg:mx-auto flex flex-col items-center justify-center rounded-[40px] border-4 border-dashed border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
-                                  <ImageIcon className="w-16 h-16 text-slate-300 dark:text-slate-500 mb-6 opacity-20" strokeWidth={1} />
-                                  <span className="text-sm font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Foto Angkatan Belum Tersedia</span>
+                                <div className="w-full aspect-[3/4] lg:max-w-md lg:mx-auto flex flex-col items-center justify-center rounded-[48px] border-4 border-dashed border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/10 transition-all duration-300 group/batch-empty">
+                                  <div className="relative mb-8">
+                                    <div className="absolute inset-0 bg-indigo-500/10 blur-2xl rounded-full scale-110 opacity-0 group-hover/batch-empty:opacity-100 transition-opacity duration-500" />
+                                    <div className="relative w-20 h-20 rounded-[28px] bg-white dark:bg-slate-800 border-4 border-slate-900 dark:border-slate-700 shadow-[8px_8px_0_0_#0f172a] dark:shadow-[8px_8px_0_0_#334155] flex items-center justify-center transform group-hover/batch-empty:-rotate-6 transition-transform duration-500">
+                                      <ImageIcon className="w-10 h-10 text-slate-300 dark:text-slate-600 group-hover/batch-empty:text-indigo-400 transition-colors" strokeWidth={1.5} />
+                                    </div>
+                                  </div>
+                                  <span className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight text-center px-8 leading-tight">Foto Angkatan Belum Tersedia</span>
+                                  <p className="text-[10px] font-black text-slate-400 dark:text-slate-600 mt-4 uppercase tracking-widest text-center px-10 leading-relaxed">Admin akan mengunggah foto grup kelas segera</p>
                                 </div>
                               )
                             )}
@@ -1659,15 +1710,24 @@ export default function YearbookClassesViewUI(props: any) {
                         </div>
 
                         {/* Members Grid/List */}
+                        {/* Members Grid/List */}
                         <div className="flex items-center gap-3 mb-8">
                           <div className="w-2 h-8 bg-amber-400 dark:bg-amber-600 rounded-full border-2 border-slate-900 dark:border-slate-600 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155]"></div>
-                          <h3 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-[0.2em]">Daftar Anggota</h3>
+                          <h3 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-[0.2em]">{canManage ? 'Daftar Anggota' : 'Profil Anda'}</h3>
                         </div>
 
                         {classMembers.length === 0 ? (
-                          <div className="flex flex-col items-center justify-center py-20 opacity-60 min-h-[40vh] bg-slate-50 dark:bg-slate-800/50 rounded-[32px] border-4 border-dashed border-slate-200 dark:border-slate-700">
-                            <Users className="w-16 h-16 mb-4 opacity-20 text-slate-400 dark:text-slate-500" strokeWidth={1} />
-                            <p className="text-center text-sm font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Belum ada anggota terdaftar</p>
+                          <div className="flex flex-col items-center justify-center py-16 sm:py-24 min-h-[45vh] w-full bg-slate-50/50 dark:bg-slate-900/10 rounded-[48px] border-4 border-dashed border-slate-200 dark:border-slate-800 transition-all duration-300 group/empty">
+                            <div className="relative mb-8">
+                              <div className="absolute inset-0 bg-indigo-500/20 dark:bg-indigo-500/10 blur-2xl rounded-full scale-150 opacity-0 group-hover/empty:opacity-100 transition-opacity duration-500" />
+                              <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-[28px] sm:rounded-[32px] bg-white dark:bg-slate-800 border-4 border-slate-900 dark:border-slate-700 shadow-[8px_8px_0_0_#0f172a] dark:shadow-[8px_8px_0_0_#334155] flex items-center justify-center transform group-hover/empty:-rotate-6 transition-transform duration-500">
+                                <Users className="w-10 h-10 sm:w-12 sm:h-12 text-slate-300 dark:text-slate-600 group-hover/empty:text-indigo-400 dark:group-hover/empty:text-indigo-500 transition-colors" strokeWidth={1.5} />
+                              </div>
+                            </div>
+                            <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-[0.1em] mb-2 text-center px-6">Belum Ada Anggota</h3>
+                            <p className="text-slate-400 dark:text-slate-600 text-[10px] sm:text-xs font-black uppercase tracking-widest text-center max-w-[280px] leading-relaxed px-6">
+                              Pastikan teman-teman anda sudah bergabung ke kelas ini melalui link undangan album
+                            </p>
                           </div>
                         ) : classViewMode === 'list' ? (
                           <div className="space-y-4">

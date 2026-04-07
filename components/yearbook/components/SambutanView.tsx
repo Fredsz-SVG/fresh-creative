@@ -241,12 +241,17 @@ export default function SambutanView({
       )}
 
       {teachersSorted.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 min-h-[50vh] w-full bg-slate-50/50 dark:bg-slate-800/30 rounded-[40px] border-4 border-dashed border-slate-200 dark:border-slate-700">
-          <div className="w-20 h-20 rounded-3xl bg-white border-4 border-slate-900 shadow-[8px_8px_0_0_#e2e8f0] flex items-center justify-center mb-6">
-            <Users className="w-10 h-10 text-slate-300" strokeWidth={1.5} />
+        <div className="flex flex-col items-center justify-center py-20 min-h-[45vh] w-full bg-slate-50/50 dark:bg-slate-900/20 rounded-[48px] border-4 border-dashed border-slate-200 dark:border-slate-800 transition-all duration-300 group/empty">
+          <div className="relative mb-8">
+            <div className="absolute inset-0 bg-indigo-500/20 dark:bg-indigo-500/10 blur-2xl rounded-full scale-150 opacity-0 group-hover/empty:opacity-100 transition-opacity duration-500" />
+            <div className="relative w-24 h-24 rounded-[32px] bg-white dark:bg-slate-800 border-4 border-slate-900 dark:border-slate-700 shadow-[8px_8px_0_0_#0f172a] dark:shadow-[8px_8px_0_0_#334155] flex items-center justify-center transform group-hover/empty:-rotate-6 transition-transform duration-500">
+              <Users className="w-12 h-12 text-slate-300 dark:text-slate-600 group-hover/empty:text-indigo-400 dark:group-hover/empty:text-indigo-500 transition-colors" strokeWidth={1.5} />
+            </div>
           </div>
-          <h3 className="text-lg font-black text-slate-900 uppercase tracking-widest mb-2">Belum Ada Guru</h3>
-          <p className="text-slate-400 text-sm font-bold uppercase tracking-tight">Klik tombol tambah untuk memulai daftar sambutan</p>
+          <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-[0.1em] mb-2 text-center px-6">Belum Ada Guru</h3>
+          <p className="text-slate-400 dark:text-slate-600 text-[10px] sm:text-xs font-black uppercase tracking-widest text-center max-w-[280px] leading-relaxed px-6">
+            Pilih tombol tambah di pojok layar untuk memulai daftar profil guru
+          </p>
         </div>
       ) : (
         <div className="grid gap-2 sm:grid-cols-2 lg:gap-3 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">

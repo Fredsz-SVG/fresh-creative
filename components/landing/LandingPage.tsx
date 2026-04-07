@@ -10,6 +10,7 @@ import { FAQ } from "./FAQ";
 import { DemoEbook } from "./DemoEbook";
 import { Contact } from "./Contact";
 import { Footer } from "./Footer";
+import { ScrollToTop } from "./ScrollToTop";
 
 export default function LandingPage() {
   return (
@@ -24,6 +25,7 @@ export default function LandingPage() {
       <FAQ />
       <Contact />
       <Footer />
+      <ScrollToTop />
     </main>
   );
 }

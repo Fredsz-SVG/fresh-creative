@@ -1,6 +1,6 @@
 'use client'
 
-import { BookOpen, ImagePlus, Video, Trash2, Play } from 'lucide-react'
+import { Book, BookOpen, ImagePlus, Video, Trash2, Play } from 'lucide-react'
 import FastImage from '@/components/ui/FastImage'
 
 interface CoverViewProps {
@@ -50,7 +50,7 @@ export default function CoverView({
             />
           ) : (
             <div className="flex flex-col items-center justify-center w-full h-full text-muted dark:text-slate-400 gap-3">
-              <BookOpen className="w-12 h-12 opacity-50" />
+              <Book className="w-12 h-12 opacity-50" />
               <span className="text-xs">Cover album</span>
             </div>
           )}
