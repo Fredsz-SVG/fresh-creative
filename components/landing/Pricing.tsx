@@ -363,8 +363,15 @@ export function Pricing() {
                   const total = n * totalPerStudent;
                   return (
                     <div key={pkg.id} className="flex min-w-[85%] sm:min-w-0 sm:w-full flex-col snap-center sm:snap-align-none">
-                      <button
-                        type="button"
+                      <div
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            setSelectedDigitalId(isSelected ? null : pkg.id);
+                          }
+                        }}
                         onClick={() => setSelectedDigitalId(isSelected ? null : pkg.id)}
                         className={`relative w-full h-full rounded-[1.5rem] sm:rounded-[2rem] border-2 p-6 sm:p-8 text-left transition-all duration-300 focus:outline-none flex flex-col ${
                           isSelected
@@ -479,7 +486,7 @@ export function Pricing() {
                       >
                         {isSelected ? "Paket dipilih" : "Pilih Paket"}
                       </span>
-                    </button>
+                    </div>
                   </div>
                   );
                 })}
