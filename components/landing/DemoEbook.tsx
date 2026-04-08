@@ -139,7 +139,7 @@ export function DemoEbook() {
                   const isFlipbook = /\/flipbook(?:[/?#]|$)/i.test(normalized);
                   const idMatch = normalized.match(/(?:album|yearbook)\/([^/?#]+)/i);
                   const baseUrl = idMatch
-                    ? (isFlipbook ? `/album/${idMatch[1]}/flipbook` : `/album/${idMatch[1]}/preview`)
+                    ? (isFlipbook ? `/album/${idMatch[1]}/flipbook` : `/album/${idMatch[1]}/view`)
                     : normalized;
                   
                   // Append theme to the URL

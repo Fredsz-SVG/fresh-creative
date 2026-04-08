@@ -210,7 +210,7 @@ export default function AdminShowcasePage() {
             </h3>
             <p className="text-[13px] font-bold text-slate-600 dark:text-slate-300 mb-4 leading-relaxed">
               Link publik preview album (tanpa login). Gunakan format: <br />
-              <code className="text-sky-700 dark:text-sky-300 bg-white/60 dark:bg-slate-900/60 px-1.5 py-0.5 rounded border border-sky-200 dark:border-sky-700">/album/[album-id]/preview</code>
+              <code className="text-sky-700 dark:text-sky-300 bg-white/60 dark:bg-slate-900/60 px-1.5 py-0.5 rounded border border-sky-200 dark:border-sky-700">/album/[album-id]/view</code>
             </p>
             <div className="relative">
               <input
@@ -218,7 +218,7 @@ export default function AdminShowcasePage() {
                 type="text"
                 value={albumCarouselLink}
                 onChange={(e) => setAlbumCarouselLink(e.target.value)}
-                placeholder="/album/uuid/preview"
+                placeholder="/album/uuid/view"
                 className="w-full px-5 py-4 text-sm font-bold rounded-2xl bg-white dark:bg-slate-900 border-4 border-slate-900 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-4 focus:ring-sky-200 dark:focus:ring-sky-900 transition-all shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155] focus:shadow-none"
               />
             </div>

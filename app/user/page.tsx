@@ -120,7 +120,7 @@ export default function UserPage() {
     const isFlipbook = /\/flipbook(?:[/?#]|$)/i.test(normalized)
     const idMatch = normalized.match(/(?:album|yearbook)\/([^/?#]+)/i)
     const baseUrl = idMatch
-      ? (isFlipbook ? `/album/${idMatch[1]}/flipbook` : `/album/${idMatch[1]}/preview`)
+      ? (isFlipbook ? `/album/${idMatch[1]}/flipbook` : `/album/${idMatch[1]}/view`)
       : normalized
     const isDark = typeof document !== 'undefined' && document.documentElement.classList.contains('dark')
     const connector = baseUrl.includes('?') ? '&' : '?'
