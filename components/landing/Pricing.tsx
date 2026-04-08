@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect } from "react";
-import { Check, Book, BookOpen, Sparkles, Star } from "lucide-react";
+import { Check, Book, BookOpen, Sparkles, Star, X } from "lucide-react";
 import { TiLocationArrow } from "react-icons/ti";
 import { motion, AnimatePresence } from "framer-motion";
 import { apiUrl } from "@/lib/api-url";
@@ -471,7 +471,7 @@ export function Pricing() {
                       </div>
                       <div className="mt-4 flex items-center justify-between border-t border-slate-100 dark:border-white/10 pt-4 text-sm">
                         <span className="text-slate-500 dark:text-white/60">
-                          {isSelected && addonsTotal > 0 ? `Dasar + add-on (${n} siswa)` : `Estimasi ${n} siswa`}
+                          {`Estimasi ${n} siswa`}
                         </span>
                         <span className="font-semibold text-slate-900 dark:text-white">
                           {formatRupiah(total)}
@@ -507,18 +507,24 @@ export function Pricing() {
               </div>
 
               {selectedDigitalId && (
-                <div className="fixed sm:relative bottom-0 left-0 right-0 z-[100] sm:z-auto sm:mt-16 flex flex-col sm:flex-row items-center justify-between sm:justify-center gap-3 sm:gap-6 rounded-t-[1.5rem] sm:rounded-[2rem] border-t-4 sm:border-2 border-slate-900 dark:border-white bg-lime-400 p-4 sm:p-8 text-center shadow-[0_-8px_30px_-15px_rgba(0,0,0,0.3)] sm:shadow-[3px_3px_0_0_#0f172a] dark:sm:shadow-[3px_3px_0_0_#fff] animate-in slide-in-from-bottom-full sm:animate-none duration-300">
-                  <div className="flex-1 text-left sm:text-center">
-                    <p className="text-xs sm:text-lg font-black text-slate-900 tracking-tight leading-tight">
-                      🔥 Paket <span className="underline decoration-2">{digitalPackages.find((p) => p.id === selectedDigitalId)?.name}</span> dipilih.
+                <div className="fixed bottom-4 sm:bottom-8 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-md sm:max-w-none sm:w-max z-[100] flex flex-col sm:flex-row items-center justify-between sm:justify-center gap-3 sm:gap-6 rounded-[2rem] sm:rounded-[2.5rem] border-2 border-slate-900 dark:border-white bg-lime-400 p-5 sm:px-8 sm:py-5 text-center shadow-[4px_4px_0_0_#0f172a] sm:shadow-[6px_6px_0_0_#0f172a] dark:shadow-[#fff] dark:sm:shadow-[#fff] animate-in slide-in-from-bottom-full duration-300">
+                  <button 
+                    onClick={() => setSelectedDigitalId(null)}
+                    className="absolute top-3 right-3 sm:top-1/2 sm:-translate-y-1/2 sm:right-3 text-slate-900 hover:bg-slate-900/10 rounded-full p-1.5 transition-colors"
+                  >
+                    <X className="w-5 h-5 sm:w-5 sm:h-5" />
+                  </button>
+                  <div className="flex-1 text-center pr-6 sm:pr-0">
+                    <p className="text-[13px] sm:text-lg font-black text-slate-900 tracking-tight leading-tight">
+                      🔥 Paket Digital <span className="underline decoration-2">{digitalPackages.find((p) => p.id === selectedDigitalId)?.name}</span> dipilih.
                     </p>
-                    <p className="hidden sm:block text-sm font-bold text-slate-700 mt-1">Siap untuk diproses sekarang juga.</p>
+                    <p className="text-xs sm:text-sm font-bold text-slate-700 mt-1">Siap untuk diproses sekarang juga.</p>
                   </div>
                   <a
                     href="/login?next=/user/showroom"
-                    className="group inline-flex items-center gap-2 rounded-xl sm:rounded-2xl border-2 sm:border border-slate-900 bg-white px-5 sm:px-10 py-3 sm:py-4 text-[11px] sm:text-base font-black text-slate-900 transition-all hover:-translate-y-0.5 hover:-translate-x-0.5 hover:shadow-[3px_3px_0_0_#0f172a] active:translate-x-0 active:translate-y-0 active:shadow-none whitespace-nowrap"
+                    className="group inline-flex items-center justify-center gap-2 w-full sm:w-auto rounded-xl sm:rounded-3xl border-2 sm:border border-slate-900 bg-white px-5 sm:px-8 py-3 sm:py-3.5 text-[11px] sm:text-base font-black text-slate-900 transition-all hover:-translate-y-0.5 hover:-translate-x-0.5 hover:shadow-[3px_3px_0_0_#0f172a] active:translate-x-0 active:translate-y-0 active:shadow-none whitespace-nowrap sm:mr-6"
                   >
-                    Lanjut <span className="hidden sm:inline">Sekarang</span> <TiLocationArrow className="h-4 w-4 sm:h-5 sm:w-5 transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />
+                    Lanjut Sekarang <TiLocationArrow className="h-4 w-4 sm:h-5 sm:w-5 transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />
                   </a>
                 </div>
               )}
