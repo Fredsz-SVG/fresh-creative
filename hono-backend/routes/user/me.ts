@@ -3,6 +3,7 @@ import { getD1 } from '../../lib/edge-env'
 import { ensureUserStubInD1, getUserRow } from '../../lib/d1-users'
 import { requireAuthJwt, getAuthUserId } from '../../middleware'
 import { getUserMeCache, setUserMeCache } from '../../lib/user-response-cache'
+import { getCreditsFromSupabase, mirrorCreditsToD1 } from '../../lib/credits'
 
 const userMe = new Hono()
 userMe.use('*', requireAuthJwt)
@@ -28,18 +29,21 @@ userMe.get('/', async (c) => {
   }
 
   await ensureUserStubInD1(db, userId)
-  const row = await getUserRow(db, userId)
-  if (!row) {
-    const payload = { id: userId, credits: 0, isSuspended: false }
-    setUserMeCache(userId, payload, USER_ME_CACHE_TTL_MS)
-    c.header('Cache-Control', 'private, max-age=2, stale-while-revalidate=10')
-    c.header('X-Cache', 'MISS')
-    return c.json(payload)
+  // Source of truth: Supabase public.users.credits
+  let credits = 0
+  try {
+    credits = await getCreditsFromSupabase(c.env as Record<string, string>, userId)
+    await mirrorCreditsToD1(db, userId, credits)
+  } catch {
+    // fallback to D1 if env missing
+    const rowFallback = await getUserRow(db, userId)
+    credits = rowFallback?.credits ?? 0
   }
+  const row = await getUserRow(db, userId)
   const payload = {
     id: userId,
-    credits: row.credits ?? 0,
-    isSuspended: (row.is_suspended ?? 0) === 1,
+    credits,
+    isSuspended: (row?.is_suspended ?? 0) === 1,
   }
   setUserMeCache(userId, payload, USER_ME_CACHE_TTL_MS)
   c.header('Cache-Control', 'private, max-age=2, stale-while-revalidate=10')

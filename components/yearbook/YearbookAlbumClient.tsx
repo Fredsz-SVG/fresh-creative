@@ -495,7 +495,12 @@ export default function YearbookAlbumClient({
     if (!id) return
     // Optimistic class IDs (temp-*) belum ada di D1, jadi jangan fetch untuk menghindari 404 noise.
     if (classId.startsWith('temp-')) return
+    // Endpoint ini (tanpa student_name) hanya untuk owner/admin.
+    // Untuk user biasa akan 403, jadi jangan spam request di mobile load.
+    if (!isOwner && !isAlbumAdmin) return
     const res = await fetchWithAuth(`/api/albums/${id}/photos?class_id=${encodeURIComponent(classId)}`, { credentials: 'include', cache: 'no-store' })
+    if (res.status === 403) return
+    if (!res.ok) return
     const list = await res.json().catch(() => []) as { student_name: string; file_url: string }[]
     if (!Array.isArray(list)) return
     const map: Record<string, string> = {}
@@ -503,7 +508,7 @@ export default function YearbookAlbumClient({
       if (p.student_name && p.file_url && !map[p.student_name]) map[p.student_name] = p.file_url
     }
     setFirstPhotoByStudentByClass((prev) => ({ ...prev, [classId]: map }))
-  }, [id])
+  }, [id, isOwner, isAlbumAdmin])
 
   useEffect(() => {
     if (currentClassId && id) fetchFirstPhotosForClass(currentClassId)

@@ -4,9 +4,9 @@
   "type": "module",
   "main": "worker.ts",
   "scripts": {
-    "dev": "wrangler dev worker.ts",
+    "dev": "wrangler dev worker.ts --remote",
     "dev:remote": "wrangler dev worker.ts --remote",
-    "dev:local": "wrangler dev worker.ts",
+    "dev:local": "wrangler dev worker.ts --local",
     "build": "wrangler build",
     "deploy": "wrangler deploy --keep-vars",
     "types:cf": "wrangler types --include-runtime=false",
@@ -37,6 +37,6 @@
     "prettier": "^3.2.5",
     "typescript": "^5.9.3",
     "vitest": "^1.2.2",
-    "wrangler": "^4.79.0"
+    "wrangler": "^4.81.0"
   }
 }

@@ -20,10 +20,15 @@ function getServerAppOrigin(): string {
 }
 
 export function getApiUrl(): string {
-    if (typeof window !== 'undefined') {
-        return ''
-    }
-    return getServerAppOrigin()
+  // Browser:
+  // Prefer direct Hono origin if configured to avoid dev-proxy timeouts for long-running AI calls.
+  if (typeof window !== 'undefined') {
+    const direct = process.env.NEXT_PUBLIC_API_URL?.trim()
+    if (direct) return direct.endsWith('/') ? direct.slice(0, -1) : direct
+    return ''
+  }
+  // Server (RSC/Route Handler):
+  return getServerAppOrigin()
 }
 
 /**

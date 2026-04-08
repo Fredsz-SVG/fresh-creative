@@ -84,6 +84,7 @@ import landingConfig from './routes/landing/config';
 // ── Misc ──
 import pricing from './routes/pricing';
 import proxyImage from './routes/proxy-image';
+import tryonProxy from './routes/tryon-proxy';
 import realtime from './routes/realtime';
 import selectArea from './routes/select-area';
 import showcase from './routes/showcase';
@@ -246,6 +247,7 @@ app.route('/api/landing', landingConfig);
 // Misc
 app.route('/api/pricing', pricing);
 app.route('/api/proxy-image', proxyImage);
+app.route('/api/tryon-proxy', tryonProxy);
 app.route('/api/realtime', realtime);
 app.route('/api/select-area', selectArea);
 app.route('/api/showcase', showcase);

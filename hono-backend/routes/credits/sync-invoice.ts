@@ -1,7 +1,7 @@
 import { Hono } from 'hono'
 import { getSupabaseClient } from '../../lib/supabase'
 import { getD1 } from '../../lib/edge-env'
-import { mirrorUserCreditsToSupabase } from '../../lib/supabase-user-mirror'
+import { getCreditsFromSupabase, mirrorCreditsToD1, setCreditsInSupabase } from '../../lib/credits'
 
 const creditsSyncInvoice = new Hono()
 
@@ -70,23 +70,13 @@ creditsSyncInvoice.post('/', async (c) => {
             .bind(invStatus, paymentMethod, paidAt, externalId)
             .run()
 
-          const userRow = await db
-            .prepare(`SELECT credits FROM users WHERE id = ?`)
-            .bind(userId)
-            .first<{ credits: number | null }>()
-
-          const newCredits = (userRow?.credits ?? 0) + (pkg.credits ?? 0)
-          await db
-            .prepare(`UPDATE users SET credits = ?, updated_at = datetime('now') WHERE id = ?`)
-            .bind(newCredits, userId)
-            .run()
-
-          // Keep Supabase `public.users.credits` in sync so ensureUserInD1() doesn't overwrite D1 credits back to 0.
-          try {
-            await mirrorUserCreditsToSupabase(c?.env as Record<string, string>, userId, newCredits)
-          } catch {
-            // ignore if env missing
-          }
+          const currentCredits = await getCreditsFromSupabase(c.env as Record<string, string>, userId).catch(async () => {
+            const row = await db.prepare(`SELECT credits FROM users WHERE id = ?`).bind(userId).first<{ credits: number | null }>()
+            return row?.credits ?? 0
+          })
+          const newCredits = currentCredits + (pkg.credits ?? 0)
+          await setCreditsInSupabase(c.env as Record<string, string>, userId, newCredits)
+          await mirrorCreditsToD1(db, userId, newCredits)
           synced++
         } else if (isAlbum) {
           const match = externalId.match(/^album_(.+?)_user_(.+?)_ts_/)

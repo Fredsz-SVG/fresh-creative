@@ -1,6 +1,6 @@
 import { Hono } from 'hono'
 import { getD1 } from '../../lib/edge-env'
-import { mirrorUserCreditsToSupabase } from '../../lib/supabase-user-mirror'
+import { getCreditsFromSupabase, mirrorCreditsToD1, setCreditsInSupabase } from '../../lib/credits'
 
 const webhooksXendit = new Hono()
 
@@ -64,24 +64,14 @@ webhooksXendit.post('/', async (c) => {
           .first<{ user_id: string }>()
 
         if (userId?.user_id) {
-          const userRow = await db
-            .prepare(`SELECT credits FROM users WHERE id = ?`)
-            .bind(userId.user_id)
-            .first<{ credits: number | null }>()
-
-          const currentCredits = userRow?.credits ?? 0
+          const currentCredits = await getCreditsFromSupabase(c.env as Record<string, string>, userId.user_id).catch(async () => {
+            const row = await db.prepare(`SELECT credits FROM users WHERE id = ?`).bind(userId.user_id).first<{ credits: number | null }>()
+            return row?.credits ?? 0
+          })
           const nextCredits = currentCredits + pkg.credits
-          await db
-            .prepare(`UPDATE users SET credits = ?, updated_at = datetime('now') WHERE id = ?`)
-            .bind(nextCredits, userId.user_id)
-            .run()
-
-          // Mirror to Supabase `public.users.credits` (source of truth)
-          try {
-            await mirrorUserCreditsToSupabase(c?.env as Record<string, string>, userId.user_id, nextCredits)
-          } catch {
-            // ignore
-          }
+          // Source of truth: Supabase
+          await setCreditsInSupabase(c.env as Record<string, string>, userId.user_id, nextCredits)
+          await mirrorCreditsToD1(db, userId.user_id, nextCredits)
         }
       }
     }

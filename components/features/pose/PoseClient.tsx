@@ -153,7 +153,7 @@ export default function Pose() {
                         setSubject(null);
                         setSubjectPreview(null);
                       }}
-                      className="absolute top-1.5 sm:top-2 right-1.5 sm:right-2 p-1.5 sm:p-2 bg-red-500 text-white rounded-full border-2 border-slate-900 hover:bg-red-600 transition-colors z-10"
+                      className="absolute top-1.5 sm:top-2 right-1.5 sm:right-2 z-10 inline-flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 bg-red-500 text-white rounded-full border-2 border-slate-900 hover:bg-red-600 transition-colors shadow-[2px_2px_0_0_#0f172a] active:shadow-none active:translate-x-0.5 active:translate-y-0.5"
                     >
                       <X className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     </button>
@@ -244,7 +244,7 @@ export default function Pose() {
                         }
                       }}
                       disabled={downloadingIndex !== null}
-                      className="absolute top-1.5 sm:top-2 right-1.5 sm:right-2 p-1.5 sm:p-2 bg-emerald-500 text-white rounded-full border-2 border-slate-900 hover:bg-emerald-600 transition-colors shadow-[2px_2px_0_0_#0f172a] disabled:opacity-70"
+                      className="absolute top-1.5 sm:top-2 right-1.5 sm:right-2 inline-flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 bg-emerald-500 text-white rounded-full border-2 border-slate-900 hover:bg-emerald-600 transition-colors shadow-[2px_2px_0_0_#0f172a] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 disabled:opacity-70"
                       title="Download (langsung ke device)"
                     >
                       {downloadingIndex === index ? (

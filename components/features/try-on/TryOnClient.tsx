@@ -2,20 +2,18 @@
 
 import { useEffect, useState } from 'react'
 import { Upload, X, Loader2, Download, User, Shirt, ChevronUp, ChevronDown, Save } from 'lucide-react'
-import { Client } from '@gradio/client'
 import { downloadImageWithWatermark } from '@/lib/download-image'
 import { fetchWithAuth } from '@/lib/api-client'
 import { asObject, asString } from '@/components/yearbook/utils/response-narrowing'
 
 
-const API_URL = 'https://virtual-try-on.fmind.dev/'
-const ENDPOINT = '/generate_try_on_images'
 const MAX_PRODUCTS = 3
 
 interface ProductItem {
   file: File
   preview: string
   id: number
+  category: 'upper_body' | 'lower_body'
 }
 
 export default function TryOn() {
@@ -81,7 +79,12 @@ export default function TryOn() {
           new Promise<ProductItem>((resolve) => {
             const reader = new FileReader()
             reader.onloadend = () =>
-              resolve({ file, preview: reader.result as string, id: Date.now() + Math.random() })
+              resolve({
+                file,
+                preview: reader.result as string,
+                id: Date.now() + Math.random(),
+                category: 'upper_body',
+              })
             reader.readAsDataURL(file)
           })
       )
@@ -94,6 +97,10 @@ export default function TryOn() {
     setProducts((prev) => prev.filter((p) => p.id !== id))
   }
 
+  const setProductCategory = (id: number, category: 'upper_body' | 'lower_body') => {
+    setProducts((prev) => prev.map((p) => (p.id === id ? { ...p, category } : p)))
+  }
+
   const moveProduct = (index: number, direction: 'up' | 'down') => {
     const next = index + (direction === 'up' ? -1 : 1)
     if (next < 0 || next >= products.length) return
@@ -102,95 +109,6 @@ export default function TryOn() {
         ;[arr[index], arr[next]] = [arr[next], arr[index]]
       return arr
     })
-  }
-
-  const baseUrl = API_URL.replace(/\/$/, '')
-
-  const normalizeResultToUrls = (data: unknown): string[] => {
-    if (data === undefined || data === null) return []
-    const collected: string[] = []
-    const toUrl = (item: unknown): string | null => {
-      if (typeof item === 'string') {
-        if (item.startsWith('http') || item.startsWith('data:')) return item
-        if (item.trim().length > 0 && (item.includes('/') || item.includes('.'))) return `${baseUrl}${item.startsWith('/') ? '' : '/'}${item}`
-        return null
-      }
-      if (item && typeof item === 'object') {
-        const o = item as Record<string, unknown>
-        if (typeof o.url === 'string' && (o.url.startsWith('http') || o.url.startsWith('data:'))) return o.url
-        if (typeof o.path === 'string') {
-          return o.path.startsWith('http') || o.path.startsWith('data:') ? o.path : `${baseUrl}${o.path.startsWith('/') ? '' : '/'}${o.path}`
-        }
-        if (Array.isArray(o.path) && o.path.length > 0) {
-          const first = o.path[0]
-          if (typeof first === 'string')
-            return first.startsWith('http') || first.startsWith('data:') ? first : `${baseUrl}${first.startsWith('/') ? '' : '/'}${first}`
-        }
-        if (o.blob instanceof Blob) return URL.createObjectURL(o.blob)
-        if (item instanceof Blob) return URL.createObjectURL(item)
-      }
-      return null
-    }
-    const collectFrom = (val: unknown): void => {
-      if (typeof val === 'string') {
-        const u = toUrl(val)
-        if (u) collected.push(u)
-        return
-      }
-      if (val && typeof val === 'object' && Array.isArray(val)) {
-        val.forEach(collectFrom)
-        return
-      }
-      if (val && typeof val === 'object') {
-        const u = toUrl(val)
-        if (u) collected.push(u)
-        else Object.values(val as Record<string, unknown>).forEach(collectFrom)
-      }
-    }
-    if (Array.isArray(data)) {
-      for (const item of data) {
-        const u = toUrl(item)
-        if (u) collected.push(u)
-        else collectFrom(item)
-      }
-      if (collected.length > 0) return [...new Set(collected)]
-      const first = data[0]
-      if (first && typeof first === 'object' && Array.isArray((first as Record<string, unknown>).path)) {
-        const inner = (first as { path: unknown[] }).path
-        return inner.map((i) => toUrl(i)).filter((u): u is string => !!u)
-      }
-    } else {
-      const single = toUrl(data)
-      if (single) return [single]
-      collectFrom(data)
-    }
-    return collected.length > 0 ? [...new Set(collected)] : []
-  }
-
-  const getFirstImageBlob = async (rawData: unknown): Promise<Blob | null> => {
-    if (!rawData) return null
-    const arr = Array.isArray(rawData) && rawData.length === 1 && Array.isArray(rawData[0]) ? rawData[0] : Array.isArray(rawData) ? rawData : [rawData]
-    for (const item of arr) {
-      if (item && typeof item === 'object' && 'blob' in item && (item as { blob: unknown }).blob instanceof Blob) return (item as { blob: Blob }).blob
-      if (item instanceof Blob) return item
-    }
-    const urls = normalizeResultToUrls(rawData)
-    const firstUrl = urls[0]
-    if (!firstUrl) return null
-    if (firstUrl.startsWith('blob:')) {
-      try {
-        const res = await fetch(firstUrl)
-        return await res.blob()
-      } catch {
-        return null
-      }
-    }
-    try {
-      const res = await fetch(firstUrl, { mode: 'cors' })
-      return res.ok ? await res.blob() : null
-    } catch {
-      return null
-    }
   }
 
   const handleGenerate = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -206,54 +124,49 @@ export default function TryOn() {
     setLoadingProgress({ current: 0, total: products.length })
 
     try {
-      const creditRes = await fetchWithAuth('/api/admin/ai-edit', {
+      // Call backend Replicate try-on (avoid external Gradio endpoint / CORS / downtime).
+      // Chain mode: apply products sequentially and return final image.
+      const formData = new FormData()
+      formData.append('human_img', personImage)
+      formData.append('mode', 'chain')
+      // Default yang paling aman untuk menjaga proporsi: jangan auto-crop, steps moderat.
+      formData.append('crop', 'false')
+      formData.append('steps', '32')
+      for (let i = 0; i < products.length; i++) {
+        setLoadingProgress({ current: i + 1, total: products.length })
+        formData.append('garments', products[i].file)
+        formData.append(`category_${i}`, products[i].category || 'upper_body')
+      }
+
+      const res = await fetchWithAuth('/api/ai-features/tryon', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ feature_slug: 'tryon' }),
+        body: formData,
       })
-      const creditData = asObject(await creditRes.json().catch(() => ({})))
-      if (!creditRes.ok || creditData.ok !== true) {
-        if (creditRes.status === 402) {
-          setError(
-            asString(creditData.error) ||
-            'Credit kamu tidak cukup untuk fitur Try On. Silakan top up credit terlebih dahulu.'
-          )
+      const data = asObject(await res.json().catch(() => ({})))
+      if (!res.ok || data.ok !== true) {
+        if (res.status === 402) {
+          setError(asString(data.error) || 'Credit kamu tidak cukup untuk fitur Try On. Silakan top up credit terlebih dahulu.')
         } else {
-          setError(asString(creditData.error) || 'Gagal memotong credit untuk fitur Try On.')
+          setError(asString(data.error) || 'Gagal memproses Try On.')
         }
         setLoading(false)
         setLoadingProgress({ current: 0, total: 0 })
         return
       }
+      const r = (data as Record<string, unknown>).results
+      const urls =
+        Array.isArray(r) ? r.filter((x): x is string => typeof x === 'string') : typeof r === 'string' ? [r] : []
+      if (!urls.length) {
+        setError('Gagal mendapatkan hasil akhir. Coba lagi.')
+        setLoading(false)
+        setLoadingProgress({ current: 0, total: 0 })
+        return
+      }
+      setResults(urls)
+      setError(null)
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('credits-updated'))
       }
-
-      const client = await Client.connect(API_URL)
-      let currentPerson: File | Blob = personImage
-      for (let i = 0; i < products.length; i++) {
-        setLoadingProgress({ current: i + 1, total: products.length })
-        const result = await client.predict(ENDPOINT, {
-          person_image: currentPerson,
-          product_image: products[i].file,
-          base_steps: 32,
-          image_count: 1,
-        })
-        let rawData = result?.data
-        if (Array.isArray(rawData) && rawData.length === 1 && Array.isArray(rawData[0])) {
-          rawData = rawData[0]
-        }
-        const nextBlob = await getFirstImageBlob(rawData)
-        if (!nextBlob) {
-          setError(`Gagal mendapatkan hasil untuk baju ${i + 1}. Coba gambar lain atau ubah pengaturan.`)
-          setLoading(false)
-          setLoadingProgress({ current: 0, total: 0 })
-          return
-        }
-        currentPerson = nextBlob
-      }
-      setResults([URL.createObjectURL(currentPerson)])
-      setError(null)
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err))
     } finally {
@@ -308,7 +221,7 @@ export default function TryOn() {
                         setPersonImage(null)
                         setPersonPreview(null)
                       }}
-                      className="absolute top-1.5 right-1.5 p-1.5 sm:p-2 bg-red-500 text-white rounded-full border-2 border-slate-900 hover:bg-red-600 transition-colors z-10"
+                      className="absolute top-1.5 right-1.5 z-10 inline-flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 bg-red-500 text-white rounded-full border-2 border-slate-900 hover:bg-red-600 transition-colors shadow-[2px_2px_0_0_#0f172a] active:shadow-none active:translate-x-0.5 active:translate-y-0.5"
                     >
                       <X className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     </button>
@@ -363,32 +276,61 @@ export default function TryOn() {
                       <span className="block text-center text-[10px] font-black text-slate-600 py-1 uppercase tracking-widest">
                         Urutan {index + 1} (dipakai {index + 1 === 1 ? 'pertama' : index + 1 === 2 ? 'kedua' : 'terakhir'})
                       </span>
+                      <div className="px-2 pb-2">
+                        <label className="block text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">
+                          Jenis
+                        </label>
+                        <div className="grid grid-cols-2 gap-1">
+                          <button
+                            type="button"
+                            onClick={() => setProductCategory(p.id, 'upper_body')}
+                            className={`px-2 py-1 rounded-lg border-2 text-[9px] font-black uppercase tracking-widest transition-colors ${
+                              p.category === 'upper_body'
+                                ? 'bg-indigo-500 text-white border-slate-900'
+                                : 'bg-white text-slate-700 border-slate-300 hover:border-slate-900'
+                            }`}
+                          >
+                            Atas
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setProductCategory(p.id, 'lower_body')}
+                            className={`px-2 py-1 rounded-lg border-2 text-[9px] font-black uppercase tracking-widest transition-colors ${
+                              p.category === 'lower_body'
+                                ? 'bg-indigo-500 text-white border-slate-900'
+                                : 'bg-white text-slate-700 border-slate-300 hover:border-slate-900'
+                            }`}
+                          >
+                            Bawah
+                          </button>
+                        </div>
+                      </div>
                       <div className="absolute top-1 right-1 flex gap-1 z-10">
                         <button
                           type="button"
                           onClick={() => moveProduct(index, 'up')}
                           disabled={index === 0}
-                          className="p-1.5 bg-slate-900 text-white rounded-full border-2 border-slate-900 hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed"
+                          className="inline-flex items-center justify-center w-8 h-8 bg-slate-900 text-white rounded-full border-2 border-slate-900 hover:bg-slate-800 shadow-[2px_2px_0_0_#0f172a] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 disabled:opacity-40 disabled:cursor-not-allowed"
                           title="Pindah ke atas"
                         >
-                          <ChevronUp className="w-3 h-3" />
+                          <ChevronUp className="w-4 h-4" />
                         </button>
                         <button
                           type="button"
                           onClick={() => moveProduct(index, 'down')}
                           disabled={index === products.length - 1}
-                          className="p-1.5 bg-slate-900 text-white rounded-full border-2 border-slate-900 hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed"
+                          className="inline-flex items-center justify-center w-8 h-8 bg-slate-900 text-white rounded-full border-2 border-slate-900 hover:bg-slate-800 shadow-[2px_2px_0_0_#0f172a] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 disabled:opacity-40 disabled:cursor-not-allowed"
                           title="Pindah ke bawah"
                         >
-                          <ChevronDown className="w-3 h-3" />
+                          <ChevronDown className="w-4 h-4" />
                         </button>
                         <button
                           type="button"
                           onClick={() => removeProduct(p.id)}
-                          className="p-1.5 bg-red-500 text-white rounded-full border-2 border-slate-900 hover:bg-red-600"
+                          className="inline-flex items-center justify-center w-8 h-8 bg-red-500 text-white rounded-full border-2 border-slate-900 hover:bg-red-600 shadow-[2px_2px_0_0_#0f172a] active:shadow-none active:translate-x-0.5 active:translate-y-0.5"
                           title="Hapus"
                         >
-                          <X className="w-3 h-3" />
+                          <X className="w-4 h-4" />
                         </button>
                       </div>
                     </div>
@@ -447,7 +389,7 @@ export default function TryOn() {
                     <img
                       src={url}
                       alt={`Try-on result ${index + 1}`}
-                      className="w-full h-auto max-h-64 sm:max-h-80 object-contain rounded-xl"
+                      className="w-full h-auto object-contain rounded-xl border-2 border-slate-900 bg-slate-100 shadow-[3px_3px_0_0_#0f172a]"
                     />
                     <button
                       type="button"
@@ -465,7 +407,7 @@ export default function TryOn() {
                         }
                       }}
                       disabled={downloadingIndex === index}
-                      className="absolute top-1.5 right-1.5 p-1.5 sm:p-2 bg-emerald-500 text-white rounded-full border-2 border-slate-900 hover:bg-emerald-600 transition-colors disabled:opacity-70 shadow-[2px_2px_0_0_#0f172a]"
+                      className="absolute top-1.5 right-1.5 inline-flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 bg-emerald-500 text-white rounded-full border-2 border-slate-900 hover:bg-emerald-600 transition-colors shadow-[2px_2px_0_0_#0f172a] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 disabled:opacity-70"
                       title="Download"
                     >
                       {downloadingIndex === index ? (

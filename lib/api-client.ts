@@ -24,7 +24,8 @@ function hashString(input: string): string {
 }
 
 const DEFAULT_GET_TTL_MS_BY_PATH: Record<string, number> = {
-  '/api/user/me': 3000,
+  // Credits can change due to AI usage; keep it effectively real-time.
+  '/api/user/me': 0,
   '/api/user/notifications': 3000,
   '/api/auth/otp-status': 3000,
   '/api/albums': 3000,

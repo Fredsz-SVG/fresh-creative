@@ -2,6 +2,7 @@ import { Hono } from 'hono'
 import { getSupabaseClient } from '../../../lib/supabase'
 import { getD1 } from '../../../lib/edge-env'
 import { parseJsonArray } from '../../../lib/d1-json'
+import { deductCreditsFromSupabaseAndMirrorToD1, getCreditsFromSupabase } from '../../../lib/credits'
 
 const albumsIdUnlockFeature = new Hono()
 
@@ -127,14 +128,12 @@ albumsIdUnlockFeature.post('/', async (c) => {
   const cost = pricing?.credits_per_unlock ?? 0
   if (cost <= 0) return c.json({ error: 'Fitur tidak dapat dibuka dengan credit.' }, 400)
 
-  const userRow = await db
-    .prepare(`SELECT credits FROM users WHERE id = ?`)
-    .bind(user.id)
-    .first<{ credits: number | null }>()
-  const credits = userRow?.credits ?? 0
-  if (credits < cost) {
-    return c.json({ error: 'Credit tidak cukup. Silakan top up terlebih dahulu.' }, 402)
-  }
+  // Source of truth: Supabase credits
+  const credits = await getCreditsFromSupabase(c.env as Record<string, string>, user.id).catch(async () => {
+    const row = await db.prepare(`SELECT credits FROM users WHERE id = ?`).bind(user.id).first<{ credits: number | null }>()
+    return row?.credits ?? 0
+  })
+  if (credits < cost) return c.json({ error: 'Credit tidak cukup. Silakan top up terlebih dahulu.' }, 402)
 
   const unlockedAt = new Date().toISOString()
   const fid = crypto.randomUUID()
@@ -146,12 +145,13 @@ albumsIdUnlockFeature.post('/', async (c) => {
     .bind(fid, user.id, albumId, featureType, cost, unlockedAt)
     .run()
   if (!ins.success) return c.json({ error: 'Insert failed' }, 500)
-
-  const upd = await db
-    .prepare(`UPDATE users SET credits = ?, updated_at = datetime('now') WHERE id = ?`)
-    .bind(Math.max(0, credits - cost), user.id)
-    .run()
-  if (!upd.success) return c.json({ error: 'Gagal memotong credit.' }, 500)
+  const r = await deductCreditsFromSupabaseAndMirrorToD1({
+    env: c.env as Record<string, string>,
+    db,
+    userId: user.id,
+    amount: cost,
+  })
+  if (!r.ok) return c.json({ error: 'Credit tidak cukup. Silakan top up terlebih dahulu.' }, 402)
   return c.json({ ok: true, unlocked_at: unlockedAt })
 })
 

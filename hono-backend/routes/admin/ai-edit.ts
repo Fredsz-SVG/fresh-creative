@@ -3,6 +3,7 @@ import { getSupabaseClient } from '../../lib/supabase'
 import { getRole } from '../../lib/auth'
 import { getD1 } from '../../lib/edge-env'
 import { ensureUserInD1, honoEnvForSupabasePublicSync } from '../../lib/d1-users'
+import { deductCreditsFromSupabaseAndMirrorToD1 } from '../../lib/credits'
 
 const aiEdit = new Hono()
 
@@ -16,6 +17,43 @@ aiEdit.get('/', async (c) => {
     )
     .all<{ id: string; feature_slug: string; credits_per_use: number; credits_per_unlock: number }>()
   return c.json(results ?? [])
+})
+
+// POST — potong credit sekali pakai (Try On Gradio, Image Editor remove-bg, dll.)
+aiEdit.post('/', async (c) => {
+  try {
+    const supabase = getSupabaseClient(c)
+    const db = getD1(c)
+    if (!db) return c.json({ ok: false, error: 'Database not configured' }, 503)
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser()
+    if (authError || !user) return c.json({ ok: false, error: 'Unauthorized' }, 401)
+
+    const body = (await c.req.json().catch(() => ({}))) as { feature_slug?: string }
+    const feature_slug = typeof body.feature_slug === 'string' ? body.feature_slug.trim() : ''
+    if (!feature_slug) return c.json({ ok: false, error: 'feature_slug wajib' }, 400)
+
+    const pricing = await db
+      .prepare(`SELECT credits_per_use FROM ai_feature_pricing WHERE feature_slug = ?`)
+      .bind(feature_slug)
+      .first<{ credits_per_use: number }>()
+    const creditsPerUse = pricing?.credits_per_use ?? 0
+    if (creditsPerUse > 0) {
+      const r = await deductCreditsFromSupabaseAndMirrorToD1({
+        env: c.env as Record<string, string>,
+        db,
+        userId: user.id,
+        amount: creditsPerUse,
+      })
+      if (!r.ok) return c.json({ ok: false, error: 'Credit tidak cukup' }, 402)
+    }
+    return c.json({ ok: true })
+  } catch (err: unknown) {
+    console.error('ai-edit POST error:', err)
+    return c.json({ ok: false, error: err instanceof Error ? err.message : 'Gagal' }, 500)
+  }
 })
 
 // PUT - update pricing (admin only)

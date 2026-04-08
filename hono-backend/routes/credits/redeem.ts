@@ -1,6 +1,7 @@
 import { Hono } from 'hono'
 import { getSupabaseClient } from '../../lib/supabase'
 import { getD1 } from '../../lib/edge-env'
+import { deductCreditsFromSupabaseAndMirrorToD1, getCreditsFromSupabase, mirrorCreditsToD1, setCreditsInSupabase } from '../../lib/credits'
 
 async function checkIsAdmin(c: import('hono').Context, userId: string): Promise<boolean> {
   const db = getD1(c)
@@ -87,19 +88,14 @@ creditsRedeem.post('/', async (c) => {
       .first<{ id: string }>()
     if (existing) return c.json({ error: 'Kamu sudah pernah menggunakan kode ini.' }, 409)
 
-    const userRow = await db
-      .prepare(`SELECT credits FROM users WHERE id = ?`)
-      .bind(user.id)
-      .first<{ credits: number | null }>()
-    const currentCredits = userRow?.credits ?? 0
     const add = redeemCode.credits as number
+    const currentCredits = await getCreditsFromSupabase(c.env as Record<string, string>, user.id).catch(async () => {
+      const row = await db.prepare(`SELECT credits FROM users WHERE id = ?`).bind(user.id).first<{ credits: number | null }>()
+      return row?.credits ?? 0
+    })
     const newCredits = currentCredits + add
-
-    const rUp = await db
-      .prepare(`UPDATE users SET credits = ?, updated_at = datetime('now') WHERE id = ?`)
-      .bind(newCredits, user.id)
-      .run()
-    if (!rUp.success) return c.json({ error: 'Gagal menambah credit.' }, 500)
+    await setCreditsInSupabase(c.env as Record<string, string>, user.id, newCredits)
+    await mirrorCreditsToD1(db, user.id, newCredits)
 
     const histId = crypto.randomUUID()
     await db

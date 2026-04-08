@@ -4,6 +4,7 @@ import { getD1 } from '../../lib/edge-env'
 import { ensureUserStubInD1, getUserRow } from '../../lib/d1-users'
 import { requireAuthJwt, getAuthUserId } from '../../middleware'
 import { getUserBootstrapCache, setUserBootstrapCache } from '../../lib/user-response-cache'
+import { getCreditsFromSupabase, mirrorCreditsToD1 } from '../../lib/credits'
 
 const OTP_COOKIE_NAME = 'otp_verified'
 
@@ -43,6 +44,14 @@ userBootstrap.get('/', async (c) => {
   }
 
   await ensureUserStubInD1(db, userId)
+  let credits = 0
+  try {
+    credits = await getCreditsFromSupabase(c.env as Record<string, string>, userId)
+    await mirrorCreditsToD1(db, userId, credits)
+  } catch {
+    const meFallback = await getUserRow(db, userId)
+    credits = meFallback?.credits ?? 0
+  }
   const me = await getUserRow(db, userId)
   const suspended = (me?.is_suspended ?? 0) === 1
 
@@ -60,7 +69,7 @@ userBootstrap.get('/', async (c) => {
   const payload: Record<string, unknown> = {
     me: {
       id: userId,
-      credits: me?.credits ?? 0,
+      credits,
       isSuspended: suspended,
       role: me?.role ?? 'user',
     },
