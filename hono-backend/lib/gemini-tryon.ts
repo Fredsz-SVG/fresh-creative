@@ -48,14 +48,6 @@ export async function imageStringToGeminiInput(s: string): Promise<GeminiImageIn
   return null
 }
 
-function flashTextOutputToString(output: unknown): string {
-  if (typeof output === 'string') return output
-  if (Array.isArray(output)) {
-    return output.map((x) => (typeof x === 'string' ? x : '')).join('')
-  }
-  return String(output ?? '')
-}
-
 function extractImageUrlFromFlashImageOutput(output: unknown): string {
   if (typeof output === 'string') {
     if (output.startsWith('http://') || output.startsWith('https://') || output.startsWith('data:')) {
@@ -83,7 +75,7 @@ function extractRetryAfterSeconds(err: unknown): number | null {
   const fromHeader = h ? parseInt(h, 10) : NaN
   if (!Number.isNaN(fromHeader) && fromHeader > 0) return fromHeader
   if (typeof e?.message === 'string') {
-    const m = /\"retry_after\"\\s*:\\s*(\\d+)/.exec(e.message)
+    const m = /"retry_after"\s*:\s*(\d+)/.exec(e.message)
     if (m) {
       const n = parseInt(m[1], 10)
       if (!Number.isNaN(n) && n > 0) return n

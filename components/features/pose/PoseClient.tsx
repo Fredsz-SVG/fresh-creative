@@ -75,7 +75,8 @@ export default function Pose() {
         body: formData,
       });
 
-      const data = asObject(await res.json().catch(() => ({})));
+      const rawText = await res.text()
+      const data = asObject((() => { try { return rawText ? JSON.parse(rawText) : {} } catch { return {} } })())
 
       if (data.ok && data.results) {
         // Ensure results is an array
@@ -86,10 +87,12 @@ export default function Pose() {
         setResults(resultsArray);
       } else {
         // Handle error status codes
+        const fallback = rawText || `HTTP ${res.status} ${res.statusText}` || "Gagal mengubah pose"
+        const msg = asString(data.error) || fallback
         if (res.status === 402) {
-          setError(asString(data.error) || "❌ Credit Replicate tidak cukup!");
+          setError(msg || "❌ Credit Replicate tidak cukup!");
         } else {
-          setError(asString(data.error) || "Gagal mengubah pose");
+          setError(`HTTP ${res.status} ${res.statusText}\n${msg}`)
         }
       }
     } catch (err: any) {
@@ -165,12 +168,12 @@ export default function Pose() {
             {/* Prompt Input */}
             <div>
               <label className="block text-[10px] sm:text-xs font-black mb-2 sm:mb-3 text-slate-900 uppercase tracking-tight">
-                2. Deskripsi Karakter (Prompt) <span className="text-red-500">*</span>
+                2. Instruksi Pose (Prompt)
               </label>
               <textarea
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
-                placeholder="Contoh: 'Foto closeup seorang wanita muda dengan rambut panjang cokelat, memakai sweater abu-abu' atau kosongkan untuk default"
+                placeholder="Contoh: 'angkat tangan kanan seperti melambaikan', 'pose berdiri tegap tangan di pinggang', 'pose duduk santai menyamping'"
                 rows={3}
                 className="w-full px-3 sm:px-4 py-2.5 border-2 border-slate-900 rounded-xl bg-white text-slate-900 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-slate-900 resize-none"
               />
@@ -253,9 +256,6 @@ export default function Pose() {
                         <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                       )}
                     </button>
-                    <div className="absolute bottom-1.5 sm:bottom-2 left-1.5 sm:left-2 px-2 py-1 bg-slate-900 text-white text-[10px] font-black rounded-lg">
-                      #{index + 1}
-                    </div>
                   </div>
                 </div>
               ))}

@@ -1,5 +1,6 @@
 import { Hono } from 'hono'
 import type { Context } from 'hono'
+import type { ContentfulStatusCode } from 'hono/utils/http-status'
 import { getSupabaseClient } from '../../lib/supabase'
 import { getD1 } from '../../lib/edge-env'
 import { fileToDataUri, formDataString, requestIsMultipart } from '../../lib/ai-multipart'
@@ -76,21 +77,6 @@ tryon.post('/', async (c) => {
     } = await supabase.auth.getUser()
     if (authError || !user) return c.json({ ok: false, error: 'Unauthorized' }, 401)
 
-    const pricing = await db
-      .prepare(`SELECT credits_per_use FROM ai_feature_pricing WHERE feature_slug = ?`)
-      .bind('tryon')
-      .first<{ credits_per_use: number }>()
-    const creditsPerUse = pricing?.credits_per_use ?? 0
-    if (creditsPerUse > 0) {
-      const r = await deductCreditsFromSupabaseAndMirrorToD1({
-        env: c.env as Record<string, string>,
-        db,
-        userId: user.id,
-        amount: creditsPerUse,
-      })
-      if (!r.ok) return c.json({ ok: false, error: 'Credit tidak cukup' }, 402)
-    }
-
     const REPLICATE_API_TOKEN = ((c.env as ReplicateEnv).REPLICATE_API_TOKEN || '').trim()
     if (!REPLICATE_API_TOKEN) return c.json({ ok: false, error: 'REPLICATE_API_TOKEN tidak dikonfigurasi' }, 500)
 
@@ -100,6 +86,35 @@ tryon.post('/', async (c) => {
 
     if (!body.human_img) return c.json({ ok: false, error: 'File manusia tidak valid' }, 400)
 
+    let itemsCount = 1
+    const garments = Array.isArray(body.garments) ? body.garments.filter((g): g is string => typeof g === 'string') : []
+    
+    if (!body.garm_img) {
+      if (!garments.length) return c.json({ ok: false, error: 'Minimal 1 garment' }, 400)
+      if (garments.length > MAX_GARMENTS) {
+        return c.json({ ok: false, error: `Maksimal ${MAX_GARMENTS} garments` }, 400)
+      }
+      itemsCount = garments.length
+    }
+
+    const pricing = await db
+      .prepare(`SELECT credits_per_use FROM ai_feature_pricing WHERE feature_slug = ?`)
+      .bind('tryon')
+      .first<{ credits_per_use: number }>()
+    
+    const creditsPerUse = pricing?.credits_per_use ?? 0
+    const totalCreditsNeeded = creditsPerUse * itemsCount
+
+    if (totalCreditsNeeded > 0) {
+      const r = await deductCreditsFromSupabaseAndMirrorToD1({
+        env: c.env as Record<string, string>,
+        db,
+        userId: user.id,
+        amount: totalCreditsNeeded,
+      })
+      if (!r.ok) return c.json({ ok: false, error: 'Credit tidak cukup' }, 402)
+    }
+
     const person0 = await imageStringToGeminiInput(body.human_img)
     if (!person0) return c.json({ ok: false, error: 'Gambar orang tidak valid' }, 400)
 
@@ -108,12 +123,6 @@ tryon.post('/', async (c) => {
       if (!cloth) return c.json({ ok: false, error: 'Gambar garment tidak valid' }, 400)
       const result = await generateVirtualTryOnGemini(replicate, person0, cloth)
       return c.json({ ok: true, results: [result] })
-    }
-
-    const garments = Array.isArray(body.garments) ? body.garments.filter((g): g is string => typeof g === 'string') : []
-    if (!garments.length) return c.json({ ok: false, error: 'Minimal 1 garment' }, 400)
-    if (garments.length > MAX_GARMENTS) {
-      return c.json({ ok: false, error: `Maksimal ${MAX_GARMENTS} garments` }, 400)
     }
 
     if (body.mode === 'chain') {
@@ -171,7 +180,7 @@ tryon.post('/', async (c) => {
         typeof parsed?.retry_after === 'number'
           ? parsed.retry_after
           : (() => {
-              const m = /\"retry_after\"\\s*:\\s*(\\d+)/.exec(message)
+              const m = /"retry_after"\s*:\s*(\d+)/.exec(message)
               return m ? parseInt(m[1], 10) : undefined
             })()
       const hint =
@@ -183,7 +192,7 @@ tryon.post('/', async (c) => {
 
     // Teruskan status 4xx yang jelas ke client (mis. input salah, unauthorized, dll.)
     if (typeof status === 'number' && status >= 400 && status < 500) {
-      return c.json({ ok: false, error: message }, status as any)
+      return c.json({ ok: false, error: message }, status as ContentfulStatusCode)
     }
 
     // Error upstream (Replicate/model error) → 502 lebih akurat daripada 500.

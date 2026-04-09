@@ -158,17 +158,17 @@ export default function TryOn() {
   }
 
   return (
-    <section id="tryon-replicate-gemini" className="py-4 md:py-6" aria-label="Virtual try-on Replicate Gemini">
+    <section id="tryon" className="py-4 md:py-6" aria-label="Virtual try-on">
       <div className="max-w-3xl mx-auto">
         <form onSubmit={handleGenerate}>
           <div className="bg-white rounded-2xl border-4 border-slate-900 shadow-[6px_6px_0_0_#0f172a] p-4 sm:p-6 space-y-4 sm:space-y-5">
             <div className="flex flex-col items-center gap-1 text-center">
               <p className="inline-flex items-center gap-1.5 text-[10px] sm:text-xs font-black text-indigo-600 uppercase tracking-widest">
                 <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-                Replicate · Gemini 2.5 (virtual try-on)
+                Virtual Try-On AI
               </p>
               <p className="text-[10px] sm:text-xs font-black text-slate-500 uppercase tracking-widest max-w-md">
-                Model: gemini-2.5-flash + gemini-2.5-flash-image. Upload foto kamu dan 1–3 pakaian; mode berantai di server jadi satu gambar.
+                Upload foto kamu dan 1–3 item pakaian; lihat keajaiban AI kami memakaikan pakaian favoritmu dengan gaya yang ultra-realistis!
               </p>
             </div>
             {/* Person Image */}
@@ -225,7 +225,7 @@ export default function TryOn() {
                 Foto Produk / Item (maks. {MAX_PRODUCTS}) <span className="text-red-500">*</span>
               </label>
               <p className="text-[10px] text-slate-500 mb-2 uppercase tracking-widest">
-                Urutan menentukan layering (mis. luar → dalam). AI menggabungkan pakaian ke foto kamu lewat Replicate.
+                Urutan kadang berpengaruh. Disarankan upload dari pakaian atas ke bawah.
               </p>
               <div
                 onClick={() => products.length < MAX_PRODUCTS && document.getElementById('product-upload')?.click()}
@@ -306,7 +306,10 @@ export default function TryOn() {
 
             {typeof creditsPerGenerate === 'number' && creditsPerGenerate >= 0 && (
               <p className="text-[10px] font-black text-slate-500 text-center uppercase tracking-widest">
-                Biaya: {creditsPerGenerate} credit per generate (satu kali submit, potong di backend).
+                Biaya:{' '}
+                {products.length > 0
+                  ? `${creditsPerGenerate * products.length} credit (${products.length} item × ${creditsPerGenerate})`
+                  : `${creditsPerGenerate} credit per item`}
               </p>
             )}
 
@@ -318,7 +321,7 @@ export default function TryOn() {
               {loading ? (
                 <>
                   <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
-                  <span>Memproses (Replicate / Gemini)…</span>
+                  <span>Sedang meracik gaya barumu…</span>
                 </>
               ) : (
                 <>
