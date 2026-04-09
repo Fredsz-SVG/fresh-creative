@@ -178,10 +178,10 @@ export function Hero() {
               </div>
               <div className="flex flex-col">
                 <span className="special-font text-3xl sm:text-4xl font-bold text-white md:text-5xl">
-                  <AnimatedCounter target={0} suffix="%" />
+                  Lifetime
                 </span>
                 <span className="font-general text-[8px] sm:text-[10px] uppercase tracking-widest text-white/60">
-                  Pungli
+                  Access
                 </span>
               </div>
             </div>

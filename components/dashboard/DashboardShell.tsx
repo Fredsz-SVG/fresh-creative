@@ -150,7 +150,9 @@ export default function DashboardShell({
         path.startsWith('/api/credits/') ||
         path.startsWith('/api/admin/transactions') ||
         path.includes('/join-requests') ||
-        (path.includes('/classes/') && path.includes('/request'))
+        (path.includes('/classes/') && path.includes('/request')) ||
+        path.startsWith('/api/user/notifications') ||
+        path.startsWith('/api/albums')
       )) {
         fetchNotifications()
       }

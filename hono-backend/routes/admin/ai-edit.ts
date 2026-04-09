@@ -19,7 +19,7 @@ aiEdit.get('/', async (c) => {
   return c.json(results ?? [])
 })
 
-// POST — potong credit sekali pakai (Try On Gradio, Image Editor remove-bg, dll.)
+// POST — potong credit sekali pakai (Image Editor remove-bg, dll.; Try On utama lewat /api/ai-features/tryon)
 aiEdit.post('/', async (c) => {
   try {
     const supabase = getSupabaseClient(c)

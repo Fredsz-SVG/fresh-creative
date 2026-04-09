@@ -13,6 +13,7 @@ declare namespace Cloudflare {
 		SUPABASE_SERVICE_ROLE_KEY: string;
 		/** Legacy JWT secret (HS256). Token ECC pakai JWKS — secret opsional jika semua token ES256. */
 		SUPABASE_JWT_SECRET?: string;
+		/** Juga dipakai Try On via model `google/gemini-2.5-*` di Replicate. */
 		REPLICATE_API_TOKEN: string;
 		RESEND_API_KEY: string;
 		RESEND_FROM_EMAIL: string;

@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Upload, X, Loader2, Download, User, Shirt, ChevronUp, ChevronDown, Save } from 'lucide-react'
+import { Upload, X, Loader2, Download, User, Shirt, ChevronUp, ChevronDown, Sparkles } from 'lucide-react'
 import { downloadImageWithWatermark } from '@/lib/download-image'
 import { fetchWithAuth } from '@/lib/api-client'
 import { asObject, asString } from '@/components/yearbook/utils/response-narrowing'
@@ -13,7 +13,6 @@ interface ProductItem {
   file: File
   preview: string
   id: number
-  category: 'upper_body' | 'lower_body'
 }
 
 export default function TryOn() {
@@ -22,10 +21,8 @@ export default function TryOn() {
   const [personPreview, setPersonPreview] = useState<string | null>(null)
   const [results, setResults] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
-  const [loadingProgress, setLoadingProgress] = useState({ current: 0, total: 0 })
   const [error, setError] = useState<string | null>(null)
   const [downloadingIndex, setDownloadingIndex] = useState<number | null>(null)
-  const [savingIndex, setSavingIndex] = useState<number | null>(null)
   const [creditsPerGenerate, setCreditsPerGenerate] = useState<number | null>(null)
 
   useEffect(() => {
@@ -83,7 +80,6 @@ export default function TryOn() {
                 file,
                 preview: reader.result as string,
                 id: Date.now() + Math.random(),
-                category: 'upper_body',
               })
             reader.readAsDataURL(file)
           })
@@ -95,10 +91,6 @@ export default function TryOn() {
 
   const removeProduct = (id: number) => {
     setProducts((prev) => prev.filter((p) => p.id !== id))
-  }
-
-  const setProductCategory = (id: number, category: 'upper_body' | 'lower_body') => {
-    setProducts((prev) => prev.map((p) => (p.id === id ? { ...p, category } : p)))
   }
 
   const moveProduct = (index: number, direction: 'up' | 'down') => {
@@ -121,21 +113,14 @@ export default function TryOn() {
     setLoading(true)
     setResults([])
     setError(null)
-    setLoadingProgress({ current: 0, total: products.length })
 
     try {
-      // Call backend Replicate try-on (avoid external Gradio endpoint / CORS / downtime).
-      // Chain mode: apply products sequentially and return final image.
+      // Backend: POST /api/ai-features/tryon — Gemini (deskripsi + gambar), mode chain = satu request, berurutan di server.
       const formData = new FormData()
       formData.append('human_img', personImage)
       formData.append('mode', 'chain')
-      // Default yang paling aman untuk menjaga proporsi: jangan auto-crop, steps moderat.
-      formData.append('crop', 'false')
-      formData.append('steps', '32')
       for (let i = 0; i < products.length; i++) {
-        setLoadingProgress({ current: i + 1, total: products.length })
         formData.append('garments', products[i].file)
-        formData.append(`category_${i}`, products[i].category || 'upper_body')
       }
 
       const res = await fetchWithAuth('/api/ai-features/tryon', {
@@ -150,7 +135,6 @@ export default function TryOn() {
           setError(asString(data.error) || 'Gagal memproses Try On.')
         }
         setLoading(false)
-        setLoadingProgress({ current: 0, total: 0 })
         return
       }
       const r = (data as Record<string, unknown>).results
@@ -159,7 +143,6 @@ export default function TryOn() {
       if (!urls.length) {
         setError('Gagal mendapatkan hasil akhir. Coba lagi.')
         setLoading(false)
-        setLoadingProgress({ current: 0, total: 0 })
         return
       }
       setResults(urls)
@@ -171,18 +154,23 @@ export default function TryOn() {
       setError(err instanceof Error ? err.message : String(err))
     } finally {
       setLoading(false)
-      setLoadingProgress({ current: 0, total: 0 })
     }
   }
 
   return (
-    <section id="tryon-gradio" className="py-4 md:py-6">
+    <section id="tryon-replicate-gemini" className="py-4 md:py-6" aria-label="Virtual try-on Replicate Gemini">
       <div className="max-w-3xl mx-auto">
         <form onSubmit={handleGenerate}>
           <div className="bg-white rounded-2xl border-4 border-slate-900 shadow-[6px_6px_0_0_#0f172a] p-4 sm:p-6 space-y-4 sm:space-y-5">
-            <p className="text-[10px] sm:text-xs font-black text-slate-500 text-center uppercase tracking-widest">
-              Upload foto orang dan 1–3 item, lalu generate.
-            </p>
+            <div className="flex flex-col items-center gap-1 text-center">
+              <p className="inline-flex items-center gap-1.5 text-[10px] sm:text-xs font-black text-indigo-600 uppercase tracking-widest">
+                <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+                Replicate · Gemini 2.5 (virtual try-on)
+              </p>
+              <p className="text-[10px] sm:text-xs font-black text-slate-500 uppercase tracking-widest max-w-md">
+                Model: gemini-2.5-flash + gemini-2.5-flash-image. Upload foto kamu dan 1–3 pakaian; mode berantai di server jadi satu gambar.
+              </p>
+            </div>
             {/* Person Image */}
             <div>
               <label className="flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs font-black mb-2 sm:mb-3 text-slate-900 uppercase tracking-tight">
@@ -237,7 +225,7 @@ export default function TryOn() {
                 Foto Produk / Item (maks. {MAX_PRODUCTS}) <span className="text-red-500">*</span>
               </label>
               <p className="text-[10px] text-slate-500 mb-2 uppercase tracking-widest">
-                Urutan berpengaruh — pastikan dari outfit atas ke bawah.
+                Urutan menentukan layering (mis. luar → dalam). AI menggabungkan pakaian ke foto kamu lewat Replicate.
               </p>
               <div
                 onClick={() => products.length < MAX_PRODUCTS && document.getElementById('product-upload')?.click()}
@@ -276,35 +264,6 @@ export default function TryOn() {
                       <span className="block text-center text-[10px] font-black text-slate-600 py-1 uppercase tracking-widest">
                         Urutan {index + 1} (dipakai {index + 1 === 1 ? 'pertama' : index + 1 === 2 ? 'kedua' : 'terakhir'})
                       </span>
-                      <div className="px-2 pb-2">
-                        <label className="block text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">
-                          Jenis
-                        </label>
-                        <div className="grid grid-cols-2 gap-1">
-                          <button
-                            type="button"
-                            onClick={() => setProductCategory(p.id, 'upper_body')}
-                            className={`px-2 py-1 rounded-lg border-2 text-[9px] font-black uppercase tracking-widest transition-colors ${
-                              p.category === 'upper_body'
-                                ? 'bg-indigo-500 text-white border-slate-900'
-                                : 'bg-white text-slate-700 border-slate-300 hover:border-slate-900'
-                            }`}
-                          >
-                            Atas
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setProductCategory(p.id, 'lower_body')}
-                            className={`px-2 py-1 rounded-lg border-2 text-[9px] font-black uppercase tracking-widest transition-colors ${
-                              p.category === 'lower_body'
-                                ? 'bg-indigo-500 text-white border-slate-900'
-                                : 'bg-white text-slate-700 border-slate-300 hover:border-slate-900'
-                            }`}
-                          >
-                            Bawah
-                          </button>
-                        </div>
-                      </div>
                       <div className="absolute top-1 right-1 flex gap-1 z-10">
                         <button
                           type="button"
@@ -347,7 +306,7 @@ export default function TryOn() {
 
             {typeof creditsPerGenerate === 'number' && creditsPerGenerate >= 0 && (
               <p className="text-[10px] font-black text-slate-500 text-center uppercase tracking-widest">
-                Biaya: {creditsPerGenerate} credit per generate Try On.
+                Biaya: {creditsPerGenerate} credit per generate (satu kali submit, potong di backend).
               </p>
             )}
 
@@ -359,14 +318,14 @@ export default function TryOn() {
               {loading ? (
                 <>
                   <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
-                  <span>
-                    Memproses {loadingProgress.total > 0 ? `${loadingProgress.current}/${loadingProgress.total}` : ''}...
-                  </span>
+                  <span>Memproses (Replicate / Gemini)…</span>
                 </>
               ) : (
                 <>
                   <Shirt className="w-4 h-4 sm:w-5 sm:h-5" />
-                  <span>Generate Try-On {products.length > 0 ? `(${products.length} baju)` : ''}</span>
+                  <span>
+                    Generate {products.length > 0 ? `(${products.length} item pakaian)` : ''}
+                  </span>
                 </>
               )}
             </button>
@@ -377,7 +336,8 @@ export default function TryOn() {
         {results.length > 0 && (
           <div className="mt-6 sm:mt-8 max-w-3xl mx-auto px-2 sm:px-4">
             <h3 className="text-base sm:text-xl font-black mb-4 text-slate-900 text-center uppercase tracking-tight">
-              Hasil Virtual Try-On (1 foto)
+              Hasil Virtual Try-On
+              {results.length === 1 ? ' (1 gambar)' : ` (${results.length} gambar)`}
             </h3>
             <div className="grid gap-4 grid-cols-1 max-w-md mx-auto">
               {results.map((url, index) => (
@@ -398,7 +358,7 @@ export default function TryOn() {
                         try {
                           await downloadImageWithWatermark(
                             url,
-                            `fresh-creative-tryon-api-${Date.now()}-${index + 1}.jpg`
+                            `fresh-creative-tryon-${Date.now()}-${index + 1}.jpg`
                           )
                         } catch (e) {
                           setError(e instanceof Error ? e.message : 'Download gagal')

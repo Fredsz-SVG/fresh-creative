@@ -4,6 +4,8 @@ import { getD1 } from '../../lib/edge-env'
 import { ensureUserInD1, honoEnvForSupabasePublicSync } from '../../lib/d1-users'
 import { isSimilarSchoolName } from '../../lib/school-name-utils'
 import { requireAuthJwt, getAuthUserId } from '../../middleware'
+import { publishRealtimeEventFromContext } from '../../lib/realtime'
+import { invalidateUserResponseCaches } from '../../lib/user-response-cache'
 
 const albumColsUser =
   `a.id, a.user_id, a.name, a.type, a.status, a.created_at, a.description, a.cover_image_url, a.cover_image_position, a.pricing_package_id, a.payment_status, a.payment_url, a.total_estimated_price, a.pic_name, p.name as pricing_pkg_name`
@@ -216,6 +218,42 @@ albumsRoute.post('/', requireAuthJwt, async (c) => {
     return c.json({ error: e instanceof Error ? e.message : 'Insert failed' }, 500)
   }
 
+  // Buat notifikasi untuk user pembuat album (muncul di ikon lonceng).
+  // Non-fatal: kalau insert notif gagal, album tetap sukses.
+  try {
+    const notifId = crypto.randomUUID()
+    const albumName = String(baseInsert.name ?? 'Album')
+    await db
+      .prepare(
+        `INSERT INTO notifications (id, user_id, title, message, type, metadata, created_at)
+         VALUES (?, ?, ?, ?, 'info', ?, datetime('now'))`
+      )
+      .bind(
+        notifId,
+        userId,
+        'Album berhasil dibuat',
+        `${albumName}\nStatus: Menunggu persetujuan admin`,
+        JSON.stringify({ status: 'Menunggu' })
+      )
+      .run()
+  } catch {
+    /* ignore */
+  }
+
+  // Broadcast realtime supaya UI (ikon lonceng & list album) bisa refresh otomatis.
+  void publishRealtimeEventFromContext(c, {
+    type: 'api.mutated',
+    channel: 'global',
+    payload: { path: '/api/albums', method: 'POST', action: 'create' },
+    ts: new Date().toISOString(),
+  })
+  void publishRealtimeEventFromContext(c, {
+    type: 'api.mutated',
+    channel: 'global',
+    payload: { path: '/api/user/notifications', method: 'POST', action: 'create' },
+    ts: new Date().toISOString(),
+  })
+
   const row = await db.prepare(`SELECT * FROM albums WHERE id = ?`).bind(id).first()
   return c.json(row)
 })
@@ -248,6 +286,50 @@ albumsRoute.put('/', requireAuthJwt, async (c) => {
   if (r.meta.changes === 0) return c.json({ error: 'Album not found' }, 404)
 
   const row = await db.prepare(`SELECT * FROM albums WHERE id = ?`).bind(id).first<Record<string, unknown>>()
+
+  // Kirim notifikasi ke owner album saat status berubah (diterima / ditolak).
+  // Non-fatal: kalau insert notif gagal, approve/decline tetap sukses.
+  try {
+    const ownerId = String(row?.user_id ?? '')
+    const albumName = String(row?.name ?? 'Album')
+    if (ownerId) {
+      const notifId = crypto.randomUUID()
+      const isApproved = status === 'approved'
+      const statusLabel = isApproved ? 'Disetujui' : 'Ditolak'
+      await db
+        .prepare(
+          `INSERT INTO notifications (id, user_id, title, message, type, metadata, created_at)
+           VALUES (?, ?, ?, ?, ?, ?, datetime('now'))`
+        )
+        .bind(
+          notifId,
+          ownerId,
+          'Status album',
+          `${albumName}\nStatus: ${statusLabel}`,
+          isApproved ? 'success' : 'warning',
+          JSON.stringify({ status: statusLabel })
+        )
+        .run()
+      invalidateUserResponseCaches(ownerId)
+    }
+  } catch {
+    /* ignore */
+  }
+
+  // Broadcast realtime supaya lonceng & list album auto-refresh.
+  void publishRealtimeEventFromContext(c, {
+    type: 'api.mutated',
+    channel: 'global',
+    payload: { path: '/api/albums', method: 'PUT', action: 'update' },
+    ts: new Date().toISOString(),
+  })
+  void publishRealtimeEventFromContext(c, {
+    type: 'api.mutated',
+    channel: 'global',
+    payload: { path: '/api/user/notifications', method: 'POST', action: 'create' },
+    ts: new Date().toISOString(),
+  })
+
   return c.json(row)
 })
 

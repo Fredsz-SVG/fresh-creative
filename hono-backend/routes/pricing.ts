@@ -75,7 +75,11 @@ pricing.post('/', async (c) => {
   const id = typeof body.id === 'string' && body.id ? body.id : crypto.randomUUID()
   const name = String(body.name ?? '')
   const price_per_student = Number(body.price_per_student)
-  const min_students = Number(body.min_students)
+  // min_students tidak lagi wajib dari UI admin; default 0.
+  const min_students =
+    body.min_students === undefined || body.min_students === null
+      ? 0
+      : Number(body.min_students)
   const features = JSON.stringify(body.features ?? [])
   const flipbook_enabled = body.flipbook_enabled ? 1 : 0
   const ai_labs_features = JSON.stringify(body.ai_labs_features ?? [])
@@ -114,7 +118,11 @@ pricing.put('/', async (c) => {
   if (!id) return c.json({ error: 'Package ID is required' }, 400)
   const name = String(body.name ?? '')
   const price_per_student = Number(body.price_per_student)
-  const min_students = Number(body.min_students)
+  // min_students tidak lagi wajib dari UI admin; default 0.
+  const min_students =
+    body.min_students === undefined || body.min_students === null
+      ? 0
+      : Number(body.min_students)
   const features = JSON.stringify(body.features ?? [])
   const flipbook_enabled = body.flipbook_enabled ? 1 : 0
   const ai_labs_features = JSON.stringify(body.ai_labs_features ?? [])

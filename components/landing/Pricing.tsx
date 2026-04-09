@@ -360,7 +360,6 @@ export function Pricing() {
                   const chosenAddons = selectedAddonIndices[pkg.id] ?? [];
                   const addonsTotal = chosenAddons.reduce((sum, idx) => sum + (parsedFeatures[idx]?.price ?? 0), 0);
                   const totalPerStudent = pkg.pricePerStudent + addonsTotal;
-                  const total = n * totalPerStudent;
                   return (
                     <div key={pkg.id} className="flex min-w-[85%] sm:min-w-0 sm:w-full flex-col snap-center sm:snap-align-none">
                       <div
@@ -395,9 +394,6 @@ export function Pricing() {
                           <h4 className="font-general text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight">
                             {pkg.name}
                           </h4>
-                          <p className="mt-1 text-xs font-bold text-slate-500 dark:text-white/50">
-                            min. {pkg.minStudents} siswa
-                          </p>
                         </div>
                         <p className="text-[11px] font-bold text-slate-500 dark:text-white/50 uppercase tracking-wider">Harga dasar</p>
                         <p className="text-3xl font-black text-slate-900 dark:text-white">
@@ -470,11 +466,9 @@ export function Pricing() {
                         )}
                       </div>
                       <div className="mt-4 flex items-center justify-between border-t border-slate-100 dark:border-white/10 pt-4 text-sm">
-                        <span className="text-slate-500 dark:text-white/60">
-                          {`Estimasi ${n} siswa`}
-                        </span>
+                        <span className="text-slate-500 dark:text-white/60">Harga total per siswa</span>
                         <span className="font-semibold text-slate-900 dark:text-white">
-                          {formatRupiah(total)}
+                          {formatRupiah(totalPerStudent)}
                         </span>
                       </div>
                       <span

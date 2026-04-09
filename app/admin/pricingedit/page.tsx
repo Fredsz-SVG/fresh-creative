@@ -37,6 +37,7 @@ const GENERATE_SLUGS = new Set(['tryon', 'pose', 'photogroup', 'phototovideo', '
 const DEFAULT_PACKAGE_FORM: Partial<PricingPackage> = {
   name: '',
   price_per_student: 0,
+  // Tidak dipakai lagi untuk perhitungan; tetap ada di schema backend.
   min_students: 0,
   features: [],
   flipbook_enabled: false,
@@ -112,10 +113,6 @@ const PackageForm = ({ pkg, onSave, onCancel }: { pkg: Partial<PricingPackage> |
               <div>
                 <label className="text-[10px] md:text-xs font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest mb-1 md:mb-1.5 block">Price / Student</label>
                 <input name="price_per_student" type="number" value={formData.price_per_student} onChange={handleChange} placeholder="0" className="w-full px-4 py-3 md:px-5 md:py-3.5 bg-slate-50 dark:bg-slate-800 border-4 border-slate-900 dark:border-slate-700 rounded-xl md:rounded-2xl text-slate-900 dark:text-white font-bold placeholder:text-slate-300 dark:placeholder:text-slate-500 focus:outline-none shadow-[3px_3px_0_0_#0f172a] dark:shadow-[3px_3px_0_0_#334155] md:shadow-[4px_4px_0_0_#0f172a] dark:md:shadow-[4px_4px_0_0_#334155] focus:shadow-none" required />
-              </div>
-              <div>
-                <label className="text-[10px] md:text-xs font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest mb-1 md:mb-1.5 block">Min. Student</label>
-                <input name="min_students" type="number" value={formData.min_students} onChange={handleChange} placeholder="0" className="w-full px-4 py-3 md:px-5 md:py-3.5 bg-slate-50 dark:bg-slate-800 border-4 border-slate-900 dark:border-slate-700 rounded-xl md:rounded-2xl text-slate-900 dark:text-white font-bold placeholder:text-slate-300 dark:placeholder:text-slate-500 focus:outline-none shadow-[3px_3px_0_0_#0f172a] dark:shadow-[3px_3px_0_0_#334155] md:shadow-[4px_4px_0_0_#0f172a] dark:md:shadow-[4px_4px_0_0_#334155] focus:shadow-none" required />
               </div>
             </div>
 
@@ -608,7 +605,6 @@ export default function PricingEditPage() {
                         <span className="text-slate-400 dark:text-slate-300 text-xs md:text-sm ml-1 md:ml-2">/ student</span>
                       </div>
                     </div>
-                    <p className="text-slate-400 dark:text-slate-300 font-bold text-[10px] md:text-sm mt-0.5 md:mt-1">Min. {pkg.min_students} Siswa</p>
                   </div>
 
                   {(pkg.ai_labs_features ?? []).length > 0 && (

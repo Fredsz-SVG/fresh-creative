@@ -2,13 +2,10 @@ import { Hono } from 'hono'
 import type { Context } from 'hono'
 import { getSupabaseClient } from '../../lib/supabase'
 import { getD1 } from '../../lib/edge-env'
-import { arrayBufferToBase64, fileToDataUri, formDataString, requestIsMultipart } from '../../lib/ai-multipart'
-import { getSingleReplicateUrl } from '../../lib/replicate-output'
+import { fileToDataUri, formDataString, requestIsMultipart } from '../../lib/ai-multipart'
 import { deductCreditsFromSupabaseAndMirrorToD1 } from '../../lib/credits'
+import { generateVirtualTryOnGemini, imageStringToGeminiInput } from '../../lib/gemini-tryon'
 import Replicate from 'replicate'
-
-const IDM_VTON_MODEL = 'cuuupid/idm-vton'
-const IDM_VTON_VERSION = '0513734a452173b8173e907e3a59d19a36266e55b48528559432bd21c7d7e985'
 
 type ReplicateEnv = {
   REPLICATE_API_TOKEN?: string
@@ -27,26 +24,6 @@ type TryOnBody = {
   garments?: string[]
   mode?: string
 } & Record<string, unknown>
-
-async function processSingleGarment(
-  replicate: InstanceType<typeof Replicate>,
-  humanImg: string,
-  garmImg: string,
-  garmentDes = '',
-  category = 'upper_body',
-  steps = 30,
-  crop = false,
-  seed = 42,
-  forceDc = false,
-  maskOnly = false
-): Promise<string> {
-  const output = await replicate.run(`${IDM_VTON_MODEL}:${IDM_VTON_VERSION}`, {
-    input: { human_img: humanImg, garm_img: garmImg, garment_des: garmentDes, category, steps, crop, seed, force_dc: forceDc, mask_only: maskOnly },
-  })
-  const url = getSingleReplicateUrl(output)
-  if (!url) throw new Error('Invalid try-on output')
-  return url
-}
 
 async function parseTryOnBody(c: Context): Promise<TryOnBody> {
   if (!requestIsMultipart(c)) {
@@ -68,30 +45,10 @@ async function parseTryOnBody(c: Context): Promise<TryOnBody> {
   const garmentFiles = rawGarments.filter((x): x is File => x instanceof File && x.size > 0)
   const garments = await Promise.all(garmentFiles.map((f) => fileToDataUri(f)))
   const mode = fd.get('mode')
-  const crop = fd.get('crop')
-  const stepsStr = fd.get('steps')
-  const seedStr = fd.get('seed')
-  const maskOnly = fd.get('mask_only')
-  const forceDc = fd.get('force_dc')
-  let steps = 30
-  if (typeof stepsStr === 'string' && stepsStr.trim() !== '') {
-    const n = parseInt(stepsStr, 10)
-    if (!Number.isNaN(n)) steps = n
-  }
-  let seed = 42
-  if (typeof seedStr === 'string' && seedStr.trim() !== '') {
-    const n = parseInt(seedStr, 10)
-    if (!Number.isNaN(n)) seed = n
-  }
   const out: TryOnBody = {
     human_img,
     garment_des: formDataString(fd, 'garment_des') || '',
     category: formDataString(fd, 'category') || 'upper_body',
-    steps,
-    crop: crop === 'true',
-    seed,
-    force_dc: forceDc === 'true',
-    mask_only: maskOnly === 'true',
     mode: typeof mode === 'string' ? mode : undefined,
   }
   if (garm_img) out.garm_img = garm_img
@@ -104,6 +61,8 @@ async function parseTryOnBody(c: Context): Promise<TryOnBody> {
 }
 
 const tryon = new Hono()
+
+const MAX_GARMENTS = 3
 
 // POST /api/ai-features/tryon
 tryon.post('/', async (c) => {
@@ -132,62 +91,112 @@ tryon.post('/', async (c) => {
       if (!r.ok) return c.json({ ok: false, error: 'Credit tidak cukup' }, 402)
     }
 
-    const REPLICATE_API_TOKEN = (c.env as ReplicateEnv).REPLICATE_API_TOKEN || ''
+    const REPLICATE_API_TOKEN = ((c.env as ReplicateEnv).REPLICATE_API_TOKEN || '').trim()
     if (!REPLICATE_API_TOKEN) return c.json({ ok: false, error: 'REPLICATE_API_TOKEN tidak dikonfigurasi' }, 500)
 
     const replicate = new Replicate({ auth: REPLICATE_API_TOKEN })
+
     const body = await parseTryOnBody(c)
 
     if (!body.human_img) return c.json({ ok: false, error: 'File manusia tidak valid' }, 400)
+
+    const person0 = await imageStringToGeminiInput(body.human_img)
+    if (!person0) return c.json({ ok: false, error: 'Gambar orang tidak valid' }, 400)
+
     if (body.garm_img) {
-      const result = await processSingleGarment(
-        replicate,
-        body.human_img,
-        body.garm_img,
-        body.garment_des || '',
-        body.category || 'upper_body',
-        Math.min(Math.max(body.steps || 30, 1), 40),
-        body.crop === true,
-        body.seed ?? 42,
-        body.force_dc === true,
-        body.mask_only === true
-      )
+      const cloth = await imageStringToGeminiInput(body.garm_img)
+      if (!cloth) return c.json({ ok: false, error: 'Gambar garment tidak valid' }, 400)
+      const result = await generateVirtualTryOnGemini(replicate, person0, cloth)
       return c.json({ ok: true, results: [result] })
     }
-    const garments = Array.isArray(body.garments) ? body.garments.filter((g): g is string => typeof g === 'string') : []
-    if (!garments?.length) return c.json({ ok: false, error: 'Minimal 1 garment' }, 400)
-    if (garments.length > 2) return c.json({ ok: false, error: 'Maksimal 2 garments' }, 400)
 
-    const results: string[] = []
+    const garments = Array.isArray(body.garments) ? body.garments.filter((g): g is string => typeof g === 'string') : []
+    if (!garments.length) return c.json({ ok: false, error: 'Minimal 1 garment' }, 400)
+    if (garments.length > MAX_GARMENTS) {
+      return c.json({ ok: false, error: `Maksimal ${MAX_GARMENTS} garments` }, 400)
+    }
+
     if (body.mode === 'chain') {
-      let cur = body.human_img
+      let curPerson = person0
+      let finalResult = ''
       for (let i = 0; i < garments.length; i++) {
-        const category =
-          typeof body[`category_${i}`] === 'string' ? String(body[`category_${i}`]) : 'upper_body'
-        const r = await processSingleGarment(replicate, cur, garments[i], `Garment ${i + 1}`, category)
+        const cloth = await imageStringToGeminiInput(garments[i])
+        if (!cloth) return c.json({ ok: false, error: `Gambar garment ${i + 1} tidak valid` }, 400)
+        finalResult = await generateVirtualTryOnGemini(replicate, curPerson, cloth)
         if (i < garments.length - 1) {
-          const res = await fetch(r)
-          const buffer = await res.arrayBuffer()
-          cur = 'data:image/jpeg;base64,' + arrayBufferToBase64(buffer)
-        } else {
-          results.push(r)
+          const next = await imageStringToGeminiInput(finalResult)
+          if (!next) return c.json({ ok: false, error: 'Gagal memproses hasil intermediate' }, 500)
+          curPerson = next
         }
       }
-    } else {
-      results.push(
-        ...(await Promise.all(
-          garments.map((g: string, i: number) => {
-            const category =
-              typeof body[`category_${i}`] === 'string' ? String(body[`category_${i}`]) : 'upper_body'
-            return processSingleGarment(replicate, body.human_img || '', g, `Garment ${i + 1}`, category)
-          })
-        ))
-      )
+      return c.json({ ok: true, results: [finalResult] })
     }
+
+    const results = await Promise.all(
+      garments.map(async (g, i) => {
+        const cloth = await imageStringToGeminiInput(g)
+        if (!cloth) throw new Error(`Gambar garment ${i + 1} tidak valid`)
+        return generateVirtualTryOnGemini(replicate, person0, cloth)
+      })
+    )
     return c.json({ ok: true, results })
   } catch (err: unknown) {
     console.error('Try-on error:', err)
-    const message = err instanceof Error ? err.message : 'Gagal'
+    const message = err instanceof Error ? err.message : String(err ?? 'Gagal')
+
+    // Jika error berasal dari Replicate SDK, biasanya ada status di err.response.status atau err.status.
+    const e = err as { response?: { status?: number }; status?: number }
+    let status: number | undefined = e?.response?.status ?? e?.status
+
+    // Replicate sering menyisipkan JSON error di akhir message: "...: {\"detail\":...,\"status\":429,...}"
+    // Coba parse agar kita bisa mapping status lebih akurat.
+    let parsed: { status?: number; retry_after?: number; detail?: string } | null = null
+    if (typeof message === 'string') {
+      const idx = message.lastIndexOf('{')
+      if (idx !== -1) {
+        const tail = message.slice(idx)
+        try {
+          const j = JSON.parse(tail) as { status?: number; retry_after?: number; detail?: string }
+          if (j && typeof j === 'object') parsed = j
+          if (typeof j?.status === 'number') status = j.status
+        } catch {
+          // ignore
+        }
+      }
+    }
+
+    // Replicate throttling (saldo < $5 => RPM rendah).
+    if (status === 429 || (typeof message === 'string' && message.includes('Too Many Requests'))) {
+      const retryAfter =
+        typeof parsed?.retry_after === 'number'
+          ? parsed.retry_after
+          : (() => {
+              const m = /\"retry_after\"\\s*:\\s*(\\d+)/.exec(message)
+              return m ? parseInt(m[1], 10) : undefined
+            })()
+      const hint =
+        typeof retryAfter === 'number' && !Number.isNaN(retryAfter) && retryAfter > 0
+          ? `Terlalu banyak request. Coba lagi dalam ${retryAfter} detik.`
+          : 'Terlalu banyak request. Coba lagi beberapa detik lagi.'
+      return c.json({ ok: false, error: hint, retry_after: retryAfter }, 429)
+    }
+
+    // Teruskan status 4xx yang jelas ke client (mis. input salah, unauthorized, dll.)
+    if (typeof status === 'number' && status >= 400 && status < 500) {
+      return c.json({ ok: false, error: message }, status as any)
+    }
+
+    // Error upstream (Replicate/model error) → 502 lebih akurat daripada 500.
+    if (
+      (typeof status === 'number' && status >= 500) ||
+      (typeof message === 'string' &&
+        (message.toLowerCase().includes('prediction failed') || message.toLowerCase().includes('replicate')))
+    ) {
+      const detail =
+        (typeof parsed?.detail === 'string' && parsed.detail.trim()) ? parsed.detail.trim() : message
+      return c.json({ ok: false, error: detail }, 502)
+    }
+
     return c.json({ ok: false, error: message }, 500)
   }
 })

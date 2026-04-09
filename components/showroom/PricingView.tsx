@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import DashboardTitle from "@/components/dashboard/DashboardTitle";
 import { apiUrl } from '../../lib/api-url'
 import { fetchWithAuth } from '../../lib/api-client'
+import { toast } from '@/lib/toast'
 
 export type Draft = {
   school_name: string;
@@ -161,7 +162,8 @@ export default function PricingView({
   );
   const totalPrice = useMemo(() => {
     if (!selectedPkg) return null;
-    const n = Math.max(selectedPkg.minStudents, studentsCount || selectedPkg.minStudents);
+    const n = studentsCount;
+    if (!Number.isFinite(n) || n <= 0) return null;
     const parsed = selectedPkg.features.map((f) => {
       try {
         const j = JSON.parse(f);
@@ -179,6 +181,7 @@ export default function PricingView({
     if (!draft) return;
     setSaveError("");
     setSaving(true);
+    const toastId = toast.loading('Membuat album…', { duration: Infinity })
     try {
       const body: Record<string, unknown> = {
         type: 'yearbook',
@@ -215,7 +218,9 @@ export default function PricingView({
       }
 
       if (!res.ok) {
-        setSaveError(json?.error ?? "Gagal menyimpan.");
+        const msg = json?.error ?? "Gagal menyimpan."
+        setSaveError(msg);
+        toast.error(msg)
         setSaving(false);
         return;
       }
@@ -231,6 +236,7 @@ export default function PricingView({
       // Force Next.js to invalidate cached routes so albums page shows fresh data
       router.refresh();
 
+      toast.success('Album berhasil dibuat.')
       if (afterSaveRedirect) {
         router.push(afterSaveRedirect);
         return;
@@ -238,8 +244,11 @@ export default function PricingView({
 
       router.push(backHrefSaved);
     } catch (e) {
-      setSaveError(e instanceof Error ? e.message : "Network error");
+      const msg = e instanceof Error ? e.message : "Network error"
+      setSaveError(msg);
+      toast.error(msg)
     } finally {
+      toast.dismiss(toastId)
       setSaving(false);
     }
   };
@@ -283,10 +292,9 @@ export default function PricingView({
                   return { name: f, price: 0 };
                 }
               });
-              const n = Math.max(pkg.minStudents, studentsCount || pkg.minStudents);
               const chosenAddons = selectedAddonIndices[pkg.id] ?? [];
               const addonsTotal = chosenAddons.reduce((sum, idx) => sum + (parsedFeatures[idx]?.price ?? 0), 0);
-              const total = n * (pkg.pricePerStudent + addonsTotal);
+              const totalPerStudent = pkg.pricePerStudent + addonsTotal;
               const isSelected = selectedPackageId === pkg.id;
               return (
                 <button
@@ -312,7 +320,6 @@ export default function PricingView({
                       </span>
                       <div>
                         <span className="font-black text-slate-900 dark:text-white text-[18px] tracking-tight">{pkg.name}</span>
-                        <p className="text-[13px] font-bold text-slate-600 dark:text-slate-300 mt-1">min. {pkg.minStudents} siswa</p>
                       </div>
                     </div>
                     <div className="text-left sm:text-right shrink-0 mt-2 sm:mt-0 pl-12 sm:pl-0">
@@ -394,10 +401,10 @@ export default function PricingView({
                   {/* Estimasi total */}
                   <div className={`mt-5 pt-4 border-t-2 ${isSelected ? 'border-emerald-300 dark:border-emerald-600' : 'border-slate-100 dark:border-slate-700'} flex items-center justify-between px-1`}>
                     <span className="text-[13px] font-black text-slate-600 dark:text-slate-300 uppercase tracking-widest">
-                      {isSelected && addonsTotal > 0 ? `Dasar + add-on (${n} siswa)` : `Estimasi ${n} siswa`}
+                      Harga total per siswa
                     </span>
                     <span className="text-[17px] font-black text-slate-900 dark:text-white">
-                      Rp {total.toLocaleString("id-ID")}
+                      Rp {totalPerStudent.toLocaleString("id-ID")}
                     </span>
                   </div>
                 </button>
