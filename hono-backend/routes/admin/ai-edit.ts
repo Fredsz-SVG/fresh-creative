@@ -13,9 +13,15 @@ aiEdit.get('/', async (c) => {
   if (!db) return c.json({ error: 'Database not configured' }, 503)
   const { results } = await db
     .prepare(
-      `SELECT id, feature_slug, credits_per_use, credits_per_unlock FROM ai_feature_pricing ORDER BY feature_slug ASC`
+      `SELECT id, feature_slug, credits_per_use, credits_per_unlock, duration_credits_json FROM ai_feature_pricing ORDER BY feature_slug ASC`
     )
-    .all<{ id: string; feature_slug: string; credits_per_use: number; credits_per_unlock: number }>()
+    .all<{
+      id: string
+      feature_slug: string
+      credits_per_use: number
+      credits_per_unlock: number
+      duration_credits_json: string | null
+    }>()
   return c.json(results ?? [])
 })
 
@@ -66,10 +72,33 @@ aiEdit.put('/', async (c) => {
   await ensureUserInD1(db, user, honoEnvForSupabasePublicSync(c.env))
   if ((await getRole(c, user)) !== 'admin') return c.json({ error: 'Forbidden' }, 403)
   const body = await c.req.json()
-  const { id, feature_slug, credits_per_use, credits_per_unlock } = body
+  const { id, feature_slug, credits_per_use, credits_per_unlock, duration_credits_json } = body as {
+    id?: string
+    feature_slug?: string
+    credits_per_use?: number
+    credits_per_unlock?: number
+    duration_credits_json?: string | Record<string, unknown> | null
+  }
   const hasUse = typeof credits_per_use === 'number' && credits_per_use >= 0
   const hasUnlock = typeof credits_per_unlock === 'number' && credits_per_unlock >= 0
-  if ((!id && !feature_slug) || (!hasUse && !hasUnlock)) {
+  let durationJsonStr: string | null | undefined
+  if (duration_credits_json === null) {
+    durationJsonStr = null
+  } else if (typeof duration_credits_json === 'string') {
+    const t = duration_credits_json.trim()
+    durationJsonStr = t === '' ? null : t
+  } else if (typeof duration_credits_json === 'object' && duration_credits_json !== null) {
+    durationJsonStr = JSON.stringify(duration_credits_json)
+  }
+  const hasDurationJson = duration_credits_json !== undefined
+  if (hasDurationJson && durationJsonStr != null && durationJsonStr !== undefined) {
+    try {
+      JSON.parse(durationJsonStr)
+    } catch {
+      return c.json({ error: 'duration_credits_json bukan JSON valid' }, 400)
+    }
+  }
+  if ((!id && !feature_slug) || (!hasUse && !hasUnlock && !hasDurationJson)) {
     return c.json({ error: 'Invalid payload' }, 400)
   }
   const sets: string[] = []
@@ -81,6 +110,10 @@ aiEdit.put('/', async (c) => {
   if (hasUnlock) {
     sets.push('credits_per_unlock = ?')
     vals.push(credits_per_unlock)
+  }
+  if (hasDurationJson) {
+    sets.push('duration_credits_json = ?')
+    vals.push(durationJsonStr === undefined ? null : durationJsonStr)
   }
   sets.push(`updated_at = datetime('now')`)
   if (id) {
@@ -101,16 +134,28 @@ aiEdit.put('/', async (c) => {
   const row = id
     ? await db
         .prepare(
-          `SELECT id, feature_slug, credits_per_use, credits_per_unlock FROM ai_feature_pricing WHERE id = ?`
+          `SELECT id, feature_slug, credits_per_use, credits_per_unlock, duration_credits_json FROM ai_feature_pricing WHERE id = ?`
         )
         .bind(id)
-        .first<{ id: string; feature_slug: string; credits_per_use: number; credits_per_unlock: number }>()
+        .first<{
+          id: string
+          feature_slug: string
+          credits_per_use: number
+          credits_per_unlock: number
+          duration_credits_json: string | null
+        }>()
     : await db
         .prepare(
-          `SELECT id, feature_slug, credits_per_use, credits_per_unlock FROM ai_feature_pricing WHERE feature_slug = ?`
+          `SELECT id, feature_slug, credits_per_use, credits_per_unlock, duration_credits_json FROM ai_feature_pricing WHERE feature_slug = ?`
         )
         .bind(feature_slug)
-        .first<{ id: string; feature_slug: string; credits_per_use: number; credits_per_unlock: number }>()
+        .first<{
+          id: string
+          feature_slug: string
+          credits_per_use: number
+          credits_per_unlock: number
+          duration_credits_json: string | null
+        }>()
   if (!row) return c.json({ error: 'Not found' }, 404)
   return c.json(row)
 })

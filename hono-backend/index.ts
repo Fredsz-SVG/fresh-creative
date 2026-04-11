@@ -148,16 +148,21 @@ app.use('*', async (c, next) => {
   if (c.res.status >= 400) return
   if (c.req.path.startsWith('/api/realtime')) return
 
-  await publishRealtimeEventFromContext(c, {
-    type: 'api.mutated',
-    channel: 'global',
-    payload: {
-      method,
-      path: c.req.path,
-      status: c.res.status,
-    },
-    ts: new Date().toISOString(),
-  })
+  try {
+    await publishRealtimeEventFromContext(c, {
+      type: 'api.mutated',
+      channel: 'global',
+      payload: {
+        method,
+        path: c.req.path,
+        status: c.res.status,
+      },
+      ts: new Date().toISOString(),
+    })
+  } catch (e) {
+    // Jangan biarkan kegagalan Durable Object / realtime mengubah response 2xx jadi 500.
+    console.error('publishRealtimeEventFromContext (api.mutated):', e)
+  }
 })
 
 // ══════════════════════════════════════════════════════

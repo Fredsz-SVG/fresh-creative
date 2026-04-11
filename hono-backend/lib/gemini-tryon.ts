@@ -84,7 +84,7 @@ function extractRetryAfterSeconds(err: unknown): number | null {
   return null
 }
 
-async function runWith429Retry<T>(fn: () => Promise<T>, maxRetries = 3): Promise<T> {
+export async function runWith429Retry<T>(fn: () => Promise<T>, maxRetries = 3): Promise<T> {
   let attempt = 0
   // eslint-disable-next-line no-constant-condition
   while (true) {

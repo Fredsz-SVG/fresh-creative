@@ -19,6 +19,8 @@ export default function PhotoGroup() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [prompt, setPrompt] = useState<string>('');
+  /** Instruksi tambahan: nomor foto (urutan upload) untuk ubah baju/latar per orang, dll. */
+  const [notes, setNotes] = useState<string>('');
   const [downloading, setDownloading] = useState(false);
   const [creditsPerGenerate, setCreditsPerGenerate] = useState<number | null>(null);
 
@@ -108,6 +110,9 @@ export default function PhotoGroup() {
       const formData = new FormData();
       subjects.forEach((subject) => formData.append("subjects", subject.file));
       formData.append("prompt", prompt);
+      if (notes.trim()) {
+        formData.append("notes", notes.trim());
+      }
 
       const res = await fetchWithAuth("/api/ai-features/photogroup", {
         method: "POST",
@@ -118,7 +123,12 @@ export default function PhotoGroup() {
 
       if (data.ok && data.result) {
         const resultUrl = asString(data.result)
-        if (resultUrl) setResult(resultUrl);
+        if (resultUrl) {
+          setResult(resultUrl)
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('credits-updated'))
+          }
+        }
       } else {
         // Handle error status codes
         if (res.status === 402) {
@@ -138,25 +148,25 @@ export default function PhotoGroup() {
     <section id="photogroup" className="py-4 md:py-6">
       <div className="max-w-3xl mx-auto">
         <form onSubmit={handleGenerateGroup}>
-          <div className="bg-white rounded-2xl border-4 border-slate-900 shadow-[6px_6px_0_0_#0f172a] p-4 sm:p-6 space-y-4 sm:space-y-5">
-            <p className="text-[10px] sm:text-xs font-black text-slate-500 text-center uppercase tracking-widest">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border-4 border-slate-900 dark:border-slate-700 shadow-[6px_6px_0_0_#0f172a] dark:shadow-[6px_6px_0_0_#334155] p-4 sm:p-6 space-y-4 sm:space-y-5">
+            <p className="text-[10px] sm:text-xs font-black text-slate-500 dark:text-slate-400 text-center uppercase tracking-widest">
               Upload 2–10 gambar untuk digabung menjadi satu foto grup.
             </p>
             {/* Subjects Upload */}
             <div>
-              <label className="flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs font-black mb-2 sm:mb-3 text-slate-900 uppercase tracking-tight">
+              <label className="flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs font-black mb-2 sm:mb-3 text-slate-900 dark:text-slate-100 uppercase tracking-tight">
                 <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 <span>1. Upload Foto Karakter (Maksimal {MAX_SUBJECTS}) <span className="text-red-500">*</span></span>
               </label>
-              <p className="text-[10px] text-slate-500 mb-2 sm:mb-3 uppercase tracking-widest">
-                Upload maksimal {MAX_SUBJECTS} gambar yang ingin digabung menjadi 1 foto grup.
+              <p className="text-[10px] text-slate-500 dark:text-slate-400 mb-2 sm:mb-3 uppercase tracking-widest">
+                Upload maksimal {MAX_SUBJECTS} gambar. Urutan upload = Gambar 1, 2, 3… (dipakai AI untuk membedakan orang). Wajah dan baju mengikuti tiap foto referensi kecuali Anda minta di prompt/catatan.
               </p>
               <div
                 onClick={() => document.getElementById("subjects-upload")?.click()}
-                className="border-2 border-dashed border-slate-300 rounded-xl p-4 sm:p-6 md:p-8 text-center cursor-pointer hover:border-slate-900 transition-colors"
+                className="border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-xl p-4 sm:p-6 md:p-8 text-center cursor-pointer hover:border-slate-900 dark:hover:border-slate-400 transition-colors"
               >
                 <Upload className="w-6 h-6 sm:w-8 sm:h-8 mx-auto mb-1.5 sm:mb-2 text-slate-400" />
-                <p className="text-[10px] sm:text-sm text-slate-600 uppercase tracking-widest">
+                <p className="text-[10px] sm:text-sm text-slate-600 dark:text-slate-300 uppercase tracking-widest">
                   {subjects.length >= MAX_SUBJECTS
                     ? `Sudah upload ${MAX_SUBJECTS} gambar`
                     : `Klik untuk upload gambar (${subjects.length}/${MAX_SUBJECTS})`}
@@ -176,18 +186,18 @@ export default function PhotoGroup() {
               {subjects.length > 0 && (
                 <div className="mt-3 sm:mt-4">
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 sm:gap-2.5 md:gap-3">
-                    {subjects.map((subject) => (
+                    {subjects.map((subject, idx) => (
                       <div
                         key={subject.id}
-                        className="relative border-2 border-slate-900 rounded-xl p-1.5 sm:p-2 bg-slate-100 shadow-[2px_2px_0_0_#0f172a]"
+                        className="relative border-2 border-slate-900 dark:border-slate-600 rounded-xl p-1.5 sm:p-2 bg-slate-100 dark:bg-slate-800 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155]"
                       >
                         <img
                           src={subject.preview}
                           alt={`Subject ${subject.id}`}
                           className="w-full h-24 sm:h-28 md:h-32 object-cover rounded-lg"
                         />
-                        <p className="text-[9px] sm:text-[10px] font-black text-center mt-1 sm:mt-1.5 text-slate-600 uppercase tracking-widest">
-                          Gambar {subjects.indexOf(subject) + 1}
+                        <p className="text-[9px] sm:text-[10px] font-black text-center mt-1 sm:mt-1.5 text-slate-600 dark:text-slate-300 uppercase tracking-widest">
+                          Gambar {idx + 1}
                         </p>
                         <button
                           type="button"
@@ -205,31 +215,48 @@ export default function PhotoGroup() {
 
             {/* Prompt Input */}
             <div>
-              <label className="block text-[10px] sm:text-xs font-black mb-2 sm:mb-3 text-slate-900 uppercase tracking-tight">
+              <label className="block text-[10px] sm:text-xs font-black mb-2 sm:mb-3 text-slate-900 dark:text-slate-100 uppercase tracking-tight">
                 2. Deskripsi Penggabungan (Prompt) <span className="text-red-500">*</span>
               </label>
-              <p className="text-[10px] text-slate-500 mb-2 sm:mb-3 uppercase tracking-widest">
+              <p className="text-[10px] text-slate-500 dark:text-slate-400 mb-2 sm:mb-3 uppercase tracking-widest">
                 Wajib diisi! Deskripsikan bagaimana gambar-gambar akan digabung menjadi 1 foto.
               </p>
               <textarea
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
-                placeholder="Contoh: '5 orang berdiri bersama di pantai, tersenyum, memakai baju casual' atau 'Seseorang berdiri di depan mobil sport dengan background kota'"
+                placeholder="Contoh: lima orang berdiri berjajar di pantai, senyum, sore hari. Atau: rapat di ruang kelas, background papan tulis."
                 rows={3}
-                className="w-full px-3 sm:px-4 py-2.5 border-2 border-slate-900 rounded-xl bg-white text-slate-900 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-slate-900 resize-none"
+                className="w-full px-3 sm:px-4 py-2.5 border-2 border-slate-900 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-400 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-slate-900 dark:focus:border-slate-500 resize-none"
                 required
+              />
+            </div>
+
+            {/* Optional per-image instructions */}
+            <div>
+              <label className="block text-[10px] sm:text-xs font-black mb-2 sm:mb-3 text-slate-900 dark:text-slate-100 uppercase tracking-tight">
+                3. Instruksi tambahan (opsional)
+              </label>
+              <p className="text-[10px] text-slate-500 dark:text-slate-400 mb-2 sm:mb-3 uppercase tracking-widest">
+                Sebut nomor gambar (sesuai urutan upload) jika hanya orang tertentu yang ingin ganti baju, pose khusus, dll. Tanpa ini, pakaian mengikuti foto asli masing-masing.
+              </p>
+              <textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder='Contoh: Gambar 3 ganti ke kemeja putih; foto ke-2 saja pakai topi — kosongkan jika tidak perlu.'
+                rows={2}
+                className="w-full px-3 sm:px-4 py-2.5 border-2 border-slate-900 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-400 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-slate-900 dark:focus:border-slate-500 resize-none"
               />
             </div>
 
             {/* Error Message */}
             {error && (
-              <div className="p-3 bg-red-50 border-2 border-red-500 rounded-xl text-red-600 text-[10px] sm:text-xs font-black uppercase tracking-widest whitespace-pre-line">
+              <div className="p-3 bg-red-50 dark:bg-red-950/50 border-2 border-red-500 dark:border-red-400 rounded-xl text-red-600 dark:text-red-300 text-[10px] sm:text-xs font-black uppercase tracking-widest whitespace-pre-line">
                 {error}
               </div>
             )}
 
             {typeof creditsPerGenerate === 'number' && creditsPerGenerate >= 0 && (
-              <p className="text-[10px] font-black text-slate-500 text-center uppercase tracking-widest">
+              <p className="text-[10px] font-black text-slate-500 dark:text-slate-400 text-center uppercase tracking-widest">
                 Biaya: {creditsPerGenerate} credit per generate Photo Group.
               </p>
             )}
@@ -238,7 +265,7 @@ export default function PhotoGroup() {
             <button
               type="submit"
               disabled={loading || subjects.length < 2 || subjects.length > MAX_SUBJECTS || !prompt.trim()}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-indigo-500 text-white rounded-xl border-2 border-slate-900 font-black text-xs uppercase tracking-widest shadow-[4px_4px_0_0_#0f172a] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-indigo-500 text-white rounded-xl border-2 border-slate-900 dark:border-slate-600 font-black text-xs uppercase tracking-widest shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? (
                 <>
@@ -258,10 +285,10 @@ export default function PhotoGroup() {
         {/* Result */}
         {result && (
           <div className="mt-6 sm:mt-8 max-w-3xl mx-auto px-2 sm:px-4">
-            <h3 className="text-base sm:text-xl font-black mb-4 text-slate-900 text-center uppercase tracking-tight">
+            <h3 className="text-base sm:text-xl font-black mb-4 text-slate-900 dark:text-white text-center uppercase tracking-tight">
               Hasil Photo Group
             </h3>
-            <div className="bg-white rounded-2xl border-4 border-slate-900 shadow-[6px_6px_0_0_#0f172a] p-3 sm:p-4">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl border-4 border-slate-900 dark:border-slate-700 shadow-[6px_6px_0_0_#0f172a] dark:shadow-[6px_6px_0_0_#334155] p-3 sm:p-4">
               <div className="relative max-w-xs sm:max-w-sm md:max-w-md mx-auto">
                 <img
                   src={result}
@@ -284,7 +311,7 @@ export default function PhotoGroup() {
                     }
                   }}
                   disabled={downloading}
-                  className="absolute top-1.5 sm:top-2 right-1.5 sm:right-2 inline-flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 bg-emerald-500 text-white rounded-full border-2 border-slate-900 hover:bg-emerald-600 transition-colors shadow-[2px_2px_0_0_#0f172a] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 disabled:opacity-70"
+                  className="absolute top-1.5 sm:top-2 right-1.5 sm:right-2 inline-flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 bg-emerald-500 text-white rounded-full border-2 border-slate-900 dark:border-slate-600 hover:bg-emerald-600 transition-colors shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 disabled:opacity-70"
                   title="Download (langsung ke device)"
                 >
                   {downloading ? (

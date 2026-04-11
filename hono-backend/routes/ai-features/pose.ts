@@ -5,6 +5,7 @@ import { fileToDataUri, requestIsMultipart } from '../../lib/ai-multipart'
 import { deductCreditsFromSupabaseAndMirrorToD1 } from '../../lib/credits'
 import { imageStringToGeminiInput } from '../../lib/gemini-tryon'
 import { generatePoseEditGemini } from '../../lib/gemini-pose'
+import { respondWithReplicateFriendlyError } from '../../lib/replicate-error-response'
 import Replicate from 'replicate'
 
 type ReplicateEnv = {
@@ -27,25 +28,11 @@ pose.post('/', async (c) => {
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) return c.json({ ok: false, error: 'Unauthorized' }, 401)
 
-    const pricing = await db
-      .prepare(`SELECT credits_per_use FROM ai_feature_pricing WHERE feature_slug = ?`)
-      .bind('pose')
-      .first<{ credits_per_use: number }>()
-    const creditsPerUse = pricing?.credits_per_use ?? 0
-    if (creditsPerUse > 0) {
-      const r = await deductCreditsFromSupabaseAndMirrorToD1({
-        env: c.env as Record<string, string>,
-        db,
-        userId: user.id,
-        amount: creditsPerUse,
-      })
-      if (!r.ok) return c.json({ ok: false, error: 'Credit tidak cukup' }, 402)
-    }
-
-    const REPLICATE_API_TOKEN = (c.env as ReplicateEnv).REPLICATE_API_TOKEN || ''
+    const REPLICATE_API_TOKEN = ((c.env as ReplicateEnv).REPLICATE_API_TOKEN || '').trim()
     if (!REPLICATE_API_TOKEN) return c.json({ ok: false, error: 'REPLICATE_API_TOKEN tidak dikonfigurasi' }, 500)
 
     const replicate = new Replicate({ auth: REPLICATE_API_TOKEN })
+
     let body: PoseBody
     if (requestIsMultipart(c)) {
       const fd = await c.req.formData()
@@ -66,22 +53,26 @@ pose.post('/', async (c) => {
     const subjectInput = await imageStringToGeminiInput(body.subject)
     if (!subjectInput) return c.json({ ok: false, error: 'Gambar subject tidak valid' }, 400)
 
+    const pricing = await db
+      .prepare(`SELECT credits_per_use FROM ai_feature_pricing WHERE feature_slug = ?`)
+      .bind('pose')
+      .first<{ credits_per_use: number }>()
+    const creditsPerUse = pricing?.credits_per_use ?? 0
+    if (creditsPerUse > 0) {
+      const r = await deductCreditsFromSupabaseAndMirrorToD1({
+        env: c.env as Record<string, string>,
+        db,
+        userId: user.id,
+        amount: creditsPerUse,
+      })
+      if (!r.ok) return c.json({ ok: false, error: 'Credit tidak cukup' }, 402)
+    }
+
     const url = await generatePoseEditGemini(replicate, subjectInput, body.prompt || '')
 
     return c.json({ ok: true, results: [url] })
   } catch (err: unknown) {
-    console.error('Pose error:', err)
-    const message = err instanceof Error ? err.message : String(err ?? 'Gagal')
-    const e = err as { response?: { status?: number }; status?: number }
-    const status = e?.response?.status ?? e?.status
-    if (status === 429) {
-      return c.json({ ok: false, error: 'Terlalu banyak request. Coba lagi beberapa detik lagi.' }, 429)
-    }
-    if (typeof status === 'number' && status >= 400 && status < 500) {
-      return c.json({ ok: false, error: message }, status as any)
-    }
-    // Upstream (Replicate/model) error
-    return c.json({ ok: false, error: message || 'Gagal memproses pose. Coba lagi.' }, 502)
+    return respondWithReplicateFriendlyError(c, err, 'Pose error')
   }
 })
 

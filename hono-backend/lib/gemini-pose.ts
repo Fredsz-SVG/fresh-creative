@@ -4,7 +4,11 @@
  */
 
 import Replicate from 'replicate'
-import { REPLICATE_GEMINI_FLASH_IMAGE, type GeminiImageInput } from './gemini-tryon'
+import {
+  REPLICATE_GEMINI_FLASH_IMAGE,
+  runWith429Retry,
+  type GeminiImageInput,
+} from './gemini-tryon'
 import { getSingleReplicateUrl } from './replicate-output'
 
 type ReplicateClient = InstanceType<typeof Replicate>
@@ -38,16 +42,24 @@ CRITICAL CONSTRAINTS (must follow):
 4) Do NOT change the person's outfit, do NOT restyle, do NOT replace clothing.
 5) Keep the result photorealistic.`
 
-  const output = await replicate.run(REPLICATE_GEMINI_FLASH_IMAGE, {
-    input: {
-      prompt,
-      image_input: [toDataUri(subject)],
-      output_format: 'jpg',
-    },
-  })
+  const output = await runWith429Retry(
+    () =>
+      replicate.run(REPLICATE_GEMINI_FLASH_IMAGE, {
+        input: {
+          prompt,
+          image_input: [toDataUri(subject)],
+          output_format: 'jpg',
+        },
+      }),
+    5
+  )
 
   const url = extractImageUrl(output)
-  if (!url) throw new Error('The AI did not return an image. Please try again with a clearer photo and pose instruction.')
+  if (!url) {
+    throw new Error(
+      'Replicate: model did not return an image URL. Try again with a clearer photo or pose instruction.'
+    )
+  }
   return url
 }
 

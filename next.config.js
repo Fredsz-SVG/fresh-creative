@@ -3,6 +3,10 @@ const honoApiBase = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8787')
 
 const nextConfig = {
   compress: true,
+  // Required for styled-components v6 + @scaleflex/ui (react-filerobot-image-editor) so theme/CSS applies correctly.
+  compiler: {
+    styledComponents: true,
+  },
   experimental: {
     optimizePackageImports: ['lucide-react', 'react-icons'],
   },

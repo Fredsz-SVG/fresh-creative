@@ -40,6 +40,8 @@
   ],
   "exclude": [
     "node_modules",
-    "hono-backend"
+    "hono-backend",
+    "filter",
+    "vendor"
   ]
 }

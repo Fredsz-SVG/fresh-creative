@@ -20,6 +20,94 @@ interface AiFeaturePricing {
   feature_slug: string
   credits_per_use: number
   credits_per_unlock: number
+  /** JSON: {"5":1,"10":2,"12":3} — kredit per detik (Photo to Video) */
+  duration_credits_json?: string | null
+}
+
+const PTV_SEC_MIN = 2
+const PTV_SEC_MAX = 12
+
+type PtvDurRow = { id: string; sec: number | ''; credits: number }
+
+function newPtvRowId(): string {
+  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
+    return crypto.randomUUID()
+  }
+  return `ptv-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
+}
+
+function parsePtvDurRows(item: AiFeaturePricing): PtvDurRow[] {
+  const fb = item.credits_per_use ?? 0
+  let o: Record<string, number> = {}
+  try {
+    if (item.duration_credits_json?.trim()) {
+      o = JSON.parse(item.duration_credits_json) as Record<string, number>
+    }
+  } catch {
+    o = {}
+  }
+  const keys = Object.keys(o)
+    .map((k) => parseInt(k, 10))
+    .filter((n) => Number.isFinite(n) && n >= PTV_SEC_MIN && n <= PTV_SEC_MAX)
+    .sort((a, b) => a - b)
+  if (keys.length === 0) {
+    return [
+      { id: newPtvRowId(), sec: 5, credits: fb },
+      { id: newPtvRowId(), sec: 10, credits: fb },
+    ]
+  }
+  return keys.map((n) => ({
+    id: newPtvRowId(),
+    sec: n,
+    credits: typeof o[String(n)] === 'number' && o[String(n)] >= 0 ? o[String(n)] : fb,
+  }))
+}
+
+function buildPtvDurationJsonFromRows(
+  rows: PtvDurRow[]
+): { json: string; creditsPerUse: number } | { error: string } {
+  const o: Record<string, number> = {}
+  const seen = new Set<number>()
+  const creditVals: number[] = []
+  for (const r of rows) {
+    if (r.sec === '' || !Number.isFinite(Number(r.sec))) continue
+    const s = Math.round(Number(r.sec))
+    if (s < PTV_SEC_MIN || s > PTV_SEC_MAX) {
+      return {
+        error: `Durasi ${s} di luar rentang ${PTV_SEC_MIN}–${PTV_SEC_MAX} detik (batas Seedance).`,
+      }
+    }
+    if (seen.has(s)) {
+      return { error: `Ada duplikat durasi: ${s} detik.` }
+    }
+    seen.add(s)
+    const c = Math.max(0, r.credits)
+    o[String(s)] = c
+    creditVals.push(c)
+  }
+  if (seen.size === 0) {
+    return { error: 'Isi minimal satu baris: detik (angka) dan kredit.' }
+  }
+  return {
+    json: JSON.stringify(o),
+    creditsPerUse: Math.min(...creditVals),
+  }
+}
+
+function formatPtvGenerateLine(item: AiFeaturePricing): string {
+  try {
+    const o = item.duration_credits_json?.trim()
+      ? (JSON.parse(item.duration_credits_json!) as Record<string, number>)
+      : {}
+    const keys = Object.keys(o)
+      .map((k) => parseInt(k, 10))
+      .filter((n) => Number.isFinite(n))
+      .sort((a, b) => a - b)
+    if (keys.length === 0) return `${item.credits_per_use}`
+    return keys.map((k) => `${k}s: ${o[String(k)]}`).join(' · ')
+  } catch {
+    return `${item.credits_per_use}`
+  }
 }
 
 const AI_FEATURE_LABELS: Record<string, string> = {
@@ -220,11 +308,15 @@ export default function PricingEditPage() {
   const [aiPricing, setAiPricing] = useState<AiFeaturePricing[]>([])
   const [loadingAi, setLoadingAi] = useState(true)
   const [editingAi, setEditingAi] = useState<AiFeaturePricing | null>(null)
+  const [ptvDurRows, setPtvDurRows] = useState<PtvDurRow[]>([
+    { id: newPtvRowId(), sec: 5, credits: 1 },
+    { id: newPtvRowId(), sec: 10, credits: 1 },
+  ])
   const hasCachePackagesRef = useRef(false)
   const hasCacheAiRef = useRef(false)
 
   const cacheKeyPackages = 'admin_pricing_packages_v1'
-  const cacheKeyAi = 'admin_ai_pricing_v1'
+  const cacheKeyAi = 'admin_ai_pricing_v2'
 
   // Instant render from cache to avoid skeleton when switching sidebar (before paint).
   useLayoutEffect(() => {
@@ -302,6 +394,30 @@ export default function PricingEditPage() {
     fetchAiPricing(hasCacheAiRef.current)
   }, [])
 
+  useEffect(() => {
+    const lastFetchRef = { ts: 0 }
+    const onRealtime = (event: Event) => {
+      const detail = (event as CustomEvent<{ type?: string; channel?: string; payload?: Record<string, unknown> }>).detail
+      if (!detail?.type || detail.channel !== 'global') return
+      if (detail.type !== 'api.mutated') return
+      const path = typeof detail.payload?.path === 'string' ? (detail.payload.path as string) : ''
+      if (path !== '/api/admin/ai-edit') return
+      const now = Date.now()
+      if (now - lastFetchRef.ts < 800) return
+      lastFetchRef.ts = now
+      // Auto-refresh AI pricing across devices
+      fetchAiPricing(true)
+    }
+    window.addEventListener('fresh:realtime', onRealtime)
+    return () => window.removeEventListener('fresh:realtime', onRealtime)
+  }, [])
+
+  useEffect(() => {
+    if (editingAi?.feature_slug === 'phototovideo') {
+      setPtvDurRows(parsePtvDurRows(editingAi))
+    }
+  }, [editingAi])
+
   const [saveStatus, setSaveStatus] = useState<string | null>(null)
 
   const handleSave = async (pkg: Partial<PricingPackage>) => {
@@ -335,23 +451,40 @@ export default function PricingEditPage() {
   }
 
   const handleSaveAi = async (item: AiFeaturePricing) => {
+    setSaveStatus('saving')
     try {
+      const payload: Record<string, unknown> = {
+        id: item.id,
+        feature_slug: item.feature_slug,
+        credits_per_unlock: item.credits_per_unlock,
+      }
+      if (item.feature_slug === 'phototovideo') {
+        const built = buildPtvDurationJsonFromRows(ptvDurRows)
+        if ('error' in built) {
+          alert(built.error)
+          setSaveStatus(null)
+          return
+        }
+        payload.credits_per_use = built.creditsPerUse
+        payload.duration_credits_json = built.json
+      } else {
+        payload.credits_per_use = item.credits_per_use
+      }
       const res = await fetchWithAuth('/api/admin/ai-edit', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          id: item.id,
-          feature_slug: item.feature_slug,
-          credits_per_use: item.credits_per_use,
-          credits_per_unlock: item.credits_per_unlock,
-        }),
+        body: JSON.stringify(payload),
       })
       if (!res.ok) throw new Error(await res.text())
       setEditingAi(null)
       fetchAiPricing()
+      setSaveStatus('ai-update-success')
+      setTimeout(() => setSaveStatus(null), 3000)
     } catch (err) {
       console.error('Save AI pricing failed:', err)
-      alert('Save gagal: ' + (err instanceof Error ? err.message : String(err)))
+      const msg = err instanceof Error ? err.message : String(err)
+      setSaveStatus('error: ' + msg)
+      alert('Save gagal: ' + msg)
     }
   }
 
@@ -418,7 +551,7 @@ export default function PricingEditPage() {
       )}
       {saveStatus && (
         <div className={`fixed bottom-4 md:bottom-8 left-1/2 -translate-x-1/2 z-[200] max-w-[90%] md:max-w-md w-full px-4 py-3 md:px-6 md:py-4 rounded-2xl md:rounded-3xl border-4 border-slate-900 dark:border-slate-700 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] md:shadow-[4px_4px_0_0_#0f172a] dark:md:shadow-[4px_4px_0_0_#334155] transform transition-all animate-bounce-subtle ${saveStatus === 'saving' ? 'bg-amber-300 dark:bg-amber-600 text-slate-900 dark:text-white' :
-          saveStatus === 'create-success' || saveStatus === 'update-success' || saveStatus === 'delete-success' ? 'bg-emerald-400 dark:bg-emerald-600 text-slate-900 dark:text-white' :
+          saveStatus === 'create-success' || saveStatus === 'update-success' || saveStatus === 'delete-success' || saveStatus === 'ai-update-success' ? 'bg-emerald-400 dark:bg-emerald-600 text-slate-900 dark:text-white' :
           saveStatus === 'deleting' ? 'bg-amber-300 dark:bg-amber-600 text-slate-900 dark:text-white' :
             'bg-red-400 dark:bg-red-600 text-white'
           }`}>
@@ -428,6 +561,7 @@ export default function PricingEditPage() {
               saveStatus === 'deleting' ? 'Deleting package...' :
               saveStatus === 'create-success' ? 'Package berhasil dibuat.' :
               saveStatus === 'update-success' ? 'Package berhasil diperbarui.' :
+              saveStatus === 'ai-update-success' ? 'AI pricing berhasil disimpan.' :
               saveStatus === 'delete-success' ? 'Package berhasil dihapus.' :
               saveStatus.startsWith('delete-error: ') ? `Error: ${saveStatus.replace('delete-error: ', '')}` :
                 `Error: ${saveStatus}`}
@@ -436,7 +570,7 @@ export default function PricingEditPage() {
       )}
       {editingAi && (
         <div className="fixed inset-0 bg-slate-900/60 dark:bg-black/60 flex items-center justify-center p-4 z-[100] backdrop-blur-md">
-          <div className="bg-white dark:bg-slate-900 border-4 border-slate-900 dark:border-slate-700 rounded-[24px] md:rounded-[32px] shadow-[8px_8px_0_0_#0f172a] dark:shadow-[8px_8px_0_0_#334155] md:shadow-[12px_12px_0_0_#0f172a] dark:md:shadow-[12px_12px_0_0_#334155] p-6 md:p-8 w-full max-w-md">
+          <div className="bg-white dark:bg-slate-900 border-4 border-slate-900 dark:border-slate-700 rounded-[24px] md:rounded-[32px] shadow-[8px_8px_0_0_#0f172a] dark:shadow-[8px_8px_0_0_#334155] md:shadow-[12px_12px_0_0_#0f172a] dark:md:shadow-[12px_12px_0_0_#334155] p-6 md:p-8 w-full max-w-xl max-h-[90vh] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             <h2 className="text-xl md:text-2xl font-black text-slate-900 dark:text-white mb-4 md:mb-6 tracking-tight">
               Pricing: {AI_FEATURE_LABELS[editingAi.feature_slug] ?? editingAi.feature_slug}
             </h2>
@@ -448,7 +582,7 @@ export default function PricingEditPage() {
               className="space-y-4 md:space-y-6"
             >
               <div className="space-y-3 md:space-y-4">
-                {editingAi.feature_slug !== 'flipbook_unlock' && (
+                {editingAi.feature_slug !== 'flipbook_unlock' && editingAi.feature_slug !== 'phototovideo' && (
                   <div>
                     <label className="text-[10px] md:text-xs font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest mb-1 md:mb-1.5 block">Credit per Gen</label>
                     <input
@@ -465,6 +599,102 @@ export default function PricingEditPage() {
                       className="w-full px-4 py-3 md:px-5 md:py-3.5 bg-slate-50 dark:bg-slate-800 border-4 border-slate-900 dark:border-slate-700 rounded-xl md:rounded-2xl text-slate-900 dark:text-white font-bold placeholder:text-slate-300 dark:placeholder:text-slate-500 focus:outline-none shadow-[3px_3px_0_0_#0f172a] dark:shadow-[3px_3px_0_0_#334155] md:shadow-[4px_4px_0_0_#0f172a] dark:md:shadow-[4px_4px_0_0_#334155] focus:shadow-none"
                       required
                     />
+                  </div>
+                )}
+                {editingAi.feature_slug === 'phototovideo' && (
+                  <div className="space-y-3 md:space-y-4">
+                    <p className="text-[10px] md:text-xs font-bold text-slate-600 dark:text-slate-400 leading-relaxed">
+                      Tambah baris dengan <span className="font-black">+</span>: isi <span className="font-black">detik</span> (bilangan bulat {PTV_SEC_MIN}–{PTV_SEC_MAX}) dan <span className="font-black">kredit</span> per generate. User hanya melihat durasi yang Anda definisikan di sini. Model Seedance: maks. {PTV_SEC_MAX} detik (bukan 15).
+                    </p>
+                    <div className="rounded-xl md:rounded-2xl border-4 border-slate-900 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 p-3 md:p-4 shadow-[3px_3px_0_0_#0f172a] dark:shadow-[3px_3px_0_0_#334155]">
+                      <div className="flex items-center justify-between gap-2 mb-3">
+                        <span className="text-[10px] md:text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">
+                          Durasi &amp; kredit
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setPtvDurRows((prev) => [
+                              ...prev,
+                              { id: newPtvRowId(), sec: '', credits: 0 },
+                            ])
+                          }
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 md:px-3 md:py-2 rounded-lg md:rounded-xl bg-lime-400 dark:bg-lime-600 text-slate-900 dark:text-white border-2 border-slate-900 dark:border-slate-700 text-[10px] md:text-xs font-black uppercase tracking-widest shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all"
+                        >
+                          <Plus size={14} className="md:w-4 md:h-4" strokeWidth={3} />
+                          Baris
+                        </button>
+                      </div>
+                      <div className="space-y-2 md:space-y-3">
+                        {ptvDurRows.map((row) => (
+                          <div
+                            key={row.id}
+                            className="flex flex-wrap items-end gap-2 md:gap-3"
+                          >
+                            <div className="flex-1 min-w-[4.5rem]">
+                              <label className="text-[9px] md:text-[10px] font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest mb-1 block">
+                                Detik
+                              </label>
+                              <input
+                                type="number"
+                                min={PTV_SEC_MIN}
+                                max={PTV_SEC_MAX}
+                                step={1}
+                                placeholder={`${PTV_SEC_MIN}–${PTV_SEC_MAX}`}
+                                value={row.sec === '' ? '' : row.sec}
+                                onChange={(e) => {
+                                  const v = e.target.value
+                                  setPtvDurRows((prev) =>
+                                    prev.map((r) =>
+                                      r.id === row.id
+                                        ? {
+                                            ...r,
+                                            sec: v === '' ? '' : Number(v),
+                                          }
+                                        : r
+                                    )
+                                  )
+                                }}
+                                className="w-full px-3 py-2.5 md:px-4 md:py-3 bg-white dark:bg-slate-900 border-4 border-slate-900 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-bold text-sm focus:outline-none shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] focus:shadow-none"
+                              />
+                            </div>
+                            <div className="flex-1 min-w-[4.5rem]">
+                              <label className="text-[9px] md:text-[10px] font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest mb-1 block">
+                                Kredit
+                              </label>
+                              <input
+                                type="number"
+                                min={0}
+                                value={row.credits}
+                                onChange={(e) =>
+                                  setPtvDurRows((prev) =>
+                                    prev.map((r) =>
+                                      r.id === row.id
+                                        ? { ...r, credits: Number(e.target.value) }
+                                        : r
+                                    )
+                                  )
+                                }
+                                className="w-full px-3 py-2.5 md:px-4 md:py-3 bg-white dark:bg-slate-900 border-4 border-slate-900 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-bold text-sm focus:outline-none shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] focus:shadow-none"
+                              />
+                            </div>
+                            <button
+                              type="button"
+                              disabled={ptvDurRows.length <= 1}
+                              onClick={() =>
+                                setPtvDurRows((prev) =>
+                                  prev.filter((r) => r.id !== row.id)
+                                )
+                              }
+                              className="shrink-0 p-2.5 md:p-3 rounded-xl border-2 border-slate-900 dark:border-slate-700 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 disabled:opacity-40 disabled:pointer-events-none transition-colors"
+                              title="Hapus baris"
+                            >
+                              <Trash2 size={18} className="md:w-5 md:h-5" strokeWidth={3} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 )}
                 <div>
@@ -694,9 +924,18 @@ export default function PricingEditPage() {
                         <span className="text-base md:text-lg font-black text-violet-500 dark:text-violet-400">{item.credits_per_unlock} <span className="text-[10px] text-slate-400 dark:text-slate-300">CREDITS</span></span>
                       </div>
                       {hasGenerate && !isFlipbook && (
-                        <div className="flex flex-col">
+                        <div className="flex flex-col max-w-[min(100%,220px)] md:max-w-none">
                           <span className="text-[9px] md:text-[10px] font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest">Generate</span>
-                          <span className="text-base md:text-lg font-black text-sky-500 dark:text-sky-400">{item.credits_per_use} <span className="text-[10px] text-slate-400 dark:text-slate-300">CREDITS</span></span>
+                          {item.feature_slug === 'phototovideo' ? (
+                            <span className="text-xs md:text-sm font-black text-sky-500 dark:text-sky-400 leading-snug break-words">
+                              {formatPtvGenerateLine(item)}
+                            </span>
+                          ) : (
+                            <span className="text-base md:text-lg font-black text-sky-500 dark:text-sky-400">
+                              {item.credits_per_use}{' '}
+                              <span className="text-[10px] text-slate-400 dark:text-slate-300">CREDITS</span>
+                            </span>
+                          )}
                         </div>
                       )}
                     </div>

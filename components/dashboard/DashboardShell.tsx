@@ -137,7 +137,11 @@ export default function DashboardShell({
       const path = typeof detail.payload?.path === 'string' ? detail.payload.path : ''
       const method = typeof detail.payload?.method === 'string' ? detail.payload.method : ''
 
-      if (path.startsWith('/api/user/') || path.startsWith('/api/credits/')) {
+      if (
+        path.startsWith('/api/user/') ||
+        path.startsWith('/api/credits/') ||
+        path.startsWith('/api/ai-features/')
+      ) {
         refreshCredits()
       }
 

@@ -11,3 +11,5 @@ hono-backend/.dev.vars
 .DS_Store
 .vscode/
 .idea/
+filter/
+vendor/

@@ -1,6 +1,7 @@
 "use client"
 
 import { type ReactNode, useEffect, useRef } from 'react'
+import { apiUrl } from '@/lib/api-url'
 
 type RealtimeEvent = {
   type?: string
@@ -10,12 +11,11 @@ type RealtimeEvent = {
 }
 
 function getRealtimeWsUrl(): string {
-  const explicitApi = process.env.NEXT_PUBLIC_API_URL?.trim()
-  if (explicitApi) {
-    const api = new URL(explicitApi)
-    const protocol = api.protocol === 'https:' ? 'wss:' : 'ws:'
-    return `${protocol}//${api.host}/api/realtime/ws`
-  }
+  // Keep base origin consistent with fetchWithAuth/apiUrl().
+  const httpUrl = apiUrl('/api/realtime/ws')
+  if (httpUrl.startsWith('https://')) return httpUrl.replace(/^https:\/\//, 'wss://')
+  if (httpUrl.startsWith('http://')) return httpUrl.replace(/^http:\/\//, 'ws://')
+  // Relative fallback (same-origin).
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
   return `${protocol}//${window.location.host}/api/realtime/ws`
 }

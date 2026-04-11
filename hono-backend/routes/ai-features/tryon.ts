@@ -1,11 +1,11 @@
 import { Hono } from 'hono'
 import type { Context } from 'hono'
-import type { ContentfulStatusCode } from 'hono/utils/http-status'
 import { getSupabaseClient } from '../../lib/supabase'
 import { getD1 } from '../../lib/edge-env'
 import { fileToDataUri, formDataString, requestIsMultipart } from '../../lib/ai-multipart'
 import { deductCreditsFromSupabaseAndMirrorToD1 } from '../../lib/credits'
 import { generateVirtualTryOnGemini, imageStringToGeminiInput } from '../../lib/gemini-tryon'
+import { respondWithReplicateFriendlyError } from '../../lib/replicate-error-response'
 import Replicate from 'replicate'
 
 type ReplicateEnv = {
@@ -150,63 +150,7 @@ tryon.post('/', async (c) => {
     )
     return c.json({ ok: true, results })
   } catch (err: unknown) {
-    console.error('Try-on error:', err)
-    const message = err instanceof Error ? err.message : String(err ?? 'Gagal')
-
-    // Jika error berasal dari Replicate SDK, biasanya ada status di err.response.status atau err.status.
-    const e = err as { response?: { status?: number }; status?: number }
-    let status: number | undefined = e?.response?.status ?? e?.status
-
-    // Replicate sering menyisipkan JSON error di akhir message: "...: {\"detail\":...,\"status\":429,...}"
-    // Coba parse agar kita bisa mapping status lebih akurat.
-    let parsed: { status?: number; retry_after?: number; detail?: string } | null = null
-    if (typeof message === 'string') {
-      const idx = message.lastIndexOf('{')
-      if (idx !== -1) {
-        const tail = message.slice(idx)
-        try {
-          const j = JSON.parse(tail) as { status?: number; retry_after?: number; detail?: string }
-          if (j && typeof j === 'object') parsed = j
-          if (typeof j?.status === 'number') status = j.status
-        } catch {
-          // ignore
-        }
-      }
-    }
-
-    // Replicate throttling (saldo < $5 => RPM rendah).
-    if (status === 429 || (typeof message === 'string' && message.includes('Too Many Requests'))) {
-      const retryAfter =
-        typeof parsed?.retry_after === 'number'
-          ? parsed.retry_after
-          : (() => {
-              const m = /"retry_after"\s*:\s*(\d+)/.exec(message)
-              return m ? parseInt(m[1], 10) : undefined
-            })()
-      const hint =
-        typeof retryAfter === 'number' && !Number.isNaN(retryAfter) && retryAfter > 0
-          ? `Terlalu banyak request. Coba lagi dalam ${retryAfter} detik.`
-          : 'Terlalu banyak request. Coba lagi beberapa detik lagi.'
-      return c.json({ ok: false, error: hint, retry_after: retryAfter }, 429)
-    }
-
-    // Teruskan status 4xx yang jelas ke client (mis. input salah, unauthorized, dll.)
-    if (typeof status === 'number' && status >= 400 && status < 500) {
-      return c.json({ ok: false, error: message }, status as ContentfulStatusCode)
-    }
-
-    // Error upstream (Replicate/model error) → 502 lebih akurat daripada 500.
-    if (
-      (typeof status === 'number' && status >= 500) ||
-      (typeof message === 'string' &&
-        (message.toLowerCase().includes('prediction failed') || message.toLowerCase().includes('replicate')))
-    ) {
-      const detail =
-        (typeof parsed?.detail === 'string' && parsed.detail.trim()) ? parsed.detail.trim() : message
-      return c.json({ ok: false, error: detail }, 502)
-    }
-
-    return c.json({ ok: false, error: message }, 500)
+    return respondWithReplicateFriendlyError(c, err, 'Try-on error')
   }
 })
 
