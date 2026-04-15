@@ -54,6 +54,7 @@ export type AlbumRow = {
   students_count?: number
   source?: string
   total_estimated_price?: number
+  individual_payments_enabled?: number | null;
   payment_status?: 'unpaid' | 'paid'
   payment_url?: string | null
   cover_image_url?: string | null
@@ -101,8 +102,9 @@ function AlbumCard({
   const [showInfo, setShowInfo] = useState(false)
   const isAdmin = variant === 'admin'
   const isPaid = album.payment_status === 'paid'
-  const isApproved = album.status === 'approved'
-  const isClickable = album.type === 'public' || (isApproved && (isPaid || isAdmin))
+    const isIndividualPayment = album.individual_payments_enabled === 1
+    const isApproved = album.status === 'approved'
+  const isClickable = album.type === 'public' || (isApproved && (isPaid || isAdmin || isIndividualPayment))
   const destinationUrl = album.type === 'public'
       ? `${basePath}/album/public/${album.id}` 
     : `/album/${album.album_id ?? album.id}/view`
@@ -216,12 +218,12 @@ function AlbumCard({
 
             <div className="flex items-center gap-3">
               <div className={`w-8 h-8 rounded-lg border-2 border-slate-900 dark:border-slate-700 flex items-center justify-center shrink-0 ${isPaid ? 'bg-indigo-100 dark:bg-indigo-900' : 'bg-red-100 dark:bg-red-900'}`}> 
-                <CreditCard className={`w-4 h-4 ${isPaid ? 'text-indigo-600 dark:text-indigo-300' : 'text-red-500 dark:text-red-300'}`} />
+                <CreditCard className={`w-4 h-4 ${isPaid ? 'text-emerald-600 dark:text-emerald-400' : isIndividualPayment ? 'text-amber-500 dark:text-amber-400' : 'text-red-500 dark:text-red-300'}`} />
               </div>
               <div>
                 <p className="text-[10px] font-bold text-slate-400 dark:text-slate-300 uppercase">Pembayaran</p>
-                <p className={`text-xs font-black ${isPaid ? 'text-indigo-600 dark:text-indigo-300' : 'text-red-500 dark:text-red-300'}`}>
-                  {isPaid ? 'Lunas' : 'Belum Bayar'}
+                <p className={`text-xs font-black ${isPaid ? 'text-emerald-600 dark:text-emerald-400' : isIndividualPayment ? 'text-amber-500 dark:text-amber-400' : 'text-red-500 dark:text-red-300'}`}>
+                  {isPaid ? 'Lunas' : isIndividualPayment ? 'Bayar Mandiri' : 'Belum Bayar'}
                 </p>
               </div>
             </div>
