@@ -43,7 +43,7 @@ export type AlbumRow = {
   album_id?: string | null
   leads?: { school_name: string } | null
   pricing_package_id?: string | null
-  pricing_packages?: { name: string } | null
+  package_snapshot?: { name: string } | null; pricing_packages?: { name: string } | null
   isOwner?: boolean
   school_city?: string
   kab_kota?: string
@@ -105,7 +105,7 @@ function AlbumCard({
   const isClickable = album.type === 'public' || (isApproved && (isPaid || isAdmin))
   const destinationUrl = album.type === 'public'
       ? `${basePath}/album/public/${album.id}` 
-    : `/album/${album.album_id ?? album.id}/preview`
+    : `/album/${album.album_id ?? album.id}/view`
 
   const editorUrl = album.type === 'yearbook'
     ? getYearbookSectionQueryUrl(album.album_id ?? album.id, 'cover', pathname || null)
@@ -140,7 +140,7 @@ function AlbumCard({
         if (!isClickable) return
         try { router.prefetch(destinationUrl) } catch { }
       }}
-      className={`relative border-2 border-slate-900 dark:border-slate-700 rounded-3xl p-4 sm:p-5 flex flex-col h-full transition-all duration-200 min-h-[120px] shadow-[5px_5px_0_0_#0f172a] dark:shadow-[5px_5px_0_0_#334155] bg-white dark:bg-slate-900 ${isClickable ? 'cursor-pointer hover:shadow-none hover:translate-x-1 hover:translate-y-1' : 'cursor-default opacity-80'
+      className={`relative border-2 border-slate-900 dark:border-slate-700 rounded-3xl p-4 sm:p-5 flex flex-col h-full transition-all duration-200 min-h-[120px] shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] bg-white dark:bg-slate-900 ${isClickable ? 'cursor-pointer hover:shadow-none hover:translate-x-1 hover:translate-y-1' : 'cursor-default opacity-80'
         }`}>
       {/* Album Cover - Main Primary Visual */}
       <div className="aspect-[4/3] w-full bg-slate-100 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 rounded-2xl mb-4 overflow-hidden relative shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155]">
@@ -158,7 +158,7 @@ function AlbumCard({
           </div>
         )}
         {album.type === 'public' && (
-          <div className="absolute top-2 left-2 px-2 py-0.5 bg-indigo-500 text-white text-[9px] font-black uppercase rounded border border-slate-900">
+          <div className="absolute top-2 left-2 px-2 py-0.5 bg-indigo-500 text-white text-[9px] font-black uppercase rounded border-2 border-slate-900">
             Public
           </div>
         )}
@@ -187,7 +187,7 @@ function AlbumCard({
       {/* Info Detail Popup */}
       {showInfo && !isAdmin && (
         <div
-          className="absolute top-12 right-4 z-50 w-64 bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 shadow-[3px_3px_0_0_#0f172a] dark:shadow-[3px_3px_0_0_#334155] rounded-2xl p-4 animate-in fade-in zoom-in duration-200 cursor-default"
+          className="absolute top-12 right-4 z-50 w-64 bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] rounded-2xl p-4 animate-in fade-in zoom-in duration-200 cursor-default"
           onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
         >
           <div className="flex justify-between items-center mb-4 pb-2 border-b-2 border-slate-100 dark:border-slate-800">
@@ -234,7 +234,7 @@ function AlbumCard({
                 <p className="text-[10px] font-bold text-slate-400 dark:text-slate-300 uppercase">Paket Album</p>
                 <p className="text-xs font-black text-slate-900 dark:text-slate-100 truncate">
                   {album.type === 'yearbook'
-                    ? (album.pricing_packages?.name?.replace(/^Paket\s+/i, '') || 'Yearbook')
+                    ? ((album.package_snapshot?.name || album.pricing_packages?.name) || 'Yearbook')
                     : 'Shared Gallery'
                   }
                 </p>
@@ -306,7 +306,7 @@ function AlbumCard({
               type="button"
               disabled={!!loadingId}
               onClick={(e) => { e.preventDefault(); e.stopPropagation(); onPay(album) }}
-              className="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-black rounded-xl bg-emerald-400 dark:bg-emerald-700 border-2 border-slate-900 text-slate-900 dark:text-slate-100 shadow-[3px_3px_0_0_#0f172a] hover:translate-y-1 hover:translate-x-1 hover:shadow-none transition-all disabled:opacity-50"
+              className="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-black rounded-xl bg-emerald-400 dark:bg-emerald-700 border-2 border-slate-900 text-slate-900 dark:text-slate-100 shadow-[2px_2px_0_0_#0f172a] hover:translate-y-1 hover:translate-x-1 hover:shadow-none transition-all disabled:opacity-50"
             >
               <Check className="w-3.5 h-3.5" /> Bayar Sekarang
             </button>
@@ -338,7 +338,7 @@ function AlbumCard({
               onTouchStart={() => {
                 try { router.prefetch(editorUrl) } catch { /* ignore */ }
               }}
-              className={`inline-flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-black rounded-xl border-2 border-slate-900 shadow-[3px_3px_0_0_#0f172a] transition-all ${
+              className={`inline-flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-black rounded-xl border-2 border-slate-900 shadow-[2px_2px_0_0_#0f172a] transition-all ${
                 isNavigatingToEditor
                   ? 'bg-slate-300 dark:bg-slate-700 text-slate-700 dark:text-slate-200 pointer-events-none'
                   : 'bg-indigo-300 dark:bg-indigo-900 text-slate-900 dark:text-slate-100 hover:translate-y-1 hover:translate-x-1 hover:shadow-none'
@@ -387,6 +387,7 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
   const [joinLoading, setJoinLoading] = useState(false)
   const [joinError, setJoinError] = useState<string | null>(null)
   const [confirmModal, setConfirmModal] = useState<'personal' | 'yearbook' | null>(null)
+  const [deleteConfirm, setDeleteConfirm] = useState<AlbumRow | null>(null)
   const [invoicePopupUrl, setInvoicePopupUrl] = useState<string | null>(null)
   const [copyFeedback, setCopyFeedback] = useState(false)
   const [showJoinForm, setShowJoinForm] = useState(false)
@@ -495,7 +496,7 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
       a.name?.toLowerCase().includes(q) ||
       a.school_city?.toLowerCase().includes(q) ||
       a.pic_name?.toLowerCase().includes(q) ||
-      a.pricing_packages?.name?.toLowerCase().includes(q) ||
+      (a.package_snapshot?.name || a.pricing_packages?.name)?.toLowerCase().includes(q) ||
       a.wa_e164?.includes(q)
     )
   }, [albums, searchQuery])
@@ -587,12 +588,7 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
     e.stopPropagation()
     setLoadingId(album.id)
     try {
-      const res = await fetchWithAuth('/api/albums', {
-        method: 'PUT',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: album.id, status: 'approved' }),
-      })
+      const res = await fetchWithAuth(`/api/albums/${album.id}`, { method: 'PUT', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'approved' }) })
       if (!res.ok) {
         const err = asObject(await res.json().catch(() => ({})))
         alert(getErrorMessage(err, 'Gagal approve'))
@@ -608,12 +604,7 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
     e.stopPropagation()
     setLoadingId(album.id)
     try {
-      const res = await fetchWithAuth('/api/albums', {
-        method: 'PUT',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: album.id, status: 'declined' }),
-      })
+      const res = await fetchWithAuth(`/api/albums/${album.id}`, { method: 'PUT', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'declined' }) })
       if (!res.ok) {
         const err = asObject(await res.json().catch(() => ({})))
         alert(getErrorMessage(err, 'Gagal decline'))
@@ -658,15 +649,16 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
 
   const handleDelete = async (e: React.MouseEvent, album: AlbumRow) => {
     e.stopPropagation()
-    if (!confirm('Yakin ingin menghapus?')) return
+    setDeleteConfirm(album)
+  }
+
+  const confirmDelete = async () => {
+    if (!deleteConfirm) return
+    const album = deleteConfirm
+    setDeleteConfirm(null)
     setLoadingId(album.id)
     try {
-      const res = await fetchWithAuth('/api/albums', {
-        method: 'DELETE',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: album.id }),
-      })
+      const res = await fetchWithAuth(`/api/albums/${album.id}`, { method: 'DELETE', credentials: 'include' })
       if (!res.ok) {
         const err = asObject(await res.json().catch(() => ({})))
         alert(getErrorMessage(err, 'Gagal hapus'))
@@ -677,7 +669,6 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
       setLoadingId(null)
     }
   }
-
   const handlePay = async (album: AlbumRow) => {
     if (album.payment_url) {
       setInvoicePopupUrl(album.payment_url)
@@ -833,6 +824,40 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
 
   return (
     <div>
+      
+      {deleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+          <div 
+            className="w-full max-w-sm bg-white dark:bg-slate-800 rounded-3xl p-6 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] border-2 border-slate-900 dark:border-slate-700 animate-in fade-in zoom-in-95 duration-200"
+          >
+            <div className="bg-rose-100 dark:bg-rose-900/30 w-12 h-12 rounded-2xl flex items-center justify-center mb-4">
+              <Trash2 className="w-6 h-6 text-rose-600 dark:text-rose-400" />
+            </div>
+            <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Hapus Album?</h3>
+            <p className="text-slate-600 dark:text-slate-300 mb-6 text-sm">
+              Anda yakin ingin menghapus album <span className="font-bold">"{deleteConfirm.name}"</span>?
+              Tindakan ini tidak dapat dibatalkan.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button
+                type="button"
+                onClick={() => setDeleteConfirm(null)}
+                className="flex-1 py-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={confirmDelete}
+                className="flex-1 py-3 rounded-xl bg-rose-500 text-white text-sm font-bold hover:bg-rose-600 transition-colors shadow-[2px_2px_0_0_#0f172a] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5"
+              >
+                Ya, Hapus
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {invoicePopupUrl && (
         <div className="fixed inset-0 z-[110] flex flex-col bg-white" role="dialog" aria-modal="true" aria-label="Invoice pembayaran">
           <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-gray-50 shrink-0">
@@ -860,9 +885,9 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
       {/* 1. Search Bar - Paling Atas */}
       {/* 1. Header: Title & Action Buttons Row */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 mt-2">
-        <div>
-          <h1 className="text-3xl font-black text-slate-900 dark:text-slate-100 sm:text-4xl tracking-tight">{title}</h1>
-          <p className="text-slate-600 dark:text-slate-400 font-bold text-sm mt-1 sm:text-base">{subtitle}</p>
+        <div className="flex flex-col gap-2">
+          <h1 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white tracking-tight">{title}</h1>
+          <p className="text-slate-600 dark:text-slate-300 font-medium text-xs md:text-sm">{subtitle}</p>
         </div>
 
         <div className="flex flex-nowrap items-center gap-2 w-full md:w-auto min-w-0">
@@ -874,7 +899,7 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
               if (showSearch) setShowSearch(false)
               if (showJoinForm) setShowJoinForm(false)
             }}
-            className={`flex-1 min-w-0 md:flex-initial inline-flex items-center justify-center gap-1 sm:gap-2 px-2 py-2 sm:px-4 sm:py-2 text-[10px] sm:text-sm font-black rounded-lg sm:rounded-xl border-2 border-slate-900 dark:border-slate-700 shadow-[3px_3px_0_0_#0f172a] dark:shadow-[3px_3px_0_0_#334155] transition-all active:scale-95 ${showPreviewForm ? 'bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-200' : 'bg-emerald-100 text-slate-900 dark:bg-slate-800 dark:text-slate-200 hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none'}`}
+            className={`flex-1 min-w-0 md:flex-initial inline-flex items-center justify-center gap-1 sm:gap-2 px-2 py-2 sm:px-4 sm:py-2 text-[10px] sm:text-sm font-black rounded-lg sm:rounded-xl border-2 border-slate-900 dark:border-slate-700 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] transition-all active:scale-95 ${showPreviewForm ? 'bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-200' : 'bg-emerald-100 text-slate-900 dark:bg-slate-800 dark:text-slate-200 hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none'}`}
           >
             <Eye className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
             <span className="whitespace-nowrap truncate">{showPreviewForm ? 'Tutup' : 'Preview'}</span>
@@ -888,7 +913,7 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
               if (showJoinForm) setShowJoinForm(false)
               if (showPreviewForm) setShowPreviewForm(false)
             }}
-            className={`flex-1 min-w-0 md:flex-initial inline-flex items-center justify-center gap-1 sm:gap-2 px-2 py-2 sm:px-4 sm:py-2 text-[10px] sm:text-sm font-black rounded-lg sm:rounded-xl border-2 border-slate-900 dark:border-slate-700 shadow-[3px_3px_0_0_#0f172a] dark:shadow-[3px_3px_0_0_#334155] transition-all active:scale-95 ${showSearch ? 'bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-200' : 'bg-white text-slate-900 dark:bg-slate-900 dark:text-white hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none'}`}
+            className={`flex-1 min-w-0 md:flex-initial inline-flex items-center justify-center gap-1 sm:gap-2 px-2 py-2 sm:px-4 sm:py-2 text-[10px] sm:text-sm font-black rounded-lg sm:rounded-xl border-2 border-slate-900 dark:border-slate-700 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] transition-all active:scale-95 ${showSearch ? 'bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-200' : 'bg-white text-slate-900 dark:bg-slate-900 dark:text-white hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none'}`}
           >
             <Search className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
             <span className="whitespace-nowrap truncate">{showSearch ? 'Tutup' : 'Search'}</span>
@@ -898,7 +923,7 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
           <button
             type="button"
             onClick={() => setConfirmModal('yearbook')}
-            className="flex-1 min-w-0 md:flex-initial inline-flex items-center justify-center gap-1 sm:gap-2 px-2 py-2 sm:px-4 sm:py-2 text-[10px] sm:text-sm font-black rounded-lg sm:rounded-xl bg-emerald-400 border-2 border-slate-900 dark:border-slate-700 shadow-[3px_3px_0_0_#0f172a] dark:shadow-[3px_3px_0_0_#334155] text-slate-900 dark:text-white hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all active:scale-95"
+            className="flex-1 min-w-0 md:flex-initial inline-flex items-center justify-center gap-1 sm:gap-2 px-2 py-2 sm:px-4 sm:py-2 text-[10px] sm:text-sm font-black rounded-lg sm:rounded-xl bg-emerald-400 border-2 border-slate-900 dark:border-slate-700 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] text-slate-900 dark:text-white hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all active:scale-95"
           >
             <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
             <span className="whitespace-nowrap truncate">Buat</span>
@@ -912,7 +937,7 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
               if (showSearch) setShowSearch(false)
               if (showPreviewForm) setShowPreviewForm(false)
             }}
-            className={`flex-1 min-w-0 md:flex-initial inline-flex items-center justify-center gap-1 sm:gap-2 px-2 py-2 sm:px-4 sm:py-2 text-[10px] sm:text-sm font-black rounded-lg sm:rounded-xl border-2 border-slate-900 dark:border-slate-700 shadow-[3px_3px_0_0_#0f172a] dark:shadow-[3px_3px_0_0_#334155] transition-all active:scale-95 ${showJoinForm ? 'bg-slate-200 text-slate-600 dark:bg-orange-700 dark:text-white' : 'bg-orange-400 text-slate-900 dark:bg-orange-700 dark:text-white hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none'}`}
+            className={`flex-1 min-w-0 md:flex-initial inline-flex items-center justify-center gap-1 sm:gap-2 px-2 py-2 sm:px-4 sm:py-2 text-[10px] sm:text-sm font-black rounded-lg sm:rounded-xl border-2 border-slate-900 dark:border-slate-700 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] transition-all active:scale-95 ${showJoinForm ? 'bg-slate-200 text-slate-600 dark:bg-orange-700 dark:text-white' : 'bg-orange-400 text-slate-900 dark:bg-orange-700 dark:text-white hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none'}`}
           >
             <UserPlus className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
             <span className="whitespace-nowrap truncate">{showJoinForm ? 'Tutup' : 'Join'}</span>
@@ -949,7 +974,7 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
               <button
                 type="button"
                 onClick={handleOpenPreview}
-                className="px-6 py-2.5 text-sm font-black rounded-xl bg-slate-900 text-white shadow-[3px_3px_0_0_#475569] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all"
+                className="px-6 py-2.5 text-sm font-black rounded-xl bg-slate-900 text-white shadow-[2px_2px_0_0_#0f172a] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all"
               >
                 Buka Preview
               </button>
@@ -994,7 +1019,7 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
               type="button"
               onClick={handleOpenInviteLink}
               disabled={joinLoading}
-              className="px-6 py-2.5 text-sm font-black rounded-xl bg-slate-900 text-white shadow-[3px_3px_0_0_#475569] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all disabled:opacity-50"
+              className="px-6 py-2.5 text-sm font-black rounded-xl bg-slate-900 text-white shadow-[2px_2px_0_0_#0f172a] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all disabled:opacity-50"
             >
               {joinLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Gas Lanjut!'}
             </button>
@@ -1007,7 +1032,7 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
           <>
             <div className="md:hidden grid grid-cols-1 gap-4">
               {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="border-2 border-slate-900 dark:border-slate-700 rounded-3xl p-5 bg-white dark:bg-slate-900 shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155] animate-pulse space-y-4">
+                <div key={i} className="border-2 border-slate-900 dark:border-slate-700 rounded-3xl p-5 bg-white dark:bg-slate-900 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] animate-pulse space-y-4">
                   <div className="h-6 bg-slate-200 dark:bg-slate-700 rounded w-3/4" />
                   <div className="h-4 bg-slate-100 dark:bg-slate-800 rounded w-1/2" />
                   <div className="h-4 bg-slate-100 dark:bg-slate-800 rounded w-full" />
@@ -1015,7 +1040,7 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
                 </div>
               ))}
             </div>
-            <div className="hidden md:block bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-3xl overflow-hidden animate-pulse shadow-[6px_6px_0_0_#0f172a] dark:shadow-[6px_6px_0_0_#334155]">
+            <div className="hidden md:block bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-3xl overflow-hidden animate-pulse shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155]">
               <div className="h-14 bg-emerald-200 dark:bg-slate-800 border-b-2 border-slate-900 dark:border-slate-700 w-full" />
               {[1, 2, 3, 4, 5, 6].map((i) => (
                 <div key={i} className="flex items-center px-5 py-5 border-b-2 border-slate-100 dark:border-slate-700 gap-4">
@@ -1031,7 +1056,7 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
         ) : (
           <div className="grid grid-cols-1 gap-3 sm:gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-              <div key={i} className="relative border-2 border-slate-900 dark:border-slate-700 rounded-3xl p-4 sm:p-5 flex flex-col h-full bg-white dark:bg-slate-900 animate-pulse min-h-[120px] shadow-[5px_5px_0_0_#0f172a] dark:shadow-[5px_5px_0_0_#334155]">
+              <div key={i} className="relative border-2 border-slate-900 dark:border-slate-700 rounded-3xl p-4 sm:p-5 flex flex-col h-full bg-white dark:bg-slate-900 animate-pulse min-h-[120px] shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155]">
                 <div className="aspect-[4/3] w-full bg-slate-100 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 rounded-2xl mb-4 overflow-hidden" />
                 <div className="flex justify-between items-start gap-2 mb-2">
                   <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded-md flex-1 min-w-0" />
@@ -1044,7 +1069,7 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
           </div>
         )
       ) : filteredAlbums.length === 0 ? (
-        <div className="text-center py-12 sm:py-16 border-2 border-slate-900 dark:border-slate-700 rounded-3xl bg-white dark:bg-slate-900 shadow-[6px_6px_0_0_#0f172a] dark:shadow-[6px_6px_0_0_#334155]">
+        <div className="text-center py-12 sm:py-16 border-2 border-slate-900 dark:border-slate-700 rounded-3xl bg-white dark:bg-slate-900 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155]">
           <h3 className="text-base font-black text-slate-900 dark:text-white sm:text-xl tracking-tight">
             {albums.length === 0 ? (isAdmin ? 'Belum ada data' : 'Belum ada album') : 'Tidak ada hasil'}
           </h3>
@@ -1065,13 +1090,13 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
                 ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(album.total_estimated_price)
                 : '-'
               return (
-                <div key={album.id} className="rounded-3xl border-2 border-slate-900 bg-white p-5 flex flex-col gap-4 shadow-[4px_4px_0_0_#0f172a] hover:shadow-[6px_6px_0_0_#0f172a] hover:-translate-y-1 hover:-translate-x-1 transition-all">
+                <div key={album.id} className="rounded-3xl border-2 border-slate-900 bg-white p-5 flex flex-col gap-4 shadow-[2px_2px_0_0_#0f172a] hover:shadow-[2px_2px_0_0_#0f172a] hover:-translate-y-1 hover:-translate-x-1 transition-all">
                   <div className="space-y-1.5 text-[13px] sm:text-sm font-bold text-slate-600">
                     <p className="font-black text-slate-900 text-[15px] sm:text-base break-words mb-2">{album.name}</p>
                     {album.pic_name && (
                       <p><span className="text-slate-400">Nama:</span> <span className="text-slate-800">{album.pic_name}</span></p>
                     )}
-                    <p><span className="text-slate-400">Paket:</span> <span className="text-slate-800">{album.pricing_packages?.name?.replace(/^Paket\s+/i, '') || '-'}</span></p>
+                    <p><span className="text-slate-400">Paket:</span> <span className="text-slate-800">{(album.package_snapshot?.name || album.pricing_packages?.name) || '-'}</span></p>
                     <p><span className="text-slate-400">Kota:</span> <span className="text-slate-800">{album.school_city || '-'}</span></p>
                     <p><span className="text-slate-400">WA:</span> <span className="text-slate-800">{album.wa_e164 || '-'}</span></p>
                     {album.students_count != null && album.students_count > 0 && (
@@ -1098,7 +1123,7 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-4 border-t-2 border-slate-900">
                     <Link
                       href={destUrl}
-                      className="col-span-2 sm:col-span-1 flex items-center justify-center gap-1 px-3 py-2.5 text-xs font-black rounded-xl bg-sky-400 border-2 border-slate-900 text-slate-900 shadow-[3px_3px_0_0_#0f172a] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all"
+                      className="col-span-2 sm:col-span-1 flex items-center justify-center gap-1 px-3 py-2.5 text-xs font-black rounded-xl bg-sky-400 border-2 border-slate-900 text-slate-900 shadow-[2px_2px_0_0_#0f172a] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all"
                     >
                       Details <ChevronRight className="w-3.5 h-3.5" />
                     </Link>
@@ -1107,7 +1132,7 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
                         type="button"
                         disabled={!!loadingId}
                         onClick={(e) => { e.preventDefault(); handleApprove(e as any, album) }}
-                        className="flex items-center justify-center gap-1 px-3 py-2.5 text-xs font-black rounded-xl bg-emerald-400 border-2 border-slate-900 text-slate-900 shadow-[3px_3px_0_0_#0f172a] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all disabled:opacity-50"
+                        className="flex items-center justify-center gap-1 px-3 py-2.5 text-xs font-black rounded-xl bg-emerald-400 border-2 border-slate-900 text-slate-900 shadow-[2px_2px_0_0_#0f172a] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all disabled:opacity-50"
                       >
                         {isProcessing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />} Approve
                       </button>
@@ -1117,7 +1142,7 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
                         type="button"
                         disabled={!!loadingId}
                         onClick={(e) => { e.preventDefault(); handleDecline(e as any, album) }}
-                        className="flex items-center justify-center gap-1 px-3 py-2.5 text-xs font-black rounded-xl bg-orange-400 border-2 border-slate-900 text-slate-900 shadow-[3px_3px_0_0_#0f172a] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all disabled:opacity-50"
+                        className="flex items-center justify-center gap-1 px-3 py-2.5 text-xs font-black rounded-xl bg-orange-400 border-2 border-slate-900 text-slate-900 shadow-[2px_2px_0_0_#0f172a] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all disabled:opacity-50"
                       >
                         <X className="w-3.5 h-3.5" /> Decline
                       </button>
@@ -1126,7 +1151,7 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
                       type="button"
                       disabled={!!loadingId}
                       onClick={(e) => { e.preventDefault(); handleDelete(e as any, album) }}
-                      className="flex items-center justify-center gap-1 px-3 py-2.5 text-xs font-black rounded-xl bg-red-500 border-2 border-slate-900 text-white shadow-[3px_3px_0_0_#0f172a] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all disabled:opacity-50"
+                      className="flex items-center justify-center gap-1 px-3 py-2.5 text-xs font-black rounded-xl bg-red-500 border-2 border-slate-900 text-white shadow-[2px_2px_0_0_#0f172a] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all disabled:opacity-50"
                     >
                       <Trash2 className="w-3.5 h-3.5" /> Hapus
                     </button>
@@ -1136,7 +1161,7 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
             })}
           </div>
           {/* Desktop: tabel */}
-          <div className="hidden md:block bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 rounded-3xl overflow-hidden shadow-[6px_6px_0_0_#0f172a] dark:shadow-[6px_6px_0_0_#334155]">
+          <div className="hidden md:block bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 rounded-3xl overflow-hidden shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155]">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead className="bg-emerald-300 dark:bg-slate-900 border-b-2 border-slate-900 dark:border-slate-700">
@@ -1180,7 +1205,7 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
                           </div>
                         </td>
                         <td className="px-3 py-2.5 text-[11px] font-bold text-slate-600 dark:text-slate-300 text-center whitespace-nowrap">
-                          {album.pricing_packages?.name?.replace(/^Paket\s+/i, '') || '-'}
+                          {(album.package_snapshot?.name || album.pricing_packages?.name) || '-'}
                         </td>
                         <td className="px-3 py-2.5 text-[11px] font-bold text-slate-600 dark:text-slate-300 text-center whitespace-nowrap">
                           {album.wa_e164 || '-'}
@@ -1196,7 +1221,7 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
                         <td className="px-3 py-2.5 text-center whitespace-nowrap">
                           <div className="flex flex-col items-center gap-1">
                             <span
-                              className={`inline-block px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider rounded border-2 border-slate-900 dark:border-slate-700 shadow-[1px_1px_0_0_#0f172a] dark:shadow-[1px_1px_0_0_#334155] ${
+                              className={`inline-block px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider rounded border-2 border-slate-900 dark:border-slate-700 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] ${
                                 (album.status ?? 'pending') === 'approved'
                                   ? 'bg-emerald-300 dark:bg-emerald-700 text-slate-900 dark:text-white'
                                   : (album.status ?? 'pending') === 'pending'
@@ -1209,7 +1234,7 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
                             </span>
                             {album.type === 'yearbook' && (album.status ?? 'pending') === 'approved' && (
                               <span
-                                className={`inline-block px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider rounded border-2 border-slate-900 dark:border-slate-700 shadow-[1px_1px_0_0_#0f172a] dark:shadow-[1px_1px_0_0_#334155] ${
+                                className={`inline-block px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider rounded border-2 border-slate-900 dark:border-slate-700 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] ${
                                   album.payment_status === 'paid'
                                     ? 'bg-emerald-300 dark:bg-emerald-700 text-slate-900 dark:text-white'
                                     : 'bg-red-400 dark:bg-red-700 text-white'
@@ -1323,7 +1348,7 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
           role="presentation"
         >
           <div
-            className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-[28px] p-6 sm:p-8 max-w-md w-full shadow-[6px_6px_0_0_#0f172a] dark:shadow-[6px_6px_0_0_#334155]"
+            className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-[1.5rem] p-6 sm:p-8 max-w-md w-full shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155]"
             onClick={(e) => e.stopPropagation()}
             role="dialog"
             aria-modal="true"
@@ -1350,10 +1375,10 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
                   type="button"
                   onClick={() => {
                     const id = yearbookOpenChoice.album_id ?? yearbookOpenChoice.id
-                    router.push(`/album/${id}/preview`)
+                    router.push(`/album/${id}/view`)
                     closeYearbookPublicChoice()
                   }}
-                  className="w-full flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl bg-violet-300 dark:bg-violet-800 border-2 border-slate-900 dark:border-slate-600 text-slate-900 dark:text-white text-sm font-black uppercase tracking-wider shadow-[3px_3px_0_0_#0f172a] dark:shadow-[3px_3px_0_0_#334155] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all"
+                  className="w-full flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl bg-violet-300 dark:bg-violet-800 border-2 border-slate-900 dark:border-slate-600 text-slate-900 dark:text-white text-sm font-black uppercase tracking-wider shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all"
                 >
                   <LayoutGrid className="w-5 h-5 shrink-0" strokeWidth={2.5} />
                   Kartu
@@ -1366,7 +1391,7 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
                       router.push(`/album/${id}/flipbook`)
                       closeYearbookPublicChoice()
                     }}
-                    className="w-full flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl bg-emerald-300 dark:bg-emerald-800 border-2 border-slate-900 dark:border-slate-600 text-slate-900 dark:text-white text-sm font-black uppercase tracking-wider shadow-[3px_3px_0_0_#0f172a] dark:shadow-[3px_3px_0_0_#334155] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all"
+                    className="w-full flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl bg-emerald-300 dark:bg-emerald-800 border-2 border-slate-900 dark:border-slate-600 text-slate-900 dark:text-white text-sm font-black uppercase tracking-wider shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all"
                   >
                     <BookOpen className="w-5 h-5 shrink-0" strokeWidth={2.5} />
                     Flipbook
@@ -1388,7 +1413,7 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
       {/* Modal konfirmasi buat Personal / Yearbook — UI custom, bukan dialog browser */}
       {confirmModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 dark:bg-black/50 backdrop-blur-md" onClick={() => setConfirmModal(null)}>
-          <div className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-[32px] p-6 sm:p-8 max-w-sm w-full shadow-[6px_6px_0_0_#0f172a] dark:shadow-[6px_6px_0_0_#334155] text-center" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-3xl p-6 sm:p-8 max-w-sm w-full shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] text-center" onClick={(e) => e.stopPropagation()}>
             <h3 className="text-xl font-black text-slate-900 dark:text-white mb-6 uppercase tracking-tight">Mulai Project Baru</h3>
             <div className="flex gap-3">
               <button
@@ -1416,7 +1441,7 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
 
       {inviteModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 dark:bg-black/60 backdrop-blur-sm" onClick={() => setInviteModal(null)}>
-          <div className="bg-white dark:bg-slate-900 border-4 border-slate-900 dark:border-slate-700 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-[8px_8px_0_0_#0f172a] dark:shadow-[8px_8px_0_0_#334155]" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155]" onClick={(e) => e.stopPropagation()}>
             <h3 className="text-[22px] font-black text-slate-900 dark:text-white mb-1 leading-tight">Undangan Album</h3>
             <p className="font-bold text-slate-600 dark:text-slate-300 mb-4">{inviteModal.albumName}</p>
             <p className="text-[13px] font-bold text-slate-500 dark:text-slate-400 mb-6">Bagikan kode ini; penerima bisa masukkan kode di halaman Album.</p>
@@ -1432,7 +1457,7 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
                   setCopyFeedback(true)
                   setTimeout(() => setCopyFeedback(false), 2000)
                 }}
-                className="w-full sm:w-auto px-5 py-3 text-[15px] font-black rounded-2xl bg-indigo-300 dark:bg-indigo-600 border-2 border-slate-900 dark:border-slate-600 text-slate-900 dark:text-white shadow-[3px_3px_0_0_#0f172a] dark:shadow-[3px_3px_0_0_#334155] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all"
+                className="w-full sm:w-auto px-5 py-3 text-[15px] font-black rounded-2xl bg-indigo-300 dark:bg-indigo-600 border-2 border-slate-900 dark:border-slate-600 text-slate-900 dark:text-white shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all"
               >
                 {copyFeedback ? 'Tersalin!' : 'Salin Kode'}
               </button>
@@ -1441,7 +1466,7 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
             <button
               type="button"
               onClick={() => setInviteModal(null)}
-              className="w-full py-3 text-[15px] font-black rounded-2xl bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 text-slate-900 dark:text-white shadow-[3px_3px_0_0_#0f172a] dark:shadow-[3px_3px_0_0_#334155] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all"
+              className="w-full py-3 text-[15px] font-black rounded-2xl bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 text-slate-900 dark:text-white shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all"
             >
               Tutup
             </button>
