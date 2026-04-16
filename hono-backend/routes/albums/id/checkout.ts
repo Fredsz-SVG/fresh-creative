@@ -87,6 +87,53 @@ checkoutRoute.post('/', async (c) => {
     const isAdmin = (await getRole(c, user)) === 'admin'
     const redirectPath = isAdmin ? '/admin/riwayat' : '/user/riwayat'
 
+    const itemsQuantity = isUpgradeRequest ? (body.added_students || 1) : 1;
+    let lineItems: Array<{ name: string; quantity: number; price: number }> = [];
+    let totalCalculated = 0;
+
+    try {
+      if (album.package_snapshot) {
+        const pkg = JSON.parse(album.package_snapshot as string);
+        
+        if (pkg.price_per_student) {
+          const baseP = Number(pkg.price_per_student);
+          lineItems.push({
+            name: `Paket Dasar`,
+            quantity: itemsQuantity,
+            price: baseP,
+          });
+          totalCalculated += baseP * itemsQuantity;
+        }
+
+        if (pkg.features && Array.isArray(pkg.features)) {
+          for (const f of pkg.features) {
+            try {
+              const j = typeof f === 'string' ? JSON.parse(f) : f;
+              if (j.price > 0 || Number(j.price) > 0) {
+                const addonP = Number(j.price);
+                lineItems.push({
+                  name: `Add-on: ${j.name}`,
+                  quantity: itemsQuantity,
+                  price: addonP,
+                });
+                totalCalculated += addonP * itemsQuantity;
+              }
+            } catch { /* ignore individual addon parse error */ }
+          }
+        }
+      }
+    } catch { /* ignore snapshot parse error */ }
+
+    if (lineItems.length === 0 || totalCalculated !== amount) {
+      lineItems = [
+        {
+          name: isUpgradeRequest ? `Penambahan ${itemsQuantity} Anggota: ${album.name}` : `Pembayaran Album: ${album.name}`,
+          quantity: 1,
+          price: amount,
+        },
+      ];
+    }
+
     const invoicePayload: Record<string, unknown> = {
       external_id: externalId,
       amount: amount,
@@ -94,13 +141,7 @@ checkoutRoute.post('/', async (c) => {
       description: desc,
       success_redirect_url: `${baseUrl}${redirectPath}?status=success`,
       failure_redirect_url: `${baseUrl}${redirectPath}?status=failed`,
-      items: [
-        {
-          name: `${album.name} Album Payment`,
-          quantity: 1,
-          price: amount,
-        },
-      ],
+      items: lineItems,
     }
 
     if (user.email) {

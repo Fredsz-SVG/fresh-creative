@@ -6,7 +6,7 @@ import { ensureUserInD1, honoEnvForSupabasePublicSync } from '../../lib/d1-users
 
 const transactions = new Hono()
 
-const txSelect = `t.id, t.user_id, t.external_id, t.amount, t.status, t.payment_method, t.invoice_url, t.created_at, t.album_id, t.description,
+const txSelect = `t.id, t.user_id, t.external_id, t.amount, t.status, t.payment_method, t.invoice_url, t.created_at, t.album_id, t.description, a.package_snapshot, t.new_students_count, a.students_count as total_students,
   cp.credits as pkg_credits, a.name as album_name`
 
 transactions.get('/', async (c) => {
@@ -37,8 +37,8 @@ transactions.get('/', async (c) => {
       .bind(user.id)
       .all<Record<string, unknown>>()
     const list = (results ?? []).map((row) => {
-      const { pkg_credits, album_name, ...rest } = row
-      return { ...rest, credits: pkg_credits ?? null, album_name: album_name ?? null }
+      const { pkg_credits, album_name, package_snapshot, new_students_count, total_students, ...rest } = row
+      return { ...rest, credits: pkg_credits ?? null, album_name: album_name ?? null, package_snapshot: package_snapshot ?? null, new_students_count: new_students_count ?? null, total_students: total_students ?? null }
     })
     return c.json(list)
   }
@@ -69,14 +69,17 @@ transactions.get('/', async (c) => {
   return c.json(
     list.map((tx) => {
       const u = userMap.get(tx.user_id as string) || { full_name: '-', email: '-' }
-      const { pkg_credits, album_name, ...rest } = tx
-      return {
-        ...rest,
-        credits: pkg_credits ?? null,
-        album_name: album_name ?? null,
-        user_full_name: u.full_name,
-        user_email: u.email,
-      }
+      const { pkg_credits, album_name, package_snapshot, new_students_count, total_students, ...rest } = tx
+        return {
+          ...rest,
+          credits: pkg_credits ?? null,
+          album_name: album_name ?? null,
+          package_snapshot: package_snapshot ?? null,
+          new_students_count: new_students_count ?? null,
+          total_students: total_students ?? null,
+          user_full_name: u.full_name,
+          user_email: u.email,
+        }
     })
   )
 })
