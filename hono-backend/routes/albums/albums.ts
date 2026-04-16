@@ -17,7 +17,7 @@ function mapAlbumRow(r: Record<string, unknown>) {
           typeof rest.package_snapshot === 'string'
             ? JSON.parse(rest.package_snapshot)
             : rest.package_snapshot
-      } catch (e) {
+      } catch {
         console.error('FAILED TO PARSE', rest.package_snapshot)
         snapshot = null
       }

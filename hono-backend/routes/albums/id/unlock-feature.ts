@@ -1,7 +1,6 @@
 import { Hono } from 'hono'
 import { getSupabaseClient } from '../../../lib/supabase'
 import { getD1 } from '../../../lib/edge-env'
-import { parseJsonArray } from '../../../lib/d1-json'
 import {
   deductCreditsFromSupabaseAndMirrorToD1,
   getCreditsFromSupabase,
@@ -71,7 +70,7 @@ albumsIdUnlockFeature.get('/', async (c) => {
     flipbookEnabledByPackage = snapshot.flipbook_enabled === true || snapshot.flipbook_enabled === 1 || String(snapshot.flipbook_enabled) === 'true';
       let _ai = snapshot.ai_labs_features || [];
       if (typeof _ai === 'string') {
-        try { _ai = JSON.parse(_ai); } catch (e) {}
+        try { _ai = JSON.parse(_ai); } catch { /* ignore */ }
       }
       aiLabsFeaturesByPackage = Array.isArray(_ai) ? _ai : [];
   }
