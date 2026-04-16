@@ -24,12 +24,13 @@ export async function generateAndPrintInvoice(tx: InvoiceTransaction) {
     month: 'long',
     day: 'numeric',
     hour: '2-digit',
-    minute: '2-digit'
+    minute: '2-digit',
   })
-  
-  const paymentMethod = tx.payment_method ? tx.payment_method.replace(/_/g, ' ').toUpperCase() : 'TRANSFER / LAINNYA'
-  
-  // Decide description
+
+  const paymentMethod = tx.payment_method
+    ? tx.payment_method.replace(/_/g, ' ').toUpperCase()
+    : 'TRANSFER / LAINNYA'
+
   let desc = 'Pembayaran Platform Fresh'
   if (tx.description) {
     desc = tx.description
@@ -41,7 +42,6 @@ export async function generateAndPrintInvoice(tx: InvoiceTransaction) {
     desc = 'Top Up Credit'
   }
 
-  // Get user name/email if not provided in tx
   let finalName = tx.user_full_name
   let finalEmail = tx.user_email
 
@@ -62,45 +62,63 @@ export async function generateAndPrintInvoice(tx: InvoiceTransaction) {
   }
 
   const printedName = finalName || 'Pelanggan Fresh'
-    let lineItemsHtml = ''
-    let totalCalculated = 0
-    let itemsQuantity = tx.new_students_count ? Number(tx.new_students_count) : 1
+  const itemsQuantity = tx.new_students_count ? Number(tx.new_students_count) : 1
+  const parsedAmount = Number(tx.amount)
 
-    try {
-      if (tx.package_snapshot) {
-        const pkgStr = String(tx.package_snapshot)
-        const pkg = typeof pkgStr === 'string' ? JSON.parse(pkgStr) : pkgStr
-        
-        if (pkg && pkg.price_per_student) {
-          const baseP = Number(pkg.price_per_student)
-          const rowPrice = baseP * itemsQuantity
-          totalCalculated += rowPrice
-          lineItemsHtml += `<tr><td>Paket Dasar</td><td class="text-right">${itemsQuantity}</td><td class="text-right" style="white-space: nowrap;">Rp ${rowPrice.toLocaleString('id-ID')}</td></tr>`
+  const formatMoney = (value: number) => `Rp ${value.toLocaleString('id-ID')}`
+  const lineItems: Array<{ name: string; quantity: number; total: number }> = []
+
+  try {
+    if (tx.package_snapshot) {
+      const pkg = JSON.parse(tx.package_snapshot)
+      const qty = Number.isFinite(itemsQuantity) && itemsQuantity > 0 ? itemsQuantity : 1
+
+      if (pkg?.price_per_student != null) {
+        const basePrice = Number(pkg.price_per_student)
+        if (Number.isFinite(basePrice) && basePrice > 0) {
+          lineItems.push({
+            name: `Paket Dasar${pkg.name ? `: ${pkg.name}` : ''}`,
+            quantity: qty,
+            total: basePrice * qty,
+          })
         }
+      }
 
-        if (pkg && pkg.features && Array.isArray(pkg.features)) {
-          for (const f of pkg.features) {
-            try {
-              const j = typeof f === 'string' ? JSON.parse(f) : f
-              if (j.price > 0 || Number(j.price) > 0) {
-                const addonP = Number(j.price)
-                const rowPrice = addonP * itemsQuantity
-                totalCalculated += rowPrice
-                lineItemsHtml += `<tr><td>&#x21B3; Add-on: ${j.name}</td><td class="text-right">${itemsQuantity}</td><td class="text-right" style="white-space: nowrap;">Rp ${rowPrice.toLocaleString('id-ID')}</td></tr>`
-              }
-            } catch(_e) { /* ignore addon error */ }
+      if (Array.isArray(pkg?.features)) {
+        for (const feature of pkg.features) {
+          try {
+            const addon = typeof feature === 'string' ? JSON.parse(feature) : feature
+            const addonPrice = Number(addon?.price)
+            if (Number.isFinite(addonPrice) && addonPrice > 0) {
+              lineItems.push({
+                name: `↳ Add-on: ${addon?.name || 'Add-on'}`,
+                quantity: qty,
+                total: addonPrice * qty,
+              })
+            }
+          } catch {
+            // ignore a single malformed addon entry and keep the rest
           }
         }
       }
-    } catch(_err) { /* ignore parse */ }
-
-    if (lineItemsHtml === '' || Number(totalCalculated) !== Number(tx.amount)) {
-      lineItemsHtml = `<tr>
-        <td>${desc}</td>
-        <td class="text-right">1</td>
-        <td class="text-right" style="white-space: nowrap;">Rp ${tx.amount.toLocaleString('id-ID')}</td>
-      </tr>`
     }
+  } catch {
+    // ignore snapshot parse error and fall back to a single row below
+  }
+
+  const renderedLineItems = lineItems.length
+    ? lineItems.map((item) => `
+          <tr>
+            <td>${item.name}</td>
+            <td class="text-right">${item.quantity}</td>
+            <td class="text-right" style="white-space: nowrap;">${formatMoney(item.total)}</td>
+          </tr>`).join('')
+    : `<tr>
+          <td>${desc}</td>
+          <td class="text-right">1</td>
+          <td class="text-right" style="white-space: nowrap;">${formatMoney(parsedAmount)}</td>
+        </tr>`
+
   const html = `
 <!DOCTYPE html>
 <html lang="id">
@@ -197,16 +215,21 @@ export async function generateAndPrintInvoice(tx: InvoiceTransaction) {
       <thead>
         <tr>
           <th>Deskripsi Item</th>
-            <th class="text-right">Qty</th>
-            <th class="text-right">Total</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${lineItemsHtml}
+          <th class="text-right">Qty</th>
+          <th class="text-right">Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${renderedLineItems}
+      </tbody>
+    </table>
+
+    <!-- Totals -->
+    <div class="totals">
       <div class="totals-box">
         <div class="tot-row final">
           <span class="tot-label final">Total Dibayar</span>
-          <span class="tot-val final">Rp ${tx.amount.toLocaleString('id-ID')}</span>
+          <span class="tot-val final">${formatMoney(parsedAmount)}</span>
         </div>
       </div>
     </div>

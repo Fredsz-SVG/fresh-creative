@@ -1,11 +1,12 @@
 'use client'
 
 import DashboardTitle from '@/components/dashboard/DashboardTitle'
-import { History, ExternalLink, Loader2, CreditCard, X } from 'lucide-react'
+import { History, ExternalLink, Loader2, CreditCard, X, Download } from 'lucide-react'
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react'
 import { supabase } from '@/lib/supabase'
 import { fetchWithAuth } from '../../../lib/api-client'
 import { asObject } from '@/components/yearbook/utils/response-narrowing'
+import { generateAndPrintInvoice } from '@/lib/generate-invoice'
 
 type Transaction = {
   id: string
@@ -18,6 +19,8 @@ type Transaction = {
   payment_method?: string | null
   album_name?: string | null
   description?: string | null
+  package_snapshot?: string | null
+  new_students_count?: number | null
 }
 
 export default function UserRiwayatPage() {
@@ -269,6 +272,17 @@ export default function UserRiwayatPage() {
                     >
                       Bayar Sekarang
                       <ExternalLink className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+
+                  {tx.invoice_url && (tx.status === 'PAID' || tx.status === 'SETTLED') && (
+                    <button
+                      type="button"
+                      onClick={() => generateAndPrintInvoice(tx)}
+                      className="flex items-center gap-2 text-[12px] sm:text-[13px] font-bold bg-emerald-200 border-2 border-slate-200 text-slate-900 px-3 py-1.5 mt-3 rounded-xl hover:translate-x-0.5 hover:translate-y-0.5 transition-all shadow-[4px_4px_0_0_#334155] w-fit"
+                    >
+                      Download Invoice
+                      <Download className="w-3.5 h-3.5" />
                     </button>
                   )}
                 </div>
