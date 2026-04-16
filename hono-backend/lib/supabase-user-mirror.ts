@@ -16,13 +16,15 @@ export async function mirrorUserFieldsToSupabase(
 
   const admin = getAdminSupabaseClient(env)
   // Keep boundary cast in one place so route handlers stay strongly typed.
-  await (admin as unknown as {
-    from: (table: string) => {
-      update: (payload: Record<string, unknown>) => {
-        eq: (column: string, value: string) => Promise<unknown>
+  await (
+    admin as unknown as {
+      from: (table: string) => {
+        update: (payload: Record<string, unknown>) => {
+          eq: (column: string, value: string) => Promise<unknown>
+        }
       }
     }
-  })
+  )
     .from('users')
     .update(fields as unknown as Record<string, unknown>)
     .eq('id', userId)

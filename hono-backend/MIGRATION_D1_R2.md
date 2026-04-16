@@ -4,10 +4,10 @@ Fokus: **skema konsisten** di repo; **tidak** wajib migrasi data dari Postgres/S
 
 ## Arsitektur
 
-| Supabase (`supabase/migrations`) | Hono + Cloudflare |
-|-----------------------------------|-------------------|
+| Supabase (`supabase/migrations`)                                                   | Hono + Cloudflare                               |
+| ---------------------------------------------------------------------------------- | ----------------------------------------------- |
 | Auth: `0000_supabase_auth_minimal.sql` → `public.users`, `login_otps`, RPC/trigger | **D1** (`d1/migrations/`) — semua data aplikasi |
-| | **R2** — file (`wrangler.toml` → `ASSETS`) |
+|                                                                                    | **R2** — file (`wrangler.toml` → `ASSETS`)      |
 
 Detail urutan file D1: **[`d1/README.md`](d1/README.md)**.
 
@@ -47,10 +47,10 @@ Route masih bisa memanggil **Supabase** (`supabase.from` / Storage) sampai digan
 
 ## File acuan
 
-| Lokasi | Fungsi |
-|--------|--------|
-| `supabase/migrations/0000_supabase_auth_minimal.sql` | SQL Editor — auth + profil minimal |
-| `hono-backend/d1/migrations/*.sql` | Skema + seed aplikasi |
-| `supabase/migrations/_legacy/` | Arsip Postgres lama (referensi saja) |
-| `lib/verify-supabase-jwt.ts` | Verifikasi JWT di Worker |
-| **`ROUTES_EDGE.md`** | Audit route: mana yang sudah D1/R2, mana yang masih Supabase |
+| Lokasi                                               | Fungsi                                                       |
+| ---------------------------------------------------- | ------------------------------------------------------------ |
+| `supabase/migrations/0000_supabase_auth_minimal.sql` | SQL Editor — auth + profil minimal                           |
+| `hono-backend/d1/migrations/*.sql`                   | Skema + seed aplikasi                                        |
+| `supabase/migrations/_legacy/`                       | Arsip Postgres lama (referensi saja)                         |
+| `lib/verify-supabase-jwt.ts`                         | Verifikasi JWT di Worker                                     |
+| **`ROUTES_EDGE.md`**                                 | Audit route: mana yang sudah D1/R2, mana yang masih Supabase |

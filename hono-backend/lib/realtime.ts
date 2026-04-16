@@ -30,14 +30,21 @@ export async function publishRealtimeEvent(env: unknown, event: RealtimeEvent): 
   if (!hub) return
   const id = hub.idFromName('global')
   const stub = hub.get(id)
-  await stub.fetch('https://realtime-hub/publish', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(event),
-  })
+  try {
+    await stub.fetch('https://realtime-hub/publish', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(event),
+    })
+  } catch (err) {
+    console.error('Realtime publish error:', err)
+  }
 }
 
-export async function publishRealtimeEventFromContext(c: Context, event: RealtimeEvent): Promise<void> {
+export async function publishRealtimeEventFromContext(
+  c: Context,
+  event: RealtimeEvent
+): Promise<void> {
   await publishRealtimeEvent(c.env, event)
 }
 

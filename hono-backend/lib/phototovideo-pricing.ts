@@ -36,10 +36,7 @@ export function allowedPhotoToVideoSeconds(row: PhotoToVideoPricingRow): number[
   const keys = Object.keys(fromJson)
     .map((k) => parseInt(k, 10))
     .filter(
-      (n) =>
-        Number.isFinite(n) &&
-        n >= PHOTOTOVIDEO_DURATION_MIN &&
-        n <= PHOTOTOVIDEO_DURATION_MAX
+      (n) => Number.isFinite(n) && n >= PHOTOTOVIDEO_DURATION_MIN && n <= PHOTOTOVIDEO_DURATION_MAX
     )
     .sort((a, b) => a - b)
   if (keys.length > 0) {

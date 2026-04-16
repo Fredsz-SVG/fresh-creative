@@ -16,21 +16,25 @@ import { compositeForegroundOnImageBg, compositeForegroundOnSolid } from './comp
 if (typeof window !== 'undefined') {
   ;(window as any).React = (window as any).React ?? ReactGlobal
 
-  // Suppress Filerobot's internal styled-components passing 'active' boolean onto DOM elements
+  // Suppress Filerobot's internal styled-components passing non-boolean / unknown props onto DOM elements.
+  // React passes warnings as printf-style calls: args[0] = format string, args[1..n] = substitution values.
+  // We must join all args into one flat string so that prop names (passed as separate args) are also matched.
   const originalConsoleError = console.error
   console.error = (...args: any[]) => {
-    const isIgnoredWarning = args.some(
-      (arg) => {
-        const str = typeof arg === 'string' ? arg : (arg instanceof Error ? arg.message : '')
-        return (
-          str.includes('for a non-boolean attribute `active`') ||
-          str.includes('React does not recognize the `disableHover` prop') ||
-          str.includes('React does not recognize the `isCollapsed` prop') ||
-          str.includes('React does not recognize the `noWrap` prop') ||
-          str.includes('React does not recognize the `watermarkTool` prop')
-        )
-      }
-    )
+    const combined = args
+      .map((a) => (typeof a === 'string' ? a : a instanceof Error ? a.message : ''))
+      .join(' ')
+    const isIgnoredWarning =
+      combined.includes('for a non-boolean attribute `active`') ||
+      combined.includes('non-boolean attribute') && combined.includes('active') ||
+      // React "does not recognize" warnings for Filerobot/Scaleflex internal props
+      (combined.includes('React does not recognize') &&
+        (combined.includes('disableHover') ||
+          combined.includes('isCollapsed') ||
+          combined.includes('noWrap') ||
+          combined.includes('watermarkTool') ||
+          combined.includes('showTabsDrawer') ||
+          combined.includes('active')))
     if (isIgnoredWarning) return
     originalConsoleError.apply(console, args)
   }
@@ -97,10 +101,12 @@ const Button: React.FC<ButtonProps> = ({ variant = 'primary', children, classNam
   return (
     <button
       className={clsx(
-        'inline-flex items-center px-4 py-2 rounded-lg font-medium transition-colors',
+        'inline-flex items-center justify-center px-5 py-2.5 rounded-xl font-black text-[13px] uppercase tracking-widest border-2 transition-all touch-manipulation',
+        'shadow-[4px_4px_0_0_#334155] dark:shadow-[3px_3px_0_0_rgba(255,255,255,0.15)]',
+        'hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none active:translate-x-0.5 active:translate-y-0.5 active:shadow-none',
         {
-          'bg-blue-600 hover:bg-blue-700 text-white': variant === 'primary',
-          'bg-gray-700 hover:bg-gray-600 text-gray-200': variant === 'secondary',
+          'bg-indigo-500 dark:bg-indigo-500 border-slate-200 dark:border-white/30 text-white hover:bg-indigo-400 dark:hover:bg-indigo-400': variant === 'primary',
+          'bg-white dark:bg-slate-800 border-slate-200 dark:border-white/30 text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-slate-700': variant === 'secondary',
         },
         className
       )}
@@ -114,8 +120,8 @@ const Button: React.FC<ButtonProps> = ({ variant = 'primary', children, classNam
 const LoadingSpinner: React.FC = () => {
   return (
     <div className="flex items-center justify-center p-4">
-      <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
-      <span className="ml-3 text-gray-400">Processing image...</span>
+      <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-500"></div>
+      <span className="ml-3 text-slate-500 dark:text-slate-400 text-sm font-medium">Memproses...</span>
     </div>
   )
 }
@@ -129,6 +135,7 @@ interface EditorProps {
   handleRemoveBg: () => Promise<void>
   removeBgState: 'idle' | 'removing' | 'error'
   creditsPerRemoveBg: number | null
+  currentCredits: number | null
   hasRemovedBg: boolean
   onRequestBgUpload: () => void
   onPickSolidColor: (hex: string) => void
@@ -142,6 +149,7 @@ const ImageEditor: React.FC<EditorProps> = ({
   handleRemoveBg,
   removeBgState,
   creditsPerRemoveBg,
+  currentCredits,
   hasRemovedBg,
   onRequestBgUpload,
   onPickSolidColor,
@@ -154,6 +162,7 @@ const ImageEditor: React.FC<EditorProps> = ({
         onRemoveBg: handleRemoveBg,
         removeBgState,
         creditsPerUse: creditsPerRemoveBg,
+        currentCredits,
         hasRemovedBg,
         onRequestBgUpload,
         onPickSolidColor,
@@ -164,6 +173,7 @@ const ImageEditor: React.FC<EditorProps> = ({
     handleRemoveBg,
     removeBgState,
     creditsPerRemoveBg,
+    currentCredits,
     hasRemovedBg,
     onRequestBgUpload,
     onPickSolidColor,
@@ -492,6 +502,17 @@ const ImageEditor: React.FC<EditorProps> = ({
         .SfxModalActions-root .SfxButton-root[color='secondary']:hover {
           background-color: rgba(255,255,255,0.07) !important;
         }
+        /* Tombol warning-primary (Confirm / "Ya, Lanjutkan" di ConfirmationModal) */
+        .SfxModalActions-root .SfxButton-root[color='warning-primary'],
+        .SfxModal-Container .SfxButton-root[color='warning-primary'] {
+          background-color: #b45309 !important;
+          color: #ffffff !important;
+          border: none !important;
+        }
+        .SfxModalActions-root .SfxButton-root[color='warning-primary']:hover,
+        .SfxModal-Container .SfxButton-root[color='warning-primary']:hover {
+          background-color: #92400e !important;
+        }
 
         /* Slider quality di modal */
         .SfxModal-Container .FIE_save-quality-wrapper label,
@@ -606,6 +627,68 @@ const ImageEditor: React.FC<EditorProps> = ({
           max-height: none !important;
           height: auto !important;
         }
+
+        /* ━━━ Fix: Crop button height mismatch ━━━
+         * The Crop tool renders inside StyledToolsBarItemButton (.FIE_crop-tool)
+         * which is a flex div with padding:8px 12px.  Inside it lives
+         * StyledOpenMenuButton (.FIE_crop-presets-opener-button) — an SfxButton
+         * that has its own min-height / padding and inflates the row.
+         * Fix: cap the outer wrapper AND neutralise the button's own sizing.
+         */
+        .FIE_crop-tool {
+          height: 36px !important;
+          max-height: 36px !important;
+          padding-top: 4px !important;
+          padding-bottom: 4px !important;
+          box-sizing: border-box !important;
+          align-items: center !important;
+        }
+        /* Neutralise the SfxButton dropdown chevron so it doesn't push height */
+        .FIE_crop-presets-opener-button.SfxButton-root,
+        .FIE_crop-presets-opener-button {
+          min-height: unset !important;
+          height: auto !important;
+          padding: 0 !important;
+          line-height: 1 !important;
+          display: inline-flex !important;
+          align-items: center !important;
+        }
+
+        /* ━━━ Fix: Scroll-arrow white gradient background on tools bar ━━━
+         * Filerobot Carousel renders FIE_carousel-prev-button / FIE_carousel-next-button
+         * with a hardcoded white linear-gradient.  Override to match dark theme.
+         */
+        .FIE_carousel-prev-button,
+        .FIE_carousel-next-button,
+        [data-testid='FIE-carousel-prev-button'],
+        [data-testid='FIE-carousel-next-button'] {
+          background: linear-gradient(
+            90deg,
+            #1e1e1e 1.56%,
+            rgba(30,30,30,0.89) 52.4%,
+            rgba(30,30,30,0.53) 76.04%,
+            rgba(30,30,30,0) 100%
+          ) !important;
+          color: #e8e8e8 !important;
+        }
+        [data-testid='FIE-carousel-next-button'],
+        .FIE_carousel-next-button {
+          background: linear-gradient(
+            270deg,
+            #1e1e1e 1.56%,
+            rgba(30,30,30,0.89) 52.4%,
+            rgba(30,30,30,0.53) 76.04%,
+            rgba(30,30,30,0) 100%
+          ) !important;
+        }
+        /* Icon colour inside arrows */
+        .FIE_carousel-prev-button svg,
+        .FIE_carousel-next-button svg,
+        [data-testid='FIE-carousel-prev-button'] svg,
+        [data-testid='FIE-carousel-next-button'] svg {
+          color: #e8e8e8 !important;
+          fill: #e8e8e8 !important;
+        }
       `}</style>
     </div>
   )
@@ -620,6 +703,7 @@ export default function ImageEditorFilerobot() {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [creditsPerRemoveBg, setCreditsPerRemoveBg] = useState<number | null>(null)
+  const [currentCredits, setCurrentCredits] = useState<number | null>(null)
   const [removeBgState, setRemoveBgState] = useState<'idle' | 'removing' | 'error'>('idle')
   /** Setelah Remove BG sukses — tampilkan opsi upload / warna solid. */
   const [hasRemovedBg, setHasRemovedBg] = useState(false)
@@ -654,6 +738,34 @@ export default function ImageEditorFilerobot() {
     loadPricing()
     return () => { cancelled = true }
   }, [])
+
+  // Fetch current user credits (refresh when editor opens, and on credits-updated event)
+  const refreshCurrentCredits = useCallback(async () => {
+    try {
+      const res = await fetchWithAuth('/api/user/me')
+      if (!res.ok) return
+      const data = asObject(await res.json().catch(() => ({})))
+      if (typeof data.credits === 'number') setCurrentCredits(data.credits)
+    } catch {
+      // ignore
+    }
+  }, [])
+
+  useEffect(() => {
+    refreshCurrentCredits()
+  }, [])
+
+  // When editor opens, re-fetch so saldo is always fresh
+  useEffect(() => {
+    if (selectedImage) refreshCurrentCredits()
+  }, [selectedImage, refreshCurrentCredits])
+
+  // Keep in sync with credits-updated events (e.g. after Remove BG succeeds)
+  useEffect(() => {
+    const handler = () => { refreshCurrentCredits() }
+    window.addEventListener('credits-updated', handler)
+    return () => window.removeEventListener('credits-updated', handler)
+  }, [refreshCurrentCredits])
 
   // Lock scrolling when editor is active
   useEffect(() => {
@@ -812,79 +924,61 @@ export default function ImageEditorFilerobot() {
   }, [selectedImage, hasRemovedBg])
 
   return (
-    <div className="min-h-screen bg-white relative w-full">
+    <div className="h-full overflow-hidden bg-white dark:bg-slate-950 relative w-full transition-colors duration-300">
       {error && selectedImage && (
         <div className="fixed top-20 inset-x-0 z-[100] p-3 text-center bg-red-600 text-white font-bold text-xs uppercase tracking-widest shadow-xl">
           {error}
         </div>
       )}
 
-      {/* Exactly GitHub Landing Page layout */}
+      {/* Upload landing — tombol saja, di tengah */}
       {!selectedImage && !editedImage && (
-        <div className="flex flex-col items-center justify-center p-8 text-black dark:text-gray-900 bg-white">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">Filter</h1>
-          <div className="text-center max-w-2xl mb-12">
-            <p className="text-xl text-gray-600 mb-6">
-              A powerful, web-based image editor with an intuitive interface for quick edits and filters. Local and privacy-friendly.
-            </p>
-            
-            <div className="inline-block">
-              {isProcessing ? (
-                <LoadingSpinner />
-              ) : (
-                <>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    className="hidden"
-                    accept="image/*"
-                    onChange={handleFileChange}
-                  />
-                  <Button onClick={() => fileInputRef.current?.click()}>
-                    <Upload className="w-5 h-5 mr-2" />
-                    Upload Image
-                  </Button>
-                </>
-              )}
-            </div>
-            
-            {error && (
-              <p className="mt-4 text-red-500 font-medium text-sm">{error}</p>
-            )}
+        <div className="flex flex-col items-center justify-center h-full gap-5 px-6 pt-24 sm:pt-40">
+
+          {/* Icon card */}
+          <div
+            className="w-20 h-20 rounded-2xl flex items-center justify-center
+              bg-indigo-100 dark:bg-indigo-500/20
+              border-2 border-slate-200 dark:border-white/20
+              shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_rgba(255,255,255,0.1)]"
+          >
+            <svg
+              className="w-10 h-10 text-indigo-600 dark:text-indigo-400"
+              fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round"
+                d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3 21h18M3 3h18" />
+            </svg>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-4xl">
-            <div className="flex flex-col items-center p-4 bg-gray-50 rounded-lg">
-              <img src="/img/editing@1x.webp" alt="Intuitive Editing" className="w-full h-64 object-cover rounded-lg mb-4" />
-              <span className="text-lg font-semibold text-gray-800 mb-2">🖌️ Intuitive Editing</span>
-              <p className="text-gray-600 text-center">Easy-to-use interface for basic and advanced modifications</p>
-            </div>
-            <div className="flex flex-col items-center p-4 bg-gray-50 rounded-lg">
-              <img src="/img/filters@1x.webp" alt="Fab Filters" className="w-full h-64 object-cover rounded-lg mb-4" />
-              <span className="text-lg font-semibold text-gray-800 mb-2">⚡ Fab Filters</span>
-              <p className="text-gray-600 text-center">Full of beautiful filters to make your photos stand out</p>
-            </div>
-            <div className="flex flex-col items-center p-4 bg-gray-50 rounded-lg">
-              <img src="/img/tools@1x.webp" alt="Rich Tools" className="w-full h-64 object-cover rounded-lg mb-4" />
-              <span className="text-lg font-semibold text-gray-800 mb-2">🎨 Rich Tools</span>
-              <p className="text-gray-600 text-center">Crop, rotate, adjust, and more</p>
-            </div>
-            <div className="flex flex-col items-center p-4 bg-gray-50 rounded-lg">
-              <img src="/img/mobile@1x.webp" alt="Mobile-Optimized" className="w-full h-64 object-cover rounded-lg mb-4" />
-              <span className="text-lg font-semibold text-gray-800 mb-2">📱 Mobile-Optimized</span>
-              <p className="text-gray-600 text-center">Fully responsive design that works on all devices</p>
-            </div>
-            <div className="flex flex-col items-center p-4 bg-gray-50 rounded-lg">
-              <img src="/img/tune@1x.webp" alt="Fine-tuning" className="w-full h-64 object-cover rounded-lg mb-4" />
-              <span className="text-lg font-semibold text-gray-800 mb-2">💄 Fine-tuning</span>
-              <p className="text-gray-600 text-center">Brightness, Contrast, HSV and more.</p>
-            </div>
-            <div className="flex flex-col items-center p-4 bg-gray-50 rounded-lg">
-              <img src="/img/crops@1x.webp" alt="Preset Crops" className="w-full h-64 object-cover rounded-lg mb-4" />
-              <span className="text-lg font-semibold text-gray-800 mb-2">🎯 Preset Crops</span>
-              <p className="text-gray-600 text-center">Common aspect ratios for social media and web</p>
-            </div>
+          <div className="text-center">
+            <p className="text-[16px] font-black text-slate-900 dark:text-white tracking-tight">
+              Edit &amp; percantik fotomu
+            </p>
           </div>
+
+          {/* Upload button / spinner */}
+          {isProcessing ? (
+            <LoadingSpinner />
+          ) : (
+            <>
+              <input
+                ref={fileInputRef}
+                type="file"
+                className="hidden"
+                accept="image/*"
+                onChange={handleFileChange}
+              />
+              <Button onClick={() => fileInputRef.current?.click()}>
+                <Upload className="w-4 h-4 mr-2" />
+                Pilih Foto
+              </Button>
+            </>
+          )}
+
+          {error && (
+            <p className="text-red-500 dark:text-red-400 font-medium text-sm text-center max-w-xs">{error}</p>
+          )}
         </div>
       )}
 
@@ -905,6 +999,7 @@ export default function ImageEditorFilerobot() {
             handleRemoveBg={handleRemoveBg}
             removeBgState={removeBgState}
             creditsPerRemoveBg={creditsPerRemoveBg}
+            currentCredits={currentCredits}
             hasRemovedBg={hasRemovedBg}
             onRequestBgUpload={() => replaceBgInputRef.current?.click()}
             onPickSolidColor={handlePickSolidColor}
@@ -941,31 +1036,7 @@ export default function ImageEditorFilerobot() {
         </div>
       )}
 
-      <footer className="absolute bottom-0 w-full py-4 text-center text-gray-500 text-sm">
-        Powered by <a href="https://github.com/scaleflex/filerobot-image-editor" className="text-blue-500 hover:text-blue-600" target="_blank" rel="noopener noreferrer">Filerobot</a>
-      </footer>
+
     </div>
   )
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

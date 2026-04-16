@@ -181,46 +181,44 @@ const PackageForm = ({ pkg, onSave, onCancel }: { pkg: Partial<PricingPackage> |
   }
 
   return (
-    <div className="fixed inset-0 bg-slate-900/60 dark:bg-black/60 flex items-center justify-center p-2 md:p-4 z-[100] backdrop-blur-md">
-      <div className="bg-white dark:bg-slate-900 border-4 border-slate-900 dark:border-slate-700 rounded-[24px] md:rounded-[32px] shadow-[8px_8px_0_0_#0f172a] dark:shadow-[8px_8px_0_0_#334155] md:shadow-[12px_12px_0_0_#0f172a] dark:md:shadow-[12px_12px_0_0_#334155] p-5 md:p-8 w-full max-w-lg max-h-[95vh] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-        <div className="flex justify-between items-center mb-4 md:mb-6">
-          <h2 className="text-xl md:text-2xl font-black text-slate-900 dark:text-white tracking-tight">{pkg?.id ? 'Edit Package' : 'New Package'}</h2>
-          <button onClick={onCancel} className="p-1 md:p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
-            <X size={20} className="md:w-6 md:h-6 text-slate-900 dark:text-white" strokeWidth={3} />
+    <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-[100]">
+      <div className="bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-2xl shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] p-5 md:p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+        <div className="flex justify-between items-center mb-5">
+          <h2 className="text-lg font-bold text-slate-900 dark:text-white">{pkg?.id ? 'Edit Package' : 'New Package'}</h2>
+          <button onClick={onCancel} className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+            <X size={20} className="text-slate-700 dark:text-slate-200" strokeWidth={2.5} />
           </button>
         </div>
 
-        <form onSubmit={handleSave} className="space-y-4 md:space-y-6">
-          <div className="space-y-3 md:space-y-4">
+        <form onSubmit={handleSave} className="space-y-4">
+          <div className="space-y-3">
             <div>
-              <label className="text-[10px] md:text-xs font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest mb-1 md:mb-1.5 block">Package Name</label>
-              <input name="name" value={formData.name} onChange={handleChange} placeholder="e.g. Gold" className="w-full px-4 py-3 md:px-5 md:py-3.5 bg-slate-50 dark:bg-slate-800 border-4 border-slate-900 dark:border-slate-700 rounded-xl md:rounded-2xl text-slate-900 dark:text-white font-bold placeholder:text-slate-300 dark:placeholder:text-slate-500 focus:outline-none shadow-[3px_3px_0_0_#0f172a] dark:shadow-[3px_3px_0_0_#334155] md:shadow-[4px_4px_0_0_#0f172a] dark:md:shadow-[4px_4px_0_0_#334155] focus:shadow-none" required />
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 block">Package Name</label>
+              <input name="name" value={formData.name} onChange={handleChange} placeholder="e.g. Gold" className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-violet-200" required />
             </div>
 
-            <div className="grid grid-cols-2 gap-3 md:gap-4">
-              <div>
-                <label className="text-[10px] md:text-xs font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest mb-1 md:mb-1.5 block">Price / Student</label>
-                <input name="price_per_student" type="number" value={formData.price_per_student} onChange={handleChange} placeholder="0" className="w-full px-4 py-3 md:px-5 md:py-3.5 bg-slate-50 dark:bg-slate-800 border-4 border-slate-900 dark:border-slate-700 rounded-xl md:rounded-2xl text-slate-900 dark:text-white font-bold placeholder:text-slate-300 dark:placeholder:text-slate-500 focus:outline-none shadow-[3px_3px_0_0_#0f172a] dark:shadow-[3px_3px_0_0_#334155] md:shadow-[4px_4px_0_0_#0f172a] dark:md:shadow-[4px_4px_0_0_#334155] focus:shadow-none" required />
-              </div>
+            <div>
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 block">Price / Student</label>
+              <input name="price_per_student" type="number" value={formData.price_per_student} onChange={handleChange} placeholder="0" className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-violet-200" required />
             </div>
 
-            <div className="bg-slate-50 dark:bg-slate-800 p-4 md:p-5 rounded-[20px] md:rounded-[24px] border-4 border-slate-900 dark:border-slate-700 shadow-[3px_3px_0_0_#0f172a] dark:shadow-[3px_3px_0_0_#334155] md:shadow-[4px_4px_0_0_#0f172a] dark:md:shadow-[4px_4px_0_0_#334155]">
-              <div className="flex justify-between items-center mb-3 md:mb-4">
-                <p className="text-[10px] md:text-xs font-black text-slate-900 dark:text-white uppercase tracking-widest">Features</p>
-                <button type="button" onClick={() => setAddons([...addons, { name: '', price: 0 }])} className="text-[10px] md:text-xs bg-indigo-400 dark:bg-indigo-600 text-slate-900 dark:text-white border-2 border-slate-900 dark:border-slate-700 px-2.5 py-1 md:px-3 md:py-1.5 rounded-lg md:rounded-xl hover:translate-x-0.5 hover:translate-y-0.5 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] hover:shadow-none font-black transition-all">
+            <div className="bg-slate-50 dark:bg-slate-800 p-3 rounded-xl border-2 border-slate-200 dark:border-slate-700">
+              <div className="flex justify-between items-center mb-3">
+                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Features</p>
+                <button type="button" onClick={() => setAddons([...addons, { name: '', price: 0 }])} className="text-[10px] bg-emerald-100 text-emerald-700 px-2.5 py-1.5 rounded-lg hover:bg-emerald-200 font-bold transition-all shadow-[2px_2px_0_0_#059669] hover:shadow-none">
                   + Add
                 </button>
               </div>
-              <div className="space-y-2 md:space-y-3 max-h-40 md:max-h-60 overflow-y-auto pr-1">
-                {addons.length === 0 && <p className="text-[10px] md:text-xs text-slate-400 dark:text-slate-300 font-bold italic py-2 md:py-4 text-center">Belum ada add-on.</p>}
+              <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
+                {addons.length === 0 && <p className="text-[10px] text-slate-400 font-medium italic py-2 text-center">Belum ada add-on.</p>}
                 {addons.map((addon, idx) => (
-                  <div key={idx} className="flex gap-1.5 md:gap-2 items-center">
+                  <div key={idx} className="flex gap-2 items-center">
                     <input
                       type="text"
                       value={addon.name}
                       onChange={(e) => handleAddonNameChange(idx, e.target.value)}
                       placeholder="Fitur"
-                      className="flex-1 p-2 md:p-2.5 text-xs md:text-sm bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-lg md:rounded-xl font-bold text-slate-900 dark:text-white focus:outline-none"
+                      className="flex-1 p-2 text-xs bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-violet-200"
                       required
                     />
                     <input
@@ -228,40 +226,40 @@ const PackageForm = ({ pkg, onSave, onCancel }: { pkg: Partial<PricingPackage> |
                       value={addon.price || ''}
                       onChange={(e) => handleAddonPriceChange(idx, Number(e.target.value))}
                       placeholder="Rp"
-                      className="w-16 md:w-24 p-2 md:p-2.5 text-xs md:text-sm bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-lg md:rounded-xl font-bold text-slate-900 dark:text-white focus:outline-none"
+                      className="w-20 p-2 text-xs bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-violet-200"
                     />
-                    <button type="button" onClick={() => removeAddon(idx)} className="text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 p-1.5 md:p-2 rounded-lg transition-colors">
-                      <Trash2 size={16} className="md:w-[18px] md:h-[18px]" strokeWidth={3} />
+                    <button type="button" onClick={() => removeAddon(idx)} className="text-rose-500 hover:bg-rose-50 p-1.5 rounded-lg transition-colors">
+                      <Trash2 size={14} strokeWidth={2} />
                     </button>
                   </div>
                 ))}
               </div>
             </div>
 
-            <div className="p-3 md:p-4 border-4 border-slate-900 dark:border-slate-700 rounded-xl md:rounded-2xl bg-amber-50 dark:bg-slate-800 shadow-[3px_3px_0_0_#0f172a] dark:shadow-[3px_3px_0_0_#334155] md:shadow-[4px_4px_0_0_#0f172a] dark:md:shadow-[4px_4px_0_0_#334155]">
-              <label className="flex items-center gap-3 md:gap-4 cursor-pointer select-none">
-                <div className="relative scale-90 md:scale-100">
+            <div className="p-3 border-2 border-slate-200 dark:border-slate-700 rounded-xl bg-amber-50 dark:bg-slate-800">
+              <label className="flex items-center gap-3 cursor-pointer select-none">
+                <div className="relative">
                   <input
                     type="checkbox"
                     checked={!!formData.is_popular}
                     onChange={(e) => setFormData({ ...formData, is_popular: e.target.checked })}
                     className="sr-only peer"
                   />
-                  <div className="w-12 h-6 bg-slate-200 dark:bg-slate-600 border-2 border-slate-900 dark:border-slate-700 rounded-full peer-checked:bg-amber-400 dark:peer-checked:bg-amber-500 transition-colors" />
-                  <div className="absolute left-1 top-1 w-4 h-4 bg-white dark:bg-slate-300 border-2 border-slate-900 dark:border-slate-700 rounded-full transition-transform peer-checked:translate-x-6" />
+                  <div className="w-10 h-5 bg-slate-200 dark:bg-slate-600 rounded-full peer-checked:bg-amber-400 transition-colors" />
+                  <div className="absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-5" />
                 </div>
-                <span className="text-xs md:text-sm text-slate-900 dark:text-white font-black flex items-center gap-2">
-                  <Star size={14} className="md:w-4 md:h-4 text-amber-500 fill-amber-500" />
+                <span className="text-sm text-slate-900 dark:text-white font-bold flex items-center gap-2">
+                  <Star size={14} className="text-amber-500 fill-amber-500" />
                   Popular
                 </span>
               </label>
             </div>
 
-            <div className="space-y-2 md:space-y-3">
-              <p className="text-[10px] md:text-xs font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest">Included AI Labs</p>
-              <div className="grid grid-cols-2 gap-2 md:gap-3">
+            <div className="space-y-2">
+              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Included AI Labs</p>
+              <div className="grid grid-cols-2 gap-2">
                 {Object.entries(AI_FEATURE_LABELS).map(([slug, label]) => (
-                  <label key={slug} className={`flex items-center gap-2 md:gap-3 p-2 md:p-3 rounded-xl md:rounded-2xl border-4 border-slate-900 dark:border-slate-700 transition-all cursor-pointer select-none ${(formData.ai_labs_features ?? []).includes(slug) ? 'bg-indigo-100 dark:bg-indigo-900/50 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155]' : 'bg-white dark:bg-slate-800 shadow-none'
+                  <label key={slug} className={`flex items-center gap-2 p-2 rounded-xl border-2 transition-all cursor-pointer select-none ${(formData.ai_labs_features ?? []).includes(slug) ? 'bg-violet-100 border-violet-300 dark:bg-violet-900/30 dark:border-violet-700' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700'
                     }`}>
                     <input
                       type="checkbox"
@@ -275,20 +273,20 @@ const PackageForm = ({ pkg, onSave, onCancel }: { pkg: Partial<PricingPackage> |
                             : current.filter((s) => s !== slug),
                         })
                       }}
-                      className="w-4 h-4 md:w-5 md:h-5 rounded-md border-2 border-slate-900 dark:border-slate-700 text-indigo-600 focus:ring-indigo-400"
+                      className="w-4 h-4 rounded border-2 border-slate-300 dark:border-slate-600 text-violet-600 focus:ring-violet-200"
                     />
-                    <span className="text-[10px] md:text-xs font-black text-slate-900 dark:text-white truncate">{label}</span>
+                    <span className="text-[10px] font-bold text-slate-700 dark:text-slate-200 truncate">{label}</span>
                   </label>
                 ))}
               </div>
             </div>
           </div>
 
-          <div className="flex gap-3 md:gap-4 pt-2 md:pt-4">
-            <button type="button" onClick={onCancel} className="flex-1 px-4 py-3 md:px-6 md:py-4 border-4 border-slate-900 dark:border-slate-700 rounded-xl md:rounded-2xl text-slate-900 dark:text-white font-black hover:bg-slate-50 dark:hover:bg-slate-800 transition-all active:scale-95 shadow-[3px_3px_0_0_#0f172a] dark:shadow-[3px_3px_0_0_#334155] md:shadow-[4px_4px_0_0_#0f172a] dark:md:shadow-[4px_4px_0_0_#334155] active:shadow-none text-xs md:text-base">
+          <div className="flex gap-3 pt-2">
+            <button type="button" onClick={onCancel} className="flex-1 px-4 py-2.5 border-2 border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200 font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-[4px_4px_0_0_#334155] hover:shadow-none">
               Cancel
             </button>
-            <button type="submit" className="flex-1 px-4 py-3 md:px-6 md:py-4 bg-indigo-400 dark:bg-indigo-600 text-slate-900 dark:text-white border-4 border-slate-900 dark:border-slate-700 rounded-xl md:rounded-2xl font-black hover:translate-x-1 hover:translate-y-1 transition-all shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155] md:shadow-[6px_6px_0_0_#0f172a] dark:md:shadow-[6px_6px_0_0_#334155] hover:shadow-none text-xs md:text-base">
+            <button type="submit" className="flex-1 px-4 py-2.5 bg-emerald-400 text-emerald-900 rounded-xl font-bold hover:bg-emerald-300 transition-all shadow-[2px_2px_0_0_#059669] hover:shadow-none">
               Save
             </button>
           </div>
@@ -522,18 +520,18 @@ export default function PricingEditPage() {
         <PackageForm pkg={editingPackage} onSave={handleSave} onCancel={() => setEditingPackage(null)} />
       )}
       {deleteTargetId && (
-        <div className="fixed inset-0 bg-slate-900/60 dark:bg-black/60 flex items-center justify-center p-2 md:p-4 z-[200] backdrop-blur-md">
-          <div className="bg-white dark:bg-slate-900 border-4 border-slate-900 dark:border-slate-700 rounded-[24px] md:rounded-[32px] shadow-[6px_6px_0_0_#0f172a] dark:shadow-[6px_6px_0_0_#334155] md:shadow-[10px_10px_0_0_#0f172a] dark:md:shadow-[10px_10px_0_0_#334155] p-5 md:p-7 w-full max-w-md">
-            <h3 className="text-lg md:text-2xl font-black text-slate-900 dark:text-white tracking-tight">Hapus Package?</h3>
-            <p className="mt-2 text-xs md:text-sm font-bold text-slate-600 dark:text-slate-300">
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-[200]">
+          <div className="bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-2xl shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] p-5 md:p-6 w-full max-w-sm">
+            <h3 className="text-base md:text-lg font-bold text-slate-900 dark:text-white">Hapus Package?</h3>
+            <p className="mt-2 text-xs md:text-sm text-slate-500 dark:text-slate-400">
               Aksi ini tidak bisa dibatalkan. Data package yang dipilih akan dihapus permanen.
             </p>
-            <div className="mt-5 md:mt-6 flex gap-3 md:gap-4">
+            <div className="mt-4 flex gap-3">
               <button
                 type="button"
                 disabled={deleting}
                 onClick={() => setDeleteTargetId(null)}
-                className="flex-1 px-4 py-3 md:px-6 md:py-4 border-4 border-slate-900 dark:border-slate-700 rounded-xl md:rounded-2xl text-slate-900 dark:text-white font-black hover:bg-slate-50 dark:hover:bg-slate-800 transition-all active:scale-95 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] md:shadow-[3px_3px_0_0_#0f172a] dark:md:shadow-[3px_3px_0_0_#334155] active:shadow-none text-xs md:text-base disabled:opacity-60 disabled:cursor-not-allowed"
+                className="flex-1 px-4 py-2.5 border-2 border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200 font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:shadow-none disabled:opacity-60"
               >
                 Batal
               </button>
@@ -541,7 +539,7 @@ export default function PricingEditPage() {
                 type="button"
                 disabled={deleting}
                 onClick={confirmDelete}
-                className="flex-1 px-4 py-3 md:px-6 md:py-4 bg-red-400 dark:bg-red-600 text-white border-4 border-slate-900 dark:border-slate-700 rounded-xl md:rounded-2xl font-black hover:translate-x-1 hover:translate-y-1 transition-all shadow-[3px_3px_0_0_#0f172a] dark:shadow-[3px_3px_0_0_#334155] md:shadow-[5px_5px_0_0_#0f172a] dark:md:shadow-[5px_5px_0_0_#334155] hover:shadow-none text-xs md:text-base disabled:opacity-60 disabled:cursor-not-allowed"
+                className="flex-1 px-4 py-2.5 bg-rose-400 text-rose-900 rounded-xl font-bold hover:bg-rose-300 transition-all shadow-[2px_2px_0_0_#e11d48] hover:shadow-none disabled:opacity-60"
               >
                 {deleting ? 'Menghapus...' : 'Hapus'}
               </button>
@@ -550,13 +548,13 @@ export default function PricingEditPage() {
         </div>
       )}
       {saveStatus && (
-        <div className={`fixed bottom-4 md:bottom-8 left-1/2 -translate-x-1/2 z-[200] max-w-[90%] md:max-w-md w-full px-4 py-3 md:px-6 md:py-4 rounded-2xl md:rounded-3xl border-4 border-slate-900 dark:border-slate-700 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] md:shadow-[4px_4px_0_0_#0f172a] dark:md:shadow-[4px_4px_0_0_#334155] transform transition-all animate-bounce-subtle ${saveStatus === 'saving' ? 'bg-amber-300 dark:bg-amber-600 text-slate-900 dark:text-white' :
-          saveStatus === 'create-success' || saveStatus === 'update-success' || saveStatus === 'delete-success' || saveStatus === 'ai-update-success' ? 'bg-emerald-400 dark:bg-emerald-600 text-slate-900 dark:text-white' :
-          saveStatus === 'deleting' ? 'bg-amber-300 dark:bg-amber-600 text-slate-900 dark:text-white' :
-            'bg-red-400 dark:bg-red-600 text-white'
+        <div className={`fixed bottom-4 md:bottom-6 left-1/2 -translate-x-1/2 z-[200] max-w-[90%] md:max-w-sm w-full px-4 py-3 rounded-xl border-2 shadow-[4px_4px_0_0_#334155] transform transition-all animate-bounce-subtle ${saveStatus === 'saving' ? 'bg-amber-100 border-amber-300 text-amber-700' :
+          saveStatus === 'create-success' || saveStatus === 'update-success' || saveStatus === 'delete-success' || saveStatus === 'ai-update-success' ? 'bg-emerald-100 border-emerald-300 text-emerald-700' :
+          saveStatus === 'deleting' ? 'bg-amber-100 border-amber-300 text-amber-700' :
+            'bg-rose-100 border-rose-300 text-rose-700'
           }`}>
-          <div className="flex items-center gap-2 md:gap-3 font-black text-xs md:text-sm">
-            {saveStatus === 'saving' || saveStatus === 'deleting' ? <RefreshCw className="animate-spin w-4 h-4 md:w-5 md:h-5" /> : null}
+          <div className="flex items-center gap-2 font-bold text-xs md:text-sm">
+            {saveStatus === 'saving' || saveStatus === 'deleting' ? <RefreshCw className="animate-spin w-4 h-4" /> : null}
             {saveStatus === 'saving' ? 'Processing...' :
               saveStatus === 'deleting' ? 'Deleting package...' :
               saveStatus === 'create-success' ? 'Package berhasil dibuat.' :
@@ -569,9 +567,9 @@ export default function PricingEditPage() {
         </div>
       )}
       {editingAi && (
-        <div className="fixed inset-0 bg-slate-900/60 dark:bg-black/60 flex items-center justify-center p-4 z-[100] backdrop-blur-md">
-          <div className="bg-white dark:bg-slate-900 border-4 border-slate-900 dark:border-slate-700 rounded-[24px] md:rounded-[32px] shadow-[8px_8px_0_0_#0f172a] dark:shadow-[8px_8px_0_0_#334155] md:shadow-[12px_12px_0_0_#0f172a] dark:md:shadow-[12px_12px_0_0_#334155] p-6 md:p-8 w-full max-w-xl max-h-[90vh] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-            <h2 className="text-xl md:text-2xl font-black text-slate-900 dark:text-white mb-4 md:mb-6 tracking-tight">
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-[100]">
+          <div className="bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-2xl shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] p-5 md:p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <h2 className="text-lg md:text-xl font-bold text-slate-900 dark:text-white mb-4">
               Pricing: {AI_FEATURE_LABELS[editingAi.feature_slug] ?? editingAi.feature_slug}
             </h2>
             <form
@@ -579,12 +577,12 @@ export default function PricingEditPage() {
                 e.preventDefault()
                 handleSaveAi(editingAi)
               }}
-              className="space-y-4 md:space-y-6"
+              className="space-y-4"
             >
-              <div className="space-y-3 md:space-y-4">
+              <div className="space-y-3">
                 {editingAi.feature_slug !== 'flipbook_unlock' && editingAi.feature_slug !== 'phototovideo' && (
                   <div>
-                    <label className="text-[10px] md:text-xs font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest mb-1 md:mb-1.5 block">Credit per Gen</label>
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 block">Credit per Gen</label>
                     <input
                       name="credits_per_use"
                       type="number"
@@ -596,19 +594,19 @@ export default function PricingEditPage() {
                           credits_per_use: Number(e.target.value),
                         })
                       }
-                      className="w-full px-4 py-3 md:px-5 md:py-3.5 bg-slate-50 dark:bg-slate-800 border-4 border-slate-900 dark:border-slate-700 rounded-xl md:rounded-2xl text-slate-900 dark:text-white font-bold placeholder:text-slate-300 dark:placeholder:text-slate-500 focus:outline-none shadow-[3px_3px_0_0_#0f172a] dark:shadow-[3px_3px_0_0_#334155] md:shadow-[4px_4px_0_0_#0f172a] dark:md:shadow-[4px_4px_0_0_#334155] focus:shadow-none"
+                      className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-violet-200"
                       required
                     />
                   </div>
                 )}
                 {editingAi.feature_slug === 'phototovideo' && (
-                  <div className="space-y-3 md:space-y-4">
-                    <p className="text-[10px] md:text-xs font-bold text-slate-600 dark:text-slate-400 leading-relaxed">
-                      Tambah baris dengan <span className="font-black">+</span>: isi <span className="font-black">detik</span> (bilangan bulat {PTV_SEC_MIN}–{PTV_SEC_MAX}) dan <span className="font-black">kredit</span> per generate. User hanya melihat durasi yang Anda definisikan di sini. Model Seedance: maks. {PTV_SEC_MAX} detik (bukan 15).
+                  <div className="space-y-3">
+                    <p className="text-[10px] font-medium text-slate-500 dark:text-slate-400 leading-relaxed">
+                      Tambah baris dengan <span className="font-bold">+</span>: isi <span className="font-bold">detik</span> (bilangan bulat {PTV_SEC_MIN}–{PTV_SEC_MAX}) dan <span className="font-bold">kredit</span> per generate.
                     </p>
-                    <div className="rounded-xl md:rounded-2xl border-4 border-slate-900 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 p-3 md:p-4 shadow-[3px_3px_0_0_#0f172a] dark:shadow-[3px_3px_0_0_#334155]">
+                    <div className="rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-3">
                       <div className="flex items-center justify-between gap-2 mb-3">
-                        <span className="text-[10px] md:text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">
+                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
                           Durasi &amp; kredit
                         </span>
                         <button
@@ -619,9 +617,9 @@ export default function PricingEditPage() {
                               { id: newPtvRowId(), sec: '', credits: 0 },
                             ])
                           }
-                          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 md:px-3 md:py-2 rounded-lg md:rounded-xl bg-lime-400 dark:bg-lime-600 text-slate-900 dark:text-white border-2 border-slate-900 dark:border-slate-700 text-[10px] md:text-xs font-black uppercase tracking-widest shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all"
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-100 text-emerald-700 text-[10px] font-bold hover:bg-emerald-200 transition-all shadow-[2px_2px_0_0_#059669] hover:shadow-none"
                         >
-                          <Plus size={14} className="md:w-4 md:h-4" strokeWidth={3} />
+                          <Plus size={14} strokeWidth={2.5} />
                           Baris
                         </button>
                       </div>
@@ -629,10 +627,10 @@ export default function PricingEditPage() {
                         {ptvDurRows.map((row) => (
                           <div
                             key={row.id}
-                            className="flex flex-wrap items-end gap-2 md:gap-3"
+                            className="flex flex-wrap items-end gap-2"
                           >
                             <div className="flex-1 min-w-[4.5rem]">
-                              <label className="text-[9px] md:text-[10px] font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest mb-1 block">
+                              <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1 block">
                                 Detik
                               </label>
                               <input
@@ -655,11 +653,11 @@ export default function PricingEditPage() {
                                     )
                                   )
                                 }}
-                                className="w-full px-3 py-2.5 md:px-4 md:py-3 bg-white dark:bg-slate-900 border-4 border-slate-900 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-bold text-sm focus:outline-none shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] focus:shadow-none"
+                                className="w-full px-3 py-2 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-bold text-sm focus:outline-none focus:ring-2 focus:ring-violet-200"
                               />
                             </div>
                             <div className="flex-1 min-w-[4.5rem]">
-                              <label className="text-[9px] md:text-[10px] font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest mb-1 block">
+                              <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1 block">
                                 Kredit
                               </label>
                               <input
@@ -675,7 +673,7 @@ export default function PricingEditPage() {
                                     )
                                   )
                                 }
-                                className="w-full px-3 py-2.5 md:px-4 md:py-3 bg-white dark:bg-slate-900 border-4 border-slate-900 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-bold text-sm focus:outline-none shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] focus:shadow-none"
+                                className="w-full px-3 py-2 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-bold text-sm focus:outline-none focus:ring-2 focus:ring-violet-200"
                               />
                             </div>
                             <button
@@ -686,7 +684,7 @@ export default function PricingEditPage() {
                                   prev.filter((r) => r.id !== row.id)
                                 )
                               }
-                              className="shrink-0 p-2.5 md:p-3 rounded-xl border-2 border-slate-900 dark:border-slate-700 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 disabled:opacity-40 disabled:pointer-events-none transition-colors"
+                              className="shrink-0 p-2 rounded-xl bg-rose-100 text-rose-600 hover:bg-rose-200 disabled:opacity-40 disabled:pointer-events-none transition-colors shadow-[2px_2px_0_0_#e11d48] hover:shadow-none"
                               title="Hapus baris"
                             >
                               <Trash2 size={18} className="md:w-5 md:h-5" strokeWidth={3} />
@@ -698,7 +696,7 @@ export default function PricingEditPage() {
                   </div>
                 )}
                 <div>
-                  <label className="text-[10px] md:text-xs font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest mb-1 md:mb-1.5 block">Credit per Unlock</label>
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 block">Credit per Unlock</label>
                   <input
                     name="credits_per_unlock"
                     type="number"
@@ -710,22 +708,22 @@ export default function PricingEditPage() {
                         credits_per_unlock: Number(e.target.value),
                       })
                     }
-                    className="w-full px-4 py-3 md:px-5 md:py-3.5 bg-slate-50 dark:bg-slate-800 border-4 border-slate-900 dark:border-slate-700 rounded-xl md:rounded-2xl text-slate-900 dark:text-white font-bold placeholder:text-slate-300 dark:placeholder:text-slate-500 focus:outline-none shadow-[3px_3px_0_0_#0f172a] dark:shadow-[3px_3px_0_0_#334155] md:shadow-[4px_4px_0_0_#0f172a] dark:md:shadow-[4px_4px_0_0_#334155] focus:shadow-none"
+                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-violet-200"
                     required
                   />
                 </div>
               </div>
-              <div className="flex gap-3 md:gap-4 pt-2 md:pt-4">
+              <div className="flex gap-3 pt-2">
                 <button
                   type="button"
                   onClick={() => setEditingAi(null)}
-                  className="flex-1 px-4 py-3 md:px-6 md:py-4 border-4 border-slate-900 dark:border-slate-700 rounded-xl md:rounded-2xl text-slate-900 dark:text-white font-black hover:bg-slate-50 dark:hover:bg-slate-800 transition-all active:scale-95 shadow-[3px_3px_0_0_#0f172a] dark:shadow-[3px_3px_0_0_#334155] md:shadow-[4px_4px_0_0_#0f172a] dark:md:shadow-[4px_4px_0_0_#334155] active:shadow-none text-xs md:text-base"
+                  className="flex-1 px-4 py-2.5 border-2 border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200 font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-[4px_4px_0_0_#334155] hover:shadow-none"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 px-4 py-3 md:px-6 md:py-4 bg-sky-400 dark:bg-sky-600 text-slate-900 dark:text-white border-4 border-slate-900 dark:border-slate-700 rounded-xl md:rounded-2xl font-black hover:translate-x-1 hover:translate-y-1 transition-all shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155] md:shadow-[6px_6px_0_0_#0f172a] dark:md:shadow-[6px_6px_0_0_#334155] hover:shadow-none text-xs md:text-base"
+                  className="flex-1 px-4 py-2.5 bg-sky-400 text-sky-900 rounded-xl font-bold hover:bg-sky-300 transition-all shadow-[2px_2px_0_0_#0284c7] hover:shadow-none"
                 >
                   Save
                 </button>
@@ -734,61 +732,101 @@ export default function PricingEditPage() {
           </div>
         </div>
       )}
-      <div className="flex flex-col gap-4 mb-8 lg:flex-row lg:justify-between lg:items-end px-4 md:px-0">
-        <div className="space-y-1">
-          <h1 className="text-2xl md:text-4xl font-black text-slate-900 dark:text-white tracking-tight">Pricing Config</h1>
-          <p className="text-sm md:text-base font-bold text-slate-500 dark:text-slate-300">Kelola paket harga yearbook & fitur berbayar lainnya.</p>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 mb-6 px-4 md:px-0">
+          <div className="space-y-1">
+            <h1 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
+              {activeTab === 'yearbook' ? 'Pricing Yearbook' : 'Pricing AI'}
+            </h1>
+            <p className="text-xs md:text-sm font-medium text-slate-500 dark:text-slate-400">
+              {activeTab === 'yearbook' ? 'Kelola paket harga yearbook.' : 'Kelola biaya unlock & generate.'}
+            </p>
+          </div>
+          {activeTab === 'yearbook' && (
+            <button onClick={() => setEditingPackage({})} className="flex items-center justify-center gap-2 px-5 py-2.5 md:px-6 md:py-3 bg-emerald-400 text-emerald-900 rounded-xl font-bold hover:bg-emerald-300 transition-all shadow-[2px_2px_0_0_#059669] hover:shadow-none hover:-translate-x-0.5 hover:-translate-y-0.5 text-sm">
+              <Plus size={18} className="md:w-5 md:h-5" strokeWidth={2.5} />
+                Buat Paket
+            </button>
+          )}
         </div>
-        <button onClick={() => setEditingPackage({})} className="flex items-center justify-center gap-2 px-6 py-3 md:px-8 md:py-4 bg-lime-400 dark:bg-lime-600 text-slate-900 dark:text-white border-4 border-slate-900 dark:border-slate-700 rounded-2xl font-black hover:translate-x-1 hover:translate-y-1 transition-all shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155] md:shadow-[6px_6px_0_0_#0f172a] dark:md:shadow-[6px_6px_0_0_#334155] hover:shadow-none text-sm md:text-base">
-          <Plus size={20} className="md:w-6 md:h-6" strokeWidth={3} />
-          Create Package
-        </button>
-      </div>
 
       {/* Tabs */}
-      <div className="mb-8 grid grid-cols-2 gap-2 md:flex md:flex-nowrap md:gap-3 px-4 md:px-0">
-        <button
-          type="button"
-          onClick={() => setActiveTab('yearbook')}
-          className={`flex items-center justify-center gap-2 md:gap-3 px-2 py-3 md:px-8 md:py-4 rounded-xl md:rounded-2xl text-[11px] md:text-base font-black border-4 border-slate-900 dark:border-slate-700 transition-all active:scale-95 ${activeTab === 'yearbook' ? 'bg-violet-400 dark:bg-violet-600 text-slate-900 dark:text-white shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155] md:shadow-[6px_6px_0_0_#0f172a] dark:md:shadow-[6px_6px_0_0_#334155]' : 'bg-white dark:bg-slate-800 text-slate-400 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 shadow-none'}`}
-        >
-          <Layout className="w-4 h-4 md:w-6 md:h-6" strokeWidth={3} />
-          <span>Yearbook</span>
-          <span className="px-1.5 py-0.5 bg-slate-900 dark:bg-slate-700 text-white text-[9px] md:text-xs rounded-lg border-2 border-slate-900 dark:border-slate-600 ml-0.5 md:ml-1">
-            {packages.length}
-          </span>
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab('ai')}
-          className={`flex items-center justify-center gap-2 md:gap-3 px-2 py-3 md:px-8 md:py-4 rounded-xl md:rounded-2xl text-[11px] md:text-base font-black border-4 border-slate-900 dark:border-slate-700 transition-all active:scale-95 ${activeTab === 'ai' ? 'bg-sky-400 dark:bg-sky-600 text-slate-900 dark:text-white shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155] md:shadow-[6px_6px_0_0_#0f172a] dark:md:shadow-[6px_6px_0_0_#334155]' : 'bg-white dark:bg-slate-800 text-slate-400 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 shadow-none'}`}
-        >
-          <Zap className="w-4 h-4 md:w-6 md:h-6" strokeWidth={3} />
-          <span>Unlock & Gen</span>
-          <span className="px-1.5 py-0.5 bg-slate-900 dark:bg-slate-700 text-white text-[9px] md:text-xs rounded-lg border-2 border-slate-900 dark:border-slate-600 ml-0.5 md:ml-1">
-            {aiPricing.length}
-          </span>
-        </button>
+      <div className="mb-8 px-4 md:px-0">
+        <div className="relative inline-flex items-center gap-1 p-1 bg-white dark:bg-slate-800 rounded-2xl border-2 border-slate-200 dark:border-slate-700 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]">
+          <div
+            className="absolute top-1 bottom-1 rounded-xl bg-violet-400 transition-all duration-300 ease-out"
+            style={{
+              transform: activeTab === 'yearbook' ? 'translateX(0)' : 'translateX(100%)',
+              width: 'calc(50% - 6px)',
+            }}
+          />
+          <button
+            type="button"
+            onClick={() => setActiveTab('yearbook')}
+            className={`relative z-10 flex items-center justify-center gap-1.5 md:gap-2 px-3 py-2 md:px-5 md:py-2.5 rounded-xl text-[10px] md:text-sm font-bold transition-all duration-200 ${
+              activeTab === 'yearbook'
+                ? 'text-slate-900'
+                : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+            }`}
+          >
+            <Layout className="w-3.5 h-3.5 md:w-5 md:h-5" strokeWidth={2.5} />
+            <span>Yearbook</span>
+            <span className="px-1.5 py-0.5 bg-slate-900 dark:bg-slate-700 text-white text-[9px] md:text-xs rounded-lg border-2 border-slate-200 dark:border-slate-600 ml-0.5">
+              {packages.length}
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('ai')}
+            className={`relative z-10 flex items-center justify-center gap-1.5 md:gap-2 px-3 py-2 md:px-5 md:py-2.5 rounded-xl text-[10px] md:text-sm font-bold transition-all duration-200 ${
+              activeTab === 'ai'
+                ? 'text-slate-900'
+                : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+            }`}
+          >
+            <Zap className="w-3.5 h-3.5 md:w-5 md:h-5" strokeWidth={2.5} />
+            <span>Unlock & Gen</span>
+            <span className="px-1.5 py-0.5 bg-slate-900 dark:bg-slate-700 text-white text-[9px] md:text-xs rounded-lg border-2 border-slate-200 dark:border-slate-600 ml-0.5">
+              {aiPricing.length}
+            </span>
+          </button>
+        </div>
       </div>
 
       {activeTab === 'yearbook' ? (
         loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8 px-4 md:px-0">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 px-4 md:px-0">
             {[1, 2, 3, 4].map((i) => (
               <div
                 key={i}
-                className="bg-white dark:bg-slate-900 border-4 border-slate-900 dark:border-slate-700 rounded-[24px] md:rounded-[32px] p-6 md:p-8 animate-pulse shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155] md:shadow-[8px_8px_0_0_#0f172a] dark:md:shadow-[8px_8px_0_0_#334155]"
+                className="bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-2xl p-5 md:p-6 animate-pulse shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]"
               >
-                <div className="space-y-4">
-                  <div className="h-6 md:h-8 bg-slate-100 dark:bg-slate-800 rounded-xl w-32 md:w-48" />
-                  <div className="h-4 md:h-6 bg-slate-50 dark:bg-slate-800 rounded-lg w-full" />
-                  <div className="h-20 md:h-24 bg-slate-50 dark:bg-slate-800 rounded-2xl w-full" />
+                <div className="space-y-3">
+                  <div className="h-5 md:h-6 bg-slate-100 dark:bg-slate-800 rounded-xl w-28 md:w-40" />
+                  <div className="h-3 md:h-4 bg-slate-50 dark:bg-slate-800 rounded-lg w-full" />
+                  <div className="h-16 md:h-20 bg-slate-50 dark:bg-slate-800 rounded-xl w-full" />
                 </div>
               </div>
             ))}
           </div>
+        ) : packages.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 px-4 md:px-8 text-center bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-3xl border-dashed shadow-[4px_4px_0_0_#94a3b8] dark:shadow-[4px_4px_0_0_#1e293b] mx-4 md:mx-0">
+            <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-2xl flex items-center justify-center mb-4 transform -rotate-3 border-2 border-slate-200 dark:border-slate-700">
+              <Layout size={32} className="text-slate-400 dark:text-slate-500" strokeWidth={1.5} />
+            </div>
+            <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-2">Belum ada paket harga</h3>
+            <p className="text-sm font-medium text-slate-500 dark:text-slate-400 max-w-md mb-6">
+              Anda belum membuat daftar paket harga untuk Yearbook. Silakan buat paket baru untuk ditawarkan kepada pelanggan.
+            </p>
+            <button
+              onClick={() => setEditingPackage({})}
+              className="flex items-center gap-2 bg-emerald-400 hover:bg-emerald-300 text-emerald-900 px-5 py-2.5 rounded-xl font-bold text-sm shadow-[3px_3px_0_0_#059669] hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all"
+            >
+              <Plus size={18} strokeWidth={2.5} />
+              Buat Paket Pertama
+            </button>
+          </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8 px-4 md:px-0 pb-12">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 px-4 md:px-0 pb-12">
             {packages.map((pkg) => {
               const addonsList = pkg.features.map((f) => {
                 try {
@@ -802,69 +840,69 @@ export default function PricingEditPage() {
               return (
                 <div
                   key={pkg.id}
-                  className="bg-white dark:bg-slate-900 border-4 border-slate-900 dark:border-slate-700 rounded-[24px] md:rounded-[32px] p-6 md:p-8 shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155] md:shadow-[8px_8px_0_0_#0f172a] dark:md:shadow-[8px_8px_0_0_#334155] hover:shadow-[6px_6px_0_0_#0f172a] dark:hover:shadow-[6px_6px_0_0_#334155] md:hover:shadow-[12px_12px_0_0_#0f172a] dark:md:hover:shadow-[12px_12px_0_0_#334155] hover:-translate-x-1 hover:-translate-y-1 transition-all group relative overflow-hidden"
+                  className="bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-2xl p-5 md:p-6 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:shadow-none hover:-translate-x-0.5 hover:-translate-y-0.5 transition-all group relative overflow-hidden"
                 >
-                  <div className="absolute top-0 right-0 pt-4 pr-4 md:pt-6 md:pr-6 flex gap-1.5 md:gap-2 scale-90 md:scale-100">
+                  <div className="absolute top-3 right-3 md:top-4 md:right-4 flex gap-1.5">
                     <button
                       onClick={() => setEditingPackage(pkg)}
-                      className="p-2 md:p-3 rounded-xl md:rounded-2xl bg-amber-300 dark:bg-amber-600 border-2 border-slate-900 dark:border-slate-700 text-slate-900 dark:text-white hover:translate-x-0.5 hover:translate-y-0.5 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] hover:shadow-none transition-all active:scale-95"
+                      className="p-1.5 md:p-2 rounded-xl bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-900 shadow-[2px_2px_0_0_#d97706] hover:shadow-none transition-all"
                     >
-                      <Edit size={16} className="md:w-5 md:h-5" strokeWidth={3} />
+                      <Edit size={14} className="md:w-4 md:h-4" strokeWidth={2} />
                     </button>
                     <button
                       onClick={() => handleDelete(pkg.id)}
-                      className="p-2 md:p-3 rounded-xl md:rounded-2xl bg-red-400 dark:bg-red-600 border-2 border-slate-900 dark:border-slate-700 text-white hover:translate-x-0.5 hover:translate-y-0.5 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] hover:shadow-none transition-all active:scale-95"
+                      className="p-1.5 md:p-2 rounded-xl bg-rose-100 dark:bg-rose-900/50 text-rose-700 dark:text-rose-300 hover:bg-rose-200 dark:hover:bg-rose-900 shadow-[2px_2px_0_0_#e11d48] hover:shadow-none transition-all"
                     >
-                      <Trash2 size={16} className="md:w-5 md:h-5" strokeWidth={3} />
+                      <Trash2 size={14} className="md:w-4 md:h-4" strokeWidth={2} />
                     </button>
                   </div>
 
-                  <div className="mb-4 md:mb-6">
-                    <div className="flex items-center flex-wrap gap-2 md:gap-3 mb-2 pr-20 md:pr-0">
-                      <h3 className="text-xl md:text-2xl font-black text-slate-900 dark:text-white">{pkg.name}</h3>
+                  <div className="mb-3 md:mb-4 pr-16 md:pr-20">
+                    <div className="flex items-center flex-wrap gap-2 mb-1.5">
+                      <h3 className="text-lg md:text-xl font-bold text-slate-900 dark:text-white">{pkg.name}</h3>
                       {pkg.is_popular && (
-                        <span className="inline-flex items-center gap-1.5 px-2 py-1 md:px-3 md:py-1 rounded-full bg-amber-400 dark:bg-amber-600 text-slate-900 dark:text-white text-[10px] md:text-xs font-black border-2 border-slate-900 dark:border-slate-700 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155]">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-400 text-amber-900 text-[9px] md:text-[10px] font-bold shadow-[2px_2px_0_0_#d97706]">
                           <Star size={10} className="md:w-3 md:h-3" fill="currentColor" /> Pop
                         </span>
                       )}
                     </div>
-                    <div className="text-slate-900 dark:text-white font-black">
-                      <span className="text-xs md:text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Harga dasar</span>
+                    <div className="text-slate-900 dark:text-white font-bold">
+                      <span className="text-[10px] md:text-xs font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider">Harga dasar</span>
                       <div className="mt-0.5">
-                        <span className="text-2xl md:text-3xl">Rp {pkg.price_per_student.toLocaleString('id-ID')}</span>
-                        <span className="text-slate-400 dark:text-slate-300 text-xs md:text-sm ml-1 md:ml-2">/ student</span>
+                        <span className="text-xl md:text-2xl">Rp {pkg.price_per_student.toLocaleString('id-ID')}</span>
+                        <span className="text-slate-400 dark:text-slate-400 text-xs ml-1">/ student</span>
                       </div>
                     </div>
                   </div>
 
                   {(pkg.ai_labs_features ?? []).length > 0 && (
-                    <div className="mb-6 flex flex-wrap gap-2">
+                    <div className="mb-4 flex flex-wrap gap-1.5">
                       {(pkg.ai_labs_features ?? []).map((slug) => (
                         <span
                           key={slug}
-                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-black border-2 border-slate-900 dark:border-slate-700 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] ${slug === 'flipbook_unlock' ? 'bg-emerald-300 dark:bg-emerald-700 text-slate-900 dark:text-white' : 'bg-indigo-300 dark:bg-indigo-700 text-slate-900 dark:text-white'
+                          className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold ${slug === 'flipbook_unlock' ? 'bg-emerald-100 text-emerald-700' : 'bg-violet-100 text-violet-700'
                             }`}
                         >
-                          {slug === 'flipbook_unlock' ? <Book size={12} strokeWidth={3} /> : <Sparkles size={12} strokeWidth={3} />}
+                          {slug === 'flipbook_unlock' ? <Book size={11} strokeWidth={2} /> : <Sparkles size={11} strokeWidth={2} />}
                           {AI_FEATURE_LABELS[slug]?.toUpperCase() ?? slug.toUpperCase()}
                         </span>
                       ))}
                     </div>
                   )}
 
-                  <div className="bg-slate-50 dark:bg-slate-800 border-4 border-slate-900 dark:border-slate-700 rounded-2xl p-5 shadow-inner">
-                    <p className="text-[10px] font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest mb-3">Add-on extra (opsional — bisa dipilih user)</p>
-                    <ul className="space-y-3">
+                  <div className="bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-xl p-4">
+                    <p className="text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-2">Add-on extra (opsional)</p>
+                    <ul className="space-y-2">
                       {addonsList.length === 0 ? (
-                        <li className="text-sm font-bold text-slate-400 dark:text-slate-400 italic">Belum ada add-on.</li>
+                        <li className="text-xs font-medium text-slate-400 dark:text-slate-400 italic">Belum ada add-on.</li>
                       ) : (
                         addonsList.map((addon, i) => (
-                          <li key={i} className="flex items-center justify-between text-sm">
-                            <div className="flex items-center gap-2 font-bold text-slate-600 dark:text-slate-300">
-                              <ChevronRight size={14} className="text-indigo-400 dark:text-indigo-300" strokeWidth={4} />
+                          <li key={i} className="flex items-center justify-between text-xs">
+                            <div className="flex items-center gap-1.5 font-medium text-slate-600 dark:text-slate-300">
+                              <ChevronRight size={12} className="text-violet-400 dark:text-violet-300" strokeWidth={3} />
                               {addon.name}
                             </div>
-                            <span className="text-xs font-black text-slate-500 dark:text-slate-300">
+                            <span className="text-slate-500 dark:text-slate-400">
                               {addon.price > 0 ? `+Rp ${addon.price.toLocaleString('id-ID')} / siswa` : '—'}
                             </span>
                           </li>
@@ -878,62 +916,59 @@ export default function PricingEditPage() {
           </div>
         )
       ) : loadingAi ? (
-        <div className="space-y-6 px-4 md:px-0">
+        <div className="space-y-4 px-4 md:px-0">
           {[1, 2, 3].map((i) => (
             <div
               key={i}
-              className="bg-white dark:bg-slate-900 border-4 border-slate-900 dark:border-slate-700 rounded-3xl p-6 md:p-8 animate-pulse shadow-[6px_6px_0_0_#0f172a] dark:shadow-[6px_6px_0_0_#334155]"
+              className="bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-2xl p-5 animate-pulse shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]"
             >
               <div className="flex justify-between items-center">
-                <div className="space-y-3">
-                  <div className="h-6 bg-slate-100 dark:bg-slate-800 rounded-lg w-40" />
-                  <div className="h-4 bg-slate-50 dark:bg-slate-800 rounded-lg w-64" />
+                <div className="space-y-2">
+                  <div className="h-5 bg-slate-100 dark:bg-slate-800 rounded-lg w-36" />
+                  <div className="h-3 bg-slate-50 dark:bg-slate-800 rounded-lg w-52" />
                 </div>
-                <div className="h-10 bg-slate-100 dark:bg-slate-800 rounded-xl w-24" />
+                <div className="h-9 bg-slate-100 dark:bg-slate-800 rounded-xl w-20" />
               </div>
             </div>
           ))}
         </div>
       ) : aiPricing.length === 0 ? (
-        <div className="bg-white dark:bg-slate-900 border-4 border-slate-900 dark:border-slate-700 rounded-[32px] p-12 text-center shadow-[12px_12px_0_0_#0f172a] dark:shadow-[12px_12px_0_0_#334155] mx-4 md:mx-0">
-          <Zap className="w-16 h-16 mx-auto mb-4 text-slate-200 dark:text-slate-600" />
-          <h3 className="text-xl font-black text-slate-900 dark:text-white mb-2">No AI Data</h3>
-          <p className="text-slate-400 dark:text-slate-300 font-bold">Jalankan migration SQL terlebih dahulu untuk mengisi data pricing AI.</p>
+        <div className="bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-2xl p-10 text-center shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] mx-4 md:mx-0">
+          <Zap className="w-12 h-12 mx-auto mb-3 text-sky-300" />
+          <h3 className="text-base font-bold text-slate-900 dark:text-white mb-1">No AI Data</h3>
+          <p className="text-xs text-slate-400 dark:text-slate-400 font-medium">Jalankan migration SQL terlebih dahulu untuk mengisi data pricing AI.</p>
         </div>
       ) : (
-        <div className="space-y-4 md:space-y-6 px-4 md:px-0 pb-12">
-          <p className="px-3 py-2 md:px-4 md:py-3 bg-indigo-50 dark:bg-indigo-900/30 border-4 border-indigo-200 dark:border-indigo-800 rounded-xl md:rounded-2xl text-[11px] md:text-[13px] font-black text-indigo-700 dark:text-indigo-200 w-fit mb-2 md:mb-4">
-            Kelola biaya <span className="underline decoration-wavy underline-offset-4">unlock</span> & <span className="underline decoration-wavy underline-offset-4">generate</span>.
-          </p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+        <div className="space-y-3 px-4 md:px-0 pb-12">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {aiPricing.map((item) => {
               const isFlipbook = item.feature_slug === 'flipbook_unlock'
               const hasGenerate = GENERATE_SLUGS.has(item.feature_slug)
               return (
                 <div
                   key={item.id}
-                  className="bg-white dark:bg-slate-900 border-4 border-slate-900 dark:border-slate-700 rounded-[24px] md:rounded-3xl p-5 md:p-8 shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155] md:shadow-[6px_6px_0_0_#0f172a] dark:md:shadow-[6px_6px_0_0_#334155] hover:shadow-[6px_6px_0_0_#0f172a] dark:hover:shadow-[6px_6px_0_0_#334155] md:hover:shadow-[10px_10px_0_0_#0f172a] dark:md:hover:shadow-[10px_10px_0_0_#334155] hover:-translate-x-1 hover:-translate-y-1 transition-all group flex justify-between items-center"
+                  className="bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-2xl p-4 md:p-5 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:shadow-none hover:-translate-x-0.5 hover:-translate-y-0.5 transition-all group flex justify-between items-center"
                 >
                   <div>
-                    <h3 className="text-lg md:text-xl font-black text-slate-900 dark:text-white mb-2 md:mb-3">
+                    <h3 className="text-base md:text-lg font-bold text-slate-900 dark:text-white mb-2">
                       {AI_FEATURE_LABELS[item.feature_slug] ?? item.feature_slug}
                     </h3>
-                    <div className="flex flex-wrap gap-x-4 md:gap-x-6 gap-y-1.5 md:gap-y-2">
+                    <div className="flex flex-wrap gap-x-4 gap-y-1.5">
                       <div className="flex flex-col">
-                        <span className="text-[9px] md:text-[10px] font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest">Unlock</span>
-                        <span className="text-base md:text-lg font-black text-violet-500 dark:text-violet-400">{item.credits_per_unlock} <span className="text-[10px] text-slate-400 dark:text-slate-300">CREDITS</span></span>
+                        <span className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-wider">Unlock</span>
+                        <span className="text-sm md:text-base font-bold text-violet-500 dark:text-violet-400">{item.credits_per_unlock} <span className="text-[9px] text-slate-400 dark:text-slate-400">CREDITS</span></span>
                       </div>
                       {hasGenerate && !isFlipbook && (
-                        <div className="flex flex-col max-w-[min(100%,220px)] md:max-w-none">
-                          <span className="text-[9px] md:text-[10px] font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest">Generate</span>
+                        <div className="flex flex-col">
+                          <span className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-wider">Generate</span>
                           {item.feature_slug === 'phototovideo' ? (
-                            <span className="text-xs md:text-sm font-black text-sky-500 dark:text-sky-400 leading-snug break-words">
+                            <span className="text-xs md:text-sm font-bold text-sky-500 dark:text-sky-400 leading-snug break-words">
                               {formatPtvGenerateLine(item)}
                             </span>
                           ) : (
-                            <span className="text-base md:text-lg font-black text-sky-500 dark:text-sky-400">
+                            <span className="text-sm md:text-base font-bold text-sky-500 dark:text-sky-400">
                               {item.credits_per_use}{' '}
-                              <span className="text-[10px] text-slate-400 dark:text-slate-300">CREDITS</span>
+                              <span className="text-[9px] text-slate-400 dark:text-slate-400">CREDITS</span>
                             </span>
                           )}
                         </div>
@@ -942,9 +977,9 @@ export default function PricingEditPage() {
                   </div>
                   <button
                     onClick={() => setEditingAi(item)}
-                    className="p-3 md:p-4 rounded-xl md:rounded-2xl bg-amber-400 dark:bg-amber-600 border-2 border-slate-900 dark:border-slate-700 text-slate-900 dark:text-white hover:translate-x-0.5 hover:translate-y-0.5 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] hover:shadow-none transition-all active:scale-95 flex items-center justify-center shrink-0"
+                    className="p-2 md:p-2.5 rounded-xl bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-900 shadow-[2px_2px_0_0_#d97706] hover:shadow-none transition-all flex items-center justify-center shrink-0 ml-2"
                   >
-                    <Edit size={20} className="md:w-6 md:h-6" strokeWidth={3} />
+                    <Edit size={16} className="md:w-5 md:h-5" strokeWidth={2} />
                   </button>
                 </div>
               )

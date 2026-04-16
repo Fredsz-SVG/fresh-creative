@@ -10,6 +10,7 @@ import { apiUrl } from '../../lib/api-url'
 import { fetchWithAuth } from '../../lib/api-client'
 import { asObject, asString, getErrorMessage } from '@/components/yearbook/utils/response-narrowing'
 import FastImage from '@/components/ui/FastImage'
+import { toast } from '@/lib/toast'
 
 /** Extract token from URL atau kode (alphanumeric + - _, 6–80 char; support token lama yang panjang). */
 function parseInviteToken(input: string): { token: string; type: 'join' | 'invite' | 'code' } | null {
@@ -54,6 +55,7 @@ export type AlbumRow = {
   students_count?: number
   source?: string
   total_estimated_price?: number
+  collected_amount?: number
   individual_payments_enabled?: number | null;
   payment_status?: 'unpaid' | 'paid'
   payment_url?: string | null
@@ -369,7 +371,7 @@ function AlbumCard({
               : isApproved && !isPaid
                 ? 'Selesaikan pembayaran untuk akses'
                 : statusLabel === 'declined'
-                  ? 'Akses dibatasi'
+                  ? 'Akses dibatasi, hubungi customer service'
                   : 'Klik untuk buka'}
           </p>
         </div>
@@ -593,9 +595,10 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
       const res = await fetchWithAuth(`/api/albums/${album.id}`, { method: 'PUT', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'approved' }) })
       if (!res.ok) {
         const err = asObject(await res.json().catch(() => ({})))
-        alert(getErrorMessage(err, 'Gagal approve'))
+        toast.error(getErrorMessage(err, 'Gagal menyetujui album'))
         return
       }
+      toast.success(`Album ${album.name} disetujui`)
       await fetchAlbums(true)
     } finally {
       setLoadingId(null)
@@ -609,9 +612,10 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
       const res = await fetchWithAuth(`/api/albums/${album.id}`, { method: 'PUT', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'declined' }) })
       if (!res.ok) {
         const err = asObject(await res.json().catch(() => ({})))
-        alert(getErrorMessage(err, 'Gagal decline'))
+        toast.error(getErrorMessage(err, 'Gagal menolak album'))
         return
       }
+      toast.warning(`Album ${album.name} ditolak`)
       await fetchAlbums(true)
     } finally {
       setLoadingId(null)
@@ -623,7 +627,7 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
     if (!albumId) return
 
     if (album.type === 'yearbook' && (album.status ?? 'pending') !== 'approved') {
-      alert('Album yearbook harus disetujui dulu sebelum bisa mengundang teman.')
+      toast.error('Album yearbook harus disetujui dulu sebelum bisa mengundang teman.')
       return
     }
 
@@ -635,15 +639,16 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
       })
       const data = asObject(await res.json().catch(() => ({})))
       if (!res.ok) {
-        alert(getErrorMessage(data, 'Gagal membuat link undangan'))
+        toast.error(getErrorMessage(data, 'Gagal membuat link undangan'))
         return
       }
       const origin = typeof window !== 'undefined' ? window.location.origin : ''
       const code = asString(data.token) ?? ''
       const link = asString(data.inviteLink) ?? `${origin}/join/${code}`
       setInviteModal({ link, code, albumName: album.name })
+      toast.success(`Link undangan untuk ${album.name} berhasil dibuat`)
     } catch {
-      alert('Gagal membuat link undangan')
+      toast.error('Gagal membuat link undangan')
     } finally {
       setInviteLoading(null)
     }
@@ -663,20 +668,16 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
       const res = await fetchWithAuth(`/api/albums/${album.id}`, { method: 'DELETE', credentials: 'include' })
       if (!res.ok) {
         const err = asObject(await res.json().catch(() => ({})))
-        alert(getErrorMessage(err, 'Gagal hapus'))
+        toast.error(getErrorMessage(err, 'Gagal menghapus album'))
         return
       }
+      toast.info(`Album ${album.name} berhasil dihapus`)
       await fetchAlbums(true)
     } finally {
       setLoadingId(null)
     }
   }
   const handlePay = async (album: AlbumRow) => {
-    if (album.payment_url) {
-      setInvoicePopupUrl(album.payment_url)
-      return
-    }
-
     setLoadingId(album.id)
     try {
       const res = await fetchWithAuth(`/api/albums/${album.id}/checkout`, {
@@ -685,7 +686,7 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
       })
       const data = asObject(await res.json().catch(() => ({})))
       if (!res.ok) {
-        alert(getErrorMessage(data, 'Gagal memproses pembayaran'))
+        toast.error(getErrorMessage(data, 'Gagal memproses pembayaran'))
         return
       }
       const invoiceUrl = asString(data.invoiceUrl)
@@ -694,7 +695,7 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
         fetchAlbums(true) // Refresh data untuk simpan payment_url
       }
     } catch {
-      alert('Gagal memproses pembayaran')
+      toast.error('Gagal memproses pembayaran')
     } finally {
       setLoadingId(null)
     }
@@ -1088,9 +1089,13 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
               const destUrl = album.type === 'public'
                 ? `/admin/album/public/${album.id}`
                 : `/admin/album/yearbook/${album.album_id ?? album.id}`
-              const estimasi = album.total_estimated_price
+              const estimasiTotal = album.total_estimated_price
                 ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(album.total_estimated_price)
                 : '-'
+              const estimasiTerkumpul = album.collected_amount
+                ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(album.collected_amount)
+                : 'Rp 0'
+              const estimasiText = album.total_estimated_price ? `${estimasiTerkumpul} / ${estimasiTotal}` : '-'
               return (
                 <div key={album.id} className="rounded-3xl border-2 border-slate-900 bg-white p-5 flex flex-col gap-4 shadow-[2px_2px_0_0_#0f172a] hover:shadow-[2px_2px_0_0_#0f172a] hover:-translate-y-1 hover:-translate-x-1 transition-all">
                   <div className="space-y-1.5 text-[13px] sm:text-sm font-bold text-slate-600">
@@ -1104,7 +1109,7 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
                     {album.students_count != null && album.students_count > 0 && (
                       <p><span className="text-slate-400">Siswa:</span> <span className="text-slate-800">{album.students_count}</span></p>
                     )}
-                    <p><span className="text-slate-400">Estimasi:</span> <span className="text-slate-800">{estimasi}</span></p>
+                    <p><span className="text-slate-400">Estimasi:</span> <span className="text-slate-800">{estimasiText}</span></p>
                     <div className="mt-2 pt-1 flex flex-wrap gap-2">
                       <span
                         className={`inline-block px-2 py-0.5 text-[10px] font-black uppercase tracking-wider rounded border-2 border-slate-900 shadow-[2px_2px_0_0_#0f172a] ${(album.status ?? 'pending') === 'approved' ? 'bg-emerald-300 text-slate-900' :
@@ -1180,6 +1185,9 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
                 <tbody className="divide-y-2 divide-slate-100 dark:divide-slate-700">
                   {paginatedAlbums.map((album) => {
                     const isProcessing = loadingId === album.id
+                    const estimasiTotal = album.total_estimated_price ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(album.total_estimated_price) : '-'
+                    const estimasiTerkumpul = album.collected_amount ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(album.collected_amount) : 'Rp 0'
+                    const estimasiText = album.total_estimated_price ? `${estimasiTerkumpul} / ${estimasiTotal}` : '-'
                     return (
                       <tr
                         key={album.id}
@@ -1216,9 +1224,7 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
                           {album.students_count || '-'}
                         </td>
                         <td className="px-3 py-2.5 text-[11px] text-slate-600 dark:text-slate-300 font-bold text-center hidden xl:table-cell whitespace-nowrap">
-                          {album.total_estimated_price
-                            ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(album.total_estimated_price)
-                            : '-'}
+                          {estimasiText}
                         </td>
                         <td className="px-3 py-2.5 text-center whitespace-nowrap">
                           <div className="flex flex-col items-center gap-1">

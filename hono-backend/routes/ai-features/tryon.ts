@@ -78,7 +78,8 @@ tryon.post('/', async (c) => {
     if (authError || !user) return c.json({ ok: false, error: 'Unauthorized' }, 401)
 
     const REPLICATE_API_TOKEN = ((c.env as ReplicateEnv).REPLICATE_API_TOKEN || '').trim()
-    if (!REPLICATE_API_TOKEN) return c.json({ ok: false, error: 'REPLICATE_API_TOKEN tidak dikonfigurasi' }, 500)
+    if (!REPLICATE_API_TOKEN)
+      return c.json({ ok: false, error: 'REPLICATE_API_TOKEN tidak dikonfigurasi' }, 500)
 
     const replicate = new Replicate({ auth: REPLICATE_API_TOKEN })
 
@@ -87,8 +88,10 @@ tryon.post('/', async (c) => {
     if (!body.human_img) return c.json({ ok: false, error: 'File manusia tidak valid' }, 400)
 
     let itemsCount = 1
-    const garments = Array.isArray(body.garments) ? body.garments.filter((g): g is string => typeof g === 'string') : []
-    
+    const garments = Array.isArray(body.garments)
+      ? body.garments.filter((g): g is string => typeof g === 'string')
+      : []
+
     if (!body.garm_img) {
       if (!garments.length) return c.json({ ok: false, error: 'Minimal 1 garment' }, 400)
       if (garments.length > MAX_GARMENTS) {
@@ -101,7 +104,7 @@ tryon.post('/', async (c) => {
       .prepare(`SELECT credits_per_use FROM ai_feature_pricing WHERE feature_slug = ?`)
       .bind('tryon')
       .first<{ credits_per_use: number }>()
-    
+
     const creditsPerUse = pricing?.credits_per_use ?? 0
     const totalCreditsNeeded = creditsPerUse * itemsCount
 

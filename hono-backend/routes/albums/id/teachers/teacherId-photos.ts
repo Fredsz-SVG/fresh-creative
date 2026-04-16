@@ -37,7 +37,10 @@ teacherIdPhotos.post('/', async (c) => {
 
     if (!fileData || fileData.byteLength === 0) return c.json({ error: 'No file provided' }, 400)
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser()
     if (authError || !user) return c.json({ error: 'Unauthorized' }, 401)
 
     const isGlobalAdmin = (await getRole(c, user)) === 'admin'
@@ -77,7 +80,9 @@ teacherIdPhotos.post('/', async (c) => {
     const publicUrl = publicAlbumAssetUrl(c, relPath)
 
     const maxSort = await db
-      .prepare(`SELECT sort_order FROM album_teacher_photos WHERE teacher_id = ? ORDER BY sort_order DESC LIMIT 1`)
+      .prepare(
+        `SELECT sort_order FROM album_teacher_photos WHERE teacher_id = ? ORDER BY sort_order DESC LIMIT 1`
+      )
       .bind(teacherId)
       .first<{ sort_order: number | null }>()
     const nextSort = (maxSort?.sort_order ?? -1) + 1
@@ -91,7 +96,10 @@ teacherIdPhotos.post('/', async (c) => {
       .run()
     if (!ins.success) return c.json({ error: 'Insert failed' }, 500)
 
-    const row = await db.prepare(`SELECT * FROM album_teacher_photos WHERE id = ?`).bind(photoId).first()
+    const row = await db
+      .prepare(`SELECT * FROM album_teacher_photos WHERE id = ?`)
+      .bind(photoId)
+      .first()
     return c.json(row, 201)
   } catch (error: unknown) {
     console.error('Error in POST teacher photos:', error)

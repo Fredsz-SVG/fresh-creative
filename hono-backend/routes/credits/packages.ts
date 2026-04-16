@@ -43,10 +43,15 @@ creditsPackages.post('/', async (c) => {
   }
   try {
     await db
-      .prepare('INSERT INTO credit_packages (id, name, credits, price, popular) VALUES (?, ?, ?, ?, ?)')
+      .prepare(
+        'INSERT INTO credit_packages (id, name, credits, price, popular) VALUES (?, ?, ?, ?, ?)'
+      )
       .bind(id, name, credits, price, popular)
       .run()
-    const row = await db.prepare('SELECT * FROM credit_packages WHERE id = ?').bind(id).first<Record<string, unknown>>()
+    const row = await db
+      .prepare('SELECT * FROM credit_packages WHERE id = ?')
+      .bind(id)
+      .first<Record<string, unknown>>()
     return c.json(row ? mapCredit(row) : { id })
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : 'error'
@@ -69,7 +74,10 @@ creditsPackages.put('/', async (c) => {
       .bind(credits, price, popular, id)
       .run()
     if (r.meta.changes === 0) return c.json({ error: 'No rows updated' }, 404)
-    const row = await db.prepare('SELECT * FROM credit_packages WHERE id = ?').bind(id).first<Record<string, unknown>>()
+    const row = await db
+      .prepare('SELECT * FROM credit_packages WHERE id = ?')
+      .bind(id)
+      .first<Record<string, unknown>>()
     return c.json(row ? mapCredit(row) : {})
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : 'error'

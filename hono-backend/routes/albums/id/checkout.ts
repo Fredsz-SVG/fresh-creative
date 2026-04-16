@@ -13,17 +13,24 @@ checkoutRoute.post('/', async (c) => {
     const supabase = getSupabaseClient(c)
     const db = getD1(c)
     if (!db) return c.json({ error: 'Database not configured' }, 503)
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser()
     if (authError || !user) return c.json({ error: 'Unauthorized' }, 401)
 
-    const album = await db.prepare(`SELECT * FROM albums WHERE id = ?`).bind(albumId).first<Record<string, unknown>>()
+    const album = await db
+      .prepare(`SELECT * FROM albums WHERE id = ?`)
+      .bind(albumId)
+      .first<Record<string, unknown>>()
     if (!album) return c.json({ error: 'Album not found' }, 404)
 
     if (album.user_id !== user.id) {
       if ((await getRole(c, user)) !== 'admin') return c.json({ error: 'Forbidden' }, 403)
     }
 
-    if (album.status !== 'approved') return c.json({ error: 'Album must be approved before payment' }, 400)
+    if (album.status !== 'approved')
+      return c.json({ error: 'Album must be approved before payment' }, 400)
 
     const body = await c.req.json().catch(() => ({}))
     const isUpgradeRequest = body.upgrade === true
@@ -32,12 +39,24 @@ checkoutRoute.post('/', async (c) => {
       return c.json({ error: 'Album already paid' }, 400)
     }
 
-    const amount = isUpgradeRequest ? (body.amount || 0) : album.total_estimated_price
+    let amount = isUpgradeRequest ? body.amount || 0 : Number(album.total_estimated_price)
+
+    // Fallback: Jika album lama masih menyimpan total_estimated_price untuk banyak siswa,
+    // maka kita bagi dengan students_count (selama individual_payments_enabled tidak 0/false).
+    if (
+      !isUpgradeRequest &&
+      album.individual_payments_enabled !== 0 &&
+      album.students_count &&
+      (album.students_count as number) > 1
+    ) {
+      amount = amount / (album.students_count as number)
+      // Removed the destructive UPDATE statement which caused the price to cascade every time checkout was clicked.
+    }
     if (!amount || (amount as number) <= 0) return c.json({ error: 'Invalid album price' }, 400)
 
     const existingTx = await db
       .prepare(
-        `SELECT invoice_url FROM transactions WHERE album_id = ? AND status = 'PENDING' AND amount = ? ORDER BY created_at DESC LIMIT 1`
+        `SELECT invoice_url FROM transactions WHERE album_id = ? AND status = 'PENDING' AND amount = ? AND created_at >= datetime('now', '-23 hours') ORDER BY created_at DESC LIMIT 1`
       )
       .bind(albumId, amount)
       .first<{ invoice_url: string | null }>()
@@ -48,7 +67,9 @@ checkoutRoute.post('/', async (c) => {
       if (!isStubbed) return c.json({ invoiceUrl: url })
       // Abaikan transaksi stub lama (hindari browser membuka domain yang tidak resolve).
       await db
-        .prepare(`UPDATE transactions SET status = 'FAILED', updated_at = datetime('now') WHERE album_id = ? AND invoice_url = ? AND status = 'PENDING'`)
+        .prepare(
+          `UPDATE transactions SET status = 'FAILED', updated_at = datetime('now') WHERE album_id = ? AND invoice_url = ? AND status = 'PENDING'`
+        )
         .bind(albumId, url)
         .run()
     }
@@ -57,7 +78,7 @@ checkoutRoute.post('/', async (c) => {
     const txId = crypto.randomUUID()
     const desc = isUpgradeRequest
       ? `Penambahan ${body.added_students || 0} Anggota Album: ${album.name}`
-      : `Pembayaran Album: ${album.name}`
+      : `Pembayaran Album (Akses Kreator): ${album.name}`
 
     const xenditKey = (c.env as { XENDIT_SECRET_KEY?: string }).XENDIT_SECRET_KEY || ''
     if (!xenditKey) return c.json({ error: 'XENDIT_SECRET_KEY missing' }, 500)
@@ -99,7 +120,11 @@ checkoutRoute.post('/', async (c) => {
       },
       body: JSON.stringify(invoicePayload),
     })
-    const invoice = (await xenditRes.json()) as { message?: string; invoice_url?: string; status?: string }
+    const invoice = (await xenditRes.json()) as {
+      message?: string
+      invoice_url?: string
+      status?: string
+    }
 
     if (!xenditRes.ok) {
       console.error('Xendit album checkout error:', invoice)

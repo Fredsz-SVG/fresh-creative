@@ -10,9 +10,7 @@ async function provincesFromD1(
   if (qRaw) {
     const like = `%${qRaw}%`
     const { results } = await db
-      .prepare(
-        'SELECT id, name FROM ref_provinces WHERE name_lower LIKE ? ORDER BY name LIMIT 100'
-      )
+      .prepare('SELECT id, name FROM ref_provinces WHERE name_lower LIKE ? ORDER BY name LIMIT 100')
       .bind(like)
       .all<{ id: string; name: string }>()
     return results ?? []
@@ -30,8 +28,7 @@ async function citiesFromD1(
   cleanQ: string,
   limit: number
 ): Promise<{ id: string; province_id: string; name: string; kind: string }[]> {
-  let sql =
-    'SELECT id, province_id, name, kind FROM ref_cities WHERE province_id = ?'
+  let sql = 'SELECT id, province_id, name, kind FROM ref_cities WHERE province_id = ?'
   const binds: (string | number)[] = [province_id]
   if (kind === 'kota' || kind === 'kabupaten') {
     sql += ' AND kind = ?'
@@ -43,12 +40,15 @@ async function citiesFromD1(
   }
   sql += ' ORDER BY name LIMIT ?'
   binds.push(limit)
-  const { results } = await db.prepare(sql).bind(...binds).all<{
-    id: string
-    province_id: string
-    name: string
-    kind: string
-  }>()
+  const { results } = await db
+    .prepare(sql)
+    .bind(...binds)
+    .all<{
+      id: string
+      province_id: string
+      name: string
+      kind: string
+    }>()
   return results ?? []
 }
 

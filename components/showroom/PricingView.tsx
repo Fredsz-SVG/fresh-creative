@@ -162,8 +162,6 @@ export default function PricingView({
   );
   const totalPrice = useMemo(() => {
     if (!selectedPkg) return null;
-    const n = studentsCount;
-    if (!Number.isFinite(n) || n <= 0) return null;
     const parsed = selectedPkg.features.map((f) => {
       try {
         const j = JSON.parse(f);
@@ -174,8 +172,11 @@ export default function PricingView({
     });
     const chosen = selectedAddonIndices[selectedPkg.id] ?? [];
     const addonsTotal = chosen.reduce((sum, idx) => sum + (parsed[idx]?.price ?? 0), 0);
-    return n * (selectedPkg.pricePerStudent + addonsTotal);
-  }, [selectedPkg, studentsCount, selectedAddonIndices]);
+    // Harga per siswa
+    const pricePerStudent = selectedPkg.pricePerStudent + addonsTotal;
+    // Total estimasi seluruh album = harga per siswa * jumlah siswa
+    return pricePerStudent * (draft?.students_count || 1);
+  }, [selectedPkg, selectedAddonIndices, draft?.students_count]);
 
   const handleSaveToDb = async () => {
     if (!draft) return;
@@ -185,7 +186,8 @@ export default function PricingView({
     try {
       const body: Record<string, unknown> = {
         type: 'yearbook',
-        school_name: draft.school_name, // Map school_name (from draft)
+        name: draft.school_name, // Backend expects 'name' for the album name
+        school_name: draft.school_name, // Also send school_name just in case
         province_id: draft.province_id,
         province_name: draft.province_name,
         school_city: draft.school_city,
@@ -297,17 +299,24 @@ export default function PricingView({
               const totalPerStudent = pkg.pricePerStudent + addonsTotal;
               const isSelected = selectedPackageId === pkg.id;
               return (
-                <button
+                <div
                   key={pkg.id}
-                  type="button"
                   onClick={() => setSelectedPackageId(isSelected ? null : pkg.id)}
-                  className={`relative w-[85vw] sm:w-full shrink-0 snap-center text-left rounded-3xl border-4 p-6 transition-all duration-200 ${isSelected
-                    ? "border-slate-900 dark:border-slate-600 bg-emerald-200 dark:bg-emerald-900/40 shadow-[8px_8px_0_0_#0f172a] dark:shadow-[8px_8px_0_0_#334155] scale-100 sm:scale-[1.02] translate-x-1 translate-y-1 sm:translate-x-0 sm:translate-y-0"
-                    : "border-slate-900 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-[6px_6px_0_0_#0f172a] dark:shadow-[6px_6px_0_0_#334155] hover:translate-x-1 hover:translate-y-1 hover:shadow-none"
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      setSelectedPackageId(isSelected ? null : pkg.id);
+                    }
+                  }}
+                  className={`text-left cursor-pointer relative w-[85vw] sm:w-full shrink-0 snap-center rounded-3xl border-4 p-6 transition-all duration-200 ${isSelected
+                    ? "border-slate-200 dark:border-slate-600 bg-emerald-200 dark:bg-emerald-900/40 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] scale-100 sm:scale-[1.02] translate-x-1 translate-y-1 sm:translate-x-0 sm:translate-y-0"
+                    : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:translate-x-1 hover:translate-y-1 hover:shadow-none"
                     }`}
                 >
                   {pkg.is_popular && !isSelected && (
-                    <span className="absolute -top-3.5 right-6 px-3 py-1 rounded-full bg-orange-400 dark:bg-orange-500 border-2 border-slate-900 dark:border-slate-600 text-[11px] font-black text-slate-900 dark:text-slate-900 uppercase tracking-widest shadow-[3px_3px_0_0_#0f172a] dark:shadow-[3px_3px_0_0_#334155] rotate-2 flex items-center gap-1.5">
+                    <span className="absolute -top-3.5 right-6 px-3 py-1 rounded-full bg-orange-400 dark:bg-orange-500 border-2 border-slate-200 dark:border-slate-600 text-[11px] font-black text-slate-900 dark:text-slate-900 uppercase tracking-widest shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] rotate-2 flex items-center gap-1.5">
                       Popular <Star className="w-3 h-3 fill-slate-900" />
                     </span>
                   )}
@@ -315,7 +324,7 @@ export default function PricingView({
                   {/* Header: checkbox + name + base price */}
                   <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                     <div className="flex items-start sm:items-center gap-4">
-                      <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border-2 transition-all mt-1 sm:mt-0 ${isSelected ? "border-slate-900 dark:border-slate-500 bg-slate-900 dark:bg-slate-600 text-emerald-300 dark:text-emerald-400 shadow-inner" : "border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800"}`}>
+                      <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border-2 transition-all mt-1 sm:mt-0 ${isSelected ? "border-slate-200 dark:border-slate-500 bg-slate-900 dark:bg-slate-600 text-emerald-300 dark:text-emerald-400 shadow-inner" : "border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800"}`}>
                         {isSelected ? <Check className="h-5 w-5" strokeWidth={3} /> : null}
                       </span>
                       <div>
@@ -352,14 +361,14 @@ export default function PricingView({
                       <p className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-3">Termasuk</p>
                       <div className="flex flex-wrap gap-2">
                         {pkg.flipbook_enabled && !pkg.ai_labs_features.includes('flipbook_unlock') && (
-                          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-300 dark:bg-amber-400 text-amber-950 text-[12px] font-black uppercase tracking-wider border-2 border-amber-700 dark:border-amber-300 shadow-[2px_2px_0_0_#0f172a] dark:shadow-amber-300/80">
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-300 dark:bg-amber-400 text-amber-950 text-[12px] font-black uppercase tracking-wider border-2 border-amber-700 dark:border-amber-300 shadow-[4px_4px_0_0_#334155] dark:shadow-amber-300/80">
                             <Book className="w-3.5 h-3.5" /> Flipbook
                           </span>
                         )}
                         {pkg.ai_labs_features.map((slug) => (
                           <span
                             key={slug}
-                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[12px] font-black uppercase tracking-wider border-2 shadow-[2px_2px_0_0_#0f172a] ${slug === 'flipbook_unlock' ? 'border-amber-700 dark:border-amber-300 bg-amber-300 dark:bg-amber-400 text-amber-950 dark:shadow-amber-300/80' : 'border-slate-900 dark:border-slate-600 bg-indigo-300 dark:bg-indigo-900/50 text-slate-900 dark:text-slate-100 dark:shadow-[2px_2px_0_0_#334155]'
+                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[12px] font-black uppercase tracking-wider border-2 shadow-[4px_4px_0_0_#334155] ${slug === 'flipbook_unlock' ? 'border-amber-700 dark:border-amber-300 bg-amber-300 dark:bg-amber-400 text-amber-950 dark:shadow-amber-300/80' : 'border-slate-200 dark:border-slate-600 bg-indigo-300 dark:bg-indigo-900/50 text-slate-900 dark:text-slate-100 dark:shadow-[4px_4px_0_0_#1e293b]'
                               }`}
                           >
                             {slug === 'flipbook_unlock' ? <Book className="w-3.5 h-3.5" /> : <Sparkles className="w-3.5 h-3.5" />}
@@ -376,7 +385,7 @@ export default function PricingView({
                       <div className="flex items-center justify-between mb-3">
                         <p className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Addon</p>
                         {chosenAddons.length > 0 && (
-                          <span className="bg-emerald-400 dark:bg-emerald-500 text-slate-900 text-[10px] px-2 py-0.5 rounded-full font-black border-2 border-slate-900 dark:border-slate-700 shadow-[2px_2px_0_0_#0f172a]">
+                          <span className="bg-emerald-400 dark:bg-emerald-500 text-slate-900 text-[10px] px-2 py-0.5 rounded-full font-black border-2 border-slate-200 dark:border-slate-700 shadow-[4px_4px_0_0_#334155]">
                             {chosenAddons.length} Dipilih
                           </span>
                         )}
@@ -389,8 +398,8 @@ export default function PricingView({
                         }}
                         className={`w-full py-2.5 px-4 rounded-xl border-2 transition-all font-black uppercase text-[11px] tracking-wider ${
                           isSelected
-                            ? "bg-white dark:bg-emerald-900/30 border-slate-900 dark:border-slate-600 text-slate-900 dark:text-emerald-300"
-                            : "bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:border-slate-900 dark:hover:border-slate-500 shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155]"
+                            ? "bg-white dark:bg-emerald-900/30 border-slate-200 dark:border-slate-600 text-slate-900 dark:text-emerald-300"
+                            : "bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:border-slate-200 dark:hover:border-slate-500 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]"
                         } active:translate-x-0 active:translate-y-0 active:shadow-none`}
                       >
                         {chosenAddons.length > 0 ? "Ubah Add-on" : "Pilih Add-on"}
@@ -407,7 +416,7 @@ export default function PricingView({
                       Rp {totalPerStudent.toLocaleString("id-ID")}
                     </span>
                   </div>
-                </button>
+                </div>
               );
             })}
           </div>
@@ -417,24 +426,24 @@ export default function PricingView({
             {packages.map((_, i) => (
               <div
                 key={i}
-                className={`h-2.5 rounded-full border-2 border-slate-900 dark:border-slate-600 transition-all duration-300 ${i === activeIdx ? 'w-8 bg-emerald-400 dark:bg-emerald-500' : 'w-2.5 bg-slate-200 dark:bg-slate-700'}`}
+                className={`h-2.5 rounded-full border-2 border-slate-200 dark:border-slate-600 transition-all duration-300 ${i === activeIdx ? 'w-8 bg-emerald-400 dark:bg-emerald-500' : 'w-2.5 bg-slate-200 dark:bg-slate-700'}`}
               />
             ))}
           </div>
         </div>
 
         {draft && (
-          <div className="mt-8 border-t-4 border-slate-900 dark:border-slate-700 pt-8">
+          <div className="mt-8 border-t-4 border-slate-200 dark:border-slate-700 pt-8">
             {saveError ? <p className="text-[14px] font-bold text-red-500 dark:text-red-400 mb-4">{saveError}</p> : null}
             <button
               type="button"
               onClick={handleSaveToDb}
               disabled={saving || !selectedPackageId}
-              className="w-full px-6 py-4 bg-indigo-400 dark:bg-indigo-600 text-slate-900 dark:text-white border-4 border-slate-900 dark:border-slate-700 rounded-2xl text-[18px] font-black uppercase tracking-widest shadow-[6px_6px_0_0_#0f172a] dark:shadow-[6px_6px_0_0_#334155] hover:translate-x-1 hover:translate-y-1 hover:shadow-[2px_2px_0_0_#0f172a] dark:hover:shadow-[2px_2px_0_0_#334155] disabled:opacity-50 transition-all"
+              className="w-full px-6 py-4 bg-indigo-400 dark:bg-indigo-600 text-slate-900 dark:text-white border-2 border-slate-200 dark:border-slate-700 rounded-2xl text-[18px] font-black uppercase tracking-widest shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:translate-x-1 hover:translate-y-1 hover:shadow-[4px_4px_0_0_#334155] dark:hover:shadow-[2px_2px_0_0_#334155] disabled:opacity-50 transition-all"
             >
-              {saving ? "Menyimpan..." : afterSaveRedirect ? "Simpan Data ke Database" : "Simpan dan Lihat Album"}
+              {saving ? "Menyimpan..." : afterSaveRedirect ? "Ajukan Pendaftaran" : "Simpan dan Lihat Album"}
             </button>
-            <p className="text-[13px] font-bold text-slate-500 dark:text-slate-400 mt-4 text-center">Pilih paket di atas lalu klik simpan.</p>
+            <p className="text-[13px] font-bold text-slate-500 dark:text-slate-400 mt-4 text-center">Pilih paket di atas lalu klik ajukan.</p>
           </div>
         )}
 
@@ -460,7 +469,7 @@ export default function PricingView({
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="relative w-full max-w-md bg-white dark:bg-slate-900 border-4 border-slate-900 dark:border-slate-700 p-6 sm:p-8 rounded-[2.5rem] shadow-[10px_10px_0_0_#0f172a] dark:shadow-[10px_10px_0_0_#334155]"
+              className="relative w-full max-w-md bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 p-6 sm:p-8 rounded-[2.5rem] shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]"
             >
               <div className="flex items-center justify-between mb-6">
                 <h3 className="font-sans text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">
@@ -496,8 +505,8 @@ export default function PricingView({
                         key={i}
                         className={`flex items-center gap-4 p-4 rounded-2xl border-2 transition-all cursor-pointer ${
                           checked
-                            ? "border-slate-900 dark:border-slate-500 bg-emerald-50 dark:bg-emerald-900/20 shadow-none translate-x-[2px] translate-y-[2px]"
-                            : "border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/30 hover:border-slate-400 shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155]"
+                            ? "border-slate-200 dark:border-slate-500 bg-emerald-50 dark:bg-emerald-900/20 shadow-none translate-x-[2px] translate-y-[2px]"
+                            : "border-slate-200 dark:border-slate-200 bg-slate-50 dark:bg-slate-800/30 hover:border-slate-400 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]"
                         }`}
                       >
                         <div className="relative flex items-center">
@@ -508,7 +517,7 @@ export default function PricingView({
                             className="sr-only"
                           />
                           <div className={`h-6 w-6 rounded-lg border-2 flex items-center justify-center transition-all ${
-                            checked ? "bg-emerald-500 border-slate-900 dark:border-slate-500" : "bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700"
+                            checked ? "bg-emerald-500 border-slate-200 dark:border-slate-500" : "bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700"
                           }`}>
                             {checked && <Check className="h-4 w-4 text-slate-900" strokeWidth={4} />}
                           </div>
@@ -525,7 +534,7 @@ export default function PricingView({
 
               <button
                 onClick={() => setOpenAddonPkgId(null)}
-                className="mt-8 w-full py-4 rounded-2xl border-4 border-slate-900 bg-indigo-400 dark:bg-indigo-600 text-white font-black uppercase tracking-widest shadow-[6px_6px_0_0_#0f172a] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all"
+                className="mt-8 w-full py-4 rounded-2xl border-2 border-slate-200 bg-indigo-400 dark:bg-indigo-600 text-white font-black uppercase tracking-widest shadow-[4px_4px_0_0_#334155] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all"
               >
                 Selesai
               </button>

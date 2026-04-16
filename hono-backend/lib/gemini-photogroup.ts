@@ -18,17 +18,28 @@ function toDataUri(input: GeminiImageInput): string {
 }
 
 function extractImageUrl(output: unknown): string {
-  if (typeof output === 'string' && (output.startsWith('http://') || output.startsWith('https://') || output.startsWith('data:'))) {
+  if (
+    typeof output === 'string' &&
+    (output.startsWith('http://') || output.startsWith('https://') || output.startsWith('data:'))
+  ) {
     return output
   }
   return getSingleReplicateUrl(output)
 }
 
-function buildPhotoGroupPrompt(userPrompt: string, imageCount: number, extraNotes?: string): string {
+function buildPhotoGroupPrompt(
+  userPrompt: string,
+  imageCount: number,
+  extraNotes?: string
+): string {
   const lines: string[] = []
-  lines.push(`Create ONE photorealistic group photograph combining exactly ${imageCount} different people from the ${imageCount} reference images.`)
+  lines.push(
+    `Create ONE photorealistic group photograph combining exactly ${imageCount} different people from the ${imageCount} reference images.`
+  )
   lines.push('')
-  lines.push('REFERENCE ORDER (first uploaded image = #1, second = #2, and so on — never swap identities):')
+  lines.push(
+    'REFERENCE ORDER (first uploaded image = #1, second = #2, and so on — never swap identities):'
+  )
   for (let i = 1; i <= imageCount; i++) {
     lines.push(
       `- Image #${i}: Person ${i}. Match this person’s face, hair, skin tone, facial structure, and body proportions ONLY from this reference.`
@@ -36,8 +47,12 @@ function buildPhotoGroupPrompt(userPrompt: string, imageCount: number, extraNote
   }
   lines.push('')
   lines.push('IDENTITY (critical):')
-  lines.push('- Each person in the output must be clearly the same individual as in their numbered reference. Do not blend faces, do not swap faces, do not invent new people.')
-  lines.push('- Preserve recognizable features per person: eyes, nose, mouth, jawline, hair, approximate age.')
+  lines.push(
+    '- Each person in the output must be clearly the same individual as in their numbered reference. Do not blend faces, do not swap faces, do not invent new people.'
+  )
+  lines.push(
+    '- Preserve recognizable features per person: eyes, nose, mouth, jawline, hair, approximate age.'
+  )
   lines.push('')
   lines.push('CLOTHING AND ACCESSORIES:')
   lines.push(
@@ -52,7 +67,9 @@ function buildPhotoGroupPrompt(userPrompt: string, imageCount: number, extraNote
     lines.push(extraNotes.trim())
   }
   lines.push('')
-  lines.push('OUTPUT: One high-quality JPEG, natural consistent lighting across the group, single coherent group photo.')
+  lines.push(
+    'OUTPUT: One high-quality JPEG, natural consistent lighting across the group, single coherent group photo.'
+  )
   return lines.join('\n')
 }
 

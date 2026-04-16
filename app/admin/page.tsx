@@ -378,12 +378,12 @@ export default function AdminPage() {
 
   return (
     <div className="w-full">
-      <div className="flex flex-col gap-2 mb-10 px-4 md:px-0">
-        <h1 className="text-3xl font-black text-slate-900 dark:text-white sm:text-4xl tracking-tight">
+      <div className="flex flex-col gap-2 mb-8 px-4 md:px-0">
+        <h1 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
           Admin Dashboard
         </h1>
-        <p className="text-slate-600 dark:text-slate-300 font-bold text-sm sm:text-base max-w-2xl">
-          Overview of user distribution, credits, and registration activity.
+        <p className="text-slate-600 dark:text-slate-300 font-medium text-xs md:text-sm max-w-2xl">
+          Overview data pengguna, kredit, dan aktivitas registrasi
         </p>
       </div>
 
@@ -396,7 +396,7 @@ export default function AdminPage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6 mb-8 px-4 md:px-0">
         {loading && !stats ? (
           [1, 2, 3, 4].map((i) => (
-            <div key={`stat-skeleton-${i}`} className="bg-white border-4 border-slate-900 rounded-[24px] p-5 md:p-6 animate-pulse shadow-[4px_4px_0_0_#0f172a]">
+            <div key={`stat-skeleton-${i}`} className="bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 rounded-2xl p-5 md:p-6 animate-pulse shadow-[2px_2px_0_0_#0f172a]">
               <div className="h-3 w-16 bg-slate-100 rounded mb-3" />
               <div className="h-8 w-24 bg-slate-50 rounded" />
             </div>
@@ -404,12 +404,12 @@ export default function AdminPage() {
         ) : (
           <>
             {[
-              { label: 'Total User', value: stats?.totalUsers.toLocaleString() ?? '0', color: 'bg-indigo-300 dark:bg-slate-800', shadow: 'shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155]', text: 'text-slate-900 dark:text-white' },
-              { label: 'Admin', value: stats?.totalAdmins.toLocaleString() ?? '0', color: 'bg-purple-300 dark:bg-slate-800', shadow: 'shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155]', text: 'text-slate-900 dark:text-white' },
-              { label: 'Total Credit', value: stats?.totalCredits.toLocaleString() ?? '0', color: 'bg-amber-300 dark:bg-slate-800', shadow: 'shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155]', text: 'text-slate-900 dark:text-white' },
-              { label: 'New User (7d)', value: stats?.newUsers7d.toLocaleString() ?? '0', color: 'bg-emerald-300 dark:bg-slate-800', shadow: 'shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155]', text: 'text-slate-900 dark:text-white' }
+              { label: 'Total User', value: stats?.totalUsers.toLocaleString() ?? '0', color: 'bg-indigo-300 dark:bg-slate-800', shadow: 'shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155]', text: 'text-slate-900 dark:text-white' },
+              { label: 'Admin', value: stats?.totalAdmins.toLocaleString() ?? '0', color: 'bg-purple-300 dark:bg-slate-800', shadow: 'shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155]', text: 'text-slate-900 dark:text-white' },
+              { label: 'Total Credit', value: stats?.totalCredits.toLocaleString() ?? '0', color: 'bg-amber-300 dark:bg-slate-800', shadow: 'shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155]', text: 'text-slate-900 dark:text-white' },
+              { label: 'New User (7d)', value: stats?.newUsers7d.toLocaleString() ?? '0', color: 'bg-emerald-300 dark:bg-slate-800', shadow: 'shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155]', text: 'text-slate-900 dark:text-white' }
             ].map((sc) => (
-              <div key={sc.label} className={`${sc.color} border-4 border-slate-900 dark:border-slate-700 rounded-[24px] p-5 md:p-6 ${sc.shadow} hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all`}>
+              <div key={sc.label} className={`${sc.color} border-2 border-slate-900 dark:border-slate-700 rounded-[24px] p-5 md:p-6 ${sc.shadow} hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all`}>
                 <p className={`text-[10px] md:text-xs font-black uppercase tracking-widest mb-1.5 md:mb-2 ${sc.text}`}>{sc.label}</p>
                 <p className={`text-2xl md:text-4xl font-black ${sc.text}`}>
                   {sc.value}
@@ -420,7 +420,7 @@ export default function AdminPage() {
         )}
       </div>
 
-      <div className="bg-white dark:bg-slate-900 border-4 border-slate-900 dark:border-slate-700 rounded-[24px] md:rounded-[32px] overflow-hidden shadow-[3px_3px_0_0_#0f172a] dark:shadow-[3px_3px_0_0_#334155] md:shadow-[6px_6px_0_0_#0f172a] dark:md:shadow-[6px_6px_0_0_#334155] mx-4 md:mx-0">
+      <div className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-[24px] md:rounded-[32px] overflow-hidden shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] md:shadow-[2px_2px_0_0_#0f172a] dark:md:shadow-[2px_2px_0_0_#0f172a] mx-4 md:mx-0">
         <div className="px-5 py-4 md:px-8 md:py-6 border-b-4 border-slate-900 dark:border-slate-700 flex items-center justify-between gap-4 flex-wrap bg-violet-300 dark:bg-slate-800">
           <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-3">
             <h2 className="text-xl md:text-2xl font-black text-slate-900 dark:text-white leading-none">Users</h2>
@@ -437,7 +437,7 @@ export default function AdminPage() {
                 setSearch(e.target.value)
               }}
               placeholder="Cari user..."
-              className="w-full sm:w-64 px-4 py-2.5 text-sm font-bold bg-white dark:bg-slate-900 border-4 border-slate-900 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none shadow-[3px_3px_0_0_#0f172a] dark:shadow-[3px_3px_0_0_#334155] focus:shadow-none transition-all"
+              className="w-full sm:w-64 px-4 py-2.5 text-sm font-bold bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] focus:shadow-none transition-all"
             />
           </div>
         </div>
@@ -445,7 +445,7 @@ export default function AdminPage() {
           {loading && (
             <>
               {[1, 2, 3].map((i) => (
-                <div key={`mobile-skeleton-${i}`} className="bg-slate-50 border-4 border-slate-900 rounded-2xl p-4 space-y-3 animate-pulse">
+                <div key={`mobile-skeleton-${i}`} className="bg-slate-50 border-2 border-slate-900 rounded-2xl p-4 space-y-3 animate-pulse">
                   <div className="h-5 w-40 bg-slate-200 rounded-lg" />
                   <div className="h-3 w-32 bg-slate-100 rounded-lg" />
                   <div className="h-10 w-full bg-slate-200 rounded-xl" />
@@ -454,12 +454,12 @@ export default function AdminPage() {
             </>
           )}
           {!loading && stats && stats.latestUsers.length === 0 && (
-            <div className="py-12 text-center text-slate-400 bg-slate-50 rounded-2xl border-4 border-slate-200 border-dashed">
+            <div className="py-12 text-center text-slate-400 bg-slate-50 rounded-2xl border-2 border-slate-900 border-dashed">
               <p className="font-black">Belum ada user terdaftar.</p>
             </div>
           )}
           {!loading && stats && stats.latestUsers.length > 0 && stats.latestUsers.map((u) => (
-            <div key={u.id} className="bg-white dark:bg-slate-800 border-4 border-slate-900 dark:border-slate-700 rounded-2xl p-4 space-y-4 shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155] hover:-translate-x-0.5 hover:-translate-y-0.5 transition-all">
+            <div key={u.id} className="bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 rounded-2xl p-4 space-y-4 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] hover:-translate-x-0.5 hover:-translate-y-0.5 transition-all">
               <div className="flex justify-between items-start gap-2">
                 <div className="min-w-0">
                   <p className="text-sm font-black text-slate-900 dark:text-white truncate">{u.full_name || 'No Name'}</p>
@@ -678,14 +678,14 @@ export default function AdminPage() {
             <button
               disabled={currentPage <= 1 || loading}
               onClick={() => setPage((p) => Math.max(1, p - 1))}
-              className="px-4 py-2 bg-white border-2 border-slate-900 rounded-xl text-xs font-black uppercase hover:bg-slate-50 disabled:opacity-40 shadow-[3px_3px_0_0_#0f172a] hover:shadow-none transition-all"
+              className="px-4 py-2 bg-white border-2 border-slate-900 rounded-xl text-xs font-black uppercase hover:bg-slate-50 disabled:opacity-40 shadow-[2px_2px_0_0_#0f172a] hover:shadow-none transition-all"
             >
               Prev
             </button>
             <button
               disabled={currentPage >= totalPages || loading}
               onClick={() => setPage((p) => p + 1)}
-              className="px-4 py-2 bg-white border-2 border-slate-900 rounded-xl text-xs font-black uppercase hover:bg-slate-50 disabled:opacity-40 shadow-[3px_3px_0_0_#0f172a] hover:shadow-none transition-all"
+              className="px-4 py-2 bg-white border-2 border-slate-900 rounded-xl text-xs font-black uppercase hover:bg-slate-50 disabled:opacity-40 shadow-[2px_2px_0_0_#0f172a] hover:shadow-none transition-all"
             >
               Next
             </button>
@@ -695,7 +695,7 @@ export default function AdminPage() {
 
       {confirmOpen && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/40 dark:bg-black/50 backdrop-blur-md px-4">
-          <div className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-[32px] w-full max-w-sm p-6 sm:p-8 text-center shadow-[6px_6px_0_0_#0f172a] dark:shadow-[6px_6px_0_0_#334155]">
+          <div className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-[32px] w-full max-w-sm p-6 sm:p-8 text-center shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155]">
             <h3 className="text-xl font-black text-slate-900 dark:text-white mb-2 uppercase tracking-tight">{confirmTitle}</h3>
             <p className="text-sm font-bold text-slate-500 dark:text-slate-400 mb-6">{confirmDescription}</p>
             <div className="flex items-center justify-center gap-3">

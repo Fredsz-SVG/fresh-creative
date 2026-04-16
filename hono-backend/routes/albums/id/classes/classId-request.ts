@@ -9,7 +9,9 @@ classRequestRoute.post('/', async (c) => {
   const supabase = getSupabaseClient(c)
   const db = getD1(c)
   if (!db) return c.json({ error: 'Database not configured' }, 503)
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   if (!user) return c.json({ error: 'Unauthorized' }, 401)
 
   const albumId = c.req.param('id')
@@ -28,7 +30,8 @@ classRequestRoute.post('/', async (c) => {
       .prepare(`SELECT album_id FROM album_members WHERE album_id = ? AND user_id = ?`)
       .bind(albumId, user.id)
       .first<{ album_id: string }>()
-    if (!member) return c.json({ error: 'Anda harus bergabung ke album dulu via link undangan' }, 403)
+    if (!member)
+      return c.json({ error: 'Anda harus bergabung ke album dulu via link undangan' }, 403)
   }
 
   const cls = await db
@@ -39,7 +42,7 @@ classRequestRoute.post('/', async (c) => {
 
   const body = await c.req.json().catch(() => ({}))
   const student_name = typeof body?.student_name === 'string' ? body.student_name.trim() : ''
-  const email = typeof body?.email === 'string' ? body.email.trim() : user.email ?? ''
+  const email = typeof body?.email === 'string' ? body.email.trim() : (user.email ?? '')
 
   if (!student_name) return c.json({ error: 'Nama siswa wajib' }, 400)
 
@@ -129,9 +132,14 @@ classRequestRoute.post('/', async (c) => {
         JSON.stringify({ status: 'Menunggu' })
       )
       .run()
-  } catch { /* non-fatal */ }
+  } catch {
+    /* non-fatal */
+  }
 
-  const created = await db.prepare(`SELECT * FROM album_join_requests WHERE id = ?`).bind(rid).first()
+  const created = await db
+    .prepare(`SELECT * FROM album_join_requests WHERE id = ?`)
+    .bind(rid)
+    .first()
 
   // Broadcast ke semua device agar approval sidebar langsung update
   void publishRealtimeEventFromContext(c, {

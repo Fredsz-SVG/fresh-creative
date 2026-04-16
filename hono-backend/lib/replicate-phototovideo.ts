@@ -28,7 +28,9 @@ export function validateAudioFileSize(size: number): boolean {
  * Prompt motion: pertahankan pakaian & penampilan; hanya gerak/ekspresi sesuai user.
  */
 export function buildPhotoToVideoPrompt(userMotionPrompt: string): string {
-  const motion = userMotionPrompt.trim() || 'Natural subtle movement: breathing, slight head motion, soft eye contact with camera.'
+  const motion =
+    userMotionPrompt.trim() ||
+    'Natural subtle movement: breathing, slight head motion, soft eye contact with camera.'
   return `IMPORTANT — Preserve the subject's clothing, colors, patterns, accessories, and overall appearance exactly as in the source photo. Do NOT change outfit, do NOT add or remove garments, do NOT recolor fabric.
 
 Motion and performance only (keep the same clothes and identity):

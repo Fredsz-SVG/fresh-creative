@@ -5,7 +5,7 @@ import { type PropsWithChildren } from "react";
 
 function BentoCardWrap({ children, className = "" }: PropsWithChildren<{ className?: string }>) {
   return (
-    <div className={`group relative transition-all duration-300 border border-slate-900 dark:border-white shadow-[2px_2px_0_0_#0f172a] md:shadow-[3px_3px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#a3e635] md:dark:shadow-[3px_3px_0_0_#a3e635] hover:-translate-y-1 hover:-translate-x-1 hover:shadow-[4px_4px_0_0_#0f172a] md:hover:shadow-[5px_5px_0_0_#0f172a] dark:hover:shadow-[4px_4px_0_0_#a3e635] md:dark:hover:shadow-[5px_5px_0_0_#a3e635] overflow-hidden rounded-[1.5rem] md:rounded-[2rem] bg-slate-900 ${className}`}>
+    <div className={`group relative transition-all duration-300 border border-slate-200 dark:border-white shadow-[4px_4px_0_0_#334155] md:shadow-[4px_4px_0_0_#334155] dark:shadow-[2px_2px_0_0_#a3e635] md:dark:shadow-[3px_3px_0_0_#a3e635] hover:-translate-y-1 hover:-translate-x-1 hover:shadow-[4px_4px_0_0_#334155] md:hover:shadow-[4px_4px_0_0_#334155] dark:hover:shadow-[4px_4px_0_0_#a3e635] md:dark:hover:shadow-[5px_5px_0_0_#a3e635] overflow-hidden rounded-[1.5rem] md:rounded-[2rem] bg-slate-900 ${className}`}>
       {children}
     </div>
   );

@@ -10,7 +10,9 @@ classMemberUserRoute.delete('/', async (c) => {
     const supabase = getSupabaseClient(c)
     const db = getD1(c)
     if (!db) return c.json({ error: 'Database not configured' }, 503)
-    const { data: { user } } = await supabase.auth.getUser()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
     if (!user) return c.json({ error: 'Unauthorized' }, 401)
 
     const albumId = c.req.param('id')
@@ -36,7 +38,10 @@ classMemberUserRoute.delete('/', async (c) => {
     const canManage = isOwner || isAlbumAdmin
 
     if (!canManage && user.id !== userId) {
-      return c.json({ error: 'Hanya owner/admin album atau diri sendiri yang bisa menghapus profil' }, 403)
+      return c.json(
+        { error: 'Hanya owner/admin album atau diri sendiri yang bisa menghapus profil' },
+        403
+      )
     }
 
     const cls = await db
@@ -51,7 +56,10 @@ classMemberUserRoute.delete('/', async (c) => {
       .first<{ id: string }>()
     if (!access) return c.json({ error: 'Member not found' }, 404)
 
-    const del = await db.prepare(`DELETE FROM album_class_access WHERE id = ?`).bind(access.id).run()
+    const del = await db
+      .prepare(`DELETE FROM album_class_access WHERE id = ?`)
+      .bind(access.id)
+      .run()
     if (!del.success) return c.json({ error: 'Delete failed' }, 500)
 
     await db
@@ -81,7 +89,9 @@ classMemberUserRoute.patch('/', async (c) => {
   const supabase = getSupabaseClient(c)
   const db = getD1(c)
   if (!db) return c.json({ error: 'Database not configured' }, 503)
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   if (!user) return c.json({ error: 'Unauthorized' }, 401)
 
   const albumId = c.req.param('id')
@@ -107,7 +117,10 @@ classMemberUserRoute.patch('/', async (c) => {
   const isEditingSelf = user.id === userId
 
   if (!isEditingSelf && !canManage)
-    return c.json({ error: 'Hanya owner atau admin album yang bisa menyunting profil orang lain' }, 403)
+    return c.json(
+      { error: 'Hanya owner atau admin album yang bisa menyunting profil orang lain' },
+      403
+    )
 
   const access = await db
     .prepare(`SELECT id, status FROM album_class_access WHERE class_id = ? AND user_id = ?`)
@@ -118,7 +131,11 @@ classMemberUserRoute.patch('/', async (c) => {
   const body = await c.req.json().catch(() => ({}))
   const student_name = typeof body?.student_name === 'string' ? body.student_name.trim() : undefined
   const email =
-    body?.email !== undefined ? (typeof body.email === 'string' ? body.email.trim() || null : null) : undefined
+    body?.email !== undefined
+      ? typeof body.email === 'string'
+        ? body.email.trim() || null
+        : null
+      : undefined
   const date_of_birth =
     body?.date_of_birth !== undefined
       ? typeof body.date_of_birth === 'string'
@@ -132,9 +149,17 @@ classMemberUserRoute.patch('/', async (c) => {
         : null
       : undefined
   const message =
-    body?.message !== undefined ? (typeof body.message === 'string' ? body.message.trim() || null : null) : undefined
+    body?.message !== undefined
+      ? typeof body.message === 'string'
+        ? body.message.trim() || null
+        : null
+      : undefined
   const video_url =
-    body?.video_url !== undefined ? (typeof body.video_url === 'string' ? body.video_url.trim() || null : null) : undefined
+    body?.video_url !== undefined
+      ? typeof body.video_url === 'string'
+        ? body.video_url.trim() || null
+        : null
+      : undefined
 
   if (
     student_name === undefined &&
@@ -177,10 +202,16 @@ classMemberUserRoute.patch('/', async (c) => {
   vals.push(access.id)
 
   const sql = `UPDATE album_class_access SET ${sets.join(', ')} WHERE id = ?`
-  const r = await db.prepare(sql).bind(...vals).run()
+  const r = await db
+    .prepare(sql)
+    .bind(...vals)
+    .run()
   if (!r.success) return c.json({ error: 'Update failed' }, 500)
 
-  const updated = await db.prepare(`SELECT * FROM album_class_access WHERE id = ?`).bind(access.id).first()
+  const updated = await db
+    .prepare(`SELECT * FROM album_class_access WHERE id = ?`)
+    .bind(access.id)
+    .first()
   return c.json(updated)
 })
 

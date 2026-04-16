@@ -1,7 +1,8 @@
 'use client'
 
-import React from 'react'
-import { Loader2, Upload, Wand2 } from 'lucide-react'
+import React, { useState } from 'react'
+import { createPortal } from 'react-dom'
+import { Loader2, Upload, Wand2, Coins, AlertTriangle, X } from 'lucide-react'
 import { TOOLS } from 'react-filerobot-image-editor'
 
 /**
@@ -67,17 +68,200 @@ export type RemoveBgToolsOpts = {
   onRemoveBg: () => void
   removeBgState: 'idle' | 'removing' | 'error'
   creditsPerUse: number | null
+  currentCredits: number | null
   hasRemovedBg: boolean
   onRequestBgUpload: () => void
   onPickSolidColor: (hex: string) => void
   onRestoreTransparent: () => void
 }
 
+// ── Confirmation dialog portal ───────────────────────────────────────────────
+
+interface ConfirmDialogProps {
+  creditsPerUse: number | null
+  currentCredits: number | null
+  onConfirm: () => void
+  onCancel: () => void
+}
+
+function ConfirmDialog({ creditsPerUse, currentCredits, onConfirm, onCancel }: ConfirmDialogProps) {
+  const cost = typeof creditsPerUse === 'number' ? creditsPerUse : null
+  const balance = typeof currentCredits === 'number' ? currentCredits : null
+  const afterBalance = balance !== null && cost !== null ? balance - cost : null
+  const insufficient = afterBalance !== null && afterBalance < 0
+
+  const dialog = (
+    <div
+      style={{ zIndex: 99999 }}
+      className="fixed inset-0 flex items-center justify-center p-4"
+      onClick={onCancel}
+    >
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+
+      {/* Dialog Card */}
+      <div
+        className="relative w-full max-w-xs rounded-2xl overflow-hidden shadow-2xl"
+        style={{ background: '#161616', border: '1px solid #2e2e2e' }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div
+          className="flex items-center justify-between px-4 pt-4 pb-3"
+          style={{ borderBottom: '1px solid #262626' }}
+        >
+          <div className="flex items-center gap-2">
+            <Wand2 className="w-4 h-4 text-[#60a5fa] shrink-0" />
+            <span className="text-[13px] font-semibold text-[#e8e8e8] leading-tight">
+              Konfirmasi Remove BG
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={onCancel}
+            className="w-6 h-6 rounded-md flex items-center justify-center text-[#666] hover:text-[#e8e8e8] hover:bg-[#2a2a2a] transition-colors"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="px-4 py-4 flex flex-col gap-3">
+          {/* Credit info rows */}
+          <div
+            className="rounded-xl overflow-hidden"
+            style={{ background: '#1c1c1c', border: '1px solid #2a2a2a' }}
+          >
+            {/* Current balance */}
+            <div
+              className="flex items-center justify-between px-3 py-2.5"
+              style={{ borderBottom: '1px solid #252525' }}
+            >
+              <div className="flex items-center gap-2">
+                <div
+                  className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0"
+                  style={{ background: '#1e3a5f' }}
+                >
+                  <Coins className="w-3.5 h-3.5 text-[#60a5fa]" />
+                </div>
+                <span className="text-[11px] text-[#9ca3af]">Saldo kamu</span>
+              </div>
+              <span className="text-[13px] font-bold tabular-nums text-[#e8e8e8]">
+                {balance !== null ? `${balance} credit` : '—'}
+              </span>
+            </div>
+
+            {/* Cost */}
+            <div
+              className="flex items-center justify-between px-3 py-2.5"
+              style={{ borderBottom: '1px solid #252525' }}
+            >
+              <div className="flex items-center gap-2">
+                <div
+                  className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0"
+                  style={{ background: '#2d1b1b' }}
+                >
+                  <span className="text-[10px] font-bold text-[#f87171]">−</span>
+                </div>
+                <span className="text-[11px] text-[#9ca3af]">Biaya Remove BG</span>
+              </div>
+              <span className="text-[13px] font-bold tabular-nums text-[#f87171]">
+                {cost !== null ? `${cost} credit` : '—'}
+              </span>
+            </div>
+
+            {/* After */}
+            <div className="flex items-center justify-between px-3 py-2.5">
+              <div className="flex items-center gap-2">
+                <div
+                  className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0"
+                  style={{ background: insufficient ? '#2d1b1b' : '#162d1f' }}
+                >
+                  <span
+                    className="text-[10px] font-bold"
+                    style={{ color: insufficient ? '#f87171' : '#4ade80' }}
+                  >
+                    =
+                  </span>
+                </div>
+                <span className="text-[11px] text-[#9ca3af]">Sisa setelah</span>
+              </div>
+              <span
+                className="text-[13px] font-bold tabular-nums"
+                style={{ color: insufficient ? '#f87171' : '#4ade80' }}
+              >
+                {afterBalance !== null ? `${afterBalance} credit` : '—'}
+              </span>
+            </div>
+          </div>
+
+          {/* Insufficient warning */}
+          {insufficient && (
+            <div
+              className="flex items-start gap-2 rounded-xl px-3 py-2.5"
+              style={{ background: '#2d1111', border: '1px solid #4b1a1a' }}
+            >
+              <AlertTriangle className="w-3.5 h-3.5 text-[#f87171] shrink-0 mt-0.5" />
+              <p className="text-[11px] text-[#f87171] leading-snug">
+                Credit tidak cukup. Silakan top up terlebih dahulu.
+              </p>
+            </div>
+          )}
+
+          {/* Question */}
+          {!insufficient && (
+            <p className="text-[12px] text-[#9ca3af] text-center leading-snug">
+              Apakah kamu yakin ingin melanjutkan?
+            </p>
+          )}
+        </div>
+
+        {/* Actions */}
+        <div
+          className="flex gap-2 px-4 pb-4"
+        >
+          <button
+            type="button"
+            onClick={onCancel}
+            className="flex-1 px-3 py-2 rounded-xl text-[12px] font-semibold transition-colors"
+            style={{
+              background: '#252525',
+              border: '1px solid #3a3a3a',
+              color: '#b0b0b0',
+            }}
+          >
+            Batal
+          </button>
+          <button
+            type="button"
+            disabled={!!insufficient}
+            onClick={() => { onConfirm() }}
+            className="flex-1 px-3 py-2 rounded-xl text-[12px] font-semibold transition-colors disabled:opacity-40 disabled:pointer-events-none"
+            style={{
+              background: insufficient ? '#2a2a2a' : '#1565c0',
+              border: '1px solid ' + (insufficient ? '#3a3a3a' : '#1976d2'),
+              color: '#ffffff',
+            }}
+          >
+            Ya, Lanjutkan
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+
+  if (typeof document === 'undefined') return null
+  return createPortal(dialog, document.body)
+}
+
+// ── Main tool builder ────────────────────────────────────────────────────────
+
 export function buildRemoveBgObjectRemovalTool(opts: RemoveBgToolsOpts) {
   const {
     onRemoveBg,
     removeBgState,
     creditsPerUse,
+    currentCredits,
     hasRemovedBg,
     onRequestBgUpload,
     onPickSolidColor,
@@ -94,6 +278,8 @@ export function buildRemoveBgObjectRemovalTool(opts: RemoveBgToolsOpts) {
 
   function RemoveBgOptions(props: { t: (k: string) => string }) {
     const { t } = props
+    const [showConfirm, setShowConfirm] = useState(false)
+
     const actionLabel = busy ? t('removeBgRunning') : removeDone ? t('removeBgAlreadyDone') : t('removeBgRun')
     const bgDisabled = !hasRemovedBg || busy
 
@@ -108,7 +294,7 @@ export function buildRemoveBgObjectRemovalTool(opts: RemoveBgToolsOpts) {
             type="button"
             disabled={busy || removeDone}
             title={removeDone ? t('removeBgAlreadyDone') : t('removeBgHint')}
-            onClick={() => void onRemoveBg()}
+            onClick={() => setShowConfirm(true)}
             className="w-full inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-[12px] font-semibold border transition-colors
               border-[#3a3a3a] bg-[#252525] text-[#e8e8e8]
               hover:bg-[#2f2f2f] hover:border-[#4a4a4a]
@@ -127,6 +313,19 @@ export function buildRemoveBgObjectRemovalTool(opts: RemoveBgToolsOpts) {
             }
           </button>
         </div>
+
+        {/* ── Confirm dialog (portal) ─────────────────────────── */}
+        {showConfirm && (
+          <ConfirmDialog
+            creditsPerUse={creditsPerUse}
+            currentCredits={currentCredits}
+            onCancel={() => setShowConfirm(false)}
+            onConfirm={() => {
+              setShowConfirm(false)
+              onRemoveBg()
+            }}
+          />
+        )}
 
         {/* ── Divider ──────────────────────────────────────────── */}
         <div className="mx-3 border-t border-[#2a2a2a]" />

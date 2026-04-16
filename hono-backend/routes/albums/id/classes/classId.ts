@@ -9,7 +9,9 @@ classIdRoute.delete('/', async (c) => {
   const supabase = getSupabaseClient(c)
   const db = getD1(c)
   if (!db) return c.json({ error: 'Database not configured' }, 503)
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   if (!user) return c.json({ error: 'Unauthorized' }, 401)
 
   const albumId = c.req.param('id')
@@ -43,7 +45,9 @@ classIdRoute.patch('/', async (c) => {
   const supabase = getSupabaseClient(c)
   const db = getD1(c)
   if (!db) return c.json({ error: 'Database not configured' }, 503)
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   if (!user) return c.json({ error: 'Unauthorized' }, 401)
 
   const albumId = c.req.param('id')
@@ -71,7 +75,8 @@ classIdRoute.patch('/', async (c) => {
   const body = await c.req.json().catch(() => ({}))
   const name = typeof body?.name === 'string' ? body.name.trim() : undefined
   const sort_order = body?.sort_order !== undefined ? Number(body.sort_order) : undefined
-  const batch_photo_url = typeof body?.batch_photo_url === 'string' ? body.batch_photo_url : undefined
+  const batch_photo_url =
+    typeof body?.batch_photo_url === 'string' ? body.batch_photo_url : undefined
 
   const updates: string[] = []
   const vals: unknown[] = []
@@ -104,7 +109,10 @@ classIdRoute.patch('/', async (c) => {
 
   vals.push(classId)
   const sql = `UPDATE album_classes SET ${updates.join(', ')} WHERE id = ?`
-  const r = await db.prepare(sql).bind(...vals).run()
+  const r = await db
+    .prepare(sql)
+    .bind(...vals)
+    .run()
   if (!r.success) return c.json({ error: 'Update failed' }, 500)
 
   const updated = await db

@@ -6,9 +6,7 @@ type PutBody = ArrayBuffer | ReadableStream | ArrayBufferView | string | null | 
 type PutBodyNormalized = string | ArrayBuffer | ArrayBufferView
 
 const isBlobLike = (value: unknown): value is Blob =>
-  typeof value === 'object' &&
-  value !== null &&
-  typeof (value as Blob).arrayBuffer === 'function'
+  typeof value === 'object' && value !== null && typeof (value as Blob).arrayBuffer === 'function'
 
 const isReadableStreamLike = (value: unknown): value is ReadableStream =>
   typeof value === 'object' &&
@@ -41,7 +39,10 @@ export async function putAlbumPhoto(
   const normalized = await normalizePutBody(body)
   await bucket.put(key, normalized, {
     httpMetadata: options?.contentType
-      ? { contentType: options.contentType, cacheControl: options.cacheControl ?? 'public, max-age=3600' }
+      ? {
+          contentType: options.contentType,
+          cacheControl: options.cacheControl ?? 'public, max-age=3600',
+        }
       : { cacheControl: options?.cacheControl ?? 'public, max-age=3600' },
   })
   await publishRealtimeEventFromGlobal({

@@ -22,15 +22,17 @@ allClassMembersRoute.get('/', async (c) => {
     if (!album) return c.json({ error: 'Album not found' }, 404)
 
     const roleRes = user ? await getRole(c, user) : 'user'
-    const memberRow = user ? await db
-      .prepare(`SELECT role FROM album_members WHERE album_id = ? AND user_id = ?`)
-      .bind(albumId, user.id)
-      .first<{ role: string }>() : null
+    const memberRow = user
+      ? await db
+          .prepare(`SELECT role FROM album_members WHERE album_id = ? AND user_id = ?`)
+          .bind(albumId, user.id)
+          .first<{ role: string }>()
+      : null
 
     const isGlobalAdmin = roleRes === 'admin'
-    const isOwner = user ? (album.user_id === user.id || isGlobalAdmin) : false
+    const isOwner = user ? album.user_id === user.id || isGlobalAdmin : false
     const isAlbumAdmin = memberRow?.role === 'admin'
-    const canSeePending = user ? (isOwner || isAlbumAdmin) : false
+    const canSeePending = user ? isOwner || isAlbumAdmin : false
 
     const { results: data } = await db
       .prepare(

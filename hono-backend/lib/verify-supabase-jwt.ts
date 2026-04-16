@@ -1,9 +1,4 @@
-import {
-  createRemoteJWKSet,
-  decodeProtectedHeader,
-  jwtVerify,
-  type JWTPayload,
-} from 'jose'
+import { createRemoteJWKSet, decodeProtectedHeader, jwtVerify, type JWTPayload } from 'jose'
 
 export type SupabaseAccessPayload = JWTPayload & {
   sub?: string

@@ -6,7 +6,9 @@ import { verifySupabaseAccessToken } from './lib/verify-supabase-jwt'
 export async function requireAuth(c: Context, next: Next) {
   const { getSupabaseClient } = await import('./lib/supabase')
   const supabase = getSupabaseClient(c)
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   if (!user) return c.json({ error: 'Unauthorized' }, 401)
   c.set('user', user)
   await next()
@@ -34,7 +36,17 @@ export async function requireAuthJwt(c: Context, next: Next) {
       jwtSecret: env?.SUPABASE_JWT_SECRET,
     })
     if (!('error' in result)) {
-      c.set('userId', result.payload.sub!)
+      const sub = result.payload.sub!
+      c.set('userId', sub)
+      // Resolve app role from D1 (admin/user), fallback to JWT metadata
+      const { getRole } = await import('./lib/auth')
+      const payload = result.payload as Record<string, unknown>
+      const appRole = await getRole(c, {
+        id: sub,
+        user_metadata: (payload.user_metadata as Record<string, unknown>) ?? {},
+        app_metadata: (payload.app_metadata as Record<string, unknown>) ?? {},
+      })
+      c.set('user', { id: sub, role: appRole })
       await next()
       return
     }
@@ -42,9 +54,15 @@ export async function requireAuthJwt(c: Context, next: Next) {
 
   const { getSupabaseClient } = await import('./lib/supabase')
   const supabase = getSupabaseClient(c)
-  const { data: { user }, error } = await supabase.auth.getUser()
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser()
   if (error || !user) return c.json({ error: 'Unauthorized' }, 401)
   c.set('userId', user.id)
+  const { getRole } = await import('./lib/auth')
+  const appRole = await getRole(c, user)
+  c.set('user', { id: user.id, role: appRole })
   await next()
 }
 
@@ -66,7 +84,9 @@ export async function getAuthUserId(c: Context): Promise<string | null> {
 
   const { getSupabaseClient } = await import('./lib/supabase')
   const supabase = getSupabaseClient(c)
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   return user?.id ?? null
 }
 

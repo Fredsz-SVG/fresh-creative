@@ -30,10 +30,7 @@ function loadDevVars() {
     if (eq === -1) continue
     const key = t.slice(0, eq).trim()
     let val = t.slice(eq + 1).trim()
-    if (
-      (val.startsWith('"') && val.endsWith('"')) ||
-      (val.startsWith("'") && val.endsWith("'"))
-    ) {
+    if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
       val = val.slice(1, -1)
     }
     if (!process.env[key]) process.env[key] = val
@@ -75,10 +72,7 @@ if (!rows?.length) {
   process.exit(0)
 }
 
-const lines = [
-  '-- Sinkron dari Supabase public.users → D1 (generated)',
-  'BEGIN TRANSACTION;',
-]
+const lines = ['-- Sinkron dari Supabase public.users → D1 (generated)', 'BEGIN TRANSACTION;']
 
 for (const r of rows) {
   const id = r.id
@@ -90,11 +84,13 @@ for (const r of rows) {
   const created = r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString()
   const updated = r.updated_at ? new Date(r.updated_at).toISOString() : created
 
-  lines.push(`INSERT OR REPLACE INTO users (id, email, role, full_name, credits, is_suspended, created_at, updated_at) VALUES (${sqlQuote(
-    id
-  )}, ${sqlQuote(email)}, ${sqlQuote(role)}, ${fullName == null ? 'NULL' : sqlQuote(fullName)}, ${credits}, ${suspended}, ${sqlQuote(
-    created
-  )}, ${sqlQuote(updated)});`)
+  lines.push(
+    `INSERT OR REPLACE INTO users (id, email, role, full_name, credits, is_suspended, created_at, updated_at) VALUES (${sqlQuote(
+      id
+    )}, ${sqlQuote(email)}, ${sqlQuote(role)}, ${fullName == null ? 'NULL' : sqlQuote(fullName)}, ${credits}, ${suspended}, ${sqlQuote(
+      created
+    )}, ${sqlQuote(updated)});`
+  )
 }
 
 lines.push('COMMIT;')

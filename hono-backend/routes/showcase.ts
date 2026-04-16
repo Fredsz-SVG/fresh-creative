@@ -32,7 +32,10 @@ showcase.get('/', async (c) => {
   try {
     const base = await getShowcaseFromD1(db)
     const enrichedPreviews = await enrichShowcasePreviewsWithAlbumCovers(db, base.albumPreviews)
-    const payload: ShowcasePayload = { albumPreviews: enrichedPreviews, flipbookPreviewUrl: base.flipbookPreviewUrl }
+    const payload: ShowcasePayload = {
+      albumPreviews: enrichedPreviews,
+      flipbookPreviewUrl: base.flipbookPreviewUrl,
+    }
     showcaseCache = payload
     showcaseCacheExpiresAt = now + SHOWCASE_CACHE_TTL_MS
     c.header('Cache-Control', 'public, max-age=20, stale-while-revalidate=60')

@@ -6,6 +6,15 @@ export interface NamedItem {
   name: string;
 }
 
+export interface PackageSnapshot {
+  name: string;
+  price_per_student: number;
+  min_students: number;
+  features: string;
+  flipbook_enabled: boolean;
+  ai_labs_features: string[];
+}
+
 // Represents the structure of a pricing package
 export interface PricingPackage extends NamedItem { }
 
@@ -16,7 +25,7 @@ export interface Lead {
   created_at: string;
   created_by: string | null;
   pricing_package_id: string | null;
-  pricing_packages: PricingPackage | null;
+  package_snapshot: PackageSnapshot | null;
 }
 
 // Represents an Album, which can be a yearbook or a public album
@@ -29,7 +38,7 @@ export interface Album {
   lead_id: string | null;
   user_id: string;
   pricing_package_id: string | null;
-  pricing_packages: PricingPackage | null;
+  package_snapshot: PackageSnapshot | null;
   users: User | null;
 }
 

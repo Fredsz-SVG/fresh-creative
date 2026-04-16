@@ -9,15 +9,19 @@ import type { D1Database } from '@cloudflare/workers-types'
 
 const overview = new Hono()
 
-async function verifyAdmin(
-  c: Context
-): Promise<
+async function verifyAdmin(c: Context): Promise<
   | Response
-  | { user: { id: string; email?: string; user_metadata?: Record<string, unknown> }; db: D1Database }
+  | {
+      user: { id: string; email?: string; user_metadata?: Record<string, unknown> }
+      db: D1Database
+    }
 > {
   const supabase = getSupabaseClient(c)
   const db = getD1(c)
-  const { data: { user }, error: authError } = await supabase.auth.getUser()
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser()
   if (authError || !user) {
     return c.json({ error: 'Unauthorized' }, 401)
   }
@@ -58,7 +62,11 @@ overview.get('/', async (c) => {
     const totalUsers =
       (await db.prepare(`SELECT COUNT(*) as c FROM users`).first<{ c: number }>())?.c ?? 0
     const totalAdmins =
-      (await db.prepare(`SELECT COUNT(*) as c FROM users WHERE role = 'admin'`).first<{ c: number }>())?.c ?? 0
+      (
+        await db
+          .prepare(`SELECT COUNT(*) as c FROM users WHERE role = 'admin'`)
+          .first<{ c: number }>()
+      )?.c ?? 0
     const since = new Date()
     since.setDate(since.getDate() - 7)
     const sinceIso = since.toISOString()
@@ -70,7 +78,9 @@ overview.get('/', async (c) => {
           .first<{ c: number }>()
       )?.c ?? 0
 
-    const creditRows = await db.prepare(`SELECT credits FROM users`).all<{ credits: number | null }>()
+    const creditRows = await db
+      .prepare(`SELECT credits FROM users`)
+      .all<{ credits: number | null }>()
     const totalCredits = (creditRows.results ?? []).reduce(
       (sum, row) => sum + (typeof row.credits === 'number' ? row.credits : 0),
       0
@@ -131,7 +141,8 @@ overview.put('/', async (c) => {
 
   // Source of truth: update Supabase `public.users` first.
   // UI admin ini memodifikasi credits/role/suspend; sebelumnya hanya mengubah D1.
-  if (typeof credits === 'number' && credits < 0) return c.json({ error: 'Credits must be >= 0' }, 400)
+  if (typeof credits === 'number' && credits < 0)
+    return c.json({ error: 'Credits must be >= 0' }, 400)
 
   // Safety: admin tidak boleh mengubah role miliknya sendiri.
   // Ini mencegah self-demote yang bisa bikin admin terkunci/inkonsisten.
@@ -182,7 +193,10 @@ overview.put('/', async (c) => {
   update.push(`updated_at = datetime('now')`)
   vals.push(id)
   const sql = `UPDATE users SET ${update.join(', ')} WHERE id = ?`
-  const r = await db.prepare(sql).bind(...vals).run()
+  const r = await db
+    .prepare(sql)
+    .bind(...vals)
+    .run()
   if (!r.success) return c.json({ error: 'Update failed' }, 500)
   if (r.meta.changes === 0) return c.json({ error: 'User not found' }, 404)
   const row = await db

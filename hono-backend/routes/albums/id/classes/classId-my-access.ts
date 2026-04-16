@@ -8,7 +8,9 @@ myAccessRoute.get('/', async (c) => {
   const supabase = getSupabaseClient(c)
   const db = getD1(c)
   if (!db) return c.json({ error: 'Database not configured' }, 503)
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   if (!user) return c.json({ error: 'Unauthorized' }, 401)
 
   const albumId = c.req.param('id')
@@ -31,7 +33,9 @@ myAccessRoute.patch('/', async (c) => {
   const supabase = getSupabaseClient(c)
   const db = getD1(c)
   if (!db) return c.json({ error: 'Database not configured' }, 503)
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   if (!user) return c.json({ error: 'Unauthorized' }, 401)
 
   const albumId = c.req.param('id')
@@ -39,17 +43,24 @@ myAccessRoute.patch('/', async (c) => {
   if (!albumId || !classId) return c.json({ error: 'Album ID and class ID required' }, 400)
 
   const access = await db
-    .prepare(`SELECT id, user_id, status FROM album_class_access WHERE class_id = ? AND user_id = ? AND album_id = ?`)
+    .prepare(
+      `SELECT id, user_id, status FROM album_class_access WHERE class_id = ? AND user_id = ? AND album_id = ?`
+    )
     .bind(classId, user.id, albumId)
     .first<{ id: string; user_id: string; status: string }>()
 
   if (!access) return c.json({ error: 'Akses tidak ditemukan' }, 404)
-  if (access.status !== 'approved') return c.json({ error: 'Hanya bisa menyunting setelah akses disetujui' }, 403)
+  if (access.status !== 'approved')
+    return c.json({ error: 'Hanya bisa menyunting setelah akses disetujui' }, 403)
 
   const body = await c.req.json().catch(() => ({}))
   const student_name = typeof body?.student_name === 'string' ? body.student_name.trim() : undefined
   const email =
-    body?.email !== undefined ? (typeof body.email === 'string' ? body.email.trim() || null : null) : undefined
+    body?.email !== undefined
+      ? typeof body.email === 'string'
+        ? body.email.trim() || null
+        : null
+      : undefined
   const date_of_birth =
     body?.date_of_birth !== undefined
       ? typeof body.date_of_birth === 'string'
@@ -63,9 +74,17 @@ myAccessRoute.patch('/', async (c) => {
         : null
       : undefined
   const message =
-    body?.message !== undefined ? (typeof body.message === 'string' ? body.message.trim() || null : null) : undefined
+    body?.message !== undefined
+      ? typeof body.message === 'string'
+        ? body.message.trim() || null
+        : null
+      : undefined
   const video_url =
-    body?.video_url !== undefined ? (typeof body.video_url === 'string' ? body.video_url.trim() || null : null) : undefined
+    body?.video_url !== undefined
+      ? typeof body.video_url === 'string'
+        ? body.video_url.trim() || null
+        : null
+      : undefined
 
   if (
     student_name === undefined &&
@@ -118,7 +137,10 @@ myAccessRoute.patch('/', async (c) => {
     .run()
   if (!r.success) return c.json({ error: 'Update failed' }, 500)
 
-  const updated = await db.prepare(`SELECT * FROM album_class_access WHERE id = ?`).bind(access.id).first()
+  const updated = await db
+    .prepare(`SELECT * FROM album_class_access WHERE id = ?`)
+    .bind(access.id)
+    .first()
   return c.json(updated)
 })
 
@@ -126,7 +148,9 @@ myAccessRoute.delete('/', async (c) => {
   const supabase = getSupabaseClient(c)
   const db = getD1(c)
   if (!db) return c.json({ error: 'Database not configured' }, 503)
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   if (!user) return c.json({ error: 'Unauthorized' }, 401)
 
   const albumId = c.req.param('id')
@@ -134,7 +158,9 @@ myAccessRoute.delete('/', async (c) => {
   if (!albumId || !classId) return c.json({ error: 'Album ID and class ID required' }, 400)
 
   const access = await db
-    .prepare(`SELECT id, status FROM album_class_access WHERE class_id = ? AND user_id = ? AND album_id = ?`)
+    .prepare(
+      `SELECT id, status FROM album_class_access WHERE class_id = ? AND user_id = ? AND album_id = ?`
+    )
     .bind(classId, user.id, albumId)
     .first<{ id: string; status: string }>()
 

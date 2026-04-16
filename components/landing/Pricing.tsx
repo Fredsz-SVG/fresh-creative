@@ -289,7 +289,7 @@ export function Pricing() {
 
         {/* Tab: Digital | Fisik */}
         <div className="flex justify-center mb-10">
-          <div className="relative flex items-center rounded-xl border border-slate-900 dark:border-white bg-white dark:bg-slate-900 p-1 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[#a3e635]">
+          <div className="relative flex items-center rounded-xl border border-slate-200 dark:border-white bg-white dark:bg-slate-900 p-1 shadow-[4px_4px_0_0_#334155] dark:shadow-[#a3e635]">
             <button
               type="button"
               onClick={() => setTab("digital")}
@@ -302,7 +302,7 @@ export function Pricing() {
               {tab === "digital" && (
                 <motion.div
                   layoutId="pricing-active-tab"
-                  className="absolute inset-0 bg-lime-500 rounded-lg border border-slate-900 dark:border-white"
+                  className="absolute inset-0 bg-lime-500 rounded-lg border border-slate-200 dark:border-white"
                   transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                 />
               )}
@@ -320,7 +320,7 @@ export function Pricing() {
               {tab === "fisik" && (
                 <motion.div
                   layoutId="pricing-active-tab"
-                  className="absolute inset-0 bg-lime-500 rounded-lg border border-slate-900 dark:border-white"
+                  className="absolute inset-0 bg-lime-500 rounded-lg border border-slate-200 dark:border-white"
                   transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                 />
               )}
@@ -374,8 +374,8 @@ export function Pricing() {
                         onClick={() => setSelectedDigitalId(isSelected ? null : pkg.id)}
                         className={`relative w-full h-full rounded-[1.5rem] sm:rounded-[2rem] border-2 p-6 sm:p-8 text-left transition-all duration-300 focus:outline-none flex flex-col ${
                           isSelected
-                            ? "border-slate-900 dark:border-white bg-lime-400/10 shadow-none translate-x-[3px] translate-y-[3px]"
-                            : "border-slate-900 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-[3px_3px_0_0_#0f172a] dark:shadow-[#a3e635] hover:-translate-y-0.5 hover:-translate-x-0.5 hover:shadow-[4px_4px_0_0_#0f172a] dark:hover:shadow-[#a3e635]"
+                            ? "border-slate-200 dark:border-white bg-lime-400/10 shadow-none translate-x-[3px] translate-y-[3px]"
+                            : "border-slate-200 dark:border-slate-200 bg-white dark:bg-slate-900 shadow-[4px_4px_0_0_#334155] dark:shadow-[#a3e635] hover:-translate-y-0.5 hover:-translate-x-0.5 hover:shadow-[4px_4px_0_0_#334155] dark:hover:shadow-[#a3e635]"
                         }`}
                       >
                       {isSelected && (
@@ -405,7 +405,7 @@ export function Pricing() {
                         <ul className="mt-6 space-y-2 pt-1">
                           {parsedFeatures.filter((p) => p.price === 0).map((parsed, idx) => (
                             <li key={idx} className="flex items-center gap-3 text-sm font-bold text-slate-700 dark:text-white/80">
-                              <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md border border-slate-900 dark:border-white bg-lime-400 shadow-[1px_1px_0_0_#0f172a] dark:shadow-[#a3e635]">
+                              <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md border border-slate-200 dark:border-white bg-lime-400 shadow-[4px_4px_0_0_#334155] dark:shadow-[#a3e635]">
                                 <Check className="h-3 w-3 text-slate-900" strokeWidth={4} />
                               </div>
                               <span>{parsed.name}</span>
@@ -418,17 +418,17 @@ export function Pricing() {
                             <div className="flex flex-wrap gap-2">
                               {pkg.flipbook_enabled &&
                                 !pkg.ai_labs_features.includes("flipbook_unlock") && (
-                                  <span className="inline-flex items-center gap-1.5 rounded-md border border-amber-700 dark:border-amber-300 bg-amber-300 dark:bg-amber-400 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-amber-950 shadow-[1px_1px_0_0_#0f172a] dark:shadow-amber-300/80">
+                                  <span className="inline-flex items-center gap-1.5 rounded-md border border-amber-700 dark:border-amber-300 bg-amber-300 dark:bg-amber-400 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-amber-950 shadow-[4px_4px_0_0_#334155] dark:shadow-amber-300/80">
                                     <Book className="h-3 w-3" /> Flipbook
                                   </span>
                                 )}
                               {pkg.ai_labs_features.map((slug) => (
                                 <span
                                   key={slug}
-                                  className={`inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[10px] font-black uppercase tracking-wider shadow-[1px_1px_0_0_#0f172a] ${
+                                  className={`inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[10px] font-black uppercase tracking-wider shadow-[4px_4px_0_0_#334155] ${
                                     slug === "flipbook_unlock"
                                       ? "border border-amber-700 dark:border-amber-300 bg-amber-300 dark:bg-amber-400 text-amber-950 dark:shadow-amber-300/80"
-                                      : "border border-slate-900 dark:border-white bg-cyan-400 text-slate-900 dark:shadow-[#a3e635]"
+                                      : "border border-slate-200 dark:border-white bg-cyan-400 text-slate-900 dark:shadow-[#a3e635]"
                                   }`}
                                 >
                                   {slug === "flipbook_unlock" ? (
@@ -458,7 +458,7 @@ export function Pricing() {
                                 e.stopPropagation();
                                 setOpenAddonPkgId(pkg.id);
                               }}
-                              className="w-full py-2.5 px-4 rounded-xl border border-slate-900 dark:border-white bg-slate-50 dark:bg-slate-800 text-[11px] font-black uppercase text-slate-900 dark:text-white transition-all hover:-translate-y-0.5 hover:-translate-x-0.5 hover:shadow-[3px_3px_0_0_#0f172a] dark:hover:shadow-[#a3e635] shadow-[2px_2px_0_0_#0f172a] dark:shadow-[#a3e635] active:translate-x-0 active:translate-y-0 active:shadow-none"
+                              className="w-full py-2.5 px-4 rounded-xl border border-slate-200 dark:border-white bg-slate-50 dark:bg-slate-800 text-[11px] font-black uppercase text-slate-900 dark:text-white transition-all hover:-translate-y-0.5 hover:-translate-x-0.5 hover:shadow-[4px_4px_0_0_#334155] dark:hover:shadow-[#a3e635] shadow-[4px_4px_0_0_#334155] dark:shadow-[#a3e635] active:translate-x-0 active:translate-y-0 active:shadow-none"
                             >
                               {chosenAddons.length > 0 ? "Ubah Add-on" : "Pilih Add-on"}
                             </button>
@@ -472,10 +472,10 @@ export function Pricing() {
                         </span>
                       </div>
                       <span
-                        className={`mt-6 block w-full rounded-xl py-3 border border-slate-900 dark:border-white text-center text-sm font-black uppercase transition-all duration-300 ${
+                        className={`mt-6 block w-full rounded-xl py-3 border border-slate-200 dark:border-white text-center text-sm font-black uppercase transition-all duration-300 ${
                           isSelected
                             ? "bg-lime-500 text-white dark:text-black shadow-none"
-                            : "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-[2px_2px_0_0_#0f172a] dark:shadow-[#a3e635] group-hover:bg-lime-400"
+                            : "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-[4px_4px_0_0_#334155] dark:shadow-[#a3e635] group-hover:bg-lime-400"
                         }`}
                       >
                         {isSelected ? "Paket dipilih" : "Pilih Paket"}
@@ -491,7 +491,7 @@ export function Pricing() {
                 {digitalPackages.map((_, idx) => (
                   <div 
                     key={idx}
-                    className={`transition-all duration-300 border border-slate-900 rounded-full ${
+                    className={`transition-all duration-300 border border-slate-200 rounded-full ${
                       activeSwipeIndex === idx 
                         ? "h-3 w-10 bg-lime-400 shadow-[2px_2px_0_0_#000]" 
                         : "h-3 w-3 bg-white shadow-[1px_1px_0_0_#000]"
@@ -501,7 +501,7 @@ export function Pricing() {
               </div>
 
               {selectedDigitalId && (
-                <div className="fixed bottom-4 sm:bottom-8 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-md sm:max-w-none sm:w-max z-[100] flex flex-col sm:flex-row items-center justify-between sm:justify-center gap-3 sm:gap-6 rounded-[2rem] sm:rounded-[2.5rem] border-2 border-slate-900 dark:border-white bg-lime-400 p-5 sm:px-8 sm:py-5 text-center shadow-[4px_4px_0_0_#0f172a] sm:shadow-[6px_6px_0_0_#0f172a] dark:shadow-[#fff] dark:sm:shadow-[#fff] animate-in slide-in-from-bottom-full duration-300">
+                <div className="fixed bottom-4 sm:bottom-8 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-md sm:max-w-none sm:w-max z-[100] flex flex-col sm:flex-row items-center justify-between sm:justify-center gap-3 sm:gap-6 rounded-[2rem] sm:rounded-[2.5rem] border-2 border-slate-200 dark:border-white bg-lime-400 p-5 sm:px-8 sm:py-5 text-center shadow-[4px_4px_0_0_#334155] sm:shadow-[4px_4px_0_0_#334155] dark:shadow-[#fff] dark:sm:shadow-[#fff] animate-in slide-in-from-bottom-full duration-300">
                   <button 
                     onClick={() => setSelectedDigitalId(null)}
                     className="absolute top-3 right-3 sm:top-1/2 sm:-translate-y-1/2 sm:right-3 text-slate-900 hover:bg-slate-900/10 rounded-full p-1.5 transition-colors"
@@ -516,7 +516,7 @@ export function Pricing() {
                   </div>
                   <a
                     href="/login?next=/user/showroom"
-                    className="group inline-flex items-center justify-center gap-2 w-full sm:w-auto rounded-xl sm:rounded-3xl border-2 sm:border border-slate-900 bg-white px-5 sm:px-8 py-3 sm:py-3.5 text-[11px] sm:text-base font-black text-slate-900 transition-all hover:-translate-y-0.5 hover:-translate-x-0.5 hover:shadow-[3px_3px_0_0_#0f172a] active:translate-x-0 active:translate-y-0 active:shadow-none whitespace-nowrap sm:mr-6"
+                    className="group inline-flex items-center justify-center gap-2 w-full sm:w-auto rounded-xl sm:rounded-3xl border-2 sm:border border-slate-200 bg-white px-5 sm:px-8 py-3 sm:py-3.5 text-[11px] sm:text-base font-black text-slate-900 transition-all hover:-translate-y-0.5 hover:-translate-x-0.5 hover:shadow-[4px_4px_0_0_#334155] active:translate-x-0 active:translate-y-0 active:shadow-none whitespace-nowrap sm:mr-6"
                   >
                     Lanjut Sekarang <TiLocationArrow className="h-4 w-4 sm:h-5 sm:w-5 transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />
                   </a>
@@ -531,7 +531,7 @@ export function Pricing() {
         {tab === "fisik" && (
         <>
         {!showFisikEstimator ? (
-          <div className="mx-auto max-w-3xl rounded-[1.5rem] sm:rounded-[2.5rem] border-2 border-slate-900 dark:border-white bg-white dark:bg-slate-900 shadow-[3px_3px_0_0_#0f172a] dark:shadow-[#a3e635] p-5 sm:p-8 md:p-12">
+          <div className="mx-auto max-w-3xl rounded-[1.5rem] sm:rounded-[2.5rem] border-2 border-slate-200 dark:border-white bg-white dark:bg-slate-900 shadow-[4px_4px_0_0_#334155] dark:shadow-[#a3e635] p-5 sm:p-8 md:p-12">
             <h3 className="font-sans text-lg sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white mb-2 sm:mb-3 flex items-center gap-3">
               <span className="h-6 sm:h-8 w-2 bg-lime-500" /> Data Awal Cetak Fisik
             </h3>
@@ -552,7 +552,7 @@ export function Pricing() {
                     if (fisikIntroError) setFisikIntroError(null);
                   }}
                   placeholder="Contoh: SMA Negeri 1 Jakarta"
-                  className="w-full rounded-xl border border-slate-900 dark:border-white bg-slate-50 dark:bg-slate-800 px-3 sm:px-4 py-2.5 sm:py-3 text-slate-900 dark:text-white text-xs sm:text-sm font-bold focus:shadow-[2px_2px_0_0_#0f172a] dark:focus:shadow-[#a3e635] focus:outline-none transition-all shadow-[1px_1px_0_0_#0f172a] dark:shadow-[#a3e635]"
+                  className="w-full rounded-xl border border-slate-200 dark:border-white bg-slate-50 dark:bg-slate-800 px-3 sm:px-4 py-2.5 sm:py-3 text-slate-900 dark:text-white text-xs sm:text-sm font-bold focus:shadow-[4px_4px_0_0_#334155] dark:focus:shadow-[#a3e635] focus:outline-none transition-all shadow-[4px_4px_0_0_#334155] dark:shadow-[#a3e635]"
                 />
               </div>
 
@@ -568,7 +568,7 @@ export function Pricing() {
                     if (fisikIntroError) setFisikIntroError(null);
                   }}
                   placeholder="Contoh: 081234567890"
-                  className="w-full rounded-xl border border-slate-900 dark:border-white bg-slate-50 dark:bg-slate-800 px-3 sm:px-4 py-2.5 sm:py-3 text-slate-900 dark:text-white text-xs sm:text-sm font-bold focus:shadow-[2px_2px_0_0_#0f172a] dark:focus:shadow-[#a3e635] focus:outline-none transition-all shadow-[1px_1px_0_0_#0f172a] dark:shadow-[#a3e635]"
+                  className="w-full rounded-xl border border-slate-200 dark:border-white bg-slate-50 dark:bg-slate-800 px-3 sm:px-4 py-2.5 sm:py-3 text-slate-900 dark:text-white text-xs sm:text-sm font-bold focus:shadow-[4px_4px_0_0_#334155] dark:focus:shadow-[#a3e635] focus:outline-none transition-all shadow-[4px_4px_0_0_#334155] dark:shadow-[#a3e635]"
                 />
               </div>
 
@@ -584,7 +584,7 @@ export function Pricing() {
                     if (fisikIntroError) setFisikIntroError(null);
                   }}
                   placeholder="Contoh: Budi Prasetyo"
-                  className="w-full rounded-xl border border-slate-900 dark:border-white bg-slate-50 dark:bg-slate-800 px-3 sm:px-4 py-2.5 sm:py-3 text-slate-900 dark:text-white text-xs sm:text-sm font-bold focus:shadow-[2px_2px_0_0_#0f172a] dark:focus:shadow-[#a3e635] focus:outline-none transition-all shadow-[1px_1px_0_0_#0f172a] dark:shadow-[#a3e635]"
+                  className="w-full rounded-xl border border-slate-200 dark:border-white bg-slate-50 dark:bg-slate-800 px-3 sm:px-4 py-2.5 sm:py-3 text-slate-900 dark:text-white text-xs sm:text-sm font-bold focus:shadow-[4px_4px_0_0_#334155] dark:focus:shadow-[#a3e635] focus:outline-none transition-all shadow-[4px_4px_0_0_#334155] dark:shadow-[#a3e635]"
                 />
               </div>
 
@@ -595,14 +595,14 @@ export function Pricing() {
               <button
                 type="button"
                 onClick={handleLanjutFisik}
-                className="group w-full rounded-[1.2rem] sm:rounded-[1.5rem] border border-slate-900 bg-lime-400 px-5 sm:px-8 py-3.5 sm:py-4 text-sm sm:text-base font-black text-slate-900 transition-all hover:-translate-y-0.5 hover:-translate-x-0.5 hover:shadow-[3px_3px_0_0_#0f172a] active:translate-x-0 active:translate-y-0 active:shadow-none"
+                className="group w-full rounded-[1.2rem] sm:rounded-[1.5rem] border border-slate-200 bg-lime-400 px-5 sm:px-8 py-3.5 sm:py-4 text-sm sm:text-base font-black text-slate-900 transition-all hover:-translate-y-0.5 hover:-translate-x-0.5 hover:shadow-[4px_4px_0_0_#334155] active:translate-x-0 active:translate-y-0 active:shadow-none"
               >
                 Lanjutkan <TiLocationArrow className="inline-block ml-1 sm:ml-2 group-hover:translate-x-1" />
               </button>
             </div>
           </div>
         ) : (
-        <div className="mx-auto max-w-6xl rounded-[1.5rem] sm:rounded-[2.5rem] border-2 border-slate-900 dark:border-white bg-white dark:bg-slate-900 shadow-[3px_3px_0_0_#0f172a] dark:shadow-[#a3e635] p-5 sm:p-8 md:p-12">
+        <div className="mx-auto max-w-6xl rounded-[1.5rem] sm:rounded-[2.5rem] border-2 border-slate-200 dark:border-white bg-white dark:bg-slate-900 shadow-[4px_4px_0_0_#334155] dark:shadow-[#a3e635] p-5 sm:p-8 md:p-12">
           <div className="mb-5 sm:mb-6 rounded-xl border border-cyan-300 dark:border-cyan-500/50 bg-cyan-50 dark:bg-cyan-900/20 p-3 sm:p-4 text-xs sm:text-sm text-cyan-900 dark:text-cyan-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <span>
               <strong>{fisikIntro.schoolName}</strong> • {fisikIntro.contactName} ({fisikIntro.whatsapp})
@@ -638,7 +638,7 @@ export function Pricing() {
                     max={500}
                     value={jumlahSiswa}
                     onChange={(e) => setJumlahSiswa(Number(e.target.value))}
-                    className="pricing-slider-brutalist w-full h-4 rounded-none appearance-none cursor-pointer bg-slate-200 dark:bg-white/20 border border-slate-900 dark:border-white"
+                    className="pricing-slider-brutalist w-full h-4 rounded-none appearance-none cursor-pointer bg-slate-200 dark:bg-white/20 border border-slate-200 dark:border-white"
                   />
                 </div>
                 <div>
@@ -654,7 +654,7 @@ export function Pricing() {
                     max={20}
                     value={jumlahKelas}
                     onChange={(e) => setJumlahKelas(Number(e.target.value))}
-                    className="pricing-slider-brutalist w-full h-4 rounded-none appearance-none cursor-pointer bg-slate-200 dark:bg-white/20 border border-slate-900 dark:border-white"
+                    className="pricing-slider-brutalist w-full h-4 rounded-none appearance-none cursor-pointer bg-slate-200 dark:bg-white/20 border border-slate-200 dark:border-white"
                   />
                 </div>
               </div>
@@ -675,7 +675,7 @@ export function Pricing() {
                   step={4}
                   value={tebalBuku}
                   onChange={(e) => setTebalBuku(Number(e.target.value))}
-                  className="pricing-slider-brutalist w-full h-4 rounded-none appearance-none cursor-pointer bg-slate-200 dark:bg-white/20 border border-slate-900 dark:border-white"
+                  className="pricing-slider-brutalist w-full h-4 rounded-none appearance-none cursor-pointer bg-slate-200 dark:bg-white/20 border border-slate-200 dark:border-white"
                 />
                 <p className="mt-1 text-xs text-slate-400 dark:text-white/50">*Kelipatan 4 halaman</p>
               </div>
@@ -688,7 +688,7 @@ export function Pricing() {
                   <select
                     value={cover}
                     onChange={(e) => setCover(e.target.value as typeof cover)}
-                    className="w-full rounded-xl border border-slate-900 dark:border-white bg-slate-50 dark:bg-slate-800 px-3 sm:px-4 py-2 sm:py-2.5 text-slate-900 dark:text-white text-xs sm:text-sm font-bold focus:shadow-[2px_2px_0_0_#0f172a] dark:focus:shadow-[#a3e635] focus:outline-none transition-all shadow-[1px_1px_0_0_#0f172a] dark:shadow-[#a3e635]"
+                    className="w-full rounded-xl border border-slate-200 dark:border-white bg-slate-50 dark:bg-slate-800 px-3 sm:px-4 py-2 sm:py-2.5 text-slate-900 dark:text-white text-xs sm:text-sm font-bold focus:shadow-[4px_4px_0_0_#334155] dark:focus:shadow-[#a3e635] focus:outline-none transition-all shadow-[4px_4px_0_0_#334155] dark:shadow-[#a3e635]"
                   >
                     {COVER_OPTIONS.map((opt) => (
                       <option key={opt.id} value={opt.id} className="bg-white dark:bg-gray-900 text-slate-900 dark:text-white">
@@ -704,7 +704,7 @@ export function Pricing() {
                   <select
                     value={packaging}
                     onChange={(e) => setPackaging(e.target.value as typeof packaging)}
-                    className="w-full rounded-xl border border-slate-900 dark:border-white bg-slate-50 dark:bg-slate-800 px-3 sm:px-4 py-2 sm:py-2.5 text-slate-900 dark:text-white text-xs sm:text-sm font-bold focus:shadow-[2px_2px_0_0_#0f172a] dark:focus:shadow-[#a3e635] focus:outline-none transition-all shadow-[1px_1px_0_0_#0f172a] dark:shadow-[#a3e635]"
+                    className="w-full rounded-xl border border-slate-200 dark:border-white bg-slate-50 dark:bg-slate-800 px-3 sm:px-4 py-2 sm:py-2.5 text-slate-900 dark:text-white text-xs sm:text-sm font-bold focus:shadow-[4px_4px_0_0_#334155] dark:focus:shadow-[#a3e635] focus:outline-none transition-all shadow-[4px_4px_0_0_#334155] dark:shadow-[#a3e635]"
                   >
                     {PACKAGING_OPTIONS.map((opt) => (
                       <option key={opt.id} value={opt.id} className="bg-white dark:bg-gray-900 text-slate-900 dark:text-white">
@@ -724,7 +724,7 @@ export function Pricing() {
                         type="checkbox"
                         checked={videoCinematic}
                         onChange={(e) => setVideoCinematic(e.target.checked)}
-                        className="h-5 w-5 sm:h-6 sm:w-6 rounded-none border border-slate-900 dark:border-white bg-white dark:bg-slate-800 text-lime-500 focus:ring-0 shadow-[1px_1px_0_0_#0f172a] dark:shadow-[#a3e635] checked:bg-lime-500"
+                        className="h-5 w-5 sm:h-6 sm:w-6 rounded-none border border-slate-200 dark:border-white bg-white dark:bg-slate-800 text-lime-500 focus:ring-0 shadow-[4px_4px_0_0_#334155] dark:shadow-[#a3e635] checked:bg-lime-500"
                       />
                       <span className="text-xs sm:text-sm text-slate-700 dark:text-white/90">
                         Video Cinematic
@@ -742,7 +742,7 @@ export function Pricing() {
                 <select
                   value={fotografer}
                   onChange={(e) => setFotografer(e.target.value as typeof fotografer)}
-                  className="w-full rounded-xl border border-slate-900 dark:border-white bg-slate-50 dark:bg-slate-800 px-3 sm:px-4 py-2 sm:py-2.5 text-slate-900 dark:text-white text-xs sm:text-sm font-bold focus:shadow-[2px_2px_0_0_#0f172a] dark:focus:shadow-[#a3e635] focus:outline-none transition-all shadow-[1px_1px_0_0_#0f172a] dark:shadow-[#a3e635]"
+                  className="w-full rounded-xl border border-slate-200 dark:border-white bg-slate-50 dark:bg-slate-800 px-3 sm:px-4 py-2 sm:py-2.5 text-slate-900 dark:text-white text-xs sm:text-sm font-bold focus:shadow-[4px_4px_0_0_#334155] dark:focus:shadow-[#a3e635] focus:outline-none transition-all shadow-[4px_4px_0_0_#334155] dark:shadow-[#a3e635]"
                 >
                   {FOTOGRAFER_OPTIONS.map((opt) => (
                     <option key={opt.id} value={opt.id} className="bg-white dark:bg-gray-900 text-slate-900 dark:text-white">
@@ -808,7 +808,7 @@ export function Pricing() {
               <button
                 type="button"
                 onClick={handleAmbilPenawaran}
-                className="group w-full rounded-[1.2rem] sm:rounded-[1.5rem] border border-slate-900 bg-lime-400 px-5 sm:px-8 py-3.5 sm:py-5 text-base sm:text-xl font-black text-slate-900 transition-all hover:-translate-y-0.5 hover:-translate-x-0.5 hover:shadow-[3px_3px_0_0_#0f172a] active:translate-x-0 active:translate-y-0 active:shadow-none"
+                className="group w-full rounded-[1.2rem] sm:rounded-[1.5rem] border border-slate-200 bg-lime-400 px-5 sm:px-8 py-3.5 sm:py-5 text-base sm:text-xl font-black text-slate-900 transition-all hover:-translate-y-0.5 hover:-translate-x-0.5 hover:shadow-[4px_4px_0_0_#334155] active:translate-x-0 active:translate-y-0 active:shadow-none"
               >
                 Ambil Penawaran <TiLocationArrow className="inline-block ml-1 sm:ml-2 group-hover:translate-x-1" />
               </button>
@@ -834,7 +834,7 @@ export function Pricing() {
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="relative w-full max-w-md bg-white dark:bg-slate-900 border-4 border-slate-900 dark:border-white p-6 sm:p-8 rounded-[2rem] shadow-[8px_8px_0_0_#000] dark:shadow-[#a3e635]"
+              className="relative w-full max-w-md bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-white p-6 sm:p-8 rounded-[2rem] shadow-[8px_8px_0_0_#000] dark:shadow-[#a3e635]"
             >
               <div className="flex items-center justify-between mb-6">
                 <h3 className="font-general text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">
@@ -870,8 +870,8 @@ export function Pricing() {
                         key={i}
                         className={`flex items-center gap-4 p-4 rounded-2xl border-2 transition-all cursor-pointer ${
                           checked
-                            ? "border-slate-900 dark:border-white bg-lime-400/10 shadow-none translate-x-[2px] translate-y-[2px]"
-                            : "border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 hover:border-slate-400 shadow-[3px_3px_0_0_#0f172a] dark:shadow-[#a3e635]"
+                            ? "border-slate-200 dark:border-white bg-lime-400/10 shadow-none translate-x-[2px] translate-y-[2px]"
+                            : "border-slate-200 dark:border-slate-200 bg-slate-50 dark:bg-slate-800/50 hover:border-slate-400 shadow-[4px_4px_0_0_#334155] dark:shadow-[#a3e635]"
                         }`}
                       >
                         <div className="relative flex items-center">
@@ -882,7 +882,7 @@ export function Pricing() {
                             className="sr-only"
                           />
                           <div className={`h-6 w-6 rounded-lg border-2 flex items-center justify-center transition-all ${
-                            checked ? "bg-lime-500 border-slate-900 dark:border-white" : "bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600"
+                            checked ? "bg-lime-500 border-slate-200 dark:border-white" : "bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600"
                           }`}>
                             {checked && <Check className="h-4 w-4 text-slate-900" strokeWidth={4} />}
                           </div>
@@ -899,7 +899,7 @@ export function Pricing() {
 
               <button
                 onClick={() => setOpenAddonPkgId(null)}
-                className="mt-8 w-full py-4 rounded-2xl border-2 border-slate-900 bg-lime-400 text-slate-900 font-black uppercase tracking-widest shadow-[4px_4px_0_0_#000] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all"
+                className="mt-8 w-full py-4 rounded-2xl border-2 border-slate-200 bg-lime-400 text-slate-900 font-black uppercase tracking-widest shadow-[4px_4px_0_0_#000] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all"
               >
                 Selesai
               </button>

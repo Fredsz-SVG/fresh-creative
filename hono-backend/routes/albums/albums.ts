@@ -3,7 +3,7 @@ import { getD1 } from '../../lib/edge-env'
 import { requireAuthJwt } from '../../middleware'
 import { invalidateUserResponseCaches } from '../../lib/user-response-cache'
 
-const albumColsUser = `a.id, a.user_id, a.name, a.type, a.status, a.created_at, a.description, a.cover_image_url, a.cover_image_position, a.pricing_package_id, a.payment_status, a.payment_url, a.total_estimated_price, a.pic_name, a.individual_payments_enabled, a.package_snapshot`
+const albumColsUser = `a.id, a.user_id, a.name, a.type, a.status, a.created_at, a.description, a.cover_image_url, a.cover_image_position, a.pricing_package_id, a.payment_status, a.payment_url, a.total_estimated_price, a.pic_name, a.individual_payments_enabled, a.package_snapshot, (SELECT SUM(amount) FROM transactions WHERE album_id = a.id AND status IN ('PAID', 'SETTLED')) as collected_amount`
 
 function mapAlbumRow(r: Record<string, unknown>) {
   const rest = { ...r }
@@ -34,7 +34,7 @@ albumsRoute.get('/', requireAuthJwt, async (c) => {
     const db = getD1(c)
     if (!db) return c.json({ error: 'Database not configured' }, 503)
 
-    const user = c.get('user')
+    const user = (c as any).get('user')
     const userId = user?.id
     const role = user?.role || 'member'
 
@@ -47,12 +47,11 @@ albumsRoute.get('/', requireAuthJwt, async (c) => {
     if (shouldUseAdminScope) {
       const { results } = await db
         .prepare(
-          `SELECT a.id, a.name, a.type, a.status, a.created_at, a.description, a.cover_image_url, a.cover_image_position, a.pricing_package_id, a.school_city, a.kab_kota, a.wa_e164, a.province_id, a.province_name, a.pic_name, a.students_count, a.source, a.total_estimated_price, a.payment_status, a.payment_url, a.package_snapshot FROM albums a ORDER BY a.created_at DESC`
-        )
-        .all<Record<string, unknown>>()
-
-      const rows = results ?? []
-      const result = rows.map((a) => {
+            `SELECT a.id, a.name, a.type, a.status, a.created_at, a.description, a.cover_image_url, a.cover_image_position, a.pricing_package_id, a.school_city, a.kab_kota, a.wa_e164, a.province_id, a.province_name, a.pic_name, a.students_count, a.source, a.total_estimated_price, a.payment_status, a.payment_url, a.package_snapshot, (SELECT SUM(amount) FROM transactions WHERE album_id = a.id AND status IN ('PAID', 'SETTLED')) as collected_amount FROM albums a ORDER BY a.created_at DESC`
+          )
+          .all<Record<string, unknown>>()
+        const rows = results ?? []
+        const result = rows.map((a) => {
         const m = mapAlbumRow(a)
         return { ...m, isOwner: false }
       })
@@ -99,7 +98,7 @@ albumsRoute.post('/', requireAuthJwt, async (c) => {
     const db = getD1(c)
     if (!db) return c.json({ error: 'Database not configured' }, 503)
 
-    const user = c.get('user')
+    const user = (c as any).get('user')
     if (!user?.id) return c.json({ error: 'Unauthorized' }, 401)
 
     const body = await c.req.json()
@@ -147,16 +146,18 @@ albumsRoute.post('/', requireAuthJwt, async (c) => {
       }
     }
 
+    const newId = crypto.randomUUID()
     const result = await db
       .prepare(
         `INSERT INTO albums (
-        user_id, name, type, description, pricing_package_id, package_snapshot,
+        id, user_id, name, type, description, pricing_package_id, package_snapshot,
         school_city, kab_kota, wa_e164, province_id,
         province_name, pic_name, students_count, source,
         total_estimated_price, individual_payments_enabled
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id`
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id`
       )
       .bind(
+        newId,
         (user as any).id,
         name,
         type,
@@ -176,7 +177,12 @@ albumsRoute.post('/', requireAuthJwt, async (c) => {
       )
       .first()
 
-    return c.json({ id: result?.id }, 201)
+    const notifId = crypto.randomUUID()
+      await db.prepare('INSERT INTO notifications (id, user_id, title, message, type, action_url) VALUES (?, ?, ?, ?, ?, ?)')
+        .bind(notifId, (user as any).id, 'Menunggu Persetujuan', `Album "${name}" telah berhasil diajukan dan sedang menunggu persetujuan admin.`, 'info', '/user/riwayat')
+          .run()
+      invalidateUserResponseCaches((user as any).id)
+      return c.json({ id: result?.id }, 201)
   } catch (error) {
     console.error('ERROR ALBUMS API:', error)
     return c.json({ error: 'Internal server error', details: String(error) }, 500)
@@ -188,7 +194,7 @@ albumsRoute.delete('/:id', requireAuthJwt, async (c) => {
     const db = getD1(c)
     if (!db) return c.json({ error: 'Database not configured' }, 503)
 
-    const user = c.get('user')
+    const user = (c as any).get('user')
     if (!user?.id) return c.json({ error: 'Unauthorized' }, 401)
 
     const albumId = c.req.param('id')
@@ -215,19 +221,47 @@ albumsRoute.put('/:id', requireAuthJwt, async (c) => {
   try {
     const db = getD1(c)
     if (!db) return c.json({ error: 'Database not configured' }, 503)
-    const user = c.get('user')
+    const user = (c as any).get('user')
     if (!user?.id) return c.json({ error: 'Unauthorized' }, 401)
     if (user.role !== 'admin') return c.json({ error: 'Forbidden' }, 403)
     const albumId = c.req.param('id')
     const body = await c.req.json()
     const { status } = body
     if (!status) return c.json({ error: 'Missing status' }, 400)
-    const result = await db
-      .prepare('UPDATE albums SET status = ? WHERE id = ?')
-      .bind(status, albumId)
-      .run()
-    if (!result.success) return c.json({ error: 'Failed to update album' }, 400)
-    return c.json({ success: true, status }, 200)
+    // Ambil user_id dan nama untuk notif
+      const albumInfo = await db.prepare('SELECT user_id, name FROM albums WHERE id = ?').bind(albumId).first()
+
+      const result = await db
+        .prepare('UPDATE albums SET status = ? WHERE id = ?')
+        .bind(status, albumId)
+        .run()
+      if (!result.success) return c.json({ error: 'Failed to update album' }, 400)
+
+      if (albumInfo && albumInfo.user_id) {
+        const notifId = crypto.randomUUID()
+        let notifTitle = ''
+        let notifMessage = ''
+        let notifType = 'info'
+        
+        if (status === 'approved' || status === 'accepted') {
+          notifTitle = 'Persetujuan Disetujui'
+          notifMessage = `Selamat! Pengajuan album "${albumInfo.name}" Anda telah disetujui.`
+          notifType = 'success'
+        } else if (status === 'declined' || status === 'rejected') {
+          notifTitle = 'Persetujuan Ditolak'
+          notifMessage = `Mohon maaf, pengajuan album "${albumInfo.name}" Anda ditolak oleh admin.`
+          notifType = 'error'
+        }
+
+        if (notifTitle) {
+          await db.prepare('INSERT INTO notifications (id, user_id, title, message, type, action_url) VALUES (?, ?, ?, ?, ?, ?)')
+            .bind(notifId, albumInfo.user_id, notifTitle, notifMessage, notifType, '/user/riwayat')
+            .run()
+          invalidateUserResponseCaches(albumInfo.user_id as string)
+        }
+      }
+
+      return c.json({ success: true, status }, 200)
   } catch (error) {
     console.error('ERROR ALBUMS API (PUT):', error)
     return c.json({ error: 'Internal server error', details: String(error) }, 500)
@@ -235,3 +269,5 @@ albumsRoute.put('/:id', requireAuthJwt, async (c) => {
 })
 
 export default albumsRoute
+
+

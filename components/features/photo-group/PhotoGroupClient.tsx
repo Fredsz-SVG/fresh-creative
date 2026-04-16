@@ -148,7 +148,7 @@ export default function PhotoGroup() {
     <section id="photogroup" className="py-4 md:py-6">
       <div className="max-w-3xl mx-auto">
         <form onSubmit={handleGenerateGroup}>
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border-4 border-slate-900 dark:border-slate-700 shadow-[6px_6px_0_0_#0f172a] dark:shadow-[6px_6px_0_0_#334155] p-4 sm:p-6 space-y-4 sm:space-y-5">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border-2 border-slate-200 dark:border-slate-700 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] p-4 sm:p-6 space-y-4 sm:space-y-5">
             <p className="text-[10px] sm:text-xs font-black text-slate-500 dark:text-slate-400 text-center uppercase tracking-widest">
               Upload 2–10 gambar untuk digabung menjadi satu foto grup.
             </p>
@@ -163,7 +163,7 @@ export default function PhotoGroup() {
               </p>
               <div
                 onClick={() => document.getElementById("subjects-upload")?.click()}
-                className="border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-xl p-4 sm:p-6 md:p-8 text-center cursor-pointer hover:border-slate-900 dark:hover:border-slate-400 transition-colors"
+                className="border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-xl p-4 sm:p-6 md:p-8 text-center cursor-pointer hover:border-slate-200 dark:hover:border-slate-400 transition-colors"
               >
                 <Upload className="w-6 h-6 sm:w-8 sm:h-8 mx-auto mb-1.5 sm:mb-2 text-slate-400" />
                 <p className="text-[10px] sm:text-sm text-slate-600 dark:text-slate-300 uppercase tracking-widest">
@@ -189,7 +189,7 @@ export default function PhotoGroup() {
                     {subjects.map((subject, idx) => (
                       <div
                         key={subject.id}
-                        className="relative border-2 border-slate-900 dark:border-slate-600 rounded-xl p-1.5 sm:p-2 bg-slate-100 dark:bg-slate-800 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155]"
+                        className="relative border-2 border-slate-200 dark:border-slate-600 rounded-xl p-1.5 sm:p-2 bg-slate-100 dark:bg-slate-800 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]"
                       >
                         <img
                           src={subject.preview}
@@ -202,7 +202,7 @@ export default function PhotoGroup() {
                         <button
                           type="button"
                           onClick={() => removeSubject(subject.id)}
-                          className="absolute top-1 right-1 inline-flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 bg-red-500 text-white rounded-full border-2 border-slate-900 hover:bg-red-600 transition-colors shadow-[2px_2px_0_0_#0f172a] active:shadow-none active:translate-x-0.5 active:translate-y-0.5"
+                          className="absolute top-1 right-1 inline-flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 bg-red-500 text-white rounded-full border-2 border-slate-200 hover:bg-red-600 transition-colors shadow-[4px_4px_0_0_#334155] active:shadow-none active:translate-x-0.5 active:translate-y-0.5"
                         >
                           <X className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
                         </button>
@@ -226,7 +226,7 @@ export default function PhotoGroup() {
                 onChange={(e) => setPrompt(e.target.value)}
                 placeholder="Contoh: lima orang berdiri berjajar di pantai, senyum, sore hari. Atau: rapat di ruang kelas, background papan tulis."
                 rows={3}
-                className="w-full px-3 sm:px-4 py-2.5 border-2 border-slate-900 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-400 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-slate-900 dark:focus:border-slate-500 resize-none"
+                className="w-full px-3 sm:px-4 py-2.5 border-2 border-slate-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-400 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-slate-200 dark:focus:border-slate-500 resize-none"
                 required
               />
             </div>
@@ -244,7 +244,7 @@ export default function PhotoGroup() {
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder='Contoh: Gambar 3 ganti ke kemeja putih; foto ke-2 saja pakai topi — kosongkan jika tidak perlu.'
                 rows={2}
-                className="w-full px-3 sm:px-4 py-2.5 border-2 border-slate-900 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-400 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-slate-900 dark:focus:border-slate-500 resize-none"
+                className="w-full px-3 sm:px-4 py-2.5 border-2 border-slate-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-400 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-slate-200 dark:focus:border-slate-500 resize-none"
               />
             </div>
 
@@ -265,7 +265,7 @@ export default function PhotoGroup() {
             <button
               type="submit"
               disabled={loading || subjects.length < 2 || subjects.length > MAX_SUBJECTS || !prompt.trim()}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-indigo-500 text-white rounded-xl border-2 border-slate-900 dark:border-slate-600 font-black text-xs uppercase tracking-widest shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-indigo-500 text-white rounded-xl border-2 border-slate-200 dark:border-slate-600 font-black text-xs uppercase tracking-widest shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? (
                 <>
@@ -288,7 +288,7 @@ export default function PhotoGroup() {
             <h3 className="text-base sm:text-xl font-black mb-4 text-slate-900 dark:text-white text-center uppercase tracking-tight">
               Hasil Photo Group
             </h3>
-            <div className="bg-white dark:bg-slate-900 rounded-2xl border-4 border-slate-900 dark:border-slate-700 shadow-[6px_6px_0_0_#0f172a] dark:shadow-[6px_6px_0_0_#334155] p-3 sm:p-4">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl border-2 border-slate-200 dark:border-slate-700 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] p-3 sm:p-4">
               <div className="relative max-w-xs sm:max-w-sm md:max-w-md mx-auto">
                 <img
                   src={result}
@@ -311,7 +311,7 @@ export default function PhotoGroup() {
                     }
                   }}
                   disabled={downloading}
-                  className="absolute top-1.5 sm:top-2 right-1.5 sm:right-2 inline-flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 bg-emerald-500 text-white rounded-full border-2 border-slate-900 dark:border-slate-600 hover:bg-emerald-600 transition-colors shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 disabled:opacity-70"
+                  className="absolute top-1.5 sm:top-2 right-1.5 sm:right-2 inline-flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 bg-emerald-500 text-white rounded-full border-2 border-slate-200 dark:border-slate-600 hover:bg-emerald-600 transition-colors shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 disabled:opacity-70"
                   title="Download (langsung ke device)"
                 >
                   {downloading ? (

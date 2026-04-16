@@ -36,7 +36,9 @@ function getUpstreamPathname(requestUrl: string): string {
   // - /api/tryon-proxy/config (full)
   // - /config (already stripped)
   const full = url.pathname
-  return full.startsWith('/api/tryon-proxy') ? full.slice('/api/tryon-proxy'.length) || '/' : full || '/'
+  return full.startsWith('/api/tryon-proxy')
+    ? full.slice('/api/tryon-proxy'.length) || '/'
+    : full || '/'
 }
 
 tryonProxy.get('/config', async (c) => {
@@ -62,7 +64,9 @@ tryonProxy.all('/*', async (c) => {
   const reqInit: RequestInit = {
     method: c.req.method,
     headers: new Headers(c.req.raw.headers),
-    body: ['GET', 'HEAD'].includes(c.req.method.toUpperCase()) ? undefined : await c.req.arrayBuffer(),
+    body: ['GET', 'HEAD'].includes(c.req.method.toUpperCase())
+      ? undefined
+      : await c.req.arrayBuffer(),
   }
   // Fix headers for upstream.
   ;(reqInit.headers as Headers).delete('host')
@@ -75,4 +79,3 @@ tryonProxy.all('/*', async (c) => {
 })
 
 export default tryonProxy
-

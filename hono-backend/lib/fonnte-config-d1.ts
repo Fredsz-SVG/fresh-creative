@@ -25,7 +25,10 @@ export async function getFonnteConfigFromD1(db: D1Database): Promise<FonnteConfi
   }
 }
 
-export async function saveFonnteConfigToD1(db: D1Database, payload: FonnteConfigPayload): Promise<void> {
+export async function saveFonnteConfigToD1(
+  db: D1Database,
+  payload: FonnteConfigPayload
+): Promise<void> {
   await db
     .prepare('INSERT OR REPLACE INTO site_settings (key, value) VALUES (?, ?)')
     .bind(FONNTE_CONFIG_KEY, JSON.stringify(payload))

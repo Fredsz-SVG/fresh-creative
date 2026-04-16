@@ -13,7 +13,7 @@ export function DemoLivePhoto() {
 
         <div className="mx-auto mt-6 grid max-w-4xl grid-cols-1 gap-6 sm:grid-cols-3 md:mt-10 md:gap-8">
           <div className="flex flex-col items-center text-center">
-            <span className="font-general mb-2 flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full border border-slate-900 dark:border-white bg-lime-400 text-sm sm:text-lg font-black text-slate-900 shadow-[1.5px_1.5px_0_0_#0f172a] dark:shadow-[1.5px_1.5px_0_0_#fff]">
+            <span className="font-general mb-2 flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full border border-slate-200 dark:border-white bg-lime-400 text-sm sm:text-lg font-black text-slate-900 shadow-[1.5px_1.5px_0_0_#0f172a] dark:shadow-[1.5px_1.5px_0_0_#fff]">
               1
             </span>
             <h3 className="font-general text-base font-black uppercase tracking-wide text-slate-900 dark:text-blue-50">
@@ -24,7 +24,7 @@ export function DemoLivePhoto() {
             </p>
           </div>
           <div className="flex flex-col items-center text-center">
-            <span className="font-general mb-2 flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full border border-slate-900 dark:border-white bg-lime-400 text-sm sm:text-lg font-black text-slate-900 shadow-[1.5px_1.5px_0_0_#0f172a] dark:shadow-[1.5px_1.5px_0_0_#fff]">
+            <span className="font-general mb-2 flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full border border-slate-200 dark:border-white bg-lime-400 text-sm sm:text-lg font-black text-slate-900 shadow-[1.5px_1.5px_0_0_#0f172a] dark:shadow-[1.5px_1.5px_0_0_#fff]">
               2
             </span>
             <h3 className="font-general text-base font-black uppercase tracking-wide text-slate-900 dark:text-blue-50">
@@ -35,7 +35,7 @@ export function DemoLivePhoto() {
             </p>
           </div>
           <div className="flex flex-col items-center text-center">
-            <span className="font-general mb-2 flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full border border-slate-900 dark:border-white bg-lime-400 text-sm sm:text-lg font-black text-slate-900 shadow-[1.5px_1.5px_0_0_#0f172a] dark:shadow-[1.5px_1.5px_0_0_#fff]">
+            <span className="font-general mb-2 flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full border border-slate-200 dark:border-white bg-lime-400 text-sm sm:text-lg font-black text-slate-900 shadow-[1.5px_1.5px_0_0_#0f172a] dark:shadow-[1.5px_1.5px_0_0_#fff]">
               3
             </span>
             <h3 className="font-general text-base font-black uppercase tracking-wide text-slate-900 dark:text-blue-50">

@@ -58,7 +58,7 @@ export function Contact() {
           </p>
           <a
             href="#pricing"
-            className="font-general group relative z-10 mt-10 inline-flex items-center gap-1 cursor-pointer overflow-hidden rounded-full bg-yellow-300 px-7 py-3 text-center text-xs font-black uppercase text-black border border-slate-900 shadow-[2px_2px_0_0_#000] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[3px_3px_0_0_#000] dark:shadow-[2px_2px_0_0_#a3e635] dark:hover:shadow-[3px_3px_0_0_#a3e635] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all"
+            className="font-general group relative z-10 mt-10 inline-flex items-center gap-1 cursor-pointer overflow-hidden rounded-full bg-yellow-300 px-7 py-3 text-center text-xs font-black uppercase text-black border border-slate-200 shadow-[2px_2px_0_0_#000] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[3px_3px_0_0_#000] dark:shadow-[2px_2px_0_0_#a3e635] dark:hover:shadow-[3px_3px_0_0_#a3e635] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all"
           >
             <TiLocationArrow className="text-lg" />
             Buat Project

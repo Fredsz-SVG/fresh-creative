@@ -45,41 +45,41 @@ const PackageForm = ({ pkg, onSave, onCancel }: { pkg: Partial<CreditPackage> | 
     }
 
     return (
-        <div className="fixed inset-0 bg-slate-900/60 dark:bg-black/60 flex items-center justify-center p-4 z-[100] backdrop-blur-md">
-            <div className="bg-white dark:bg-slate-900 border-4 border-slate-900 dark:border-slate-700 rounded-[32px] shadow-[12px_12px_0_0_#0f172a] dark:shadow-[12px_12px_0_0_#334155] p-8 w-full max-w-md animate-in fade-in zoom-in duration-200 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-                <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">{pkg?.id ? 'Edit Package' : 'New Package'}</h2>
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-[100]">
+            <div className="bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-2xl shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] p-5 md:p-6 w-full max-w-md">
+                <div className="flex justify-between items-center mb-5">
+                    <h2 className="text-lg font-bold text-slate-900 dark:text-white">{pkg?.id ? 'Edit Package' : 'New Package'}</h2>
                     <button onClick={onCancel} className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
-                        <X size={24} className="text-slate-900 dark:text-white" strokeWidth={3} />
+                        <X size={20} className="text-slate-700 dark:text-slate-200" strokeWidth={2.5} />
                     </button>
                 </div>
 
-                <form onSubmit={handleSubmit} className="space-y-6">
-                    <div className="space-y-4">
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    <div className="space-y-3">
                         <div>
-                            <label className="text-xs font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest mb-1.5 block">Credits Amount</label>
+                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 block">Credits Amount</label>
                             <input
                                 name="credits"
                                 type="number"
                                 value={formData.credits}
                                 onChange={handleChange}
-                                className="w-full px-5 py-3.5 bg-slate-50 dark:bg-slate-800 border-4 border-slate-900 dark:border-slate-700 rounded-2xl text-slate-900 dark:text-white font-bold placeholder:text-slate-300 dark:placeholder:text-slate-500 focus:outline-none focus:ring-4 focus:ring-indigo-100 dark:focus:ring-indigo-900 transition-all shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155] focus:shadow-none"
+                                className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-violet-200"
                                 required
                             />
                         </div>
                         <div>
-                            <label className="text-xs font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest mb-1.5 block">Price (IDR)</label>
+                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 block">Price (IDR)</label>
                             <input
                                 name="price"
                                 type="number"
                                 value={formData.price}
                                 onChange={handleChange}
-                                className="w-full px-5 py-3.5 bg-slate-50 dark:bg-slate-800 border-4 border-slate-900 dark:border-slate-700 rounded-2xl text-slate-900 dark:text-white font-bold placeholder:text-slate-300 dark:placeholder:text-slate-500 focus:outline-none focus:ring-4 focus:ring-indigo-100 dark:focus:ring-indigo-900 transition-all shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155] focus:shadow-none"
+                                className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-violet-200"
                                 required
                             />
                         </div>
-                        <div className="p-4 border-4 border-slate-900 dark:border-slate-700 rounded-2xl bg-amber-50 dark:bg-slate-800 shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155]">
-                            <label className="flex items-center gap-4 cursor-pointer select-none">
+                        <div className="p-3 border-2 border-slate-200 dark:border-slate-700 rounded-xl bg-amber-50 dark:bg-slate-800">
+                            <label className="flex items-center gap-3 cursor-pointer select-none">
                                 <div className="relative">
                                     <input
                                         type="checkbox"
@@ -88,21 +88,21 @@ const PackageForm = ({ pkg, onSave, onCancel }: { pkg: Partial<CreditPackage> | 
                                         name="popular"
                                         className="sr-only peer"
                                     />
-                                    <div className="w-12 h-6 bg-slate-200 dark:bg-slate-600 border-2 border-slate-900 dark:border-slate-700 rounded-full peer-checked:bg-amber-400 dark:peer-checked:bg-amber-500 transition-colors" />
-                                    <div className="absolute left-1 top-1 w-4 h-4 bg-white dark:bg-slate-300 border-2 border-slate-900 dark:border-slate-700 rounded-full transition-transform peer-checked:translate-x-6" />
+                                    <div className="w-10 h-5 bg-slate-200 dark:bg-slate-600 rounded-full peer-checked:bg-amber-400 transition-colors" />
+                                    <div className="absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-5" />
                                 </div>
-                                <span className="text-sm text-slate-900 dark:text-white font-black flex items-center gap-2">
-                                    <Star size={16} className="text-amber-500 fill-amber-500" />
+                                <span className="text-sm text-slate-900 dark:text-white font-bold flex items-center gap-2">
+                                    <Star size={14} className="text-amber-500 fill-amber-500" />
                                     Mark as Popular
                                 </span>
                             </label>
                         </div>
                     </div>
-                    <div className="flex gap-4 pt-4">
-                        <button type="button" onClick={onCancel} className="flex-1 px-6 py-4 border-4 border-slate-900 dark:border-slate-700 rounded-2xl text-slate-900 dark:text-white font-black hover:bg-slate-50 dark:hover:bg-slate-800 transition-all active:scale-95 shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155] active:shadow-none">
+                    <div className="flex gap-3 pt-2">
+                        <button type="button" onClick={onCancel} className="flex-1 px-4 py-2.5 border-2 border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200 font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-[4px_4px_0_0_#334155] hover:shadow-none">
                             Cancel
                         </button>
-                        <button type="submit" className="flex-1 px-6 py-4 bg-indigo-400 dark:bg-indigo-600 text-slate-900 dark:text-white border-4 border-slate-900 dark:border-slate-700 rounded-2xl font-black hover:translate-x-1 hover:translate-y-1 transition-all shadow-[6px_6px_0_0_#0f172a] dark:shadow-[6px_6px_0_0_#334155] hover:shadow-none">
+                        <button type="submit" className="flex-1 px-4 py-2.5 bg-emerald-400 text-emerald-900 rounded-xl font-bold hover:bg-emerald-300 transition-all shadow-[2px_2px_0_0_#059669] hover:shadow-none">
                             Save
                         </button>
                     </div>
@@ -357,10 +357,10 @@ export default function AdminCreditSettingsPage() {
             )}
 
             {statusBanner && (
-                <div className={`fixed bottom-4 md:bottom-8 left-1/2 -translate-x-1/2 z-[200] max-w-[90%] md:max-w-md w-full px-4 py-3 md:px-6 md:py-4 rounded-2xl md:rounded-3xl border-4 border-slate-900 dark:border-slate-700 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] md:shadow-[4px_4px_0_0_#0f172a] dark:md:shadow-[4px_4px_0_0_#334155] transform transition-all animate-bounce-subtle ${statusBanner.startsWith('error:') ? 'bg-red-400 dark:bg-red-600 text-white' : statusBanner.includes('success') ? 'bg-emerald-400 dark:bg-emerald-600 text-slate-900 dark:text-white' : 'bg-amber-300 dark:bg-amber-600 text-slate-900 dark:text-white'}`}>
-                    <div className="flex items-center gap-2 md:gap-3 font-black text-xs md:text-sm">
+                <div className={`fixed bottom-4 md:bottom-6 left-1/2 -translate-x-1/2 z-[200] max-w-[90%] md:max-w-sm w-full px-4 py-3 rounded-xl border-2 shadow-[4px_4px_0_0_#334155] transform transition-all animate-bounce-subtle ${statusBanner.startsWith('error:') ? 'bg-rose-100 border-rose-300 text-rose-700' : statusBanner.includes('success') ? 'bg-emerald-100 border-emerald-300 text-emerald-700' : 'bg-amber-100 border-amber-300 text-amber-700'}`}>
+                    <div className="flex items-center gap-2 font-bold text-xs md:text-sm">
                         {statusBanner === 'saving-package' || statusBanner === 'creating-redeem' || statusBanner === 'updating-redeem-status' || statusBanner === 'deleting-item'
-                            ? <Loader2 className="animate-spin w-4 h-4 md:w-5 md:h-5" />
+                            ? <Loader2 className="animate-spin w-4 h-4" />
                             : null}
                         {statusBanner === 'saving-package' ? 'Menyimpan package...' :
                             statusBanner === 'creating-redeem' ? 'Membuat kode redeem...' :
@@ -381,85 +381,85 @@ export default function AdminCreditSettingsPage() {
 
             {/* Create Redeem Code Modal */}
             {showCreateRedeem && (
-                <div className="fixed inset-0 bg-slate-900/60 dark:bg-black/60 flex items-center justify-center p-4 z-[100] backdrop-blur-md">
-                    <div className="bg-white dark:bg-slate-900 border-4 border-slate-900 dark:border-slate-700 rounded-[32px] shadow-[12px_12px_0_0_#0f172a] dark:shadow-[12px_12px_0_0_#334155] p-8 w-full max-w-md animate-in fade-in zoom-in duration-200 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-                        <div className="flex justify-between items-center mb-6">
-                            <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Buat Kode Redeem</h2>
+                <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-[100]">
+                    <div className="bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-2xl shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] p-5 md:p-6 w-full max-w-md">
+                        <div className="flex justify-between items-center mb-5">
+                            <h2 className="text-lg font-bold text-slate-900 dark:text-white">Buat Kode Redeem</h2>
                             <button onClick={() => setShowCreateRedeem(false)} className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
-                                <X size={24} className="text-slate-900 dark:text-white" strokeWidth={3} />
+                                <X size={20} className="text-slate-700 dark:text-slate-200" strokeWidth={2.5} />
                             </button>
                         </div>
 
-                        <div className="space-y-6">
+                        <div className="space-y-4">
                             <div>
-                                <label className="text-xs font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest mb-1.5 block">Kode Voucher</label>
+                                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 block">Kode Voucher</label>
                                 <div className="flex gap-2">
                                     <input
                                         value={newCode.code}
                                         onChange={(e) => setNewCode({ ...newCode, code: e.target.value.toUpperCase() })}
                                         placeholder="AUTO-GENERATE"
-                                        className="flex-1 px-5 py-3.5 bg-slate-50 dark:bg-slate-800 border-4 border-slate-900 dark:border-slate-700 rounded-2xl text-slate-900 dark:text-white font-bold placeholder:text-slate-300 dark:placeholder:text-slate-500 focus:outline-none focus:ring-4 focus:ring-indigo-100 dark:focus:ring-indigo-900 transition-all shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155] focus:shadow-none uppercase font-mono"
+                                        className="flex-1 px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-bold placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-pink-200 uppercase font-mono text-sm"
                                     />
                                     <button
                                         type="button"
                                         onClick={() => setNewCode({ ...newCode, code: generateRandomCode() })}
-                                        className="px-4 py-2 bg-slate-100 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white text-[10px] font-black hover:translate-x-0.5 hover:translate-y-0.5 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] hover:shadow-none transition-all"
+                                        className="px-3 py-2 bg-pink-100 text-pink-700 rounded-xl text-[10px] font-bold hover:bg-pink-200 transition-all shadow-[2px_2px_0_0_#db2777] hover:shadow-none"
                                     >
                                         GENERATE
                                     </button>
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-2 gap-3">
                                 <div>
-                                    <label className="text-xs font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest mb-1.5 block">Jumlah Credit</label>
+                                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 block">Jumlah Credit</label>
                                     <input
                                         type="number"
                                         min={1}
                                         value={newCode.credits}
                                         onChange={(e) => setNewCode({ ...newCode, credits: Number(e.target.value) })}
-                                        className="w-full px-5 py-3.5 bg-slate-50 dark:bg-slate-800 border-4 border-slate-900 dark:border-slate-700 rounded-2xl text-slate-900 dark:text-white font-bold focus:outline-none shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155]"
+                                        className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-pink-200"
                                         required
                                     />
                                 </div>
                                 <div>
-                                    <label className="text-xs font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest mb-1.5 block">Limit Pakai</label>
+                                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 block">Limit Pakai</label>
                                     <input
                                         type="number"
                                         min={1}
                                         value={newCode.max_uses}
                                         onChange={(e) => setNewCode({ ...newCode, max_uses: Number(e.target.value) })}
-                                        className="w-full px-5 py-3.5 bg-slate-50 dark:bg-slate-800 border-4 border-slate-900 dark:border-slate-700 rounded-2xl text-slate-900 dark:text-white font-bold focus:outline-none shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155]"
+                                        className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-pink-200"
                                         required
                                     />
                                 </div>
                             </div>
 
                             <div>
-                                <label className="text-xs font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest mb-1.5 block">Kadaluarsa (Opsional)</label>
+                                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 block">Kadaluarsa (Opsional)</label>
                                 <input
                                     type="datetime-local"
                                     value={newCode.expires_at}
                                     onChange={(e) => setNewCode({ ...newCode, expires_at: e.target.value })}
-                                    className="w-full px-5 py-3.5 bg-slate-50 dark:bg-slate-800 border-4 border-slate-900 dark:border-slate-700 rounded-2xl text-slate-900 dark:text-white font-bold focus:outline-none shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155]"
+                                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-pink-200"
                                 />
                             </div>
                         </div>
 
-                        <div className="flex gap-4 pt-8">
+                        <div className="flex gap-3 pt-5">
                             <button
                                 type="button"
                                 onClick={() => setShowCreateRedeem(false)}
-                                className="flex-1 px-6 py-4 border-4 border-slate-900 dark:border-slate-700 rounded-2xl text-slate-900 dark:text-white font-black hover:bg-slate-50 dark:hover:bg-slate-800 transition-all active:scale-95 shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155] active:shadow-none"
+                                className="flex-1 px-4 py-2.5 border-2 border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200 font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-[4px_4px_0_0_#334155] hover:shadow-none"
                             >
                                 Batal
                             </button>
                             <button
                                 type="button"
                                 onClick={handleCreateRedeem}
-                                className="flex-1 px-6 py-4 bg-purple-400 dark:bg-purple-600 text-slate-900 dark:text-white border-4 border-slate-900 dark:border-slate-700 rounded-2xl font-black hover:translate-x-1 hover:translate-y-1 transition-all shadow-[6px_6px_0_0_#0f172a] dark:shadow-[6px_6px_0_0_#334155] hover:shadow-none flex items-center justify-center gap-2"
+                                className="flex-1 px-4 py-2.5 bg-pink-400 text-pink-900 rounded-xl font-bold hover:bg-pink-300 transition-all shadow-[2px_2px_0_0_#db2777] hover:shadow-none flex items-center justify-center gap-2"
                             >
-                                <Gift size={18} strokeWidth={3} />
+                                <Gift size={16} strokeWidth={2.5} />
                                 Buat Kode
                             </button>
                         </div>
@@ -469,23 +469,20 @@ export default function AdminCreditSettingsPage() {
 
             {/* Delete Confirmation Modal */}
             {deletePrompt && (
-                <div className="fixed inset-0 bg-slate-900/60 dark:bg-black/60 flex items-center justify-center p-4 z-[100] backdrop-blur-md" onClick={() => !isDeleting && setDeletePrompt(null)}>
-                    <div
-                        className="bg-white dark:bg-slate-900 border-4 border-slate-900 dark:border-slate-700 rounded-[32px] shadow-[12px_12px_0_0_#0f172a] dark:shadow-[12px_12px_0_0_#334155] p-8 w-full max-w-sm animate-in fade-in zoom-in duration-200 overflow-hidden"
-                        onClick={e => e.stopPropagation()}
-                    >
-                        <div className="w-20 h-20 rounded-3xl bg-red-50 dark:bg-red-900/30 border-4 border-red-100 dark:border-red-800 flex items-center justify-center text-red-500 dark:text-red-400 mb-6 mx-auto">
-                            <Trash2 size={32} strokeWidth={2.5} />
-                        </div>
-                        <h3 className="text-2xl font-black text-slate-900 dark:text-white text-center mb-2 tracking-tight">{deletePrompt.title}</h3>
-                        <p className="text-sm font-bold text-slate-400 dark:text-slate-300 text-center mb-8">{deletePrompt.text}</p>
-
-                        <div className="flex gap-4">
+                <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-[200]">
+                    <div className="bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-2xl shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] p-5 md:p-6 w-full max-w-sm" onClick={e => e.stopPropagation()}>
+                        <h3 className="text-base md:text-lg font-bold text-slate-900 dark:text-white">
+                            Hapus {deletePrompt.type === 'package' ? 'Package' : 'Kode Redeem'}?
+                        </h3>
+                        <p className="mt-2 text-xs md:text-sm text-slate-500 dark:text-slate-400">
+                            Aksi ini tidak bisa dibatalkan. {deletePrompt.type === 'package' ? 'Data' : 'Kode'} yang dipilih akan dihapus permanen.
+                        </p>
+                        <div className="mt-4 flex gap-3">
                             <button
                                 type="button"
                                 onClick={() => setDeletePrompt(null)}
                                 disabled={isDeleting}
-                                className="flex-1 px-6 py-4 border-4 border-slate-900 dark:border-slate-700 rounded-2xl text-slate-900 dark:text-white font-black hover:bg-slate-50 dark:hover:bg-slate-800 transition-all active:scale-95 shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155] active:shadow-none"
+                                className="flex-1 px-4 py-2.5 border-2 border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200 font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:shadow-none disabled:opacity-60"
                             >
                                 Batal
                             </button>
@@ -493,105 +490,137 @@ export default function AdminCreditSettingsPage() {
                                 type="button"
                                 onClick={executeDelete}
                                 disabled={isDeleting}
-                                className="flex-1 px-6 py-4 bg-red-500 dark:bg-red-600 text-white border-4 border-slate-900 dark:border-slate-700 rounded-2xl font-black hover:translate-x-1 hover:translate-y-1 transition-all shadow-[6px_6px_0_0_#0f172a] dark:shadow-[6px_6px_0_0_#334155] hover:shadow-none flex justify-center items-center gap-2"
+                                className="flex-1 px-4 py-2.5 bg-rose-400 text-rose-900 rounded-xl font-bold hover:bg-rose-300 transition-all shadow-[2px_2px_0_0_#e11d48] hover:shadow-none disabled:opacity-60 flex justify-center items-center gap-2"
                             >
-                                {isDeleting ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Hapus'}
+                                {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Hapus'}
                             </button>
                         </div>
                     </div>
                 </div>
             )}
 
-            <div className="flex flex-col gap-4 mb-8 lg:flex-row lg:justify-between lg:items-end">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 mb-6">
                 <div className="space-y-1">
-                    <h1 className="text-2xl md:text-4xl font-black text-slate-900 dark:text-white tracking-tight">Credit Settings</h1>
-                    <p className="text-sm md:text-base font-bold text-slate-500 dark:text-slate-300">Atur harga paket top up & management voucher code promo.</p>
+                    <h1 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Credit Settings</h1>
+                    <p className="text-xs md:text-sm font-medium text-slate-500 dark:text-slate-400">Atur harga paket top up & management voucher code promo.</p>
                 </div>
                 {activeTab === 'packages' ? (
                     <button
                         onClick={() => setEditingPackage({})}
-                        className="flex items-center justify-center gap-2 px-6 py-3 md:px-8 md:py-4 bg-indigo-400 dark:bg-indigo-600 text-slate-900 dark:text-white border-4 border-slate-900 dark:border-slate-700 rounded-2xl font-black hover:translate-x-1 hover:translate-y-1 transition-all shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155] md:shadow-[6px_6px_0_0_#0f172a] dark:md:shadow-[6px_6px_0_0_#334155] hover:shadow-none text-sm md:text-base"
+                        className="flex items-center justify-center gap-2 px-5 py-2.5 md:px-6 md:py-3 bg-emerald-400 text-emerald-900 rounded-xl font-bold hover:bg-emerald-300 transition-all shadow-[2px_2px_0_0_#059669] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 text-sm md:text-base"
                     >
-                        <Plus size={20} className="md:w-6 md:h-6" strokeWidth={3} />
-                        Add Package
+                        <Plus size={18} className="md:w-5 md:h-5" strokeWidth={2.5} />
+                        Tambah Paket Credit
                     </button>
                 ) : (
                     <button
                         onClick={() => setShowCreateRedeem(true)}
-                        className="flex items-center justify-center gap-2 px-6 py-3 md:px-8 md:py-4 bg-purple-400 dark:bg-purple-600 text-slate-900 dark:text-white border-4 border-slate-900 dark:border-slate-700 rounded-2xl font-black hover:translate-x-1 hover:translate-y-1 transition-all shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155] md:shadow-[6px_6px_0_0_#0f172a] dark:md:shadow-[6px_6px_0_0_#334155] hover:shadow-none text-sm md:text-base"
+                        className="flex items-center justify-center gap-2 px-5 py-2.5 md:px-6 md:py-3 bg-pink-400 text-pink-900 rounded-xl font-bold hover:bg-pink-300 transition-all shadow-[2px_2px_0_0_#db2777] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 text-sm md:text-base"
                     >
-                        <Gift size={20} className="md:w-6 md:h-6" strokeWidth={3} />
+                        <Gift size={18} className="md:w-5 md:h-5" strokeWidth={2.5} />
                         Buat Kode Redeem
                     </button>
                 )}
             </div>
 
             {/* Tabs */}
-            <div className="mb-8 grid grid-cols-2 gap-2 md:flex md:flex-nowrap md:gap-3">
+            <div className="mb-8">
+              <div className="relative inline-flex items-center gap-1 p-1 bg-white dark:bg-slate-800 rounded-2xl border-2 border-slate-200 dark:border-slate-700 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]">
+                <div
+                  className="absolute top-1 bottom-1 rounded-xl bg-violet-400 transition-all duration-300 ease-out"
+                  style={{
+                    transform: activeTab === 'packages' ? 'translateX(0)' : 'translateX(100%)',
+                    width: 'calc(50% - 6px)',
+                  }}
+                />
                 <button
-                    type="button"
-                    onClick={() => setActiveTab('packages')}
-                    className={`flex items-center justify-center gap-2 md:gap-3 px-2 py-3 md:px-8 md:py-4 rounded-xl md:rounded-2xl text-[11px] md:text-base font-black border-4 border-slate-900 dark:border-slate-700 transition-all active:scale-95 ${activeTab === 'packages' ? 'bg-violet-400 dark:bg-violet-600 text-slate-900 dark:text-white shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155] md:shadow-[6px_6px_0_0_#0f172a] dark:md:shadow-[6px_6px_0_0_#334155]' : 'bg-white dark:bg-slate-800 text-slate-400 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 shadow-none'}`}
+                  type="button"
+                  onClick={() => setActiveTab('packages')}
+                  className={`relative z-10 flex items-center justify-center gap-1.5 md:gap-2 px-3 py-2 md:px-5 md:py-2.5 rounded-xl text-[10px] md:text-sm font-bold transition-all duration-200 ${
+                    activeTab === 'packages'
+                      ? 'text-slate-900'
+                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+                  }`}
                 >
-                    <Layout className="w-4 h-4 md:w-6 md:h-6" strokeWidth={3} />
-                    <span>Packages</span>
-                    <span className="px-1.5 py-0.5 bg-slate-900 dark:bg-slate-700 text-white text-[9px] md:text-xs rounded-lg border-2 border-slate-900 dark:border-slate-600 ml-0.5 md:ml-1">
-                        {packages.length}
-                    </span>
+                  <Layout className="w-3.5 h-3.5 md:w-5 md:h-5" strokeWidth={2.5} />
+                  <span>Packages</span>
+                  <span className="px-1.5 py-0.5 bg-slate-900 dark:bg-slate-700 text-white text-[9px] md:text-xs rounded-lg border-2 border-slate-200 dark:border-slate-600 ml-0.5">
+                    {packages.length}
+                  </span>
                 </button>
                 <button
-                    type="button"
-                    onClick={() => setActiveTab('redeem')}
-                    className={`flex items-center justify-center gap-2 md:gap-3 px-2 py-3 md:px-8 md:py-4 rounded-xl md:rounded-2xl text-[11px] md:text-base font-black border-4 border-slate-900 dark:border-slate-700 transition-all active:scale-95 ${activeTab === 'redeem' ? 'bg-purple-400 dark:bg-purple-600 text-slate-900 dark:text-white shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155] md:shadow-[6px_6px_0_0_#0f172a] dark:md:shadow-[6px_6px_0_0_#334155]' : 'bg-white dark:bg-slate-800 text-slate-400 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 shadow-none'}`}
+                  type="button"
+                  onClick={() => setActiveTab('redeem')}
+                  className={`relative z-10 flex items-center justify-center gap-1.5 md:gap-2 px-3 py-2 md:px-5 md:py-2.5 rounded-xl text-[10px] md:text-sm font-bold transition-all duration-200 ${
+                    activeTab === 'redeem'
+                      ? 'text-slate-900'
+                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+                  }`}
                 >
-                    <Hash className="w-4 h-4 md:w-6 md:h-6" strokeWidth={3} />
-                    <span className="truncate">Redeems</span>
-                    <span className="px-1.5 py-0.5 bg-slate-900 dark:bg-slate-700 text-white text-[9px] md:text-xs rounded-lg border-2 border-slate-900 dark:border-slate-600 ml-0.5 md:ml-1">
-                        {redeemCodes.length}
-                    </span>
+                  <Hash className="w-3.5 h-3.5 md:w-5 md:h-5" strokeWidth={2.5} />
+                  <span className="truncate">Redeems</span>
+                  <span className="px-1.5 py-0.5 bg-slate-900 dark:bg-slate-700 text-white text-[9px] md:text-xs rounded-lg border-2 border-slate-200 dark:border-slate-600 ml-0.5">
+                    {redeemCodes.length}
+                  </span>
                 </button>
+              </div>
             </div>
 
             {activeTab === 'packages' ? (
                 <>
                     {loading ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-8">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                             {[1, 2, 3, 4].map((i) => (
-                                <div key={i} className="bg-white dark:bg-slate-900 border-4 border-slate-900 dark:border-slate-700 rounded-[24px] md:rounded-[32px] p-6 md:p-8 animate-pulse shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155] md:shadow-[8px_8px_0_0_#0f172a] dark:md:shadow-[8px_8px_0_0_#334155]">
-                                    <div className="space-y-4">
-                                        <div className="h-8 bg-slate-100 dark:bg-slate-800 rounded-xl w-16" />
-                                        <div className="h-3 bg-slate-50 dark:bg-slate-800 rounded-lg w-12" />
-                                        <div className="h-8 bg-slate-50 dark:bg-slate-800 rounded-xl w-full mt-2" />
+                                <div key={i} className="bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-2xl p-5 md:p-6 animate-pulse shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]">
+                                    <div className="space-y-3">
+                                        <div className="h-7 bg-slate-100 dark:bg-slate-800 rounded-xl w-14" />
+                                        <div className="h-2.5 bg-slate-50 dark:bg-slate-800 rounded-lg w-10" />
+                                        <div className="h-7 bg-slate-50 dark:bg-slate-800 rounded-xl w-full mt-2" />
                                     </div>
                                 </div>
                             ))}
-                        </div>
-                    ) : (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-8 pb-12">
+                        </div>                      ) : packages.length === 0 ? (
+                          <div className="flex flex-col items-center justify-center py-16 px-4 md:px-8 text-center bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-3xl border-dashed shadow-[4px_4px_0_0_#94a3b8] dark:shadow-[4px_4px_0_0_#1e293b]">
+                              <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-2xl flex items-center justify-center mb-4 transform -rotate-3 border-2 border-slate-200 dark:border-slate-700">
+                                  <Layout size={32} className="text-slate-400 dark:text-slate-500" strokeWidth={1.5} />
+                              </div>
+                              <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-2">Belum ada paket credit</h3>
+                              <p className="text-sm font-medium text-slate-500 dark:text-slate-400 max-w-md mb-6">
+                                  Anda belum membuat daftar paket credit. Silakan buat paket baru untuk ditawarkan kepada pelanggan.
+                              </p>
+                              <button
+                                  onClick={() => setEditingPackage({ credits: 0, price: 0, popular: false })}
+                                  className="flex items-center gap-2 bg-emerald-400 hover:bg-emerald-300 text-emerald-900 px-5 py-2.5 rounded-xl font-bold text-sm shadow-[3px_3px_0_0_#059669] hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all"
+                              >
+                                  <Plus size={18} strokeWidth={2.5} />
+                                  Buat Paket Credit
+                              </button>
+                          </div>                    ) : (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 pb-12">
                             {packages.map((pkg) => (
-                                <div key={pkg.id} className="group relative bg-white dark:bg-slate-900 border-4 border-slate-900 dark:border-slate-700 rounded-[24px] md:rounded-[32px] p-6 md:p-8 shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155] md:shadow-[8px_8px_0_0_#0f172a] dark:md:shadow-[8px_8px_0_0_#334155] hover:shadow-[6px_6px_0_0_#0f172a] dark:hover:shadow-[6px_6px_0_0_#334155] md:hover:shadow-[12px_12px_0_0_#0f172a] dark:md:hover:shadow-[12px_12px_0_0_#334155] hover:-translate-x-1 hover:-translate-y-1 transition-all overflow-hidden">
-                                    <div className="flex justify-between items-start mb-4 md:mb-6">
+                                <div key={pkg.id} className="group relative bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-2xl p-5 md:p-6 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:shadow-none hover:-translate-x-0.5 hover:-translate-y-0.5 transition-all overflow-hidden">
+                                    <div className="flex justify-between items-start mb-3 md:mb-4">
                                         <div>
-                                            <p className="text-3xl md:text-5xl font-black text-slate-900 dark:text-white tracking-tight leading-none mb-1">{pkg.credits}</p>
-                                            <p className="text-[10px] font-black text-slate-400 dark:text-slate-300 uppercase tracking-[0.2em]">Credits</p>
+                                            <p className="text-2xl md:text-4xl font-black text-slate-900 dark:text-white tracking-tight leading-none mb-0.5">{pkg.credits}</p>
+                                            <p className="text-[10px] font-bold text-slate-400 dark:text-slate-300 uppercase tracking-wider">Credits</p>
                                         </div>
+                                    </div>
+
+                                    <div className="pt-3 md:pt-4 border-t-2 border-slate-100 dark:border-slate-700 flex justify-between items-center gap-2">
+                                        <p className="text-lg md:text-xl font-bold text-violet-600 dark:text-violet-400">Rp {pkg.price.toLocaleString('id-ID')}</p>
                                         {pkg.popular && (
-                                            <span className="bg-amber-400 dark:bg-amber-600 text-slate-900 dark:text-white text-[9px] md:text-[10px] font-black px-2 py-1 md:px-3 md:py-1.5 rounded-full uppercase tracking-widest border-2 border-slate-900 dark:border-slate-700 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155]">
+                                            <span className="bg-amber-400 dark:bg-amber-600 text-amber-900 dark:text-white text-[9px] md:text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider shadow-[2px_2px_0_0_#d97706]">
                                                 Popular
                                             </span>
                                         )}
                                     </div>
 
-                                    <div className="pt-4 md:pt-6 border-t-[3px] md:border-t-4 border-slate-100 dark:border-slate-700">
-                                        <p className="text-xl md:text-2xl font-black text-violet-600 dark:text-violet-400">Rp {pkg.price.toLocaleString('id-ID')}</p>
-                                    </div>
-
-                                    <div className="absolute top-3 right-3 md:top-4 md:right-4 flex gap-1.5 md:gap-2 lg:opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all scale-90 md:scale-100">
-                                        <button onClick={() => setEditingPackage(pkg)} className="p-2 md:p-3 rounded-xl md:rounded-2xl bg-amber-300 dark:bg-amber-600 border-2 border-slate-900 dark:border-slate-700 text-slate-900 dark:text-white hover:translate-x-0.5 hover:translate-y-0.5 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] hover:shadow-none transition-all active:scale-95">
-                                            <Edit size={16} className="md:w-[18px] md:h-[18px]" strokeWidth={3} />
+                                    <div className="absolute top-3 right-3 md:top-4 md:right-4 flex gap-1.5 md:gap-2 lg:opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all">
+                                        <button onClick={() => setEditingPackage(pkg)} className="p-1.5 md:p-2 rounded-xl bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-900 shadow-[2px_2px_0_0_#d97706] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all">
+                                            <Edit size={14} className="md:w-4 md:h-4" strokeWidth={2.5} />
                                         </button>
-                                        <button onClick={() => handleDelete(pkg.id, pkg.credits)} className="p-2 md:p-3 rounded-xl md:rounded-2xl bg-red-400 dark:bg-red-600 border-2 border-slate-900 dark:border-slate-700 text-white hover:translate-x-0.5 hover:translate-y-0.5 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] hover:shadow-none transition-all active:scale-95">
-                                            <Trash2 size={16} className="md:w-[18px] md:h-[18px]" strokeWidth={3} />
+                                        <button onClick={() => handleDelete(pkg.id, pkg.credits)} className="p-1.5 md:p-2 rounded-xl bg-rose-100 dark:bg-rose-900/50 text-rose-600 dark:text-rose-300 hover:bg-rose-200 dark:hover:bg-rose-900 shadow-[2px_2px_0_0_#e11d48] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all">
+                                            <Trash2 size={14} className="md:w-4 md:h-4" strokeWidth={2.5} />
                                         </button>
                                     </div>
                                 </div>
@@ -604,7 +633,7 @@ export default function AdminCreditSettingsPage() {
                     {loadingRedeem ? (
                         <div className="space-y-6">
                             {[1, 2, 3].map((i) => (
-                                <div key={i} className="bg-white dark:bg-slate-900 border-4 border-slate-900 dark:border-slate-700 rounded-[24px] md:rounded-[32px] p-5 md:p-8 animate-pulse shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155] md:shadow-[6px_6px_0_0_#0f172a] dark:md:shadow-[6px_6px_0_0_#334155]">
+                                <div key={i} className="bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-[24px] md:rounded-[32px] p-5 md:p-8 animate-pulse shadow-[#64748b] dark:shadow-[4px_4px_0_0_#1e293b] md:shadow-[#64748b] dark:md:shadow-[6px_6px_0_0_#334155]">
                                     <div className="flex justify-between items-center">
                                         <div className="space-y-3">
                                             <div className="h-5 md:h-6 bg-slate-100 dark:bg-slate-800 rounded-lg w-32 md:w-40" />
@@ -616,20 +645,29 @@ export default function AdminCreditSettingsPage() {
                             ))}
                         </div>
                     ) : redeemCodes.length === 0 ? (
-                        <div className="bg-white dark:bg-slate-900 border-4 border-slate-900 dark:border-slate-700 rounded-[24px] md:rounded-[32px] p-8 md:p-16 text-center shadow-[6px_6px_0_0_#0f172a] dark:shadow-[6px_6px_0_0_#334155] md:shadow-[12px_12px_0_0_#0f172a] dark:md:shadow-[12px_12px_0_0_#334155]">
-                            <div className="w-16 h-16 md:w-24 md:h-24 rounded-2xl md:rounded-3xl bg-slate-50 dark:bg-slate-800 border-4 border-slate-100 dark:border-slate-700 flex items-center justify-center mx-auto mb-4 md:mb-6 text-slate-200 dark:text-slate-600">
-                                <Gift className="w-8 h-8 md:w-12 md:h-12" strokeWidth={1.5} />
+                        <div className="flex flex-col items-center justify-center py-16 px-4 md:px-8 text-center bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-3xl border-dashed shadow-[4px_4px_0_0_#94a3b8] dark:shadow-[4px_4px_0_0_#1e293b]">
+                            <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-2xl flex items-center justify-center mb-4 transform -rotate-3 border-2 border-slate-200 dark:border-slate-700">
+                                <Gift size={32} className="text-slate-400 dark:text-slate-500" strokeWidth={1.5} />
                             </div>
-                            <h3 className="text-lg md:text-xl font-black text-slate-900 dark:text-white mb-2">Belum ada kode redeem.</h3>
-                            <p className="text-xs md:text-base text-slate-400 dark:text-slate-300 font-bold">Klik &quot;Buat Kode Redeem&quot; untuk mencetak voucher baru.</p>
+                            <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-2">Belum ada kode redeem</h3>
+                            <p className="text-sm font-medium text-slate-500 dark:text-slate-400 max-w-md mb-6">
+                                Anda belum membuat daftar kode redeem. Silakan klik "Buat Kode Redeem" untuk mencetak voucher baru.
+                            </p>
+                            <button
+                                onClick={() => setShowCreateRedeem(true)}
+                                className="flex items-center gap-2 bg-pink-500 hover:bg-pink-600 text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow-[3px_3px_0_0_#9d174d] hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all"
+                            >
+                                <Gift size={18} strokeWidth={2.5} />
+                                Buat Kode Redeem
+                            </button>
                         </div>
                     ) : (
-                        <div className="space-y-6 pb-20">
+                        <div className="space-y-4 pb-20">
                             {redeemCodes.map((item) => {
                                 const isExpired = item.expires_at && new Date(item.expires_at) < new Date()
                                 const isFull = item.used_count >= item.max_uses
                                 const statusColor = !item.is_active || isExpired
-                                    ? 'red'
+                                    ? 'rose'
                                     : isFull
                                         ? 'amber'
                                         : 'emerald'
@@ -644,46 +682,46 @@ export default function AdminCreditSettingsPage() {
                                 return (
                                     <div
                                         key={item.id}
-                                        className={`group relative bg-white dark:bg-slate-900 border-4 border-slate-900 dark:border-slate-700 rounded-[24px] md:rounded-[32px] p-5 md:p-8 transition-all shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155] md:shadow-[6px_6px_0_0_#0f172a] dark:md:shadow-[6px_6px_0_0_#334155] hover:shadow-[6px_6px_0_0_#0f172a] dark:hover:shadow-[6px_6px_0_0_#334155] md:hover:shadow-[10px_10px_0_0_#0f172a] dark:md:hover:shadow-[10px_10px_0_0_#334155] hover:-translate-x-1 hover:-translate-y-1 ${!item.is_active || isExpired || isFull ? 'opacity-60 grayscale-[0.5]' : ''
+                                        className={`group relative bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-2xl p-4 md:p-5 transition-all shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:shadow-none hover:-translate-x-0.5 hover:-translate-y-0.5 ${!item.is_active || isExpired || isFull ? 'opacity-60 grayscale-[0.3]' : ''
                                             }`}
                                     >
-                                        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 md:gap-8">
+                                        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 md:gap-4">
                                             <div className="flex-1 min-w-0">
-                                                <div className="flex flex-wrap items-center gap-2 md:gap-4 mb-3 md:mb-6">
-                                                    <div className="px-3 py-1.5 md:px-4 md:py-2 bg-slate-900 dark:bg-slate-700 text-white rounded-lg md:rounded-xl font-mono text-base md:text-2xl font-black tracking-[0.1em] md:tracking-[0.2em] shadow-[3px_3px_0_0_#a855f7] dark:shadow-[4px_4px_0_0_#a855f7]">
+                                                <div className="flex flex-wrap items-center gap-2 mb-2 md:mb-3">
+                                                    <div className="px-3 py-1.5 md:px-4 md:py-2 bg-slate-900 dark:bg-slate-700 text-white rounded-lg md:rounded-xl font-mono text-sm md:text-lg font-bold tracking-wider shadow-[2px_2px_0_0_#475569]">
                                                         {item.code}
                                                     </div>
-                                                    <div className="flex items-center gap-2">
+                                                    <div className="flex items-center gap-1.5">
                                                         <button
                                                             onClick={() => copyCode(item.code)}
-                                                            className="p-2 md:p-3 rounded-xl bg-slate-100 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 text-slate-500 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-all shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] hover:shadow-none"
+                                                            className="p-1.5 md:p-2 rounded-lg bg-pink-50 dark:bg-pink-950/30 text-pink-500 hover:bg-pink-100 dark:hover:bg-pink-900/50 transition-all shadow-[2px_2px_0_0_#db2777] hover:shadow-none"
                                                             title="Copy Code"
                                                         >
-                                                            <Copy size={16} className="md:w-[18px] md:h-[18px]" strokeWidth={2.5} />
+                                                            <Copy size={14} className="md:w-4 md:h-4" strokeWidth={2} />
                                                         </button>
-                                                        <span className={`text-[9px] md:text-[11px] font-black uppercase tracking-widest px-3 py-1 md:px-4 md:py-1.5 rounded-full border-2 border-slate-900 dark:border-slate-700 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] md:shadow-[3px_3px_0_0_#0f172a] dark:md:shadow-[3px_3px_0_0_#334155] ${statusColor === 'emerald' ? 'bg-emerald-300 dark:bg-emerald-700 text-slate-900 dark:text-white' :
-                                                            statusColor === 'amber' ? 'bg-amber-300 dark:bg-amber-600 text-slate-900 dark:text-white' :
-                                                                'bg-red-400 dark:bg-red-600 text-white'
+                                                        <span className={`text-[9px] md:text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full ${statusColor === 'emerald' ? 'bg-emerald-100 text-emerald-700' :
+                                                            statusColor === 'amber' ? 'bg-amber-100 text-amber-700' :
+                                                                'bg-rose-100 text-rose-700'
                                                             }`}>
                                                             {statusText}
                                                         </span>
                                                     </div>
                                                 </div>
 
-                                                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
-                                                    <div className="flex items-center gap-2 md:gap-3">
-                                                        <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl bg-purple-100 dark:bg-purple-900/50 border-2 border-slate-900 dark:border-slate-700 flex items-center justify-center shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155]">
-                                                            <Gift className="w-4 h-4 md:w-5 md:h-5 text-purple-600 dark:text-purple-400" strokeWidth={2.5} />
+                                                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="w-8 h-8 md:w-9 md:h-9 rounded-lg bg-pink-50 dark:bg-pink-950/30 flex items-center justify-center shrink-0">
+                                                            <Gift className="w-4 h-4 md:w-5 md:h-5 text-pink-500" strokeWidth={2} />
                                                         </div>
                                                         <div>
-                                                            <p className="text-[9px] md:text-[10px] font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest">Bonus</p>
-                                                            <p className="text-xs md:text-sm font-black text-slate-900 dark:text-white">{item.credits} Credits</p>
+                                                            <p className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-wider">Bonus</p>
+                                                            <p className="text-xs md:text-sm font-bold text-slate-900 dark:text-white">{item.credits} Credits</p>
                                                         </div>
                                                     </div>
 
-                                                    <div className="flex items-center gap-2 md:gap-3">
-                                                        <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl bg-orange-100 dark:bg-orange-900/50 border-2 border-slate-900 dark:border-slate-700 flex items-center justify-center shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155]">
-                                                            <Users className="w-4 h-4 md:w-5 md:h-5 text-orange-600 dark:text-orange-400" strokeWidth={2.5} />
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="w-8 h-8 md:w-9 md:h-9 rounded-lg bg-orange-50 dark:bg-orange-950/30 flex items-center justify-center shrink-0">
+                                                            <Users className="w-4 h-4 md:w-5 md:h-5 text-orange-500" strokeWidth={2} />
                                                         </div>
                                                         <div>
                                                             <p className="text-[9px] md:text-[10px] font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest">Usage</p>
@@ -693,7 +731,7 @@ export default function AdminCreditSettingsPage() {
 
                                                     {item.expires_at && (
                                                         <div className="flex items-center gap-2 md:gap-3 col-span-2 md:col-span-1">
-                                                            <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl bg-blue-100 dark:bg-blue-900/50 border-2 border-slate-900 dark:border-slate-700 flex items-center justify-center shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155]">
+                                                            <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl bg-blue-100 dark:bg-blue-900/50 border-2 border-slate-200 dark:border-slate-700 flex items-center justify-center shadow-[#64748b] dark:shadow-[4px_4px_0_0_#1e293b]">
                                                                 <Clock className="w-4 h-4 md:w-5 md:h-5 text-blue-600 dark:text-blue-400" strokeWidth={2.5} />
                                                             </div>
                                                             <div>
@@ -707,21 +745,21 @@ export default function AdminCreditSettingsPage() {
                                                 </div>
                                             </div>
 
-                                            <div className="flex lg:flex-col items-center justify-end gap-3 md:gap-4 lg:pl-8 lg:border-l-4 lg:border-slate-100 dark:lg:border-slate-700 shrink-0 mt-2 lg:mt-0">
+                                            <div className="flex lg:flex-col items-center justify-end gap-2 lg:pl-4 lg:border-l-2 lg:border-slate-100 dark:lg:border-slate-700 shrink-0 mt-2 lg:mt-0">
                                                 <button
                                                     onClick={() => handleToggleRedeem(item)}
-                                                    className={`flex items-center justify-center w-11 h-11 md:w-14 md:h-14 rounded-xl md:rounded-2xl border-2 border-slate-900 dark:border-slate-700 shadow-[3px_3px_0_0_#0f172a] dark:shadow-[3px_3px_0_0_#334155] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all active:scale-95 ${item.is_active ? 'bg-emerald-300 dark:bg-emerald-700' : 'bg-slate-100 dark:bg-slate-800'
+                                                    className={`flex items-center justify-center w-9 h-9 md:w-10 md:h-10 rounded-xl border-2 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:shadow-none hover:-translate-x-0.5 hover:-translate-y-0.5 transition-all ${item.is_active ? 'bg-emerald-100 dark:bg-emerald-900/50 border-emerald-300 dark:border-emerald-700 text-emerald-600 dark:text-emerald-400' : 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-slate-400 dark:text-slate-500'
                                                         }`}
                                                     title={item.is_active ? 'Nonaktifkan' : 'Aktifkan'}
                                                 >
-                                                    {item.is_active ? <ToggleRight size={22} className="md:w-7 md:h-7 text-slate-900 dark:text-white" strokeWidth={2.5} /> : <ToggleLeft size={22} className="md:w-7 md:h-7 text-slate-900 dark:text-white" strokeWidth={2.5} />}
+                                                    {item.is_active ? <ToggleRight size={18} className="md:w-5 md:h-5" strokeWidth={2} /> : <ToggleLeft size={18} className="md:w-5 md:h-5" strokeWidth={2} />}
                                                 </button>
                                                 <button
                                                     onClick={() => handleDeleteRedeem(item.id, item.code)}
-                                                    className="flex items-center justify-center w-11 h-11 md:w-14 md:h-14 rounded-xl md:rounded-2xl bg-red-400 dark:bg-red-600 border-2 border-slate-900 dark:border-slate-700 text-white shadow-[3px_3px_0_0_#0f172a] dark:shadow-[3px_3px_0_0_#334155] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all active:scale-95"
+                                                    className="flex items-center justify-center w-9 h-9 md:w-10 md:h-10 rounded-xl bg-rose-100 dark:bg-rose-900/50 border-2 border-rose-300 dark:border-rose-700 text-rose-600 dark:text-rose-400 shadow-[2px_2px_0_0_#e11d48] hover:shadow-none hover:-translate-x-0.5 hover:-translate-y-0.5 transition-all"
                                                     title="Hapus"
                                                 >
-                                                    <Trash2 size={20} className="md:w-6 md:h-6" strokeWidth={2.5} />
+                                                    <Trash2 size={16} className="md:w-4 md:h-4" strokeWidth={2} />
                                                 </button>
                                             </div>
                                         </div>

@@ -13,7 +13,9 @@ albumsIdPhotos.get('/', async (c) => {
   const supabase = getSupabaseClient(c)
   const db = getD1(c)
   if (!db) return c.json({ error: 'Database not configured' }, 503)
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   if (!user) return c.json({ error: 'Unauthorized' }, 401)
 
   const albumId = c.req.param('id')
@@ -78,14 +80,18 @@ albumsIdPhotos.delete('/', async (c) => {
   const bucket = getAssets(c)
   if (!db) return c.json({ error: 'Database not configured' }, 503)
   if (!bucket) return c.json({ error: 'Storage not configured' }, 503)
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   if (!user) return c.json({ error: 'Unauthorized' }, 401)
 
   const albumId = c.req.param('id')
   if (!albumId) return c.json({ error: 'Album ID required' }, 400)
 
   const classId = c.req.query('class_id') || ''
-  const studentName = c.req.query('student_name') ? decodeURIComponent(c.req.query('student_name')!) : ''
+  const studentName = c.req.query('student_name')
+    ? decodeURIComponent(c.req.query('student_name')!)
+    : ''
   const indexStr = c.req.query('index') || ''
   const index = parseInt(indexStr, 10)
   if (!classId || !studentName || Number.isNaN(index)) {
@@ -150,7 +156,9 @@ albumsIdPhotos.post('/', async (c) => {
   const bucket = getAssets(c)
   if (!db) return c.json({ error: 'Database not configured' }, 503)
   if (!bucket) return c.json({ error: 'Storage not configured' }, 503)
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   if (!user) return c.json({ error: 'Unauthorized' }, 401)
 
   const albumId = c.req.param('id')
@@ -257,9 +265,7 @@ albumsIdPhotos.post('/', async (c) => {
 
   const updatedPhotos = [...currentPhotos, fileUrl]
   const upd = await db
-    .prepare(
-      `UPDATE album_class_access SET photos = ?, updated_at = datetime('now') WHERE id = ?`
-    )
+    .prepare(`UPDATE album_class_access SET photos = ?, updated_at = datetime('now') WHERE id = ?`)
     .bind(JSON.stringify(updatedPhotos), targetAccess.id)
     .run()
   if (!upd.success) return c.json({ error: 'Update failed' }, 500)

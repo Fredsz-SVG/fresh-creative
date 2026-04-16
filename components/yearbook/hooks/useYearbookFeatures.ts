@@ -19,7 +19,7 @@ export function useYearbookFeatures(id: string | undefined) {
       if (res.ok) {
         const data = asObject(await res.json().catch(() => ({})))
         setFeatureUnlocks(asStringArray(data.unlocked_features))
-        setFlipbookEnabledByPackage(data.flipbook_enabled_by_package === true)
+        setFlipbookEnabledByPackage(data.flipbook_enabled_by_package === true || data.flipbook_unlocked_on_album === true)
         setAiLabsFeaturesByPackage(asStringArray(data.ai_labs_features_by_package))
         setFeatureCreditCosts(asNumberRecord(data.credit_costs))
       }

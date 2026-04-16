@@ -1,0 +1,1 @@
+const content = require("fs").readFileSync("app/admin/showcase/page.tsx", "utf8"); console.log(content.substring(content.indexOf("bg-emerald-400 dark:bg-emerald-700") - 300, content.indexOf("bg-emerald-400 dark:bg-emerald-700") + 350)); 

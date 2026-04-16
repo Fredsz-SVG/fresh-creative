@@ -34,20 +34,34 @@ export function levenshtein(a: string, b: string): number {
 }
 
 /**
+ * Extract numbers from a string
+ */
+function extractNumbers(s: string): string {
+  const match = s.match(/\d+/g)
+  return match ? match.join('') : ''
+}
+
+/**
  * Check if two school names are "similar" (potential duplicates).
- * Returns true if normalized names match exactly, or Levenshtein ≤ 2.
+ * Returns true if normalized names match exactly, or Levenshtein tolerance,
+ * BUT ONLY IF their numbers (like SMP 1 vs SMP 2) match.
  */
 export function isSimilarSchoolName(a: string, b: string): boolean {
   const normA = normalizeName(a)
   const normB = normalizeName(b)
   if (normA === normB) return true
 
+  // STRICT RULE: If the schools have different numbers (SMA 1 vs SMA 2), they are DEFINITELY different schools.
+  const numA = extractNumbers(normA)
+  const numB = extractNumbers(normB)
+  if (numA !== numB) return false // They have different numbers, so they cannot be the same school
+
   const noSpA = normA.replace(/\s/g, '')
   const noSpB = normB.replace(/\s/g, '')
   if (noSpA === noSpB) return true
 
-  if (levenshtein(normA, normB) <= 2) return true
-  if (levenshtein(noSpA, noSpB) <= 2) return true
+  if (levenshtein(normA, normB) <= (Math.max(normA.length, normB.length) > 10 ? 3 : 2)) return true
+  if (levenshtein(noSpA, noSpB) <= (Math.max(noSpA.length, noSpB.length) > 10 ? 3 : 2)) return true
 
   return false
 }

@@ -98,7 +98,7 @@ export function Navbar() {
             <div className="flex items-center gap-1 sm:gap-4">
               <a
                 href="#pricing"
-                className="hidden md:inline-flex items-center gap-1 md:ml-8 px-7 py-3 bg-yellow-300 text-black font-black text-xs uppercase tracking-wide border border-slate-900 dark:border-white rounded-full shadow-[2px_2px_0_0_#000] dark:shadow-[2px_2px_0_0_#a3e635] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[3px_3px_0_0_#000] dark:hover:shadow-[3px_3px_0_0_#a3e635] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all duration-200"
+                className="hidden md:inline-flex items-center gap-1 md:ml-8 px-7 py-3 bg-yellow-300 text-black font-black text-xs uppercase tracking-wide border border-slate-200 dark:border-white rounded-full shadow-[2px_2px_0_0_#000] dark:shadow-[2px_2px_0_0_#a3e635] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[3px_3px_0_0_#000] dark:hover:shadow-[3px_3px_0_0_#a3e635] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all duration-200"
               >
                 <TiLocationArrow className="text-base" />
                 <span className="font-general text-xs uppercase">Buat Project</span>
@@ -211,7 +211,7 @@ export function Navbar() {
       <div 
         className={cn(
           "fixed inset-x-0 top-0 bg-white dark:bg-slate-950 transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] md:hidden flex flex-col items-center gap-6 pt-[88px] sm:pt-[100px] pb-10 z-[40]",
-          isMenuOpen ? "translate-y-0 opacity-100 visible shadow-2xl border-b-2 border-slate-900 dark:border-white/20" : "-translate-y-8 opacity-0 invisible pointer-events-none"
+          isMenuOpen ? "translate-y-0 opacity-100 visible shadow-2xl border-b-2 border-slate-200 dark:border-white/20" : "-translate-y-8 opacity-0 invisible pointer-events-none"
         )}
       >
         {NAV_ITEMS.map(({ label, href }) => (
@@ -226,7 +226,7 @@ export function Navbar() {
         ))}
         <a
           href="#pricing"
-          className="mt-2 inline-flex items-center justify-center gap-1 px-7 py-3 bg-yellow-300 text-black font-black text-xs uppercase tracking-wide border border-slate-900 dark:border-white rounded-full shadow-[2px_2px_0_0_#000] dark:shadow-[2px_2px_0_0_#fff] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[3px_3px_0_0_#000] dark:hover:shadow-[3px_3px_0_0_#fff] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all duration-200 w-[80%]"
+          className="mt-2 inline-flex items-center justify-center gap-1 px-7 py-3 bg-yellow-300 text-black font-black text-xs uppercase tracking-wide border border-slate-200 dark:border-white rounded-full shadow-[2px_2px_0_0_#000] dark:shadow-[2px_2px_0_0_#fff] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[3px_3px_0_0_#000] dark:hover:shadow-[3px_3px_0_0_#fff] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all duration-200 w-[80%]"
           onClick={() => setIsMenuOpen(false)}
         >
           <TiLocationArrow className="text-lg" />

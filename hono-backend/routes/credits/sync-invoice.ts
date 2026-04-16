@@ -10,11 +10,16 @@ creditsSyncInvoice.post('/', async (c) => {
     const supabase = getSupabaseClient(c)
     const db = getD1(c)
     if (!db) return c.json({ error: 'Database not configured' }, 503)
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser()
     if (authError || !user) return c.json({ error: 'Unauthorized' }, 401)
 
     const { results: pendingRows } = await db
-      .prepare(`SELECT id, external_id, package_id, amount FROM transactions WHERE user_id = ? AND status = 'PENDING'`)
+      .prepare(
+        `SELECT id, external_id, package_id, amount FROM transactions WHERE user_id = ? AND status = 'PENDING'`
+      )
       .bind(user.id)
       .all<{ id: string; external_id: string; package_id: string | null; amount: number }>()
 
@@ -31,9 +36,12 @@ creditsSyncInvoice.post('/', async (c) => {
       if (!externalId) continue
 
       try {
-        const res = await fetch(`https://api.xendit.co/v2/invoices?external_id=${encodeURIComponent(externalId)}`, {
-          headers: { Authorization: 'Basic ' + auth },
-        })
+        const res = await fetch(
+          `https://api.xendit.co/v2/invoices?external_id=${encodeURIComponent(externalId)}`,
+          {
+            headers: { Authorization: 'Basic ' + auth },
+          }
+        )
         const invoicesRaw = (await res.json()) as unknown
         const invoice = Array.isArray(invoicesRaw) ? invoicesRaw[0] : invoicesRaw
         const inv = invoice as Record<string, unknown> | undefined
@@ -70,8 +78,14 @@ creditsSyncInvoice.post('/', async (c) => {
             .bind(invStatus, paymentMethod, paidAt, externalId)
             .run()
 
-          const currentCredits = await getCreditsFromSupabase(c.env as Record<string, string>, userId).catch(async () => {
-            const row = await db.prepare(`SELECT credits FROM users WHERE id = ?`).bind(userId).first<{ credits: number | null }>()
+          const currentCredits = await getCreditsFromSupabase(
+            c.env as Record<string, string>,
+            userId
+          ).catch(async () => {
+            const row = await db
+              .prepare(`SELECT credits FROM users WHERE id = ?`)
+              .bind(userId)
+              .first<{ credits: number | null }>()
             return row?.credits ?? 0
           })
           const newCredits = currentCredits + (pkg.credits ?? 0)
@@ -105,7 +119,9 @@ creditsSyncInvoice.post('/', async (c) => {
               .run()
           } else {
             await db
-              .prepare(`UPDATE albums SET payment_status = 'paid', updated_at = datetime('now') WHERE id = ?`)
+              .prepare(
+                `UPDATE albums SET payment_status = 'paid', updated_at = datetime('now') WHERE id = ?`
+              )
               .bind(albumId)
               .run()
           }

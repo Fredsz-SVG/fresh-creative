@@ -43,8 +43,7 @@ userNotifications.post('/', async (c) => {
   const body = await c.req.json()
   const { title, message, type, action_url, metadata } = body || {}
   const id = crypto.randomUUID()
-  const metaStr =
-    metadata !== undefined && metadata !== null ? JSON.stringify(metadata) : null
+  const metaStr = metadata !== undefined && metadata !== null ? JSON.stringify(metadata) : null
   const ins = await db
     .prepare(
       `INSERT INTO notifications (id, user_id, title, message, type, action_url, metadata, created_at)
@@ -64,10 +63,7 @@ userNotifications.patch('/', async (c) => {
   if (!db) return c.json({ error: 'Database not configured' }, 503)
   const userId = await getAuthUserId(c)
   if (!userId) return c.json({ error: 'Unauthorized' }, 401)
-  await db
-    .prepare(`UPDATE notifications SET is_read = 1 WHERE user_id = ?`)
-    .bind(userId)
-    .run()
+  await db.prepare(`UPDATE notifications SET is_read = 1 WHERE user_id = ?`).bind(userId).run()
   invalidateUserResponseCaches(userId)
   return c.json({ success: true })
 })

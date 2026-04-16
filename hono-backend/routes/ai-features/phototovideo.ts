@@ -36,11 +36,15 @@ phototovideo.post('/', async (c) => {
     const supabase = getSupabaseClient(c)
     const db = getD1(c)
     if (!db) return c.json({ ok: false, error: 'Database not configured' }, 503)
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser()
     if (authError || !user) return c.json({ ok: false, error: 'Unauthorized' }, 401)
 
     const REPLICATE_API_TOKEN = ((c.env as ReplicateEnv).REPLICATE_API_TOKEN || '').trim()
-    if (!REPLICATE_API_TOKEN) return c.json({ ok: false, error: 'REPLICATE_API_TOKEN tidak dikonfigurasi' }, 500)
+    if (!REPLICATE_API_TOKEN)
+      return c.json({ ok: false, error: 'REPLICATE_API_TOKEN tidak dikonfigurasi' }, 500)
     const replicate = new Replicate({ auth: REPLICATE_API_TOKEN })
 
     let body: PhotoToVideoBody
@@ -56,12 +60,18 @@ phototovideo.post('/', async (c) => {
       let audioUri: string | undefined
       if (audioFile instanceof File && audioFile.size > 0) {
         if (!validateAudioFileSize(audioFile.size)) {
-          return c.json({ ok: false, error: 'File audio maksimal 5MB (syarat model lip-sync).' }, 400)
+          return c.json(
+            { ok: false, error: 'File audio maksimal 5MB (syarat model lip-sync).' },
+            400
+          )
         }
         const mime = (audioFile.type || '').toLowerCase()
         const okByExt = /\.(mp3|wav|m4a|aac|ogg|webm|flac)$/i.test(audioFile.name)
         if (!mime.startsWith('audio/') && !okByExt) {
-          return c.json({ ok: false, error: 'Format audio didukung: mp3, wav, m4a, aac, ogg.' }, 400)
+          return c.json(
+            { ok: false, error: 'Format audio didukung: mp3, wav, m4a, aac, ogg.' },
+            400
+          )
         }
         audioUri = await fileToDataUri(audioFile)
       }
@@ -78,7 +88,11 @@ phototovideo.post('/', async (c) => {
       body = (await c.req.json().catch(() => ({}))) as PhotoToVideoBody
     }
 
-    if (body.duration === undefined || body.duration === null || !Number.isFinite(Number(body.duration))) {
+    if (
+      body.duration === undefined ||
+      body.duration === null ||
+      !Number.isFinite(Number(body.duration))
+    ) {
       body.duration = 5
     }
 

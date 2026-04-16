@@ -27,7 +27,9 @@ async function canManageFlipbook(c: Context, albumId: string): Promise<FlipbookM
   const supabase = getSupabaseClient(c)
   const db = getD1(c)
   if (!db) return { ok: false, status: 503, error: 'Database not configured' }
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   if (!user) return { ok: false, status: 401, error: 'Unauthorized' }
   const album = await db
     .prepare(`SELECT id, user_id FROM albums WHERE id = ?`)
@@ -57,7 +59,9 @@ albumFlipbookRoute.post('/upload', async (c) => {
   if (!db) return c.json({ error: 'Database not configured' }, 503)
   if (!bucket) return c.json({ error: 'Storage not configured' }, 503)
 
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   if (!user) return c.json({ error: 'Unauthorized' }, 401)
 
   const albumId = c.req.param('id')
@@ -163,10 +167,22 @@ albumFlipbookRoute.patch('/pages/:pageId', async (c) => {
   const body = await c.req.json<Record<string, unknown>>()
   const sets: string[] = []
   const vals: unknown[] = []
-  if (body.image_url !== undefined) { sets.push('image_url = ?'); vals.push(String(body.image_url ?? '')) }
-  if (body.page_number !== undefined) { sets.push('page_number = ?'); vals.push(Number(body.page_number ?? 0)) }
-  if (body.width !== undefined) { sets.push('width = ?'); vals.push(body.width == null ? null : Number(body.width)) }
-  if (body.height !== undefined) { sets.push('height = ?'); vals.push(body.height == null ? null : Number(body.height)) }
+  if (body.image_url !== undefined) {
+    sets.push('image_url = ?')
+    vals.push(String(body.image_url ?? ''))
+  }
+  if (body.page_number !== undefined) {
+    sets.push('page_number = ?')
+    vals.push(Number(body.page_number ?? 0))
+  }
+  if (body.width !== undefined) {
+    sets.push('width = ?')
+    vals.push(body.width == null ? null : Number(body.width))
+  }
+  if (body.height !== undefined) {
+    sets.push('height = ?')
+    vals.push(body.height == null ? null : Number(body.height))
+  }
   if (sets.length === 0) return c.json({ error: 'No fields to update' }, 400)
   vals.push(pageId, albumId)
   const upd = await perm.db
@@ -188,7 +204,9 @@ albumFlipbookRoute.post('/pages/reorder', async (c) => {
   const perm = await canManageFlipbook(c, albumId)
   if (!perm.ok) return denyFlipbookManage(c, perm as FlipbookManageDenied)
   const body = await c.req.json<Record<string, unknown>>()
-  const pageIds = Array.isArray(body.page_ids) ? (body.page_ids as unknown[]).map((v) => String(v)) : []
+  const pageIds = Array.isArray(body.page_ids)
+    ? (body.page_ids as unknown[]).map((v) => String(v))
+    : []
   if (!pageIds.length) return c.json({ error: 'page_ids required' }, 400)
   for (let i = 0; i < pageIds.length; i++) {
     await perm.db
@@ -240,12 +258,30 @@ albumFlipbookRoute.patch('/hotspots/:hotspotId', async (c) => {
   const body = await c.req.json<Record<string, unknown>>()
   const sets: string[] = []
   const vals: unknown[] = []
-  if (body.video_url !== undefined) { sets.push('video_url = ?'); vals.push(String(body.video_url ?? '')) }
-  if (body.label !== undefined) { sets.push('label = ?'); vals.push(String(body.label ?? '')) }
-  if (body.x !== undefined) { sets.push('x = ?'); vals.push(Number(body.x ?? 0)) }
-  if (body.y !== undefined) { sets.push('y = ?'); vals.push(Number(body.y ?? 0)) }
-  if (body.width !== undefined) { sets.push('width = ?'); vals.push(Number(body.width ?? 0)) }
-  if (body.height !== undefined) { sets.push('height = ?'); vals.push(Number(body.height ?? 0)) }
+  if (body.video_url !== undefined) {
+    sets.push('video_url = ?')
+    vals.push(String(body.video_url ?? ''))
+  }
+  if (body.label !== undefined) {
+    sets.push('label = ?')
+    vals.push(String(body.label ?? ''))
+  }
+  if (body.x !== undefined) {
+    sets.push('x = ?')
+    vals.push(Number(body.x ?? 0))
+  }
+  if (body.y !== undefined) {
+    sets.push('y = ?')
+    vals.push(Number(body.y ?? 0))
+  }
+  if (body.width !== undefined) {
+    sets.push('width = ?')
+    vals.push(Number(body.width ?? 0))
+  }
+  if (body.height !== undefined) {
+    sets.push('height = ?')
+    vals.push(Number(body.height ?? 0))
+  }
   if (sets.length === 0) return c.json({ error: 'No fields to update' }, 400)
   vals.push(hotspotId)
   const upd = await perm.db
@@ -323,7 +359,9 @@ albumFlipbookRoute.post('/', async (c) => {
   const supabase = getSupabaseClient(c)
   const db = getD1(c)
   if (!db) return c.json({ error: 'Database not configured' }, 503)
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   if (!user) return c.json({ error: 'Unauthorized' }, 401)
   const albumId = c.req.param('id')
   if (!albumId) return c.json({ error: 'Album ID required' }, 400)
@@ -359,7 +397,8 @@ albumFlipbookRoute.post('/', async (c) => {
     }
     await db.prepare(`DELETE FROM manual_flipbook_pages WHERE album_id = ?`).bind(albumId).run()
     return c.json({
-      message: 'Flipbook assets cleaned successfully (DB only, storage cleanup not implemented in Workers)',
+      message:
+        'Flipbook assets cleaned successfully (DB only, storage cleanup not implemented in Workers)',
     })
   } catch (error: unknown) {
     return c.json({ error: error instanceof Error ? error.message : 'Internal server error' }, 500)

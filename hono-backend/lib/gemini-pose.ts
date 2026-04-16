@@ -18,7 +18,10 @@ function toDataUri(input: GeminiImageInput): string {
 }
 
 function extractImageUrl(output: unknown): string {
-  if (typeof output === 'string' && (output.startsWith('http://') || output.startsWith('https://') || output.startsWith('data:'))) {
+  if (
+    typeof output === 'string' &&
+    (output.startsWith('http://') || output.startsWith('https://') || output.startsWith('data:'))
+  ) {
     return output
   }
   return getSingleReplicateUrl(output)
@@ -29,7 +32,8 @@ export async function generatePoseEditGemini(
   subject: GeminiImageInput,
   poseInstruction: string
 ): Promise<string> {
-  const instruction = (poseInstruction || '').trim() || 'Change the pose to a natural standing pose.'
+  const instruction =
+    (poseInstruction || '').trim() || 'Change the pose to a natural standing pose.'
   const prompt = `Edit the provided photo to change ONLY the person's pose.
 
 Target pose instruction:
@@ -62,4 +66,3 @@ CRITICAL CONSTRAINTS (must follow):
   }
   return url
 }
-

@@ -11,7 +11,10 @@ albumsIdJoinStats.get('/', async (c) => {
   if (!db) return c.json({ error: 'Database not configured' }, 503)
 
   try {
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser()
     if (authError || !user) return c.json({ error: 'Unauthorized' }, 401)
 
     const album = await db
@@ -23,21 +26,29 @@ albumsIdJoinStats.get('/', async (c) => {
     // Join-stats is used by the registration flow; allow any authenticated user to read capacity/counts.
 
     const approved = await db
-      .prepare(`SELECT COUNT(*) as c FROM album_class_access WHERE album_id = ? AND status = 'approved'`)
+      .prepare(
+        `SELECT COUNT(*) as c FROM album_class_access WHERE album_id = ? AND status = 'approved'`
+      )
       .bind(albumId)
       .first<{ c: number }>()
     const pending = await db
-      .prepare(`SELECT COUNT(*) as c FROM album_join_requests WHERE album_id = ? AND status = 'pending'`)
+      .prepare(
+        `SELECT COUNT(*) as c FROM album_join_requests WHERE album_id = ? AND status = 'pending'`
+      )
       .bind(albumId)
       .first<{ c: number }>()
     const rejected = await db
-      .prepare(`SELECT COUNT(*) as c FROM album_join_requests WHERE album_id = ? AND status = 'rejected'`)
+      .prepare(
+        `SELECT COUNT(*) as c FROM album_join_requests WHERE album_id = ? AND status = 'rejected'`
+      )
       .bind(albumId)
       .first<{ c: number }>()
 
     // Owner album dihitung sebagai 1 slot terisi, tapi jangan dobel jika owner sudah punya akses approved ke kelas.
     const ownerHasApprovedAccess = await db
-      .prepare(`SELECT 1 as ok FROM album_class_access WHERE album_id = ? AND user_id = ? AND status = 'approved' LIMIT 1`)
+      .prepare(
+        `SELECT 1 as ok FROM album_class_access WHERE album_id = ? AND user_id = ? AND status = 'approved' LIMIT 1`
+      )
       .bind(albumId, album.user_id)
       .first<{ ok: number }>()
 

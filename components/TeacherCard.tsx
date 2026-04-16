@@ -187,19 +187,19 @@ export default function TeacherCard({
       />
       {typeof document !== 'undefined' && localConfirm && createPortal(
         <div className="fixed inset-0 bg-slate-900/40 dark:bg-black/50 backdrop-blur-md flex items-center justify-center z-[100] p-4" onClick={() => setLocalConfirm(null)}>
-          <div className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-[32px] p-6 sm:p-8 max-w-sm w-full shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] text-center" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-[32px] p-6 sm:p-8 max-w-sm w-full shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] text-center" onClick={e => e.stopPropagation()}>
             <h3 className="text-xl font-black text-slate-900 dark:text-white mb-2 uppercase tracking-tight">{localConfirm.title}</h3>
             <p className="text-sm font-bold text-slate-500 dark:text-slate-400 mb-6">{localConfirm.message}</p>
             <div className="flex gap-3">
               <button
                 onClick={() => setLocalConfirm(null)}
-                className="flex-1 py-3.5 rounded-xl bg-slate-100 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 text-slate-900 dark:text-white text-xs font-black uppercase tracking-widest shadow-[1px_1px_0_0_rgba(15,23,42,0.13)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.36)] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
+                className="flex-1 py-3.5 rounded-xl bg-slate-100 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white text-xs font-black uppercase tracking-widest shadow-[1px_1px_0_0_rgba(15,23,42,0.13)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.36)] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
               >
                 Batal
               </button>
               <button
                 onClick={() => { localConfirm.onConfirm(); setLocalConfirm(null) }}
-                className="flex-1 py-3.5 rounded-xl bg-red-500 text-white border-2 border-slate-900 dark:border-slate-700 text-xs font-black uppercase tracking-widest shadow-[1px_1px_0_0_rgba(15,23,42,0.13)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.36)] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
+                className="flex-1 py-3.5 rounded-xl bg-red-500 text-white border-2 border-slate-200 dark:border-slate-700 text-xs font-black uppercase tracking-widest shadow-[1px_1px_0_0_rgba(15,23,42,0.13)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.36)] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
               >
                 Ya, Hapus
               </button>
@@ -221,11 +221,11 @@ export default function TeacherCard({
         >
           {/* ================= FRONT SIDE ================= */}
           <div
-            className="relative w-full h-full backface-hidden rounded-2xl border-4 border-slate-900 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] group-hover:shadow-none group-hover:translate-x-1 group-hover:translate-y-1 transition-all duration-300 flex flex-col overflow-hidden"
+            className="relative w-full h-full backface-hidden rounded-2xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] group-hover:shadow-none group-hover:translate-x-1 group-hover:translate-y-1 transition-all duration-300 flex flex-col overflow-hidden"
             style={{ backfaceVisibility: 'hidden' }}
           >
             {/* Photo section */}
-            <div className="relative aspect-[4/5] overflow-hidden bg-slate-50 dark:bg-slate-800 flex-shrink-0 border-b-4 border-slate-900 dark:border-slate-700">
+            <div className="relative aspect-[4/5] overflow-hidden bg-slate-50 dark:bg-slate-800 flex-shrink-0 border-b-4 border-slate-200 dark:border-slate-700">
               {(teacher.photos && teacher.photos.length > 0 || teacher.photo_url) ? (
                 <FastImage
                   src={teacher.photos && teacher.photos.length > 0 ? teacher.photos[0].file_url : teacher.photo_url}
@@ -254,7 +254,7 @@ export default function TeacherCard({
                     e.stopPropagation()
                     onPlayVideo(teacher.video_url!)
                   }}
-                  className="absolute bottom-3 right-3 w-10 h-10 rounded-full bg-indigo-400 dark:bg-indigo-600 text-white border-2 border-slate-900 dark:border-slate-600 flex items-center justify-center transition-all shadow-[1px_1px_0_0_rgba(15,23,42,0.13)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.36)] active:shadow-none active:translate-x-0.5 active:translate-y-0.5"
+                  className="absolute bottom-3 right-3 w-10 h-10 rounded-full bg-indigo-400 dark:bg-indigo-600 text-white border-2 border-slate-200 dark:border-slate-600 flex items-center justify-center transition-all shadow-[1px_1px_0_0_rgba(15,23,42,0.13)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.36)] active:shadow-none active:translate-x-0.5 active:translate-y-0.5"
                   title="Putar Video"
                 >
                   <Play className="w-5 h-5 ml-1" fill="currentColor" />
@@ -279,8 +279,8 @@ export default function TeacherCard({
 
               {/* Message Block */}
               {teacher.message && (
-                <div className="mt-3.5 p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 relative flex-1 flex flex-col min-h-0 shadow-[1px_1px_0_0_rgba(15,23,42,0.1)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.3)]">
-                  <Quote className="absolute -top-2 -left-2 w-5 h-5 text-slate-900 dark:text-slate-300 bg-white dark:bg-slate-800 rounded-full p-1 border-2 border-slate-900 dark:border-slate-600" />
+                <div className="mt-3.5 p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-600 relative flex-1 flex flex-col min-h-0 shadow-[1px_1px_0_0_rgba(15,23,42,0.1)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.3)]">
+                  <Quote className="absolute -top-2 -left-2 w-5 h-5 text-slate-900 dark:text-slate-300 bg-white dark:bg-slate-800 rounded-full p-1 border-2 border-slate-200 dark:border-slate-600" />
                   <p className="italic font-bold text-slate-600 dark:text-slate-300 leading-snug text-xs line-clamp-3 pl-1 pt-0.5">
                     "{stripQuotes(teacher.message)}"
                   </p>
@@ -328,11 +328,11 @@ export default function TeacherCard({
               WebkitBackfaceVisibility: 'hidden',
               transform: 'rotateY(180deg)'
             }}
-            className="absolute inset-0 w-full h-full flex flex-col rounded-2xl border-4 border-slate-900 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] overflow-hidden"
+            className="absolute inset-0 w-full h-full flex flex-col rounded-2xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] overflow-hidden"
           >
             {/* Header */}
-            <div className="px-4 py-3 border-b-4 border-slate-900 dark:border-slate-700 bg-amber-300 dark:bg-amber-600 flex items-center gap-3 flex-shrink-0">
-              <button type="button" className="w-8 h-8 rounded-lg border-2 border-slate-900 dark:border-slate-600 hover:bg-white/20 dark:hover:bg-slate-800/50 flex items-center justify-center bg-white dark:bg-slate-800 shadow-[1px_1px_0_0_rgba(15,23,42,0.13)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.36)] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all" onClick={onCancelEdit}>
+            <div className="px-4 py-3 border-b-4 border-slate-200 dark:border-slate-700 bg-amber-300 dark:bg-amber-600 flex items-center gap-3 flex-shrink-0">
+              <button type="button" className="w-8 h-8 rounded-lg border-2 border-slate-200 dark:border-slate-600 hover:bg-white/20 dark:hover:bg-slate-800/50 flex items-center justify-center bg-white dark:bg-slate-800 shadow-[1px_1px_0_0_rgba(15,23,42,0.13)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.36)] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all" onClick={onCancelEdit}>
                 <ChevronLeft className="w-5 h-5" strokeWidth={2.5} />
               </button>
               <h3 className="text-slate-900 dark:text-white font-black text-xs uppercase tracking-widest">Edit Guru</h3>
@@ -346,7 +346,7 @@ export default function TeacherCard({
                   value={editName || ''}
                   onChange={(e) => setEditName(e.target.value)}
                   placeholder="Nama Guru"
-                  className="w-full px-3 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-bold placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                  className="w-full px-3 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-bold placeholder:text-slate-400 dark:placeholder:text-slate-500"
                 />
               </div>
               <div>
@@ -356,7 +356,7 @@ export default function TeacherCard({
                   value={editTitle || ''}
                   onChange={(e) => setEditTitle(e.target.value)}
                   placeholder="Jabatan Guru (mis: Wali Kelas)"
-                  className="w-full px-3 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-bold placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                  className="w-full px-3 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-bold placeholder:text-slate-400 dark:placeholder:text-slate-500"
                 />
               </div>
 
@@ -366,9 +366,9 @@ export default function TeacherCard({
                 {allDisplayPhotos.length > 0 && (
                   <div className="flex gap-3 flex-wrap mb-3">
                     {allDisplayPhotos.map((photo, idx) => (
-                      <div key={photo.id} className="relative w-14 h-14 bg-slate-100 dark:bg-slate-800 rounded-xl flex-shrink-0 border-2 border-slate-900 dark:border-slate-600 shadow-[1px_1px_0_0_rgba(15,23,42,0.13)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.36)]">
+                      <div key={photo.id} className="relative w-14 h-14 bg-slate-100 dark:bg-slate-800 rounded-xl flex-shrink-0 border-2 border-slate-200 dark:border-slate-600 shadow-[1px_1px_0_0_rgba(15,23,42,0.13)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.36)]">
                         {photo.isPending && (
-                          <div className="absolute -top-2 -left-2 bg-emerald-400 text-slate-900 text-[8px] font-black px-1.5 py-0.5 rounded-lg border-2 border-slate-900 z-10 shadow-[1px_1px_0_0_rgba(15,23,42,0.14)] uppercase">BARU</div>
+                          <div className="absolute -top-2 -left-2 bg-emerald-400 text-slate-900 text-[8px] font-black px-1.5 py-0.5 rounded-lg border-2 border-slate-200 z-10 shadow-[1px_1px_0_0_rgba(15,23,42,0.14)] uppercase">BARU</div>
                         )}
                         <FastImage
                           src={photo.file_url}
@@ -388,7 +388,7 @@ export default function TeacherCard({
                               setLocalConfirm({ title: 'Hapus Foto', message: `Hapus foto ini?`, onConfirm: () => onDeletePhoto(teacher.id, photo.id) })
                             }
                           }}
-                          className="absolute -top-1.5 -right-1.5 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center shadow-[1px_1px_0_0_rgba(15,23,42,0.14)] hover:bg-red-600 transition-all z-20 border-2 border-slate-900 active:shadow-none active:translate-x-0.5 active:translate-y-0.5"
+                          className="absolute -top-1.5 -right-1.5 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center shadow-[1px_1px_0_0_rgba(15,23,42,0.14)] hover:bg-red-600 transition-all z-20 border-2 border-slate-200 active:shadow-none active:translate-x-0.5 active:translate-y-0.5"
                         >
                           <X className="w-4 h-4" strokeWidth={3} />
                         </button>
@@ -399,18 +399,18 @@ export default function TeacherCard({
 
                 {/* Pending video preview */}
                 {pendingVideo && (
-                  <div className="flex items-center gap-3 mb-3 p-3 rounded-xl bg-sky-50 dark:bg-sky-950/50 border-2 border-slate-900 dark:border-slate-600 shadow-[1px_1px_0_0_rgba(15,23,42,0.1)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.3)]">
-                    <div className="w-10 h-10 rounded-lg bg-sky-100 dark:bg-sky-900/50 flex items-center justify-center flex-shrink-0 border-2 border-slate-900 dark:border-slate-600">
+                  <div className="flex items-center gap-3 mb-3 p-3 rounded-xl bg-sky-50 dark:bg-sky-950/50 border-2 border-slate-200 dark:border-slate-600 shadow-[1px_1px_0_0_rgba(15,23,42,0.1)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.3)]">
+                    <div className="w-10 h-10 rounded-lg bg-sky-100 dark:bg-sky-900/50 flex items-center justify-center flex-shrink-0 border-2 border-slate-200 dark:border-slate-600">
                       <Video className="w-5 h-5 text-sky-700 dark:text-sky-400" />
                     </div>
                     <span className="text-xs font-black text-slate-900 dark:text-slate-200 truncate flex-1 uppercase tracking-tight">{pendingVideo.file.name}</span>
-                    <button type="button" onClick={removePendingVideo} className="p-2 rounded-lg bg-red-100 dark:bg-red-950/50 text-red-600 dark:text-red-400 border-2 border-slate-900 dark:border-slate-600 hover:bg-red-500 hover:text-white transition-all shadow-[1px_1px_0_0_rgba(15,23,42,0.13)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.36)] active:shadow-none active:translate-x-0.5 active:translate-y-0.5">
+                    <button type="button" onClick={removePendingVideo} className="p-2 rounded-lg bg-red-100 dark:bg-red-950/50 text-red-600 dark:text-red-400 border-2 border-slate-200 dark:border-slate-600 hover:bg-red-500 hover:text-white transition-all shadow-[1px_1px_0_0_rgba(15,23,42,0.13)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.36)] active:shadow-none active:translate-x-0.5 active:translate-y-0.5">
                       <X className="w-4 h-4" strokeWidth={3} />
                     </button>
                   </div>
                 )}
                 {pendingVideo && (
-                  <div className="mb-3 rounded-xl overflow-hidden border-2 border-slate-900 dark:border-slate-600 bg-black shadow-[1px_1px_0_0_rgba(15,23,42,0.13)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.36)]">
+                  <div className="mb-3 rounded-xl overflow-hidden border-2 border-slate-200 dark:border-slate-600 bg-black shadow-[1px_1px_0_0_rgba(15,23,42,0.13)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.36)]">
                     <video src={pendingVideo.previewUrl} controls preload="metadata" className="w-full max-h-40 object-contain bg-black" playsInline />
                   </div>
                 )}
@@ -443,7 +443,7 @@ export default function TeacherCard({
                   value={editVideoUrl || ''}
                   onChange={(e) => setEditVideoUrl(e.target.value)}
                   placeholder="Link Video Eksternal"
-                  className="w-full px-3 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-bold placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                  className="w-full px-3 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-bold placeholder:text-slate-400 dark:placeholder:text-slate-500"
                 />
               </div>
 
@@ -455,25 +455,25 @@ export default function TeacherCard({
                   onChange={(e) => setEditMessage(e.target.value)}
                   placeholder="Pesan / Kesan"
                   rows={2}
-                  className="w-full px-3 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-bold placeholder:text-slate-400 dark:placeholder:text-slate-500 resize-none"
+                  className="w-full px-3 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-bold placeholder:text-slate-400 dark:placeholder:text-slate-500 resize-none"
                 />
               </div>
             </div>
 
             {/* Save & Cancel buttons */}
-            <div className="px-4 py-3 bg-white dark:bg-slate-900 border-t-4 border-slate-900 dark:border-slate-700 flex gap-3 flex-shrink-0">
+            <div className="px-4 py-3 bg-white dark:bg-slate-900 border-t-4 border-slate-200 dark:border-slate-700 flex gap-3 flex-shrink-0">
               <button
                 type="button"
                 onClick={handleSave}
                 disabled={savingTeacher}
-                className="flex-[2] px-4 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest bg-indigo-500 text-white hover:bg-indigo-600 transition-all border-2 border-slate-900 dark:border-slate-600 shadow-[1px_1px_0_0_rgba(15,23,42,0.1)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.3)] active:shadow-none active:translate-x-1 active:translate-y-1 disabled:opacity-50 flex items-center justify-center"
+                className="flex-[2] px-4 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest bg-indigo-500 text-white hover:bg-indigo-600 transition-all border-2 border-slate-200 dark:border-slate-600 shadow-[1px_1px_0_0_rgba(15,23,42,0.1)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.3)] active:shadow-none active:translate-x-1 active:translate-y-1 disabled:opacity-50 flex items-center justify-center"
               >
                 {savingTeacher ? 'Loading...' : 'Simpan'}
               </button>
               <button
                 type="button"
                 onClick={onCancelEdit}
-                className="flex-1 px-4 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition-all border-2 border-slate-900 dark:border-slate-600 shadow-[1px_1px_0_0_rgba(15,23,42,0.1)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.3)] active:shadow-none active:translate-x-1 active:translate-y-1"
+                className="flex-1 px-4 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition-all border-2 border-slate-200 dark:border-slate-600 shadow-[1px_1px_0_0_rgba(15,23,42,0.1)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.3)] active:shadow-none active:translate-x-1 active:translate-y-1"
               >
                 Batal
               </button>

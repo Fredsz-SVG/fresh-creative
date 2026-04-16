@@ -21,7 +21,7 @@ albumIdRoute.get('/', async (c) => {
     const [row, role] = await Promise.all([
       db
         .prepare(
-          `SELECT id, name, type, status, cover_image_url, cover_image_position, cover_video_url, description, user_id, created_at, flipbook_mode, payment_status, payment_url, total_estimated_price, pricing_package_id
+          `SELECT id, name, type, status, cover_image_url, cover_image_position, cover_video_url, description, user_id, created_at, flipbook_mode, payment_status, payment_url, total_estimated_price, pricing_package_id, package_snapshot
            FROM albums WHERE id = ?`
         )
         .bind(id)
@@ -39,9 +39,7 @@ albumIdRoute.get('/', async (c) => {
     let isAlbumAdmin = false
     if (user && !isOwner && !isAdmin) {
       const member = await db
-        .prepare(
-          `SELECT role FROM album_members WHERE album_id = ? AND user_id = ?`
-        )
+        .prepare(`SELECT role FROM album_members WHERE album_id = ? AND user_id = ?`)
         .bind(id, user.id)
         .first<{ role: string }>()
       if (member) {
@@ -134,6 +132,7 @@ albumIdRoute.get('/', async (c) => {
       payment_url: row.payment_url || null,
       total_estimated_price: row.total_estimated_price || 0,
       pricing_package_id: row.pricing_package_id || null,
+      package_snapshot: row.package_snapshot ? JSON.parse(row.package_snapshot as string) : null,
       classes: classesWithCount,
     })
   } finally {
@@ -164,8 +163,14 @@ albumIdRoute.patch('/', async (c) => {
   }
 
   const body = await c.req.json()
-  const { cover_image_url, description, students_count, flipbook_mode, total_estimated_price } =
-    body as Record<string, unknown>
+  const {
+    cover_image_url,
+    description,
+    students_count,
+    flipbook_mode,
+    total_estimated_price,
+    pricing_package_id,
+  } = body as Record<string, unknown>
 
   const sets: string[] = []
   const vals: unknown[] = []
@@ -189,11 +194,48 @@ albumIdRoute.patch('/', async (c) => {
     sets.push('total_estimated_price = ?')
     vals.push(total_estimated_price)
   }
+  if (pricing_package_id !== undefined) {
+    sets.push('pricing_package_id = ?')
+    vals.push(pricing_package_id)
+    if (pricing_package_id) {
+      const pkg = await db
+        .prepare(
+          `SELECT name, price_per_student, min_students, features, flipbook_enabled, ai_labs_features FROM pricing_packages WHERE id = ?`
+        )
+        .bind(pricing_package_id)
+        .first<{
+          name: string
+          price_per_student: number
+          min_students: number
+          features: string
+          flipbook_enabled: number
+          ai_labs_features: string
+        }>()
+      if (pkg) {
+        const snapshot = JSON.stringify({
+          name: pkg.name,
+          price_per_student: pkg.price_per_student,
+          min_students: pkg.min_students,
+          features: pkg.features,
+          flipbook_enabled: pkg.flipbook_enabled === 1,
+          ai_labs_features: JSON.parse(pkg.ai_labs_features || '[]'),
+        })
+        sets.push('package_snapshot = ?')
+        vals.push(snapshot)
+      }
+    } else {
+      sets.push('package_snapshot = ?')
+      vals.push(null)
+    }
+  }
   if (sets.length === 0) return c.json(album, 400)
 
   vals.push(id)
   const sql = `UPDATE albums SET ${sets.join(', ')}, updated_at = datetime('now') WHERE id = ?`
-  const r = await db.prepare(sql).bind(...vals).run()
+  const r = await db
+    .prepare(sql)
+    .bind(...vals)
+    .run()
   if (!r.success) return c.json({ error: 'Update failed' }, 500)
 
   const updated = await db.prepare(`SELECT * FROM albums WHERE id = ?`).bind(id).first()

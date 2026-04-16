@@ -17,7 +17,10 @@ albumsIdTeachersTeacherIdPhotosPhotoId.delete('/', async (c) => {
     const albumId = c.req.param('id')
     const teacherId = c.req.param('teacherId')
     const photoId = c.req.param('photoId')
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser()
     if (authError || !user) {
       return c.json({ error: 'Unauthorized' }, 401)
     }
@@ -55,7 +58,10 @@ albumsIdTeachersTeacherIdPhotosPhotoId.delete('/', async (c) => {
     } catch {
       /* continue */
     }
-    const del = await db.prepare(`DELETE FROM album_teacher_photos WHERE id = ?`).bind(photoId).run()
+    const del = await db
+      .prepare(`DELETE FROM album_teacher_photos WHERE id = ?`)
+      .bind(photoId)
+      .run()
     if (!del.success) return c.json({ error: 'Delete failed' }, 500)
     return c.json({ success: true }, 200)
   } catch (error: unknown) {

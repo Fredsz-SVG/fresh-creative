@@ -1,7 +1,11 @@
 import type { D1Database } from '@cloudflare/workers-types'
 import { Hono } from 'hono'
 import { getShowcaseFromD1, saveShowcaseToD1, type ShowcasePayload } from '../../lib/showcase-d1'
-import { getFonnteConfigFromD1, saveFonnteConfigToD1, type FonnteConfigPayload } from '../../lib/fonnte-config-d1'
+import {
+  getFonnteConfigFromD1,
+  saveFonnteConfigToD1,
+  type FonnteConfigPayload,
+} from '../../lib/fonnte-config-d1'
 import { getSupabaseClient } from '../../lib/supabase'
 import { getRole } from '../../lib/auth'
 import { ensureUserInD1, honoEnvForSupabasePublicSync } from '../../lib/d1-users'
@@ -32,7 +36,10 @@ function requireDb(c: { env: unknown }): D1Database | null {
 // GET /api/admin/showcase
 adminShowcase.get('/', async (c) => {
   const supabase = getSupabaseClient(c)
-  const { data: { user }, error: authError } = await supabase.auth.getUser()
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser()
   if (authError || !user) return c.json({ error: 'Unauthorized' }, 401)
 
   const db = requireDb(c)
@@ -40,10 +47,7 @@ adminShowcase.get('/', async (c) => {
   await ensureUserInD1(db, user, honoEnvForSupabasePublicSync(c.env))
   if ((await getRole(c, user)) !== 'admin') return c.json({ error: 'Forbidden' }, 403)
   try {
-    const [showcase, fonnte] = await Promise.all([
-      getShowcaseFromD1(db),
-      getFonnteConfigFromD1(db),
-    ])
+    const [showcase, fonnte] = await Promise.all([getShowcaseFromD1(db), getFonnteConfigFromD1(db)])
     return c.json({ ...showcase, ...fonnte })
   } catch {
     return c.json({ error: 'Failed to load showcase' }, 500)
@@ -53,7 +57,10 @@ adminShowcase.get('/', async (c) => {
 // PUT /api/admin/showcase
 adminShowcase.put('/', async (c) => {
   const supabase = getSupabaseClient(c)
-  const { data: { user }, error: authError } = await supabase.auth.getUser()
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser()
   if (authError || !user) return c.json({ error: 'Unauthorized' }, 401)
 
   const db = requireDb(c)
@@ -62,7 +69,7 @@ adminShowcase.put('/', async (c) => {
   if ((await getRole(c, user)) !== 'admin') return c.json({ error: 'Forbidden' }, 403)
 
   const body = await c.req.json().catch(() => ({}))
-  
+
   // Showcase payload
   const albumPreviews = Array.isArray(body?.albumPreviews)
     ? body.albumPreviews
@@ -79,9 +86,10 @@ adminShowcase.put('/', async (c) => {
           link: normalizeShowcaseLink(x.link),
         }))
     : []
-  const flipbookPreviewUrl = typeof body?.flipbookPreviewUrl === 'string'
-    ? normalizeShowcaseLink(body.flipbookPreviewUrl)
-    : ''
+  const flipbookPreviewUrl =
+    typeof body?.flipbookPreviewUrl === 'string'
+      ? normalizeShowcaseLink(body.flipbookPreviewUrl)
+      : ''
   const showcasePayload: ShowcasePayload = { albumPreviews, flipbookPreviewUrl }
 
   // Fonnte config payload

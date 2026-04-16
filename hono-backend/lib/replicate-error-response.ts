@@ -83,7 +83,10 @@ export function respondWithReplicateFriendlyError(
   }
 
   if (!String(message ?? '').trim()) {
-    return c.json({ ok: false, error: 'Layanan AI mengembalikan error tanpa detail. Coba lagi.' }, 502)
+    return c.json(
+      { ok: false, error: 'Layanan AI mengembalikan error tanpa detail. Coba lagi.' },
+      502
+    )
   }
 
   // Bukan Replicate: sering error Supabase/D1/jaringan — tetap JSON jelas, hindari 500 generik tanpa isi.

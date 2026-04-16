@@ -20,15 +20,17 @@ joinRequestsRequestId.patch('/', async (c) => {
     const db = getD1(c)
     if (!db) return c.json({ error: 'Database not configured' }, 503)
 
-    const { data: { user } } = await supabase.auth.getUser()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
     if (!user) {
       return c.json({ error: 'Unauthorized' }, 401)
     }
 
     const album = await db
-      .prepare(`SELECT user_id FROM albums WHERE id = ?`)
+      .prepare(`SELECT user_id, individual_payments_enabled FROM albums WHERE id = ?`)
       .bind(albumId)
-      .first<{ user_id: string }>()
+      .first<{ user_id: string; individual_payments_enabled?: number }>()
     if (!album) return c.json({ error: 'Album tidak ditemukan' }, 404)
     const isOwner = album.user_id === user.id
     if (!isOwner) {
@@ -81,10 +83,13 @@ joinRequestsRequestId.patch('/', async (c) => {
         }
 
         const accessId = crypto.randomUUID()
+        const hasPaid = album.individual_payments_enabled ? 0 : 1
+        const pStatus = album.individual_payments_enabled ? 'unpaid' : 'paid'
+
         const ins = await db
           .prepare(
-            `INSERT INTO album_class_access (id, album_id, class_id, user_id, student_name, email, status, photos, created_at, updated_at)
-             VALUES (?, ?, ?, ?, ?, ?, 'approved', '[]', datetime('now'), datetime('now'))`
+            `INSERT INTO album_class_access (id, album_id, class_id, user_id, student_name, email, status, photos, has_paid, payment_status, created_at, updated_at) 
+             VALUES (?, ?, ?, ?, ?, ?, 'approved', '[]', ?, ?, datetime('now'), datetime('now'))`
           )
           .bind(
             accessId,
@@ -92,7 +97,9 @@ joinRequestsRequestId.patch('/', async (c) => {
             assigned_class_id,
             joinRequest.user_id,
             joinRequest.student_name,
-            joinRequest.email ?? null
+            joinRequest.email ?? null,
+            hasPaid,
+            pStatus
           )
           .run()
 

@@ -5,7 +5,7 @@ import { AlertCircle, CheckCircle2, Info, Loader2, TriangleAlert } from 'lucide-
 import { AppToast, subscribeToToasts } from '@/lib/toast'
 
 const BASE_CLASS =
-  'w-full border-4 border-slate-900 dark:border-slate-700 rounded-2xl md:rounded-3xl shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] md:shadow-[4px_4px_0_0_#0f172a] dark:md:shadow-[4px_4px_0_0_#334155] px-4 py-3 md:px-6 md:py-4 font-black text-xs md:text-sm animate-bounce-subtle'
+  'w-full border-2 border-slate-200 dark:border-slate-700 rounded-2xl md:rounded-3xl shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] md:shadow-[4px_4px_0_0_#334155] dark:md:shadow-[4px_4px_0_0_#334155] px-4 py-3 md:px-6 md:py-4 font-black text-xs md:text-sm animate-bounce-subtle'
 
 function toastColorClass(type: AppToast['type']) {
   if (type === 'success') return 'bg-emerald-400 dark:bg-emerald-600 text-slate-900 dark:text-white'

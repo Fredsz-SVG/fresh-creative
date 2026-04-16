@@ -14,7 +14,9 @@ albumCoverVideoRoute.post('/', async (c) => {
   const bucket = getAssets(c)
   if (!db) return c.json({ error: 'Database not configured' }, 503)
   if (!bucket) return c.json({ error: 'Storage not configured' }, 503)
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   if (!user) return c.json({ error: 'Unauthorized' }, 401)
 
   const albumId = c.req.param('id')
@@ -57,7 +59,10 @@ albumCoverVideoRoute.post('/', async (c) => {
   const relPath = `${albumId}/cover-video.${safeExt}`
 
   try {
-    await putAlbumPhoto(bucket, relPath, fileData, { contentType: mimetype, cacheControl: 'public, max-age=3600' })
+    await putAlbumPhoto(bucket, relPath, fileData, {
+      contentType: mimetype,
+      cacheControl: 'public, max-age=3600',
+    })
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : String(e)
     return c.json({ error: msg || 'Upload video sampul gagal' }, 500)
@@ -78,7 +83,9 @@ albumCoverVideoRoute.delete('/', async (c) => {
   const supabase = getSupabaseClient(c)
   const db = getD1(c)
   if (!db) return c.json({ error: 'Database not configured' }, 503)
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   if (!user) return c.json({ error: 'Unauthorized' }, 401)
 
   const albumId = c.req.param('id')

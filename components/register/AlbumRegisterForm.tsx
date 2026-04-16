@@ -174,7 +174,7 @@ export default function AlbumRegisterForm({ albumId: albumIdProp, token, loginRe
   if (inviteError) {
     return (
       <div className="fixed inset-0 h-[100dvh] bg-slate-100 dark:bg-slate-950 flex items-center justify-center p-4 overflow-hidden transition-colors duration-500">
-        <div className="text-center p-8 bg-white dark:bg-slate-900 border-4 border-slate-900 dark:border-white rounded-[2rem] shadow-[8px_8px_0_0_#000] dark:shadow-[#a3e635] max-w-sm w-full">
+        <div className="text-center p-8 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-white rounded-[2rem] shadow-[8px_8px_0_0_#000] dark:shadow-[#a3e635] max-w-sm w-full">
           <p className="font-general text-red-600 dark:text-red-400 font-black mb-6 uppercase tracking-tight">
             {inviteError === 'Invite expired'
               ? 'Link undangan sudah kadaluarsa.'
@@ -195,7 +195,7 @@ export default function AlbumRegisterForm({ albumId: albumIdProp, token, loginRe
     return (
       <div className="fixed inset-0 h-[100dvh] bg-slate-100 dark:bg-slate-950 flex items-center justify-center p-4 overflow-hidden transition-colors duration-500">
         <div className="flex flex-col items-center gap-4">
-          <div className="h-12 w-12 border-4 border-slate-900 dark:border-white border-t-lime-500 animate-spin rounded-full shadow-[4px_4px_0_0_#000] dark:shadow-[#a3e635]" />
+          <div className="h-12 w-12 border-2 border-slate-200 dark:border-white border-t-lime-500 animate-spin rounded-full shadow-[4px_4px_0_0_#000] dark:shadow-[#a3e635]" />
           <p className="font-general font-black uppercase tracking-widest text-slate-900 dark:text-white">Memuat Data...</p>
         </div>
       </div>
@@ -205,8 +205,8 @@ export default function AlbumRegisterForm({ albumId: albumIdProp, token, loginRe
   if (success) {
     return (
       <div className="fixed inset-0 h-[100dvh] bg-slate-100 dark:bg-slate-950 flex items-center justify-center p-4 overflow-hidden transition-colors duration-500">
-        <div className="bg-white dark:bg-slate-900 border-4 border-slate-900 dark:border-white rounded-[2rem] p-8 max-w-md w-full text-center shadow-[10px_10px_0_0_#000] dark:shadow-[#a3e635]">
-          <div className="w-20 h-20 bg-lime-400 border-4 border-slate-900 dark:border-white rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-[4px_4px_0_0_#000] -rotate-3 transition-transform hover:rotate-0">
+        <div className="bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-white rounded-[2rem] p-8 max-w-md w-full text-center shadow-[10px_10px_0_0_#000] dark:shadow-[#a3e635]">
+          <div className="w-20 h-20 bg-lime-400 border-2 border-slate-200 dark:border-white rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-[4px_4px_0_0_#000] -rotate-3 transition-transform hover:rotate-0">
             <Check className="w-10 h-10 text-slate-900" strokeWidth={4} />
           </div>
           <h1 className="text-3xl font-black text-slate-900 dark:text-white mb-3 uppercase tracking-tight">Pendaftaran Berhasil!</h1>
@@ -215,7 +215,7 @@ export default function AlbumRegisterForm({ albumId: albumIdProp, token, loginRe
           </p>
           <button
             onClick={() => router.push('/')}
-            className="w-full px-6 py-4 rounded-2xl bg-lime-400 text-slate-900 border-4 border-slate-900 font-black uppercase tracking-widest shadow-[6px_6px_0_0_#000] hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all"
+            className="w-full px-6 py-4 rounded-2xl bg-lime-400 text-slate-900 border-2 border-slate-200 font-black uppercase tracking-widest shadow-[6px_6px_0_0_#000] hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all"
           >
             Beranda
           </button>
@@ -227,12 +227,12 @@ export default function AlbumRegisterForm({ albumId: albumIdProp, token, loginRe
   return (
     <div className="fixed inset-0 h-[100dvh] bg-slate-100 dark:bg-slate-950 overflow-hidden flex flex-col transition-colors duration-500">
       <div className="flex-1 min-h-0 overflow-y-auto overscroll-none flex items-center justify-center p-3 sm:p-4">
-        <div className="bg-white dark:bg-slate-900 border-4 border-slate-900 dark:border-white rounded-[1.5rem] sm:rounded-[2rem] p-5 sm:p-8 max-w-md w-full relative my-auto shadow-[10px_10px_0_0_#000] dark:shadow-[10px_10px_0_0_#a3e635]">
+        <div className="bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-white rounded-[1.5rem] sm:rounded-[2rem] p-5 sm:p-8 max-w-md w-full relative my-auto shadow-[10px_10px_0_0_#000] dark:shadow-[10px_10px_0_0_#a3e635]">
           {onClose && (
             <button
               type="button"
               onClick={onClose}
-              className="absolute top-3 right-3 sm:top-5 sm:right-5 p-1.5 bg-slate-100 dark:bg-slate-800 border-2 border-slate-900 dark:border-white rounded-lg text-slate-900 dark:text-white hover:bg-red-400 dark:hover:bg-red-500 transition-colors shadow-[2px_2px_0_0_#000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none"
+              className="absolute top-3 right-3 sm:top-5 sm:right-5 p-1.5 bg-slate-100 dark:bg-slate-800 border-2 border-slate-200 dark:border-white rounded-lg text-slate-900 dark:text-white hover:bg-red-400 dark:hover:bg-red-500 transition-colors shadow-[2px_2px_0_0_#000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none"
               aria-label="Tutup"
             >
               <X className="w-4 h-4" strokeWidth={3} />
@@ -249,7 +249,7 @@ export default function AlbumRegisterForm({ albumId: albumIdProp, token, loginRe
 
             {stats && stats.limit_count > 0 && (
               <div className="mt-3 flex items-center">
-                 <div className="px-2.5 py-0.5 bg-cyan-400 border-2 border-slate-900 dark:border-white rounded-lg shadow-[2px_2px_0_0_#000] -rotate-1">
+                 <div className="px-2.5 py-0.5 bg-cyan-400 border-2 border-slate-200 dark:border-white rounded-lg shadow-[2px_2px_0_0_#000] -rotate-1">
                    <span className="text-[9px] font-black text-slate-900 uppercase tracking-wider">
                      {stats.approved_count}/{stats.limit_count} Terdaftar
                    </span>
@@ -282,7 +282,7 @@ export default function AlbumRegisterForm({ albumId: albumIdProp, token, loginRe
                   value={formData.student_name}
                   onChange={(e) => setFormData({ ...formData, student_name: e.target.value })}
                   placeholder="Nama Lengkap"
-                  className="w-full px-4 py-2.5 text-sm font-bold border-[3px] border-slate-900 dark:border-white bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:shadow-[4px_4px_0_0_#22c55e] dark:focus:shadow-[#22c55e] transition-all rounded-xl"
+                  className="w-full px-4 py-2.5 text-sm font-bold border-2 border-slate-200 dark:border-white bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:shadow-[4px_4px_0_0_#22c55e] dark:focus:shadow-[#22c55e] transition-all rounded-xl"
                   required
                 />
               </div>
@@ -297,7 +297,7 @@ export default function AlbumRegisterForm({ albumId: albumIdProp, token, loginRe
                     <button
                       type="button"
                       onClick={() => setClassDropdownOpen((o) => !o)}
-                      className="w-full flex items-center justify-between gap-4 px-4 py-2.5 text-sm font-black border-[3px] border-slate-900 dark:border-white bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white rounded-xl focus:outline-none focus:shadow-[4px_4px_0_0_#22c55e] transition-all"
+                      className="w-full flex items-center justify-between gap-4 px-4 py-2.5 text-sm font-black border-2 border-slate-200 dark:border-white bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white rounded-xl focus:outline-none focus:shadow-[4px_4px_0_0_#22c55e] transition-all"
                     >
                       <span className="truncate">{formData.class_name || '-- PILIH KELAS --'}</span>
                       <ChevronDown className={`w-4 h-4 shrink-0 transition-transform ${classDropdownOpen ? 'rotate-180' : ''}`} strokeWidth={3} />
@@ -305,7 +305,7 @@ export default function AlbumRegisterForm({ albumId: albumIdProp, token, loginRe
                     {classDropdownOpen && (
                       <>
                         <div className="fixed inset-0 z-[90] bg-black/5" onClick={() => setClassDropdownOpen(false)} />
-                        <div className="absolute left-0 right-0 top-full z-[100] mt-1 w-full rounded-xl bg-white dark:bg-slate-800 border-[3px] border-slate-900 dark:border-white overflow-hidden">
+                        <div className="absolute left-0 right-0 top-full z-[100] mt-1 w-full rounded-xl bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-white overflow-hidden">
                           <ul className="max-h-52 overflow-y-auto no-scrollbar p-1.5">
                             {albumClasses.map((cls) => (
                               <li key={cls.id}>
@@ -332,7 +332,7 @@ export default function AlbumRegisterForm({ albumId: albumIdProp, token, loginRe
                     value={formData.class_name}
                     onChange={(e) => setFormData({ ...formData, class_name: e.target.value })}
                     placeholder="XII IPA 1"
-                    className="w-full px-4 py-2.5 text-sm font-bold border-[3px] border-slate-900 dark:border-white bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:shadow-[4px_4px_0_0_#22c55e] transition-all rounded-xl"
+                    className="w-full px-4 py-2.5 text-sm font-bold border-2 border-slate-200 dark:border-white bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:shadow-[4px_4px_0_0_#22c55e] transition-all rounded-xl"
                     required
                   />
                 )}
@@ -348,7 +348,7 @@ export default function AlbumRegisterForm({ albumId: albumIdProp, token, loginRe
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     placeholder="nama@email.com"
-                    className="w-full px-4 py-2.5 text-sm font-bold border-[3px] border-slate-900 dark:border-white bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:shadow-[4px_4px_0_0_#22c55e] transition-all rounded-xl"
+                    className="w-full px-4 py-2.5 text-sm font-bold border-2 border-slate-200 dark:border-white bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:shadow-[4px_4px_0_0_#22c55e] transition-all rounded-xl"
                     required
                   />
                 </div>
@@ -362,7 +362,7 @@ export default function AlbumRegisterForm({ albumId: albumIdProp, token, loginRe
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                     placeholder="08123xxx"
-                    className="w-full px-4 py-2.5 text-sm font-bold border-[3px] border-slate-900 dark:border-white bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:shadow-[4px_4px_0_0_#22c55e] transition-all rounded-xl"
+                    className="w-full px-4 py-2.5 text-sm font-bold border-2 border-slate-200 dark:border-white bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:shadow-[4px_4px_0_0_#22c55e] transition-all rounded-xl"
                     required
                   />
                 </div>
@@ -371,7 +371,7 @@ export default function AlbumRegisterForm({ albumId: albumIdProp, token, loginRe
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full h-12 sm:h-14 mt-2 rounded-xl bg-lime-400 text-slate-900 border-[3px] border-slate-900 dark:border-white font-black uppercase text-sm sm:text-base tracking-widest shadow-[5px_5px_0_0_#000] dark:shadow-[5px_5px_0_0_#a3e635] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all flex items-center justify-center gap-2 group disabled:opacity-50 disabled:translate-x-0 disabled:translate-y-0 active:scale-95"
+                className="w-full h-12 sm:h-14 mt-2 rounded-xl bg-lime-400 text-slate-900 border-2 border-slate-200 dark:border-white font-black uppercase text-sm sm:text-base tracking-widest shadow-[5px_5px_0_0_#000] dark:shadow-[5px_5px_0_0_#a3e635] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all flex items-center justify-center gap-2 group disabled:opacity-50 disabled:translate-x-0 disabled:translate-y-0 active:scale-95"
               >
                 {submitting ? (
                   <Loader2 className="w-6 h-6 animate-spin" />

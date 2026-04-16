@@ -20,9 +20,13 @@ export async function getShowcaseFromD1(db: D1Database): Promise<ShowcasePayload
   if (!row?.value) return defaultShowcase
   try {
     const raw = JSON.parse(row.value) as Record<string, unknown>
-    const albumPreviews = Array.isArray(raw.albumPreviews) ? raw.albumPreviews : defaultShowcase.albumPreviews
+    const albumPreviews = Array.isArray(raw.albumPreviews)
+      ? raw.albumPreviews
+      : defaultShowcase.albumPreviews
     const flipbookPreviewUrl =
-      typeof raw.flipbookPreviewUrl === 'string' ? raw.flipbookPreviewUrl : defaultShowcase.flipbookPreviewUrl
+      typeof raw.flipbookPreviewUrl === 'string'
+        ? raw.flipbookPreviewUrl
+        : defaultShowcase.flipbookPreviewUrl
     return {
       albumPreviews: albumPreviews as ShowcasePayload['albumPreviews'],
       flipbookPreviewUrl,

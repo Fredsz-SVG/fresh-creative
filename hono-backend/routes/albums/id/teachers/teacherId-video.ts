@@ -33,7 +33,10 @@ teacherVideo.post('/', async (c) => {
       return c.json({ error: 'Video maksimal 20MB' }, 413)
     }
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser()
     if (authError || !user) {
       return c.json({ error: 'Unauthorized' }, 401)
     }
@@ -92,7 +95,10 @@ teacherVideo.post('/', async (c) => {
     const fileBuffer = await file.arrayBuffer()
 
     try {
-      await putAlbumPhoto(bucket, relPath, fileBuffer, { contentType: mimetype, cacheControl: 'public, max-age=3600' })
+      await putAlbumPhoto(bucket, relPath, fileBuffer, {
+        contentType: mimetype,
+        cacheControl: 'public, max-age=3600',
+      })
     } catch (e: unknown) {
       console.error('Storage upload error:', e)
       return c.json({ error: e instanceof Error ? e.message : 'Upload failed' }, 500)
@@ -101,7 +107,9 @@ teacherVideo.post('/', async (c) => {
     const publicUrl = publicAlbumAssetUrl(c, relPath)
 
     const upd = await db
-      .prepare(`UPDATE album_teachers SET video_url = ?, updated_at = datetime('now') WHERE id = ? AND album_id = ?`)
+      .prepare(
+        `UPDATE album_teachers SET video_url = ?, updated_at = datetime('now') WHERE id = ? AND album_id = ?`
+      )
       .bind(publicUrl, teacherId, albumId)
       .run()
 
@@ -126,7 +134,10 @@ teacherVideo.delete('/', async (c) => {
     const albumId = c.req.param('id')
     const teacherId = c.req.param('teacherId')
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser()
     if (authError || !user) {
       return c.json({ error: 'Unauthorized' }, 401)
     }
@@ -177,7 +188,9 @@ teacherVideo.delete('/', async (c) => {
     }
 
     const upd = await db
-      .prepare(`UPDATE album_teachers SET video_url = NULL, updated_at = datetime('now') WHERE id = ? AND album_id = ?`)
+      .prepare(
+        `UPDATE album_teachers SET video_url = NULL, updated_at = datetime('now') WHERE id = ? AND album_id = ?`
+      )
       .bind(teacherId, albumId)
       .run()
 

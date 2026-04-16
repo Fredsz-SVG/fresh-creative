@@ -1,0 +1,1 @@
+const content = require("fs").readFileSync("app/admin/showcase/page.tsx", "utf8"); console.log(content.match(/border-4/g)); console.log(content.match(/shadow-.*#0f172a/g)); console.log(content.match(/text-3xl/g));

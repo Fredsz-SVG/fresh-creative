@@ -12,7 +12,9 @@ albumClasses.get('/', async (c) => {
   const db = getD1(c)
   if (!db) return c.json({ error: 'Database not configured' }, 503)
 
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   if (!user) return c.json({ error: 'Unauthorized' }, 401)
   const albumId = c.req.param('id')
   if (!albumId) return c.json({ error: 'Album ID required' }, 400)
@@ -59,7 +61,9 @@ albumClasses.post('/', async (c) => {
   const db = getD1(c)
   if (!db) return c.json({ error: 'Database not configured' }, 503)
 
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   if (!user) return c.json({ error: 'Unauthorized' }, 401)
   const albumId = c.req.param('id')
   if (!albumId) return c.json({ error: 'Album ID required' }, 400)
@@ -75,7 +79,7 @@ albumClasses.post('/', async (c) => {
     return c.json({ error: 'Only owner can add class' }, 403)
   }
 
-  const body = await c.req.json().catch(() => ({})) as Record<string, unknown>
+  const body = (await c.req.json().catch(() => ({}))) as Record<string, unknown>
   const name = typeof body?.name === 'string' ? body.name.trim() : ''
   if (!name) return c.json({ error: 'Class name is required' }, 400)
 

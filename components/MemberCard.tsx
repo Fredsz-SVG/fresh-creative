@@ -237,19 +237,19 @@ export default function MemberCard({
       {/* Moderation / Delete Confirmation Modal */}
       {typeof document !== 'undefined' && localConfirm && createPortal(
         <div className="fixed inset-0 bg-slate-900/40 dark:bg-black/50 backdrop-blur-md flex items-center justify-center z-[100] p-4" onClick={() => setLocalConfirm(null)}>
-          <div className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-[32px] p-6 sm:p-8 max-w-sm w-full shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] text-center transform transition-all animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-[32px] p-6 sm:p-8 max-w-sm w-full shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] text-center transform transition-all animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
             <h3 className="text-xl font-black text-slate-900 dark:text-white mb-2 uppercase tracking-tight">{localConfirm.title}</h3>
             <p className="text-sm font-bold text-slate-500 dark:text-slate-400 mb-6">{localConfirm.message}</p>
             <div className="flex gap-3">
               <button
                 onClick={() => setLocalConfirm(null)}
-                className="flex-1 py-3.5 rounded-xl bg-slate-100 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 text-slate-900 dark:text-white text-xs font-black uppercase tracking-widest shadow-[1px_1px_0_0_rgba(15,23,42,0.13)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.36)] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
+                className="flex-1 py-3.5 rounded-xl bg-slate-100 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white text-xs font-black uppercase tracking-widest shadow-[1px_1px_0_0_rgba(15,23,42,0.13)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.36)] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
               >
                 Batal
               </button>
               <button
                 onClick={() => { localConfirm.onConfirm(); setLocalConfirm(null) }}
-                className="flex-1 py-3.5 rounded-xl bg-red-500 text-white border-2 border-slate-900 dark:border-slate-700 text-xs font-black uppercase tracking-widest shadow-[1px_1px_0_0_rgba(15,23,42,0.13)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.36)] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
+                className="flex-1 py-3.5 rounded-xl bg-red-500 text-white border-2 border-slate-200 dark:border-slate-700 text-xs font-black uppercase tracking-widest shadow-[1px_1px_0_0_rgba(15,23,42,0.13)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.36)] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
               >
                 Hapus
               </button>
@@ -272,7 +272,7 @@ export default function MemberCard({
         >
           {/* ================= FRONT SIDE ================= */}
           <div
-            className="relative w-full h-full rounded-2xl border-4 border-slate-900 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] group-hover:shadow-none group-hover:translate-x-1 group-hover:translate-y-1 transition-[box-shadow,transform] duration-300 flex flex-col overflow-hidden"
+            className="relative w-full h-full rounded-2xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] group-hover:shadow-none group-hover:translate-x-1 group-hover:translate-y-1 transition-[box-shadow,transform] duration-300 flex flex-col overflow-hidden"
             style={{
               backfaceVisibility: 'hidden',
               WebkitBackfaceVisibility: 'hidden',
@@ -283,7 +283,7 @@ export default function MemberCard({
             }}
           >
             {/* Photo Section */}
-            <div className="relative aspect-[4/5] overflow-hidden bg-slate-50 dark:bg-slate-800 flex-shrink-0 border-b-4 border-slate-900 dark:border-slate-700">
+            <div className="relative aspect-[4/5] overflow-hidden bg-slate-50 dark:bg-slate-800 flex-shrink-0 border-b-4 border-slate-200 dark:border-slate-700">
               {photos.length > 0 || firstPhoto ? (
                 <FastImage
                   src={photos.length > 0 ? photos[0].file_url : firstPhoto || ''}
@@ -309,7 +309,7 @@ export default function MemberCard({
                 <button
                   type="button"
                   onClick={(e) => { e.stopPropagation(); if (onPlayVideo) onPlayVideo(member.video_url!) }}
-                  className="absolute bottom-3 right-3 w-10 h-10 rounded-full bg-indigo-400 dark:bg-indigo-600 text-white border-2 border-slate-900 dark:border-slate-600 flex items-center justify-center transition-all shadow-[1px_1px_0_0_rgba(15,23,42,0.13)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.36)] active:shadow-none active:translate-x-0.5 active:translate-y-0.5"
+                  className="absolute bottom-3 right-3 w-10 h-10 rounded-full bg-indigo-400 dark:bg-indigo-600 text-white border-2 border-slate-200 dark:border-slate-600 flex items-center justify-center transition-all shadow-[1px_1px_0_0_rgba(15,23,42,0.13)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.36)] active:shadow-none active:translate-x-0.5 active:translate-y-0.5"
                   title="Putar Video"
                 >
                   <Play className="w-5 h-5 ml-1" fill="currentColor" />
@@ -323,7 +323,7 @@ export default function MemberCard({
               <div className="mb-2.5 flex flex-col">
                 <h3 className="font-black text-slate-900 dark:text-white text-base leading-tight line-clamp-1 break-words pb-0.5 uppercase tracking-tight">
                   {member.student_name}
-                  {member.is_me && <span className="inline-flex items-center ml-2 px-2 py-0.5 rounded-lg text-[9px] font-black bg-emerald-400 dark:bg-emerald-600 text-slate-900 dark:text-white border-2 border-slate-900 dark:border-slate-600 shadow-[1px_1px_0_0_rgba(15,23,42,0.12)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.34)] align-middle">ANDA</span>}
+                  {member.is_me && <span className="inline-flex items-center ml-2 px-2 py-0.5 rounded-lg text-[9px] font-black bg-emerald-400 dark:bg-emerald-600 text-slate-900 dark:text-white border-2 border-slate-200 dark:border-slate-600 shadow-[1px_1px_0_0_rgba(15,23,42,0.12)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.34)] align-middle">ANDA</span>}
                 </h3>
               </div>
 
@@ -351,8 +351,8 @@ export default function MemberCard({
 
               {/* Message Block */}
               {member.message && (
-                <div className="mt-3.5 p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 relative flex-1 flex flex-col min-h-0 shadow-[1px_1px_0_0_rgba(15,23,42,0.1)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.3)]">
-                  <Quote className="absolute -top-2 -left-2 w-5 h-5 text-slate-900 dark:text-slate-300 bg-white dark:bg-slate-800 rounded-full p-1 border-2 border-slate-900 dark:border-slate-600" />
+                <div className="mt-3.5 p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-600 relative flex-1 flex flex-col min-h-0 shadow-[1px_1px_0_0_rgba(15,23,42,0.1)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.3)]">
+                  <Quote className="absolute -top-2 -left-2 w-5 h-5 text-slate-900 dark:text-slate-300 bg-white dark:bg-slate-800 rounded-full p-1 border-2 border-slate-200 dark:border-slate-600" />
                   <p className="italic font-bold text-slate-600 dark:text-slate-300 leading-snug text-xs line-clamp-3 pl-1 pt-0.5">
                     "{stripQuotes(member.message)}"
                   </p>
@@ -396,11 +396,11 @@ export default function MemberCard({
               pointerEvents: isFlipped ? 'auto' : 'none',
               zIndex: isFlipped ? 1 : 0
             }}
-            className="absolute inset-0 w-full h-full flex flex-col rounded-2xl border-2 border-slate-900 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] overflow-hidden"
+            className="absolute inset-0 w-full h-full flex flex-col rounded-2xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] overflow-hidden"
           >
             {/* Header */}
-            <div className="px-4 py-3 border-b-2 border-slate-900 dark:border-slate-700 bg-amber-300 dark:bg-amber-600 flex items-center gap-3 flex-shrink-0">
-              <button type="button" className="w-8 h-8 rounded-lg border-2 border-slate-900 dark:border-slate-600 hover:bg-white/20 dark:hover:bg-slate-800/50 flex items-center justify-center bg-white dark:bg-slate-800 shadow-[1px_1px_0_0_rgba(15,23,42,0.13)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.36)] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all" onClick={onCancelEdit}>
+            <div className="px-4 py-3 border-b-2 border-slate-200 dark:border-slate-700 bg-amber-300 dark:bg-amber-600 flex items-center gap-3 flex-shrink-0">
+              <button type="button" className="w-8 h-8 rounded-lg border-2 border-slate-200 dark:border-slate-600 hover:bg-white/20 dark:hover:bg-slate-800/50 flex items-center justify-center bg-white dark:bg-slate-800 shadow-[1px_1px_0_0_rgba(15,23,42,0.13)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.36)] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all" onClick={onCancelEdit}>
                 <ChevronLeft className="w-5 h-5 text-slate-900 dark:text-white" />
               </button>
               <h3 className="text-slate-900 dark:text-white font-black text-xs uppercase tracking-widest">Edit Profil</h3>
@@ -415,7 +415,7 @@ export default function MemberCard({
                   value={editName || ''}
                   onChange={(e) => setEditName(e.target.value)}
                   placeholder="Nama Lengkap"
-                  className="w-full px-3 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-bold placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                  className="w-full px-3 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-bold placeholder:text-slate-400 dark:placeholder:text-slate-500"
                 />
               </div>
 
@@ -427,7 +427,7 @@ export default function MemberCard({
                     value={editInstagram || ''}
                     onChange={(e) => setEditInstagram(e.target.value)}
                     placeholder="@ig"
-                    className="w-full px-3 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-bold placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                    className="w-full px-3 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-bold placeholder:text-slate-400 dark:placeholder:text-slate-500"
                   />
                 </div>
               </div>
@@ -439,7 +439,7 @@ export default function MemberCard({
                   value={editTtl || ''}
                   onChange={(e) => setEditTtl(e.target.value)}
                   placeholder="Ttl (Sby, 1 Jan 2005)"
-                  className="w-full px-3 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-bold placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                  className="w-full px-3 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-bold placeholder:text-slate-400 dark:placeholder:text-slate-500"
                 />
               </div>
 
@@ -449,9 +449,9 @@ export default function MemberCard({
                 {displayPreviewPhotos.length > 0 && (
                   <div className="flex gap-3 flex-wrap mb-3">
                     {displayPreviewPhotos.map((photo, idx) => (
-                      <div key={photo.id} className="relative w-14 h-14 bg-slate-100 dark:bg-slate-800 rounded-xl flex-shrink-0 border-2 border-slate-900 dark:border-slate-600 shadow-[1px_1px_0_0_rgba(15,23,42,0.13)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.36)]">
+                      <div key={photo.id} className="relative w-14 h-14 bg-slate-100 dark:bg-slate-800 rounded-xl flex-shrink-0 border-2 border-slate-200 dark:border-slate-600 shadow-[1px_1px_0_0_rgba(15,23,42,0.13)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.36)]">
                         {photo.isPending && (
-                          <div className="absolute -top-2 -left-2 bg-emerald-400 dark:bg-emerald-600 text-slate-900 dark:text-white text-[8px] font-black px-1.5 py-0.5 rounded-lg border-2 border-slate-900 dark:border-slate-600 z-10 shadow-[1px_1px_0_0_rgba(15,23,42,0.13)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.36)] uppercase">BARU</div>
+                          <div className="absolute -top-2 -left-2 bg-emerald-400 dark:bg-emerald-600 text-slate-900 dark:text-white text-[8px] font-black px-1.5 py-0.5 rounded-lg border-2 border-slate-200 dark:border-slate-600 z-10 shadow-[1px_1px_0_0_rgba(15,23,42,0.13)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.36)] uppercase">BARU</div>
                         )}
                         <FastImage
                           src={photo.file_url}
@@ -469,7 +469,7 @@ export default function MemberCard({
                               setLocalConfirm({ title: 'Hapus Foto', message: `Hapus foto ini?`, onConfirm: () => onDeletePhoto?.(photo.id, classId, member.student_name) })
                             }
                           }}
-                          className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center shadow-[1px_1px_0_0_rgba(15,23,42,0.13)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.36)] hover:bg-red-600 transition-all z-20 border-2 border-slate-900 dark:border-slate-600 active:shadow-none active:translate-x-0.5 active:translate-y-0.5"
+                          className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center shadow-[1px_1px_0_0_rgba(15,23,42,0.13)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.36)] hover:bg-red-600 transition-all z-20 border-2 border-slate-200 dark:border-slate-600 active:shadow-none active:translate-x-0.5 active:translate-y-0.5"
                         >
                           <X className="w-3.5 h-3.5" />
                         </button>
@@ -480,18 +480,18 @@ export default function MemberCard({
 
                 {/* Pending video preview (sama seperti TeacherCard) */}
                 {pendingVideo && (
-                  <div className="flex items-center gap-3 mb-3 p-3 rounded-xl bg-sky-50 dark:bg-sky-950/50 border-2 border-slate-900 dark:border-slate-600 shadow-[1px_1px_0_0_rgba(15,23,42,0.1)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.3)]">
-                    <div className="w-10 h-10 rounded-lg bg-sky-100 dark:bg-sky-900/50 flex items-center justify-center flex-shrink-0 border-2 border-slate-900 dark:border-slate-600">
+                  <div className="flex items-center gap-3 mb-3 p-3 rounded-xl bg-sky-50 dark:bg-sky-950/50 border-2 border-slate-200 dark:border-slate-600 shadow-[1px_1px_0_0_rgba(15,23,42,0.1)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.3)]">
+                    <div className="w-10 h-10 rounded-lg bg-sky-100 dark:bg-sky-900/50 flex items-center justify-center flex-shrink-0 border-2 border-slate-200 dark:border-slate-600">
                       <Video className="w-5 h-5 text-sky-700 dark:text-sky-400" />
                     </div>
                     <span className="text-xs font-black text-slate-900 dark:text-slate-200 truncate flex-1 uppercase tracking-tight">{pendingVideo.file.name}</span>
-                    <button type="button" onClick={removePendingVideo} className="p-2 rounded-lg bg-red-100 dark:bg-red-950/50 text-red-600 dark:text-red-400 border-2 border-slate-900 dark:border-slate-600 hover:bg-red-500 hover:text-white transition-all shadow-[1px_1px_0_0_rgba(15,23,42,0.13)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.36)] active:shadow-none active:translate-x-0.5 active:translate-y-0.5">
+                    <button type="button" onClick={removePendingVideo} className="p-2 rounded-lg bg-red-100 dark:bg-red-950/50 text-red-600 dark:text-red-400 border-2 border-slate-200 dark:border-slate-600 hover:bg-red-500 hover:text-white transition-all shadow-[1px_1px_0_0_rgba(15,23,42,0.13)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.36)] active:shadow-none active:translate-x-0.5 active:translate-y-0.5">
                       <X className="w-4 h-4" strokeWidth={3} />
                     </button>
                   </div>
                 )}
                 {pendingVideo && (
-                  <div className="mb-3 rounded-xl overflow-hidden border-2 border-slate-900 dark:border-slate-600 bg-black shadow-[1px_1px_0_0_rgba(15,23,42,0.13)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.36)]">
+                  <div className="mb-3 rounded-xl overflow-hidden border-2 border-slate-200 dark:border-slate-600 bg-black shadow-[1px_1px_0_0_rgba(15,23,42,0.13)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.36)]">
                     <video src={pendingVideo.previewUrl} controls preload="metadata" className="w-full max-h-40 object-contain bg-black" playsInline />
                   </div>
                 )}
@@ -523,7 +523,7 @@ export default function MemberCard({
                   value={editVideoUrl || ''}
                   onChange={(e) => setEditVideoUrl(e.target.value)}
                   placeholder="Link YouTube"
-                  className="w-full px-3 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-bold placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                  className="w-full px-3 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-bold placeholder:text-slate-400 dark:placeholder:text-slate-500"
                 />
               </div>
 
@@ -534,25 +534,25 @@ export default function MemberCard({
                   onChange={(e) => setEditMessage(e.target.value)}
                   placeholder="Pesan / Kesan"
                   rows={2}
-                  className="w-full px-3 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-bold placeholder:text-slate-400 dark:placeholder:text-slate-500 resize-none"
+                  className="w-full px-3 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-bold placeholder:text-slate-400 dark:placeholder:text-slate-500 resize-none"
                 />
               </div>
             </div>
 
             {/* Editing Action Buttons */}
-            <div className="px-4 py-3 bg-white dark:bg-slate-900 border-t-2 border-slate-900 dark:border-slate-700 flex gap-3 flex-shrink-0">
+            <div className="px-4 py-3 bg-white dark:bg-slate-900 border-t-2 border-slate-200 dark:border-slate-700 flex gap-3 flex-shrink-0">
               <button
                 type="button"
                 onClick={handleSave}
                 disabled={saving}
-                className="flex-[2] px-4 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest bg-indigo-500 text-white hover:bg-indigo-600 transition-all border-2 border-slate-900 dark:border-slate-600 shadow-[1px_1px_0_0_rgba(15,23,42,0.13)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.36)] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 disabled:opacity-50 flex items-center justify-center"
+                className="flex-[2] px-4 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest bg-indigo-500 text-white hover:bg-indigo-600 transition-all border-2 border-slate-200 dark:border-slate-600 shadow-[1px_1px_0_0_rgba(15,23,42,0.13)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.36)] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 disabled:opacity-50 flex items-center justify-center"
               >
                 {saving ? 'Loading...' : 'Simpan'}
               </button>
               <button
                 type="button"
                 onClick={onCancelEdit}
-                className="flex-1 px-4 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition-all border-2 border-slate-900 dark:border-slate-600 shadow-[1px_1px_0_0_rgba(15,23,42,0.13)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.36)] active:shadow-none active:translate-x-0.5 active:translate-y-0.5"
+                className="flex-1 px-4 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition-all border-2 border-slate-200 dark:border-slate-600 shadow-[1px_1px_0_0_rgba(15,23,42,0.13)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.36)] active:shadow-none active:translate-x-0.5 active:translate-y-0.5"
               >
                 Batal
               </button>
@@ -563,10 +563,10 @@ export default function MemberCard({
         {/* Form overlay when flipped: not transformed so inputs/buttons are always clickable (3D flip blocks pointer events in some browsers) */}
         {isFlipped && showFormOverlay && (
           <div
-            className="absolute inset-0 z-20 flex flex-col rounded-2xl border-2 border-slate-900 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] overflow-hidden"
+            className="absolute inset-0 z-20 flex flex-col rounded-2xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] overflow-hidden"
           >
-            <div className="px-4 py-3 border-b-2 border-slate-900 dark:border-slate-700 bg-amber-300 dark:bg-amber-600 flex items-center gap-3 flex-shrink-0">
-              <button type="button" className="w-8 h-8 rounded-lg border-2 border-slate-900 dark:border-slate-600 hover:bg-white/20 dark:hover:bg-slate-800/50 flex items-center justify-center bg-white dark:bg-slate-800 shadow-[1px_1px_0_0_rgba(15,23,42,0.13)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.36)] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all" onClick={onCancelEdit}>
+            <div className="px-4 py-3 border-b-2 border-slate-200 dark:border-slate-700 bg-amber-300 dark:bg-amber-600 flex items-center gap-3 flex-shrink-0">
+              <button type="button" className="w-8 h-8 rounded-lg border-2 border-slate-200 dark:border-slate-600 hover:bg-white/20 dark:hover:bg-slate-800/50 flex items-center justify-center bg-white dark:bg-slate-800 shadow-[1px_1px_0_0_rgba(15,23,42,0.13)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.36)] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all" onClick={onCancelEdit}>
                 <ChevronLeft className="w-5 h-5 text-slate-900 dark:text-white" />
               </button>
               <h3 className="text-slate-900 dark:text-white font-black text-xs uppercase tracking-widest">Edit Profil</h3>
@@ -579,45 +579,45 @@ export default function MemberCard({
                   value={editName || ''}
                   onChange={(e) => setEditName(e.target.value)}
                   placeholder="Nama Lengkap"
-                  className="w-full px-3 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-bold placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                  className="w-full px-3 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-bold placeholder:text-slate-400 dark:placeholder:text-slate-500"
                 />
               </div>
               <div className="grid grid-cols-2 gap-2.5">
                 <div className="col-span-2">
                   <label className="text-[10px] font-black text-slate-900 dark:text-white uppercase tracking-widest mb-1 block">Instagram</label>
-                  <input type="text" value={editInstagram || ''} onChange={(e) => setEditInstagram(e.target.value)} placeholder="@ig" className="w-full px-3 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-bold placeholder:text-slate-400 dark:placeholder:text-slate-500" />
+                  <input type="text" value={editInstagram || ''} onChange={(e) => setEditInstagram(e.target.value)} placeholder="@ig" className="w-full px-3 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-bold placeholder:text-slate-400 dark:placeholder:text-slate-500" />
                 </div>
               </div>
               <div>
                 <label className="text-[10px] font-black text-slate-900 dark:text-white uppercase tracking-widest mb-1 block">Tempat, Tanggal Lahir</label>
-                <input type="text" value={editTtl || ''} onChange={(e) => setEditTtl(e.target.value)} placeholder="Ttl (Sby, 1 Jan 2005)" className="w-full px-3 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-bold placeholder:text-slate-400 dark:placeholder:text-slate-500" />
+                <input type="text" value={editTtl || ''} onChange={(e) => setEditTtl(e.target.value)} placeholder="Ttl (Sby, 1 Jan 2005)" className="w-full px-3 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-bold placeholder:text-slate-400 dark:placeholder:text-slate-500" />
               </div>
               <div className="pt-1">
                 <label className="text-[10px] font-black text-slate-900 dark:text-white uppercase tracking-widest mb-2 block">Foto Galeri (Maks 4)</label>
                 {displayPreviewPhotos.length > 0 && (
                   <div className="flex gap-3 flex-wrap mb-3">
                     {displayPreviewPhotos.map((photo, idx) => (
-                      <div key={photo.id} className="relative w-14 h-14 bg-slate-100 dark:bg-slate-800 rounded-xl flex-shrink-0 border-2 border-slate-900 dark:border-slate-600 shadow-[1px_1px_0_0_rgba(15,23,42,0.13)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.36)]">
-                        {photo.isPending && <div className="absolute -top-2 -left-2 bg-emerald-400 dark:bg-emerald-600 text-slate-900 dark:text-white text-[8px] font-black px-1.5 py-0.5 rounded-lg border-2 border-slate-900 dark:border-slate-600 z-10 shadow-[1px_1px_0_0_rgba(15,23,42,0.13)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.36)] uppercase">BARU</div>}
+                      <div key={photo.id} className="relative w-14 h-14 bg-slate-100 dark:bg-slate-800 rounded-xl flex-shrink-0 border-2 border-slate-200 dark:border-slate-600 shadow-[1px_1px_0_0_rgba(15,23,42,0.13)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.36)]">
+                        {photo.isPending && <div className="absolute -top-2 -left-2 bg-emerald-400 dark:bg-emerald-600 text-slate-900 dark:text-white text-[8px] font-black px-1.5 py-0.5 rounded-lg border-2 border-slate-200 dark:border-slate-600 z-10 shadow-[1px_1px_0_0_rgba(15,23,42,0.13)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.36)] uppercase">BARU</div>}
                         <FastImage src={photo.file_url} alt={`preview-${idx}`} className="w-full h-full object-cover rounded-lg cursor-pointer hover:opacity-80 transition-opacity" onClick={() => { if (onOpenGallery) onOpenGallery(classId, member.student_name) }} />
-                        <button type="button" onClick={(e) => { e.stopPropagation(); if (photo.isPending) removePendingPhoto(idx - basePhotos.length); else setLocalConfirm({ title: 'Hapus Foto', message: 'Hapus foto ini?', onConfirm: () => onDeletePhoto?.(photo.id, classId, member.student_name) }) }} className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center shadow-[1px_1px_0_0_rgba(15,23,42,0.13)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.36)] hover:bg-red-600 transition-all z-20 border-2 border-slate-900 dark:border-slate-600 active:shadow-none active:translate-x-0.5 active:translate-y-0.5"><X className="w-3.5 h-3.5" /></button>
+                        <button type="button" onClick={(e) => { e.stopPropagation(); if (photo.isPending) removePendingPhoto(idx - basePhotos.length); else setLocalConfirm({ title: 'Hapus Foto', message: 'Hapus foto ini?', onConfirm: () => onDeletePhoto?.(photo.id, classId, member.student_name) }) }} className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center shadow-[1px_1px_0_0_rgba(15,23,42,0.13)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.36)] hover:bg-red-600 transition-all z-20 border-2 border-slate-200 dark:border-slate-600 active:shadow-none active:translate-x-0.5 active:translate-y-0.5"><X className="w-3.5 h-3.5" /></button>
                       </div>
                     ))}
                   </div>
                 )}
                 {pendingVideo && (
-                  <div className="flex items-center gap-3 mb-3 p-3 rounded-xl bg-sky-50 dark:bg-sky-950/50 border-2 border-slate-900 dark:border-slate-600 shadow-[1px_1px_0_0_rgba(15,23,42,0.1)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.3)]">
-                    <div className="w-10 h-10 rounded-lg bg-sky-100 dark:bg-sky-900/50 flex items-center justify-center flex-shrink-0 border-2 border-slate-900 dark:border-slate-600">
+                  <div className="flex items-center gap-3 mb-3 p-3 rounded-xl bg-sky-50 dark:bg-sky-950/50 border-2 border-slate-200 dark:border-slate-600 shadow-[1px_1px_0_0_rgba(15,23,42,0.1)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.3)]">
+                    <div className="w-10 h-10 rounded-lg bg-sky-100 dark:bg-sky-900/50 flex items-center justify-center flex-shrink-0 border-2 border-slate-200 dark:border-slate-600">
                       <Video className="w-5 h-5 text-sky-700 dark:text-sky-400" />
                     </div>
                     <span className="text-xs font-black text-slate-900 dark:text-slate-200 truncate flex-1 uppercase tracking-tight">{pendingVideo.file.name}</span>
-                    <button type="button" onClick={removePendingVideo} className="p-2 rounded-lg bg-red-100 dark:bg-red-950/50 text-red-600 dark:text-red-400 border-2 border-slate-900 dark:border-slate-600 hover:bg-red-500 hover:text-white transition-all shadow-[1px_1px_0_0_rgba(15,23,42,0.13)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.36)] active:shadow-none active:translate-x-0.5 active:translate-y-0.5">
+                    <button type="button" onClick={removePendingVideo} className="p-2 rounded-lg bg-red-100 dark:bg-red-950/50 text-red-600 dark:text-red-400 border-2 border-slate-200 dark:border-slate-600 hover:bg-red-500 hover:text-white transition-all shadow-[1px_1px_0_0_rgba(15,23,42,0.13)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.36)] active:shadow-none active:translate-x-0.5 active:translate-y-0.5">
                       <X className="w-4 h-4" strokeWidth={3} />
                     </button>
                   </div>
                 )}
                 {pendingVideo && (
-                  <div className="mb-3 rounded-xl overflow-hidden border-2 border-slate-900 dark:border-slate-600 bg-black shadow-[1px_1px_0_0_rgba(15,23,42,0.13)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.36)]">
+                  <div className="mb-3 rounded-xl overflow-hidden border-2 border-slate-200 dark:border-slate-600 bg-black shadow-[1px_1px_0_0_rgba(15,23,42,0.13)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.36)]">
                     <video src={pendingVideo.previewUrl} controls preload="metadata" className="w-full max-h-40 object-contain bg-black" playsInline />
                   </div>
                 )}
@@ -628,16 +628,16 @@ export default function MemberCard({
               </div>
               <div>
                 <label className="text-[10px] font-black text-slate-900 dark:text-white uppercase tracking-widest mb-1 block">Link YouTube</label>
-                <input type="url" value={editVideoUrl || ''} onChange={(e) => setEditVideoUrl(e.target.value)} placeholder="Link YouTube" className="w-full px-3 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-bold placeholder:text-slate-400 dark:placeholder:text-slate-500" />
+                <input type="url" value={editVideoUrl || ''} onChange={(e) => setEditVideoUrl(e.target.value)} placeholder="Link YouTube" className="w-full px-3 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-bold placeholder:text-slate-400 dark:placeholder:text-slate-500" />
               </div>
               <div>
                 <label className="text-[10px] font-black text-slate-900 dark:text-white uppercase tracking-widest mb-1 block">Pesan / Kesan</label>
-                <textarea value={editMessage || ''} onChange={(e) => setEditMessage(e.target.value)} placeholder="Pesan / Kesan" rows={2} className="w-full px-3 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-bold placeholder:text-slate-400 dark:placeholder:text-slate-500 resize-none" />
+                <textarea value={editMessage || ''} onChange={(e) => setEditMessage(e.target.value)} placeholder="Pesan / Kesan" rows={2} className="w-full px-3 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-bold placeholder:text-slate-400 dark:placeholder:text-slate-500 resize-none" />
               </div>
             </div>
-            <div className="px-4 py-3 bg-white dark:bg-slate-900 border-t-2 border-slate-900 dark:border-slate-700 flex gap-3 flex-shrink-0">
-              <button type="button" onClick={handleSave} disabled={saving} className="flex-[2] px-4 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest bg-indigo-500 text-white hover:bg-indigo-600 transition-all border-2 border-slate-900 dark:border-slate-600 shadow-[1px_1px_0_0_rgba(15,23,42,0.13)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.36)] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 disabled:opacity-50 flex items-center justify-center">{saving ? 'Loading...' : 'Simpan'}</button>
-              <button type="button" onClick={onCancelEdit} className="flex-1 px-4 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition-all border-2 border-slate-900 dark:border-slate-600 shadow-[1px_1px_0_0_rgba(15,23,42,0.13)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.36)] active:shadow-none active:translate-x-0.5 active:translate-y-0.5">Batal</button>
+            <div className="px-4 py-3 bg-white dark:bg-slate-900 border-t-2 border-slate-200 dark:border-slate-700 flex gap-3 flex-shrink-0">
+              <button type="button" onClick={handleSave} disabled={saving} className="flex-[2] px-4 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest bg-indigo-500 text-white hover:bg-indigo-600 transition-all border-2 border-slate-200 dark:border-slate-600 shadow-[1px_1px_0_0_rgba(15,23,42,0.13)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.36)] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 disabled:opacity-50 flex items-center justify-center">{saving ? 'Loading...' : 'Simpan'}</button>
+              <button type="button" onClick={onCancelEdit} className="flex-1 px-4 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition-all border-2 border-slate-200 dark:border-slate-600 shadow-[1px_1px_0_0_rgba(15,23,42,0.13)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.36)] active:shadow-none active:translate-x-0.5 active:translate-y-0.5">Batal</button>
             </div>
           </div>
         )}

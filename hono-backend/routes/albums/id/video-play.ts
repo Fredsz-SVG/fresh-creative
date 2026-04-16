@@ -92,7 +92,10 @@ albumsIdVideoPlay.get('/public', async (c) => {
 
   const db = getD1(c)
   if (!db) return c.json({ error: 'Database not configured' }, 503)
-  const album = await db.prepare(`SELECT id FROM albums WHERE id = ?`).bind(albumId).first<{ id: string }>()
+  const album = await db
+    .prepare(`SELECT id FROM albums WHERE id = ?`)
+    .bind(albumId)
+    .first<{ id: string }>()
   if (!album) return c.json({ error: 'Album not found' }, 404)
 
   return streamVideoFromR2(c, videoUrl)
@@ -100,7 +103,9 @@ albumsIdVideoPlay.get('/public', async (c) => {
 
 albumsIdVideoPlay.get('/', async (c) => {
   const supabase = getSupabaseClient(c)
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   if (!user) return c.json({ error: 'Unauthorized' }, 401)
 
   const albumId = c.req.param('id')
@@ -116,7 +121,10 @@ albumsIdVideoPlay.get('/', async (c) => {
 
   const db = getD1(c)
   if (!db) return c.json({ error: 'Database not configured' }, 503)
-  const album = await db.prepare(`SELECT id FROM albums WHERE id = ?`).bind(albumId).first<{ id: string }>()
+  const album = await db
+    .prepare(`SELECT id FROM albums WHERE id = ?`)
+    .bind(albumId)
+    .first<{ id: string }>()
   if (!album) return c.json({ error: 'Album not found' }, 404)
 
   return streamVideoFromR2(c, videoUrl)

@@ -54,7 +54,9 @@ pricing.get('/', async (c) => {
   }
 
   try {
-    const { results } = await db.prepare('SELECT * FROM pricing_packages ORDER BY id').all<Record<string, unknown>>()
+    const { results } = await db
+      .prepare('SELECT * FROM pricing_packages ORDER BY id')
+      .all<Record<string, unknown>>()
     const parsed = (results ?? []).map(parsePkg)
     pricingCache = parsed
     pricingCacheExpiresAt = now + PRICING_CACHE_TTL_MS
@@ -77,9 +79,7 @@ pricing.post('/', async (c) => {
   const price_per_student = Number(body.price_per_student)
   // min_students tidak lagi wajib dari UI admin; default 0.
   const min_students =
-    body.min_students === undefined || body.min_students === null
-      ? 0
-      : Number(body.min_students)
+    body.min_students === undefined || body.min_students === null ? 0 : Number(body.min_students)
   const features = JSON.stringify(body.features ?? [])
   const flipbook_enabled = body.flipbook_enabled ? 1 : 0
   const ai_labs_features = JSON.stringify(body.ai_labs_features ?? [])
@@ -93,7 +93,16 @@ pricing.post('/', async (c) => {
         `INSERT INTO pricing_packages (id, name, price_per_student, min_students, features, is_active, flipbook_enabled, ai_labs_features, is_popular)
          VALUES (?, ?, ?, ?, ?, 1, ?, ?, ?)`
       )
-      .bind(id, name, price_per_student, min_students, features, flipbook_enabled, ai_labs_features, is_popular)
+      .bind(
+        id,
+        name,
+        price_per_student,
+        min_students,
+        features,
+        flipbook_enabled,
+        ai_labs_features,
+        is_popular
+      )
       .run()
     resetPricingCache()
     await publishRealtimeEventFromContext(c, {
@@ -102,7 +111,10 @@ pricing.post('/', async (c) => {
       payload: { action: 'create', id },
       ts: new Date().toISOString(),
     })
-    const row = await db.prepare('SELECT * FROM pricing_packages WHERE id = ?').bind(id).first<Record<string, unknown>>()
+    const row = await db
+      .prepare('SELECT * FROM pricing_packages WHERE id = ?')
+      .bind(id)
+      .first<Record<string, unknown>>()
     return c.json(row ? parsePkg(row) : { id })
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : 'error'
@@ -120,9 +132,7 @@ pricing.put('/', async (c) => {
   const price_per_student = Number(body.price_per_student)
   // min_students tidak lagi wajib dari UI admin; default 0.
   const min_students =
-    body.min_students === undefined || body.min_students === null
-      ? 0
-      : Number(body.min_students)
+    body.min_students === undefined || body.min_students === null ? 0 : Number(body.min_students)
   const features = JSON.stringify(body.features ?? [])
   const flipbook_enabled = body.flipbook_enabled ? 1 : 0
   const ai_labs_features = JSON.stringify(body.ai_labs_features ?? [])
@@ -133,7 +143,16 @@ pricing.put('/', async (c) => {
         `UPDATE pricing_packages SET name = ?, price_per_student = ?, min_students = ?, features = ?,
          flipbook_enabled = ?, ai_labs_features = ?, is_popular = ?, updated_at = datetime('now') WHERE id = ?`
       )
-      .bind(name, price_per_student, min_students, features, flipbook_enabled, ai_labs_features, is_popular, id)
+      .bind(
+        name,
+        price_per_student,
+        min_students,
+        features,
+        flipbook_enabled,
+        ai_labs_features,
+        is_popular,
+        id
+      )
       .run()
     if (r.meta.changes === 0) return c.json({ error: 'Package not found' }, 404)
     resetPricingCache()
@@ -143,7 +162,10 @@ pricing.put('/', async (c) => {
       payload: { action: 'update', id },
       ts: new Date().toISOString(),
     })
-    const row = await db.prepare('SELECT * FROM pricing_packages WHERE id = ?').bind(id).first<Record<string, unknown>>()
+    const row = await db
+      .prepare('SELECT * FROM pricing_packages WHERE id = ?')
+      .bind(id)
+      .first<Record<string, unknown>>()
     return c.json(row ? [parsePkg(row)] : [])
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : 'error'

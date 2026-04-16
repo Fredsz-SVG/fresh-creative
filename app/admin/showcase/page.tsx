@@ -123,7 +123,7 @@ export default function AdminShowcasePage() {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
           {[1, 2, 3].map(i => (
-            <div key={i} className="rounded-3xl border-4 border-slate-900 dark:border-slate-700 bg-white dark:bg-slate-900 p-6 md:p-8 shadow-[8px_8px_0_0_#0f172a] dark:shadow-[8px_8px_0_0_#334155]">
+            <div key={i} className="rounded-2xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-6 md:p-8 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]">
               <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-32 mb-4" />
               <div className="h-4 bg-slate-100 dark:bg-slate-800 rounded w-full mb-2" />
               <div className="h-4 bg-slate-100 dark:bg-slate-800 rounded w-full mb-4 max-w-[85%]" />
@@ -138,8 +138,8 @@ export default function AdminShowcasePage() {
   return (
     <div className="max-w-4xl pb-12">
       {statusBanner && (
-        <div className={`fixed bottom-4 md:bottom-8 left-1/2 -translate-x-1/2 z-[200] max-w-[90%] md:max-w-md w-full px-4 py-3 md:px-6 md:py-4 rounded-2xl md:rounded-3xl border-4 border-slate-900 dark:border-slate-700 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] md:shadow-[4px_4px_0_0_#0f172a] dark:md:shadow-[4px_4px_0_0_#334155] transform transition-all animate-bounce-subtle ${statusBanner.startsWith('error:') ? 'bg-red-400 dark:bg-red-600 text-white' : statusBanner.endsWith('-success') ? 'bg-emerald-400 dark:bg-emerald-600 text-slate-900 dark:text-white' : 'bg-amber-300 dark:bg-amber-600 text-slate-900 dark:text-white'}`}>
-          <div className="flex items-center gap-2 md:gap-3 font-black text-xs md:text-sm">
+        <div className={`fixed bottom-4 md:bottom-8 left-1/2 -translate-x-1/2 z-[200] max-w-[90%] md:max-w-md w-full px-4 py-3 md:px-6 md:py-4 rounded-2xl md:rounded-2xl border-2 border-slate-200 dark:border-slate-700 shadow-[#64748b] dark:shadow-[4px_4px_0_0_#1e293b] md:shadow-[4px_4px_0_0_#334155] dark:md:shadow-[4px_4px_0_0_#334155] transform transition-all animate-bounce-subtle ${statusBanner.startsWith('error:') ? 'bg-red-400 dark:bg-red-600 text-white' : statusBanner.endsWith('-success') ? 'bg-emerald-400 dark:bg-emerald-600 text-slate-900 dark:text-white' : 'bg-amber-300 dark:bg-amber-600 text-slate-900 dark:text-white'}`}>
+          <div className="flex items-center gap-2 md:gap-3 font-bold text-xs md:text-sm">
             {statusBanner.startsWith('saving-') ? <Loader2 className="animate-spin w-4 h-4 md:w-5 md:h-5" /> : null}
             {statusBanner === 'saving-flipbook' ? 'Menyimpan preview flipbook...' :
               statusBanner === 'saving-album' ? 'Menyimpan preview album...' :
@@ -152,23 +152,25 @@ export default function AdminShowcasePage() {
         </div>
       )}
 
-      <div className="flex flex-col gap-2 mb-10">
-        <h1 className="text-3xl font-black text-slate-900 dark:text-white sm:text-4xl tracking-tight">
-          Showcase Configuration
-        </h1>
-        <p className="text-slate-600 dark:text-slate-300 font-bold text-sm sm:text-base max-w-2xl">
-          Atur contoh preview album dan flipbook yang ditampilkan di halaman <span className="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200">/user</span>. Ini adalah data demo publik yang bisa diklik oleh user baru.
-        </p>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+        <div className="space-y-1">
+          <h1 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
+            Showcase Configuration
+          </h1>
+          <p className="text-xs md:text-sm font-medium text-slate-500 dark:text-slate-400 max-w-2xl">
+            Atur contoh preview album dan flipbook yang ditampilkan di halaman <span className="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400">/user</span>. Ini adalah data demo publik yang bisa diklik oleh user baru.
+          </p>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
         {/* Flipbook Preview */}
-        <div className="rounded-3xl border-4 border-slate-900 dark:border-slate-700 bg-emerald-50 dark:bg-slate-800 p-6 md:p-8 shadow-[8px_8px_0_0_#0f172a] dark:shadow-[8px_8px_0_0_#334155] relative overflow-hidden group">
+        <div className="rounded-2xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-6 md:p-8 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] relative overflow-hidden group">
           <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
             <BookOpen className="w-16 h-16 text-emerald-300 dark:text-emerald-900" />
           </div>
           <div className="relative">
-            <h3 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+            <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
               <BookOpen className="w-4 h-4" />
               Preview Flipbook
             </h3>
@@ -183,14 +185,14 @@ export default function AdminShowcasePage() {
                 value={flipbookPreviewUrl}
                 onChange={(e) => setFlipbookPreviewUrl(e.target.value)}
                 placeholder="/album/uuid/flipbook"
-                className="w-full px-5 py-4 text-sm font-bold rounded-2xl bg-white dark:bg-slate-900 border-4 border-slate-900 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-4 focus:ring-emerald-200 dark:focus:ring-emerald-900 transition-all shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155] focus:shadow-none"
+                className="w-full px-5 py-4 text-sm font-bold rounded-2xl bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-4 focus:ring-emerald-200 dark:focus:ring-emerald-900 transition-all shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] focus:shadow-none"
               />
             </div>
             <button
               type="button"
               onClick={() => handleSaveSection('flipbook')}
               disabled={savingSection !== null}
-              className="mt-4 w-full flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-emerald-400 dark:bg-emerald-700 text-slate-900 dark:text-white border-4 border-slate-900 dark:border-slate-700 text-sm font-black hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155] transition-all disabled:opacity-50"
+              className="mt-4 w-full flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-emerald-400 dark:bg-emerald-700 text-slate-900 dark:text-white border-2 border-slate-200 dark:border-slate-700 text-sm font-bold hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] transition-all disabled:opacity-50"
             >
               {savingSection === 'flipbook' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
               Simpan Flipbook
@@ -199,12 +201,12 @@ export default function AdminShowcasePage() {
         </div>
 
         {/* Album Carousel Preview */}
-        <div className="rounded-3xl border-4 border-slate-900 dark:border-slate-700 bg-sky-50 dark:bg-slate-800 p-6 md:p-8 shadow-[8px_8px_0_0_#0f172a] dark:shadow-[8px_8px_0_0_#334155] relative overflow-hidden group">
+        <div className="rounded-2xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-6 md:p-8 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] relative overflow-hidden group">
           <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
             <Eye className="w-16 h-16 text-sky-300 dark:text-sky-900" />
           </div>
           <div className="relative">
-            <h3 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+            <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
               <Eye className="w-4 h-4" />
               Preview Album
             </h3>
@@ -219,14 +221,14 @@ export default function AdminShowcasePage() {
                 value={albumCarouselLink}
                 onChange={(e) => setAlbumCarouselLink(e.target.value)}
                 placeholder="/album/uuid/view"
-                className="w-full px-5 py-4 text-sm font-bold rounded-2xl bg-white dark:bg-slate-900 border-4 border-slate-900 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-4 focus:ring-sky-200 dark:focus:ring-sky-900 transition-all shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155] focus:shadow-none"
+                className="w-full px-5 py-4 text-sm font-bold rounded-2xl bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-4 focus:ring-sky-200 dark:focus:ring-sky-900 transition-all shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] focus:shadow-none"
               />
             </div>
             <button
               type="button"
               onClick={() => handleSaveSection('album')}
               disabled={savingSection !== null}
-              className="mt-4 w-full flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-sky-400 dark:bg-sky-700 text-slate-900 dark:text-white border-4 border-slate-900 dark:border-slate-700 text-sm font-black hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155] transition-all disabled:opacity-50"
+              className="mt-4 w-full flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-sky-400 dark:bg-sky-700 text-slate-900 dark:text-white border-2 border-slate-200 dark:border-slate-700 text-sm font-bold hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] transition-all disabled:opacity-50"
             >
               {savingSection === 'album' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
               Simpan Album
@@ -235,12 +237,12 @@ export default function AdminShowcasePage() {
         </div>
 
         {/* Fonnte WhatsApp Target */}
-        <div className="rounded-3xl border-4 border-slate-900 dark:border-slate-700 bg-green-50 dark:bg-slate-800 p-6 md:p-8 shadow-[8px_8px_0_0_#0f172a] dark:shadow-[8px_8px_0_0_#334155] relative overflow-hidden group">
+        <div className="rounded-2xl border-2 border-slate-200 dark:border-slate-700 bg-green-50 dark:bg-slate-800 p-6 md:p-8 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] relative overflow-hidden group">
           <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
             <MessageCircle className="w-16 h-16 text-green-300 dark:text-green-900" />
           </div>
           <div className="relative">
-            <h3 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+            <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
               <MessageCircle className="w-4 h-4" />
               Fonnte WhatsApp Target
             </h3>
@@ -255,14 +257,14 @@ export default function AdminShowcasePage() {
                 value={fonnteTarget}
                 onChange={(e) => setFonnteTarget(e.target.value)}
                 placeholder="6285865913347"
-                className="w-full px-5 py-4 text-sm font-bold rounded-2xl bg-white dark:bg-slate-900 border-4 border-slate-900 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-4 focus:ring-green-200 dark:focus:ring-green-900 transition-all shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155] focus:shadow-none"
+                className="w-full px-5 py-4 text-sm font-bold rounded-2xl bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-4 focus:ring-green-200 dark:focus:ring-green-900 transition-all shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] focus:shadow-none"
               />
             </div>
             <button
               type="button"
               onClick={() => handleSaveSection('fonnte')}
               disabled={savingSection !== null}
-              className="mt-4 w-full flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-green-400 dark:bg-green-700 text-slate-900 dark:text-white border-4 border-slate-900 dark:border-slate-700 text-sm font-black hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155] transition-all disabled:opacity-50"
+              className="mt-4 w-full flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-green-400 dark:bg-green-700 text-slate-900 dark:text-white border-2 border-slate-200 dark:border-slate-700 text-sm font-bold hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] transition-all disabled:opacity-50"
             >
               {savingSection === 'fonnte' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
               Simpan Target

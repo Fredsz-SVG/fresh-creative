@@ -27,7 +27,11 @@ export async function setCreditsInSupabase(
   if (error) throw new Error(error.message)
 }
 
-export async function mirrorCreditsToD1(db: D1Database, userId: string, credits: number): Promise<void> {
+export async function mirrorCreditsToD1(
+  db: D1Database,
+  userId: string,
+  credits: number
+): Promise<void> {
   await ensureUserStubInD1(db, userId)
   await db
     .prepare(`UPDATE users SET credits = ?, updated_at = datetime('now') WHERE id = ?`)
@@ -44,7 +48,9 @@ export async function deductCreditsFromSupabaseAndMirrorToD1(opts: {
   db: D1Database
   userId: string
   amount: number
-}): Promise<{ ok: true; creditsAfter: number } | { ok: false; reason: 'insufficient'; credits: number }> {
+}): Promise<
+  { ok: true; creditsAfter: number } | { ok: false; reason: 'insufficient'; credits: number }
+> {
   const { env, db, userId, amount } = opts
   if (amount <= 0) {
     const credits = await getCreditsFromSupabase(env, userId)
@@ -57,4 +63,3 @@ export async function deductCreditsFromSupabaseAndMirrorToD1(opts: {
   await mirrorCreditsToD1(db, userId, after)
   return { ok: true, creditsAfter: after }
 }
-

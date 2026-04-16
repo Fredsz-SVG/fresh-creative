@@ -64,7 +64,7 @@ export default function ShowroomForm({ backHref, pricingPath, draftKey, source }
   const [submitted, setSubmitted] = useState(false);
 
   // School name validation
-  const SCHOOL_NAME_REGEX = /^(SMAN|SMKN|SMK|SMA|MAN|MA|SMPN|SMP|MTsN|MTs|SDN|SD|MIN|MI)\s+\d+\s+.{2,}$/i;
+  const SCHOOL_NAME_REGEX = /^(SMAN|SMKN|SMK|SMA|MAN|MA|SMPN|SMP|MTsN|MTs|SDN|SD|MIN|MI)(\s+\d+)?\s+.{2,}$/i;
   const schoolNameValid = useMemo(() => {
     const t = school_name.trim();
     if (!t) return true; // don't show error when empty
@@ -235,7 +235,7 @@ export default function ShowroomForm({ backHref, pricingPath, draftKey, source }
 
     if (school_name.trim().length < 5) return setError("Nama project minimal 5 karakter.");
     if (!SCHOOL_NAME_REGEX.test(school_name.trim())) {
-      return setError("Sertahakan nama sekolah/lembaga yang valid. Contoh: SMAN 1 Salatiga, SMKN 2 Bandung.");
+      return setError("Sertakan nama sekolah/lembaga yang valid. Contoh: SMA Hidayatul Muslihin, SMAN 1 Salatiga.");
     }
     if (dupCheck?.exists) {
       const matchedInfo = dupCheck.matched_name ? `"${dupCheck.matched_name}"` : `"${school_name.trim()}"`;
@@ -302,14 +302,14 @@ export default function ShowroomForm({ backHref, pricingPath, draftKey, source }
                 ? 'border-red-500 dark:border-red-600 shadow-[4px_4px_0_0_#ef4444] dark:shadow-[4px_4px_0_0_#dc2626]'
                 : dupCheck?.exists
                   ? 'border-orange-500 dark:border-orange-600 shadow-[4px_4px_0_0_#f97316] dark:shadow-[4px_4px_0_0_#ea580c]'
-                  : 'border-slate-900 dark:border-slate-700 shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155]'
+                  : 'border-slate-200 dark:border-slate-700 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]'
                 }`}
               autoComplete="organization"
             />
             {school_name.trim() && !schoolNameValid && (
               <p className="text-xs font-bold text-red-500 mt-2">
-                Format: SMAN/SMKN/SMA/SMK/MAN/MA/SMPN/SMP/MTsN/MTs/SDN/SD/MIN/MI + nomor + nama kota.
-                <br />Contoh: SMAN 1 Salatiga, SMKN 2 Bandung, MAN 1 Jakarta
+                Format: SMAN/SMKN/SMA/SMK/MAN/MA/SMPN/SMP/MTsN/MTs/SDN/SD/MIN/MI + (opsional nomor) + nama kota.
+                <br />Contoh: SMA Hidayatul Muslihin, SMAN 1 Salatiga, MAN Jakarta
               </p>
             )}
             {dupCheck?.exists && (
@@ -342,11 +342,11 @@ export default function ShowroomForm({ backHref, pricingPath, draftKey, source }
               onFocus={() => setShowProvDrop(true)}
               disabled={loadingProv}
               placeholder={loadingProv ? "Memuat..." : "Ketik nama provinsi, lalu pilih"}
-              className="w-full px-4 py-3 bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-bold placeholder:font-normal placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-4 focus:ring-indigo-300 dark:focus:ring-indigo-900 shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155] disabled:opacity-60 transition-all"
+              className="w-full px-4 py-3 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-bold placeholder:font-normal placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-4 focus:ring-indigo-300 dark:focus:ring-indigo-900 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] disabled:opacity-60 transition-all"
               autoComplete="off"
             />
             {showProvDrop && provinceSuggestions.length > 0 ? (
-              <ul className="absolute z-20 mt-2 w-full max-h-56 overflow-auto bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-xl shadow-[6px_6px_0_0_#0f172a] dark:shadow-[6px_6px_0_0_#334155]">
+              <ul className="absolute z-20 mt-2 w-full max-h-56 overflow-auto bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-xl shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]">
                 {provinceSuggestions.map((p) => (
                   <li key={p.id}>
                     <button
@@ -375,11 +375,11 @@ export default function ShowroomForm({ backHref, pricingPath, draftKey, source }
               placeholder={
                 !provinceId ? "Pilih provinsi dulu" : loadingCity ? "Memuat..." : "Ketik nama kota/kabupaten, lalu pilih"
               }
-              className="w-full px-4 py-3 bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-bold placeholder:font-normal placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-4 focus:ring-indigo-300 dark:focus:ring-indigo-900 shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155] disabled:opacity-60 transition-all"
+              className="w-full px-4 py-3 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-bold placeholder:font-normal placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-4 focus:ring-indigo-300 dark:focus:ring-indigo-900 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] disabled:opacity-60 transition-all"
               autoComplete="off"
             />
             {showCityDrop && provinceId && citySuggestions.length > 0 ? (
-              <ul className="absolute z-20 mt-2 w-full max-h-56 overflow-auto bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-xl shadow-[6px_6px_0_0_#0f172a] dark:shadow-[6px_6px_0_0_#334155]">
+              <ul className="absolute z-20 mt-2 w-full max-h-56 overflow-auto bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-xl shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]">
                 {citySuggestions.map((c) => (
                   <li key={c.id}>
                     <button
@@ -404,7 +404,7 @@ export default function ShowroomForm({ backHref, pricingPath, draftKey, source }
               value={pic_name}
               onChange={(e) => setPicName(e.target.value)}
               placeholder="Contoh: Rachel"
-              className="w-full px-4 py-3 bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-bold placeholder:font-normal placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-4 focus:ring-indigo-300 dark:focus:ring-indigo-900 shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155] transition-all"
+              className="w-full px-4 py-3 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-bold placeholder:font-normal placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-4 focus:ring-indigo-300 dark:focus:ring-indigo-900 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] transition-all"
               autoComplete="name"
             />
           </div>
@@ -417,7 +417,7 @@ export default function ShowroomForm({ backHref, pricingPath, draftKey, source }
                 name="wa_cc"
                 value={countryCode}
                 onChange={(e) => setCountryCode(e.target.value)}
-                className="w-24 px-4 py-3 bg-slate-100 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-bold focus:outline-none focus:bg-white dark:focus:bg-slate-900 focus:ring-4 focus:ring-indigo-300 dark:focus:ring-indigo-900 shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155] transition-all"
+                className="w-24 px-4 py-3 bg-slate-100 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-bold focus:outline-none focus:bg-white dark:focus:bg-slate-900 focus:ring-4 focus:ring-indigo-300 dark:focus:ring-indigo-900 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] transition-all"
                 inputMode="text"
               />
               <input
@@ -426,7 +426,7 @@ export default function ShowroomForm({ backHref, pricingPath, draftKey, source }
                 value={waLocal}
                 onChange={(e) => setWaLocal(e.target.value.replace(/\D/g, ""))}
                 placeholder="812xxxxxxx"
-                className="flex-1 px-4 py-3 bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-bold placeholder:font-normal placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-4 focus:ring-indigo-300 dark:focus:ring-indigo-900 shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155] transition-all"
+                className="flex-1 px-4 py-3 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-bold placeholder:font-normal placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-4 focus:ring-indigo-300 dark:focus:ring-indigo-900 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] transition-all"
                 inputMode="numeric"
                 autoComplete="tel"
               />
@@ -444,7 +444,7 @@ export default function ShowroomForm({ backHref, pricingPath, draftKey, source }
               value={studentsCountText}
               onChange={(e) => setStudentsCountText(e.target.value.replace(/[^\d]/g, ""))}
               placeholder="Contoh: 350"
-              className="w-full px-4 py-3 bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-bold placeholder:font-normal placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-4 focus:ring-indigo-300 dark:focus:ring-indigo-900 shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155] transition-all"
+              className="w-full px-4 py-3 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-bold placeholder:font-normal placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-4 focus:ring-indigo-300 dark:focus:ring-indigo-900 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] transition-all"
               inputMode="numeric"
             />
           </div>
@@ -471,7 +471,7 @@ export default function ShowroomForm({ backHref, pricingPath, draftKey, source }
           <button
             type="submit"
             disabled={submitted}
-            className="w-full mt-4 px-6 py-4 text-lg font-black rounded-2xl bg-indigo-300 dark:bg-indigo-600 border-2 border-slate-900 dark:border-slate-700 text-slate-900 dark:text-white shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all disabled:opacity-50"
+            className="w-full mt-4 px-6 py-4 text-lg font-black rounded-2xl bg-indigo-300 dark:bg-indigo-600 border-2 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all disabled:opacity-50"
           >
             {submitted ? "Mengirim..." : "Lanjut ke Pricing"}
           </button>

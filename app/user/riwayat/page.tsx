@@ -180,10 +180,10 @@ export default function UserRiwayatPage() {
       )}
 
       <div className="flex flex-col gap-2 mb-8">
-        <h1 className="text-3xl font-black text-slate-900 dark:text-white sm:text-4xl tracking-tight">
+        <h1 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
           Riwayat Transaksi
         </h1>
-        <p className="text-slate-600 dark:text-slate-300 font-bold text-sm sm:text-base">
+        <p className="text-slate-600 dark:text-slate-300 font-medium text-xs md:text-sm">
           Daftar transaksi Top Up credit Anda.
         </p>
       </div>
@@ -191,9 +191,9 @@ export default function UserRiwayatPage() {
       {loading ? (
         <div className="space-y-5">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="rounded-3xl border-2 border-slate-900 bg-white dark:bg-slate-900 p-5 sm:p-6 flex items-start justify-between gap-4 animate-pulse shadow-[6px_6px_0_0_#0f172a] dark:shadow-[6px_6px_0_0_#334155]">
+            <div key={i} className="rounded-2xl border-2 border-slate-200 bg-white dark:bg-slate-900 p-5 sm:p-6 flex items-start justify-between gap-4 animate-pulse shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]">
               <div className="flex items-start gap-3 sm:gap-4 flex-1 min-w-0">
-                <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-slate-200 dark:bg-slate-800 border-2 border-slate-900 shrink-0" />
+                <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-slate-200 dark:bg-slate-800 border-2 border-slate-200 shrink-0" />
                 <div className="flex flex-col min-w-0 py-1 w-full">
                   <div className="h-5 w-3/4 bg-slate-200 dark:bg-slate-800 rounded mb-3" />
                   <div className="space-y-2">
@@ -210,12 +210,12 @@ export default function UserRiwayatPage() {
           ))}
         </div>
       ) : transactions.length === 0 ? (
-        <div className="rounded-3xl border-2 border-slate-900 bg-white dark:bg-slate-900 p-6 sm:p-8 shadow-[8px_8px_0_0_#0f172a] dark:shadow-[8px_8px_0_0_#334155]">
+        <div className="rounded-2xl border-2 border-slate-200 bg-white dark:bg-slate-900 p-6 sm:p-8 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]">
           <div className="flex flex-col items-center justify-center py-12 text-center">
-            <div className="w-20 h-20 rounded-2xl bg-indigo-100 dark:bg-slate-800 border-2 border-slate-900 flex items-center justify-center mb-6 text-slate-900 dark:text-white shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155]">
+            <div className="w-20 h-20 rounded-2xl bg-indigo-100 dark:bg-slate-800 border-2 border-slate-200 flex items-center justify-center mb-6 text-slate-900 dark:text-white shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]">
               <History className="w-10 h-10" />
             </div>
-            <p className="text-[17px] font-black text-slate-900 dark:text-white mb-2">Belum ada riwayat</p>
+            <p className="text-[17px] font-bold text-slate-900 dark:text-white mb-2">Belum ada riwayat</p>
             <p className="text-[14px] font-bold text-slate-500 dark:text-slate-300 max-w-sm">
               Riwayat transaksi top up Anda akan muncul di sini.
             </p>
@@ -224,17 +224,17 @@ export default function UserRiwayatPage() {
       ) : (
         <div className="space-y-5">
           {paginatedTransactions.map((tx) => (
-            <div key={tx.id} className="rounded-3xl border-2 border-slate-900 bg-white dark:bg-slate-900 p-5 sm:p-6 flex items-start justify-between gap-4 shadow-[5px_5px_0_0_#0f172a] dark:shadow-[5px_5px_0_0_#334155] hover:shadow-[7px_7px_0_0_#0f172a] dark:hover:shadow-[7px_7px_0_0_#334155] hover:-translate-y-1 hover:-translate-x-1 transition-all">
+            <div key={tx.id} className="rounded-2xl border-2 border-slate-200 bg-white dark:bg-slate-900 p-5 sm:p-6 flex items-start justify-between gap-4 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:shadow-[4px_4px_0_0_#334155] dark:hover:shadow-[7px_7px_0_0_#334155] hover:-translate-y-1 hover:-translate-x-1 transition-all">
               {/* Left Side: Icon + Details */}
               <div className="flex items-start gap-3 sm:gap-4 flex-1 min-w-0">
-                <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-2xl border-2 border-slate-900 flex items-center justify-center shrink-0 shadow-inner ${tx.status === 'PAID' || tx.status === 'SETTLED' ? 'bg-emerald-300 text-slate-900'
+                <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-2xl border-2 border-slate-200 flex items-center justify-center shrink-0 shadow-inner ${tx.status === 'PAID' || tx.status === 'SETTLED' ? 'bg-emerald-300 text-slate-900'
                   : tx.status === 'PENDING' ? 'bg-orange-300 text-slate-900'
                     : 'bg-red-400 text-white'
                   }`}>
                   <CreditCard className="w-5 h-5 sm:w-6 sm:h-6" />
                 </div>
                 <div className="flex flex-col min-w-0 py-0.5">
-                  <h4 className="font-black text-[14px] sm:text-[17px] text-slate-900 dark:text-white leading-tight">
+                  <h4 className="font-bold text-[14px] sm:text-[17px] text-slate-900 dark:text-white leading-tight">
                     {tx.description
                       ? tx.description
                       : tx.album_name
@@ -254,7 +254,7 @@ export default function UserRiwayatPage() {
                         </span>
                       )}
                       {tx.payment_method && (
-                        <span className="px-2 py-0.5 rounded border-2 border-slate-900 dark:border-slate-700 bg-indigo-50 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-200 font-black text-[10px] uppercase tracking-wide">
+                        <span className="px-2 py-0.5 rounded border-2 border-slate-200 dark:border-slate-700 bg-indigo-50 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-200 font-bold text-[10px] uppercase tracking-wide">
                           {tx.payment_method.replace(/_/g, ' ')}
                         </span>
                       )}
@@ -265,7 +265,7 @@ export default function UserRiwayatPage() {
                     <button
                       type="button"
                       onClick={() => tx.invoice_url && setInvoicePopupUrl(tx.invoice_url)}
-                      className="flex items-center gap-2 text-[12px] sm:text-[13px] font-black bg-indigo-300 border-2 border-slate-900 text-slate-900 px-3 py-1.5 mt-3 rounded-xl hover:translate-x-0.5 hover:translate-y-0.5 transition-all shadow-[2px_2px_0_0_#0f172a] w-fit"
+                      className="flex items-center gap-2 text-[12px] sm:text-[13px] font-bold bg-indigo-300 border-2 border-slate-200 text-slate-900 px-3 py-1.5 mt-3 rounded-xl hover:translate-x-0.5 hover:translate-y-0.5 transition-all shadow-[4px_4px_0_0_#334155] w-fit"
                     >
                       Bayar Sekarang
                       <ExternalLink className="w-3.5 h-3.5" />
@@ -276,10 +276,10 @@ export default function UserRiwayatPage() {
 
               {/* Right Side: Amount + Status (Bottom Right) */}
               <div className="flex flex-col items-end shrink-0 text-right self-end ml-2">
-                <span className="whitespace-nowrap font-black text-[15px] sm:text-xl text-slate-900 dark:text-white">
+                <span className="whitespace-nowrap font-bold text-[15px] sm:text-xl text-slate-900 dark:text-white">
                   Rp {tx.amount.toLocaleString('id-ID')}
                 </span>
-                <span className={`inline-block text-[9px] sm:text-[11px] font-black px-2 py-0.5 sm:px-2.5 sm:py-1 mt-2 rounded border-2 border-slate-900 uppercase tracking-widest shadow-[2px_2px_0_0_#0f172a] ${tx.status === 'PAID' || tx.status === 'SETTLED' ? 'bg-emerald-300 text-slate-900'
+                <span className={`inline-block text-[9px] sm:text-[11px] font-bold px-2 py-0.5 sm:px-2.5 sm:py-1 mt-2 rounded border-2 border-slate-200 uppercase tracking-widest shadow-[4px_4px_0_0_#334155] ${tx.status === 'PAID' || tx.status === 'SETTLED' ? 'bg-emerald-300 text-slate-900'
                   : tx.status === 'PENDING' ? 'bg-orange-300 text-slate-900'
                     : 'bg-red-400 text-white'
                   }`}>
@@ -302,18 +302,18 @@ export default function UserRiwayatPage() {
               type="button"
               disabled={currentPage === 1}
               onClick={() => setCurrentPage(p => p - 1)}
-              className="px-4 py-2 text-[13px] font-black rounded-xl bg-white border-2 border-slate-900 text-slate-900 shadow-[3px_3px_0_0_#0f172a] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none disabled:opacity-50 transition-all"
+              className="px-4 py-2 text-[13px] font-bold rounded-xl bg-white border-2 border-slate-200 text-slate-900 shadow-[4px_4px_0_0_#334155] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none disabled:opacity-50 transition-all"
             >
               Sebelumnya
             </button>
-            <div className="flex items-center px-4 py-2 text-[13px] font-black bg-indigo-200 border-2 border-slate-900 shadow-[3px_3px_0_0_#0f172a] rounded-xl text-slate-900">
+            <div className="flex items-center px-4 py-2 text-[13px] font-bold bg-indigo-200 border-2 border-slate-200 shadow-[4px_4px_0_0_#334155] rounded-xl text-slate-900">
               {currentPage} / {totalPages}
             </div>
             <button
               type="button"
               disabled={currentPage === totalPages}
               onClick={() => setCurrentPage(p => p + 1)}
-              className="px-4 py-2 text-[13px] font-black rounded-xl bg-white border-2 border-slate-900 text-slate-900 shadow-[3px_3px_0_0_#0f172a] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none disabled:opacity-50 transition-all"
+              className="px-4 py-2 text-[13px] font-bold rounded-xl bg-white border-2 border-slate-200 text-slate-900 shadow-[4px_4px_0_0_#334155] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none disabled:opacity-50 transition-all"
             >
               Selanjutnya
             </button>

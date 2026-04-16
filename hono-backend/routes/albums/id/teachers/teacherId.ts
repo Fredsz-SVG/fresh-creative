@@ -37,7 +37,10 @@ albumsIdTeachersTeacherId.patch('/', async (c) => {
     const teacherId = c.req.param('teacherId')
     const body = await c.req.json()
     const { name, title, message, video_url } = body
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser()
     if (authError || !user) {
       return c.json({ error: 'Unauthorized' }, 401)
     }
@@ -92,7 +95,10 @@ albumsIdTeachersTeacherId.delete('/', async (c) => {
     if (!db) return c.json({ error: 'Database not configured' }, 503)
     const albumId = c.req.param('id')
     const teacherId = c.req.param('teacherId')
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser()
     if (authError || !user) {
       return c.json({ error: 'Unauthorized' }, 401)
     }

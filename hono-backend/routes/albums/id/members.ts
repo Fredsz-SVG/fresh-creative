@@ -10,7 +10,9 @@ albumsIdMembers.get('/', async (c) => {
   const supabase = getSupabaseClient(c)
   const db = getD1(c)
   if (!db) return c.json({ error: 'Database not configured' }, 503)
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   if (!user) return c.json({ error: 'Unauthorized' }, 401)
 
   const albumId = c.req.param('id')
@@ -54,8 +56,7 @@ albumsIdMembers.get('/', async (c) => {
       .bind(album.user_id)
       .first<{ id: string; email: string }>()
 
-    const memberIds =
-      members?.map((m) => m.user_id).filter((id) => id !== album.user_id) ?? []
+    const memberIds = members?.map((m) => m.user_id).filter((id) => id !== album.user_id) ?? []
     const emailByUserId: Record<string, string> = {}
     if (memberIds.length > 0) {
       const ph = memberIds.map(() => '?').join(',')
@@ -125,7 +126,9 @@ albumsIdMembers.post('/', async (c) => {
   const supabase = getSupabaseClient(c)
   const db = getD1(c)
   if (!db) return c.json({ error: 'Database not configured' }, 503)
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   if (!user) return c.json({ error: 'Unauthorized' }, 401)
 
   const albumId = c.req.param('id')
@@ -177,7 +180,9 @@ albumsIdMembers.patch('/', async (c) => {
   const supabase = getSupabaseClient(c)
   const db = getD1(c)
   if (!db) return c.json({ error: 'Database not configured' }, 503)
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   if (!user) return c.json({ error: 'Unauthorized' }, 401)
 
   const albumId = c.req.param('id')
@@ -214,7 +219,9 @@ albumsIdMembers.delete('/', async (c) => {
   const supabase = getSupabaseClient(c)
   const db = getD1(c)
   if (!db) return c.json({ error: 'Database not configured' }, 503)
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   if (!user) return c.json({ error: 'Unauthorized' }, 401)
   const albumId = c.req.param('id')
   const searchParams = c.req.query()
@@ -237,7 +244,8 @@ albumsIdMembers.delete('/', async (c) => {
       .bind(albumId, user.id)
       .first<{ role: string }>()
     const isAlbumAdmin = member?.role === 'admin'
-    if (!isAlbumAdmin) return c.json({ error: 'Hanya owner atau admin yang dapat menghapus member' }, 403)
+    if (!isAlbumAdmin)
+      return c.json({ error: 'Hanya owner atau admin yang dapat menghapus member' }, 403)
   }
   const del = await db
     .prepare(`DELETE FROM album_members WHERE album_id = ? AND user_id = ?`)

@@ -7,7 +7,13 @@ import { getD1 } from './edge-env'
  */
 export async function getRole(
   c: Context,
-  user: User | { id: string; user_metadata?: Record<string, unknown>; app_metadata?: Record<string, unknown> }
+  user:
+    | User
+    | {
+        id: string
+        user_metadata?: Record<string, unknown>
+        app_metadata?: Record<string, unknown>
+      }
 ): Promise<'admin' | 'user'> {
   const db = getD1(c)
   if (db) {
@@ -22,8 +28,7 @@ export async function getRole(
       /* ignore */
     }
   }
-  const metaRole =
-    (user.user_metadata?.role as string) || (user.app_metadata?.role as string)
+  const metaRole = (user.user_metadata?.role as string) || (user.app_metadata?.role as string)
   if (metaRole === 'admin' || metaRole === 'user') return metaRole
   return 'user'
 }
@@ -31,6 +36,7 @@ export async function getRole(
 /** Role dari session metadata saja (tanpa query DB). Untuk fallback cepat. */
 export function getRoleFromSession(session: Session | null): 'admin' | 'user' {
   if (!session?.user) return 'user'
-  const role = (session.user.user_metadata?.role as string) || (session.user.app_metadata?.role as string)
+  const role =
+    (session.user.user_metadata?.role as string) || (session.user.app_metadata?.role as string)
   return role === 'admin' ? 'admin' : 'user'
 }

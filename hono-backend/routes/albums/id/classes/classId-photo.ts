@@ -38,7 +38,10 @@ classIdPhoto.post('/', async (c) => {
     const albumId = c.req.param('id')
     const classId = c.req.param('classId')
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser()
     if (authError || !user) return c.json({ error: 'Unauthorized' }, 401)
 
     const sysRole = await getRole(c, user)
@@ -115,7 +118,10 @@ classIdPhoto.delete('/', async (c) => {
     const albumId = c.req.param('id')
     const classId = c.req.param('classId')
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser()
     if (authError || !user) return c.json({ error: 'Unauthorized' }, 401)
 
     const sysRole = await getRole(c, user)

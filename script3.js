@@ -1,0 +1,1 @@
+const fs = require("fs"); let content = fs.readFileSync("app/admin/showcase/page.tsx", "utf8"); content = content.replace(/shadow-\[4px_4px_0_0_#0f172a\]/g, "shadow-[2px_2px_0_0_#64748b]"); content = content.replace(/dark:shadow-\[4px_4px_0_0_#334155\]/g, "dark:shadow-[2px_2px_0_0_#334155]"); fs.writeFileSync("app/admin/showcase/page.tsx", content);

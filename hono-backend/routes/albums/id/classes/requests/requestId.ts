@@ -9,7 +9,9 @@ classRequestIdRoute.patch('/', async (c) => {
   const supabase = getSupabaseClient(c)
   const db = getD1(c)
   if (!db) return c.json({ error: 'Database not configured' }, 503)
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   if (!user) return c.json({ error: 'Unauthorized' }, 401)
 
   const albumId = c.req.param('id')
@@ -34,7 +36,8 @@ classRequestIdRoute.patch('/', async (c) => {
   }
 
   const body = await c.req.json().catch(() => ({}))
-  const status = body?.status === 'approved' ? 'approved' : body?.status === 'rejected' ? 'rejected' : null
+  const status =
+    body?.status === 'approved' ? 'approved' : body?.status === 'rejected' ? 'rejected' : null
   if (!status) return c.json({ error: 'status must be approved or rejected' }, 400)
 
   const row = await db
@@ -83,7 +86,10 @@ classRequestIdRoute.patch('/', async (c) => {
 
     await db.prepare(`DELETE FROM album_join_requests WHERE id = ?`).bind(requestId).run()
 
-    const created = await db.prepare(`SELECT * FROM album_class_access WHERE id = ?`).bind(accessId).first()
+    const created = await db
+      .prepare(`SELECT * FROM album_class_access WHERE id = ?`)
+      .bind(accessId)
+      .first()
     return c.json(created)
   }
 
@@ -92,7 +98,10 @@ classRequestIdRoute.patch('/', async (c) => {
     .bind(requestId)
     .run()
   if (!upd.success) return c.json({ error: 'Update failed' }, 500)
-  const updated = await db.prepare(`SELECT * FROM album_join_requests WHERE id = ?`).bind(requestId).first()
+  const updated = await db
+    .prepare(`SELECT * FROM album_join_requests WHERE id = ?`)
+    .bind(requestId)
+    .first()
   return c.json(updated)
 })
 

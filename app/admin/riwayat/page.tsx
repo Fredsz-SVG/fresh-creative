@@ -189,11 +189,11 @@ export default function AdminRiwayatPage() {
       {invoicePopupUrl && (
         <div className="fixed inset-0 z-[110] flex flex-col bg-white dark:bg-slate-900" role="dialog" aria-modal="true" aria-label="Lihat invoice">
           <div className="flex items-center justify-between px-4 py-3 border-b-4 border-slate-900 bg-slate-50 dark:bg-slate-800 shrink-0">
-            <h3 className="text-base font-black text-slate-900">Invoice Pembayaran</h3>
+            <h3 className="text-base font-bold text-slate-900">Invoice Pembayaran</h3>
             <button
               type="button"
               onClick={() => setInvoicePopupUrl(null)}
-              className="flex items-center justify-center w-10 h-10 rounded-xl border-2 border-slate-900 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-red-50 dark:hover:bg-red-900 hover:text-red-500 shadow-[2px_2px_0_0_#0f172a] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all"
+              className="flex items-center justify-center w-10 h-10 rounded-xl border-2 border-slate-900 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-red-50 dark:hover:bg-red-900 hover:text-red-500 shadow-[#64748b] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all"
             >
               <X className="w-5 h-5" />
             </button>
@@ -211,36 +211,46 @@ export default function AdminRiwayatPage() {
       )}
 
       <div className="flex flex-col gap-2 mb-8">
-        <h1 className="text-3xl font-black text-slate-900 dark:text-white sm:text-4xl tracking-tight">
+        <h1 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
           Riwayat Transaksi
         </h1>
-        <p className="text-slate-600 dark:text-slate-300 font-bold text-sm sm:text-base">
+        <p className="text-slate-600 dark:text-slate-300 font-medium text-xs md:text-sm">
           {viewMode === 'mine' ? 'Daftar riwayat transaksi Top Up Anda.' : 'Monitor semua transaksi dari pengguna.'}
         </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-2 sm:gap-3 mb-8">
-        <button
-          type="button"
-          onClick={() => { setViewMode('mine'); setCurrentPage(1); }}
-          className={`flex min-w-0 items-center justify-center gap-1.5 sm:gap-2 px-2 py-2.5 sm:px-6 sm:py-3 rounded-2xl text-xs sm:text-sm font-black border-4 border-slate-900 transition-all active:scale-95 whitespace-nowrap ${viewMode === 'mine' ? 'bg-violet-400 text-slate-900 shadow-[4px_4px_0_0_#0f172a]' : 'bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-none'}`}
-        >
-          <User className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" strokeWidth={3} />
-          <span className="truncate"><span className="sm:hidden">Saya</span><span className="hidden sm:inline">Riwayat Saya</span></span>
-        </button>
-        <button
-          type="button"
-          onClick={() => { setViewMode('all'); setCurrentPage(1); }}
-          className={`flex min-w-0 items-center justify-center gap-1.5 sm:gap-2 px-2 py-2.5 sm:px-6 sm:py-3 rounded-2xl text-xs sm:text-sm font-black border-4 border-slate-900 transition-all active:scale-95 whitespace-nowrap ${viewMode === 'all' ? 'bg-sky-400 text-slate-900 shadow-[4px_4px_0_0_#0f172a]' : 'bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-none'}`}
-        >
-          <Users className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" strokeWidth={3} />
-          <span className="truncate"><span className="sm:hidden">Semua user</span><span className="hidden sm:inline">Riwayat Semua User</span></span>
-        </button>
+      <div className="flex justify-center mb-4 sm:mb-6">
+        <div className="relative inline-flex items-center gap-1 p-1 bg-white dark:bg-slate-800 rounded-2xl border-2 border-slate-900 dark:border-slate-700 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]">
+          <div
+            className={`absolute top-1 bottom-1 rounded-xl bg-violet-400 transition-all duration-300 ease-out`}
+            style={{
+              transform: viewMode === 'mine' ? 'translateX(0)' : 'translateX(100%)',
+              width: 'calc(50% - 6px)',
+              left: '4px'
+            }}
+          />
+          <button
+            type="button"
+            onClick={() => { setViewMode('mine'); setCurrentPage(1); }}
+            className={`relative z-10 flex min-w-0 items-center justify-center gap-1.5 sm:gap-2 px-4 py-2 sm:px-6 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all duration-200 whitespace-nowrap ${viewMode === 'mine' ? 'text-white' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
+          >
+            <User className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" strokeWidth={viewMode === 'mine' ? 3 : 2.5} />
+            <span className="truncate"><span className="sm:hidden">Saya</span><span className="hidden sm:inline">Riwayat Saya</span></span>
+          </button>
+          <button
+            type="button"
+            onClick={() => { setViewMode('all'); setCurrentPage(1); }}
+            className={`relative z-10 flex min-w-0 items-center justify-center gap-1.5 sm:gap-2 px-4 py-2 sm:px-6 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all duration-200 whitespace-nowrap ${viewMode === 'all' ? 'text-white' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
+          >
+            <Users className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" strokeWidth={viewMode === 'all' ? 3 : 2.5} />
+            <span className="truncate"><span className="sm:hidden">Semua</span><span className="hidden sm:inline">Riwayat Semua</span></span>
+          </button>
+        </div>
       </div>
 
       {viewMode === 'all' && (
         <div className="mb-8 relative max-w-2xl">
-          <div className="flex items-center gap-3 p-4 bg-slate-50 dark:bg-slate-800 border-4 border-slate-900 rounded-3xl shadow-inner group focus-within:bg-white dark:focus-within:bg-slate-900 transition-all">
+          <div className="flex items-center gap-3 p-4 bg-slate-50 dark:bg-slate-800 border-2 border-slate-900 rounded-2xl shadow-inner group focus-within:bg-white dark:focus-within:bg-slate-900 transition-all">
             <Search className="h-5 w-5 text-slate-400 group-focus-within:text-slate-900 transition-colors" strokeWidth={3} />
             <input
               type="text"
@@ -256,9 +266,9 @@ export default function AdminRiwayatPage() {
       {currentLoading ? (
         <div className="space-y-6">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="rounded-3xl border-4 border-slate-900 bg-white dark:bg-slate-900 p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 animate-pulse shadow-[6px_6px_0_0_#0f172a] dark:shadow-[6px_6px_0_0_#334155]">
+            <div key={i} className="rounded-2xl border-2 border-slate-900 bg-white dark:bg-slate-900 p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 animate-pulse shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]">
               <div className="flex items-center gap-5">
-                <div className="w-14 h-14 rounded-2xl bg-slate-100 dark:bg-slate-800 shrink-0 border-2 border-slate-200 dark:border-slate-700" />
+                <div className="w-14 h-14 rounded-2xl bg-slate-100 dark:bg-slate-800 shrink-0 border-2 border-slate-900 dark:border-slate-700" />
                 <div className="space-y-3">
                   <div className="h-5 bg-slate-100 dark:bg-slate-800 rounded-lg w-48" />
                   <div className="h-4 bg-slate-50 dark:bg-slate-900 rounded-lg w-64" />
@@ -272,24 +282,24 @@ export default function AdminRiwayatPage() {
           ))}
         </div>
       ) : transactions.length === 0 ? (
-        <div className="rounded-[40px] border-4 border-slate-900 bg-white dark:bg-slate-900 p-12 shadow-[12px_12px_0_0_#0f172a] dark:shadow-[12px_12px_0_0_#334155]">
+        <div className="rounded-[40px] border-2 border-slate-900 bg-white dark:bg-slate-900 p-12 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]">
           <div className="flex flex-col items-center justify-center text-center">
-            <div className="w-24 h-24 rounded-3xl bg-slate-50 dark:bg-slate-800 border-4 border-slate-100 dark:border-slate-700 flex items-center justify-center mb-6 text-slate-300">
+            <div className="w-24 h-24 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 flex items-center justify-center mb-6 text-slate-300">
               <History className="w-12 h-12" strokeWidth={1.5} />
             </div>
-            <h3 className="text-xl font-black text-slate-900 dark:text-white mb-2">Belum Ada Riwayat</h3>
+            <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Belum Ada Riwayat</h3>
             <p className="text-sm font-bold text-slate-400 dark:text-slate-300 max-w-sm">
               {viewMode === 'mine' ? 'Transaksi Top Up atau pemesanan album Anda akan tercatat secara otomatis di sini.' : 'Belum ada transaksi yang tercatat dalam sistem.'}
             </p>
           </div>
         </div>
       ) : filteredTransactions.length === 0 && viewMode === 'all' && searchQuery ? (
-        <div className="rounded-[40px] border-4 border-slate-900 bg-white p-12 shadow-[12px_12px_0_0_#0f172a]">
+        <div className="rounded-[40px] border-2 border-slate-900 bg-white p-12 shadow-[4px_4px_0_0_#334155]">
           <div className="flex flex-col items-center justify-center text-center">
-            <div className="w-24 h-24 rounded-3xl bg-slate-50 border-4 border-slate-100 flex items-center justify-center mb-6 text-slate-300">
+            <div className="w-24 h-24 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center mb-6 text-slate-300">
               <Search className="w-12 h-12" strokeWidth={1.5} />
             </div>
-            <h3 className="text-xl font-black text-slate-900 mb-2">Hasil Tidak Ditemukan</h3>
+            <h3 className="text-xl font-bold text-slate-900 mb-2">Hasil Tidak Ditemukan</h3>
             <p className="text-sm font-bold text-slate-400 max-w-sm">
               Tidak ada transaksi yang cocok dengan pencarian &quot;<span className="text-slate-900">{searchQuery}</span>&quot;
             </p>
@@ -300,11 +310,11 @@ export default function AdminRiwayatPage() {
           {paginatedTransactions.map((tx) => (
             <div
               key={tx.id}
-              className="rounded-3xl border-4 border-slate-900 bg-white dark:bg-slate-900 p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-[6px_6px_0_0_#0f172a] dark:shadow-[6px_6px_0_0_#334155] hover:shadow-[10px_10px_0_0_#0f172a] dark:hover:shadow-[10px_10px_0_0_#334155] hover:-translate-x-1 hover:-translate-y-1 transition-all"
+              className="rounded-2xl border-2 border-slate-900 bg-white dark:bg-slate-900 p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:shadow-[4px_4px_0_0_#334155] dark:hover:shadow-[5px_5px_0_0_#334155] hover:-translate-x-1 hover:-translate-y-1 transition-all"
             >
               <div className="flex items-center gap-6">
                 <div
-                  className={`w-14 h-14 rounded-2xl border-4 border-slate-900 flex items-center justify-center shrink-0 shadow-[4px_4px_0_0_#0f172a] ${tx.status === 'PAID' || tx.status === 'SETTLED'
+                  className={`w-14 h-14 rounded-2xl border-2 border-slate-900 flex items-center justify-center shrink-0 shadow-[4px_4px_0_0_#334155] ${tx.status === 'PAID' || tx.status === 'SETTLED'
                     ? 'bg-emerald-300'
                     : tx.status === 'PENDING'
                       ? 'bg-orange-300'
@@ -314,14 +324,14 @@ export default function AdminRiwayatPage() {
                   <CreditCard className="w-6 h-6 text-slate-900" strokeWidth={2.5} />
                 </div>
                 <div className="space-y-1">
-                  <h4 className="text-lg font-black text-slate-900 dark:text-white leading-tight">
+                  <h4 className="text-lg font-bold text-slate-900 dark:text-white leading-tight">
                     {tx.description || (tx.album_name ? tx.album_name : (tx.credits != null ? `Top Up ${tx.credits} Credits` : 'Transaction'))}
                   </h4>
                   <div className="flex flex-col gap-1.5">
                     {viewMode === 'all' && (tx.user_full_name != null || tx.user_email != null) && (
-                      <div className="flex flex-wrap items-center gap-2 text-[13px] font-bold bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 w-fit">
+                      <div className="flex flex-wrap items-center gap-2 text-[13px] font-bold bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-xl border-2 border-slate-900 dark:border-slate-700 w-fit">
                         <User className="w-4 h-4 text-indigo-500 mr-1" />
-                        <span className="text-slate-900 dark:text-white font-black">{tx.user_full_name ?? '-'}</span>
+                        <span className="text-slate-900 dark:text-white font-bold">{tx.user_full_name ?? '-'}</span>
                         <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600 mx-1" />
                         <span className="font-medium text-slate-500 dark:text-slate-300">{tx.user_email ?? '-'}</span>
                       </div>
@@ -339,13 +349,13 @@ export default function AdminRiwayatPage() {
                       </span>
                       {tx.external_id && (
                         <span className="flex items-center gap-1.5 font-mono">
-                          <code className="bg-slate-200 dark:bg-slate-700 px-2 rounded text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-600 text-xs tracking-wider">
+                          <code className="bg-slate-200 dark:bg-slate-700 px-2 rounded text-slate-700 dark:text-slate-200 border-2 border-slate-900 dark:border-slate-600 text-xs tracking-wider">
                             {`TR-${tx.external_id.split('_ts_')[1] || tx.external_id.slice(-8)}`}
                           </code>
                         </span>
                       )}
                       {tx.payment_method && (
-                        <span className="px-2 py-0.5 rounded border-2 border-slate-900 dark:border-slate-700 bg-indigo-50 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-200 font-black text-[10px] uppercase tracking-wide">
+                        <span className="px-2 py-0.5 rounded border-2 border-slate-900 dark:border-slate-700 bg-indigo-50 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-200 font-bold text-[10px] uppercase tracking-wide">
                           {tx.payment_method.replace(/_/g, ' ')}
                         </span>
                       )}
@@ -356,12 +366,12 @@ export default function AdminRiwayatPage() {
 
               <div className="flex items-center justify-between md:flex-col md:items-end gap-6 md:gap-3">
                 <div className="text-right">
-                  <span className="block text-2xl font-black text-slate-900 dark:text-white">
+                  <span className="block text-2xl font-bold text-slate-900 dark:text-white">
                     Rp {tx.amount.toLocaleString('id-ID')}
                   </span>
                   <div className="mt-1">
                     <span
-                      className={`text-[10px] font-black px-2.5 py-1 rounded-lg border-2 border-slate-900 shadow-[2px_2px_0_0_#0f172a] uppercase tracking-widest ${tx.status === 'PAID' || tx.status === 'SETTLED'
+                      className={`text-[10px] font-bold px-2.5 py-1 rounded-lg border-2 border-slate-900 shadow-[#64748b] uppercase tracking-widest ${tx.status === 'PAID' || tx.status === 'SETTLED'
                         ? 'bg-emerald-300 text-slate-900'
                         : tx.status === 'PENDING'
                           ? 'bg-orange-300 text-slate-900'
@@ -377,7 +387,7 @@ export default function AdminRiwayatPage() {
                   <button
                     type="button"
                     onClick={() => tx.invoice_url && setInvoicePopupUrl(tx.invoice_url)}
-                    className="flex items-center gap-2 text-sm font-black bg-orange-400 text-slate-900 px-5 py-2.5 rounded-2xl border-2 border-slate-900 hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none shadow-[3px_3px_0_0_#0f172a] transition-all"
+                    className="flex items-center gap-2 text-sm font-bold bg-orange-400 text-slate-900 px-5 py-2.5 rounded-2xl border-2 border-slate-900 hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none shadow-[#64748b] transition-all"
                   >
                     Lanjutkan Bayar
                     <ExternalLink className="w-4 h-4" strokeWidth={3} />
@@ -392,7 +402,7 @@ export default function AdminRiwayatPage() {
       {/* Pagination Controls */}
       {!currentLoading && filteredTransactions.length > itemsPerPage && (
         <div className="flex items-center justify-between mt-10 flex-wrap gap-4 px-2">
-          <p className="text-sm font-black text-slate-400">
+          <p className="text-sm font-bold text-slate-400">
             Menampilkan <span className="text-slate-900">{((currentPage - 1) * itemsPerPage) + 1} - {Math.min(currentPage * itemsPerPage, filteredTransactions.length)}</span> dari <span className="text-slate-900">{filteredTransactions.length}</span> data
           </p>
           <div className="flex gap-2 shrink-0">
@@ -400,18 +410,18 @@ export default function AdminRiwayatPage() {
               type="button"
               disabled={currentPage === 1}
               onClick={() => setCurrentPage(p => p - 1)}
-              className="flex items-center justify-center w-10 h-10 rounded-xl bg-white border-2 border-slate-900 text-slate-900 shadow-[3px_3px_0_0_#0f172a] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none disabled:opacity-50 transition-all"
+              className="flex items-center justify-center w-10 h-10 rounded-xl bg-white border-2 border-slate-900 text-slate-900 shadow-[#64748b] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none disabled:opacity-50 transition-all"
             >
               <ChevronLeft className="w-5 h-5" strokeWidth={3} />
             </button>
-            <div className="flex items-center px-4 py-2 text-sm font-black bg-indigo-200 border-2 border-slate-900 shadow-[3px_3px_0_0_#0f172a] rounded-xl text-slate-900">
+            <div className="flex items-center px-4 py-2 text-sm font-bold bg-indigo-200 border-2 border-slate-900 shadow-[#64748b] rounded-xl text-slate-900">
               {currentPage} / {totalPages}
             </div>
             <button
               type="button"
               disabled={currentPage === totalPages}
               onClick={() => setCurrentPage(p => p + 1)}
-              className="flex items-center justify-center w-10 h-10 rounded-xl bg-white border-2 border-slate-900 text-slate-900 shadow-[3px_3px_0_0_#0f172a] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none disabled:opacity-50 transition-all"
+              className="flex items-center justify-center w-10 h-10 rounded-xl bg-white border-2 border-slate-900 text-slate-900 shadow-[#64748b] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none disabled:opacity-50 transition-all"
             >
               <ChevronRight className="w-5 h-5" strokeWidth={3} />
             </button>

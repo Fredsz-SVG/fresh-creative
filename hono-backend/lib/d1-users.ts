@@ -30,8 +30,7 @@ function roleFromJwt(
     app_metadata?: Record<string, unknown>
   }
 ): 'admin' | 'user' | null {
-  const r =
-    (user.app_metadata?.role as string) || (user.user_metadata?.role as string)
+  const r = (user.app_metadata?.role as string) || (user.user_metadata?.role as string)
   if (r === 'admin' || r === 'user') return r
   return null
 }
@@ -104,9 +103,7 @@ export async function ensureUserInD1(
   let suspendedBind: number | null = null
 
   const existing = await db
-    .prepare(
-      `SELECT role, full_name, credits, is_suspended, updated_at FROM users WHERE id = ?`
-    )
+    .prepare(`SELECT role, full_name, credits, is_suspended, updated_at FROM users WHERE id = ?`)
     .bind(user.id)
     .first<LocalUserSyncRow>()
 
@@ -134,9 +131,7 @@ export async function ensureUserInD1(
 
   await db.batch([
     db
-      .prepare(
-        `INSERT OR IGNORE INTO users (id, email, role, full_name) VALUES (?, ?, ?, ?)`
-      )
+      .prepare(`INSERT OR IGNORE INTO users (id, email, role, full_name) VALUES (?, ?, ?, ?)`)
       .bind(user.id, email, insertRole, fullName),
     db
       .prepare(
@@ -149,22 +144,13 @@ export async function ensureUserInD1(
           updated_at = datetime('now')
          WHERE id = ?`
       )
-      .bind(
-        email,
-        fullName,
-        metaRole ?? null,
-        creditsBind,
-        suspendedBind,
-        user.id
-      ),
+      .bind(email, fullName, metaRole ?? null, creditsBind, suspendedBind, user.id),
   ])
 }
 
 export async function getUserRow(db: D1Database, userId: string): Promise<D1UserRow | null> {
   const row = await db
-    .prepare(
-      `SELECT id, email, role, credits, is_suspended, full_name FROM users WHERE id = ?`
-    )
+    .prepare(`SELECT id, email, role, credits, is_suspended, full_name FROM users WHERE id = ?`)
     .bind(userId)
     .first<D1UserRow>()
   return row ?? null

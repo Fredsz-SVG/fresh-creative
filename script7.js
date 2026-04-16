@@ -1,0 +1,1 @@
+const content = require("fs").readFileSync("app/admin/showcase/page.tsx", "utf8"); console.log(content.substring(content.indexOf("Flipbook Preview */}"), content.indexOf("Flipbook Preview */}") + 1000));

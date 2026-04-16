@@ -9,10 +9,15 @@ export function getAccessTokenFromContext(c: Context): string | undefined {
   const cookieObj = Object.fromEntries(cookies.split(';').map((v) => v.trim().split('=')))
   let rawCookie = cookieObj['sb-access-token']
 
-  if (!rawCookie && c.env && (c.env as { NEXT_PUBLIC_SUPABASE_URL?: string }).NEXT_PUBLIC_SUPABASE_URL) {
+  if (
+    !rawCookie &&
+    c.env &&
+    (c.env as { NEXT_PUBLIC_SUPABASE_URL?: string }).NEXT_PUBLIC_SUPABASE_URL
+  ) {
     try {
-      const ref = new URL((c.env as { NEXT_PUBLIC_SUPABASE_URL: string }).NEXT_PUBLIC_SUPABASE_URL)
-        .hostname.split('.')[0]
+      const ref = new URL(
+        (c.env as { NEXT_PUBLIC_SUPABASE_URL: string }).NEXT_PUBLIC_SUPABASE_URL
+      ).hostname.split('.')[0]
       const authKey = `sb-${ref}-auth-token`
       rawCookie = cookieObj[authKey]
       if (!rawCookie) {

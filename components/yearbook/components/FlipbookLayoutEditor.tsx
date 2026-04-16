@@ -709,16 +709,16 @@ export default function FlipbookLayoutEditor({ album, onPlayVideo, onUpdateAlbum
         <div className="flex flex-col lg:flex-row min-h-[calc(100vh-140px)] lg:h-[calc(100vh-80px)] gap-4 lg:gap-6 w-full max-w-7xl mx-auto px-4 py-4 lg:py-6 overflow-x-hidden">
             {/* Mobile Tabs Toggle - Only show when we have pages */}
             {manualPages.length > 0 && (
-                <div className="flex lg:hidden w-full bg-slate-100 dark:bg-slate-800 p-1.5 rounded-xl border-4 border-slate-900 dark:border-slate-700 order-2 flex-shrink-0">
+                <div className="flex lg:hidden w-full bg-slate-100 dark:bg-slate-800 p-1.5 rounded-xl border-2 border-slate-200 dark:border-slate-700 order-2 flex-shrink-0">
                     <button
                         onClick={() => setMobileTab('pages')}
-                        className={`flex-1 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${mobileTab === 'pages' ? 'bg-white dark:bg-slate-700 border-2 border-slate-900 dark:border-slate-600 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400 border-2 border-transparent hover:text-slate-700 dark:hover:text-slate-300'}`}
+                        className={`flex-1 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${mobileTab === 'pages' ? 'bg-white dark:bg-slate-700 border-2 border-slate-200 dark:border-slate-600 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400 border-2 border-transparent hover:text-slate-700 dark:hover:text-slate-300'}`}
                     >
                         Pages
                     </button>
                     <button
                         onClick={() => setMobileTab('hotspots')}
-                        className={`flex-1 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${mobileTab === 'hotspots' ? 'bg-white dark:bg-slate-700 border-2 border-slate-900 dark:border-slate-600 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400 border-2 border-transparent hover:text-slate-700 dark:hover:text-slate-300'}`}
+                        className={`flex-1 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${mobileTab === 'hotspots' ? 'bg-white dark:bg-slate-700 border-2 border-slate-200 dark:border-slate-600 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400 border-2 border-transparent hover:text-slate-700 dark:hover:text-slate-300'}`}
                     >
                         Hotspots
                     </button>
@@ -728,7 +728,7 @@ export default function FlipbookLayoutEditor({ album, onPlayVideo, onUpdateAlbum
             {/* Layout Sidebar / Selector */}
             <div className={`${mobileTab === 'pages' || manualPages.length === 0 ? 'flex' : 'hidden'} lg:flex flex-col w-full lg:w-72 gap-4 lg:gap-6 flex-shrink-0 order-3 lg:order-1 lg:h-full`}>
                 {canManage && (
-                    <div className="order-0 w-full bg-white dark:bg-slate-900 rounded-2xl border-4 border-slate-900 dark:border-slate-700 p-4 shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155]">
+                    <div className="order-0 w-full bg-white dark:bg-slate-900 rounded-2xl border-2 border-slate-200 dark:border-slate-700 p-4 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]">
                         {/* Cover & Back Cover Upload */}
                         <div className="flex gap-2 mb-3">
                             <div className="flex-1">
@@ -744,7 +744,7 @@ export default function FlipbookLayoutEditor({ album, onPlayVideo, onUpdateAlbum
                                     htmlFor="cover-upload"
                                     className={`flex items-center justify-center gap-2 w-full p-3 border-4 border-dashed border-slate-200 dark:border-slate-600 rounded-xl cursor-pointer hover:bg-emerald-50 dark:hover:bg-emerald-950/50 hover:border-emerald-400 dark:hover:border-emerald-500 transition-all group ${uploadingCover ? 'opacity-50 pointer-events-none' : 'active:translate-x-0.5 active:translate-y-0.5'}`}
                                 >
-                                    <div className="w-8 h-8 rounded-lg bg-emerald-400 dark:bg-emerald-600 border-2 border-slate-900 dark:border-slate-600 flex items-center justify-center group-hover:rotate-3 transition-transform shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] flex-shrink-0">
+                                    <div className="w-8 h-8 rounded-lg bg-emerald-400 dark:bg-emerald-600 border-2 border-slate-200 dark:border-slate-600 flex items-center justify-center group-hover:rotate-3 transition-transform shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] flex-shrink-0">
                                         {uploadingCover ? <Loader2 className="w-4 h-4 text-white animate-spin" /> : <BookOpen className="w-4 h-4 text-white" />}
                                     </div>
                                     <span className="text-[9px] font-black text-slate-900 dark:text-white uppercase tracking-widest leading-tight">
@@ -765,7 +765,7 @@ export default function FlipbookLayoutEditor({ album, onPlayVideo, onUpdateAlbum
                                     htmlFor="backcover-upload"
                                     className={`flex items-center justify-center gap-2 w-full p-3 border-4 border-dashed border-slate-200 dark:border-slate-600 rounded-xl cursor-pointer hover:bg-orange-50 dark:hover:bg-orange-950/50 hover:border-orange-400 dark:hover:border-orange-500 transition-all group ${uploadingBackCover ? 'opacity-50 pointer-events-none' : 'active:translate-x-0.5 active:translate-y-0.5'}`}
                                 >
-                                    <div className="w-8 h-8 rounded-lg bg-orange-400 dark:bg-orange-600 border-2 border-slate-900 dark:border-slate-600 flex items-center justify-center group-hover:rotate-3 transition-transform shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] flex-shrink-0">
+                                    <div className="w-8 h-8 rounded-lg bg-orange-400 dark:bg-orange-600 border-2 border-slate-200 dark:border-slate-600 flex items-center justify-center group-hover:rotate-3 transition-transform shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] flex-shrink-0">
                                         {uploadingBackCover ? <Loader2 className="w-4 h-4 text-white animate-spin" /> : <BookMarked className="w-4 h-4 text-white" />}
                                     </div>
                                     <span className="text-[9px] font-black text-slate-900 dark:text-white uppercase tracking-widest leading-tight">
@@ -789,7 +789,7 @@ export default function FlipbookLayoutEditor({ album, onPlayVideo, onUpdateAlbum
                                 htmlFor="pdf-upload"
                                 className={`flex flex-row items-center justify-start gap-4 p-4 border-4 border-dashed border-slate-200 dark:border-slate-600 rounded-xl cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 hover:border-indigo-400 dark:hover:border-indigo-500 transition-all group ${uploadingPdf ? 'opacity-50 pointer-events-none' : 'active:translate-x-0.5 active:translate-y-0.5'}`}
                             >
-                                <div className="w-10 h-10 rounded-xl bg-indigo-400 dark:bg-indigo-600 border-2 border-slate-900 dark:border-slate-600 flex items-center justify-center group-hover:rotate-3 transition-transform shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] flex-shrink-0">
+                                <div className="w-10 h-10 rounded-xl bg-indigo-400 dark:bg-indigo-600 border-2 border-slate-200 dark:border-slate-600 flex items-center justify-center group-hover:rotate-3 transition-transform shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] flex-shrink-0">
                                     <ImagePlus className="w-5 h-5 text-white" />
                                 </div>
                                 <div className="text-left flex-1">
@@ -803,7 +803,7 @@ export default function FlipbookLayoutEditor({ album, onPlayVideo, onUpdateAlbum
                     </div>
                 )}
 
-                <div className="w-full bg-white dark:bg-slate-900 rounded-2xl border-4 border-slate-900 dark:border-slate-700 p-4 shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155] h-auto lg:flex-1 flex flex-col min-h-0">
+                <div className="w-full bg-white dark:bg-slate-900 rounded-2xl border-2 border-slate-200 dark:border-slate-700 p-4 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] h-auto lg:flex-1 flex flex-col min-h-0">
                     <div className="flex items-center justify-between mb-3 lg:mb-4">
                         <h3 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] flex items-center gap-2">
                             Pages
@@ -840,7 +840,7 @@ export default function FlipbookLayoutEditor({ album, onPlayVideo, onUpdateAlbum
                                 onDragLeave={handlePageDragLeave}
                                 onDragEnd={handlePageDragEnd}
                                 className={`flex-shrink-0 w-20 sm:w-24 lg:w-full flex flex-col lg:flex-row gap-1.5 lg:gap-3 p-1.5 lg:p-2 rounded-xl border-2 lg:border-4 transition-all text-left group snap-start lg:snap-align-none ${selectedManualPageId === page.id
-                                    ? 'bg-amber-400 dark:bg-amber-500 border-slate-900 dark:border-slate-600 shadow-[2px_2px_0_0_#0f172a] lg:shadow-[3px_3px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] lg:dark:shadow-[3px_3px_0_0_#334155] -translate-y-0.5 lg:-translate-y-0'
+                                    ? 'bg-amber-400 dark:bg-amber-500 border-slate-200 dark:border-slate-600 shadow-[4px_4px_0_0_#334155] lg:shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] lg:dark:shadow-[4px_4px_0_0_#1e293b] -translate-y-0.5 lg:-translate-y-0'
                                     : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700'} ${isDragging ? 'opacity-50' : ''} ${isDropTarget ? 'ring-2 ring-indigo-400 dark:ring-indigo-500 ring-offset-2 dark:ring-offset-slate-900' : ''}`}
                             >
                                 {canManage && (
@@ -859,7 +859,7 @@ export default function FlipbookLayoutEditor({ album, onPlayVideo, onUpdateAlbum
                                     onClick={() => setSelectedManualPageId(page.id)}
                                     className="flex flex-1 min-w-0 flex-col lg:flex-row gap-1.5 lg:gap-3 p-0 rounded-lg border-0 bg-transparent text-left lg:items-center"
                                 >
-                                    <div className="w-full lg:w-14 aspect-[3/4] lg:h-[76px] bg-slate-100 dark:bg-slate-800 rounded-md overflow-hidden flex-shrink-0 border-2 border-slate-900 dark:border-slate-600 relative lg:group-hover:shadow-[2px_2px_0_0_#0f172a] dark:group-hover:shadow-[2px_2px_0_0_#334155] transition-all">
+                                    <div className="w-full lg:w-14 aspect-[3/4] lg:h-[76px] bg-slate-100 dark:bg-slate-800 rounded-md overflow-hidden flex-shrink-0 border-2 border-slate-200 dark:border-slate-600 relative lg:group-hover:shadow-[4px_4px_0_0_#334155] dark:group-hover:shadow-[2px_2px_0_0_#334155] transition-all">
                                         <img src={page.image_url} loading="lazy" decoding="async" className="w-full h-full object-cover" alt={label} />
                                         <div className="absolute top-0 right-0 bg-slate-900 dark:bg-slate-600 px-1 py-0.5 text-[7px] font-black text-white rounded-bl-md">
                                             {displayNum}
@@ -885,11 +885,11 @@ export default function FlipbookLayoutEditor({ album, onPlayVideo, onUpdateAlbum
             </div>
 
             {/* Hotspot Configuration Sidebar */}
-            <div className={`${mobileTab === 'hotspots' ? 'flex' : 'hidden'} lg:flex w-full lg:w-72 flex-col gap-4 flex-shrink-0 bg-white dark:bg-slate-900 rounded-2xl border-4 border-slate-900 dark:border-slate-700 p-4 order-4 lg:order-3 h-auto lg:h-full shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155]`}>
+            <div className={`${mobileTab === 'hotspots' ? 'flex' : 'hidden'} lg:flex w-full lg:w-72 flex-col gap-4 flex-shrink-0 bg-white dark:bg-slate-900 rounded-2xl border-2 border-slate-200 dark:border-slate-700 p-4 order-4 lg:order-3 h-auto lg:h-full shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]`}>
                 <h3 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-2">
                     {canManage ? 'Hotspot Editor' : 'Hotspots'}
                 </h3>
-                <div className="p-3 bg-slate-50 dark:bg-slate-800 border-4 border-slate-900 dark:border-slate-700 rounded-xl mb-2">
+                <div className="p-3 bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-xl mb-2">
                     <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase leading-relaxed">
                         {canManage
                             ? 'Klik pada halaman di area preview untuk menambahkan area interaktif (video popup).'
@@ -901,7 +901,7 @@ export default function FlipbookLayoutEditor({ album, onPlayVideo, onUpdateAlbum
                     <div className="flex-1 overflow-y-auto min-h-0 no-scrollbar pr-1 space-y-4">
                         {selectedPage.flipbook_video_hotspots.map((h, i) => {
                             return (
-                            <div key={h.id} className={`p-4 bg-white dark:bg-slate-800 border-4 border-slate-900 dark:border-slate-700 rounded-2xl space-y-4 shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155] ${!canManage ? 'opacity-80' : ''}`}>
+                            <div key={h.id} className={`p-4 bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-2xl space-y-4 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] ${!canManage ? 'opacity-80' : ''}`}>
                                 <div className="flex items-center justify-between gap-2">
                                     {canManage ? (
                                         <input
@@ -923,7 +923,7 @@ export default function FlipbookLayoutEditor({ album, onPlayVideo, onUpdateAlbum
                                     {canManage && (
                                         <button
                                             onClick={() => setDeleteHotspotConfirm(h.id)}
-                                            className="p-1.5 bg-red-50 dark:bg-red-950/50 text-red-500 dark:text-red-400 rounded-lg hover:bg-red-500 hover:text-white transition-all border-2 border-transparent hover:border-slate-900 dark:hover:border-slate-600 active:translate-x-0.5 active:translate-y-0.5"
+                                            className="p-1.5 bg-red-50 dark:bg-red-950/50 text-red-500 dark:text-red-400 rounded-lg hover:bg-red-500 hover:text-white transition-all border-2 border-transparent hover:border-slate-200 dark:hover:border-slate-600 active:translate-x-0.5 active:translate-y-0.5"
                                         >
                                             <Trash2 className="w-3.5 h-3.5" strokeWidth={3} />
                                         </button>
@@ -947,7 +947,7 @@ export default function FlipbookLayoutEditor({ album, onPlayVideo, onUpdateAlbum
                                                             ;(e.currentTarget as HTMLInputElement).blur()
                                                         }
                                                     }}
-                                                    className="w-full bg-slate-50 dark:bg-slate-800 border-4 border-slate-900 dark:border-slate-600 rounded-xl px-3 py-2 text-[10px] font-black text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-700 focus:outline-none placeholder:text-slate-300 dark:placeholder:text-slate-500 font-mono"
+                                                    className="w-full bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2 text-[10px] font-black text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-700 focus:outline-none placeholder:text-slate-300 dark:placeholder:text-slate-500 font-mono"
                                                 />
                                                 <div className="relative">
                                                     <input
@@ -960,7 +960,7 @@ export default function FlipbookLayoutEditor({ album, onPlayVideo, onUpdateAlbum
                                                     />
                                                     <label
                                                         htmlFor={`video-upload-${h.id}`}
-                                                        className={`flex items-center justify-center gap-2 px-3 py-2 bg-slate-100 dark:bg-slate-700 hover:bg-emerald-400 dark:hover:bg-emerald-600 border-4 border-slate-900 dark:border-slate-600 rounded-xl cursor-pointer transition-all text-[9px] font-black uppercase tracking-widest text-slate-900 dark:text-white shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 ${uploadingHotspotId === h.id ? 'opacity-50 pointer-events-none' : ''}`}
+                                                        className={`flex items-center justify-center gap-2 px-3 py-2 bg-slate-100 dark:bg-slate-700 hover:bg-emerald-400 dark:hover:bg-emerald-600 border-2 border-slate-200 dark:border-slate-600 rounded-xl cursor-pointer transition-all text-[9px] font-black uppercase tracking-widest text-slate-900 dark:text-white shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 ${uploadingHotspotId === h.id ? 'opacity-50 pointer-events-none' : ''}`}
                                                     >
                                                         {uploadingHotspotId === h.id ? <Loader2 className="w-3 h-3 animate-spin" strokeWidth={3} /> : <Play className="w-3 h-3" strokeWidth={3} />}
                                                         <span>{uploadingHotspotId === h.id ? 'Uploading...' : 'Upload Video File'}</span>
@@ -977,7 +977,7 @@ export default function FlipbookLayoutEditor({ album, onPlayVideo, onUpdateAlbum
                                 {!canManage && h.video_url && (
                                     <button
                                         onClick={() => onPlayVideo?.(h.video_url)}
-                                        className="w-full py-2 bg-indigo-400 dark:bg-indigo-600 text-white border-4 border-slate-900 dark:border-slate-600 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-[4px_4px_0_0_#0f172a] dark:shadow-[4px_4px_0_0_#334155] hover:shadow-none hover:translate-x-1 hover:translate-y-1 active:translate-x-1.5 active:translate-y-1.5 transition-all"
+                                        className="w-full py-2 bg-indigo-400 dark:bg-indigo-600 text-white border-2 border-slate-200 dark:border-slate-600 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:shadow-none hover:translate-x-1 hover:translate-y-1 active:translate-x-1.5 active:translate-y-1.5 transition-all"
                                     >
                                         Play Video
                                     </button>
@@ -987,7 +987,7 @@ export default function FlipbookLayoutEditor({ album, onPlayVideo, onUpdateAlbum
                         })}
                     </div>
                 ) : (
-                    <div className="flex-1 flex flex-col items-center justify-center text-center p-8 bg-slate-50 dark:bg-slate-800 border-4 border-dashed border-slate-200 dark:border-slate-600 rounded-2xl">
+                    <div className="flex-1 flex flex-col items-center justify-center text-center p-8 bg-slate-50 dark:bg-slate-800 border-2 border-dashed border-slate-200 dark:border-slate-600 rounded-2xl">
                         <Play className="w-10 h-10 mb-3 text-slate-200 dark:text-slate-600" strokeWidth={3} />
                         <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Belum ada hotspot di halaman ini.</p>
                     </div>
@@ -995,11 +995,11 @@ export default function FlipbookLayoutEditor({ album, onPlayVideo, onUpdateAlbum
             </div>
 
             {/* Main Preview Area */}
-            <div className={`w-full min-h-[55vh] lg:flex-1 lg:min-h-0 shrink-0 bg-white dark:bg-slate-900 rounded-[28px] lg:rounded-[36px] border-4 border-slate-900 dark:border-slate-700 overflow-hidden relative flex flex-col order-1 lg:order-2 shadow-[8px_8px_0_0_#0f172a] dark:shadow-[8px_8px_0_0_#334155] ${manualPages.length === 0 ? 'hidden lg:flex' : ''}`}>
+            <div className={`w-full min-h-[55vh] lg:flex-1 lg:min-h-0 shrink-0 bg-white dark:bg-slate-900 rounded-[28px] lg:rounded-[36px] border-2 border-slate-200 dark:border-slate-700 overflow-hidden relative flex flex-col order-1 lg:order-2 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] ${manualPages.length === 0 ? 'hidden lg:flex' : ''}`}>
                 <div className="flex-1 relative overflow-auto p-4 sm:p-12 flex no-scrollbar bg-white dark:bg-slate-900 min-h-[300px]">
                     {selectedPage ? (
                         <div
-                            className={`relative m-auto rounded-sm overflow-hidden shadow-[8px_8px_0_0_#0f172a] dark:shadow-[8px_8px_0_0_#334155] border-2 lg:border-4 border-slate-900 dark:border-slate-600 group ${isPageReady ? 'transition-opacity duration-700 opacity-100' : 'opacity-0'}`}
+                            className={`relative m-auto rounded-sm overflow-hidden shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] border-2 lg:border-2 border-slate-200 dark:border-slate-600 group ${isPageReady ? 'transition-opacity duration-700 opacity-100' : 'opacity-0'}`}
                             onMouseDown={handleMouseDown}
                             onMouseMove={handleMouseMove}
                             onMouseUp={handleMouseUp}
@@ -1034,7 +1034,7 @@ export default function FlipbookLayoutEditor({ album, onPlayVideo, onUpdateAlbum
                                     }}
                                 >
                                     {canManage && (
-                                        <div className="absolute -top-6 left-0 bg-amber-400 dark:bg-amber-500 border-2 border-slate-900 dark:border-slate-600 text-slate-900 dark:text-white text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 opacity-0 group-hover/hotspot:opacity-100 transition-opacity whitespace-nowrap shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155]">
+                                        <div className="absolute -top-6 left-0 bg-amber-400 dark:bg-amber-500 border-2 border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 opacity-0 group-hover/hotspot:opacity-100 transition-opacity whitespace-nowrap shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]">
                                             {h.label || `Hotspot #${i + 1}`}
                                         </div>
                                     )}
@@ -1043,7 +1043,7 @@ export default function FlipbookLayoutEditor({ album, onPlayVideo, onUpdateAlbum
                                             onClick={() => onPlayVideo?.(h.video_url)}
                                             className="absolute inset-0 flex items-center justify-center bg-white/20 opacity-0 hover:opacity-100 transition-opacity w-full h-full min-w-[24px] min-h-[24px]"
                                         >
-                                            <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-indigo-400 dark:bg-indigo-600 border-2 sm:border-4 border-slate-900 dark:border-slate-600 flex items-center justify-center text-white shadow-[2px_2px_0_0_#0f172a] sm:shadow-[4px_4px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] dark:sm:shadow-[4px_4px_0_0_#334155] transform hover:scale-110 active:scale-95 transition-all">
+                                            <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-indigo-400 dark:bg-indigo-600 border-2 sm:border-2 border-slate-200 dark:border-slate-600 flex items-center justify-center text-white shadow-[4px_4px_0_0_#334155] sm:shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] dark:sm:shadow-[4px_4px_0_0_#334155] transform hover:scale-110 active:scale-95 transition-all">
                                                 <Play className="w-4 h-4 sm:w-6 sm:h-6 fill-current ml-0.5 sm:ml-1" />
                                             </div>
                                         </button>
@@ -1054,7 +1054,7 @@ export default function FlipbookLayoutEditor({ album, onPlayVideo, onUpdateAlbum
                             {/* Drawing Preview */}
                             {drawingHotspot && (
                                 <div
-                                    className="absolute border-4 border-dashed border-emerald-400 bg-emerald-400/20 pointer-events-none z-50"
+                                    className="absolute border-2 border-dashed border-emerald-400 bg-emerald-400/20 pointer-events-none z-50"
                                     style={{
                                         left: `${Math.min(drawingHotspot.startX, drawingHotspot.currentX)}%`,
                                         top: `${Math.min(drawingHotspot.startY, drawingHotspot.currentY)}%`,
@@ -1065,7 +1065,7 @@ export default function FlipbookLayoutEditor({ album, onPlayVideo, onUpdateAlbum
                             )}
                         </div>
                     ) : (
-                        <div className="text-center py-20 bg-white dark:bg-slate-900 border-4 border-dashed border-slate-200 dark:border-slate-600 rounded-2xl p-12">
+                        <div className="text-center py-20 bg-white dark:bg-slate-900 border-2 border-dashed border-slate-200 dark:border-slate-600 rounded-2xl p-12">
                             <ImageIcon className="w-16 h-16 mx-auto mb-4 text-slate-200 dark:text-slate-600" strokeWidth={3} />
                             <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]">Pilih atau upload halaman PDF untuk memulai.</p>
                         </div>
@@ -1075,8 +1075,8 @@ export default function FlipbookLayoutEditor({ album, onPlayVideo, onUpdateAlbum
             {/* Hotspot Delete Confirmation Modal */}
             {deleteHotspotConfirm && (
                 <div className="fixed inset-0 bg-slate-900/40 dark:bg-black/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
-                    <div className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-[32px] p-8 max-w-md w-full shadow-[6px_6px_0_0_#0f172a] dark:shadow-[6px_6px_0_0_#334155] animate-in zoom-in-95 duration-200">
-                        <div className="w-16 h-16 bg-red-100 dark:bg-red-950/50 border-2 border-slate-900 dark:border-slate-600 rounded-2xl flex items-center justify-center mb-6">
+                    <div className="bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-[32px] p-8 max-w-md w-full shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] animate-in zoom-in-95 duration-200">
+                        <div className="w-16 h-16 bg-red-100 dark:bg-red-950/50 border-2 border-slate-200 dark:border-slate-600 rounded-2xl flex items-center justify-center mb-6">
                             <Trash2 className="w-8 h-8 text-red-500 dark:text-red-400" strokeWidth={3} />
                         </div>
                         <h3 className="text-xl font-black text-slate-900 dark:text-white mb-2 uppercase tracking-tight">Hapus Hotspot</h3>
@@ -1086,7 +1086,7 @@ export default function FlipbookLayoutEditor({ album, onPlayVideo, onUpdateAlbum
                         <div className="flex gap-4">
                             <button
                                 onClick={() => setDeleteHotspotConfirm(null)}
-                                className="flex-1 py-4 px-6 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white border-2 border-slate-900 dark:border-slate-600 font-black rounded-2xl uppercase tracking-widest text-xs shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] hover:bg-slate-200 dark:hover:bg-slate-700 transition-all active:translate-x-0.5 active:translate-y-0.5"
+                                className="flex-1 py-4 px-6 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white border-2 border-slate-200 dark:border-slate-600 font-black rounded-2xl uppercase tracking-widest text-xs shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:bg-slate-200 dark:hover:bg-slate-700 transition-all active:translate-x-0.5 active:translate-y-0.5"
                             >
                                 Batal
                             </button>
@@ -1097,7 +1097,7 @@ export default function FlipbookLayoutEditor({ album, onPlayVideo, onUpdateAlbum
                                         setDeleteHotspotConfirm(null)
                                     }
                                 }}
-                                className="flex-1 py-4 px-6 bg-red-500 text-white border-2 border-slate-900 dark:border-slate-700 font-black rounded-2xl uppercase tracking-widest text-xs shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
+                                className="flex-1 py-4 px-6 bg-red-500 text-white border-2 border-slate-200 dark:border-slate-700 font-black rounded-2xl uppercase tracking-widest text-xs shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
                             >
                                 Ya, Hapus
                             </button>
@@ -1109,8 +1109,8 @@ export default function FlipbookLayoutEditor({ album, onPlayVideo, onUpdateAlbum
             {/* Delete All Pages Confirmation Modal */}
             {deleteAllPagesConfirm && (
                 <div className="fixed inset-0 bg-slate-900/40 dark:bg-black/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
-                    <div className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-[32px] p-8 max-w-md w-full shadow-[6px_6px_0_0_#0f172a] dark:shadow-[6px_6px_0_0_#334155] animate-in zoom-in-95 duration-200">
-                        <div className="w-16 h-16 bg-red-100 dark:bg-red-950/50 border-2 border-slate-900 dark:border-slate-600 rounded-2xl flex items-center justify-center mb-6">
+                    <div className="bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-[32px] p-8 max-w-md w-full shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] animate-in zoom-in-95 duration-200">
+                        <div className="w-16 h-16 bg-red-100 dark:bg-red-950/50 border-2 border-slate-200 dark:border-slate-600 rounded-2xl flex items-center justify-center mb-6">
                             <Trash2 className="w-8 h-8 text-red-500 dark:text-red-400" strokeWidth={3} />
                         </div>
                         <h3 className="text-xl font-black text-slate-900 dark:text-white mb-2 uppercase tracking-tight">Hapus Semua Halaman</h3>
@@ -1127,7 +1127,7 @@ export default function FlipbookLayoutEditor({ album, onPlayVideo, onUpdateAlbum
                         <div className="flex gap-4">
                             <button
                                 onClick={() => setDeleteAllPagesConfirm(false)}
-                                className="flex-1 py-4 px-6 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white border-2 border-slate-900 dark:border-slate-600 font-black rounded-2xl uppercase tracking-widest text-xs shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] hover:bg-slate-200 dark:hover:bg-slate-700 transition-all active:translate-x-0.5 active:translate-y-0.5"
+                                className="flex-1 py-4 px-6 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white border-2 border-slate-200 dark:border-slate-600 font-black rounded-2xl uppercase tracking-widest text-xs shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:bg-slate-200 dark:hover:bg-slate-700 transition-all active:translate-x-0.5 active:translate-y-0.5"
                             >
                                 Batal
                             </button>
@@ -1136,7 +1136,7 @@ export default function FlipbookLayoutEditor({ album, onPlayVideo, onUpdateAlbum
                                     handleDeleteAllPages()
                                     setDeleteAllPagesConfirm(false)
                                 }}
-                                className="flex-1 py-4 px-6 bg-red-500 text-white border-2 border-slate-900 dark:border-slate-700 font-black rounded-2xl uppercase tracking-widest text-xs shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
+                                className="flex-1 py-4 px-6 bg-red-500 text-white border-2 border-slate-200 dark:border-slate-700 font-black rounded-2xl uppercase tracking-widest text-xs shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
                             >
                                 {isDeletingAll ? 'CLEANING...' : 'Ya, Hapus Semua'}
                             </button>

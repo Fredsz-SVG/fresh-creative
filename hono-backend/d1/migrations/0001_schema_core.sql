@@ -79,7 +79,7 @@ CREATE TABLE IF NOT EXISTS albums (
   name TEXT NOT NULL,
   type TEXT NOT NULL CHECK (type IN ('public', 'yearbook')),
   status TEXT CHECK (status IN ('pending', 'approved', 'declined')),
-  pricing_package_id TEXT REFERENCES pricing_packages(id),
+  pricing_package_id TEXT,
   visibility TEXT NOT NULL DEFAULT 'private' CHECK (visibility IN ('private', 'public')),
   cover_image_url TEXT,
   cover_image_position TEXT,
@@ -99,6 +99,8 @@ CREATE TABLE IF NOT EXISTS albums (
   flipbook_mode TEXT DEFAULT 'manual',
   payment_status TEXT DEFAULT 'unpaid' CHECK (payment_status IN ('unpaid', 'paid')),
   payment_url TEXT,
+  individual_payments_enabled INTEGER DEFAULT 1,
+  package_snapshot TEXT,
   created_at TEXT DEFAULT (datetime('now')),
   updated_at TEXT DEFAULT (datetime('now'))
 );
@@ -139,6 +141,9 @@ CREATE TABLE IF NOT EXISTS album_class_access (
   video_url TEXT,
   photos TEXT NOT NULL DEFAULT '[]',
   status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
+  has_paid INTEGER DEFAULT 0,
+  payment_status TEXT DEFAULT 'unpaid' CHECK (payment_status IN ('unpaid', 'pending', 'paid')),
+  payment_transaction_id TEXT,
   created_at TEXT DEFAULT (datetime('now')),
   updated_at TEXT DEFAULT (datetime('now')),
   UNIQUE (class_id, user_id)
@@ -240,6 +245,7 @@ CREATE TABLE IF NOT EXISTS transactions (
   description TEXT,
   new_students_count INTEGER,
   album_id TEXT REFERENCES albums(id) ON DELETE SET NULL,
+  access_id TEXT,
   created_at TEXT DEFAULT (datetime('now')),
   updated_at TEXT DEFAULT (datetime('now'))
 );
@@ -252,6 +258,7 @@ CREATE TABLE IF NOT EXISTS ai_feature_pricing (
   feature_slug TEXT NOT NULL UNIQUE,
   credits_per_use INTEGER NOT NULL DEFAULT 0,
   credits_per_unlock INTEGER NOT NULL DEFAULT 0,
+  duration_credits_json TEXT,
   created_at TEXT DEFAULT (datetime('now')),
   updated_at TEXT DEFAULT (datetime('now'))
 );
@@ -288,3 +295,41 @@ CREATE TABLE IF NOT EXISTS redeem_history (
   redeemed_at TEXT NOT NULL DEFAULT (datetime('now')),
   UNIQUE (redeem_code_id, user_id)
 );
+
+
+-- =============================================================================
+-- =============================================================================
+-- Site Settings
+-- =============================================================================
+CREATE TABLE IF NOT EXISTS site_settings (
+  key TEXT PRIMARY KEY NOT NULL,
+  value TEXT NOT NULL DEFAULT '{}'
+);
+
+INSERT OR REPLACE INTO site_settings (key, value)
+VALUES
+  ('showcase', '{"albumPreviews":[],"flipbookPreviewUrl":""}'),
+  ('fonnte_config', '{"target":""}');
+
+-- =============================================================================
+-- Performance & Hot-path Indexes
+-- =============================================================================
+-- Frequent filters in /api/albums/:id and /api/albums/:id/all-class-members
+CREATE INDEX IF NOT EXISTS idx_album_class_access_album_id ON album_class_access(album_id);
+CREATE INDEX IF NOT EXISTS idx_album_class_access_album_class ON album_class_access(album_id, class_id);
+CREATE INDEX IF NOT EXISTS idx_album_class_access_album_status ON album_class_access(album_id, status);
+CREATE INDEX IF NOT EXISTS idx_album_class_access_album_user_status ON album_class_access(album_id, user_id, status);
+CREATE INDEX IF NOT EXISTS idx_album_class_access_album_class_student ON album_class_access(album_id, class_id, student_name);
+-- Frequent lookups in /api/albums/:id/unlock-feature
+CREATE INDEX IF NOT EXISTS idx_feature_unlocks_user_album_feature ON feature_unlocks(user_id, album_id, feature_type);
+CREATE INDEX IF NOT EXISTS idx_feature_unlocks_album_feature ON feature_unlocks(album_id, feature_type);
+-- Frequent lookups in /api/albums/:id/flipbook
+CREATE INDEX IF NOT EXISTS idx_manual_flipbook_pages_album_page ON manual_flipbook_pages(album_id, page_number);
+CREATE INDEX IF NOT EXISTS idx_flipbook_video_hotspots_page_id ON flipbook_video_hotspots(page_id);
+-- Access checks used in multiple album admin endpoints
+CREATE INDEX IF NOT EXISTS idx_album_members_album_user ON album_members(album_id, user_id);
+CREATE INDEX IF NOT EXISTS idx_album_members_album_user_role ON album_members(album_id, user_id, role);
+-- Hot-path indexes for frequently hit API endpoints.
+CREATE INDEX IF NOT EXISTS idx_notifications_user_created_desc ON notifications(user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_album_members_user_album ON album_members(user_id, album_id);
+CREATE INDEX IF NOT EXISTS idx_album_class_access_user_status_album ON album_class_access(user_id, status, album_id);

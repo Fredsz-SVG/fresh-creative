@@ -25,11 +25,15 @@ photogroup.post('/', async (c) => {
     const supabase = getSupabaseClient(c)
     const db = getD1(c)
     if (!db) return c.json({ ok: false, error: 'Database not configured' }, 503)
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser()
     if (authError || !user) return c.json({ ok: false, error: 'Unauthorized' }, 401)
 
     const REPLICATE_API_TOKEN = ((c.env as ReplicateEnv).REPLICATE_API_TOKEN || '').trim()
-    if (!REPLICATE_API_TOKEN) return c.json({ ok: false, error: 'REPLICATE_API_TOKEN tidak dikonfigurasi' }, 500)
+    if (!REPLICATE_API_TOKEN)
+      return c.json({ ok: false, error: 'REPLICATE_API_TOKEN tidak dikonfigurasi' }, 500)
     const replicate = new Replicate({ auth: REPLICATE_API_TOKEN })
 
     let body: PhotoGroupBody
@@ -49,7 +53,9 @@ photogroup.post('/', async (c) => {
       body = (await c.req.json().catch(() => ({}))) as PhotoGroupBody
     }
 
-    const subjects = Array.isArray(body.subjects) ? body.subjects.filter((s): s is string => typeof s === 'string') : []
+    const subjects = Array.isArray(body.subjects)
+      ? body.subjects.filter((s): s is string => typeof s === 'string')
+      : []
     if (subjects.length < 2) return c.json({ ok: false, error: 'Minimal 2 gambar' }, 400)
     if (subjects.length > 10) return c.json({ ok: false, error: 'Maksimal 10 gambar' }, 400)
     if (!(body.prompt || '').trim()) return c.json({ ok: false, error: 'Prompt wajib diisi!' }, 400)
@@ -58,7 +64,10 @@ photogroup.post('/', async (c) => {
     for (let i = 0; i < subjects.length; i++) {
       const input = await imageStringToGeminiInput(subjects[i])
       if (!input) {
-        return c.json({ ok: false, error: `Gambar ke-${i + 1} tidak valid atau tidak bisa dibaca.` }, 400)
+        return c.json(
+          { ok: false, error: `Gambar ke-${i + 1} tidak valid atau tidak bisa dibaca.` },
+          400
+        )
       }
       geminiInputs.push(input)
     }
@@ -78,7 +87,12 @@ photogroup.post('/', async (c) => {
       if (!r.ok) return c.json({ ok: false, error: 'Credit tidak cukup' }, 402)
     }
 
-    const result = await generatePhotoGroupGemini(replicate, geminiInputs, body.prompt!.trim(), body.notes?.trim())
+    const result = await generatePhotoGroupGemini(
+      replicate,
+      geminiInputs,
+      body.prompt!.trim(),
+      body.notes?.trim()
+    )
 
     return c.json({ ok: true, result })
   } catch (err: unknown) {

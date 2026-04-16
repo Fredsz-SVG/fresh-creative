@@ -50,7 +50,11 @@ export async function imageStringToGeminiInput(s: string): Promise<GeminiImageIn
 
 function extractImageUrlFromFlashImageOutput(output: unknown): string {
   if (typeof output === 'string') {
-    if (output.startsWith('http://') || output.startsWith('https://') || output.startsWith('data:')) {
+    if (
+      output.startsWith('http://') ||
+      output.startsWith('https://') ||
+      output.startsWith('data:')
+    ) {
       return output
     }
   }

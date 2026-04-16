@@ -2,7 +2,10 @@ import { Hono } from 'hono'
 import { getSupabaseClient } from '../../../lib/supabase'
 import { getD1 } from '../../../lib/edge-env'
 import { parseJsonArray } from '../../../lib/d1-json'
-import { deductCreditsFromSupabaseAndMirrorToD1, getCreditsFromSupabase } from '../../../lib/credits'
+import {
+  deductCreditsFromSupabaseAndMirrorToD1,
+  getCreditsFromSupabase,
+} from '../../../lib/credits'
 
 const albumsIdUnlockFeature = new Hono()
 
@@ -11,7 +14,10 @@ albumsIdUnlockFeature.get('/', async (c) => {
   const supabase = getSupabaseClient(c)
   const db = getD1(c)
   if (!db) return c.json({ error: 'Database not configured' }, 503)
-  const { data: { user }, error: authError } = await supabase.auth.getUser()
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser()
   if (authError || !user) {
     return c.json({ error: 'Unauthorized' }, 401)
   }
@@ -28,17 +34,15 @@ albumsIdUnlockFeature.get('/', async (c) => {
       .all<{ feature_type: string; credits_spent: number; unlocked_at: string; user_id: string }>(),
     db
       .prepare(
-        `SELECT a.pricing_package_id, a.user_id, p.flipbook_enabled, p.ai_labs_features
+        `SELECT a.pricing_package_id, a.user_id, a.package_snapshot
          FROM albums a
-         LEFT JOIN pricing_packages p ON p.id = a.pricing_package_id
          WHERE a.id = ?`
       )
       .bind(albumId)
       .first<{
         pricing_package_id: string | null
         user_id: string
-        flipbook_enabled: number | null
-        ai_labs_features: string | null
+        package_snapshot: string | null
       }>(),
     db
       .prepare(`SELECT feature_slug, credits_per_unlock FROM ai_feature_pricing`)
@@ -59,9 +63,17 @@ albumsIdUnlockFeature.get('/', async (c) => {
   const album = albumRow
   let flipbookEnabledByPackage = false
   let aiLabsFeaturesByPackage: string[] = []
-  if (album?.pricing_package_id) {
-    flipbookEnabledByPackage = (album?.flipbook_enabled ?? 0) === 1
-    aiLabsFeaturesByPackage = parseJsonArray(album?.ai_labs_features) as string[]
+  if (album?.package_snapshot) {
+    const snapshot = JSON.parse(album.package_snapshot) as {
+      flipbook_enabled: boolean | number | string | number | string
+      ai_labs_features: string[]
+    }
+    flipbookEnabledByPackage = snapshot.flipbook_enabled === true || snapshot.flipbook_enabled === 1 || String(snapshot.flipbook_enabled) === 'true';
+      let _ai = snapshot.ai_labs_features || [];
+      if (typeof _ai === 'string') {
+        try { _ai = JSON.parse(_ai); } catch (e) {}
+      }
+      aiLabsFeaturesByPackage = Array.isArray(_ai) ? _ai : [];
   }
 
   const creditCosts: Record<string, number> = {}
@@ -85,7 +97,10 @@ albumsIdUnlockFeature.post('/', async (c) => {
   const supabase = getSupabaseClient(c)
   const db = getD1(c)
   if (!db) return c.json({ error: 'Database not configured' }, 503)
-  const { data: { user }, error: authError } = await supabase.auth.getUser()
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser()
   if (authError || !user) return c.json({ error: 'Unauthorized' }, 401)
   const albumId = c.req.param('id')
   const body = await c.req.json()
@@ -129,11 +144,17 @@ albumsIdUnlockFeature.post('/', async (c) => {
   if (cost <= 0) return c.json({ error: 'Fitur tidak dapat dibuka dengan credit.' }, 400)
 
   // Source of truth: Supabase credits
-  const credits = await getCreditsFromSupabase(c.env as Record<string, string>, user.id).catch(async () => {
-    const row = await db.prepare(`SELECT credits FROM users WHERE id = ?`).bind(user.id).first<{ credits: number | null }>()
-    return row?.credits ?? 0
-  })
-  if (credits < cost) return c.json({ error: 'Credit tidak cukup. Silakan top up terlebih dahulu.' }, 402)
+  const credits = await getCreditsFromSupabase(c.env as Record<string, string>, user.id).catch(
+    async () => {
+      const row = await db
+        .prepare(`SELECT credits FROM users WHERE id = ?`)
+        .bind(user.id)
+        .first<{ credits: number | null }>()
+      return row?.credits ?? 0
+    }
+  )
+  if (credits < cost)
+    return c.json({ error: 'Credit tidak cukup. Silakan top up terlebih dahulu.' }, 402)
 
   const unlockedAt = new Date().toISOString()
   const fid = crypto.randomUUID()

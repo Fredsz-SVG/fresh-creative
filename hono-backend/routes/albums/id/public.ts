@@ -13,7 +13,12 @@ albumsIdPublic.get('/', async (c) => {
     const album = await db
       .prepare(`SELECT id, name, description, students_count FROM albums WHERE id = ?`)
       .bind(albumId)
-      .first<{ id: string; name: string; description: string | null; students_count: number | null }>()
+      .first<{
+        id: string
+        name: string
+        description: string | null
+        students_count: number | null
+      }>()
     if (!album) {
       return c.json({ error: 'Album tidak ditemukan' }, 404)
     }

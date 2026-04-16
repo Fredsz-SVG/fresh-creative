@@ -25,7 +25,9 @@ inviteTokenGet.get('/:token', async (c) => {
 
   if (!album) return c.json({ error: 'Invite not found or invalid' }, 404)
 
-  const expiresAt = album.student_invite_expires_at ? new Date(album.student_invite_expires_at) : null
+  const expiresAt = album.student_invite_expires_at
+    ? new Date(album.student_invite_expires_at)
+    : null
   if (expiresAt && expiresAt < new Date()) {
     return c.json({ error: 'Invite expired' }, 410)
   }

@@ -31,7 +31,10 @@ verifyLoginOtp.post('/', async (c) => {
     return c.json({ error: 'Database not configured' }, 503)
   }
 
-  const { data: { user }, error: authError } = await supabase.auth.getUser()
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser()
 
   if (authError || !user?.email) {
     return c.json({ error: 'Unauthorized' }, 401)
@@ -46,9 +49,7 @@ verifyLoginOtp.post('/', async (c) => {
 
   const nowIso = new Date().toISOString()
   const row = await db
-    .prepare(
-      `SELECT user_id FROM login_otps WHERE user_id = ? AND code = ? AND expires_at > ?`
-    )
+    .prepare(`SELECT user_id FROM login_otps WHERE user_id = ? AND code = ? AND expires_at > ?`)
     .bind(user.id, code, nowIso)
     .first<{ user_id: string }>()
 

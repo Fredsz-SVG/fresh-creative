@@ -253,14 +253,14 @@ export default function UserPage() {
   return (
     <div className="max-w-6xl mx-auto space-y-8 sm:space-y-12 pb-12">
       {/* Welcome Hero Section */}
-      <div className="relative bg-white dark:bg-slate-900 rounded-3xl sm:rounded-[2rem] p-6 sm:p-12 border-2 border-slate-900 dark:border-white/20 overflow-hidden shadow-[4px_4px_0_0_#0f172a] sm:shadow-[8px_8px_0_0_#0f172a] dark:shadow-none transition-colors duration-500">
+      <div className="relative bg-white dark:bg-slate-900 rounded-3xl sm:rounded-[2rem] p-6 sm:p-12 border-2 border-slate-200 dark:border-white/20 overflow-hidden shadow-[4px_4px_0_0_#334155] sm:shadow-[4px_4px_0_0_#334155] dark:shadow-none transition-colors duration-500">
         {/* Retro Grid Pattern & Background color */}
         <div className="absolute inset-0 bg-[#f8fafc] dark:bg-slate-950" />
         <div className="absolute inset-0 bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] dark:bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:20px_20px] opacity-60" />
 
         {/* Decorative solid-colored brutalist blobs */}
-        <div className="absolute top-0 right-0 -translate-y-8 sm:-translate-y-12 translate-x-1/3 w-40 h-40 sm:w-64 sm:h-64 bg-emerald-400 dark:bg-emerald-600 rounded-full border-4 border-slate-900 dark:border-white/10 shadow-[2px_2px_0_0_#0f172a] sm:shadow-[4px_4px_0_0_#0f172a] dark:shadow-none pointer-events-none" />
-        <div className="absolute bottom-0 left-0 translate-y-1/3 -translate-x-1/3 w-32 h-32 sm:w-56 sm:h-56 bg-indigo-400 dark:bg-indigo-600 rounded-full border-4 border-slate-900 dark:border-white/10 shadow-[2px_2px_0_0_#0f172a] sm:shadow-[4px_4px_0_0_#0f172a] dark:shadow-none pointer-events-none" />
+        <div className="absolute top-0 right-0 -translate-y-8 sm:-translate-y-12 translate-x-1/3 w-40 h-40 sm:w-64 sm:h-64 bg-emerald-400 dark:bg-emerald-600 rounded-full border-2 border-slate-200 dark:border-white/10 shadow-[4px_4px_0_0_#334155] sm:shadow-[4px_4px_0_0_#334155] dark:shadow-none pointer-events-none" />
+        <div className="absolute bottom-0 left-0 translate-y-1/3 -translate-x-1/3 w-32 h-32 sm:w-56 sm:h-56 bg-indigo-400 dark:bg-indigo-600 rounded-full border-2 border-slate-200 dark:border-white/10 shadow-[4px_4px_0_0_#334155] sm:shadow-[4px_4px_0_0_#334155] dark:shadow-none pointer-events-none" />
 
         <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
           <div className="max-w-xl space-y-4 sm:space-y-6">
@@ -270,11 +270,11 @@ export default function UserPage() {
                 {nameLoaded ? (
                   <span className="text-indigo-600 dark:text-indigo-400 underline decoration-slate-900 dark:decoration-white decoration-4 sm:decoration-4 underline-offset-4">{userName || 'Pengguna'}</span>
                 ) : (
-                  <span className="inline-block h-5 sm:h-8 w-24 sm:w-48 bg-slate-200 dark:bg-slate-800 border-2 border-slate-900 dark:border-white/10 shadow-[2px_2px_0_0_#0f172a] dark:shadow-none animate-pulse align-middle" aria-hidden />
+                  <span className="inline-block h-5 sm:h-8 w-24 sm:w-48 bg-slate-200 dark:bg-slate-800 border-2 border-slate-200 dark:border-white/10 shadow-[4px_4px_0_0_#334155] dark:shadow-none animate-pulse align-middle" aria-hidden />
                 )}
               </h1>
               <div className="relative inline-block">
-                <p className="text-[11px] sm:text-lg font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 px-4 py-1.5 sm:px-8 sm:py-3 border-[3px] sm:border-4 border-slate-900 dark:border-white/20 rounded-[2.5rem] shadow-[3px_3px_0_0_#0f172a] sm:shadow-[6px_6px_0_0_#0f172a] dark:shadow-none leading-relaxed relative z-10">
+                <p className="text-[11px] sm:text-lg font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 px-4 py-1.5 sm:px-8 sm:py-3 border-[3px] sm:border-2 border-slate-200 dark:border-white/20 rounded-[2.5rem] shadow-[4px_4px_0_0_#334155] sm:shadow-[4px_4px_0_0_#334155] dark:shadow-none leading-relaxed relative z-10">
                   Buat, rancang, dan kelola buku kenangan digital angkatanmu dengan mudah dari sini.
                 </p>
               </div>
@@ -289,7 +289,7 @@ export default function UserPage() {
           <button
             type="button"
             onClick={() => setConfirmModal('yearbook')}
-            className="flex items-center justify-center gap-1.5 sm:gap-3 px-1 py-3.5 sm:px-10 sm:py-5 rounded-2xl bg-indigo-500 border-2 border-slate-900 dark:border-white/10 text-white text-[11px] sm:text-lg font-black tracking-tight sm:tracking-wide shadow-[4px_4px_0_0_#0f172a] sm:shadow-[6px_6px_0_0_#0f172a] dark:shadow-none hover:translate-y-0.5 hover:translate-x-0.5 sm:hover:translate-y-1 sm:hover:translate-x-1 hover:shadow-none transition-all duration-300"
+            className="flex items-center justify-center gap-1.5 sm:gap-3 px-1 py-3.5 sm:px-10 sm:py-5 rounded-2xl bg-indigo-500 border-2 border-slate-200 dark:border-white/10 text-white text-[11px] sm:text-lg font-black tracking-tight sm:tracking-wide shadow-[4px_4px_0_0_#334155] sm:shadow-[4px_4px_0_0_#334155] dark:shadow-none hover:translate-y-0.5 hover:translate-x-0.5 sm:hover:translate-y-1 sm:hover:translate-x-1 hover:shadow-none transition-all duration-300"
           >
             <PlusCircle className="w-4 h-4 sm:w-6 sm:h-6 shrink-0" />
             <span className="truncate">Buat Project</span>
@@ -297,7 +297,7 @@ export default function UserPage() {
           <button
             type="button"
             onClick={() => setShowJoinForm(!showJoinForm)}
-            className={`flex items-center justify-center gap-1.5 sm:gap-3 px-1 py-3.5 sm:px-10 sm:py-5 rounded-2xl border-2 border-slate-900 dark:border-white/10 text-[11px] sm:text-lg font-black tracking-tight sm:tracking-wide shadow-[4px_4px_0_0_#0f172a] sm:shadow-[6px_6px_0_0_#0f172a] dark:shadow-none hover:translate-y-0.5 hover:translate-x-0.5 sm:hover:translate-y-1 sm:hover:translate-x-1 hover:shadow-none transition-all duration-300 ${showJoinForm ? 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 shadow-none translate-x-0.5 translate-y-0.5' : 'bg-orange-300 dark:bg-orange-500 text-slate-900 dark:text-white'}`}
+            className={`flex items-center justify-center gap-1.5 sm:gap-3 px-1 py-3.5 sm:px-10 sm:py-5 rounded-2xl border-2 border-slate-200 dark:border-white/10 text-[11px] sm:text-lg font-black tracking-tight sm:tracking-wide shadow-[4px_4px_0_0_#334155] sm:shadow-[4px_4px_0_0_#334155] dark:shadow-none hover:translate-y-0.5 hover:translate-x-0.5 sm:hover:translate-y-1 sm:hover:translate-x-1 hover:shadow-none transition-all duration-300 ${showJoinForm ? 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 shadow-none translate-x-0.5 translate-y-0.5' : 'bg-orange-300 dark:bg-orange-500 text-slate-900 dark:text-white'}`}
           >
             <UserPlus className="w-4 h-4 sm:w-6 sm:h-6 shrink-0" />
             <span className="truncate">{showJoinForm ? 'Tutup Join' : 'Join Project'}</span>
@@ -306,7 +306,7 @@ export default function UserPage() {
 
         {/* Revealable Join Form di Bawah Tombol */}
         {showJoinForm && (
-          <div className="w-full max-w-2xl flex flex-col sm:flex-row gap-3 p-5 bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-white/10 rounded-2xl animate-in slide-in-from-bottom-4 duration-300 shadow-[8px_8px_0_0_#0f172a] dark:shadow-none">
+          <div className="w-full max-w-2xl flex flex-col sm:flex-row gap-3 p-5 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-white/10 rounded-2xl animate-in slide-in-from-bottom-4 duration-300 shadow-[4px_4px_0_0_#334155] dark:shadow-none">
             <div className="flex-1 relative">
               <input
                 type="text"
@@ -315,7 +315,7 @@ export default function UserPage() {
                 onChange={(e) => { setInviteLinkInput(e.target.value); setJoinError(null) }}
                 onKeyDown={(e) => e.key === 'Enter' && handleOpenInviteLink()}
                 placeholder="Masukan kode undangan atau link..."
-                className="w-full px-5 py-3 text-base font-bold rounded-xl bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-white/10 shadow-inner text-slate-800 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-indigo-500 transition-colors"
+                className="w-full px-5 py-3 text-base font-bold rounded-xl bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-white/10 shadow-inner text-slate-800 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-indigo-500 transition-colors"
               />
               {joinError && <p className="text-xs text-red-500 absolute -bottom-5 left-1 font-bold">{joinError}</p>}
             </div>
@@ -332,13 +332,13 @@ export default function UserPage() {
         {/* Modal Konfirmasi Create Project */}
         {confirmModal && (
           <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/40 dark:bg-black/50 backdrop-blur-md" onClick={() => setConfirmModal(null)}>
-            <div className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-[32px] p-6 sm:p-8 max-w-sm w-full shadow-[6px_6px_0_0_#0f172a] dark:shadow-[6px_6px_0_0_#334155] text-center" onClick={(e) => e.stopPropagation()}>
+            <div className="bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-[32px] p-6 sm:p-8 max-w-sm w-full shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] text-center" onClick={(e) => e.stopPropagation()}>
               <h3 className="text-xl font-black text-slate-900 dark:text-white mb-6 uppercase tracking-tight">Mulai Project Baru</h3>
               <div className="flex flex-col gap-3">
                 <button
                   type="button"
                   onClick={() => router.push('/user/showroom')}
-                  className="w-full flex items-center justify-center gap-2 py-3.5 text-xs font-black uppercase tracking-widest rounded-xl bg-emerald-400 dark:bg-emerald-600 border-2 border-slate-900 dark:border-slate-600 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] text-slate-900 dark:text-white hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
+                  className="w-full flex items-center justify-center gap-2 py-3.5 text-xs font-black uppercase tracking-widest rounded-xl bg-emerald-400 dark:bg-emerald-600 border-2 border-slate-200 dark:border-slate-600 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] text-slate-900 dark:text-white hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
                 >
                   <BookOpen className="w-5 h-5" />
                   Gas Lanjut!
@@ -346,7 +346,7 @@ export default function UserPage() {
                 <button
                   type="button"
                   onClick={() => setConfirmModal(null)}
-                  className="w-full py-3.5 rounded-xl bg-slate-100 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 text-slate-900 dark:text-white text-xs font-black uppercase tracking-widest shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
+                  className="w-full py-3.5 rounded-xl bg-slate-100 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white text-xs font-black uppercase tracking-widest shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
                 >
                   Batal
                 </button>
@@ -358,9 +358,9 @@ export default function UserPage() {
 
       <div className="grid grid-cols-2 gap-3 sm:gap-8">
         {/* Album Carousel Showcase Card */}
-        <div className="group rounded-[1.25rem] sm:rounded-[2rem] border-2 border-slate-900 dark:border-white/10 bg-white dark:bg-slate-900 shadow-[4px_4px_0_0_#0f172a] sm:shadow-[8px_8px_0_0_#0f172a] dark:shadow-none overflow-hidden hover:translate-y-1 hover:translate-x-1 hover:shadow-[2px_2px_0_0_#0f172a] sm:hover:shadow-[4px_4px_0_0_#0f172a] dark:hover:shadow-none transition-all duration-300 flex flex-col">
-          <div className="p-3 sm:p-6 border-b-2 border-slate-900 dark:border-white/10 flex flex-col items-center justify-center bg-white dark:bg-slate-900 relative z-10 w-full text-center">
-            <div className="shrink-0 w-10 h-10 sm:w-12 sm:h-12 mb-2 sm:mb-3 rounded-xl bg-orange-50 dark:bg-orange-900/20 border-2 border-slate-900 dark:border-white/10 shadow-[2px_2px_0_0_#0f172a] dark:shadow-none flex items-center justify-center">
+        <div className="group rounded-[1.25rem] sm:rounded-[2rem] border-2 border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 shadow-[4px_4px_0_0_#334155] sm:shadow-[4px_4px_0_0_#334155] dark:shadow-none overflow-hidden hover:translate-y-1 hover:translate-x-1 hover:shadow-[4px_4px_0_0_#334155] sm:hover:shadow-[4px_4px_0_0_#334155] dark:hover:shadow-none transition-all duration-300 flex flex-col">
+          <div className="p-3 sm:p-6 border-b-2 border-slate-200 dark:border-white/10 flex flex-col items-center justify-center bg-white dark:bg-slate-900 relative z-10 w-full text-center">
+            <div className="shrink-0 w-10 h-10 sm:w-12 sm:h-12 mb-2 sm:mb-3 rounded-xl bg-orange-50 dark:bg-orange-900/20 border-2 border-slate-200 dark:border-white/10 shadow-[4px_4px_0_0_#334155] dark:shadow-none flex items-center justify-center">
               <GalleryHorizontal className="w-5 h-5 sm:w-6 sm:h-6 text-orange-500 dark:text-orange-400" />
             </div>
             <h3 className="text-[13px] sm:text-[18px] font-black text-slate-800 dark:text-white tracking-tight leading-tight">Swipe Album</h3>
@@ -381,7 +381,7 @@ export default function UserPage() {
                 <div className="relative group cursor-not-allowed w-full flex justify-center grayscale opacity-50 hover:opacity-60 transition-opacity">
                   <AnimatedCarouselMockup />
                   <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                    <span className="bg-white/90 text-slate-800 font-bold px-4 py-2 rounded-full shadow-lg text-sm border-2 border-slate-900 dark:border-white/20">Belum diatur</span>
+                    <span className="bg-white/90 text-slate-800 font-bold px-4 py-2 rounded-full shadow-lg text-sm border-2 border-slate-200 dark:border-white/20">Belum diatur</span>
                   </div>
                 </div>
               </div>
@@ -399,7 +399,7 @@ export default function UserPage() {
                       >
                         <AnimatedCarouselMockup imageUrl={item.imageUrl} />
                         {/* Mobile: Neo-Brutalist "Klik untuk Demo" Badge - Floating (Super-compact) */}
-                        <div className="sm:hidden absolute bottom-4 left-1/2 -translate-x-1/2 z-30 px-2 py-0.5 bg-yellow-400 border-[1.5px] border-slate-900 rounded-md text-slate-900 text-[8px] font-black shadow-[2px_2px_0_0_#0f172a] whitespace-nowrap animate-float tracking-tighter">
+                        <div className="sm:hidden absolute bottom-4 left-1/2 -translate-x-1/2 z-30 px-2 py-0.5 bg-yellow-400 border-[1.5px] border-slate-200 rounded-md text-slate-900 text-[8px] font-black shadow-[4px_4px_0_0_#334155] whitespace-nowrap animate-float tracking-tighter">
                           Klik untuk Demo
                         </div>
                         <div className="absolute inset-0 hidden sm:flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300">
@@ -419,9 +419,9 @@ export default function UserPage() {
         </div>
 
         {/* Flipbook Showcase Card */}
-        <div className="group rounded-[1.25rem] sm:rounded-[2rem] border-2 border-slate-900 dark:border-white/10 bg-white dark:bg-slate-900 shadow-[4px_4px_0_0_#0f172a] sm:shadow-[8px_8px_0_0_#0f172a] dark:shadow-none overflow-hidden hover:translate-y-1 hover:translate-x-1 hover:shadow-[2px_2px_0_0_#0f172a] sm:hover:shadow-[4px_4px_0_0_#0f172a] dark:hover:shadow-none transition-all duration-300 flex flex-col">
-          <div className="p-3 sm:p-6 border-b-2 border-slate-900 dark:border-white/10 flex flex-col items-center justify-center bg-white dark:bg-slate-900 relative z-10 w-full text-center">
-            <div className="shrink-0 w-10 h-10 sm:w-12 sm:h-12 mb-2 sm:mb-3 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 border-2 border-slate-900 dark:border-white/10 shadow-[2px_2px_0_0_#0f172a] dark:shadow-none flex items-center justify-center">
+        <div className="group rounded-[1.25rem] sm:rounded-[2rem] border-2 border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 shadow-[4px_4px_0_0_#334155] sm:shadow-[4px_4px_0_0_#334155] dark:shadow-none overflow-hidden hover:translate-y-1 hover:translate-x-1 hover:shadow-[4px_4px_0_0_#334155] sm:hover:shadow-[4px_4px_0_0_#334155] dark:hover:shadow-none transition-all duration-300 flex flex-col">
+          <div className="p-3 sm:p-6 border-b-2 border-slate-200 dark:border-white/10 flex flex-col items-center justify-center bg-white dark:bg-slate-900 relative z-10 w-full text-center">
+            <div className="shrink-0 w-10 h-10 sm:w-12 sm:h-12 mb-2 sm:mb-3 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 border-2 border-slate-200 dark:border-white/10 shadow-[4px_4px_0_0_#334155] dark:shadow-none flex items-center justify-center">
               <BookMarked className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-500 dark:text-emerald-400" />
             </div>
             <h3 className="text-[13px] sm:text-[18px] font-black text-slate-800 dark:text-white tracking-tight leading-tight">3D Flipbook</h3>
@@ -443,7 +443,7 @@ export default function UserPage() {
                   >
                     <AnimatedFlipbookMockup />
                     {/* Mobile: Neo-Brutalist "Klik untuk Demo" Badge - Floating (Super-compact) */}
-                    <div className="sm:hidden absolute bottom-4 left-1/2 -translate-x-1/2 z-30 px-2 py-0.5 bg-yellow-400 border-[1.5px] border-slate-900 rounded-md text-slate-900 text-[8px] font-black shadow-[2px_2px_0_0_#0f172a] whitespace-nowrap animate-float tracking-tighter">
+                    <div className="sm:hidden absolute bottom-4 left-1/2 -translate-x-1/2 z-30 px-2 py-0.5 bg-yellow-400 border-[1.5px] border-slate-200 rounded-md text-slate-900 text-[8px] font-black shadow-[4px_4px_0_0_#334155] whitespace-nowrap animate-float tracking-tighter">
                       Klik untuk Demo
                     </div>
                     <div className="absolute inset-0 hidden sm:flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300">
@@ -461,7 +461,7 @@ export default function UserPage() {
                 <div className="relative group cursor-not-allowed w-full flex justify-center px-1 sm:px-0 grayscale opacity-50 hover:opacity-60 transition-opacity">
                   <AnimatedFlipbookMockup />
                   <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                    <span className="bg-white/90 text-slate-800 font-bold px-4 py-2 rounded-full shadow-lg text-sm border-2 border-slate-900 dark:border-white/20">Belum diatur</span>
+                    <span className="bg-white/90 text-slate-800 font-bold px-4 py-2 rounded-full shadow-lg text-sm border-2 border-slate-200 dark:border-white/20">Belum diatur</span>
                   </div>
                 </div>
               </div>

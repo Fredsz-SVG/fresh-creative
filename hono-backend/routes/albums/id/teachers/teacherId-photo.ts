@@ -18,7 +18,10 @@ teacherIdPhoto.post('/', async (c) => {
     const albumId = c.req.param('id')
     const teacherId = c.req.param('teacherId')
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser()
     if (authError || !user) return c.json({ error: 'Unauthorized' }, 401)
 
     const isGlobalAdmin = (await getRole(c, user)) === 'admin'
@@ -78,7 +81,9 @@ teacherIdPhoto.post('/', async (c) => {
     const publicUrl = publicAlbumAssetUrl(c, relPath)
 
     const upd = await db
-      .prepare(`UPDATE album_teachers SET photo_url = ?, updated_at = datetime('now') WHERE id = ? AND album_id = ?`)
+      .prepare(
+        `UPDATE album_teachers SET photo_url = ?, updated_at = datetime('now') WHERE id = ? AND album_id = ?`
+      )
       .bind(publicUrl, teacherId, albumId)
       .run()
 
@@ -114,7 +119,10 @@ teacherIdPhoto.delete('/', async (c) => {
     const albumId = c.req.param('id')
     const teacherId = c.req.param('teacherId')
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser()
     if (authError || !user) return c.json({ error: 'Unauthorized' }, 401)
 
     const isGlobalAdmin = (await getRole(c, user)) === 'admin'
@@ -151,7 +159,9 @@ teacherIdPhoto.delete('/', async (c) => {
     }
 
     const upd = await db
-      .prepare(`UPDATE album_teachers SET photo_url = NULL, updated_at = datetime('now') WHERE id = ? AND album_id = ?`)
+      .prepare(
+        `UPDATE album_teachers SET photo_url = NULL, updated_at = datetime('now') WHERE id = ? AND album_id = ?`
+      )
       .bind(teacherId, albumId)
       .run()
     if (!upd.success) return c.json({ error: 'Update failed' }, 500)

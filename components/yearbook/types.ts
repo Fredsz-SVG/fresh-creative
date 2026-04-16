@@ -6,6 +6,15 @@ export type AlbumClass = {
   batch_photo_url?: string | null
 }
 
+export type PackageSnapshot = {
+  name: string
+  price_per_student: number
+  min_students: number
+  features: string
+  flipbook_enabled: boolean
+  ai_labs_features: string[]
+}
+
 export type Album = {
   id: string
   name: string
@@ -23,6 +32,7 @@ export type Album = {
   payment_url?: string | null
   total_estimated_price?: number
   pricing_package_id?: string | null
+  package_snapshot?: PackageSnapshot | null
   classes: AlbumClass[]
 }
 

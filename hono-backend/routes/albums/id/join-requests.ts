@@ -11,18 +11,21 @@ albumJoinRequestsRoute.get('/', async (c) => {
     const db = getD1(c)
     if (!db) return c.json({ error: 'Database not configured' }, 503)
     const status = c.req.query('status')
-    const { data: { user } } = await supabase.auth.getUser()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
     if (!user) {
       return c.json({ error: 'Unauthorized' }, 401)
     }
     if (status === 'approved') {
       const { results: approvedData } = await db
         .prepare(
-          `SELECT id, user_id, student_name, email, class_id, status, created_at FROM album_class_access
+          `SELECT id, user_id, student_name, email, class_id, status, has_paid, payment_status, created_at FROM album_class_access
            WHERE album_id = ? AND status = 'approved' ORDER BY created_at DESC`
         )
         .bind(albumId)
         .all<Record<string, unknown>>()
+
       const transformed = (approvedData ?? []).map((access) => ({
         id: access.id,
         album_id: albumId,
@@ -33,6 +36,8 @@ albumJoinRequestsRoute.get('/', async (c) => {
         class_name: null,
         assigned_class_id: access.class_id,
         status: 'approved',
+        has_paid: access.has_paid,
+        payment_status: access.payment_status,
         requested_at: access.created_at,
         approved_at: access.created_at,
         approved_by: null,
@@ -47,7 +52,10 @@ albumJoinRequestsRoute.get('/', async (c) => {
       binds.push(status)
     }
     sql += ` ORDER BY requested_at DESC`
-    const { results: data } = await db.prepare(sql).bind(...binds).all<Record<string, unknown>>()
+    const { results: data } = await db
+      .prepare(sql)
+      .bind(...binds)
+      .all<Record<string, unknown>>()
     return c.json(data ?? [])
   } catch {
     return c.json({ error: 'Failed to fetch join requests' })
@@ -65,7 +73,10 @@ albumJoinRequestsRoute.post('/', async (c) => {
     const supabase = getSupabaseClient(c)
     const db = getD1(c)
     if (!db) return c.json({ error: 'Database not configured' }, 503)
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser()
     if (authError || !user) {
       return c.json({ error: 'Unauthorized - silakan login terlebih dahulu' }, 401)
     }
@@ -96,7 +107,9 @@ albumJoinRequestsRoute.post('/', async (c) => {
     }
 
     const existing = await db
-      .prepare(`SELECT id, status, email FROM album_join_requests WHERE album_id = ? AND user_id = ?`)
+      .prepare(
+        `SELECT id, status, email FROM album_join_requests WHERE album_id = ? AND user_id = ?`
+      )
       .bind(albumId, user.id)
       .first<{ id: string; status: string; email: string }>()
 
@@ -163,7 +176,10 @@ albumJoinRequestsRoute.post('/', async (c) => {
       return c.json({ error: 'Gagal mendaftar' })
     }
     await insertNotif()
-    const request_data = await db.prepare(`SELECT * FROM album_join_requests WHERE id = ?`).bind(rid).first()
+    const request_data = await db
+      .prepare(`SELECT * FROM album_join_requests WHERE id = ?`)
+      .bind(rid)
+      .first()
     return c.json(
       {
         success: true,

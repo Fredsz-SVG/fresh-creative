@@ -14,7 +14,9 @@ creditsCheckout.post('/', async (c) => {
     const { packageId } = body
     if (!packageId) return c.json({ error: 'Package ID required' }, 400)
 
-    const { data: { user } } = await supabase.auth.getUser()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
     if (!user) return c.json({ error: 'Unauthorized' }, 401)
     const userId = user.id
 
@@ -65,7 +67,11 @@ creditsCheckout.post('/', async (c) => {
       },
       body: JSON.stringify(invoicePayload),
     })
-    const invoice = (await xenditRes.json()) as { message?: string; invoice_url?: string; status?: string }
+    const invoice = (await xenditRes.json()) as {
+      message?: string
+      invoice_url?: string
+      status?: string
+    }
 
     if (!xenditRes.ok) {
       console.error('Xendit error:', invoice)
@@ -90,7 +96,10 @@ creditsCheckout.post('/', async (c) => {
         )
         .run()
     } catch (dbErr: unknown) {
-      console.error('Failed to insert transaction to DB:', dbErr instanceof Error ? dbErr.message : dbErr)
+      console.error(
+        'Failed to insert transaction to DB:',
+        dbErr instanceof Error ? dbErr.message : dbErr
+      )
     }
 
     return c.json({ invoiceUrl: invoice.invoice_url })

@@ -56,7 +56,10 @@ albumsIdTeachers.post('/', async (c) => {
     if (!name || !name.trim()) {
       return c.json({ error: 'Nama guru harus diisi' }, 400)
     }
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser()
     if (authError || !user) {
       return c.json({ error: 'Unauthorized' }, 401)
     }
@@ -81,7 +84,9 @@ albumsIdTeachers.post('/', async (c) => {
       }
     }
     const lastTeacher = await db
-      .prepare(`SELECT sort_order FROM album_teachers WHERE album_id = ? ORDER BY sort_order DESC LIMIT 1`)
+      .prepare(
+        `SELECT sort_order FROM album_teachers WHERE album_id = ? ORDER BY sort_order DESC LIMIT 1`
+      )
       .bind(albumId)
       .first<{ sort_order: number | null }>()
     const nextSortOrder = (lastTeacher?.sort_order ?? -1) + 1

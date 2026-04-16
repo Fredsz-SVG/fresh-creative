@@ -8,7 +8,9 @@ joinAsOwnerRoute.post('/', async (c) => {
   const supabase = getSupabaseClient(c)
   const db = getD1(c)
   if (!db) return c.json({ error: 'Database not configured' }, 503)
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   if (!user) {
     return c.json({ error: 'Unauthorized' }, 401)
   }
@@ -42,7 +44,9 @@ joinAsOwnerRoute.post('/', async (c) => {
   }
 
   const anyAccess = await db
-    .prepare(`SELECT id, class_id, student_name FROM album_class_access WHERE album_id = ? AND user_id = ?`)
+    .prepare(
+      `SELECT id, class_id, student_name FROM album_class_access WHERE album_id = ? AND user_id = ?`
+    )
     .bind(albumId, user.id)
     .first<{ id: string; class_id: string; student_name: string }>()
 
@@ -72,8 +76,7 @@ joinAsOwnerRoute.post('/', async (c) => {
     typeof body?.student_name === 'string' && body.student_name.trim()
       ? body.student_name.trim()
       : fullName || userEmail || ''
-  const email =
-    typeof body?.email === 'string' && body.email.trim() ? body.email.trim() : userEmail
+  const email = typeof body?.email === 'string' && body.email.trim() ? body.email.trim() : userEmail
 
   const accessId = crypto.randomUUID()
   const ins = await db
@@ -94,7 +97,10 @@ joinAsOwnerRoute.post('/', async (c) => {
     )
   }
 
-  const newAccess = await db.prepare(`SELECT * FROM album_class_access WHERE id = ?`).bind(accessId).first()
+  const newAccess = await db
+    .prepare(`SELECT * FROM album_class_access WHERE id = ?`)
+    .bind(accessId)
+    .first()
 
   return c.json({
     success: true,

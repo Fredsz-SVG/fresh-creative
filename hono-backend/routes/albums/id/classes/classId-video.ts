@@ -14,7 +14,9 @@ classIdVideo.post('/', async (c) => {
   const bucket = getAssets(c)
   if (!db) return c.json({ error: 'Database not configured' }, 503)
   if (!bucket) return c.json({ error: 'Storage not configured' }, 503)
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   if (!user) return c.json({ error: 'Unauthorized' }, 401)
 
   const albumId = c.req.param('id')
@@ -64,7 +66,8 @@ classIdVideo.post('/', async (c) => {
       )
       .bind(albumId, classId, user.id)
       .first<{ id: string; student_name: string | null }>()
-    if (!access) return c.json({ error: 'Anda hanya dapat upload video untuk profil Anda sendiri' }, 403)
+    if (!access)
+      return c.json({ error: 'Anda hanya dapat upload video untuk profil Anda sendiri' }, 403)
     // Source of truth dari DB agar tidak gagal karena student_name di UI beda/blank
     studentName = access.student_name || studentName || user.id
     accessId = access.id
@@ -92,9 +95,7 @@ classIdVideo.post('/', async (c) => {
         isOwner ? 'class_id = ? AND student_name = ? AND album_id = ?' : 'id = ?'
       }`
     )
-    .bind(
-      ...(isOwner ? [videoUrl, classId, studentName, albumId] : [videoUrl, accessId])
-    )
+    .bind(...(isOwner ? [videoUrl, classId, studentName, albumId] : [videoUrl, accessId]))
     .run()
   if (!upd.success) return c.json({ error: 'Update failed' }, 500)
   return c.json({ video_url: videoUrl })
