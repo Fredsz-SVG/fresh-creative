@@ -71,14 +71,14 @@ export async function generateAndPrintInvoice(tx: InvoiceTransaction) {
         const pkgStr = String(tx.package_snapshot)
         const pkg = typeof pkgStr === 'string' ? JSON.parse(pkgStr) : pkgStr
         
-        if (pkg.price_per_student) {
+        if (pkg && pkg.price_per_student) {
           const baseP = Number(pkg.price_per_student)
           const rowPrice = baseP * itemsQuantity
           totalCalculated += rowPrice
           lineItemsHtml += `<tr><td>Paket Dasar</td><td class="text-right">${itemsQuantity}</td><td class="text-right" style="white-space: nowrap;">Rp ${rowPrice.toLocaleString('id-ID')}</td></tr>`
         }
 
-        if (pkg.features && Array.isArray(pkg.features)) {
+        if (pkg && pkg.features && Array.isArray(pkg.features)) {
           for (const f of pkg.features) {
             try {
               const j = typeof f === 'string' ? JSON.parse(f) : f
@@ -94,7 +94,7 @@ export async function generateAndPrintInvoice(tx: InvoiceTransaction) {
       }
     } catch(_err) { /* ignore parse */ }
 
-    if (lineItemsHtml === '' || totalCalculated !== tx.amount) {
+    if (lineItemsHtml === '' || Number(totalCalculated) !== Number(tx.amount)) {
       lineItemsHtml = `<tr>
         <td>${desc}</td>
         <td class="text-right">1</td>
