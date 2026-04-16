@@ -235,31 +235,6 @@ export default function ApprovalView({
         </div>
       )}
 
-      {/* Checkout Invoice Popup */}
-      {checkoutInvoiceUrl && (
-        <div className="fixed inset-0 z-[110] flex flex-col bg-white dark:bg-slate-950" role="dialog" aria-modal="true" aria-label="Pembayaran">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-slate-700 bg-gray-100 dark:bg-slate-900 shrink-0">
-            <h3 className="text-sm font-semibold text-gray-800 dark:text-white">Selesaikan Pembayaran</h3>
-            <button
-              type="button"
-              onClick={() => setCheckoutInvoiceUrl(null)}
-              className="flex items-center justify-center w-9 h-9 rounded-lg text-gray-400 dark:text-slate-500 hover:text-gray-800 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-          <div className="flex-1 min-h-0 relative">
-            <iframe
-              src={checkoutInvoiceUrl}
-              title="Invoice Pembayaran"
-              className="absolute inset-0 w-full h-full border-0"
-              sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-top-navigation"
-              allow="payment"
-            />
-          </div>
-        </div>
-      )}
-
       <div className="mb-3 sm:mb-5">
         <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 sm:gap-4 mb-4 sm:mb-8 p-3 sm:p-6 bg-white dark:bg-slate-900 border-2 sm:border-2 border-slate-200 dark:border-slate-700 rounded-2xl sm:rounded-[32px] shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]">
             <div className="flex flex-col items-center px-2 sm:px-4 border-r-2 border-slate-100 dark:border-slate-700">
