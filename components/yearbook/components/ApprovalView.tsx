@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useMemo } from 'react'
-import { Edit3, Plus, Minus, Check, X, Clock, ClipboardList, Copy, Link as LinkIcon, CreditCard, Loader2, Wallet, Trash2, Search } from 'lucide-react'
+import { Edit3, Plus, Minus, Check, X, Clock, ClipboardList, Copy, Link as LinkIcon, Loader2, Trash2, Search } from 'lucide-react'
 import { toast } from '@/lib/toast'
 import { apiUrl } from '../../../lib/api-url'
 import { fetchWithAuth } from '../../../lib/api-client'
@@ -99,10 +99,7 @@ export default function ApprovalView({
   }, [approvalTab, setApprovalTab])
   const [assigningRequest, setAssigningRequest] = useState<string | null>(null)
   const [selectedClassForAssign, setSelectedClassForAssign] = useState('')
-  const [pricingPackages, setPricingPackages] = useState<PricingPackage[]>([])
-  const [loadingPricing, setLoadingPricing] = useState(false)
-  const [loadingCheckout, setLoadingCheckout] = useState(false)
-  const [checkoutInvoiceUrl, setCheckoutInvoiceUrl] = useState<string | null>(null)
+
   const [approvedSearch, setApprovedSearch] = useState('')
   const [roleChangeConfirm, setRoleChangeConfirm] = useState<{
     userId: string
@@ -111,89 +108,6 @@ export default function ApprovalView({
   } | null>(null)
   const [removeConfirm, setRemoveConfirm] = useState<{ userId: string; memberName: string } | null>(null)
   const statsLoading = !joinStats
-
-  // Fetch pricing packages when editing limit
-  useEffect(() => {
-    if (!editingLimit) return
-    setLoadingPricing(true)
-    fetchWithAuth('/api/pricing')
-      .then(res => res.ok ? res.json() : [])
-      .then((data: unknown[]) => {
-        if (Array.isArray(data) && data.length > 0) {
-          const normalized = data.map((p: Record<string, unknown>) => ({
-            id: String(p.id ?? ''),
-            name: String(p.name ?? ''),
-            pricePerStudent: Number(p.price_per_student ?? p.pricePerStudent ?? 0),
-            minStudents: Number(p.min_students ?? p.minStudents ?? 100),
-            features: Array.isArray(p.features) ? p.features.map(String) : [],
-          }))
-          setPricingPackages(normalized)
-        }
-      })
-      .catch(() => { })
-      .finally(() => setLoadingPricing(false))
-  }, [editingLimit])
-
-  // Calculate price for the new limit
-  const newLimitVal = parseInt(editLimitValue) || 0
-  const isIncreasingLimit = newLimitVal > originalLimitValue
-  const addedStudents = isIncreasingLimit ? newLimitVal - originalLimitValue : 0
-
-  // Use lowest price package as default for calculation
-  const cheapestPackage = useMemo(() => {
-    if (pricingPackages.length === 0) return null
-    return pricingPackages.reduce((prev, curr) =>
-      curr.pricePerStudent < prev.pricePerStudent ? curr : prev
-    )
-  }, [pricingPackages])
-
-  const estimatedPrice = useMemo(() => {
-    if (!cheapestPackage || newLimitVal <= 0) return 0
-    return newLimitVal * cheapestPackage.pricePerStudent
-  }, [cheapestPackage, newLimitVal])
-
-  const additionalPrice = useMemo(() => {
-    if (!cheapestPackage || addedStudents <= 0) return 0
-    return addedStudents * cheapestPackage.pricePerStudent
-  }, [cheapestPackage, addedStudents])
-
-  const needsPayment = isIncreasingLimit
-
-  const handleCheckoutForLimit = async () => {
-    if (!albumId) return
-    setLoadingCheckout(true)
-    try {
-      // Determine if this is an upgrade (already paid before) or first-time payment
-      const isUpgrade = paymentStatus === 'paid'
-      const chargePrice = isUpgrade ? additionalPrice : estimatedPrice
-
-      // DO NOT update students_count here — it will be updated by webhook after payment succeeds
-      // Only create the invoice with the new limit info
-      const res = await fetchWithAuth(`/api/albums/${albumId}/checkout`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          upgrade: isUpgrade,
-          amount: chargePrice,
-          added_students: addedStudents,
-          new_students_count: newLimitVal,
-        }),
-      })
-      const data = asObject(await res.json().catch(() => ({})))
-      const invoiceUrl = asString(data.invoiceUrl)
-      if (res.ok && invoiceUrl) {
-        toast.success('Faktur pembayaran berhasil dibuat!')
-        setCheckoutInvoiceUrl(invoiceUrl)
-        setEditingLimit(false)
-      } else {
-        toast.error(asString(data.error) || 'Gagal membuat tagihan pembayaran')
-      }
-    } catch {
-      toast.error('Gagal memproses pembayaran')
-    } finally {
-      setLoadingCheckout(false)
-    }
-  }
 
   const handleSaveLimit = async () => {
     const val = parseInt(editLimitValue)
@@ -204,11 +118,6 @@ export default function ApprovalView({
     }
     if (val < currentLimit) {
       toast.error(`Tidak bisa dikurangi. Batas saat ini: ${currentLimit}`)
-      return
-    }
-    // If increasing limit, require payment
-    if (val > originalLimitValue) {
-      await handleCheckoutForLimit()
       return
     }
     await onSaveLimit(val)
@@ -460,44 +369,7 @@ export default function ApprovalView({
                 ))}
               </div>
 
-              {/* Pricing Info - shown when increasing limit */}
-              {isIncreasingLimit && cheapestPackage && (
-                <div className="p-4 rounded-xl bg-amber-50 dark:bg-amber-950/40 border-2 border-amber-500 dark:border-amber-700 shadow-[2px_2px_0_0_#f59e0b] dark:shadow-[4px_4px_0_0_#1e293b]">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Wallet className="w-4 h-4 text-amber-500 dark:text-amber-400 flex-shrink-0" strokeWidth={3} />
-                    <span className="text-xs font-black text-amber-600 dark:text-amber-400 uppercase tracking-widest">Biaya Tambahan Anggota</span>
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    <div className="flex items-center justify-between text-xs font-bold text-slate-700 dark:text-slate-300">
-                      <span>Tambahan anggota</span>
-                      <span>+{addedStudents} siswa</span>
-                    </div>
-                    <div className="flex items-center justify-between text-xs font-bold text-slate-700 dark:text-slate-300">
-                      <span>Harga per siswa</span>
-                      <span>Rp {cheapestPackage.pricePerStudent.toLocaleString('id-ID')}</span>
-                    </div>
-                    <div className="border-t-2 border-amber-500/20 dark:border-amber-600/30 pt-2 mt-1">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[10px] text-amber-600 dark:text-amber-400 font-black uppercase tracking-widest">
-                          {paymentStatus === 'paid' ? 'Biaya Tambahan' : 'Total Baru'}
-                        </span>
-                        <span className="text-sm text-amber-600 dark:text-amber-400 font-black">
-                          Rp {(paymentStatus === 'paid' ? additionalPrice : estimatedPrice).toLocaleString('id-ID')}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {loadingPricing && isIncreasingLimit && (
-                <div className="flex items-center justify-center py-2">
-                  <Loader2 className="w-5 h-5 text-indigo-500 animate-spin" strokeWidth={3} />
-                  <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold ml-2 uppercase tracking-widest">Memuat harga...</span>
-                </div>
-              )}
-
-              <div className="flex gap-2 w-full">
+              <div className="flex gap-2 w-full mt-4">
                 <button
                   type="button"
                   onClick={() => setEditingLimit(false)}
@@ -505,35 +377,19 @@ export default function ApprovalView({
                 >
                   Batal
                 </button>
-                {isIncreasingLimit ? (
-                  <button
-                    type="button"
-                    disabled={savingLimit || loadingCheckout || !cheapestPackage}
-                    onClick={handleSaveLimit}
-                    className="flex-[2] py-3 px-4 rounded-xl bg-amber-400 dark:bg-amber-600 border-2 border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white hover:bg-amber-500 dark:hover:bg-amber-700 transition-all font-black text-xs uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] active:shadow-none active:translate-x-0.5 active:translate-y-0.5"
-                  >
-                    {loadingCheckout ? (
-                      <Loader2 className="w-4 h-4 animate-spin" strokeWidth={3} />
-                    ) : (
-                      <CreditCard className="w-4 h-4" strokeWidth={3} />
-                    )}
-                    {loadingCheckout ? 'Memproses...' : 'Bayar & Tambah'}
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    disabled={savingLimit}
-                    onClick={handleSaveLimit}
-                    className="flex-[2] py-3 px-4 rounded-xl bg-indigo-500 border-2 border-slate-200 dark:border-slate-600 text-white hover:bg-indigo-600 dark:hover:bg-indigo-600 transition-all font-black text-xs uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] active:shadow-none active:translate-x-0.5 active:translate-y-0.5"
-                  >
-                    {savingLimit ? (
-                      <Loader2 className="w-4 h-4 animate-spin" strokeWidth={3} />
-                    ) : (
-                      <Check className="w-4 h-4" strokeWidth={3} />
-                    )}
-                    {savingLimit ? 'Menyimpan...' : 'Simpan'}
-                  </button>
-                )}
+                <button
+                  type="button"
+                  disabled={savingLimit}
+                  onClick={handleSaveLimit}
+                  className="flex-[2] py-3 px-4 rounded-xl bg-indigo-500 border-2 border-slate-200 dark:border-slate-600 text-white hover:bg-indigo-600 dark:hover:bg-indigo-600 transition-all font-black text-xs uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] active:shadow-none active:translate-x-0.5 active:translate-y-0.5"
+                >
+                  {savingLimit ? (
+                    <Loader2 className="w-4 h-4 animate-spin" strokeWidth={3} />
+                  ) : (
+                    <Check className="w-4 h-4" strokeWidth={3} />
+                  )}
+                  {savingLimit ? 'Menyimpan...' : 'Simpan'}
+                </button>
               </div>
             </div>
           </div>
