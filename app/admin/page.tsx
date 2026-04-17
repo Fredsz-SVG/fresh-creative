@@ -35,6 +35,9 @@ export default function AdminPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [currentAdminId, setCurrentAdminId] = useState<string | null>(null)
   const [search, setSearch] = useState('')
+  const [roleFilter, setRoleFilter] = useState<'admin' | null>(null)
+  const [sortFilter, setSortFilter] = useState<'credits' | null>(null)
+  const [daysFilter, setDaysFilter] = useState<number | null>(null)
   const [page, setPage] = useState(1)
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [confirmTitle, setConfirmTitle] = useState('')
@@ -47,7 +50,7 @@ export default function AdminPage() {
   const mountedRef = useRef(true)
   const hasCacheRef = useRef(false)
 
-  const cacheKey = `admin_users_overview_v1:${page}:${search.trim().toLowerCase() || ''}`
+  const cacheKey = `admin_users_overview_v1:${page}:${search.trim().toLowerCase() || ''}:${roleFilter || 'all'}:${sortFilter || 'none'}:${daysFilter || 0}`
 
   useEffect(() => {
     mountedRef.current = true
@@ -93,6 +96,9 @@ export default function AdminPage() {
       params.set('page', String(page))
       params.set('perPage', '10')
       if (search.trim()) params.set('search', search.trim())
+      if (roleFilter) params.set('role', roleFilter)
+      if (sortFilter) params.set('sort', sortFilter)
+      if (daysFilter) params.set('days', String(daysFilter))
 
       const ts = Date.now()
       params.set('_t', String(ts))
@@ -130,7 +136,7 @@ export default function AdminPage() {
         setLoading(false)
       }
     }
-  }, [page, search])
+  }, [page, search, roleFilter, sortFilter, daysFilter])
 
   useEffect(() => {
     fetchOverview(hasCacheRef.current)
@@ -404,12 +410,38 @@ export default function AdminPage() {
         ) : (
           <>
             {[
-              { label: 'Total User', value: stats?.totalUsers.toLocaleString() ?? '0', color: 'bg-indigo-300 dark:bg-slate-800', shadow: 'shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155]', text: 'text-slate-900 dark:text-white' },
-              { label: 'Admin', value: stats?.totalAdmins.toLocaleString() ?? '0', color: 'bg-purple-300 dark:bg-slate-800', shadow: 'shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155]', text: 'text-slate-900 dark:text-white' },
-              { label: 'Total Credit', value: stats?.totalCredits.toLocaleString() ?? '0', color: 'bg-amber-300 dark:bg-slate-800', shadow: 'shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155]', text: 'text-slate-900 dark:text-white' },
-              { label: 'New User (7d)', value: stats?.newUsers7d.toLocaleString() ?? '0', color: 'bg-emerald-300 dark:bg-slate-800', shadow: 'shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155]', text: 'text-slate-900 dark:text-white' }
+              { id: 'total', label: 'Total User', value: stats?.totalUsers.toLocaleString() ?? '0', color: 'bg-indigo-300 dark:bg-slate-800', shadow: 'shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155]', text: 'text-slate-900 dark:text-white', active: roleFilter === null && sortFilter === null && daysFilter === null },
+              { id: 'admin', label: 'Admin', value: stats?.totalAdmins.toLocaleString() ?? '0', color: 'bg-purple-300 dark:bg-slate-800', shadow: 'shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155]', text: 'text-slate-900 dark:text-white', active: roleFilter === 'admin' },
+              { id: 'credits', label: 'Total Credit', value: stats?.totalCredits.toLocaleString() ?? '0', color: 'bg-amber-300 dark:bg-slate-800', shadow: 'shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155]', text: 'text-slate-900 dark:text-white', active: sortFilter === 'credits' },
+              { id: 'new', label: 'New User (7d)', value: stats?.newUsers7d.toLocaleString() ?? '0', color: 'bg-emerald-300 dark:bg-slate-800', shadow: 'shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155]', text: 'text-slate-900 dark:text-white', active: daysFilter === 7 }
             ].map((sc) => (
-              <div key={sc.label} className={`${sc.color} border-2 border-slate-900 dark:border-slate-700 rounded-[24px] p-5 md:p-6 ${sc.shadow} hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all`}>
+              <div 
+                key={sc.label} 
+                onClick={() => {
+                  if (sc.id === 'total') {
+                    setRoleFilter(null)
+                    setSortFilter(null)
+                    setDaysFilter(null)
+                    setPage(1)
+                  } else if (sc.id === 'admin') {
+                    setRoleFilter('admin')
+                    setSortFilter(null)
+                    setDaysFilter(null)
+                    setPage(1)
+                  } else if (sc.id === 'credits') {
+                    setRoleFilter(null)
+                    setSortFilter('credits')
+                    setDaysFilter(null)
+                    setPage(1)
+                  } else if (sc.id === 'new') {
+                    setRoleFilter(null)
+                    setSortFilter(null)
+                    setDaysFilter(7)
+                    setPage(1)
+                  }
+                }}
+                className={`${sc.color} border-2 border-slate-900 dark:border-slate-700 rounded-[24px] p-5 md:p-6 ${sc.shadow} cursor-pointer hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none ${sc.active ? 'ring-4 ring-indigo-500 ring-offset-2 dark:ring-offset-slate-900' : ''} transition-all`}
+              >
                 <p className={`text-[10px] md:text-xs font-black uppercase tracking-widest mb-1.5 md:mb-2 ${sc.text}`}>{sc.label}</p>
                 <p className={`text-2xl md:text-4xl font-black ${sc.text}`}>
                   {sc.value}
@@ -422,11 +454,10 @@ export default function AdminPage() {
 
       <div className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-[24px] md:rounded-[32px] overflow-hidden shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] md:shadow-[2px_2px_0_0_#0f172a] dark:md:shadow-[2px_2px_0_0_#0f172a] mx-4 md:mx-0">
         <div className="px-5 py-4 md:px-8 md:py-6 border-b-4 border-slate-900 dark:border-slate-700 flex items-center justify-between gap-4 flex-wrap bg-violet-300 dark:bg-slate-800">
-          <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-3">
-            <h2 className="text-xl md:text-2xl font-black text-slate-900 dark:text-white leading-none">Users</h2>
-            <span className="text-slate-900 dark:text-white text-sm md:text-base font-black uppercase tracking-widest ml-2">
-              {totalRows} Total
-            </span>
+          <div className="flex flex-col gap-1">
+            <h2 className="text-xl md:text-2xl font-black text-slate-900 dark:text-white leading-none">
+              {roleFilter === 'admin' ? 'Manage Admins' : sortFilter === 'credits' ? 'Users by Credits' : daysFilter === 7 ? 'New Users (Last 7 Days)' : 'Manage Users'}
+            </h2>
           </div>
           <div className="flex items-center gap-2 w-full sm:w-auto">
             <input

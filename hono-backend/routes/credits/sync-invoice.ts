@@ -113,7 +113,7 @@ creditsSyncInvoice.post('/', async (c) => {
           if (txRow?.new_students_count) {
             await db
               .prepare(
-                `UPDATE albums SET payment_status = 'paid', students_count = ?, total_estimated_price = ?, updated_at = datetime('now') WHERE id = ?`
+                `UPDATE albums SET payment_status = 'paid', students_count = ?, total_estimated_price = total_estimated_price + ?, updated_at = datetime('now') WHERE id = ?`
               )
               .bind(txRow.new_students_count, txRow.amount, albumId)
               .run()

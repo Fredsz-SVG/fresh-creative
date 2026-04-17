@@ -46,7 +46,7 @@ const PackageForm = ({ pkg, onSave, onCancel }: { pkg: Partial<CreditPackage> | 
 
     return (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-[100]">
-            <div className="bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-2xl shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] p-5 md:p-6 w-full max-w-md">
+            <div className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-2xl shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] p-5 md:p-6 w-full max-w-md">
                 <div className="flex justify-between items-center mb-5">
                     <h2 className="text-lg font-bold text-slate-900 dark:text-white">{pkg?.id ? 'Edit Package' : 'New Package'}</h2>
                     <button onClick={onCancel} className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
@@ -63,7 +63,7 @@ const PackageForm = ({ pkg, onSave, onCancel }: { pkg: Partial<CreditPackage> | 
                                 type="number"
                                 value={formData.credits}
                                 onChange={handleChange}
-                                className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-violet-200"
+                                className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-violet-200"
                                 required
                             />
                         </div>
@@ -74,11 +74,11 @@ const PackageForm = ({ pkg, onSave, onCancel }: { pkg: Partial<CreditPackage> | 
                                 type="number"
                                 value={formData.price}
                                 onChange={handleChange}
-                                className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-violet-200"
+                                className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-violet-200"
                                 required
                             />
                         </div>
-                        <div className="p-3 border-2 border-slate-200 dark:border-slate-700 rounded-xl bg-amber-50 dark:bg-slate-800">
+                        <div className="p-3 border-2 border-slate-900 dark:border-slate-700 rounded-xl bg-amber-50 dark:bg-slate-800">
                             <label className="flex items-center gap-3 cursor-pointer select-none">
                                 <div className="relative">
                                     <input
@@ -99,7 +99,7 @@ const PackageForm = ({ pkg, onSave, onCancel }: { pkg: Partial<CreditPackage> | 
                         </div>
                     </div>
                     <div className="flex gap-3 pt-2">
-                        <button type="button" onClick={onCancel} className="flex-1 px-4 py-2.5 border-2 border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200 font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-[4px_4px_0_0_#334155] hover:shadow-none">
+                        <button type="button" onClick={onCancel} className="flex-1 px-4 py-2.5 border-2 border-slate-900 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200 font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-[4px_4px_0_0_#334155] hover:shadow-none">
                             Cancel
                         </button>
                         <button type="submit" className="flex-1 px-4 py-2.5 bg-emerald-400 text-emerald-900 rounded-xl font-bold hover:bg-emerald-300 transition-all shadow-[2px_2px_0_0_#059669] hover:shadow-none">
@@ -382,7 +382,7 @@ export default function AdminCreditSettingsPage() {
             {/* Create Redeem Code Modal */}
             {showCreateRedeem && (
                 <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-[100]">
-                    <div className="bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-2xl shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] p-5 md:p-6 w-full max-w-md">
+                    <div className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-2xl shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] p-5 md:p-6 w-full max-w-md">
                         <div className="flex justify-between items-center mb-5">
                             <h2 className="text-lg font-bold text-slate-900 dark:text-white">Buat Kode Redeem</h2>
                             <button onClick={() => setShowCreateRedeem(false)} className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
@@ -398,7 +398,7 @@ export default function AdminCreditSettingsPage() {
                                         value={newCode.code}
                                         onChange={(e) => setNewCode({ ...newCode, code: e.target.value.toUpperCase() })}
                                         placeholder="AUTO-GENERATE"
-                                        className="flex-1 px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-bold placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-pink-200 uppercase font-mono text-sm"
+                                        className="flex-1 px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-bold placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-pink-200 uppercase font-mono text-sm"
                                     />
                                     <button
                                         type="button"
@@ -418,7 +418,7 @@ export default function AdminCreditSettingsPage() {
                                         min={1}
                                         value={newCode.credits}
                                         onChange={(e) => setNewCode({ ...newCode, credits: Number(e.target.value) })}
-                                        className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-pink-200"
+                                        className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-pink-200"
                                         required
                                     />
                                 </div>
@@ -429,7 +429,7 @@ export default function AdminCreditSettingsPage() {
                                         min={1}
                                         value={newCode.max_uses}
                                         onChange={(e) => setNewCode({ ...newCode, max_uses: Number(e.target.value) })}
-                                        className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-pink-200"
+                                        className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-pink-200"
                                         required
                                     />
                                 </div>
@@ -441,7 +441,7 @@ export default function AdminCreditSettingsPage() {
                                     type="datetime-local"
                                     value={newCode.expires_at}
                                     onChange={(e) => setNewCode({ ...newCode, expires_at: e.target.value })}
-                                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-pink-200"
+                                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-pink-200"
                                 />
                             </div>
                         </div>
@@ -450,7 +450,7 @@ export default function AdminCreditSettingsPage() {
                             <button
                                 type="button"
                                 onClick={() => setShowCreateRedeem(false)}
-                                className="flex-1 px-4 py-2.5 border-2 border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200 font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-[4px_4px_0_0_#334155] hover:shadow-none"
+                                className="flex-1 px-4 py-2.5 border-2 border-slate-900 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200 font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-[4px_4px_0_0_#334155] hover:shadow-none"
                             >
                                 Batal
                             </button>
@@ -470,7 +470,7 @@ export default function AdminCreditSettingsPage() {
             {/* Delete Confirmation Modal */}
             {deletePrompt && (
                 <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-[200]">
-                    <div className="bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-2xl shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] p-5 md:p-6 w-full max-w-sm" onClick={e => e.stopPropagation()}>
+                    <div className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-2xl shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] p-5 md:p-6 w-full max-w-sm" onClick={e => e.stopPropagation()}>
                         <h3 className="text-base md:text-lg font-bold text-slate-900 dark:text-white">
                             Hapus {deletePrompt.type === 'package' ? 'Package' : 'Kode Redeem'}?
                         </h3>
@@ -482,7 +482,7 @@ export default function AdminCreditSettingsPage() {
                                 type="button"
                                 onClick={() => setDeletePrompt(null)}
                                 disabled={isDeleting}
-                                className="flex-1 px-4 py-2.5 border-2 border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200 font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:shadow-none disabled:opacity-60"
+                                className="flex-1 px-4 py-2.5 border-2 border-slate-900 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200 font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:shadow-none disabled:opacity-60"
                             >
                                 Batal
                             </button>
@@ -525,7 +525,7 @@ export default function AdminCreditSettingsPage() {
 
             {/* Tabs */}
             <div className="mb-8">
-              <div className="relative inline-flex items-center gap-1 p-1 bg-white dark:bg-slate-800 rounded-2xl border-2 border-slate-200 dark:border-slate-700 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]">
+              <div className="relative inline-flex items-center gap-1 p-1 bg-white dark:bg-slate-800 rounded-2xl border-2 border-slate-900 dark:border-slate-700 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]">
                 <div
                   className="absolute top-1 bottom-1 rounded-xl bg-violet-400 transition-all duration-300 ease-out"
                   style={{
@@ -544,7 +544,7 @@ export default function AdminCreditSettingsPage() {
                 >
                   <Layout className="w-3.5 h-3.5 md:w-5 md:h-5" strokeWidth={2.5} />
                   <span>Packages</span>
-                  <span className="px-1.5 py-0.5 bg-slate-900 dark:bg-slate-700 text-white text-[9px] md:text-xs rounded-lg border-2 border-slate-200 dark:border-slate-600 ml-0.5">
+                  <span className="px-1.5 py-0.5 bg-slate-900 dark:bg-slate-700 text-white text-[9px] md:text-xs rounded-lg border-2 border-slate-900 dark:border-slate-600 ml-0.5">
                     {packages.length}
                   </span>
                 </button>
@@ -559,7 +559,7 @@ export default function AdminCreditSettingsPage() {
                 >
                   <Hash className="w-3.5 h-3.5 md:w-5 md:h-5" strokeWidth={2.5} />
                   <span className="truncate">Redeems</span>
-                  <span className="px-1.5 py-0.5 bg-slate-900 dark:bg-slate-700 text-white text-[9px] md:text-xs rounded-lg border-2 border-slate-200 dark:border-slate-600 ml-0.5">
+                  <span className="px-1.5 py-0.5 bg-slate-900 dark:bg-slate-700 text-white text-[9px] md:text-xs rounded-lg border-2 border-slate-900 dark:border-slate-600 ml-0.5">
                     {redeemCodes.length}
                   </span>
                 </button>
@@ -571,7 +571,7 @@ export default function AdminCreditSettingsPage() {
                     {loading ? (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                             {[1, 2, 3, 4].map((i) => (
-                                <div key={i} className="bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-2xl p-5 md:p-6 animate-pulse shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]">
+                                <div key={i} className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-2xl p-5 md:p-6 animate-pulse shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]">
                                     <div className="space-y-3">
                                         <div className="h-7 bg-slate-100 dark:bg-slate-800 rounded-xl w-14" />
                                         <div className="h-2.5 bg-slate-50 dark:bg-slate-800 rounded-lg w-10" />
@@ -580,8 +580,8 @@ export default function AdminCreditSettingsPage() {
                                 </div>
                             ))}
                         </div>                      ) : packages.length === 0 ? (
-                          <div className="flex flex-col items-center justify-center py-16 px-4 md:px-8 text-center bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-3xl border-dashed shadow-[4px_4px_0_0_#94a3b8] dark:shadow-[4px_4px_0_0_#1e293b]">
-                              <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-2xl flex items-center justify-center mb-4 transform -rotate-3 border-2 border-slate-200 dark:border-slate-700">
+                          <div className="flex flex-col items-center justify-center py-16 px-4 md:px-8 text-center bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-3xl border-dashed shadow-[4px_4px_0_0_#94a3b8] dark:shadow-[4px_4px_0_0_#1e293b]">
+                              <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-2xl flex items-center justify-center mb-4 transform -rotate-3 border-2 border-slate-900 dark:border-slate-700">
                                   <Layout size={32} className="text-slate-400 dark:text-slate-500" strokeWidth={1.5} />
                               </div>
                               <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-2">Belum ada paket credit</h3>
@@ -598,7 +598,7 @@ export default function AdminCreditSettingsPage() {
                           </div>                    ) : (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 pb-12">
                             {packages.map((pkg) => (
-                                <div key={pkg.id} className="group relative bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-2xl p-5 md:p-6 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:shadow-none hover:-translate-x-0.5 hover:-translate-y-0.5 transition-all overflow-hidden">
+                                <div key={pkg.id} className="group relative bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-2xl p-5 md:p-6 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:shadow-none hover:-translate-x-0.5 hover:-translate-y-0.5 transition-all overflow-hidden">
                                     <div className="flex justify-between items-start mb-3 md:mb-4">
                                         <div>
                                             <p className="text-2xl md:text-4xl font-black text-slate-900 dark:text-white tracking-tight leading-none mb-0.5">{pkg.credits}</p>
@@ -633,7 +633,7 @@ export default function AdminCreditSettingsPage() {
                     {loadingRedeem ? (
                         <div className="space-y-6">
                             {[1, 2, 3].map((i) => (
-                                <div key={i} className="bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-[24px] md:rounded-[32px] p-5 md:p-8 animate-pulse shadow-[#64748b] dark:shadow-[4px_4px_0_0_#1e293b] md:shadow-[#64748b] dark:md:shadow-[6px_6px_0_0_#334155]">
+                                <div key={i} className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-[24px] md:rounded-[32px] p-5 md:p-8 animate-pulse shadow-[#64748b] dark:shadow-[4px_4px_0_0_#1e293b] md:shadow-[#64748b] dark:md:shadow-[6px_6px_0_0_#334155]">
                                     <div className="flex justify-between items-center">
                                         <div className="space-y-3">
                                             <div className="h-5 md:h-6 bg-slate-100 dark:bg-slate-800 rounded-lg w-32 md:w-40" />
@@ -645,8 +645,8 @@ export default function AdminCreditSettingsPage() {
                             ))}
                         </div>
                     ) : redeemCodes.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center py-16 px-4 md:px-8 text-center bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-3xl border-dashed shadow-[4px_4px_0_0_#94a3b8] dark:shadow-[4px_4px_0_0_#1e293b]">
-                            <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-2xl flex items-center justify-center mb-4 transform -rotate-3 border-2 border-slate-200 dark:border-slate-700">
+                        <div className="flex flex-col items-center justify-center py-16 px-4 md:px-8 text-center bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-3xl border-dashed shadow-[4px_4px_0_0_#94a3b8] dark:shadow-[4px_4px_0_0_#1e293b]">
+                            <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-2xl flex items-center justify-center mb-4 transform -rotate-3 border-2 border-slate-900 dark:border-slate-700">
                                 <Gift size={32} className="text-slate-400 dark:text-slate-500" strokeWidth={1.5} />
                             </div>
                             <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-2">Belum ada kode redeem</h3>
@@ -682,7 +682,7 @@ export default function AdminCreditSettingsPage() {
                                 return (
                                     <div
                                         key={item.id}
-                                        className={`group relative bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-2xl p-4 md:p-5 transition-all shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:shadow-none hover:-translate-x-0.5 hover:-translate-y-0.5 ${!item.is_active || isExpired || isFull ? 'opacity-60 grayscale-[0.3]' : ''
+                                        className={`group relative bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-2xl p-4 md:p-5 transition-all shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:shadow-none hover:-translate-x-0.5 hover:-translate-y-0.5 ${!item.is_active || isExpired || isFull ? 'opacity-60 grayscale-[0.3]' : ''
                                             }`}
                                     >
                                         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 md:gap-4">
@@ -731,7 +731,7 @@ export default function AdminCreditSettingsPage() {
 
                                                     {item.expires_at && (
                                                         <div className="flex items-center gap-2 md:gap-3 col-span-2 md:col-span-1">
-                                                            <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl bg-blue-100 dark:bg-blue-900/50 border-2 border-slate-200 dark:border-slate-700 flex items-center justify-center shadow-[#64748b] dark:shadow-[4px_4px_0_0_#1e293b]">
+                                                            <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl bg-blue-100 dark:bg-blue-900/50 border-2 border-slate-900 dark:border-slate-700 flex items-center justify-center shadow-[#64748b] dark:shadow-[4px_4px_0_0_#1e293b]">
                                                                 <Clock className="w-4 h-4 md:w-5 md:h-5 text-blue-600 dark:text-blue-400" strokeWidth={2.5} />
                                                             </div>
                                                             <div>

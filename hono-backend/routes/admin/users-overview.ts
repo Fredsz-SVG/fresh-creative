@@ -86,35 +86,62 @@ overview.get('/', async (c) => {
       0
     )
 
+    const role = url.searchParams.get('role') // 'admin' | 'user' | null
+    const sort = url.searchParams.get('sort') // 'credits' | 'newest' | null
+    const days = parseInt(url.searchParams.get('days') ?? '0', 10)
     const from = (page - 1) * perPage
     const like = search ? `%${search}%` : null
 
-    const countFiltered = like
-      ? await db
-          .prepare(
-            `SELECT COUNT(*) as c FROM users WHERE email LIKE ? OR COALESCE(full_name, '') LIKE ?`
-          )
-          .bind(like, like)
-          .first<{ c: number }>()
-      : await db.prepare(`SELECT COUNT(*) as c FROM users`).first<{ c: number }>()
+    let whereClause = ''
+    const whereParams: unknown[] = []
+
+    if (like) {
+      whereClause = `WHERE (email LIKE ? OR COALESCE(full_name, '') LIKE ?)`
+      whereParams.push(like, like)
+    }
+
+    if (role) {
+      if (whereClause) {
+        whereClause += ` AND role = ?`
+      } else {
+        whereClause = `WHERE role = ?`
+      }
+      whereParams.push(role)
+    }
+
+    if (days > 0) {
+      const date = new Date()
+      date.setDate(date.getDate() - days)
+      const dateIso = date.toISOString()
+      if (whereClause) {
+        whereClause += ` AND created_at >= ?`
+      } else {
+        whereClause = `WHERE created_at >= ?`
+      }
+      whereParams.push(dateIso)
+    }
+
+    const countFiltered = await db
+      .prepare(`SELECT COUNT(*) as c FROM users ${whereClause}`)
+      .bind(...whereParams)
+      .first<{ c: number }>()
     const total = countFiltered?.c ?? 0
 
-    const { results: latestUsers } = like
-      ? await db
-          .prepare(
-            `SELECT id, email, full_name, role, credits, created_at, is_suspended FROM users 
-             WHERE email LIKE ? OR COALESCE(full_name, '') LIKE ?
-             ORDER BY created_at DESC LIMIT ? OFFSET ?`
-          )
-          .bind(like, like, perPage, from)
-          .all<Record<string, unknown>>()
-      : await db
-          .prepare(
-            `SELECT id, email, full_name, role, credits, created_at, is_suspended FROM users 
-             ORDER BY created_at DESC LIMIT ? OFFSET ?`
-          )
-          .bind(perPage, from)
-          .all<Record<string, unknown>>()
+    let orderBy = 'created_at DESC'
+    if (sort === 'credits') {
+      orderBy = 'COALESCE(credits, 0) DESC, created_at DESC'
+    } else if (role === 'admin') {
+      orderBy = 'full_name ASC'
+    }
+    const query = `
+      SELECT id, email, full_name, role, credits, created_at, is_suspended FROM users 
+      ${whereClause}
+      ORDER BY ${orderBy} LIMIT ? OFFSET ?
+    `
+    const { results: latestUsers } = await db
+      .prepare(query)
+      .bind(...whereParams, perPage, from)
+      .all<Record<string, unknown>>()
 
     return c.json({
       totalUsers,

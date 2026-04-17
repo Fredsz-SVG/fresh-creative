@@ -4,6 +4,11 @@ import { getCreditsFromSupabase, mirrorCreditsToD1, setCreditsInSupabase } from 
 
 const webhooksXendit = new Hono()
 
+function extractMemberAccessId(externalId: string): string | null {
+  const match = externalId.match(/^member_(.+?)_user_/)
+  return match?.[1] ?? null
+}
+
 // POST /api/webhooks/xendit
 webhooksXendit.post('/', async (c) => {
   const payload = await c.req.json()
@@ -21,11 +26,30 @@ webhooksXendit.post('/', async (c) => {
   const db = getD1(c)
   if (!db) return c.json({ error: 'Database not configured' }, 503)
 
+  const memberAccessIdFromExternal = externalId.startsWith('member_')
+    ? extractMemberAccessId(externalId)
+    : null
+
   if (status === 'EXPIRED') {
-    const tx = await db
-      .prepare(`SELECT album_id, access_id FROM transactions WHERE external_id = ?`)
-      .bind(externalId)
-      .first<{ album_id: string | null; access_id: string | null }>()
+    let tx: { album_id: string | null; access_id: string | null } | null = null
+
+    try {
+      tx = await db
+        .prepare(`SELECT album_id, access_id FROM transactions WHERE external_id = ?`)
+        .bind(externalId)
+        .first<{ album_id: string | null; access_id: string | null }>()
+    } catch {
+      const fallback = await db
+        .prepare(`SELECT album_id FROM transactions WHERE external_id = ?`)
+        .bind(externalId)
+        .first<{ album_id: string | null }>()
+      tx = fallback
+        ? {
+            album_id: fallback.album_id,
+            access_id: memberAccessIdFromExternal,
+          }
+        : null
+    }
 
     await db
       .prepare(
@@ -43,7 +67,7 @@ webhooksXendit.post('/', async (c) => {
       }
       if (tx.access_id && externalId.startsWith('member_')) {
         await db
-          .prepare(`UPDATE album_class_access SET payment_status = 'failed', payment_transaction_id = NULL, updated_at = datetime('now') WHERE id = ? AND payment_status = 'pending'`)
+          .prepare(`UPDATE album_class_access SET payment_status = 'unpaid', payment_transaction_id = NULL, updated_at = datetime('now') WHERE id = ? AND payment_status = 'pending'`)
           .bind(tx.access_id)
           .run()
       }
@@ -71,18 +95,46 @@ webhooksXendit.post('/', async (c) => {
       .bind(status, paymentMethod, externalId)
       .run()
 
-    const txRow = await db
-      .prepare(
-        `SELECT package_id, album_id, new_students_count, amount, access_id FROM transactions WHERE external_id = ?`
-      )
-      .bind(externalId)
-      .first<{
-        package_id: string | null
-        album_id: string | null
-        new_students_count: number | null
-        amount: number
-        access_id: string | null
-      }>()
+    let txRow: {
+      package_id: string | null
+      album_id: string | null
+      new_students_count: number | null
+      amount: number
+      access_id: string | null
+    } | null = null
+
+    try {
+      txRow = await db
+        .prepare(
+          `SELECT package_id, album_id, new_students_count, amount, access_id FROM transactions WHERE external_id = ?`
+        )
+        .bind(externalId)
+        .first<{
+          package_id: string | null
+          album_id: string | null
+          new_students_count: number | null
+          amount: number
+          access_id: string | null
+        }>()
+    } catch {
+      const fallback = await db
+        .prepare(
+          `SELECT package_id, album_id, new_students_count, amount FROM transactions WHERE external_id = ?`
+        )
+        .bind(externalId)
+        .first<{
+          package_id: string | null
+          album_id: string | null
+          new_students_count: number | null
+          amount: number
+        }>()
+      txRow = fallback
+        ? {
+            ...fallback,
+            access_id: memberAccessIdFromExternal,
+          }
+        : null
+    }
 
     if (txRow?.package_id && isPackage) {
       const pkg = await db
@@ -120,7 +172,7 @@ webhooksXendit.post('/', async (c) => {
         await db
           .prepare(
             `UPDATE albums
-             SET payment_status = 'paid', students_count = ?, total_estimated_price = ?, updated_at = datetime('now')
+             SET payment_status = 'paid', students_count = ?, total_estimated_price = total_estimated_price + ?, updated_at = datetime('now')
              WHERE id = ?`
           )
           .bind(txRow.new_students_count, txRow.amount, txRow.album_id)
@@ -129,10 +181,10 @@ webhooksXendit.post('/', async (c) => {
         await db
           .prepare(
             `UPDATE albums
-             SET payment_status = 'paid', total_estimated_price = ?, updated_at = datetime('now')
+             SET payment_status = 'paid', updated_at = datetime('now')
              WHERE id = ?`
           )
-          .bind(txRow.amount, txRow.album_id)
+          .bind(txRow.album_id)
           .run()
       }
     }

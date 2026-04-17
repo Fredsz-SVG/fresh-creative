@@ -58,6 +58,8 @@ export type AlbumRow = {
   collected_amount?: number
   individual_payments_enabled?: number | null;
   payment_status?: 'unpaid' | 'paid'
+  member_payment_status?: 'unpaid' | 'paid'
+  member_access_id?: string | null
   payment_url?: string | null
   cover_image_url?: string | null
   cover_image_position?: string | null
@@ -103,10 +105,16 @@ function AlbumCard({
   const router = useRouter()
   const [showInfo, setShowInfo] = useState(false)
   const isAdmin = variant === 'admin'
-  const isPaid = album.payment_status === 'paid'
-    const isIndividualPayment = album.individual_payments_enabled === 1
-    const isApproved = album.status === 'approved'
+  const isIndividualPayment = album.individual_payments_enabled === 1
+  const isPaid = (isIndividualPayment && album.isOwner === false)
+    ? album.member_payment_status === 'paid'
+    : album.payment_status === 'paid'
+  const isApproved = album.status === 'approved'
+  
   const isClickable = album.type === 'public' || (isApproved && (isPaid || isAdmin || isIndividualPayment))
+  
+  // For individual payment users who haven't paid, destination should be a checkout/info page if needed, 
+  // but usually /view handles the redirection to payment.
   const destinationUrl = album.type === 'public'
       ? `${basePath}/album/public/${album.id}` 
     : `/album/${album.album_id ?? album.id}/view`
@@ -305,14 +313,14 @@ function AlbumCard({
 
       {!isAdmin && (
         <div className="mt-4 pt-4 border-t border-gray-100 dark:border-slate-800 flex flex-col gap-2">
-          {album.isOwner !== false && isApproved && !isPaid && onPay && (
+          {(album.isOwner !== false || (isIndividualPayment && album.isOwner === false)) && isApproved && !isPaid && onPay && (
             <button
               type="button"
               disabled={!!loadingId}
               onClick={(e) => { e.preventDefault(); e.stopPropagation(); onPay(album) }}
-              className="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-black rounded-xl bg-emerald-400 dark:bg-emerald-700 border-2 border-slate-900 text-slate-900 dark:text-slate-100 shadow-[2px_2px_0_0_#0f172a] hover:translate-y-1 hover:translate-x-1 hover:shadow-none transition-all disabled:opacity-50"
+              className="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-black rounded-xl bg-orange-400 dark:bg-orange-600 border-2 border-slate-900 text-slate-900 dark:text-slate-100 shadow-[2px_2px_0_0_#0f172a] hover:translate-y-1 hover:translate-x-1 hover:shadow-none transition-all disabled:opacity-50"
             >
-              <Check className="w-3.5 h-3.5" /> Bayar Sekarang
+              <CreditCard className="w-3.5 h-3.5" /> Bayar Sekarang
             </button>
           )}
           {album.isOwner !== false && onInvite && (album.album_id ?? album.type === 'public') && (
@@ -365,7 +373,9 @@ function AlbumCard({
             {isClickable
             ? album.type === 'yearbook' && onYearbookPublicChoice
               ? 'Klik untuk pilih tampilan'
-              : 'Klik untuk buka'
+              : !isPaid && isIndividualPayment
+                ? 'Bayar untuk buka'
+                : 'Klik untuk buka'
             : statusLabel === 'pending'
               ? 'Menunggu persetujuan admin'
               : isApproved && !isPaid
@@ -680,9 +690,17 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
   const handlePay = async (album: AlbumRow) => {
     setLoadingId(album.id)
     try {
-      const res = await fetchWithAuth(`/api/albums/${album.id}/checkout`, {
+      const isIndividual = album.individual_payments_enabled === 1 && album.isOwner === false
+      const endpoint = isIndividual 
+        ? `/api/albums/${album.id}/member-checkout` 
+        : `/api/albums/${album.id}/checkout`
+      
+      const payload = isIndividual ? { access_id: album.member_access_id } : {}
+
+      const res = await fetchWithAuth(endpoint, {
         method: 'POST',
         credentials: 'include',
+        body: JSON.stringify(payload)
       })
       const data = asObject(await res.json().catch(() => ({})))
       if (!res.ok) {
@@ -707,6 +725,16 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
       : `${linkBasePath}/album/yearbook/${album.album_id ?? album.id}`
     router.push(destinationUrl)
   }
+
+  // Pastikan tidak ada double scrollbar saat popup Xendit terbuka
+  useEffect(() => {
+    if (invoicePopupUrl) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => { document.body.style.overflow = '' }
+  }, [invoicePopupUrl])
 
   // Prefetch likely destinations so opening editor feels instant.
   useEffect(() => {
@@ -862,9 +890,9 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
       )}
 
       {invoicePopupUrl && (
-        <div className="fixed inset-0 z-[110] flex flex-col bg-white" role="dialog" aria-modal="true" aria-label="Invoice pembayaran">
+        <div className="fixed inset-0 z-[110] flex flex-col bg-white" role="dialog" aria-modal="true" aria-label="Selesaikan pembayaran">
           <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-gray-50 shrink-0">
-            <h3 className="text-sm font-bold text-gray-800">Invoice Pembayaran Album</h3>
+            <h3 className="text-sm font-bold text-gray-800">Selesaikan Pembayaran</h3>
             <button
               type="button"
               onClick={() => setInvoicePopupUrl(null)}
@@ -887,7 +915,7 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
 
       {/* 1. Search Bar - Paling Atas */}
       {/* 1. Header: Title & Action Buttons Row */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 mt-2">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div className="flex flex-col gap-2">
           <h1 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white tracking-tight">{title}</h1>
           <p className="text-slate-600 dark:text-slate-300 font-medium text-xs md:text-sm">{subtitle}</p>

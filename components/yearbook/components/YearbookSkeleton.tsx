@@ -26,49 +26,49 @@ export default function YearbookSkeleton({ section }: Props) {
   return (
     <div className={mobileFirstWrapper} data-skeleton-section={section}>
       {/* Header - 1:1 dengan YearbookAlbumClient sticky header */}
-      <div className="flex sticky top-0 z-50 bg-amber-300 dark:bg-slate-900 border-b-4 border-slate-200 dark:border-slate-700 px-3 lg:px-6 h-14 min-h-[3.5rem] items-center gap-3 lg:gap-4 shadow-[0_4px_0_0_#0f172a] dark:shadow-[0_4px_0_0_#334155]">
-        <div className="w-10 h-10 rounded-xl bg-white/40 dark:bg-slate-700/50 border-2 border-slate-200 dark:border-slate-600 animate-pulse shrink-0 lg:hidden" aria-hidden />
-        <div className="hidden lg:block h-6 w-32 bg-white/40 dark:bg-slate-700/50 border-2 border-slate-200 dark:border-slate-600 rounded-xl animate-pulse shrink-0" aria-hidden />
+      <div className="flex sticky top-0 z-50 bg-amber-300 dark:bg-slate-900 border-b-4 border-slate-900 dark:border-slate-700 px-3 lg:px-6 h-14 min-h-[3.5rem] items-center gap-3 lg:gap-4 shadow-[0_4px_0_0_#0f172a] dark:shadow-[0_4px_0_0_#334155]">
+        <div className="w-10 h-10 rounded-xl bg-white/40 dark:bg-slate-700/50 border-2 border-slate-900 dark:border-slate-700 animate-pulse shrink-0 lg:hidden" aria-hidden />
+        <div className="hidden lg:block h-6 w-32 bg-white/40 dark:bg-slate-700/50 border-2 border-slate-900 dark:border-slate-700 rounded-xl animate-pulse shrink-0" aria-hidden />
         <div className="absolute left-0 right-0 flex justify-center pointer-events-none lg:contents">
-          <div className="h-7 w-32 lg:w-40 bg-white/40 dark:bg-slate-700/50 border-2 border-slate-200 dark:border-slate-600 rounded-xl animate-pulse lg:absolute lg:left-1/2 lg:-translate-x-1/2" aria-hidden />
+          <div className="h-7 w-32 lg:w-40 bg-white/40 dark:bg-slate-700/50 border-2 border-slate-900 dark:border-slate-700 rounded-xl animate-pulse lg:absolute lg:left-1/2 lg:-translate-x-1/2" aria-hidden />
         </div>
-        <div className="ml-auto h-10 w-10 rounded-full bg-white/40 dark:bg-slate-700/50 border-2 border-slate-200 dark:border-slate-600 animate-pulse shrink-0 lg:hidden" aria-hidden />
+        <div className="ml-auto h-10 w-10 rounded-full bg-white/40 dark:bg-slate-700/50 border-2 border-slate-900 dark:border-slate-700 animate-pulse shrink-0 lg:hidden" aria-hidden />
       </div>
 
       {/* Mobile bottom nav placeholder */}
-      <div className="fixed bottom-0 left-0 right-0 z-[60] h-16 border-t-4 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 lg:hidden flex items-center justify-around shadow-[0_-4px_10px_0_rgba(0,0,0,0.1)] dark:shadow-[0_-4px_10px_0_rgba(0,0,0,0.3)]">
-        <div className="w-12 h-6 bg-slate-100 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-600 rounded-lg animate-pulse" />
-        <div className="w-12 h-6 bg-slate-100 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-600 rounded-lg animate-pulse" />
-        <div className="w-16 h-16 -mt-8 rounded-full bg-indigo-500 border-2 border-slate-200 dark:border-slate-600 animate-pulse shadow-[0_4px_0_0_#0f172a] dark:shadow-[0_4px_0_0_#334155]" />
-        <div className="w-12 h-6 bg-slate-100 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-600 rounded-lg animate-pulse" />
-        <div className="w-12 h-6 bg-slate-100 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-600 rounded-lg animate-pulse" />
+      <div className="fixed bottom-0 left-0 right-0 z-[60] h-16 border-t-4 border-slate-900 dark:border-slate-700 bg-white dark:bg-slate-900 lg:hidden flex items-center justify-around shadow-[0_-4px_10px_0_rgba(0,0,0,0.1)] dark:shadow-[0_-4px_10px_0_rgba(0,0,0,0.3)]">
+        <div className="w-12 h-6 bg-slate-100 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 rounded-lg animate-pulse" />
+        <div className="w-12 h-6 bg-slate-100 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 rounded-lg animate-pulse" />
+        <div className="w-16 h-16 -mt-8 rounded-full bg-indigo-500 border-2 border-slate-900 dark:border-slate-700 animate-pulse shadow-[0_4px_0_0_#0f172a] dark:shadow-[0_4px_0_0_#334155]" />
+        <div className="w-12 h-6 bg-slate-100 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 rounded-lg animate-pulse" />
+        <div className="w-12 h-6 bg-slate-100 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 rounded-lg animate-pulse" />
       </div>
 
       <div className={`${contentWrapper} flex flex-col min-h-[calc(100vh-3.5rem)]`}>
         <div className="flex-1 flex flex-col pb-8">
           <div className="flex flex-col lg:flex-row gap-0 flex-1 lg:pl-16 lg:px-0 lg:py-0">
             {/* Icon Sidebar */}
-            <div className="hidden lg:flex fixed left-0 top-14 w-16 h-[calc(100vh-3.5rem)] flex-col border-r-4 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 z-40 py-4 shadow-[4px_0_10px_0_rgba(0,0,0,0.05)] dark:shadow-[4px_0_10px_0_rgba(0,0,0,0.2)]" aria-hidden>
+            <div className="hidden lg:flex fixed left-0 top-14 w-16 h-[calc(100vh-3.5rem)] flex-col border-r-4 border-slate-900 dark:border-slate-700 bg-white dark:bg-slate-900 z-40 py-4 shadow-[4px_0_10px_0_rgba(0,0,0,0.05)] dark:shadow-[4px_0_10px_0_rgba(0,0,0,0.2)]" aria-hidden>
               {[1, 2, 3, 4, 5, 6].map((i) => (
                 <div key={i} className="flex flex-col items-center gap-2 py-5 border-b-2 border-slate-100 dark:border-slate-700 last:border-0 w-full">
-                  <div className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-600 animate-pulse" />
-                  <div className="w-10 h-2 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 animate-pulse" />
+                  <div className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 animate-pulse" />
+                  <div className="w-10 h-2 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-900 dark:border-slate-700 animate-pulse" />
                 </div>
               ))}
             </div>
 
             {/* Classes panel */}
             {showClassesPanel && (
-              <div className="hidden lg:flex fixed left-16 top-14 w-56 h-[calc(100vh-3.5rem)] flex-col border-r-4 border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 z-[35]" aria-hidden>
-                <div className="flex-shrink-0 px-4 py-6 border-b-2 border-slate-200 dark:border-slate-700">
-                  <div className="h-12 w-full bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-600 rounded-[20px] animate-pulse shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]" />
+              <div className="hidden lg:flex fixed left-16 top-14 w-56 h-[calc(100vh-3.5rem)] flex-col border-r-4 border-slate-900 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 z-[35]" aria-hidden>
+                <div className="flex-shrink-0 px-4 py-6 border-b-2 border-slate-900 dark:border-slate-700">
+                  <div className="h-12 w-full bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 rounded-[20px] animate-pulse shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]" />
                 </div>
                 <div className="flex-1 overflow-hidden px-3 py-4 space-y-3">
                   {[1, 2, 3, 4, 5].map((i) => (
-                    <div key={i} className="h-14 px-4 rounded-2xl bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-600 animate-pulse shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]" />
+                    <div key={i} className="h-14 px-4 rounded-2xl bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 animate-pulse shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]" />
                   ))}
                 </div>
-                <div className="flex-shrink-0 px-4 py-4 border-t-2 border-slate-200 dark:border-slate-700">
+                <div className="flex-shrink-0 px-4 py-4 border-t-2 border-slate-900 dark:border-slate-700">
                   <div className="h-12 w-full rounded-2xl bg-indigo-50 dark:bg-indigo-950/50 border-2 border-indigo-700 dark:border-indigo-800 animate-pulse" />
                 </div>
               </div>
@@ -81,9 +81,9 @@ export default function YearbookSkeleton({ section }: Props) {
                 {isCover && (
                   <div className="max-w-4xl mx-auto px-4 py-8">
                     <div className="flex flex-col items-center">
-                      <div className="w-full max-w-sm aspect-[3/4] bg-slate-100 rounded-[32px] border-2 border-slate-200 animate-pulse shadow-[4px_4px_0_0_#334155]" />
+                      <div className="w-full max-w-sm aspect-[3/4] bg-slate-100 rounded-[32px] border-2 border-slate-900 animate-pulse shadow-[4px_4px_0_0_#334155]" />
                       <div className="mt-12 w-full max-w-xs space-y-4">
-                        <div className="h-10 w-full bg-slate-100 border-2 border-slate-200 rounded-2xl animate-pulse shadow-[4px_4px_0_0_#334155]" />
+                        <div className="h-10 w-full bg-slate-100 border-2 border-slate-900 rounded-2xl animate-pulse shadow-[4px_4px_0_0_#334155]" />
                         <div className="h-5 w-2/3 mx-auto bg-slate-100 rounded-full animate-pulse" />
                       </div>
                     </div>
@@ -97,8 +97,8 @@ export default function YearbookSkeleton({ section }: Props) {
                     {isClasses ? (
                       <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                         {[1, 2, 3, 4].map((i) => (
-                          <div key={i} className="rounded-[32px] border-2 border-slate-200 bg-white animate-pulse overflow-hidden shadow-[4px_4px_0_0_#334155]">
-                            <div className="aspect-[4/5] bg-slate-100 border-b-4 border-slate-200" />
+                          <div key={i} className="rounded-[32px] border-2 border-slate-900 bg-white animate-pulse overflow-hidden shadow-[4px_4px_0_0_#334155]">
+                            <div className="aspect-[4/5] bg-slate-100 border-b-4 border-slate-900" />
                             <div className="p-5 space-y-4">
                               <div className="h-7 w-3/4 bg-slate-100 rounded-xl" />
                               <div className="h-4 w-1/2 bg-slate-100 rounded-lg" />
@@ -112,8 +112,8 @@ export default function YearbookSkeleton({ section }: Props) {
                       </div>
                     ) : (
                       <div className="flex flex-col items-center justify-center min-h-[60vh]">
-                        <div className="w-full max-w-lg aspect-[4/5] rounded-[32px] border-2 border-slate-200 bg-white shadow-[4px_4px_0_0_#334155] animate-pulse flex flex-col">
-                          <div className="aspect-[4/5] bg-slate-100 border-b-4 border-slate-200" />
+                        <div className="w-full max-w-lg aspect-[4/5] rounded-[32px] border-2 border-slate-900 bg-white shadow-[4px_4px_0_0_#334155] animate-pulse flex flex-col">
+                          <div className="aspect-[4/5] bg-slate-100 border-b-4 border-slate-900" />
                           <div className="p-6 space-y-4">
                             <div className="h-8 w-3/4 bg-slate-100 rounded-xl" />
                             <div className="h-4 w-1/2 bg-slate-100 rounded-lg" />
@@ -129,8 +129,8 @@ export default function YearbookSkeleton({ section }: Props) {
                   <div className="max-w-6xl mx-auto px-4 py-8">
                     <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                       {[1, 2, 3, 4].map((i) => (
-                        <div key={i} className="rounded-2xl border-2 border-slate-200 bg-white animate-pulse overflow-hidden shadow-[4px_4px_0_0_#334155]">
-                          <div className="aspect-[4/5] bg-slate-100 border-b-4 border-slate-200" />
+                        <div key={i} className="rounded-2xl border-2 border-slate-900 bg-white animate-pulse overflow-hidden shadow-[4px_4px_0_0_#334155]">
+                          <div className="aspect-[4/5] bg-slate-100 border-b-4 border-slate-900" />
                           <div className="p-4 space-y-3">
                             <div className="h-6 w-3/4 bg-slate-100 rounded-xl" />
                             <div className="h-3 w-1/2 bg-slate-100 rounded-lg" />

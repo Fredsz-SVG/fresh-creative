@@ -182,7 +182,7 @@ const PackageForm = ({ pkg, onSave, onCancel }: { pkg: Partial<PricingPackage> |
 
   return (
     <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-[100]">
-      <div className="bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-2xl shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] p-5 md:p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+      <div className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-2xl shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] p-5 md:p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         <div className="flex justify-between items-center mb-5">
           <h2 className="text-lg font-bold text-slate-900 dark:text-white">{pkg?.id ? 'Edit Package' : 'New Package'}</h2>
           <button onClick={onCancel} className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
@@ -194,15 +194,15 @@ const PackageForm = ({ pkg, onSave, onCancel }: { pkg: Partial<PricingPackage> |
           <div className="space-y-3">
             <div>
               <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 block">Package Name</label>
-              <input name="name" value={formData.name} onChange={handleChange} placeholder="e.g. Gold" className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-violet-200" required />
+              <input name="name" value={formData.name} onChange={handleChange} placeholder="e.g. Gold" className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-violet-200" required />
             </div>
 
             <div>
               <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 block">Price / Student</label>
-              <input name="price_per_student" type="number" value={formData.price_per_student} onChange={handleChange} placeholder="0" className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-violet-200" required />
+              <input name="price_per_student" type="number" value={formData.price_per_student} onChange={handleChange} placeholder="0" className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-violet-200" required />
             </div>
 
-            <div className="bg-slate-50 dark:bg-slate-800 p-3 rounded-xl border-2 border-slate-200 dark:border-slate-700">
+            <div className="bg-slate-50 dark:bg-slate-800 p-3 rounded-xl border-2 border-slate-900 dark:border-slate-700">
               <div className="flex justify-between items-center mb-3">
                 <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Features</p>
                 <button type="button" onClick={() => setAddons([...addons, { name: '', price: 0 }])} className="text-[10px] bg-emerald-100 text-emerald-700 px-2.5 py-1.5 rounded-lg hover:bg-emerald-200 font-bold transition-all shadow-[2px_2px_0_0_#059669] hover:shadow-none">
@@ -218,7 +218,7 @@ const PackageForm = ({ pkg, onSave, onCancel }: { pkg: Partial<PricingPackage> |
                       value={addon.name}
                       onChange={(e) => handleAddonNameChange(idx, e.target.value)}
                       placeholder="Fitur"
-                      className="flex-1 p-2 text-xs bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-violet-200"
+                      className="flex-1 p-2 text-xs bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-violet-200"
                       required
                     />
                     <input
@@ -226,7 +226,7 @@ const PackageForm = ({ pkg, onSave, onCancel }: { pkg: Partial<PricingPackage> |
                       value={addon.price || ''}
                       onChange={(e) => handleAddonPriceChange(idx, Number(e.target.value))}
                       placeholder="Rp"
-                      className="w-20 p-2 text-xs bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-violet-200"
+                      className="w-20 p-2 text-xs bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-violet-200"
                     />
                     <button type="button" onClick={() => removeAddon(idx)} className="text-rose-500 hover:bg-rose-50 p-1.5 rounded-lg transition-colors">
                       <Trash2 size={14} strokeWidth={2} />
@@ -236,7 +236,7 @@ const PackageForm = ({ pkg, onSave, onCancel }: { pkg: Partial<PricingPackage> |
               </div>
             </div>
 
-            <div className="p-3 border-2 border-slate-200 dark:border-slate-700 rounded-xl bg-amber-50 dark:bg-slate-800">
+            <div className="p-3 border-2 border-slate-900 dark:border-slate-700 rounded-xl bg-amber-50 dark:bg-slate-800">
               <label className="flex items-center gap-3 cursor-pointer select-none">
                 <div className="relative">
                   <input
@@ -256,10 +256,30 @@ const PackageForm = ({ pkg, onSave, onCancel }: { pkg: Partial<PricingPackage> |
             </div>
 
             <div className="space-y-2">
-              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Included AI Labs</p>
+              <div className="p-3 border-2 border-slate-900 dark:border-slate-700 rounded-xl bg-sky-50 dark:bg-slate-800">
+                <label className="flex items-center gap-3 cursor-pointer select-none">
+                  <div className="relative">
+                    <input
+                      type="checkbox"
+                      checked={!!formData.flipbook_enabled}
+                      onChange={(e) => setFormData({ ...formData, flipbook_enabled: e.target.checked })}
+                      className="sr-only peer"
+                    />
+                    <div className="w-10 h-5 bg-slate-200 dark:bg-slate-600 rounded-full peer-checked:bg-sky-400 transition-colors" />
+                    <div className="absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-5" />
+                  </div>
+                  <span className="text-sm text-slate-900 dark:text-white font-bold flex items-center gap-2">
+                    <Book size={14} className="text-sky-500" />
+                    Enable Flipbook
+                  </span>
+                </label>
+              </div>
+              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mt-4">Included AI Labs</p>
               <div className="grid grid-cols-2 gap-2">
-                {Object.entries(AI_FEATURE_LABELS).map(([slug, label]) => (
-                  <label key={slug} className={`flex items-center gap-2 p-2 rounded-xl border-2 transition-all cursor-pointer select-none ${(formData.ai_labs_features ?? []).includes(slug) ? 'bg-violet-100 border-violet-300 dark:bg-violet-900/30 dark:border-violet-700' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700'
+                {Object.entries(AI_FEATURE_LABELS)
+                  .filter(([slug]) => slug !== 'flipbook_unlock')
+                  .map(([slug, label]) => (
+                  <label key={slug} className={`flex items-center gap-2 p-2 rounded-xl border-2 transition-all cursor-pointer select-none ${(formData.ai_labs_features ?? []).includes(slug) ? 'bg-violet-100 border-violet-300 dark:bg-violet-900/30 dark:border-violet-700' : 'bg-white dark:bg-slate-800 border-slate-900 dark:border-slate-700'
                     }`}>
                     <input
                       type="checkbox"
@@ -283,7 +303,7 @@ const PackageForm = ({ pkg, onSave, onCancel }: { pkg: Partial<PricingPackage> |
           </div>
 
           <div className="flex gap-3 pt-2">
-            <button type="button" onClick={onCancel} className="flex-1 px-4 py-2.5 border-2 border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200 font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-[4px_4px_0_0_#334155] hover:shadow-none">
+            <button type="button" onClick={onCancel} className="flex-1 px-4 py-2.5 border-2 border-slate-900 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200 font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-[4px_4px_0_0_#334155] hover:shadow-none">
               Cancel
             </button>
             <button type="submit" className="flex-1 px-4 py-2.5 bg-emerald-400 text-emerald-900 rounded-xl font-bold hover:bg-emerald-300 transition-all shadow-[2px_2px_0_0_#059669] hover:shadow-none">
@@ -521,7 +541,7 @@ export default function PricingEditPage() {
       )}
       {deleteTargetId && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-[200]">
-          <div className="bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-2xl shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] p-5 md:p-6 w-full max-w-sm">
+          <div className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-2xl shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] p-5 md:p-6 w-full max-w-sm">
             <h3 className="text-base md:text-lg font-bold text-slate-900 dark:text-white">Hapus Package?</h3>
             <p className="mt-2 text-xs md:text-sm text-slate-500 dark:text-slate-400">
               Aksi ini tidak bisa dibatalkan. Data package yang dipilih akan dihapus permanen.
@@ -531,7 +551,7 @@ export default function PricingEditPage() {
                 type="button"
                 disabled={deleting}
                 onClick={() => setDeleteTargetId(null)}
-                className="flex-1 px-4 py-2.5 border-2 border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200 font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:shadow-none disabled:opacity-60"
+                className="flex-1 px-4 py-2.5 border-2 border-slate-900 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200 font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:shadow-none disabled:opacity-60"
               >
                 Batal
               </button>
@@ -568,7 +588,7 @@ export default function PricingEditPage() {
       )}
       {editingAi && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-[100]">
-          <div className="bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-2xl shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] p-5 md:p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+          <div className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-2xl shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] p-5 md:p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <h2 className="text-lg md:text-xl font-bold text-slate-900 dark:text-white mb-4">
               Pricing: {AI_FEATURE_LABELS[editingAi.feature_slug] ?? editingAi.feature_slug}
             </h2>
@@ -594,7 +614,7 @@ export default function PricingEditPage() {
                           credits_per_use: Number(e.target.value),
                         })
                       }
-                      className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-violet-200"
+                      className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-violet-200"
                       required
                     />
                   </div>
@@ -604,7 +624,7 @@ export default function PricingEditPage() {
                     <p className="text-[10px] font-medium text-slate-500 dark:text-slate-400 leading-relaxed">
                       Tambah baris dengan <span className="font-bold">+</span>: isi <span className="font-bold">detik</span> (bilangan bulat {PTV_SEC_MIN}–{PTV_SEC_MAX}) dan <span className="font-bold">kredit</span> per generate.
                     </p>
-                    <div className="rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-3">
+                    <div className="rounded-xl border-2 border-slate-900 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-3">
                       <div className="flex items-center justify-between gap-2 mb-3">
                         <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
                           Durasi &amp; kredit
@@ -653,7 +673,7 @@ export default function PricingEditPage() {
                                     )
                                   )
                                 }}
-                                className="w-full px-3 py-2 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-bold text-sm focus:outline-none focus:ring-2 focus:ring-violet-200"
+                                className="w-full px-3 py-2 bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-bold text-sm focus:outline-none focus:ring-2 focus:ring-violet-200"
                               />
                             </div>
                             <div className="flex-1 min-w-[4.5rem]">
@@ -673,7 +693,7 @@ export default function PricingEditPage() {
                                     )
                                   )
                                 }
-                                className="w-full px-3 py-2 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-bold text-sm focus:outline-none focus:ring-2 focus:ring-violet-200"
+                                className="w-full px-3 py-2 bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-bold text-sm focus:outline-none focus:ring-2 focus:ring-violet-200"
                               />
                             </div>
                             <button
@@ -708,7 +728,7 @@ export default function PricingEditPage() {
                         credits_per_unlock: Number(e.target.value),
                       })
                     }
-                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-violet-200"
+                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-violet-200"
                     required
                   />
                 </div>
@@ -717,7 +737,7 @@ export default function PricingEditPage() {
                 <button
                   type="button"
                   onClick={() => setEditingAi(null)}
-                  className="flex-1 px-4 py-2.5 border-2 border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200 font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-[4px_4px_0_0_#334155] hover:shadow-none"
+                  className="flex-1 px-4 py-2.5 border-2 border-slate-900 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200 font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-[4px_4px_0_0_#334155] hover:shadow-none"
                 >
                   Cancel
                 </button>
@@ -751,7 +771,7 @@ export default function PricingEditPage() {
 
       {/* Tabs */}
       <div className="mb-8 px-4 md:px-0">
-        <div className="relative inline-flex items-center gap-1 p-1 bg-white dark:bg-slate-800 rounded-2xl border-2 border-slate-200 dark:border-slate-700 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]">
+        <div className="relative inline-flex items-center gap-1 p-1 bg-white dark:bg-slate-800 rounded-2xl border-2 border-slate-900 dark:border-slate-700 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]">
           <div
             className="absolute top-1 bottom-1 rounded-xl bg-violet-400 transition-all duration-300 ease-out"
             style={{
@@ -770,7 +790,7 @@ export default function PricingEditPage() {
           >
             <Layout className="w-3.5 h-3.5 md:w-5 md:h-5" strokeWidth={2.5} />
             <span>Yearbook</span>
-            <span className="px-1.5 py-0.5 bg-slate-900 dark:bg-slate-700 text-white text-[9px] md:text-xs rounded-lg border-2 border-slate-200 dark:border-slate-600 ml-0.5">
+            <span className="px-1.5 py-0.5 bg-slate-900 dark:bg-slate-700 text-white text-[9px] md:text-xs rounded-lg border-2 border-slate-900 dark:border-slate-600 ml-0.5">
               {packages.length}
             </span>
           </button>
@@ -785,7 +805,7 @@ export default function PricingEditPage() {
           >
             <Zap className="w-3.5 h-3.5 md:w-5 md:h-5" strokeWidth={2.5} />
             <span>Unlock & Gen</span>
-            <span className="px-1.5 py-0.5 bg-slate-900 dark:bg-slate-700 text-white text-[9px] md:text-xs rounded-lg border-2 border-slate-200 dark:border-slate-600 ml-0.5">
+            <span className="px-1.5 py-0.5 bg-slate-900 dark:bg-slate-700 text-white text-[9px] md:text-xs rounded-lg border-2 border-slate-900 dark:border-slate-600 ml-0.5">
               {aiPricing.length}
             </span>
           </button>
@@ -798,7 +818,7 @@ export default function PricingEditPage() {
             {[1, 2, 3, 4].map((i) => (
               <div
                 key={i}
-                className="bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-2xl p-5 md:p-6 animate-pulse shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]"
+                className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-2xl p-5 md:p-6 animate-pulse shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]"
               >
                 <div className="space-y-3">
                   <div className="h-5 md:h-6 bg-slate-100 dark:bg-slate-800 rounded-xl w-28 md:w-40" />
@@ -809,8 +829,8 @@ export default function PricingEditPage() {
             ))}
           </div>
         ) : packages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 px-4 md:px-8 text-center bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-3xl border-dashed shadow-[4px_4px_0_0_#94a3b8] dark:shadow-[4px_4px_0_0_#1e293b] mx-4 md:mx-0">
-            <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-2xl flex items-center justify-center mb-4 transform -rotate-3 border-2 border-slate-200 dark:border-slate-700">
+          <div className="flex flex-col items-center justify-center py-16 px-4 md:px-8 text-center bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-3xl border-dashed shadow-[4px_4px_0_0_#94a3b8] dark:shadow-[4px_4px_0_0_#1e293b] mx-4 md:mx-0">
+            <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-2xl flex items-center justify-center mb-4 transform -rotate-3 border-2 border-slate-900 dark:border-slate-700">
               <Layout size={32} className="text-slate-400 dark:text-slate-500" strokeWidth={1.5} />
             </div>
             <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-2">Belum ada paket harga</h3>
@@ -840,7 +860,7 @@ export default function PricingEditPage() {
               return (
                 <div
                   key={pkg.id}
-                  className="bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-2xl p-5 md:p-6 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:shadow-none hover:-translate-x-0.5 hover:-translate-y-0.5 transition-all group relative overflow-hidden"
+                  className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-2xl p-5 md:p-6 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:shadow-none hover:-translate-x-0.5 hover:-translate-y-0.5 transition-all group relative overflow-hidden"
                 >
                   <div className="absolute top-3 right-3 md:top-4 md:right-4 flex gap-1.5">
                     <button
@@ -890,7 +910,7 @@ export default function PricingEditPage() {
                     </div>
                   )}
 
-                  <div className="bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-xl p-4">
+                  <div className="bg-slate-50 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 rounded-xl p-4">
                     <p className="text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-2">Add-on extra (opsional)</p>
                     <ul className="space-y-2">
                       {addonsList.length === 0 ? (
@@ -920,7 +940,7 @@ export default function PricingEditPage() {
           {[1, 2, 3].map((i) => (
             <div
               key={i}
-              className="bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-2xl p-5 animate-pulse shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]"
+              className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-2xl p-5 animate-pulse shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]"
             >
               <div className="flex justify-between items-center">
                 <div className="space-y-2">
@@ -933,7 +953,7 @@ export default function PricingEditPage() {
           ))}
         </div>
       ) : aiPricing.length === 0 ? (
-        <div className="bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-2xl p-10 text-center shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] mx-4 md:mx-0">
+        <div className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-2xl p-10 text-center shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] mx-4 md:mx-0">
           <Zap className="w-12 h-12 mx-auto mb-3 text-sky-300" />
           <h3 className="text-base font-bold text-slate-900 dark:text-white mb-1">No AI Data</h3>
           <p className="text-xs text-slate-400 dark:text-slate-400 font-medium">Jalankan migration SQL terlebih dahulu untuk mengisi data pricing AI.</p>
@@ -947,7 +967,7 @@ export default function PricingEditPage() {
               return (
                 <div
                   key={item.id}
-                  className="bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-2xl p-4 md:p-5 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:shadow-none hover:-translate-x-0.5 hover:-translate-y-0.5 transition-all group flex justify-between items-center"
+                  className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-2xl p-4 md:p-5 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:shadow-none hover:-translate-x-0.5 hover:-translate-y-0.5 transition-all group flex justify-between items-center"
                 >
                   <div>
                     <h3 className="text-base md:text-lg font-bold text-slate-900 dark:text-white mb-2">

@@ -60,7 +60,7 @@ export default function CoverView({
             <button
               type="button"
               onClick={() => onPlayVideo && onPlayVideo(album.cover_video_url!)}
-              className="absolute bottom-3 right-3 w-10 h-10 rounded-full bg-black/70 hover:bg-black/90 flex items-center justify-center group/play transition-all hover:scale-110 backdrop-blur-sm border border-gray-200 dark:border-slate-600"
+              className="absolute bottom-3 right-3 w-10 h-10 rounded-full bg-black/70 hover:bg-black/90 flex items-center justify-center group/play transition-all hover:scale-110 backdrop-blur-sm border border-gray-200 dark:border-slate-700"
               title="Play Video Cover"
             >
               <Play className="w-4 h-4 text-gray-800 dark:text-white ml-0.5" fill="currentColor" />

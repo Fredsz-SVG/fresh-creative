@@ -122,11 +122,11 @@ const BLANK_PAGE_STYLE = {
 }
 const BlankPage = React.memo(React.forwardRef<HTMLDivElement>(function BlankPage(_, ref) {
   return (
-    <div ref={ref} data-blank-page className="page-content blank-page-content h-full w-full relative overflow-hidden border-2 border-slate-300" style={BLANK_PAGE_STYLE}>
-      <div className="absolute top-6 left-6 w-12 h-12 border-t-4 border-l-4 border-slate-400/40 rounded-tl-md" />
-      <div className="absolute top-6 right-6 w-12 h-12 border-t-4 border-r-4 border-slate-400/40 rounded-tr-md" />
-      <div className="absolute bottom-6 left-6 w-12 h-12 border-b-4 border-l-4 border-slate-400/40 rounded-bl-md" />
-      <div className="absolute bottom-6 right-6 w-12 h-12 border-b-4 border-r-4 border-slate-400/40 rounded-br-md" />
+    <div ref={ref} data-blank-page className="page-content blank-page-content h-full w-full relative overflow-hidden border-2 border-slate-900" style={BLANK_PAGE_STYLE}>
+      <div className="absolute top-6 left-6 w-12 h-12 border-t-4 border-l-4 border-slate-900/40 rounded-tl-md" />
+      <div className="absolute top-6 right-6 w-12 h-12 border-t-4 border-r-4 border-slate-900/40 rounded-tr-md" />
+      <div className="absolute bottom-6 left-6 w-12 h-12 border-b-4 border-l-4 border-slate-900/40 rounded-bl-md" />
+      <div className="absolute bottom-6 right-6 w-12 h-12 border-b-4 border-r-4 border-slate-900/40 rounded-br-md" />
       <div className="absolute inset-0 flex items-center justify-center">
         <div className="flex items-center gap-4 opacity-40">
           <div className="w-16 h-px bg-slate-600" />
@@ -682,7 +682,7 @@ export default function ManualFlipbookViewer({ pages, onPlayVideo, className = '
 
   if (!pages || pages.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center p-12 bg-white dark:bg-slate-900 rounded-[32px] border-2 border-slate-200 dark:border-slate-700 border-dashed text-slate-400 dark:text-slate-500 h-full w-full">
+      <div className="flex flex-col items-center justify-center p-12 bg-white dark:bg-slate-900 rounded-[32px] border-2 border-slate-900 dark:border-slate-700 border-dashed text-slate-400 dark:text-slate-500 h-full w-full">
         <Play className="w-16 h-16 mb-4 opacity-20" strokeWidth={3} />
         <p className="text-xs font-black uppercase tracking-[0.2em]">Belum ada halaman yang diunggah.</p>
       </div>
@@ -793,12 +793,12 @@ export default function ManualFlipbookViewer({ pages, onPlayVideo, className = '
       </div>
 
       {/* Bottom Navigation Bar — editor: tombol lebih kecil + jarak longgar; public: tetap */}
-      <div className={`mt-auto shrink-0 w-full flex items-center bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700 shadow-[0_-1px_0_0_rgba(15,23,42,0.06)] dark:shadow-[0_-1px_0_0_rgba(51,65,85,0.4)] z-50 sticky bottom-0 pb-[env(safe-area-inset-bottom)] ${isEditorView ? 'px-2 py-1' : 'px-1.5 py-0.5'}`}>
+      <div className={`mt-auto shrink-0 w-full flex items-center bg-white dark:bg-slate-900 border-t border-slate-900 dark:border-slate-700 shadow-[0_-1px_0_0_rgba(15,23,42,0.06)] dark:shadow-[0_-1px_0_0_rgba(51,65,85,0.4)] z-50 sticky bottom-0 pb-[env(safe-area-inset-bottom)] ${isEditorView ? 'px-2 py-1' : 'px-1.5 py-0.5'}`}>
         {/* Kiri: sound + flip */}
         <div className={`flex-1 flex items-center justify-start ${isEditorView ? 'gap-1.5' : 'gap-0.5'}`}>
           <button
             onClick={(e) => { e.stopPropagation(); setSoundEnabled(!soundEnabled); }}
-            className={`p-0 flex items-center justify-center rounded-sm bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-600 transition-all text-slate-900 dark:text-white active:scale-95 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] ${isEditorView ? '!size-[28px] !min-w-[28px] !min-h-[28px]' : 'size-[28px] min-w-[28px] min-h-[28px]'}`}
+            className={`p-0 flex items-center justify-center rounded-sm bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-900 dark:border-slate-700 transition-all text-slate-900 dark:text-white active:scale-95 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] ${isEditorView ? '!size-[28px] !min-w-[28px] !min-h-[28px]' : 'size-[28px] min-w-[28px] min-h-[28px]'}`}
             style={isEditorView ? { width: 28, height: 28, minWidth: 28, minHeight: 28 } : undefined}
             title={soundEnabled ? 'Matikan suara' : 'Nyalakan suara'}
           >
@@ -806,7 +806,7 @@ export default function ManualFlipbookViewer({ pages, onPlayVideo, className = '
           </button>
           <button
             onClick={(e) => { e.stopPropagation(); handleToggleCover(); }}
-            className={`p-0 flex items-center justify-center rounded-sm bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-600 transition-all text-slate-900 dark:text-white active:scale-95 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] ${isEditorView ? '!size-[28px] !min-w-[28px] !min-h-[28px]' : 'size-[28px] min-w-[28px] min-h-[28px]'}`}
+            className={`p-0 flex items-center justify-center rounded-sm bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-900 dark:border-slate-700 transition-all text-slate-900 dark:text-white active:scale-95 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] ${isEditorView ? '!size-[28px] !min-w-[28px] !min-h-[28px]' : 'size-[28px] min-w-[28px] min-h-[28px]'}`}
             style={isEditorView ? { width: 28, height: 28, minWidth: 28, minHeight: 28 } : undefined}
             title={isBackCoverOnly ? 'Ke cover depan' : 'Ke back cover'}
           >
@@ -823,13 +823,13 @@ export default function ManualFlipbookViewer({ pages, onPlayVideo, className = '
               handlePrev()
             }}
             disabled={currentPage === 0}
-            className={`p-0 flex items-center justify-center rounded-sm bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:bg-slate-200 dark:disabled:bg-slate-700 border border-slate-200 dark:border-slate-600 disabled:opacity-50 transition-all text-slate-900 dark:text-white active:scale-95 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] disabled:shadow-none disabled:translate-x-0.5 disabled:translate-y-0.5 touch-manipulation ${isEditorView ? '!size-[28px] !min-w-[28px] !min-h-[28px]' : 'size-[28px] min-w-[28px] min-h-[28px]'}`}
+            className={`p-0 flex items-center justify-center rounded-sm bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:bg-slate-200 dark:disabled:bg-slate-700 border border-slate-900 dark:border-slate-700 disabled:opacity-50 transition-all text-slate-900 dark:text-white active:scale-95 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] disabled:shadow-none disabled:translate-x-0.5 disabled:translate-y-0.5 touch-manipulation ${isEditorView ? '!size-[28px] !min-w-[28px] !min-h-[28px]' : 'size-[28px] min-w-[28px] min-h-[28px]'}`}
             style={isEditorView ? { width: 28, height: 28, minWidth: 28, minHeight: 28 } : undefined}
           >
             <ChevronLeft className={`shrink-0 ${isEditorView ? 'w-3.5 h-3.5' : 'w-4 h-4'}`} strokeWidth={3} />
           </button>
           <div
-            className={`flex flex-col items-center justify-center cursor-pointer rounded-sm border border-transparent hover:border-slate-300 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors ${isEditorView ? 'w-16 min-w-16 h-[28px]' : 'w-16 min-w-16 h-[28px]'}`}
+            className={`flex flex-col items-center justify-center cursor-pointer rounded-sm border border-transparent hover:border-slate-900 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors ${isEditorView ? 'w-16 min-w-16 h-[28px]' : 'w-16 min-w-16 h-[28px]'}`}
             onClick={(e) => {
               e.stopPropagation()
               setPageInputValue(String(currentPage + 1))
@@ -865,7 +865,7 @@ export default function ManualFlipbookViewer({ pages, onPlayVideo, className = '
               book.current?.pageFlip()?.flipNext()
             }}
             disabled={currentPage >= totalPageCount - (isMobileScreen ? 1 : 2)}
-            className={`p-0 flex items-center justify-center rounded-sm bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:bg-slate-200 dark:disabled:bg-slate-700 border border-slate-200 dark:border-slate-600 disabled:opacity-50 transition-all text-slate-900 dark:text-white active:scale-95 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] disabled:shadow-none disabled:translate-x-0.5 disabled:translate-y-0.5 ${isEditorView ? '!size-[28px] !min-w-[28px] !min-h-[28px]' : 'size-[28px] min-w-[28px] min-h-[28px]'}`}
+            className={`p-0 flex items-center justify-center rounded-sm bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:bg-slate-200 dark:disabled:bg-slate-700 border border-slate-900 dark:border-slate-700 disabled:opacity-50 transition-all text-slate-900 dark:text-white active:scale-95 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] disabled:shadow-none disabled:translate-x-0.5 disabled:translate-y-0.5 ${isEditorView ? '!size-[28px] !min-w-[28px] !min-h-[28px]' : 'size-[28px] min-w-[28px] min-h-[28px]'}`}
             style={isEditorView ? { width: 28, height: 28, minWidth: 28, minHeight: 28 } : undefined}
           >
             <ChevronRight className={`shrink-0 ${isEditorView ? 'w-3.5 h-3.5' : 'w-4 h-4'}`} strokeWidth={3} />
@@ -878,7 +878,7 @@ export default function ManualFlipbookViewer({ pages, onPlayVideo, className = '
             <>
               <button
                 onClick={(e) => { e.stopPropagation(); setShowSharePopup(true); }}
-                className={`p-0 flex items-center justify-center rounded-sm bg-emerald-400 dark:bg-emerald-600 hover:bg-emerald-300 dark:hover:bg-emerald-500 border border-slate-200 dark:border-slate-600 transition-all text-slate-900 dark:text-white active:scale-95 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] ${isEditorView ? '!size-[28px] !min-w-[28px] !min-h-[28px]' : 'size-[28px] min-w-[28px] min-h-[28px]'}`}
+                className={`p-0 flex items-center justify-center rounded-sm bg-emerald-400 dark:bg-emerald-600 hover:bg-emerald-300 dark:hover:bg-emerald-500 border border-slate-900 dark:border-slate-700 transition-all text-slate-900 dark:text-white active:scale-95 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] ${isEditorView ? '!size-[28px] !min-w-[28px] !min-h-[28px]' : 'size-[28px] min-w-[28px] min-h-[28px]'}`}
                 style={isEditorView ? { width: 28, height: 28, minWidth: 28, minHeight: 28 } : undefined}
                 title="Bagikan"
               >
@@ -893,7 +893,7 @@ export default function ManualFlipbookViewer({ pages, onPlayVideo, className = '
                   aria-labelledby="share-popup-title"
                 >
                   <div
-                    className="bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-xl shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] max-w-sm w-full p-4"
+                    className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-xl shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] max-w-sm w-full p-4"
                     onClick={(e) => e.stopPropagation()}
                   >
                     <div className="flex items-center justify-between mb-3">
@@ -919,7 +919,7 @@ export default function ManualFlipbookViewer({ pages, onPlayVideo, className = '
                           toast.success('Link disalin ke clipboard');
                           setShowSharePopup(false);
                         }}
-                        className="flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white font-bold text-sm uppercase tracking-wide hover:bg-slate-50 dark:hover:bg-slate-700 active:scale-[0.98] shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] transition-all"
+                        className="flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 text-slate-900 dark:text-white font-bold text-sm uppercase tracking-wide hover:bg-slate-50 dark:hover:bg-slate-700 active:scale-[0.98] shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] transition-all"
                       >
                         <Copy className="w-4 h-4 shrink-0" />
                         Salin link
@@ -935,7 +935,7 @@ export default function ManualFlipbookViewer({ pages, onPlayVideo, className = '
                               url,
                             }).then(() => setShowSharePopup(false)).catch(() => {})
                           }}
-                          className="flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg bg-emerald-400 dark:bg-emerald-600 hover:bg-emerald-300 dark:hover:bg-emerald-500 border-2 border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white font-bold text-sm uppercase tracking-wide active:scale-[0.98] shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] transition-all"
+                          className="flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg bg-emerald-400 dark:bg-emerald-600 hover:bg-emerald-300 dark:hover:bg-emerald-500 border-2 border-slate-900 dark:border-slate-700 text-slate-900 dark:text-white font-bold text-sm uppercase tracking-wide active:scale-[0.98] shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] transition-all"
                         >
                           <Share2 className="w-4 h-4 shrink-0" />
                           Bagikan
@@ -949,7 +949,7 @@ export default function ManualFlipbookViewer({ pages, onPlayVideo, className = '
           )}
           <button
             onClick={(e) => { e.stopPropagation(); toggleFullscreen(); }}
-            className={`p-0 flex items-center justify-center rounded-sm bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-600 transition-all text-slate-900 dark:text-white active:scale-95 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] ${isEditorView ? '!size-[28px] !min-w-[28px] !min-h-[28px]' : 'size-[28px] min-w-[28px] min-h-[28px]'}`}
+            className={`p-0 flex items-center justify-center rounded-sm bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-900 dark:border-slate-700 transition-all text-slate-900 dark:text-white active:scale-95 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] ${isEditorView ? '!size-[28px] !min-w-[28px] !min-h-[28px]' : 'size-[28px] min-w-[28px] min-h-[28px]'}`}
             style={isEditorView ? { width: 28, height: 28, minWidth: 28, minHeight: 28 } : undefined}
             title={isFullscreen ? 'Keluar fullscreen' : 'Fullscreen'}
           >
@@ -973,7 +973,7 @@ const Hotspot = React.memo(function Hotspot({ h, onPlay }: { h: VideoHotspot; on
       style={{ left: `${h.x}%`, top: `${h.y}%`, width: `${h.width}%`, height: `${h.height}%` }}
     >
       <div className="absolute inset-0 border-2 border-transparent group-hover/hotspot:border-amber-400 group-hover/hotspot:bg-amber-400/10 transition-all rounded-sm">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 p-2 bg-indigo-400 border-2 border-slate-200 rounded-xl text-white opacity-0 group-hover/hotspot:opacity-100 shadow-[4px_4px_0_0_#334155] transition-all">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 p-2 bg-indigo-400 border-2 border-slate-900 rounded-xl text-white opacity-0 group-hover/hotspot:opacity-100 shadow-[4px_4px_0_0_#334155] transition-all">
           <Play className="w-4 h-4 fill-current" />
         </div>
       </div>

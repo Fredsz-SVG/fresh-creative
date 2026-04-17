@@ -527,6 +527,19 @@ html[data-theme="light"] body {
   .input-field {
     @apply px-4 py-2.5 bg-[#f5f5fa] border border-[#e1e1eb] rounded-xl text-[#1e1e32] placeholder-[#787891] focus:outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-200 transition-all;
   }
+
+  /* Neobrutalist Design Utilities */
+  .neo-border {
+    @apply border-2 border-slate-900 shadow-[4px_4px_0_0_#334155] dark:border-slate-700 dark:shadow-[4px_4px_0_0_#1e293b];
+  }
+  
+  .neo-card {
+    @apply bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-3xl shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] overflow-hidden;
+  }
+
+  .neo-btn-primary {
+    @apply px-4 py-2 rounded-xl bg-violet-400 border-2 border-slate-900 font-bold text-slate-900 shadow-[3px_3px_0_0_#000] hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all;
+  }
 }
 
 /* ===== Animation & Utilities ===== */

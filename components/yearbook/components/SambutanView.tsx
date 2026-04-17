@@ -59,7 +59,7 @@ export default function SambutanView({
     const currentPhoto = galleryPhotos[safeIdx]
     return (
       <div className="fixed inset-0 z-[100] flex flex-col bg-zinc-950 pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]">
-        <div className="flex shrink-0 items-center gap-3 border-b border-white/10 bg-zinc-900/85 px-3 py-2.5 backdrop-blur-md">
+        <div className="flex shrink-0 items-center gap-3 border-b border-slate-900 bg-zinc-900/85 px-3 py-2.5 backdrop-blur-md">
           <button
             type="button"
             onClick={() => setTeacherPhotoViewer(null)}
@@ -128,7 +128,7 @@ export default function SambutanView({
             )}
           </div>
           {galleryPhotos.length > 1 && (
-            <div className="shrink-0 border-t border-white/10 bg-black/50 px-3 py-3 backdrop-blur-md">
+            <div className="shrink-0 border-t border-slate-900 bg-black/50 px-3 py-3 backdrop-blur-md">
               <div className="mx-auto flex max-w-5xl gap-2 overflow-x-auto pb-1 [scrollbar-width:thin]">
                 {galleryPhotos.map((p, i) => (
                   <button
@@ -161,7 +161,7 @@ export default function SambutanView({
                 className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
                 onClick={() => { setAddingTeacher(false); setNewTeacherName('') }}
               />
-              <div className="relative w-full max-w-md bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-[32px] shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] overflow-hidden animate-in zoom-in-95 duration-200 z-[101]">
+              <div className="relative w-full max-w-md bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-[32px] shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] overflow-hidden animate-in zoom-in-95 duration-200 z-[101]">
                 <div className="p-6">
                   <div className="flex items-center justify-between mb-6">
                     <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Tambah Profil</h3>
@@ -181,7 +181,7 @@ export default function SambutanView({
                         value={newTeacherName}
                         onChange={(e) => setNewTeacherName(e.target.value)}
                         placeholder="Contoh: Bpk. Budi Santoso"
-                        className="w-full px-5 py-4 rounded-xl bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-600 text-base font-black text-slate-900 dark:text-white placeholder:text-slate-300 dark:placeholder:text-slate-500 focus:outline-none focus:bg-white dark:focus:bg-slate-800 transition-all shadow-[4px_4px_0_0_#f1f5f9] dark:shadow-[4px_4px_0_0_#1e293b]"
+                        className="w-full px-5 py-4 rounded-xl bg-slate-50 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 text-base font-black text-slate-900 dark:text-white placeholder:text-slate-300 dark:placeholder:text-slate-500 focus:outline-none focus:bg-white dark:focus:bg-slate-800 transition-all shadow-[4px_4px_0_0_#f1f5f9] dark:shadow-[4px_4px_0_0_#1e293b]"
                         autoFocus
                         onKeyDown={(e) => {
                           if (e.key === 'Enter' && newTeacherName.trim()) {
@@ -201,7 +201,7 @@ export default function SambutanView({
                       <button
                         type="button"
                         onClick={() => { setAddingTeacher(false); setNewTeacherName('') }}
-                        className="flex-1 py-4 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-xs font-black uppercase tracking-widest border-2 border-slate-200 dark:border-slate-600 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
+                        className="flex-1 py-4 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-xs font-black uppercase tracking-widest border-2 border-slate-900 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
                       >
                         Batal
                       </button>
@@ -215,7 +215,7 @@ export default function SambutanView({
                           }
                         }}
                         disabled={!newTeacherName.trim()}
-                        className="flex-[2] py-4 rounded-2xl bg-emerald-400 dark:bg-emerald-600 text-slate-900 dark:text-white text-xs font-black uppercase tracking-widest border-2 border-slate-200 dark:border-slate-600 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all disabled:opacity-50"
+                        className="flex-[2] py-4 rounded-2xl bg-emerald-400 dark:bg-emerald-600 text-slate-900 dark:text-white text-xs font-black uppercase tracking-widest border-2 border-slate-900 dark:border-slate-700 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all disabled:opacity-50"
                       >
                         Tambah Sekarang
                       </button>
@@ -231,7 +231,7 @@ export default function SambutanView({
             <button
               type="button"
               onClick={() => setAddingTeacher(true)}
-              className="fixed bottom-24 right-6 lg:bottom-10 lg:right-10 z-[60] flex items-center justify-center w-14 h-14 lg:w-16 lg:h-16 rounded-full bg-amber-400 dark:bg-amber-600 border-2 border-slate-200 dark:border-slate-600 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all active:scale-90 group"
+              className="fixed bottom-24 right-6 lg:bottom-10 lg:right-10 z-[60] flex items-center justify-center w-14 h-14 lg:w-16 lg:h-16 rounded-full bg-amber-400 dark:bg-amber-600 border-2 border-slate-900 dark:border-slate-700 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all active:scale-90 group"
               title="Tambah Profil"
             >
               <Plus className="w-8 h-8 text-slate-900 dark:text-white transition-transform group-hover:rotate-90" strokeWidth={2.5} />
@@ -241,10 +241,10 @@ export default function SambutanView({
       )}
 
       {teachersSorted.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 min-h-[45vh] w-full bg-slate-50/50 dark:bg-slate-900/20 rounded-[48px] border-2 border-dashed border-slate-200 dark:border-slate-200 transition-all duration-300 group/empty">
+        <div className="flex flex-col items-center justify-center py-20 min-h-[45vh] w-full bg-slate-50/50 dark:bg-slate-900/20 rounded-[48px] border-2 border-dashed border-slate-900 dark:border-slate-900 transition-all duration-300 group/empty">
           <div className="relative mb-8">
             <div className="absolute inset-0 bg-indigo-500/20 dark:bg-indigo-500/10 blur-2xl rounded-full scale-150 opacity-0 group-hover/empty:opacity-100 transition-opacity duration-500" />
-            <div className="relative w-24 h-24 rounded-[32px] bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] flex items-center justify-center transform group-hover/empty:-rotate-6 transition-transform duration-500">
+            <div className="relative w-24 h-24 rounded-[32px] bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] flex items-center justify-center transform group-hover/empty:-rotate-6 transition-transform duration-500">
               <Users className="w-12 h-12 text-slate-300 dark:text-slate-600 group-hover/empty:text-indigo-400 dark:group-hover/empty:text-indigo-500 transition-colors" strokeWidth={1.5} />
             </div>
           </div>

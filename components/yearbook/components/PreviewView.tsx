@@ -583,7 +583,7 @@ export default function PreviewView({
 
                     {/* Description / message */}
                     {card.description && (
-                        <div className="relative pl-3 border-l-2 border-slate-400 dark:border-white/40 mt-1">
+                        <div className="relative pl-3 border-l-2 border-slate-900 dark:border-white/40 mt-1">
                             <p className="text-sm text-slate-600 dark:text-white/85 font-medium italic line-clamp-3 leading-relaxed">
                                 &ldquo;{card.description}&rdquo;
                             </p>

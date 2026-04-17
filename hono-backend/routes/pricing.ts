@@ -82,7 +82,8 @@ pricing.post('/', async (c) => {
     body.min_students === undefined || body.min_students === null ? 0 : Number(body.min_students)
   const features = JSON.stringify(body.features ?? [])
   const flipbook_enabled = body.flipbook_enabled ? 1 : 0
-  const ai_labs_features = JSON.stringify(body.ai_labs_features ?? [])
+  const _ai = Array.isArray(body.ai_labs_features) ? body.ai_labs_features : []
+  const ai_labs_features = JSON.stringify(_ai.filter((x: unknown) => x !== 'flipbook_unlock'))
   const is_popular = body.is_popular ? 1 : 0
   if (!name || !Number.isFinite(price_per_student) || !Number.isFinite(min_students)) {
     return c.json({ error: 'Invalid payload' }, 400)
@@ -135,7 +136,8 @@ pricing.put('/', async (c) => {
     body.min_students === undefined || body.min_students === null ? 0 : Number(body.min_students)
   const features = JSON.stringify(body.features ?? [])
   const flipbook_enabled = body.flipbook_enabled ? 1 : 0
-  const ai_labs_features = JSON.stringify(body.ai_labs_features ?? [])
+  const _ai = Array.isArray(body.ai_labs_features) ? body.ai_labs_features : []
+  const ai_labs_features = JSON.stringify(_ai.filter((x: unknown) => x !== 'flipbook_unlock'))
   const is_popular = body.is_popular ? 1 : 0
   try {
     const r = await db

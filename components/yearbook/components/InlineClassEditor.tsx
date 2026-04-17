@@ -96,8 +96,8 @@ export default function InlineClassEditor(p: InlineClassEditorProps) {
   return (
     <div className={`w-full ${p.center ? 'flex justify-center' : ''}`}>
       {!editing ? (
-        <div className={`w-full p-4 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-2xl shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] ${p.center ? 'flex justify-center' : ''}`}>
-          <div className={`flex items-center gap-3 w-full ${p.center ? 'justify-center border-b-4 border-slate-200/5 dark:border-slate-600/30 pb-2' : ''}`}>
+        <div className={`w-full p-4 bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-2xl shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] ${p.center ? 'flex justify-center' : ''}`}>
+          <div className={`flex items-center gap-3 w-full ${p.center ? 'justify-center border-b-4 border-slate-900/5 dark:border-slate-700/30 pb-2' : ''}`}>
             <h2 className={`${p.mainHeader ? 'text-4xl lg:text-5xl' : 'text-sm lg:text-base'} font-black text-slate-900 dark:text-white flex-1 break-words uppercase tracking-tight ${p.center ? 'text-center' : 'text-left'}`}>{classObj.name}</h2>
             {isOwner && (
               <div className="flex gap-2 flex-shrink-0">
@@ -108,7 +108,7 @@ export default function InlineClassEditor(p: InlineClassEditorProps) {
                     e.stopPropagation()
                     setEditing(true)
                   }}
-                  className={`${p.mainHeader ? 'w-10 h-10 lg:w-12 lg:h-12 rounded-xl lg:rounded-2xl' : 'w-8 h-8 lg:w-9 lg:h-9 rounded-xl'} flex items-center justify-center bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white hover:bg-amber-300 dark:hover:bg-slate-700 hover:shadow-[4px_4px_0_0_#334155] dark:hover:shadow-[3px_3px_0_0_#334155] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all`}
+                  className={`${p.mainHeader ? 'w-10 h-10 lg:w-12 lg:h-12 rounded-xl lg:rounded-2xl' : 'w-8 h-8 lg:w-9 lg:h-9 rounded-xl'} flex items-center justify-center bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 text-slate-900 dark:text-white hover:bg-amber-300 dark:hover:bg-slate-700 hover:shadow-[4px_4px_0_0_#334155] dark:hover:shadow-[3px_3px_0_0_#334155] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all`}
                   title="Edit kelas"
                 >
                   <Edit3 className={p.mainHeader ? 'w-4 h-4 lg:w-5 lg:h-5' : 'w-4 h-4'} strokeWidth={2.5} />
@@ -120,7 +120,7 @@ export default function InlineClassEditor(p: InlineClassEditorProps) {
                     e.stopPropagation()
                     onDelete && onDelete(classObj.id, classObj.name)
                   }}
-                  className={`${p.mainHeader ? 'w-10 h-10 lg:w-12 lg:h-12 rounded-xl lg:rounded-2xl' : 'w-8 h-8 lg:w-9 lg:h-9 rounded-xl'} flex items-center justify-center bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-600 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/50 hover:shadow-[4px_4px_0_0_#334155] dark:hover:shadow-[3px_3px_0_0_#334155] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all`}
+                  className={`${p.mainHeader ? 'w-10 h-10 lg:w-12 lg:h-12 rounded-xl lg:rounded-2xl' : 'w-8 h-8 lg:w-9 lg:h-9 rounded-xl'} flex items-center justify-center bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/50 hover:shadow-[4px_4px_0_0_#334155] dark:hover:shadow-[3px_3px_0_0_#334155] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all`}
                   title="Hapus kelas"
                 >
                   <Trash2 className={p.mainHeader ? 'w-4 h-4 lg:w-5 lg:h-5' : 'w-4 h-4'} strokeWidth={2.5} />
@@ -130,7 +130,7 @@ export default function InlineClassEditor(p: InlineClassEditorProps) {
           </div>
         </div>
       ) : (
-        <div className="flex flex-col gap-4 w-full bg-amber-50 dark:bg-amber-950/30 p-4 rounded-[24px] border-2 border-slate-200 dark:border-slate-700 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] animate-in zoom-in-95 duration-200">
+        <div className="flex flex-col gap-4 w-full bg-amber-50 dark:bg-amber-950/30 p-4 rounded-[24px] border-2 border-slate-900 dark:border-slate-700 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] animate-in zoom-in-95 duration-200">
           <div className="flex flex-col gap-4">
             <div className="flex flex-col gap-1.5 w-full">
               <label className="text-[10px] text-slate-400 dark:text-slate-500 font-black uppercase tracking-widest pl-1">Nama Kelas</label>
@@ -143,13 +143,13 @@ export default function InlineClassEditor(p: InlineClassEditorProps) {
                   else if (e.key === 'Escape') handleCancel()
                 }}
                 placeholder="Nama kelas..."
-                className="w-full px-4 py-2 rounded-xl text-sm bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500/10 transition-all placeholder:text-slate-300 dark:placeholder:text-slate-500"
+                className="w-full px-4 py-2 rounded-xl text-sm bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 text-slate-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500/10 transition-all placeholder:text-slate-300 dark:placeholder:text-slate-500"
               />
             </div>
 
             <div className="flex flex-col gap-1.5 w-full">
               <label className="text-[10px] text-slate-400 dark:text-slate-500 font-black uppercase tracking-widest pl-1">Urutan Kelas</label>
-              <div className="flex items-center gap-1.5 bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-600 rounded-xl p-1 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] w-fit">
+              <div className="flex items-center gap-1.5 bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 rounded-xl p-1 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] w-fit">
                 <button
                   type="button"
                   onClick={(e) => handleOrderChange(Math.max(0, (order ?? 0) - 1), e)}
@@ -178,14 +178,14 @@ export default function InlineClassEditor(p: InlineClassEditorProps) {
             <button
               type="button"
               onClick={handleSaveName}
-              className="flex-1 py-3 rounded-xl bg-indigo-500 text-white border-2 border-slate-200 dark:border-slate-600 font-black text-[10px] uppercase tracking-widest shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all"
+              className="flex-1 py-3 rounded-xl bg-indigo-500 text-white border-2 border-slate-900 dark:border-slate-700 font-black text-[10px] uppercase tracking-widest shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all"
             >
               Simpan
             </button>
             <button
               type="button"
               onClick={handleCancel}
-              className="flex-1 py-3 rounded-xl bg-white dark:bg-slate-800 text-slate-400 dark:text-slate-500 border-2 border-slate-200 dark:border-slate-600 font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none"
+              className="flex-1 py-3 rounded-xl bg-white dark:bg-slate-800 text-slate-400 dark:text-slate-500 border-2 border-slate-900 dark:border-slate-700 font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none"
             >
               Batal
             </button>

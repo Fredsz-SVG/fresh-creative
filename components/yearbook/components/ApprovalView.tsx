@@ -185,7 +185,7 @@ export default function ApprovalView({
     <div className="max-w-5xl mx-auto px-2 py-2 sm:px-3 sm:py-4">
       {roleChangeConfirm && (
         <div className="fixed inset-0 bg-slate-900/40 dark:bg-black/50 backdrop-blur-md flex items-center justify-center z-[100] p-4">
-          <div className="bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-[32px] p-6 sm:p-8 max-w-sm w-full shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] text-center">
+          <div className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-[32px] p-6 sm:p-8 max-w-sm w-full shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] text-center">
             <h3 className="text-xl font-black text-slate-900 dark:text-white mb-2 uppercase tracking-tight">Konfirmasi Perubahan</h3>
             <p className="text-sm font-bold text-slate-500 dark:text-slate-400 mb-6">
               {roleChangeConfirm.newRole === 'admin'
@@ -195,13 +195,13 @@ export default function ApprovalView({
             <div className="flex gap-3">
               <button
                 onClick={() => setRoleChangeConfirm(null)}
-                className="flex-1 py-3.5 rounded-xl bg-slate-100 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white text-xs font-black uppercase tracking-widest shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
+                className="flex-1 py-3.5 rounded-xl bg-slate-100 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 text-slate-900 dark:text-white text-xs font-black uppercase tracking-widest shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
               >
                 Tidak
               </button>
               <button
                 onClick={handleConfirmRole}
-                className="flex-1 py-3.5 rounded-xl bg-violet-500 text-white border-2 border-slate-200 dark:border-slate-600 text-xs font-black uppercase tracking-widest shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
+                className="flex-1 py-3.5 rounded-xl bg-violet-500 text-white border-2 border-slate-900 dark:border-slate-700 text-xs font-black uppercase tracking-widest shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
               >
                 Ya, Lanjutkan
               </button>
@@ -212,7 +212,7 @@ export default function ApprovalView({
 
       {removeConfirm && (
         <div className="fixed inset-0 bg-slate-900/40 dark:bg-black/50 backdrop-blur-md flex items-center justify-center z-[100] p-4">
-          <div className="bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-[32px] p-6 sm:p-8 max-w-sm w-full shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] text-center">
+          <div className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-[32px] p-6 sm:p-8 max-w-sm w-full shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] text-center">
             <h3 className="text-xl font-black text-slate-900 dark:text-white mb-2 uppercase tracking-tight">Hapus Anggota</h3>
             <p className="text-sm font-bold text-slate-500 dark:text-slate-400 mb-6">
               Hapus akses "<span className="text-slate-900 dark:text-slate-200 font-black">{removeConfirm.memberName}</span>" dari album ini?
@@ -220,13 +220,13 @@ export default function ApprovalView({
             <div className="flex gap-3">
               <button
                 onClick={() => setRemoveConfirm(null)}
-                className="flex-1 py-3.5 rounded-xl bg-slate-100 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white text-xs font-black uppercase tracking-widest shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
+                className="flex-1 py-3.5 rounded-xl bg-slate-100 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 text-slate-900 dark:text-white text-xs font-black uppercase tracking-widest shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
               >
                 Batal
               </button>
               <button
                 onClick={handleConfirmRemove}
-                className="flex-1 py-3.5 rounded-xl bg-red-500 text-white border-2 border-slate-200 dark:border-slate-700 text-xs font-black uppercase tracking-widest shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
+                className="flex-1 py-3.5 rounded-xl bg-red-500 text-white border-2 border-slate-900 dark:border-slate-700 text-xs font-black uppercase tracking-widest shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
               >
                 Ya, Hapus
               </button>
@@ -236,7 +236,7 @@ export default function ApprovalView({
       )}
 
       <div className="mb-3 sm:mb-5">
-        <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 sm:gap-4 mb-4 sm:mb-8 p-3 sm:p-6 bg-white dark:bg-slate-900 border-2 sm:border-2 border-slate-200 dark:border-slate-700 rounded-2xl sm:rounded-[32px] shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]">
+        <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 sm:gap-4 mb-4 sm:mb-8 p-3 sm:p-6 bg-white dark:bg-slate-900 border-2 sm:border-2 border-slate-900 dark:border-slate-700 rounded-2xl sm:rounded-[32px] shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]">
             <div className="flex flex-col items-center px-2 sm:px-4 border-r-2 border-slate-100 dark:border-slate-700">
               <span className="text-[9px] sm:text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-0.5">Terisi</span>
               <div className="flex items-center gap-1.5">
@@ -257,7 +257,7 @@ export default function ApprovalView({
                       setOriginalLimitValue(Number(currentLimit))
                       setEditingLimit(true)
                     }}
-                    className="w-6 h-6 rounded-lg bg-slate-100 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white flex items-center justify-center hover:bg-amber-300 dark:hover:bg-slate-700 transition-all"
+                    className="w-6 h-6 rounded-lg bg-slate-100 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 text-slate-900 dark:text-white flex items-center justify-center hover:bg-amber-300 dark:hover:bg-slate-700 transition-all"
                   >
                     <Edit3 className="w-3 h-3" strokeWidth={3} />
                   </button>
@@ -287,7 +287,7 @@ export default function ApprovalView({
           </div>
 
         {editingLimit && (
-          <div className="mt-3 sm:mt-4 p-4 sm:p-6 rounded-2xl sm:rounded-[24px] bg-white dark:bg-slate-900 border-2 sm:border-2 border-slate-200 dark:border-slate-700 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] animate-in zoom-in-95 duration-200">
+          <div className="mt-3 sm:mt-4 p-4 sm:p-6 rounded-2xl sm:rounded-[24px] bg-white dark:bg-slate-900 border-2 sm:border-2 border-slate-900 dark:border-slate-700 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] animate-in zoom-in-95 duration-200">
             <div className="flex flex-col gap-4">
               <div className="flex items-center justify-between">
                 <span className="text-xs text-slate-900 dark:text-white font-black uppercase tracking-widest">Ubah Batas Siswa</span>
@@ -304,7 +304,7 @@ export default function ApprovalView({
                   disabled={
                     parseInt(editLimitValue) <= Math.max(originalLimitValue, joinStats?.approved_count || 0)
                   }
-                  className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition-all shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] active:shadow-none active:translate-x-0.5 active:translate-y-0.5"
+                  className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 text-slate-900 dark:text-white hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition-all shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] active:shadow-none active:translate-x-0.5 active:translate-y-0.5"
                 >
                   <Minus className="w-5 h-5" strokeWidth={3} />
                 </button>
@@ -321,7 +321,7 @@ export default function ApprovalView({
                     }
                     setEditLimitValue(e.target.value)
                   }}
-                  className="flex-1 w-full max-w-[120px] px-2 py-3 rounded-xl bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white text-center text-xl font-black focus:outline-none focus:ring-2 focus:ring-indigo-500/20 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none shadow-[inset_2px_2px_0_0_rgba(15,23,42,0.1)] dark:shadow-[inset_2px_2px_0_0_rgba(51,65,85,0.3)] transition-all"
+                  className="flex-1 w-full max-w-[120px] px-2 py-3 rounded-xl bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 text-slate-900 dark:text-white text-center text-xl font-black focus:outline-none focus:ring-2 focus:ring-indigo-500/20 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none shadow-[inset_2px_2px_0_0_rgba(15,23,42,0.1)] dark:shadow-[inset_2px_2px_0_0_rgba(51,65,85,0.3)] transition-all"
                 />
                 <button
                   type="button"
@@ -348,7 +348,7 @@ export default function ApprovalView({
                 <button
                   type="button"
                   onClick={() => setEditingLimit(false)}
-                  className="flex-1 py-3 px-4 rounded-xl bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-slate-700 transition-all font-black text-xs uppercase tracking-widest shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] active:shadow-none active:translate-x-0.5 active:translate-y-0.5"
+                  className="flex-1 py-3 px-4 rounded-xl bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-slate-700 transition-all font-black text-xs uppercase tracking-widest shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] active:shadow-none active:translate-x-0.5 active:translate-y-0.5"
                 >
                   Batal
                 </button>
@@ -356,7 +356,7 @@ export default function ApprovalView({
                   type="button"
                   disabled={savingLimit}
                   onClick={handleSaveLimit}
-                  className="flex-[2] py-3 px-4 rounded-xl bg-indigo-500 border-2 border-slate-200 dark:border-slate-600 text-white hover:bg-indigo-600 dark:hover:bg-indigo-600 transition-all font-black text-xs uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] active:shadow-none active:translate-x-0.5 active:translate-y-0.5"
+                  className="flex-[2] py-3 px-4 rounded-xl bg-indigo-500 border-2 border-slate-900 dark:border-slate-700 text-white hover:bg-indigo-600 dark:hover:bg-indigo-600 transition-all font-black text-xs uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] active:shadow-none active:translate-x-0.5 active:translate-y-0.5"
                 >
                   {savingLimit ? (
                     <Loader2 className="w-4 h-4 animate-spin" strokeWidth={3} />
@@ -370,7 +370,7 @@ export default function ApprovalView({
           </div>
         )}
 
-        <div className="mt-3 sm:mt-4 p-4 sm:p-6 rounded-2xl sm:rounded-[32px] bg-indigo-50 dark:bg-indigo-950/40 border-2 sm:border-2 border-slate-200 dark:border-slate-700 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]">
+        <div className="mt-3 sm:mt-4 p-4 sm:p-6 rounded-2xl sm:rounded-[32px] bg-indigo-50 dark:bg-indigo-950/40 border-2 sm:border-2 border-slate-900 dark:border-slate-700 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]">
           <div className="flex flex-wrap items-center gap-2 mb-3 sm:mb-4">
             <LinkIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-900 dark:text-white" strokeWidth={3} />
             <span className="text-[10px] sm:text-xs font-black text-slate-900 dark:text-white uppercase tracking-widest">Akses Registrasi Siswa</span>
@@ -395,15 +395,15 @@ export default function ApprovalView({
           {!inviteTokenLoaded ? (
             <div className="flex flex-col gap-4">
               <div className="flex items-center gap-2 sm:gap-3">
-                <div className="flex-1 min-w-0 h-11 sm:h-14 rounded-lg sm:rounded-xl bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-600 animate-pulse" />
-                <div className="shrink-0 h-11 sm:h-14 w-20 sm:w-24 rounded-lg sm:rounded-xl bg-slate-300 dark:bg-slate-700 border-2 border-slate-200 dark:border-slate-600 animate-pulse" />
+                <div className="flex-1 min-w-0 h-11 sm:h-14 rounded-lg sm:rounded-xl bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 animate-pulse" />
+                <div className="shrink-0 h-11 sm:h-14 w-20 sm:w-24 rounded-lg sm:rounded-xl bg-slate-300 dark:bg-slate-700 border-2 border-slate-900 dark:border-slate-700 animate-pulse" />
               </div>
               <div className="w-full h-9 rounded-lg bg-slate-200 dark:bg-slate-700 animate-pulse" />
             </div>
           ) : inviteToken ? (
               <div className="flex flex-col gap-4">
               <div className="flex items-center gap-2 sm:gap-3">
-                <div className="flex-1 min-w-0 font-mono font-black text-slate-900 dark:text-white text-xs sm:text-lg px-3 py-2 sm:px-4 sm:py-3 rounded-lg sm:rounded-xl bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-600 truncate sm:truncate-none">
+                <div className="flex-1 min-w-0 font-mono font-black text-slate-900 dark:text-white text-xs sm:text-lg px-3 py-2 sm:px-4 sm:py-3 rounded-lg sm:rounded-xl bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 truncate sm:truncate-none">
                   {inviteToken}
                 </div>
                 <button
@@ -431,7 +431,7 @@ export default function ApprovalView({
               type="button"
               onClick={onGenerateInvite}
               disabled={generatingInvite}
-              className="w-full flex items-center justify-center gap-2 sm:gap-3 px-4 py-3 sm:px-6 sm:py-4 rounded-xl bg-indigo-500 text-white border-2 sm:border-2 border-slate-200 dark:border-slate-700 font-black text-xs sm:text-sm uppercase shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all disabled:opacity-50"
+              className="w-full flex items-center justify-center gap-2 sm:gap-3 px-4 py-3 sm:px-6 sm:py-4 rounded-xl bg-indigo-500 text-white border-2 sm:border-2 border-slate-900 dark:border-slate-700 font-black text-xs sm:text-sm uppercase shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all disabled:opacity-50"
             >
               <LinkIcon className="w-4 h-4 sm:w-5 sm:h-5" strokeWidth={3} />
               {generatingInvite ? 'Membuat...' : 'Buat Link Undangan'}
@@ -440,12 +440,12 @@ export default function ApprovalView({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 sm:flex gap-1.5 sm:gap-2 mb-4 sm:mb-8 bg-slate-100 dark:bg-slate-800 p-1.5 sm:p-2 rounded-xl sm:rounded-[24px] border-2 sm:border-2 border-slate-200 dark:border-slate-700 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]">
+      <div className="grid grid-cols-2 sm:flex gap-1.5 sm:gap-2 mb-4 sm:mb-8 bg-slate-100 dark:bg-slate-800 p-1.5 sm:p-2 rounded-xl sm:rounded-[24px] border-2 sm:border-2 border-slate-900 dark:border-slate-700 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]">
         <button
           type="button"
           onClick={() => setApprovalTab('pending')}
           className={`flex-1 min-w-0 flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-2 px-1 py-2 sm:px-6 sm:py-4 rounded-md sm:rounded-xl transition-all font-black text-[8px] sm:text-xs md:text-sm uppercase border-2 ${approvalTab === 'pending'
-            ? 'bg-amber-400 dark:bg-amber-600 border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]'
+            ? 'bg-amber-400 dark:bg-amber-600 border-slate-900 dark:border-slate-700 text-slate-900 dark:text-white shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]'
             : 'bg-white dark:bg-slate-800 border-transparent text-slate-400 dark:text-slate-500 opacity-60'
             }`}
         >
@@ -463,7 +463,7 @@ export default function ApprovalView({
           type="button"
           onClick={() => setApprovalTab('approved')}
           className={`flex-1 min-w-0 flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-2 px-1 py-2 sm:px-6 sm:py-4 rounded-md sm:rounded-xl transition-all font-black text-[8px] sm:text-xs md:text-sm uppercase border-2 ${approvalTab === 'approved'
-            ? 'bg-indigo-500 border-slate-200 dark:border-slate-600 text-white shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]'
+            ? 'bg-indigo-500 border-slate-900 dark:border-slate-700 text-white shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]'
             : 'bg-white dark:bg-slate-800 border-transparent text-slate-400 dark:text-slate-500 opacity-60'
             }`}
         >
@@ -480,8 +480,8 @@ export default function ApprovalView({
       </div>
 
       {sortedGroupKeys.length === 0 ? (
-          <div className="text-center py-8 sm:py-20 px-3 sm:px-4 bg-white dark:bg-slate-900 border-2 sm:border-2 border-slate-200 dark:border-slate-700 rounded-2xl sm:rounded-[32px] shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]">
-            <div className="w-14 h-14 sm:w-20 sm:h-20 mx-auto mb-4 sm:mb-6 rounded-2xl sm:rounded-3xl bg-amber-300 dark:bg-amber-500 border-2 sm:border-2 border-slate-200 dark:border-slate-600 flex items-center justify-center shadow-[inset_-4px_-4px_0_0_rgba(15,23,42,0.2)]">
+          <div className="text-center py-8 sm:py-20 px-3 sm:px-4 bg-white dark:bg-slate-900 border-2 sm:border-2 border-slate-900 dark:border-slate-700 rounded-2xl sm:rounded-[32px] shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]">
+            <div className="w-14 h-14 sm:w-20 sm:h-20 mx-auto mb-4 sm:mb-6 rounded-2xl sm:rounded-3xl bg-amber-300 dark:bg-amber-500 border-2 sm:border-2 border-slate-900 dark:border-slate-700 flex items-center justify-center shadow-[inset_-4px_-4px_0_0_rgba(15,23,42,0.2)]">
               <ClipboardList className="w-7 h-7 sm:w-10 sm:h-10 text-slate-900" strokeWidth={3} />
             </div>
             <p className="text-base sm:text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight mb-1.5 sm:mb-2">
@@ -502,7 +502,7 @@ export default function ApprovalView({
                     value={approvedSearch}
                     onChange={(e) => setApprovedSearch(e.target.value)}
                     placeholder="Cari nama / email (semua kelas)..."
-                    className="w-full pl-10 pr-4 py-2.5 text-xs sm:text-sm font-bold rounded-xl bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] focus:shadow-none focus:translate-x-0.5 focus:translate-y-0.5 transition-all focus:outline-none"
+                    className="w-full pl-10 pr-4 py-2.5 text-xs sm:text-sm font-bold rounded-xl bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] focus:shadow-none focus:translate-x-0.5 focus:translate-y-0.5 transition-all focus:outline-none"
                   />
                 </div>
               </div>
@@ -522,13 +522,13 @@ export default function ApprovalView({
                     type="button"
                     onClick={() => setApprovalClassIndex(idx)}
                     className={`flex-shrink-0 px-3 py-2 sm:px-4 sm:py-2.5 rounded-lg sm:rounded-xl text-[10px] sm:text-sm font-black uppercase tracking-widest transition-all flex items-center gap-2 sm:gap-3 border-2 sm:border-4 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 ${idx === safeIndex
-                      ? 'bg-indigo-400 dark:bg-indigo-600 border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white'
-                      : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-600 text-slate-400 dark:text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700'
+                      ? 'bg-indigo-400 dark:bg-indigo-600 border-slate-900 dark:border-slate-700 text-slate-900 dark:text-white'
+                      : 'bg-white dark:bg-slate-800 border-slate-900 dark:border-slate-700 text-slate-400 dark:text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700'
                       }`}
                   >
                     <span className="truncate max-w-[100px] sm:max-w-none">{tabLabel}</span>
                     <span
-                      className={`px-1.5 py-0.5 rounded-md sm:rounded-lg text-[9px] sm:text-xs font-black border-2 border-slate-200 dark:border-slate-600 shrink-0 ${idx === safeIndex ? 'bg-slate-900 dark:bg-slate-700 text-indigo-400 dark:text-indigo-300' : 'bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400'}`}
+                      className={`px-1.5 py-0.5 rounded-md sm:rounded-lg text-[9px] sm:text-xs font-black border-2 border-slate-900 dark:border-slate-700 shrink-0 ${idx === safeIndex ? 'bg-slate-900 dark:bg-slate-700 text-indigo-400 dark:text-indigo-300' : 'bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400'}`}
                     >
                       {tabCount}
                     </span>
@@ -547,11 +547,11 @@ export default function ApprovalView({
                 return (
                   <div
                     key={request.id}
-                    className="group relative flex flex-col sm:flex-row sm:items-center rounded-xl sm:rounded-2xl bg-white dark:bg-slate-900 border-2 sm:border-2 border-slate-200 dark:border-slate-700 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] p-3 sm:p-5 gap-3 sm:gap-4"
+                    className="group relative flex flex-col sm:flex-row sm:items-center rounded-xl sm:rounded-2xl bg-white dark:bg-slate-900 border-2 sm:border-2 border-slate-900 dark:border-slate-700 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] p-3 sm:p-5 gap-3 sm:gap-4"
                   >
                     <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
                       <div
-                        className={`w-11 h-11 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl flex items-center justify-center text-lg sm:text-2xl font-black border-2 sm:border-2 border-slate-200 dark:border-slate-600 shrink-0 ${request.status === 'approved' ? 'bg-indigo-300 dark:bg-indigo-600 text-slate-900 dark:text-white shadow-[inset_-2px_-2px_0_0_rgba(15,23,42,0.2)]' : 'bg-amber-300 dark:bg-amber-500 text-slate-900 dark:text-white shadow-[inset_-2px_-2px_0_0_rgba(15,23,42,0.2)]'
+                        className={`w-11 h-11 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl flex items-center justify-center text-lg sm:text-2xl font-black border-2 sm:border-2 border-slate-900 dark:border-slate-700 shrink-0 ${request.status === 'approved' ? 'bg-indigo-300 dark:bg-indigo-600 text-slate-900 dark:text-white shadow-[inset_-2px_-2px_0_0_rgba(15,23,42,0.2)]' : 'bg-amber-300 dark:bg-amber-500 text-slate-900 dark:text-white shadow-[inset_-2px_-2px_0_0_rgba(15,23,42,0.2)]'
                           }`}
                       >
                         {request.student_name?.charAt(0)?.toUpperCase() || '?'}
@@ -562,19 +562,19 @@ export default function ApprovalView({
                         <div className="flex flex-col gap-2">
                           {request.status === 'approved' && classObj && (
                             <div className="flex flex-wrap items-center gap-2">
-                              {matchedMember?.role === 'owner' && <span className="w-fit text-[10px] px-2 py-0.5 rounded-md bg-amber-400 dark:bg-amber-500 text-slate-900 font-black uppercase tracking-widest border-2 border-slate-200 dark:border-slate-600 shrink-0">Pemilik</span>}
-                              {matchedMember?.role === 'admin' && <span className="w-fit text-[10px] px-2 py-0.5 rounded-md bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 font-black uppercase tracking-widest border-2 border-slate-200 dark:border-slate-600 shrink-0">Admin</span>}
-                              {matchedMember?.role === 'member' && <span className="w-fit text-[10px] px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-black uppercase tracking-widest border-2 border-slate-200 dark:border-slate-600 shrink-0">Anggota</span>}
-                              {matchedMember?.role === 'no-account' && <span className="w-fit text-[10px] px-2 py-0.5 rounded-md bg-rose-100 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 font-black uppercase tracking-widest border-2 border-slate-200 dark:border-slate-600 shrink-0">Belum Login</span>}
-                              {currentUserId && matchedMember?.user_id === currentUserId && <span className="w-fit text-[10px] px-2 py-0.5 rounded-md bg-indigo-500 dark:bg-indigo-600 text-white font-black uppercase tracking-widest border-2 border-slate-200 dark:border-slate-600 shrink-0">Anda</span>}
+                              {matchedMember?.role === 'owner' && <span className="w-fit text-[10px] px-2 py-0.5 rounded-md bg-amber-400 dark:bg-amber-500 text-slate-900 font-black uppercase tracking-widest border-2 border-slate-900 dark:border-slate-700 shrink-0">Pemilik</span>}
+                              {matchedMember?.role === 'admin' && <span className="w-fit text-[10px] px-2 py-0.5 rounded-md bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 font-black uppercase tracking-widest border-2 border-slate-900 dark:border-slate-700 shrink-0">Admin</span>}
+                              {matchedMember?.role === 'member' && <span className="w-fit text-[10px] px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-black uppercase tracking-widest border-2 border-slate-900 dark:border-slate-700 shrink-0">Anggota</span>}
+                              {matchedMember?.role === 'no-account' && <span className="w-fit text-[10px] px-2 py-0.5 rounded-md bg-rose-100 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 font-black uppercase tracking-widest border-2 border-slate-900 dark:border-slate-700 shrink-0">Belum Login</span>}
+                              {currentUserId && matchedMember?.user_id === currentUserId && <span className="w-fit text-[10px] px-2 py-0.5 rounded-md bg-indigo-500 dark:bg-indigo-600 text-white font-black uppercase tracking-widest border-2 border-slate-900 dark:border-slate-700 shrink-0">Anda</span>}
                               {request.payment_status === 'unpaid' && (
-                                <span className="w-fit text-[10px] px-2 py-0.5 rounded-md bg-red-100 dark:bg-red-950/50 text-red-600 dark:text-red-400 font-black uppercase tracking-widest border-2 border-slate-200 dark:border-slate-600 shrink-0">Belum Bayar</span>
+                                <span className="w-fit text-[10px] px-2 py-0.5 rounded-md bg-red-100 dark:bg-red-950/50 text-red-600 dark:text-red-400 font-black uppercase tracking-widest border-2 border-slate-900 dark:border-slate-700 shrink-0">Belum Bayar</span>
                               )}
                               {request.payment_status === 'pending' && (
-                                <span className="w-fit text-[10px] px-2 py-0.5 rounded-md bg-amber-100 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 font-black uppercase tracking-widest border-2 border-slate-200 dark:border-slate-600 shrink-0">Menunggu Bayar</span>
+                                <span className="w-fit text-[10px] px-2 py-0.5 rounded-md bg-amber-100 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 font-black uppercase tracking-widest border-2 border-slate-900 dark:border-slate-700 shrink-0">Menunggu Bayar</span>
                               )}
                               {request.payment_status === 'paid' && (
-                                <span className="w-fit text-[10px] px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 font-black uppercase tracking-widest border-2 border-slate-200 dark:border-slate-600 shrink-0">Lunas</span>
+                                <span className="w-fit text-[10px] px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 font-black uppercase tracking-widest border-2 border-slate-900 dark:border-slate-700 shrink-0">Lunas</span>
                               )}
                             </div>
                           )}
@@ -596,7 +596,7 @@ export default function ApprovalView({
                             <button
                               type="button"
                               onClick={() => setRoleChangeConfirm({ userId: matchedMember.user_id, newRole: 'admin', memberName: matchedMember.name || matchedMember.email || request.student_name })}
-                              className="flex-1 sm:flex-none px-3 py-2 rounded-lg sm:rounded-xl text-[9px] sm:text-[10px] font-black uppercase bg-indigo-500 dark:bg-indigo-600 text-white border-2 border-slate-200 dark:border-slate-600 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]"
+                              className="flex-1 sm:flex-none px-3 py-2 rounded-lg sm:rounded-xl text-[9px] sm:text-[10px] font-black uppercase bg-indigo-500 dark:bg-indigo-600 text-white border-2 border-slate-900 dark:border-slate-700 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]"
                             >
                               Set Admin
                             </button>
@@ -604,7 +604,7 @@ export default function ApprovalView({
                             <button
                               type="button"
                               onClick={() => setRoleChangeConfirm({ userId: matchedMember.user_id, newRole: 'member', memberName: matchedMember.name || matchedMember.email || request.student_name })}
-                              className="flex-1 sm:flex-none px-3 py-2 rounded-lg sm:rounded-xl text-[9px] sm:text-[10px] font-black uppercase bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-2 border-slate-200 dark:border-slate-600"
+                              className="flex-1 sm:flex-none px-3 py-2 rounded-lg sm:rounded-xl text-[9px] sm:text-[10px] font-black uppercase bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-2 border-slate-900 dark:border-slate-700"
                             >
                               Jadi Anggota
                             </button>
@@ -614,7 +614,7 @@ export default function ApprovalView({
                           <button
                             type="button"
                             onClick={() => setRemoveConfirm({ userId: matchedMember.user_id, memberName: matchedMember.name || matchedMember.email || request.student_name })}
-                            className="w-10 h-10 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-600 text-red-500 dark:text-red-400 hover:bg-red-500 hover:text-white flex items-center justify-center"
+                            className="w-10 h-10 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 text-red-500 dark:text-red-400 hover:bg-red-500 hover:text-white flex items-center justify-center"
                             title="Hapus akses"
                           >
                             <Trash2 className="w-4 h-4" strokeWidth={3} />
@@ -627,7 +627,7 @@ export default function ApprovalView({
                         <button
                           type="button"
                           onClick={() => setAssigningRequest(request.id)}
-                          className="flex-1 sm:flex-none sm:w-12 h-10 sm:h-12 rounded-lg sm:rounded-xl bg-emerald-400 dark:bg-emerald-600 border-2 sm:border-2 border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white flex items-center justify-center shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all"
+                          className="flex-1 sm:flex-none sm:w-12 h-10 sm:h-12 rounded-lg sm:rounded-xl bg-emerald-400 dark:bg-emerald-600 border-2 sm:border-2 border-slate-900 dark:border-slate-700 text-slate-900 dark:text-white flex items-center justify-center shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all"
                           title="Setujui"
                         >
                           <Check className="w-5 h-5 sm:w-6 sm:h-6" strokeWidth={4} />
@@ -635,7 +635,7 @@ export default function ApprovalView({
                         <button
                           type="button"
                           onClick={() => onRejectRequest(request.id)}
-                          className="flex-1 sm:flex-none sm:w-12 h-10 sm:h-12 rounded-lg sm:rounded-xl bg-red-100 dark:bg-red-950/50 border-2 sm:border-2 border-slate-200 dark:border-slate-600 text-red-500 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50 flex items-center justify-center shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all"
+                          className="flex-1 sm:flex-none sm:w-12 h-10 sm:h-12 rounded-lg sm:rounded-xl bg-red-100 dark:bg-red-950/50 border-2 sm:border-2 border-slate-900 dark:border-slate-700 text-red-500 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50 flex items-center justify-center shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all"
                           title="Tolak"
                         >
                           <X className="w-5 h-5 sm:w-6 sm:h-6" strokeWidth={4} />
@@ -643,11 +643,11 @@ export default function ApprovalView({
                       </div>
                     )}
                     {isAssigning && (
-                      <div className="w-full sm:w-auto flex flex-col sm:flex-row gap-2 sm:gap-3 mt-2 sm:mt-0 pt-3 sm:pt-0 border-t-2 sm:border-t-0 border-slate-200/10 dark:border-slate-500/20 sm:ml-auto">
+                      <div className="w-full sm:w-auto flex flex-col sm:flex-row gap-2 sm:gap-3 mt-2 sm:mt-0 pt-3 sm:pt-0 border-t-2 sm:border-t-0 border-slate-900/10 dark:border-slate-500/20 sm:ml-auto">
                         <select
                           value={selectedClassForAssign}
                           onChange={(e) => setSelectedClassForAssign(e.target.value)}
-                          className="w-full sm:w-[150px] px-3 py-2 sm:py-3 text-xs sm:text-sm rounded-lg sm:rounded-xl bg-slate-50 dark:bg-slate-800 border-2 sm:border-2 border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white font-black focus:outline-none focus:ring-0 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]"
+                          className="w-full sm:w-[150px] px-3 py-2 sm:py-3 text-xs sm:text-sm rounded-lg sm:rounded-xl bg-slate-50 dark:bg-slate-800 border-2 sm:border-2 border-slate-900 dark:border-slate-700 text-slate-900 dark:text-white font-black focus:outline-none focus:ring-0 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]"
                         >
                           <option value="">Pilih Kelas...</option>
                           {classes.map((cls) => (
@@ -675,13 +675,13 @@ export default function ApprovalView({
                               setAssigningRequest(null)
                               setSelectedClassForAssign('')
                             }}
-                            className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-lg sm:rounded-xl bg-slate-100 dark:bg-slate-800 border-2 sm:border-2 border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white transition-all shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] active:shadow-none active:translate-x-0.5 active:translate-y-0.5"
+                            className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-lg sm:rounded-xl bg-slate-100 dark:bg-slate-800 border-2 sm:border-2 border-slate-900 dark:border-slate-700 text-slate-900 dark:text-white transition-all shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] active:shadow-none active:translate-x-0.5 active:translate-y-0.5"
                           >
                             <X className="w-4 h-4 sm:w-5 sm:h-5" strokeWidth={4} />
                           </button>
                         </div>
             {showCrossClassSearch && displayRequests.length === 0 && (
-              <div className="text-center py-10 px-4 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-2xl shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]">
+              <div className="text-center py-10 px-4 bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-2xl shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]">
                 <p className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-widest">Tidak ada hasil</p>
                 <p className="text-xs font-bold text-slate-500 dark:text-slate-400 mt-2">Coba kata kunci lain.</p>
               </div>

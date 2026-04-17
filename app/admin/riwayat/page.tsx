@@ -1,8 +1,9 @@
 'use client'
 
-import { History, ExternalLink, Loader2, CreditCard, X, Users, User, Search, RefreshCw, ChevronLeft, ChevronRight, Calendar } from 'lucide-react'
+import { History, ExternalLink, Loader2, CreditCard, X, Users, User, Search, RefreshCw, ChevronLeft, ChevronRight, Calendar, Download } from 'lucide-react'
 import { useEffect, useLayoutEffect, useState, useCallback, useRef, useMemo } from 'react'
 import { fetchWithAuth } from '../../../lib/api-client'
+import { generateAndPrintInvoice } from '../../../lib/generate-invoice'
 import Link from 'next/link'
 
 type Transaction = {
@@ -19,6 +20,8 @@ type Transaction = {
   payment_method?: string | null
   album_name?: string | null
   description?: string | null
+  package_snapshot?: string | null
+  new_students_count?: number | null
 }
 
 type ViewMode = 'mine' | 'all'
@@ -184,12 +187,22 @@ export default function AdminRiwayatPage() {
   }, [filteredTransactions, currentPage, itemsPerPage])
   const totalPages = Math.ceil(filteredTransactions.length / itemsPerPage)
 
+  // Pastikan tidak ada double scrollbar saat popup Xendit terbuka
+  useEffect(() => {
+    if (invoicePopupUrl) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => { document.body.style.overflow = '' }
+  }, [invoicePopupUrl])
+
   return (
     <>
       {invoicePopupUrl && (
-        <div className="fixed inset-0 z-[110] flex flex-col bg-white dark:bg-slate-900" role="dialog" aria-modal="true" aria-label="Lihat invoice">
+        <div className="fixed inset-0 z-[110] flex flex-col bg-white dark:bg-slate-900" role="dialog" aria-modal="true" aria-label="Selesaikan pembayaran">
           <div className="flex items-center justify-between px-4 py-3 border-b-4 border-slate-900 bg-slate-50 dark:bg-slate-800 shrink-0">
-            <h3 className="text-base font-bold text-slate-900">Invoice Pembayaran</h3>
+            <h3 className="text-base font-bold text-slate-900 dark:text-white">Selesaikan Pembayaran</h3>
             <button
               type="button"
               onClick={() => setInvoicePopupUrl(null)}
@@ -264,19 +277,19 @@ export default function AdminRiwayatPage() {
       )}
 
       {currentLoading ? (
-        <div className="space-y-6">
+        <div className="space-y-4 md:space-y-5 lg:space-y-6">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="rounded-2xl border-2 border-slate-900 bg-white dark:bg-slate-900 p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 animate-pulse shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]">
-              <div className="flex items-center gap-5">
-                <div className="w-14 h-14 rounded-2xl bg-slate-100 dark:bg-slate-800 shrink-0 border-2 border-slate-900 dark:border-slate-700" />
-                <div className="space-y-3">
-                  <div className="h-5 bg-slate-100 dark:bg-slate-800 rounded-lg w-48" />
-                  <div className="h-4 bg-slate-50 dark:bg-slate-900 rounded-lg w-64" />
+            <div key={i} className="rounded-xl md:rounded-2xl border-2 border-slate-900 bg-white dark:bg-slate-900 p-4 sm:p-5 md:p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-5 animate-pulse shadow-[3px_3px_0_0_#334155] md:shadow-[4px_4px_0_0_#334155] dark:shadow-[3px_3px_0_0_#1e293b] dark:md:shadow-[4px_4px_0_0_#1e293b]">
+              <div className="flex items-center gap-4 sm:gap-5">
+                <div className="w-12 h-12 md:w-14 md:h-14 rounded-xl md:rounded-2xl bg-slate-100 dark:bg-slate-800 shrink-0 border-2 border-slate-900 dark:border-slate-700" />
+                <div className="space-y-2 md:space-y-3">
+                  <div className="h-4 md:h-5 bg-slate-100 dark:bg-slate-800 rounded-lg w-32 sm:w-48" />
+                  <div className="h-3 md:h-4 bg-slate-50 dark:bg-slate-900 rounded-lg w-48 sm:w-64" />
                 </div>
               </div>
-              <div className="flex flex-col items-end gap-3">
-                <div className="h-6 bg-slate-100 dark:bg-slate-800 rounded-lg w-32" />
-                <div className="h-5 bg-slate-100 dark:bg-slate-800 rounded-full w-20" />
+              <div className="flex flex-row md:flex-col items-center md:items-end justify-between gap-3 mt-2 md:mt-0">
+                <div className="h-5 md:h-6 bg-slate-100 dark:bg-slate-800 rounded-lg w-24 md:w-32" />
+                <div className="h-4 md:h-5 bg-slate-100 dark:bg-slate-800 rounded-full w-16 md:w-20" />
               </div>
             </div>
           ))}
@@ -306,38 +319,38 @@ export default function AdminRiwayatPage() {
           </div>
         </div>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-4 md:space-y-5 lg:space-y-6">
           {paginatedTransactions.map((tx) => (
             <div
               key={tx.id}
-              className="rounded-2xl border-2 border-slate-900 bg-white dark:bg-slate-900 p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:shadow-[4px_4px_0_0_#334155] dark:hover:shadow-[5px_5px_0_0_#334155] hover:-translate-x-1 hover:-translate-y-1 transition-all"
+              className="rounded-xl md:rounded-2xl border-2 border-slate-900 bg-white dark:bg-slate-900 p-4 sm:p-5 md:p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-5 shadow-[3px_3px_0_0_#334155] md:shadow-[4px_4px_0_0_#334155] dark:shadow-[3px_3px_0_0_#1e293b] dark:md:shadow-[4px_4px_0_0_#1e293b] hover:shadow-[3px_3px_0_0_#334155] hover:md:shadow-[5px_5px_0_0_#334155] hover:-translate-x-1 hover:-translate-y-1 transition-all"
             >
-              <div className="flex items-center gap-6">
+              <div className="flex items-start sm:items-center gap-4 sm:gap-5">
                 <div
-                  className={`w-14 h-14 rounded-2xl border-2 border-slate-900 flex items-center justify-center shrink-0 shadow-[4px_4px_0_0_#334155] ${tx.status === 'PAID' || tx.status === 'SETTLED'
+                  className={`w-12 h-12 md:w-14 md:h-14 rounded-xl md:rounded-2xl border-2 border-slate-900 flex items-center justify-center shrink-0 shadow-[3px_3px_0_0_#334155] md:shadow-[4px_4px_0_0_#334155] ${tx.status === 'PAID' || tx.status === 'SETTLED'
                     ? 'bg-emerald-300'
                     : tx.status === 'PENDING'
                       ? 'bg-orange-300'
                       : 'bg-red-400'
                     }`}
                 >
-                  <CreditCard className="w-6 h-6 text-slate-900" strokeWidth={2.5} />
+                  <CreditCard className="w-5 h-5 md:w-6 md:h-6 text-slate-900" strokeWidth={2.5} />
                 </div>
                 <div className="space-y-1">
-                  <h4 className="text-lg font-bold text-slate-900 dark:text-white leading-tight">
+                  <h4 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white leading-tight">
                     {tx.description || (tx.album_name ? tx.album_name : (tx.credits != null ? `Top Up ${tx.credits} Credits` : 'Transaction'))}
                   </h4>
                   <div className="flex flex-col gap-1.5">
                     {viewMode === 'all' && (tx.user_full_name != null || tx.user_email != null) && (
-                      <div className="flex flex-wrap items-center gap-2 text-[13px] font-bold bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-xl border-2 border-slate-900 dark:border-slate-700 w-fit">
-                        <User className="w-4 h-4 text-indigo-500 mr-1" />
+                      <div className="flex flex-wrap items-center gap-2 text-[11px] sm:text-[13px] font-bold bg-slate-100 dark:bg-slate-800 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg sm:rounded-xl border-2 border-slate-900 dark:border-slate-700 w-fit">
+                        <User className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-indigo-500 mr-0.5 sm:mr-1" />
                         <span className="text-slate-900 dark:text-white font-bold">{tx.user_full_name ?? '-'}</span>
-                        <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600 mx-1" />
+                        <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600 mx-0.5 sm:mx-1" />
                         <span className="font-medium text-slate-500 dark:text-slate-300">{tx.user_email ?? '-'}</span>
                       </div>
                     )}
-                    <div className="flex flex-wrap items-center gap-3 text-[12px] font-bold text-slate-400">
-                      <span className="flex items-center gap-1.5">
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-[11px] sm:text-[12px] font-bold text-slate-400">
+                      <span className="flex items-center gap-1 sm:gap-1.5">
                         <Calendar className="w-3.5 h-3.5" />
                         {new Date(tx.created_at).toLocaleDateString('id-ID', {
                           year: 'numeric',
@@ -348,14 +361,14 @@ export default function AdminRiwayatPage() {
                         })}
                       </span>
                       {tx.external_id && (
-                        <span className="flex items-center gap-1.5 font-mono">
-                          <code className="bg-slate-200 dark:bg-slate-700 px-2 rounded text-slate-700 dark:text-slate-200 border-2 border-slate-900 dark:border-slate-600 text-xs tracking-wider">
+                        <span className="flex items-center gap-1 sm:gap-1.5 font-mono">
+                          <code className="bg-slate-200 dark:bg-slate-700 px-1.5 sm:px-2 rounded text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-600 text-[10px] sm:text-xs tracking-wider">
                             {`TR-${tx.external_id.split('_ts_')[1] || tx.external_id.slice(-8)}`}
                           </code>
                         </span>
                       )}
                       {tx.payment_method && (
-                        <span className="px-2 py-0.5 rounded border-2 border-slate-900 dark:border-slate-700 bg-indigo-50 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-200 font-bold text-[10px] uppercase tracking-wide">
+                        <span className="px-1.5 sm:px-2 py-0.5 rounded border border-slate-300 dark:border-slate-700 bg-indigo-50 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-200 font-bold text-[9px] sm:text-[10px] uppercase tracking-wide">
                           {tx.payment_method.replace(/_/g, ' ')}
                         </span>
                       )}
@@ -364,14 +377,14 @@ export default function AdminRiwayatPage() {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between md:flex-col md:items-end gap-6 md:gap-3">
-                <div className="text-right">
-                  <span className="block text-2xl font-bold text-slate-900 dark:text-white">
+              <div className="flex items-center justify-between md:flex-col md:items-end gap-3 mt-2 md:mt-0 xl:ml-6">
+                <div className="text-left md:text-right">
+                  <span className="block text-lg sm:text-xl md:text-2xl font-bold text-slate-900 dark:text-white">
                     Rp {tx.amount.toLocaleString('id-ID')}
                   </span>
-                  <div className="mt-1">
+                  <div className="mt-1 flex md:justify-end">
                     <span
-                      className={`text-[10px] font-bold px-2.5 py-1 rounded-lg border-2 border-slate-900 shadow-[#64748b] uppercase tracking-widest ${tx.status === 'PAID' || tx.status === 'SETTLED'
+                      className={`text-[9px] sm:text-[10px] font-bold px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-lg border-2 border-slate-900 shadow-[2px_2px_0_0_#94a3b8] sm:shadow-[#64748b] uppercase tracking-widest ${tx.status === 'PAID' || tx.status === 'SETTLED'
                         ? 'bg-emerald-300 text-slate-900'
                         : tx.status === 'PENDING'
                           ? 'bg-orange-300 text-slate-900'
@@ -387,10 +400,21 @@ export default function AdminRiwayatPage() {
                   <button
                     type="button"
                     onClick={() => tx.invoice_url && setInvoicePopupUrl(tx.invoice_url)}
-                    className="flex items-center gap-2 text-sm font-bold bg-orange-400 text-slate-900 px-5 py-2.5 rounded-2xl border-2 border-slate-900 hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none shadow-[#64748b] transition-all"
+                    className="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs md:text-sm font-bold bg-orange-400 text-slate-900 px-3 sm:px-4 md:px-5 py-2 md:py-2.5 rounded-xl md:rounded-2xl border-2 border-slate-900 hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none shadow-[2px_2px_0_0_#64748b] md:shadow-[3px_3px_0_0_#64748b] transition-all shrink-0 w-fit"
                   >
                     Lanjutkan Bayar
-                    <ExternalLink className="w-4 h-4" strokeWidth={3} />
+                    <ExternalLink className="w-3.5 h-3.5 sm:w-4 sm:h-4" strokeWidth={3} />
+                  </button>
+                )}
+
+                {tx.invoice_url && (tx.status === 'PAID' || tx.status === 'SETTLED') && (
+                  <button
+                    type="button"
+                    onClick={() => generateAndPrintInvoice(tx)}
+                    className="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs md:text-sm font-bold bg-emerald-200 text-slate-900 px-3 sm:px-4 md:px-5 py-2 md:py-2.5 rounded-xl md:rounded-2xl border-2 border-slate-900 hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none shadow-[2px_2px_0_0_#64748b] md:shadow-[3px_3px_0_0_#64748b] transition-all shrink-0 w-fit"
+                  >
+                    Download Invoice
+                    <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4" strokeWidth={3} />
                   </button>
                 )}
               </div>

@@ -97,7 +97,7 @@ export function DemoEbook() {
               onClick={() => {
                 if (albumPreviews[0]) {
                   setPreviewUrl(albumPreviews[0].link);
-                  setPreviewTitle('Carousel Preview');
+                  setPreviewTitle('Interactive Swipe Preview');
                 }
               }}
             >
@@ -115,7 +115,7 @@ export function DemoEbook() {
                     <div className="absolute inset-0 hidden sm:flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300">
                       <div className="px-6 py-3 bg-slate-900/90 dark:bg-slate-800/90 backdrop-blur-md rounded-full text-white text-sm font-black flex items-center gap-2 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300 border-2 border-slate-200 dark:border-slate-700">
                         <GalleryHorizontal className="w-4 h-4 text-orange-400 dark:text-orange-500" />
-                        <span>Buka Carousel</span>
+                        <span>Buka Interactive Swipe</span>
                       </div>
                     </div>
                   )}
@@ -184,7 +184,7 @@ export function DemoEbook() {
                   onClick={() => {
                     if (flipbookPreviewUrl) {
                       setPreviewUrl(flipbookPreviewUrl);
-                      setPreviewTitle('Flipbook Preview');
+                      setPreviewTitle('3D Virtual Flipbook Preview');
                     }
                   }}
                 >
@@ -193,7 +193,7 @@ export function DemoEbook() {
                     <div className="absolute inset-0 hidden sm:flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300">
                       <div className="px-6 py-3 bg-slate-900/90 dark:bg-slate-800/90 backdrop-blur-md rounded-full text-white text-sm font-black flex items-center gap-2 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300 border-2 border-slate-200 dark:border-slate-700">
                         <BookMarked className="w-4 h-4 text-emerald-400" />
-                        <span>Buka Flipbook</span>
+                        <span>Buka 3D Virtual Flipbook</span>
                       </div>
                     </div>
                   </div>

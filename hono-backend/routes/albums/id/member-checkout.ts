@@ -51,10 +51,57 @@ memberCheckoutRoute.post('/', async (c) => {
     }
 
     let amount = 0
+    const lineItems: Array<{ name: string; quantity: number; price: number }> = []
+
     if (album.package_snapshot) {
-      const snapshot = JSON.parse(album.package_snapshot) as { price_per_student: number }
-      amount = snapshot.price_per_student || 0
+      try {
+        const pkg = JSON.parse(album.package_snapshot)
+        if (pkg.price_per_student) {
+          const baseP = Number(pkg.price_per_student)
+          lineItems.push({
+            name: `Paket Dasar`,
+            quantity: 1,
+            price: baseP,
+          })
+          amount += baseP
+        }
+
+        if (pkg.features && Array.isArray(pkg.features)) {
+          for (const f of pkg.features) {
+            try {
+              const j = typeof f === 'string' ? JSON.parse(f) : f
+              if (j.price > 0 || Number(j.price) > 0) {
+                const addonP = Number(j.price)
+                lineItems.push({
+                  name: `Add-on: ${j.name}`,
+                  quantity: 1,
+                  price: addonP,
+                })
+                amount += addonP
+              }
+            } catch {
+              /* ignore individual addon parse error */
+            }
+          }
+        }
+      } catch {
+        /* ignore snapshot parse error */
+      }
     }
+
+    if (amount <= 0) {
+      // Fallback if price calculation failed but we have a snapshot price field (unexpected but safe)
+      const snapshot = JSON.parse(album.package_snapshot || '{}') as { price_per_student: number }
+      amount = snapshot.price_per_student || 0
+      if (lineItems.length === 0) {
+        lineItems.push({
+          name: `${album.name} Access Payment`,
+          quantity: 1,
+          price: amount,
+        })
+      }
+    }
+
     if (amount <= 0) {
       // If free, just approve immediately
       await db
@@ -83,13 +130,7 @@ memberCheckoutRoute.post('/', async (c) => {
       description: desc,
       success_redirect_url: `${baseUrl}${redirectPath}?status=success`,
       failure_redirect_url: `${baseUrl}${redirectPath}?status=failed`,
-      items: [
-        {
-          name: `${album.name} Access Payment`,
-          quantity: 1,
-          price: amount,
-        },
-      ],
+      items: lineItems,
     }
 
     if (user.email) {

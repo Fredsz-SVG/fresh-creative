@@ -67,12 +67,16 @@ albumsIdUnlockFeature.get('/', async (c) => {
       flipbook_enabled: boolean | number | string | number | string
       ai_labs_features: string[]
     }
-    flipbookEnabledByPackage = snapshot.flipbook_enabled === true || snapshot.flipbook_enabled === 1 || String(snapshot.flipbook_enabled) === 'true';
-      let _ai = snapshot.ai_labs_features || [];
-      if (typeof _ai === 'string') {
-        try { _ai = JSON.parse(_ai); } catch { /* ignore */ }
-      }
-      aiLabsFeaturesByPackage = Array.isArray(_ai) ? _ai : [];
+    let _ai = snapshot.ai_labs_features || [];
+    if (typeof _ai === 'string') {
+      try { _ai = JSON.parse(_ai); } catch { /* ignore */ }
+    }
+    aiLabsFeaturesByPackage = Array.isArray(_ai) ? _ai : [];
+
+    flipbookEnabledByPackage =
+      snapshot.flipbook_enabled === true ||
+      snapshot.flipbook_enabled === 1 ||
+      String(snapshot.flipbook_enabled) === 'true';
   }
 
   const creditCosts: Record<string, number> = {}
