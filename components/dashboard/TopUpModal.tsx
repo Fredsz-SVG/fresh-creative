@@ -126,14 +126,19 @@ export default function TopUpModal({ isOpen, onClose, currentCredit = 0, onCredi
             {/* Popup pembayaran Xendit di dalam halaman */}
             {checkoutInvoiceUrl && (
                 <div className="fixed inset-0 z-[110] flex flex-col bg-white" role="dialog" aria-modal="true" aria-label="Pembayaran Xendit">
-                    <div className="flex items-center justify-between px-6 py-4 border-b-4 border-slate-200 bg-slate-50 shrink-0">
-                        <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest">Selesaikan Pembayaran</h3>
+                    <div className="flex items-center justify-between px-4 py-3 border-b-4 border-slate-900 bg-slate-50 dark:bg-slate-800 shrink-0">
+                        <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-lg bg-indigo-500 flex items-center justify-center">
+                                <CreditCard className="w-4 h-4 text-white" strokeWidth={3} />
+                            </div>
+                            <h3 className="text-base font-bold text-slate-900 dark:text-white">Selesaikan Pembayaran</h3>
+                        </div>
                         <button
                             type="button"
                             onClick={handleCloseCheckoutPopup}
-                            className="flex items-center justify-center w-10 h-10 rounded-xl border-2 border-slate-200 bg-white text-slate-900 hover:bg-slate-100 transition-all shadow-[4px_4px_0_0_#334155] active:shadow-none active:translate-x-1 active:translate-y-1"
+                            className="flex items-center justify-center w-10 h-10 rounded-xl border-2 border-slate-900 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-red-50 dark:hover:bg-red-900 hover:text-red-500 shadow-[#64748b] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all"
                         >
-                            <X className="w-6 h-6" strokeWidth={3} />
+                            <X className="w-5 h-5" />
                         </button>
                     </div>
                     <div className="flex-1 min-h-0 relative">

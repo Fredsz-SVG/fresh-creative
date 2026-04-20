@@ -1,1 +1,0 @@
-const fs = require("fs"); let content = fs.readFileSync("app/admin/showcase/page.tsx", "utf8"); content = content.replace(/border-slate-900/g, "border-slate-200"); content = content.replace(/font-black/g, "font-bold"); fs.writeFileSync("app/admin/showcase/page.tsx", content);

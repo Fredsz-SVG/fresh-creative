@@ -1,1 +1,0 @@
-const content = require("fs").readFileSync("app/admin/showcase/page.tsx", "utf8"); console.log(content.substring(content.indexOf("flex flex-col sm:flex-row"), content.indexOf("flex flex-col sm:flex-row") + 1000));

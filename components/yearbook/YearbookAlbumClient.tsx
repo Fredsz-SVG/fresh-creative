@@ -379,26 +379,35 @@ export default function YearbookAlbumClient({
       if (detail.channel !== 'global') return
 
       const path = typeof detail.payload?.path === 'string' ? detail.payload.path : ''
-      const matchesAlbum = path.includes(`/api/albums/${id}`)
+      const matchesAlbum = path.includes(`/api/albums/${id}`) || detail.payload?.albumId === id
       const matchesUser = path.startsWith('/api/user/')
 
-      if (!matchesAlbum && !matchesUser) return
+      // Event type spesifik join request atau path mengandung join-requests
+      const isJoinEvent = detail.type.startsWith('album.joinRequest.') || path.includes('/join-requests')
 
+      if (!matchesAlbum && !matchesUser && !isJoinEvent) return
+
+      // Handle khusus feature unlock
       if (path.includes('/unlock-feature')) {
         void fetchFeatureUnlocks()
-        return
+        // Jangan return, biarkan refresh data album juga
       }
 
+      // Handle khusus credits user
       if (matchesUser) {
         window.dispatchEvent(new Event('credits-updated'))
-        return
+        // Jika path tidak mengandung album id, mungkin ini saja yang perlu diupdate
+        if (!matchesAlbum) return
       }
+
+      // Jika tipenya 'api.mutated' dan status >= 400, abaikan
+      if (detail.type === 'api.mutated' && typeof detail.payload?.status === 'number' && detail.payload.status >= 400) return
 
       // Semua mutasi album → refresh data + naikkan counter agar child components refresh
       void fetchAlbum(true)
       setRealtimeCounter(prev => prev + 1)
 
-      if (path.includes('/classes/') || path.includes('/join-requests') || path.includes('/my-access-all') || path.endsWith(`/api/albums/${id}`)) {
+      if (isJoinEvent || path.includes('/classes/') || path.includes('/my-access-all') || path.endsWith(`/api/albums/${id}`)) {
         void fetchAllAccess()
         void fetchAllClassMembers()
       }
@@ -1670,7 +1679,7 @@ export default function YearbookAlbumClient({
 
             {/* Mobile: Cover View Actions - Icon Only */}
             {activeSection === 'cover' && (isOwner || isAlbumAdmin || isGlobalAdminUser) && (
-              <div className="lg:hidden ml-auto flex items-center gap-1.5 sm:gap-2 pr-1">
+              <div className="lg:hidden ml-auto flex items-center gap-1 sm:gap-1.5">
                 <button
                   type="button"
                   onClick={(e) => {
@@ -1679,20 +1688,18 @@ export default function YearbookAlbumClient({
                     navigator.clipboard.writeText(url);
                     toast.success('Link public berhasil disalin');
                   }}
-                  className="flex items-center justify-center gap-1.5 px-3 h-8 sm:h-9 bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 rounded-lg sm:rounded-xl text-slate-900 dark:text-white shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all"
+                  className="flex items-center justify-center w-8 h-8 bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all"
                   title="Salin Link"
                 >
-                  <LinkIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" strokeWidth={3} />
-                  <span className="text-[10px] font-black uppercase">Salin</span>
+                  <LinkIcon className="w-3.5 h-3.5" strokeWidth={3} />
                 </button>
                 <Link
                   href={`/album/${album?.id}/view`}
                   target="_blank"
-                  className="flex items-center justify-center gap-1.5 px-3 h-8 sm:h-9 bg-emerald-400 dark:bg-emerald-600 border-2 border-slate-900 dark:border-slate-700 rounded-lg sm:rounded-xl text-slate-900 dark:text-white shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all"
+                  className="flex items-center justify-center w-8 h-8 bg-emerald-400 dark:bg-emerald-600 border-2 border-slate-900 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all"
                   title="Preview"
                 >
-                  <Eye className="w-3.5 h-3.5 sm:w-4 sm:h-4" strokeWidth={3} />
-                  <span className="text-[10px] font-black uppercase">Preview</span>
+                  <Eye className="w-3.5 h-3.5" strokeWidth={3} />
                 </Link>
               </div>
             )}

@@ -5,6 +5,7 @@ import { getRole } from '../../lib/auth'
 import { getD1 } from '../../lib/edge-env'
 import { ensureUserInD1, honoEnvForSupabasePublicSync } from '../../lib/d1-users'
 import { mirrorUserFieldsToSupabase } from '../../lib/supabase-user-mirror'
+import { publishRealtimeEventFromContext } from '../../lib/realtime'
 import type { D1Database } from '@cloudflare/workers-types'
 
 const overview = new Hono()
@@ -230,6 +231,20 @@ overview.put('/', async (c) => {
     .prepare(`SELECT id, email, full_name, role, credits, created_at FROM users WHERE id = ?`)
     .bind(id)
     .first<Record<string, unknown>>()
+
+  if (typeof isSuspended === 'boolean') {
+    try {
+      await publishRealtimeEventFromContext(c, {
+        type: 'user.suspended',
+        channel: 'global',
+        payload: { userId: id, isSuspended },
+        ts: new Date().toISOString(),
+      })
+    } catch (e) {
+      console.error('publishRealtimeEventFromContext failed:', e)
+    }
+  }
+
   return c.json(row)
 })
 

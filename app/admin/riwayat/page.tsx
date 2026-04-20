@@ -202,7 +202,12 @@ export default function AdminRiwayatPage() {
       {invoicePopupUrl && (
         <div className="fixed inset-0 z-[110] flex flex-col bg-white dark:bg-slate-900" role="dialog" aria-modal="true" aria-label="Selesaikan pembayaran">
           <div className="flex items-center justify-between px-4 py-3 border-b-4 border-slate-900 bg-slate-50 dark:bg-slate-800 shrink-0">
-            <h3 className="text-base font-bold text-slate-900 dark:text-white">Selesaikan Pembayaran</h3>
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-indigo-500 flex items-center justify-center">
+                <CreditCard className="w-4 h-4 text-white" strokeWidth={3} />
+              </div>
+              <h3 className="text-base font-bold text-slate-900 dark:text-white">Selesaikan Pembayaran</h3>
+            </div>
             <button
               type="button"
               onClick={() => setInvoicePopupUrl(null)}

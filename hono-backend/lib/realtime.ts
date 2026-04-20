@@ -7,6 +7,10 @@ export type RealtimeEventType =
   | 'r2.object.put'
   | 'r2.object.delete'
   | 'api.mutated'
+  | 'user.suspended'
+  | 'album.joinRequest.created'
+  | 'album.joinRequest.updated'
+  | (string & {})
 
 export type RealtimeEvent = {
   type: RealtimeEventType

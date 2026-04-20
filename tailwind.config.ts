@@ -1,6 +1,7 @@
-/** @type {import('tailwindcss').Config} */
-module.exports = {
-  darkMode: 'class',
+import type { Config } from "tailwindcss";
+
+export default {
+  darkMode: ["class", "class"],
   content: [
     "./app/admin/**/*.{js,ts,jsx,tsx,mdx}",
     "./app/album/**/*.{js,ts,jsx,tsx,mdx}",
@@ -33,7 +34,6 @@ module.exports = {
         "robert-regular": ["robert-regular", "sans-serif"],
       },
       colors: {
-        /* Pastel palette */
         pastel: {
           lavender: '#c4b5fd',
           pink: '#f9a8d4',
@@ -43,7 +43,6 @@ module.exports = {
           lemon: '#fde68a',
           lilac: '#ddd6fe',
         },
-        /* Accent solids */
         accent: {
           purple: '#8b5cf6',
           pink: '#ec4899',
@@ -51,7 +50,6 @@ module.exports = {
           peach: '#fb923c',
           sky: '#38bdf8',
         },
-        /* New Landing Page Colors */
         blue: {
           50: "#DFDFF0",
           75: "#DFDFF2",
@@ -66,7 +64,6 @@ module.exports = {
           100: "#8E983F",
           300: "#EDFF66",
         },
-        /* Dashboard background */
         'fresh-bg': '#fafaff',
         'fresh-card': '#fafaff',
         'fresh-border': '#e8e8f0',
@@ -85,8 +82,8 @@ module.exports = {
       },
       maxWidth: {
         '136': '34rem',
-      }
+      },
     },
   },
   plugins: [],
-};
+} satisfies Config;

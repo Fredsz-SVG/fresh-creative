@@ -47,11 +47,11 @@ albumsRoute.get('/', requireAuthJwt, async (c) => {
     if (shouldUseAdminScope) {
       const { results } = await db
         .prepare(
-            `SELECT a.id, a.name, a.type, a.status, a.created_at, a.description, a.cover_image_url, a.cover_image_position, a.pricing_package_id, a.school_city, a.kab_kota, a.wa_e164, a.province_id, a.province_name, a.pic_name, a.students_count, a.source, a.total_estimated_price, a.payment_status, a.payment_url, a.package_snapshot, (SELECT SUM(amount) FROM transactions WHERE album_id = a.id AND status IN ('PAID', 'SETTLED')) as collected_amount FROM albums a ORDER BY a.created_at DESC`
-          )
-          .all<Record<string, unknown>>()
-        const rows = results ?? []
-        const result = rows.map((a) => {
+          `SELECT a.id, a.name, a.type, a.status, a.created_at, a.description, a.cover_image_url, a.cover_image_position, a.pricing_package_id, a.school_city, a.kab_kota, a.wa_e164, a.province_id, a.province_name, a.pic_name, a.students_count, a.source, a.total_estimated_price, a.payment_status, a.payment_url, a.package_snapshot, (SELECT SUM(amount) FROM transactions WHERE album_id = a.id AND status IN ('PAID', 'SETTLED')) as collected_amount FROM albums a ORDER BY a.created_at DESC`
+        )
+        .all<Record<string, unknown>>()
+      const rows = results ?? []
+      const result = rows.map((a) => {
         const m = mapAlbumRow(a)
         return { ...m, isOwner: false }
       })
@@ -178,11 +178,11 @@ albumsRoute.post('/', requireAuthJwt, async (c) => {
       .first()
 
     const notifId = crypto.randomUUID()
-      await db.prepare('INSERT INTO notifications (id, user_id, title, message, type, action_url) VALUES (?, ?, ?, ?, ?, ?)')
-        .bind(notifId, (user as any).id, 'Menunggu Persetujuan', `Album "${name}" telah berhasil diajukan dan sedang menunggu persetujuan admin.`, 'info', '/user/riwayat')
-          .run()
-      invalidateUserResponseCaches((user as any).id)
-      return c.json({ id: result?.id }, 201)
+    await db.prepare('INSERT INTO notifications (id, user_id, title, message, type, action_url) VALUES (?, ?, ?, ?, ?, ?)')
+      .bind(notifId, (user as any).id, 'Menunggu Persetujuan', `Album "${name}" telah berhasil diajukan dan sedang menunggu persetujuan admin.`, 'info', '/user/riwayat')
+      .run()
+    invalidateUserResponseCaches((user as any).id)
+    return c.json({ id: result?.id }, 201)
   } catch (error) {
     console.error('ERROR ALBUMS API:', error)
     return c.json({ error: 'Internal server error', details: String(error) }, 500)
@@ -229,39 +229,39 @@ albumsRoute.put('/:id', requireAuthJwt, async (c) => {
     const { status } = body
     if (!status) return c.json({ error: 'Missing status' }, 400)
     // Ambil user_id dan nama untuk notif
-      const albumInfo = await db.prepare('SELECT user_id, name FROM albums WHERE id = ?').bind(albumId).first()
+    const albumInfo = await db.prepare('SELECT user_id, name FROM albums WHERE id = ?').bind(albumId).first()
 
-      const result = await db
-        .prepare('UPDATE albums SET status = ? WHERE id = ?')
-        .bind(status, albumId)
-        .run()
-      if (!result.success) return c.json({ error: 'Failed to update album' }, 400)
+    const result = await db
+      .prepare('UPDATE albums SET status = ? WHERE id = ?')
+      .bind(status, albumId)
+      .run()
+    if (!result.success) return c.json({ error: 'Failed to update album' }, 400)
 
-      if (albumInfo && albumInfo.user_id) {
-        const notifId = crypto.randomUUID()
-        let notifTitle = ''
-        let notifMessage = ''
-        let notifType = 'info'
-        
-        if (status === 'approved' || status === 'accepted') {
-          notifTitle = 'Persetujuan Disetujui'
-          notifMessage = `Selamat! Pengajuan album "${albumInfo.name}" Anda telah disetujui.`
-          notifType = 'success'
-        } else if (status === 'declined' || status === 'rejected') {
-          notifTitle = 'Persetujuan Ditolak'
-          notifMessage = `Mohon maaf, pengajuan album "${albumInfo.name}" Anda ditolak oleh admin.`
-          notifType = 'error'
-        }
+    if (albumInfo && albumInfo.user_id) {
+      const notifId = crypto.randomUUID()
+      let notifTitle = ''
+      let notifMessage = ''
+      let notifType = 'info'
 
-        if (notifTitle) {
-          await db.prepare('INSERT INTO notifications (id, user_id, title, message, type, action_url) VALUES (?, ?, ?, ?, ?, ?)')
-            .bind(notifId, albumInfo.user_id, notifTitle, notifMessage, notifType, '/user/riwayat')
-            .run()
-          invalidateUserResponseCaches(albumInfo.user_id as string)
-        }
+      if (status === 'approved' || status === 'accepted') {
+        notifTitle = 'Persetujuan Disetujui'
+        notifMessage = `Selamat! Pengajuan album "${albumInfo.name}" Anda telah disetujui.`
+        notifType = 'success'
+      } else if (status === 'declined' || status === 'rejected') {
+        notifTitle = 'Persetujuan Ditolak'
+        notifMessage = `Mohon maaf, pengajuan album "${albumInfo.name}" Anda ditolak oleh admin.`
+        notifType = 'error'
       }
 
-      return c.json({ success: true, status }, 200)
+      if (notifTitle) {
+        await db.prepare('INSERT INTO notifications (id, user_id, title, message, type, action_url) VALUES (?, ?, ?, ?, ?, ?)')
+          .bind(notifId, albumInfo.user_id, notifTitle, notifMessage, notifType, '/user/riwayat')
+          .run()
+        invalidateUserResponseCaches(albumInfo.user_id as string)
+      }
+    }
+
+    return c.json({ success: true, status }, 200)
   } catch (error) {
     console.error('ERROR ALBUMS API (PUT):', error)
     return c.json({ error: 'Internal server error', details: String(error) }, 500)

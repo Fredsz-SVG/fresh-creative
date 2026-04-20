@@ -44,7 +44,7 @@ export type AlbumRow = {
   album_id?: string | null
   leads?: { school_name: string } | null
   pricing_package_id?: string | null
-  package_snapshot?: { name: string } | null; pricing_packages?: { name: string } | null
+  package_snapshot?: { name: string; price_per_student?: number; features?: string[] } | null; pricing_packages?: { name: string } | null
   isOwner?: boolean
   school_city?: string
   kab_kota?: string
@@ -891,12 +891,17 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
 
       {invoicePopupUrl && (
         <div className="fixed inset-0 z-[110] flex flex-col bg-white" role="dialog" aria-modal="true" aria-label="Selesaikan pembayaran">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-gray-50 shrink-0">
-            <h3 className="text-sm font-bold text-gray-800">Selesaikan Pembayaran</h3>
+          <div className="flex items-center justify-between px-4 py-3 border-b-4 border-slate-900 bg-slate-50 dark:bg-slate-800 shrink-0">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-indigo-500 flex items-center justify-center">
+                <CreditCard className="w-4 h-4 text-white" strokeWidth={3} />
+              </div>
+              <h3 className="text-base font-bold text-slate-900 dark:text-white">Selesaikan Pembayaran</h3>
+            </div>
             <button
               type="button"
               onClick={() => setInvoicePopupUrl(null)}
-              className="flex items-center justify-center w-9 h-9 rounded-xl text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
+              className="flex items-center justify-center w-10 h-10 rounded-xl border-2 border-slate-900 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-red-50 dark:hover:bg-red-900 hover:text-red-500 shadow-[#64748b] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all"
             >
               <X className="w-5 h-5" />
             </button>
@@ -1117,13 +1122,23 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
               const destUrl = album.type === 'public'
                 ? `/admin/album/public/${album.id}`
                 : `/admin/album/yearbook/${album.album_id ?? album.id}`
-              const estimasiTotal = album.total_estimated_price
-                ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(album.total_estimated_price)
+              const addonTotal = (album.package_snapshot?.features || []).reduce((sum, f) => {
+                try {
+                  const parsed = typeof f === 'string' ? JSON.parse(f) : f
+                  return sum + (parsed.price || 0)
+                } catch {
+                  return sum
+                }
+              }, 0)
+              const pricePerStudent = (album.package_snapshot?.price_per_student || 0) + addonTotal
+              const totalEstimasi = album.students_count && pricePerStudent ? album.students_count * pricePerStudent : (album.total_estimated_price || 0)
+              const estimasiTotal = totalEstimasi > 0
+                ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(totalEstimasi)
                 : '-'
               const estimasiTerkumpul = album.collected_amount
                 ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(album.collected_amount)
                 : 'Rp 0'
-              const estimasiText = album.total_estimated_price ? `${estimasiTerkumpul} / ${estimasiTotal}` : '-'
+              const estimasiText = totalEstimasi > 0 ? `${estimasiTerkumpul} / ${estimasiTotal}` : '-'
               return (
                 <div key={album.id} className="rounded-3xl border-2 border-slate-900 bg-white p-5 flex flex-col gap-4 shadow-[2px_2px_0_0_#0f172a] hover:shadow-[2px_2px_0_0_#0f172a] hover:-translate-y-1 hover:-translate-x-1 transition-all">
                   <div className="space-y-1.5 text-[13px] sm:text-sm font-bold text-slate-600">
@@ -1213,9 +1228,21 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
                 <tbody className="divide-y-2 divide-slate-100 dark:divide-slate-700">
                   {paginatedAlbums.map((album) => {
                     const isProcessing = loadingId === album.id
-                    const estimasiTotal = album.total_estimated_price ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(album.total_estimated_price) : '-'
+                    const addonTotal = (album.package_snapshot?.features || []).reduce((sum, f) => {
+                      try {
+                        const parsed = typeof f === 'string' ? JSON.parse(f) : f
+                        return sum + (parsed.price || 0)
+                      } catch {
+                        return sum
+                      }
+                    }, 0)
+                    const pricePerStudent = (album.package_snapshot?.price_per_student || 0) + addonTotal
+                    const totalEstimasi = album.students_count && pricePerStudent ? album.students_count * pricePerStudent : (album.total_estimated_price || 0)
+                    const estimasiTotal = totalEstimasi > 0
+                      ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(totalEstimasi)
+                      : '-'
                     const estimasiTerkumpul = album.collected_amount ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(album.collected_amount) : 'Rp 0'
-                    const estimasiText = album.total_estimated_price ? `${estimasiTerkumpul} / ${estimasiTotal}` : '-'
+                    const estimasiText = totalEstimasi > 0 ? `${estimasiTerkumpul} / ${estimasiTotal}` : '-'
                     return (
                       <tr
                         key={album.id}

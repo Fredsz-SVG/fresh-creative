@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { Pencil, X, Sparkles, Trash2, ShieldCheck, UserCheck, LayoutDashboard } from 'lucide-react'
+import { Pencil, X, Sparkles, Trash2, ShieldCheck, UserCheck, LayoutDashboard, RefreshCw } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { apiUrl } from '../../lib/api-url'
 import { fetchWithAuth } from '../../lib/api-client'
@@ -49,6 +49,7 @@ export default function AdminPage() {
   const confirmActionRef = useRef<null | (() => Promise<void>)>(null)
   const mountedRef = useRef(true)
   const hasCacheRef = useRef(false)
+  const fetchIdRef = useRef(0)
 
   const cacheKey = `admin_users_overview_v1:${page}:${search.trim().toLowerCase() || ''}:${roleFilter || 'all'}:${sortFilter || 'none'}:${daysFilter || 0}`
 
@@ -62,6 +63,8 @@ export default function AdminPage() {
   // Instant render from cache to avoid skeleton on back/side nav (layout effect = before paint).
   useLayoutEffect(() => {
     if (typeof window === 'undefined') return
+    hasCacheRef.current = false // Reset before checking so fetchOverview knows if it was a cache miss
+
     try {
       const raw = window.sessionStorage.getItem(cacheKey)
       if (!raw) return
@@ -87,6 +90,8 @@ export default function AdminPage() {
 
   const fetchOverview = useCallback(async (silent = false) => {
     if (!mountedRef.current) return
+    const currentFetchId = ++fetchIdRef.current
+
     if (!silent) {
       setLoading(true)
       setError(null)
@@ -105,6 +110,8 @@ export default function AdminPage() {
 
       const res = await fetchWithAuth(`/api/admin/users/overview?${params.toString()}`)
       const data = (await res.json().catch(() => null)) as unknown
+      if (fetchIdRef.current !== currentFetchId) return
+
       if (!res.ok) {
         const err = (data && typeof data === 'object' && !Array.isArray(data) ? (data as any).error : undefined) as
           | string
@@ -128,15 +135,16 @@ export default function AdminPage() {
         }
       }
     } catch {
+      if (fetchIdRef.current !== currentFetchId) return
       if (mountedRef.current && !silent) {
         setError('Gagal memuat overview')
       }
     } finally {
-      if (mountedRef.current && !silent) {
+      if (fetchIdRef.current === currentFetchId && mountedRef.current && !silent) {
         setLoading(false)
       }
     }
-  }, [page, search, roleFilter, sortFilter, daysFilter])
+  }, [page, search, roleFilter, sortFilter, daysFilter, cacheKey])
 
   useEffect(() => {
     fetchOverview(hasCacheRef.current)
@@ -460,6 +468,14 @@ export default function AdminPage() {
             </h2>
           </div>
           <div className="flex items-center gap-2 w-full sm:w-auto">
+            <button
+              onClick={() => fetchOverview()}
+              disabled={loading}
+              className="p-2.5 bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all disabled:opacity-50"
+              title="Refresh Data"
+            >
+              <RefreshCw size={18} strokeWidth={3} className={loading ? 'animate-spin' : ''} />
+            </button>
             <input
               type="text"
               value={search}
@@ -476,10 +492,10 @@ export default function AdminPage() {
           {loading && (
             <>
               {[1, 2, 3].map((i) => (
-                <div key={`mobile-skeleton-${i}`} className="bg-slate-50 border-2 border-slate-900 rounded-2xl p-4 space-y-3 animate-pulse">
-                  <div className="h-5 w-40 bg-slate-200 rounded-lg" />
-                  <div className="h-3 w-32 bg-slate-100 rounded-lg" />
-                  <div className="h-10 w-full bg-slate-200 rounded-xl" />
+                <div key={`mobile-skeleton-${i}`} className="bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 rounded-2xl p-4 space-y-3 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] animate-pulse">
+                  <div className="h-5 w-40 bg-slate-200 dark:bg-slate-700 rounded-lg" />
+                  <div className="h-3 w-32 bg-slate-200 dark:bg-slate-700 rounded-lg" />
+                  <div className="h-10 w-full bg-slate-200 dark:bg-slate-700 rounded-xl" />
                 </div>
               ))}
             </>
@@ -584,18 +600,18 @@ export default function AdminPage() {
                 <th className="px-5 py-4 text-right text-xs font-black uppercase tracking-widest text-slate-900">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y-2 divide-slate-100">
+            <tbody className="divide-y-2 divide-slate-100 dark:divide-slate-800">
               {loading && (
                 <>
                   {[1, 2, 3, 4, 5].map((i) => (
                     <tr key={`table-skeleton-${i}`} className="animate-pulse">
-                      <td className="px-5 py-4"><div className="h-4 bg-slate-100 rounded w-32" /></td>
-                      <td className="px-5 py-4"><div className="h-4 bg-slate-50 rounded w-48" /></td>
-                      <td className="px-5 py-4"><div className="h-4 bg-slate-100 rounded w-16" /></td>
-                      <td className="px-5 py-4"><div className="h-4 bg-slate-50 rounded w-12" /></td>
-                      <td className="px-5 py-4"><div className="h-4 bg-slate-100 rounded w-12 ml-auto" /></td>
-                      <td className="px-5 py-4"><div className="h-4 bg-slate-50 rounded w-20" /></td>
-                      <td className="px-5 py-4 text-right"><div className="h-8 bg-slate-100 rounded w-24 ml-auto" /></td>
+                      <td className="px-5 py-4"><div className="h-4 bg-slate-200 dark:bg-slate-700 rounded-lg w-32" /></td>
+                      <td className="px-5 py-4"><div className="h-4 bg-slate-200 dark:bg-slate-700 rounded-lg w-48" /></td>
+                      <td className="px-5 py-4"><div className="h-4 bg-slate-200 dark:bg-slate-700 rounded-lg w-16" /></td>
+                      <td className="px-5 py-4"><div className="h-4 bg-slate-200 dark:bg-slate-700 rounded-lg w-12" /></td>
+                      <td className="px-5 py-4"><div className="h-4 bg-slate-200 dark:bg-slate-700 rounded-lg w-12 ml-auto" /></td>
+                      <td className="px-5 py-4"><div className="h-4 bg-slate-200 dark:bg-slate-700 rounded-lg w-20" /></td>
+                      <td className="px-5 py-4 text-right"><div className="h-8 bg-slate-200 dark:bg-slate-700 rounded-xl w-24 ml-auto" /></td>
                     </tr>
                   ))}
                 </>

@@ -79,6 +79,7 @@ export default function UserLayoutClient({
     // Theme is now managed by ThemeProvider (supports dark/light toggle)
     const [userName, setUserName] = useState<string>('')
     const [userEmail, setUserEmail] = useState<string>('')
+    const [userId, setUserId] = useState<string>('')
 
     // Hydrate cached gate before paint so navigating between user routes does not flash the spinner.
     useLayoutEffect(() => {
@@ -140,6 +141,7 @@ export default function UserLayoutClient({
 
             setUserEmail(session.user?.email ?? '')
             setUserName(session.user?.user_metadata?.full_name ?? session.user?.email ?? 'User')
+            setUserId(session.user?.id ?? '')
             setOk(true)
             writeUserGate()
 
@@ -155,6 +157,26 @@ export default function UserLayoutClient({
             })
         }
     }, [router])
+
+    useEffect(() => {
+        if (!userId) return
+
+        const handleRealtime = async (e: Event) => {
+            const detail = (e as CustomEvent).detail
+            if (detail?.type === 'user.suspended' && detail?.payload?.userId === userId) {
+                if (detail?.payload?.isSuspended) {
+                    clearUserGate()
+                    setOk(false)
+                    await fetchWithAuth('/api/auth/logout')
+                    await supabase.auth.signOut()
+                    router.replace('/login?error=account_suspended')
+                }
+            }
+        }
+
+        window.addEventListener('fresh:realtime', handleRealtime)
+        return () => window.removeEventListener('fresh:realtime', handleRealtime)
+    }, [userId, router])
 
     const handleLogout = async () => {
         clearUserGate()

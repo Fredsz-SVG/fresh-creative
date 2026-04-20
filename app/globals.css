@@ -431,7 +431,7 @@ html[data-theme="light"] body {
 
   /* ===== Auth / Login Page ===== */
   .auth-page {
-    @apply min-h-screen flex items-center justify-center bg-[rgb(var(--bg))];
+    @apply min-h-screen w-full;
   }
 
   .auth-card {

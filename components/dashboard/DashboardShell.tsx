@@ -56,6 +56,7 @@ export default function DashboardShell({
   const [showTopUp, setShowTopUp] = useState(false)
   const [showNotifications, setShowNotifications] = useState(false)
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false)
+  const [clearConfirmOpen, setClearConfirmOpen] = useState(false)
   const [bottomNavVisible, setBottomNavVisible] = useState(true)
   // Credits state
   const [credits, setCredits] = useState(0)
@@ -81,7 +82,7 @@ export default function DashboardShell({
   const fetchNotifications = async () => {
     if (typeof window !== 'undefined' && !navigator.onLine) return
     try {
-      const res = await fetchWithAuth('/api/user/notifications')
+      const res = await fetchWithAuth(`/api/user/notifications?_t=${Date.now()}`)
       if (!res.ok) return
       const data = await res.json().catch(() => null)
       if (data && Array.isArray(data)) {
@@ -214,7 +215,7 @@ export default function DashboardShell({
   }
 
   const handleClearNotifications = async () => {
-    if (!confirm('Hapus semua notifikasi?')) return
+    setClearConfirmOpen(false)
     const snapshot = notifications
     const prevUnread = unreadCount
     // Optimistic
@@ -448,6 +449,38 @@ export default function DashboardShell({
           </div>
         </div>
       )}
+      {clearConfirmOpen && (
+        <div
+          className="fixed inset-0 bg-slate-900/40 dark:bg-black/50 backdrop-blur-md flex items-center justify-center z-[120] p-4"
+          onClick={() => setClearConfirmOpen(false)}
+        >
+          <div
+            className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-[32px] p-6 sm:p-8 max-w-sm w-full shadow-[3px_3px_0_0_#334155] dark:shadow-[3px_3px_0_0_#1e293b] text-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-xl font-black text-slate-900 dark:text-white mb-2 uppercase tracking-tight">Hapus Semua</h3>
+            <p className="text-sm font-bold text-slate-500 dark:text-slate-400 mb-6">
+              Yakin ingin menghapus seluruh notifikasi ini? Ini tidak dapat diurungkan.
+            </p>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => setClearConfirmOpen(false)}
+                className="flex-1 py-3.5 rounded-xl bg-slate-100 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 text-slate-900 dark:text-white text-xs font-black uppercase tracking-widest shadow-[3px_3px_0_0_#334155] dark:shadow-[3px_3px_0_0_#1e293b] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={handleClearNotifications}
+                className="flex-1 py-3.5 rounded-xl bg-red-500 text-white border-2 border-slate-900 dark:border-slate-700 text-xs font-black uppercase tracking-widest shadow-[3px_3px_0_0_#334155] dark:shadow-[3px_3px_0_0_#1e293b] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
+              >
+                Hapus
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Top header */}
       <header
         className={`fixed top-0 left-0 right-0 z-40 h-14 min-h-[44px] border-b-2 border-slate-900 dark:border-white/20 bg-white dark:bg-slate-900 flex items-center justify-between px-4 pt-[env(safe-area-inset-top)] shadow-[0_2px_0_0_#334155] dark:shadow-[0_1px_0_0_rgba(255,255,255,0.08)] transition-colors duration-300 ${isAiLabsFeaturePage ? 'max-md:hidden' : ''}`}
@@ -530,7 +563,7 @@ export default function DashboardShell({
                     {notifications.length > 0 && (
                       <button
                         type="button"
-                        onClick={handleClearNotifications}
+                        onClick={() => setClearConfirmOpen(true)}
                         className="text-[10px] text-red-500 hover:text-red-700 transition-colors font-black uppercase tracking-tight underline decoration-2 underline-offset-2"
                       >
                         Hapus Semua

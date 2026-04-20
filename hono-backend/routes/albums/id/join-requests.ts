@@ -1,6 +1,7 @@
 import { Hono } from 'hono'
 import { getSupabaseClient } from '../../../lib/supabase'
 import { getD1 } from '../../../lib/edge-env'
+import { publishRealtimeEventFromContext } from '../../../lib/realtime'
 
 const albumJoinRequestsRoute = new Hono()
 
@@ -176,6 +177,19 @@ albumJoinRequestsRoute.post('/', async (c) => {
       return c.json({ error: 'Gagal mendaftar' })
     }
     await insertNotif()
+
+    // Realtime: beri tahu admin bahwa ada pendaftaran baru
+    void publishRealtimeEventFromContext(c, {
+      type: 'album.joinRequest.created',
+      channel: 'global',
+      payload: { 
+        path: `/api/albums/${albumId}/join-requests`,
+        albumId,
+        studentName: student_name
+      },
+      ts: new Date().toISOString()
+    })
+
     const request_data = await db
       .prepare(`SELECT * FROM album_join_requests WHERE id = ?`)
       .bind(rid)

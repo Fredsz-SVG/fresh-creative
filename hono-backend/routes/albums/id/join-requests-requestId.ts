@@ -139,9 +139,13 @@ joinRequestsRequestId.patch('/', async (c) => {
 
         // Broadcast approve ke semua device
         void publishRealtimeEventFromContext(c, {
-          type: 'api.mutated',
+          type: 'album.joinRequest.updated',
           channel: 'global',
-          payload: { path: `/api/albums/${albumId}/join-requests`, action: 'approve' },
+          payload: { 
+            path: `/api/albums/${albumId}/join-requests`, 
+            action: 'approve',
+            albumId
+          },
           ts: new Date().toISOString(),
         })
 
@@ -186,9 +190,13 @@ joinRequestsRequestId.patch('/', async (c) => {
 
     // Broadcast reject ke semua device
     void publishRealtimeEventFromContext(c, {
-      type: 'api.mutated',
+      type: 'album.joinRequest.updated',
       channel: 'global',
-      payload: { path: `/api/albums/${albumId}/join-requests`, action: 'reject' },
+      payload: { 
+        path: `/api/albums/${albumId}/join-requests`, 
+        action: 'reject',
+        albumId
+      },
       ts: new Date().toISOString(),
     })
 

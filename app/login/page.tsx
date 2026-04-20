@@ -1,17 +1,17 @@
 'use client'
 
-import { Suspense, useState, useEffect } from 'react'
+import { Suspense, useState, useEffect, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { getRole } from '@/lib/auth'
-import { Eye, EyeOff } from 'lucide-react'
 import { toast } from '@/lib/toast'
 import { fetchWithAuth } from '../../lib/api-client'
 import { asObject } from '@/components/yearbook/utils/response-narrowing'
+import { AnimatedLoginPage } from '@/components/animated-characters-login-page'
 
 function LoginContent() {
-  const [checkingSession, setCheckingSession] = useState(true)
+  const [checkingSession, setCheckingSession] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -54,7 +54,6 @@ function LoginContent() {
     }
     if (msg) setMessage(decodeURIComponent(msg))
 
-    // Bersihkan URL bar setelah parameter diproses agar saat direfresh tidak muncul lagi
     if (err || msg) {
       window.history.replaceState(null, '', '/login')
     }
@@ -86,7 +85,6 @@ function LoginContent() {
         if (!cancelled) setCheckingSession(false);
         return;
       }
-      // Cek apakah email sudah diverifikasi (kecuali jika login dengan provider OAuth yang otomatis terverifikasi)
       if (!session.user.email_confirmed_at && session.user.app_metadata?.provider === 'email') {
         await supabase.auth.signOut();
         if (!cancelled) setCheckingSession(false);
@@ -171,6 +169,7 @@ function LoginContent() {
           setSuspended(true)
           setSuspendedMessage('Akun Anda sedang disuspend. Silakan hubungi admin.')
           setDismissedSuspended(false)
+          setLoading(false)
           return
         }
 
@@ -181,6 +180,7 @@ function LoginContent() {
           setSuspended(true)
           setSuspendedMessage('Akun Anda sedang disuspend. Silakan hubungi admin.')
           setDismissedSuspended(false)
+          setLoading(false)
           return
         }
         if (statusData.verified) {
@@ -229,17 +229,6 @@ function LoginContent() {
     }
   }
 
-  // Jika sedang redirect (sudah login), tampilkan logo animasi (bukan spinner)
-  if (checkingSession) {
-    return (
-      <div className="auth-page">
-        <div className="flex items-center justify-center min-h-screen bg-white dark:bg-slate-950">
-          <img src="/img/logo.png" alt="Loading..." className="w-24 sm:w-32 animate-logo-pulse !opacity-100" />
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="auth-page">
       {showSuspended && (
@@ -281,77 +270,19 @@ function LoginContent() {
           </div>
         </div>
       )}
-      <div className="auth-card">
-        <h1 className="auth-title">Login</h1>
-
-        <form onSubmit={handleLogin} className="auth-form">
-          <div className="auth-field">
-            <label>Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter your email"
-              required
-            />
-          </div>
-
-          <div className="auth-field">
-            <label>Password</label>
-            <div className="relative">
-              <input
-                type={showPassword ? 'text' : 'password'}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter your password"
-                required
-                className="w-full pr-10"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute inset-y-0 right-0 px-3 flex items-center text-gray-400 hover:text-white"
-                aria-label={showPassword ? 'Hide password' : 'Show password'}
-              >
-                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </button>
-            </div>
-          </div>
-
-          <div className="auth-forgot">
-            <Link href="/forgot-password" className="auth-footer">
-              Forgot password?
-            </Link>
-          </div>
-
-          {message && <p className="text-sm text-green-600 dark:text-green-400 mb-3">{message}</p>}
-          {error && <p className="auth-error">{error}</p>}
-
-          <button disabled={loading} className="auth-button">
-            {loading ? 'Logging in...' : 'Login'}
-          </button>
-
-          <div className="auth-divider">atau lanjut dengan</div>
-          <button
-            type="button"
-            disabled={googleLoading || loading}
-            onClick={handleGoogleSignIn}
-            className="auth-google-button"
-          >
-            <svg className="w-5 h-5" viewBox="0 0 24 24" aria-hidden>
-              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
-              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
-            </svg>
-            {googleLoading ? 'Membuka Google...' : 'Login dengan Google'}
-          </button>
-        </form>
-
-        <p className="auth-footer">
-          Don&apos;t have an account? <Link href="/signup">Sign up</Link>
-        </p>
-      </div>
+      <AnimatedLoginPage
+        email={email}
+        password={password}
+        showPassword={showPassword}
+        isLoading={loading}
+        error={error}
+        onEmailChange={setEmail}
+        onPasswordChange={setPassword}
+        onTogglePassword={() => setShowPassword(!showPassword)}
+        onSubmit={handleLogin}
+        onGoogleLogin={handleGoogleSignIn}
+        googleLoading={googleLoading}
+      />
     </div>
   )
 }

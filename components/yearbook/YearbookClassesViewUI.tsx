@@ -420,21 +420,37 @@ export default function YearbookClassesViewUI(props: any) {
   }, [sidebarMode, canManage, album?.id, approvalTab, pendingLoaded, approvedLoaded, teamLoaded])
 
   // Realtime: semua mutasi album dari device lain → refresh semua data lokal komponen ini
-  const prevRealtimeCounterRef = useRef(realtimeCounter)
   useEffect(() => {
-    if (realtimeCounter === prevRealtimeCounterRef.current) return
-    prevRealtimeCounterRef.current = realtimeCounter
     if (!album?.id) return
-    // Refresh data yang di-manage lokal oleh komponen ini (tidak lewat parent props)
-    void fetchJoinStats()
-    void fetchTeachers()
-    void fetchManualPages()
-    if (canManage) {
-      void fetchJoinRequests('pending')
-      void fetchJoinRequests('approved')
-      void fetchMembers()
+
+    const onRealtime = (event: Event) => {
+      const detail = (event as CustomEvent<{ type?: string; channel?: string; payload?: Record<string, unknown>; ts?: string }>).detail
+      if (!detail?.type) return
+
+      const payload = detail.payload || {}
+      const path = typeof payload.path === 'string' ? payload.path : ''
+      const eventAlbumId = typeof payload.albumId === 'string' ? payload.albumId : ''
+
+      const isMatch = eventAlbumId === album.id || path.includes(`/api/albums/${album.id}`)
+      const isJoinEvent = detail.type.startsWith('album.joinRequest.') || path.includes('/join-requests')
+
+      if (!isMatch && !isJoinEvent) return
+
+      // Refresh data yang di-manage lokal oleh komponen ini
+      void fetchJoinStats()
+      void fetchTeachers()
+      void fetchManualPages()
+
+      if (canManage) {
+        void fetchJoinRequests('pending')
+        void fetchJoinRequests('approved')
+        void fetchMembers()
+      }
     }
-  }, [realtimeCounter, canManage, album?.id])
+
+    window.addEventListener('fresh:realtime', onRealtime)
+    return () => window.removeEventListener('fresh:realtime', onRealtime)
+  }, [album?.id, canManage])
 
   // Reset loaded flags when leaving approval section so next time we fetch fresh
   useEffect(() => {
@@ -508,7 +524,6 @@ export default function YearbookClassesViewUI(props: any) {
   // Handle reject join request
   const handleRejectJoinRequest = async (requestId: string, reason?: string) => {
     if (!album?.id) return
-    if (!confirm('Yakin ingin menolak request ini?')) return
     try {
       const res = await fetchWithAuth(`/api/albums/${album.id}/join-requests/${requestId}`, {
         method: 'PATCH',
@@ -1003,8 +1018,8 @@ export default function YearbookClassesViewUI(props: any) {
                         const isActive = idx === classIndex && !isCoverView
                         const ownerRegisteredIn = isOwner
                           ? (Object.entries(myAccessByClass) as [string, ClassAccess | null][]).find(
-                              ([, a]) => a?.status === 'approved'
-                            )?.[0]
+                            ([, a]) => a?.status === 'approved'
+                          )?.[0]
                           : null
                         const ownerRegisteredClassName =
                           ownerRegisteredIn != null ? classes.find((x) => x.id === ownerRegisteredIn)?.name ?? '' : ''
@@ -1098,7 +1113,7 @@ export default function YearbookClassesViewUI(props: any) {
 
             {/* Main content - scrollable container */}
             <main
-              className={`flex-1 ${ (sidebarMode === 'flipbook' || isAiLabsToolActive) ? 'overflow-hidden pb-0' : 'overflow-y-auto pb-40 lg:pb-0'} rounded-t-none relative
+              className={`flex-1 ${(sidebarMode === 'flipbook' || isAiLabsToolActive) ? 'overflow-hidden pb-0' : 'overflow-y-auto pb-40 lg:pb-0'} rounded-t-none relative
               ${(['classes', 'sambutan'].includes(sidebarMode) || isCoverView) ? 'lg:ml-[20rem]' : (sidebarMode === 'flipbook' || isAiLabsToolActive) ? (flipbookPreviewMode || !canManage || isAiLabsToolActive ? 'lg:ml-0' : 'lg:ml-16') : 'lg:ml-0'}
               bg-white dark:bg-slate-950
             `}
@@ -1453,13 +1468,13 @@ export default function YearbookClassesViewUI(props: any) {
               {classes.length === 0 && (
                 <div className={!isCoverView && sidebarMode === 'classes' ? 'block w-full h-full' : 'hidden'}>
                   <ClassesEmptyView
-                  canManage={canManage}
-                  addingClass={addingClass}
-                  setAddingClass={setAddingClass}
-                  newClassName={newClassName}
-                  setNewClassName={setNewClassName}
-                  onAddClass={handleAddClass}
-                />
+                    canManage={canManage}
+                    addingClass={addingClass}
+                    setAddingClass={setAddingClass}
+                    newClassName={newClassName}
+                    setNewClassName={setNewClassName}
+                    onAddClass={handleAddClass}
+                  />
                 </div>
               )}
 
@@ -1510,364 +1525,364 @@ export default function YearbookClassesViewUI(props: any) {
 
               {classes.length > 0 && (
                 <div className={!isCoverView && sidebarMode === 'classes' ? 'block w-full h-full' : 'hidden'}>
-                {/* Classes Content - Original grid view */
-                (() => {
-                  const access = myAccessByClass[currentClass.id]
-                  const hasApprovedAccess = access?.status === 'approved'
-                  const rawClassMembers = membersByClass[currentClass.id] ?? []
-                  const classMembers = (() => {
-                    const base = classMemberSearchQuery
-                      ? rawClassMembers.filter(m => m.student_name.toLowerCase().includes(classMemberSearchQuery.toLowerCase()))
-                      : rawClassMembers
-                    
-                    // Filter members logic
-                    const filtered = canManage ? base : base.filter(m => m.is_me)
-                    
-                    return [...filtered].sort((a, b) =>
-                      a.student_name.localeCompare(b.student_name, 'id', { sensitivity: 'base' })
-                    )
-                  })()
+                  {/* Classes Content - Original grid view */
+                    (() => {
+                      const access = myAccessByClass[currentClass.id]
+                      const hasApprovedAccess = access?.status === 'approved'
+                      const rawClassMembers = membersByClass[currentClass.id] ?? []
+                      const classMembers = (() => {
+                        const base = classMemberSearchQuery
+                          ? rawClassMembers.filter(m => m.student_name.toLowerCase().includes(classMemberSearchQuery.toLowerCase()))
+                          : rawClassMembers
 
-                  return (
-                    <div className="flex flex-col gap-4 pt-0 pb-6 lg:gap-8">
-                      {/* Floating Action Buttons Area for Ordinary Users */}
-                      {!canManage && (
-                        <div className="fixed top-16 right-4 lg:right-8 space-x-2 z-[45] flex items-center justify-end pointer-events-none">
-                          <button
-                            onClick={() => {
-                              const url = `${window.location.origin}/album/${album?.id}/view`;
-                              navigator.clipboard.writeText(url);
-                              toast.success('Link public berhasil disalin');
-                            }}
-                            className="pointer-events-auto flex items-center justify-center h-9 sm:h-10 px-3 sm:px-4 bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 rounded-xl text-[10px] sm:text-[11px] font-black uppercase text-slate-900 dark:text-white shadow-[2.5px_2.5px_0_0_#0f172a] dark:shadow-[2.5px_2.5px_0_0_#334155] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all text-nowrap"
-                            title="Salin Link Public Album"
-                          >
-                            <LinkIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5" strokeWidth={3} /> Salin Link
-                          </button>
-                          <button
-                            onClick={() => {
-                              if (onSectionChange) {
-                                onSectionChange('preview');
-                              } else if (album?.id) {
-                                router.push(getYearbookSectionQueryUrl(album.id, 'preview', pathname), { scroll: false });
-                              }
-                            }}
-                            className="pointer-events-auto flex items-center justify-center h-9 sm:h-10 px-3 sm:px-4 bg-emerald-400 dark:bg-emerald-600 border-2 border-slate-900 dark:border-slate-700 rounded-xl text-[10px] sm:text-[11px] font-black uppercase text-slate-900 dark:text-white shadow-[2.5px_2.5px_0_0_#0f172a] dark:shadow-[2.5px_2.5px_0_0_#334155] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all text-nowrap"
-                            title="Preview Album"
-                          >
-                            <Eye className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5" strokeWidth={3} /> Preview
-                          </button>
-                        </div>
-                      )}
-                      {/* Floating Action Button for Adding Class */}
-                      {canManage && !isCoverView && !addingClass && (
-                        <button
-                          type="button"
-                          onClick={() => setAddingClass(true)}
-                          className="fixed bottom-24 right-6 lg:bottom-10 lg:right-10 z-[60] flex items-center justify-center w-14 h-14 lg:w-16 lg:h-16 rounded-full bg-amber-400 dark:bg-amber-600 border-2 border-slate-900 dark:border-slate-700 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] active:scale-90 transition-all group"
-                          title="Tambah Kelas"
-                        >
-                          <Plus className="w-8 h-8 text-slate-900 dark:text-white transition-transform group-hover:rotate-90" strokeWidth={2.5} />
-                        </button>
-                      )}
+                        // Filter members logic
+                        const filtered = canManage ? base : base.filter(m => m.is_me)
 
-                      {/* Add Class Modal/Overlay (Responsive) */}
-                      {addingClass && (
-                        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-                          <div
-                            className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
-                            onClick={() => { setAddingClass(false); setNewClassName('') }}
-                          />
-                          <div className="relative w-full max-w-md bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-[32px] shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] overflow-hidden animate-in zoom-in-95 duration-200">
-                            <div className="p-6">
-                              <div className="flex items-center justify-between mb-6">
-                                <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Tambah Kelas Baru</h3>
-                                <button
-                                  onClick={() => { setAddingClass(false); setNewClassName('') }}
-                                  className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
-                                >
-                                  <X className="w-5 h-5 text-slate-500 dark:text-slate-400" />
-                                </button>
-                              </div>
+                        return [...filtered].sort((a, b) =>
+                          a.student_name.localeCompare(b.student_name, 'id', { sensitivity: 'base' })
+                        )
+                      })()
 
-                              <div className="flex flex-col gap-6">
-                                <div>
-                                  <label className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2 block">Nama Kelas</label>
-                                  <input
-                                    type="text"
-                                    value={newClassName}
-                                    onChange={(e) => setNewClassName(e.target.value)}
-                                    placeholder="Contoh: XII IPA 1"
-                                    className="w-full px-5 py-4 rounded-xl bg-slate-50 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 text-base font-black text-slate-900 dark:text-white placeholder:text-slate-300 dark:placeholder:text-slate-500 focus:outline-none focus:bg-white dark:focus:bg-slate-800 transition-all shadow-[4px_4px_0_0_#f1f5f9] dark:shadow-[4px_4px_0_0_#1e293b]"
-                                    autoFocus
-                                    onKeyDown={(e) => {
-                                      if (e.key === 'Enter') handleAddClass()
-                                      if (e.key === 'Escape') { setAddingClass(false); setNewClassName('') }
-                                    }}
-                                  />
-                                </div>
-
-                                <div className="flex gap-3">
-                                  <button
-                                    type="button"
-                                    onClick={() => { setAddingClass(false); setNewClassName('') }}
-                                    className="flex-1 py-4 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-xs font-black uppercase tracking-widest border-2 border-slate-900 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all shadow-[2px_2px_0_0_#e2e8f0] dark:shadow-[4px_4px_0_0_#1e293b]"
-                                  >
-                                    Batal
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={handleAddClass}
-                                    disabled={!newClassName.trim()}
-                                    className="flex-[2] py-4 rounded-2xl bg-emerald-400 dark:bg-emerald-600 text-slate-900 dark:text-white text-xs font-black uppercase tracking-widest border-2 border-slate-900 dark:border-slate-700 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all disabled:opacity-50"
-                                  >
-                                    Simpan Kelas
-                                  </button>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Class Info */}
-                      <div className="px-4">
-                        {/* Group Photo Section */}
-                        <div className="mb-14">
-                          <div className="flex items-center justify-between mb-6 gap-3">
-                            <div className="flex items-center gap-3">
-                              <div className="w-2 h-8 bg-indigo-500 dark:bg-indigo-600 rounded-full border-2 border-slate-900 dark:border-slate-700 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]"></div>
-                              <h3 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-[0.2em]">Foto Angkatan</h3>
-                            </div>
-                          </div>
-                          <div className="relative">
-                            {currentClass.batch_photo_url ? (
-                              <div
-                                className="relative group aspect-[3/4] lg:max-w-md lg:mx-auto rounded-[40px] border-2 border-slate-900 dark:border-slate-700 overflow-hidden bg-slate-100 dark:bg-slate-800 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all duration-500"
-                                onClick={() => setViewingBatchPhotoClass(currentClass)}
+                      return (
+                        <div className="flex flex-col gap-4 pt-0 pb-6 lg:gap-8">
+                          {/* Floating Action Buttons Area for Ordinary Users */}
+                          {!canManage && (
+                            <div className="fixed top-16 right-4 lg:right-8 space-x-2 z-[45] flex items-center justify-end pointer-events-none">
+                              <button
+                                onClick={() => {
+                                  const url = `${window.location.origin}/album/${album?.id}/view`;
+                                  navigator.clipboard.writeText(url);
+                                  toast.success('Link public berhasil disalin');
+                                }}
+                                className="pointer-events-auto flex items-center justify-center h-9 sm:h-10 px-3 sm:px-4 bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 rounded-xl text-[10px] sm:text-[11px] font-black uppercase text-slate-900 dark:text-white shadow-[2.5px_2.5px_0_0_#0f172a] dark:shadow-[2.5px_2.5px_0_0_#334155] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all text-nowrap"
+                                title="Salin Link Public Album"
                               >
-                                <img
-                                  src={currentClass.batch_photo_url}
-                                  alt={`Foto Angkatan ${currentClass.name}`}
-                                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                                />
-                                <div className="absolute inset-0 bg-slate-900/40 dark:bg-slate-950/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                  <div className="px-8 py-4 bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 rounded-2xl shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] flex items-center gap-3 active:scale-95 transition-all">
-                                    <Eye className="w-6 h-6 text-slate-900 dark:text-white" strokeWidth={3} />
-                                    <span className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-widest">Lihat Layar Penuh</span>
-                                  </div>
-                                </div>
-                                {canManage && (
-                                  <div className="absolute top-6 right-6 flex gap-3 opacity-100 lg:opacity-0 group-hover:opacity-100 transition-opacity">
+                                <LinkIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5" strokeWidth={3} /> Salin Link
+                              </button>
+                              <button
+                                onClick={() => {
+                                  if (onSectionChange) {
+                                    onSectionChange('preview');
+                                  } else if (album?.id) {
+                                    router.push(getYearbookSectionQueryUrl(album.id, 'preview', pathname), { scroll: false });
+                                  }
+                                }}
+                                className="pointer-events-auto flex items-center justify-center h-9 sm:h-10 px-3 sm:px-4 bg-emerald-400 dark:bg-emerald-600 border-2 border-slate-900 dark:border-slate-700 rounded-xl text-[10px] sm:text-[11px] font-black uppercase text-slate-900 dark:text-white shadow-[2.5px_2.5px_0_0_#0f172a] dark:shadow-[2.5px_2.5px_0_0_#334155] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all text-nowrap"
+                                title="Preview Album"
+                              >
+                                <Eye className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5" strokeWidth={3} /> Preview
+                              </button>
+                            </div>
+                          )}
+                          {/* Floating Action Button for Adding Class */}
+                          {canManage && !isCoverView && !addingClass && (
+                            <button
+                              type="button"
+                              onClick={() => setAddingClass(true)}
+                              className="fixed bottom-24 right-6 lg:bottom-10 lg:right-10 z-[60] flex items-center justify-center w-14 h-14 lg:w-16 lg:h-16 rounded-full bg-amber-400 dark:bg-amber-600 border-2 border-slate-900 dark:border-slate-700 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] active:scale-90 transition-all group"
+                              title="Tambah Kelas"
+                            >
+                              <Plus className="w-8 h-8 text-slate-900 dark:text-white transition-transform group-hover:rotate-90" strokeWidth={2.5} />
+                            </button>
+                          )}
+
+                          {/* Add Class Modal/Overlay (Responsive) */}
+                          {addingClass && (
+                            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                              <div
+                                className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+                                onClick={() => { setAddingClass(false); setNewClassName('') }}
+                              />
+                              <div className="relative w-full max-w-md bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-[32px] shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] overflow-hidden animate-in zoom-in-95 duration-200">
+                                <div className="p-6">
+                                  <div className="flex items-center justify-between mb-6">
+                                    <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Tambah Kelas Baru</h3>
                                     <button
-                                      onClick={(e) => {
-                                        e.stopPropagation()
-                                        handleDeleteBatchPhoto(currentClass.id)
-                                      }}
-                                      className="w-14 h-14 flex items-center justify-center bg-red-500 rounded-2xl text-white hover:bg-red-600 transition-all border-2 border-slate-900 dark:border-slate-700 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] active:shadow-none active:translate-x-0.5 active:translate-y-0.5"
-                                      title="Hapus Foto"
+                                      onClick={() => { setAddingClass(false); setNewClassName('') }}
+                                      className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
                                     >
-                                      <Trash2 className="w-7 h-7" strokeWidth={2.5} />
+                                      <X className="w-5 h-5 text-slate-500 dark:text-slate-400" />
                                     </button>
                                   </div>
-                                )}
-                              </div>
-                            ) : (
-                              canManage ? (
-                                  <button
-                                    onClick={() => {
-                                      setUploadingBatchPhotoClassId(currentClass.id)
-                                      batchPhotoInputRef.current?.click()
-                                    }}
-                                    className="w-full aspect-[3/4] lg:max-w-md lg:mx-auto flex flex-col items-center justify-center rounded-[48px] border-2 border-dashed border-slate-900 dark:border-slate-900 bg-slate-50/50 dark:bg-slate-900/10 hover:border-indigo-400 dark:hover:border-indigo-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-300 group/batch-add"
-                                  >
-                                    <div className="relative mb-8">
-                                      <div className="absolute inset-0 bg-indigo-500/15 blur-2xl rounded-full scale-150 opacity-0 group-hover/batch-add:opacity-100 transition-opacity duration-500" />
-                                      <div className="relative w-24 h-24 rounded-[32px] bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] flex items-center justify-center transform group-hover/batch-add:-rotate-6 transition-transform duration-500">
-                                        <ImageIcon className="w-12 h-12 text-indigo-500 dark:text-indigo-400" strokeWidth={2.5} />
-                                        <div className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-emerald-400 dark:bg-emerald-600 border-2 border-slate-900 dark:border-slate-700 flex items-center justify-center shadow-[4px_4px_0_0_#334155] group-hover/batch-add:scale-110 transition-transform">
-                                          <Plus className="w-5 h-5 text-slate-900 dark:text-white" strokeWidth={3} />
-                                        </div>
-                                      </div>
+
+                                  <div className="flex flex-col gap-6">
+                                    <div>
+                                      <label className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2 block">Nama Kelas</label>
+                                      <input
+                                        type="text"
+                                        value={newClassName}
+                                        onChange={(e) => setNewClassName(e.target.value)}
+                                        placeholder="Contoh: XII IPA 1"
+                                        className="w-full px-5 py-4 rounded-xl bg-slate-50 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 text-base font-black text-slate-900 dark:text-white placeholder:text-slate-300 dark:placeholder:text-slate-500 focus:outline-none focus:bg-white dark:focus:bg-slate-800 transition-all shadow-[4px_4px_0_0_#f1f5f9] dark:shadow-[4px_4px_0_0_#1e293b]"
+                                        autoFocus
+                                        onKeyDown={(e) => {
+                                          if (e.key === 'Enter') handleAddClass()
+                                          if (e.key === 'Escape') { setAddingClass(false); setNewClassName('') }
+                                        }}
+                                      />
                                     </div>
-                                    <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight text-center px-8 leading-tight">Upload Foto Angkatan</h3>
-                                    <p className="text-[10px] font-black text-slate-400 dark:text-slate-600 mt-4 uppercase tracking-widest text-center px-10 leading-relaxed">Pilih file gambar grup atau kelas (Maks. 10MB)</p>
-                                </button>
-                              ) : (
-                                <div className="w-full aspect-[3/4] lg:max-w-md lg:mx-auto flex flex-col items-center justify-center rounded-[48px] border-2 border-dashed border-slate-900 dark:border-slate-900 bg-slate-50/50 dark:bg-slate-900/10 transition-all duration-300 group/batch-empty">
-                                  <div className="relative mb-8">
-                                    <div className="absolute inset-0 bg-indigo-500/10 blur-2xl rounded-full scale-110 opacity-0 group-hover/batch-empty:opacity-100 transition-opacity duration-500" />
-                                    <div className="relative w-20 h-20 rounded-[28px] bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] flex items-center justify-center transform group-hover/batch-empty:-rotate-6 transition-transform duration-500">
-                                      <ImageIcon className="w-10 h-10 text-slate-300 dark:text-slate-600 group-hover/batch-empty:text-indigo-400 transition-colors" strokeWidth={1.5} />
+
+                                    <div className="flex gap-3">
+                                      <button
+                                        type="button"
+                                        onClick={() => { setAddingClass(false); setNewClassName('') }}
+                                        className="flex-1 py-4 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-xs font-black uppercase tracking-widest border-2 border-slate-900 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all shadow-[2px_2px_0_0_#e2e8f0] dark:shadow-[4px_4px_0_0_#1e293b]"
+                                      >
+                                        Batal
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={handleAddClass}
+                                        disabled={!newClassName.trim()}
+                                        className="flex-[2] py-4 rounded-2xl bg-emerald-400 dark:bg-emerald-600 text-slate-900 dark:text-white text-xs font-black uppercase tracking-widest border-2 border-slate-900 dark:border-slate-700 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all disabled:opacity-50"
+                                      >
+                                        Simpan Kelas
+                                      </button>
                                     </div>
                                   </div>
-                                  <span className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight text-center px-8 leading-tight">Foto Angkatan Belum Tersedia</span>
-                                  <p className="text-[10px] font-black text-slate-400 dark:text-slate-600 mt-4 uppercase tracking-widest text-center px-10 leading-relaxed">Admin akan mengunggah foto grup kelas segera</p>
                                 </div>
-                              )
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Class Info */}
+                          <div className="px-4">
+                            {/* Group Photo Section */}
+                            <div className="mb-14">
+                              <div className="flex items-center justify-between mb-6 gap-3">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-2 h-8 bg-indigo-500 dark:bg-indigo-600 rounded-full border-2 border-slate-900 dark:border-slate-700 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]"></div>
+                                  <h3 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-[0.2em]">Foto Angkatan</h3>
+                                </div>
+                              </div>
+                              <div className="relative">
+                                {currentClass.batch_photo_url ? (
+                                  <div
+                                    className="relative group aspect-[3/4] lg:max-w-md lg:mx-auto rounded-[40px] border-2 border-slate-900 dark:border-slate-700 overflow-hidden bg-slate-100 dark:bg-slate-800 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all duration-500"
+                                    onClick={() => setViewingBatchPhotoClass(currentClass)}
+                                  >
+                                    <img
+                                      src={currentClass.batch_photo_url}
+                                      alt={`Foto Angkatan ${currentClass.name}`}
+                                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                                    />
+                                    <div className="absolute inset-0 bg-slate-900/40 dark:bg-slate-950/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                      <div className="px-8 py-4 bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 rounded-2xl shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] flex items-center gap-3 active:scale-95 transition-all">
+                                        <Eye className="w-6 h-6 text-slate-900 dark:text-white" strokeWidth={3} />
+                                        <span className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-widest">Lihat Layar Penuh</span>
+                                      </div>
+                                    </div>
+                                    {canManage && (
+                                      <div className="absolute top-6 right-6 flex gap-3 opacity-100 lg:opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation()
+                                            handleDeleteBatchPhoto(currentClass.id)
+                                          }}
+                                          className="w-14 h-14 flex items-center justify-center bg-red-500 rounded-2xl text-white hover:bg-red-600 transition-all border-2 border-slate-900 dark:border-slate-700 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] active:shadow-none active:translate-x-0.5 active:translate-y-0.5"
+                                          title="Hapus Foto"
+                                        >
+                                          <Trash2 className="w-7 h-7" strokeWidth={2.5} />
+                                        </button>
+                                      </div>
+                                    )}
+                                  </div>
+                                ) : (
+                                  canManage ? (
+                                    <button
+                                      onClick={() => {
+                                        setUploadingBatchPhotoClassId(currentClass.id)
+                                        batchPhotoInputRef.current?.click()
+                                      }}
+                                      className="w-full aspect-[3/4] lg:max-w-md lg:mx-auto flex flex-col items-center justify-center rounded-[48px] border-2 border-dashed border-slate-900 dark:border-slate-900 bg-slate-50/50 dark:bg-slate-900/10 hover:border-indigo-400 dark:hover:border-indigo-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-300 group/batch-add"
+                                    >
+                                      <div className="relative mb-8">
+                                        <div className="absolute inset-0 bg-indigo-500/15 blur-2xl rounded-full scale-150 opacity-0 group-hover/batch-add:opacity-100 transition-opacity duration-500" />
+                                        <div className="relative w-24 h-24 rounded-[32px] bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] flex items-center justify-center transform group-hover/batch-add:-rotate-6 transition-transform duration-500">
+                                          <ImageIcon className="w-12 h-12 text-indigo-500 dark:text-indigo-400" strokeWidth={2.5} />
+                                          <div className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-emerald-400 dark:bg-emerald-600 border-2 border-slate-900 dark:border-slate-700 flex items-center justify-center shadow-[4px_4px_0_0_#334155] group-hover/batch-add:scale-110 transition-transform">
+                                            <Plus className="w-5 h-5 text-slate-900 dark:text-white" strokeWidth={3} />
+                                          </div>
+                                        </div>
+                                      </div>
+                                      <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight text-center px-8 leading-tight">Upload Foto Angkatan</h3>
+                                      <p className="text-[10px] font-black text-slate-400 dark:text-slate-600 mt-4 uppercase tracking-widest text-center px-10 leading-relaxed">Pilih file gambar grup atau kelas (Maks. 10MB)</p>
+                                    </button>
+                                  ) : (
+                                    <div className="w-full aspect-[3/4] lg:max-w-md lg:mx-auto flex flex-col items-center justify-center rounded-[48px] border-2 border-dashed border-slate-900 dark:border-slate-900 bg-slate-50/50 dark:bg-slate-900/10 transition-all duration-300 group/batch-empty">
+                                      <div className="relative mb-8">
+                                        <div className="absolute inset-0 bg-indigo-500/10 blur-2xl rounded-full scale-110 opacity-0 group-hover/batch-empty:opacity-100 transition-opacity duration-500" />
+                                        <div className="relative w-20 h-20 rounded-[28px] bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] flex items-center justify-center transform group-hover/batch-empty:-rotate-6 transition-transform duration-500">
+                                          <ImageIcon className="w-10 h-10 text-slate-300 dark:text-slate-600 group-hover/batch-empty:text-indigo-400 transition-colors" strokeWidth={1.5} />
+                                        </div>
+                                      </div>
+                                      <span className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight text-center px-8 leading-tight">Foto Angkatan Belum Tersedia</span>
+                                      <p className="text-[10px] font-black text-slate-400 dark:text-slate-600 mt-4 uppercase tracking-widest text-center px-10 leading-relaxed">Admin akan mengunggah foto grup kelas segera</p>
+                                    </div>
+                                  )
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Members Grid/List */}
+                            {/* Members Grid/List */}
+                            <div className="flex items-center gap-3 mb-8">
+                              <div className="w-2 h-8 bg-amber-400 dark:bg-amber-600 rounded-full border-2 border-slate-900 dark:border-slate-700 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]"></div>
+                              <h3 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-[0.2em]">{canManage ? 'Daftar Anggota' : 'Profil Anda'}</h3>
+                            </div>
+
+                            {classMembers.length === 0 ? (
+                              <div className="flex flex-col items-center justify-center py-16 sm:py-24 min-h-[45vh] w-full bg-slate-50/50 dark:bg-slate-900/10 rounded-[48px] border-2 border-dashed border-slate-900 dark:border-slate-900 transition-all duration-300 group/empty">
+                                <div className="relative mb-8">
+                                  <div className="absolute inset-0 bg-indigo-500/20 dark:bg-indigo-500/10 blur-2xl rounded-full scale-150 opacity-0 group-hover/empty:opacity-100 transition-opacity duration-500" />
+                                  <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-[28px] sm:rounded-[32px] bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] flex items-center justify-center transform group-hover/empty:-rotate-6 transition-transform duration-500">
+                                    <Users className="w-10 h-10 sm:w-12 sm:h-12 text-slate-300 dark:text-slate-600 group-hover/empty:text-indigo-400 dark:group-hover/empty:text-indigo-500 transition-colors" strokeWidth={1.5} />
+                                  </div>
+                                </div>
+                                <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-[0.1em] mb-2 text-center px-6">Belum Ada Anggota</h3>
+                                <p className="text-slate-400 dark:text-slate-600 text-[10px] sm:text-xs font-black uppercase tracking-widest text-center max-w-[280px] leading-relaxed px-6">
+                                  Pastikan teman-teman anda sudah bergabung ke kelas ini melalui link undangan album
+                                </p>
+                              </div>
+                            ) : classViewMode === 'list' ? (
+                              <div className="space-y-4">
+                                {classMembers.map((m, idx) => (
+                                  <div key={idx} className="flex items-center justify-between p-5 rounded-[24px] border-2 border-slate-900 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all">
+                                    <div className="flex-1 min-w-0">
+                                      <p className="text-base font-black text-slate-900 dark:text-white uppercase tracking-tight truncate">{m.student_name}{m.is_me ? ' (Anda)' : ''}</p>
+                                      {m.email && <p className="text-[11px] font-bold text-slate-400 dark:text-slate-500 truncate lowercase">{m.email}</p>}
+                                    </div>
+                                    <div className="flex gap-3 flex-shrink-0 ml-6">
+                                      <button
+                                        type="button"
+                                        onClick={() => openGallery(currentClass.id, m.student_name, currentClass.name)}
+                                        className="px-5 py-2.5 text-[11px] font-black uppercase tracking-widest rounded-xl border-2 border-slate-900 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-700 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all"
+                                      >
+                                        Lihat
+                                      </button>
+                                      {(canManage || (m.is_me && hasApprovedAccess)) && (
+                                        <button
+                                          type="button"
+                                          onClick={(e) => {
+                                            e.stopPropagation()
+                                            if (canManage && !m.is_me && onStartEditMember) {
+                                              setEditingProfileClassId(currentClass.id)
+                                              setEditingMemberUserId?.(m.user_id)
+                                              onStartEditMember(m, currentClass.id)
+                                            } else if (m.is_me && onStartEditMyProfile) {
+                                              setEditingProfileClassId(currentClass.id)
+                                              setEditingMemberUserId?.(null)
+                                              onStartEditMyProfile(currentClass.id)
+                                              if (fetchStudentPhotosForCard) {
+                                                fetchStudentPhotosForCard(currentClass.id, m.student_name)
+                                              }
+                                            }
+                                          }}
+                                          className="px-5 py-2.5 text-[11px] font-black uppercase tracking-widest rounded-xl border-2 border-slate-900 dark:border-slate-700 bg-indigo-100 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-700 hover:text-white shadow-[3px_3px_0_0_#4338ca] dark:shadow-[4px_4px_0_0_#1e293b] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all flex items-center gap-2"
+                                        >
+                                          <Edit3 className="w-4 h-4" strokeWidth={3} />
+                                          <span>Edit</span>
+                                        </button>
+                                      )}
+                                      {canManage && (
+                                        <button
+                                          type="button"
+                                          onClick={() => setDeleteMemberConfirm({ classId: currentClass.id, userId: m.is_me ? undefined : m.user_id, memberName: m.student_name })}
+                                          className="w-12 h-12 flex items-center justify-center rounded-xl bg-red-100 dark:bg-red-950/50 text-red-600 dark:text-red-400 border-2 border-red-600 dark:border-red-700 hover:bg-red-600 hover:text-white transition-all shadow-[3px_3px_0_0_#dc2626] dark:shadow-[4px_4px_0_0_#1e293b] active:shadow-none active:translate-x-0.5 active:translate-y-0.5"
+                                        >
+                                          <Trash2 className="w-5 h-5" strokeWidth={2.5} />
+                                        </button>
+                                      )}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <div className="grid gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 items-start">
+                                {classMembers.map((m) => (
+                                  <div key={m.user_id || m.student_name} className="min-h-0 w-full [contain:layout]">
+                                    <MemberCard
+                                      member={m as any}
+                                      firstPhoto={m.photos?.[0] || firstPhotoByStudent?.[m.student_name]}
+                                      classId={currentClass.id}
+                                      canManage={canManage}
+                                      hasApprovedAccess={hasApprovedAccess}
+                                      isFlipped={editingMemberUserId === m.user_id}
+                                      editPhotos={editingMemberUserId === m.user_id ? studentPhotosInCard : undefined}
+                                      onStartEdit={(member) => {
+                                        // Flip saja dulu; isi form & fetch foto nanti agar flip langsung terlihat
+                                        setEditingProfileClassId(currentClass.id)
+                                        setEditingMemberUserId?.(member.user_id)
+                                        requestAnimationFrame(() => {
+                                          setEditProfileName(member.student_name || '')
+                                          setEditProfileEmail(member.email || '')
+                                          setEditProfileTtl(member.date_of_birth || '')
+                                          setEditProfileInstagram(member.instagram || '')
+                                          setEditProfilePesan(member.message || '')
+                                          setEditProfileVideoUrl(member.video_url || '')
+                                          if (fetchStudentPhotosForCard) {
+                                            fetchStudentPhotosForCard(currentClass.id, member.student_name)
+                                          }
+                                        })
+                                      }}
+                                      onCancelEdit={() => {
+                                        setEditingProfileClassId(null)
+                                        setEditingMemberUserId?.(null)
+                                      }}
+                                      onSave={(data) => {
+                                        setEditProfileName(data.student_name)
+                                        setEditProfileEmail(data.email)
+                                        setEditProfileTtl(data.date_of_birth)
+                                        setEditProfileInstagram(data.instagram)
+                                        setEditProfilePesan(data.message)
+                                        setEditProfileVideoUrl(data.video_url)
+
+                                        setEditingMemberUserId?.(null)
+                                        setEditingProfileClassId(null)
+
+                                        const { pendingPhotos, pendingVideo, ...textData } = data
+                                        const studentName = data.student_name || m.student_name
+
+                                          ; (async () => {
+                                            try {
+                                              await handleSaveProfile?.(currentClass.id, false, m.user_id, textData, true)
+
+                                              if (pendingPhotos && pendingPhotos.length > 0) {
+                                                for (const file of pendingPhotos) {
+                                                  if (typeof onUploadPhoto === 'function') {
+                                                    await onUploadPhoto(currentClass.id, studentName, currentClass.name, file)
+                                                  }
+                                                }
+                                              }
+
+                                              if (pendingVideo && typeof onUploadVideo === 'function') {
+                                                await onUploadVideo(currentClass.id, studentName, currentClass.name, pendingVideo)
+                                              }
+
+                                              if (fetchMembersForClass) {
+                                                await fetchMembersForClass(currentClass.id)
+                                              }
+                                            } catch (err) {
+                                              console.error('[MemberCard onSave] Error:', err)
+                                            }
+                                          })()
+                                      }}
+                                      onDeleteClick={() => setDeleteMemberConfirm({ classId: currentClass.id, userId: m.is_me ? undefined : m.user_id, memberName: m.student_name })}
+                                      onDeletePhoto={(pid, cid, sname) => {
+                                        if (onDeletePhoto) onDeletePhoto(pid, cid || currentClass.id, sname || m.student_name)
+                                      }}
+                                      onPlayVideo={onPlayVideo}
+                                      onOpenGallery={(cid, sname) => openGallery(cid || currentClass.id, sname || m.student_name, currentClass.name)}
+                                      saving={savingProfile}
+                                    />
+                                  </div>
+                                ))}
+                              </div>
                             )}
                           </div>
                         </div>
-
-                        {/* Members Grid/List */}
-                        {/* Members Grid/List */}
-                        <div className="flex items-center gap-3 mb-8">
-                          <div className="w-2 h-8 bg-amber-400 dark:bg-amber-600 rounded-full border-2 border-slate-900 dark:border-slate-700 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]"></div>
-                          <h3 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-[0.2em]">{canManage ? 'Daftar Anggota' : 'Profil Anda'}</h3>
-                        </div>
-
-                        {classMembers.length === 0 ? (
-                          <div className="flex flex-col items-center justify-center py-16 sm:py-24 min-h-[45vh] w-full bg-slate-50/50 dark:bg-slate-900/10 rounded-[48px] border-2 border-dashed border-slate-900 dark:border-slate-900 transition-all duration-300 group/empty">
-                            <div className="relative mb-8">
-                              <div className="absolute inset-0 bg-indigo-500/20 dark:bg-indigo-500/10 blur-2xl rounded-full scale-150 opacity-0 group-hover/empty:opacity-100 transition-opacity duration-500" />
-                              <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-[28px] sm:rounded-[32px] bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] flex items-center justify-center transform group-hover/empty:-rotate-6 transition-transform duration-500">
-                                <Users className="w-10 h-10 sm:w-12 sm:h-12 text-slate-300 dark:text-slate-600 group-hover/empty:text-indigo-400 dark:group-hover/empty:text-indigo-500 transition-colors" strokeWidth={1.5} />
-                              </div>
-                            </div>
-                            <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-[0.1em] mb-2 text-center px-6">Belum Ada Anggota</h3>
-                            <p className="text-slate-400 dark:text-slate-600 text-[10px] sm:text-xs font-black uppercase tracking-widest text-center max-w-[280px] leading-relaxed px-6">
-                              Pastikan teman-teman anda sudah bergabung ke kelas ini melalui link undangan album
-                            </p>
-                          </div>
-                        ) : classViewMode === 'list' ? (
-                          <div className="space-y-4">
-                            {classMembers.map((m, idx) => (
-                              <div key={idx} className="flex items-center justify-between p-5 rounded-[24px] border-2 border-slate-900 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all">
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-base font-black text-slate-900 dark:text-white uppercase tracking-tight truncate">{m.student_name}{m.is_me ? ' (Anda)' : ''}</p>
-                                  {m.email && <p className="text-[11px] font-bold text-slate-400 dark:text-slate-500 truncate lowercase">{m.email}</p>}
-                                </div>
-                                <div className="flex gap-3 flex-shrink-0 ml-6">
-                                  <button
-                                    type="button"
-                                    onClick={() => openGallery(currentClass.id, m.student_name, currentClass.name)}
-                                    className="px-5 py-2.5 text-[11px] font-black uppercase tracking-widest rounded-xl border-2 border-slate-900 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-700 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all"
-                                  >
-                                    Lihat
-                                  </button>
-                                  {(canManage || (m.is_me && hasApprovedAccess)) && (
-                                    <button
-                                      type="button"
-                                      onClick={(e) => {
-                                        e.stopPropagation()
-                                        if (canManage && !m.is_me && onStartEditMember) {
-                                          setEditingProfileClassId(currentClass.id)
-                                          setEditingMemberUserId?.(m.user_id)
-                                          onStartEditMember(m, currentClass.id)
-                                        } else if (m.is_me && onStartEditMyProfile) {
-                                          setEditingProfileClassId(currentClass.id)
-                                          setEditingMemberUserId?.(null)
-                                          onStartEditMyProfile(currentClass.id)
-                                          if (fetchStudentPhotosForCard) {
-                                            fetchStudentPhotosForCard(currentClass.id, m.student_name)
-                                          }
-                                        }
-                                      }}
-                                      className="px-5 py-2.5 text-[11px] font-black uppercase tracking-widest rounded-xl border-2 border-slate-900 dark:border-slate-700 bg-indigo-100 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-700 hover:text-white shadow-[3px_3px_0_0_#4338ca] dark:shadow-[4px_4px_0_0_#1e293b] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all flex items-center gap-2"
-                                    >
-                                      <Edit3 className="w-4 h-4" strokeWidth={3} />
-                                      <span>Edit</span>
-                                    </button>
-                                  )}
-                                  {canManage && (
-                                    <button
-                                      type="button"
-                                      onClick={() => setDeleteMemberConfirm({ classId: currentClass.id, userId: m.is_me ? undefined : m.user_id, memberName: m.student_name })}
-                                      className="w-12 h-12 flex items-center justify-center rounded-xl bg-red-100 dark:bg-red-950/50 text-red-600 dark:text-red-400 border-2 border-red-600 dark:border-red-700 hover:bg-red-600 hover:text-white transition-all shadow-[3px_3px_0_0_#dc2626] dark:shadow-[4px_4px_0_0_#1e293b] active:shadow-none active:translate-x-0.5 active:translate-y-0.5"
-                                    >
-                                      <Trash2 className="w-5 h-5" strokeWidth={2.5} />
-                                    </button>
-                                  )}
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <div className="grid gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 items-start">
-                            {classMembers.map((m) => (
-                              <div key={m.user_id || m.student_name} className="min-h-0 w-full [contain:layout]">
-                                <MemberCard
-                                member={m as any}
-                                firstPhoto={m.photos?.[0] || firstPhotoByStudent?.[m.student_name]}
-                                classId={currentClass.id}
-                                canManage={canManage}
-                                hasApprovedAccess={hasApprovedAccess}
-                                isFlipped={editingMemberUserId === m.user_id}
-                                editPhotos={editingMemberUserId === m.user_id ? studentPhotosInCard : undefined}
-                                onStartEdit={(member) => {
-                                  // Flip saja dulu; isi form & fetch foto nanti agar flip langsung terlihat
-                                  setEditingProfileClassId(currentClass.id)
-                                  setEditingMemberUserId?.(member.user_id)
-                                  requestAnimationFrame(() => {
-                                    setEditProfileName(member.student_name || '')
-                                    setEditProfileEmail(member.email || '')
-                                    setEditProfileTtl(member.date_of_birth || '')
-                                    setEditProfileInstagram(member.instagram || '')
-                                    setEditProfilePesan(member.message || '')
-                                    setEditProfileVideoUrl(member.video_url || '')
-                                    if (fetchStudentPhotosForCard) {
-                                      fetchStudentPhotosForCard(currentClass.id, member.student_name)
-                                    }
-                                  })
-                                }}
-                                onCancelEdit={() => {
-                                  setEditingProfileClassId(null)
-                                  setEditingMemberUserId?.(null)
-                                }}
-                                onSave={(data) => {
-                                  setEditProfileName(data.student_name)
-                                  setEditProfileEmail(data.email)
-                                  setEditProfileTtl(data.date_of_birth)
-                                  setEditProfileInstagram(data.instagram)
-                                  setEditProfilePesan(data.message)
-                                  setEditProfileVideoUrl(data.video_url)
-
-                                  setEditingMemberUserId?.(null)
-                                  setEditingProfileClassId(null)
-
-                                  const { pendingPhotos, pendingVideo, ...textData } = data
-                                  const studentName = data.student_name || m.student_name
-
-                                    ; (async () => {
-                                      try {
-                                        await handleSaveProfile?.(currentClass.id, false, m.user_id, textData, true)
-
-                                        if (pendingPhotos && pendingPhotos.length > 0) {
-                                          for (const file of pendingPhotos) {
-                                            if (typeof onUploadPhoto === 'function') {
-                                              await onUploadPhoto(currentClass.id, studentName, currentClass.name, file)
-                                            }
-                                          }
-                                        }
-
-                                        if (pendingVideo && typeof onUploadVideo === 'function') {
-                                          await onUploadVideo(currentClass.id, studentName, currentClass.name, pendingVideo)
-                                        }
-
-                                        if (fetchMembersForClass) {
-                                          await fetchMembersForClass(currentClass.id)
-                                        }
-                                      } catch (err) {
-                                        console.error('[MemberCard onSave] Error:', err)
-                                      }
-                                    })()
-                                }}
-                                onDeleteClick={() => setDeleteMemberConfirm({ classId: currentClass.id, userId: m.is_me ? undefined : m.user_id, memberName: m.student_name })}
-                                onDeletePhoto={(pid, cid, sname) => {
-                                  if (onDeletePhoto) onDeletePhoto(pid, cid || currentClass.id, sname || m.student_name)
-                                }}
-                                onPlayVideo={onPlayVideo}
-                                onOpenGallery={(cid, sname) => openGallery(cid || currentClass.id, sname || m.student_name, currentClass.name)}
-                                saving={savingProfile}
-                              />
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )
-                })()}
+                      )
+                    })()}
                 </div>
               )}
               {
