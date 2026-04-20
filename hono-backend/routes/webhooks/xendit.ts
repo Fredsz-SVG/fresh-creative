@@ -1,6 +1,7 @@
 import { Hono } from 'hono'
 import { getD1 } from '../../lib/edge-env'
 import { getCreditsFromSupabase, mirrorCreditsToD1, setCreditsInSupabase } from '../../lib/credits'
+import { publishRealtimeEventFromContext } from '../../lib/realtime'
 
 const webhooksXendit = new Hono()
 
@@ -70,6 +71,18 @@ webhooksXendit.post('/', async (c) => {
           .prepare(`UPDATE album_class_access SET payment_status = 'unpaid', payment_transaction_id = NULL, updated_at = datetime('now') WHERE id = ? AND payment_status = 'pending'`)
           .bind(tx.access_id)
           .run()
+
+        void publishRealtimeEventFromContext(c, {
+          type: 'album.classAccess.updated',
+          channel: 'global',
+          payload: {
+            path: `/api/albums/${tx.album_id}/join-requests`,
+            albumId: tx.album_id,
+            accessId: tx.access_id,
+            paymentStatus: 'unpaid',
+          },
+          ts: new Date().toISOString(),
+        })
       }
     }
 
@@ -198,6 +211,18 @@ webhooksXendit.post('/', async (c) => {
         )
         .bind(txRow.access_id)
         .run()
+
+      void publishRealtimeEventFromContext(c, {
+        type: 'album.classAccess.updated',
+        channel: 'global',
+        payload: {
+          path: `/api/albums/${txRow.album_id}/join-requests`,
+          albumId: txRow.album_id,
+          accessId: txRow.access_id,
+          paymentStatus: 'paid',
+        },
+        ts: new Date().toISOString(),
+      })
     }
 
     return c.json({

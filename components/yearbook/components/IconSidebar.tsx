@@ -22,7 +22,10 @@ interface IconSidebarProps {
 }
 
 const linkClass = (active: boolean) =>
-  `flex-shrink-0 flex flex-col items-center justify-center gap-1.5 py-4 border-b-2 border-slate-900 dark:border-slate-700 text-[10px] font-black uppercase tracking-tight transition-all w-full ${active ? 'bg-slate-900 dark:bg-slate-700 text-white' : 'bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-700'}`
+  `flex-shrink-0 flex flex-col items-center justify-center gap-1.5 py-4 border-b-2 border-slate-900 dark:border-slate-700 text-[10px] font-black uppercase tracking-tight transition-all w-full ${active
+    ? 'bg-amber-400 dark:bg-amber-600 text-slate-900 dark:text-white'
+    : 'bg-white dark:bg-slate-800 text-slate-400 dark:text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-500/10'
+  }`
 
 function IconSidebarInner({
   pathname = null,

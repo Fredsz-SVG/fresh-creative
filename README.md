@@ -4,7 +4,7 @@ Phygital yearbook platform dengan AI Virtual Try-On untuk sekolah di Indonesia.
 
 ## Tech Stack
 
-- **Frontend**: Next.js 14 (App Router), React 18, TypeScript
+- **Frontend**: Next.js 16 (App Router), React 19, TypeScript
 - **Backend**: Supabase (PostgreSQL + Auth + Storage)
 - **AI Processing**: Replicate API
 - **Payment**: Xendit (Indonesia)

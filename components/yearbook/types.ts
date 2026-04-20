@@ -60,6 +60,7 @@ export type ClassMember = {
   email: string | null
   date_of_birth: string | null
   instagram: string | null
+  tiktok?: string | null
   message: string | null
   video_url: string | null
   photos?: string[]

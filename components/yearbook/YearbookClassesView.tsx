@@ -58,6 +58,8 @@ export type YearbookClassesViewProps = {
   setEditProfileTtl: (v: string) => void
   editProfileInstagram: string
   setEditProfileInstagram: (v: string) => void
+  editProfileTiktok: string
+  setEditProfileTiktok: (v: string) => void
   editProfilePesan: string
   setEditProfilePesan: (v: string) => void
   editProfileVideoUrl: string

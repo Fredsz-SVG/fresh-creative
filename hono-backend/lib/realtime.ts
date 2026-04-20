@@ -10,6 +10,7 @@ export type RealtimeEventType =
   | 'user.suspended'
   | 'album.joinRequest.created'
   | 'album.joinRequest.updated'
+  | 'album.classAccess.updated'
   | (string & {})
 
 export type RealtimeEvent = {

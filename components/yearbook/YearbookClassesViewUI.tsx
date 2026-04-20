@@ -87,6 +87,8 @@ export default function YearbookClassesViewUI(props: any) {
     setEditProfileTtl,
     editProfileInstagram = '',
     setEditProfileInstagram,
+    editProfileTiktok = '',
+    setEditProfileTiktok,
     editProfilePesan = '',
     setEditProfilePesan,
     editProfileVideoUrl = '',
@@ -433,8 +435,9 @@ export default function YearbookClassesViewUI(props: any) {
 
       const isMatch = eventAlbumId === album.id || path.includes(`/api/albums/${album.id}`)
       const isJoinEvent = detail.type.startsWith('album.joinRequest.') || path.includes('/join-requests')
+      const isClassAccessEvent = detail.type === 'album.classAccess.updated' && eventAlbumId === album.id
 
-      if (!isMatch && !isJoinEvent) return
+      if (!isMatch && !isJoinEvent && !isClassAccessEvent) return
 
       // Refresh data yang di-manage lokal oleh komponen ini
       void fetchJoinStats()
@@ -873,21 +876,21 @@ export default function YearbookClassesViewUI(props: any) {
                   <div className="grid grid-cols-2 gap-1.5">
                     <button
                       onClick={() => onSectionChange?.('cover')}
-                      className={`flex items-center gap-2 p-2 rounded-xl border-2 transition-all ${isCoverView ? 'bg-white dark:bg-slate-800 border-slate-900 dark:border-slate-700 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] -translate-y-0.5' : 'bg-transparent border-transparent text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-white'}`}
+                      className={`flex items-center gap-2 p-2 rounded-xl border-2 transition-all ${isCoverView ? 'bg-amber-400 dark:bg-amber-600 border-slate-900 dark:border-slate-700 text-slate-900 dark:text-white shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] -translate-y-0.5' : 'bg-transparent border-transparent text-slate-400 dark:text-slate-500 hover:bg-white dark:hover:bg-slate-800 hover:border-slate-900 dark:hover:border-slate-700 hover:text-slate-900 dark:hover:text-white'}`}
                     >
                       <Book className={`w-3.5 h-3.5 ${isCoverView ? 'text-indigo-500 dark:text-indigo-400' : 'text-slate-400 dark:text-slate-500'}`} />
                       <span className="text-[9px] font-black uppercase tracking-tight">Cover</span>
                     </button>
                     <button
                       onClick={() => onSectionChange?.('sambutan')}
-                      className={`flex items-center gap-2 p-2 rounded-xl border-2 transition-all ${sidebarMode === 'sambutan' ? 'bg-white dark:bg-slate-800 border-slate-900 dark:border-slate-700 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] -translate-y-0.5' : 'bg-transparent border-transparent text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-white'}`}
+                      className={`flex items-center gap-2 p-2 rounded-xl border-2 transition-all ${sidebarMode === 'sambutan' ? 'bg-amber-400 dark:bg-amber-600 border-slate-900 dark:border-slate-700 text-slate-900 dark:text-white shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] -translate-y-0.5' : 'bg-transparent border-transparent text-slate-400 dark:text-slate-500 hover:bg-white dark:hover:bg-slate-800 hover:border-slate-900 dark:hover:border-slate-700 hover:text-slate-900 dark:hover:text-white'}`}
                     >
                       <MessageSquare className={`w-3.5 h-3.5 ${sidebarMode === 'sambutan' ? 'text-violet-500 dark:text-violet-400' : 'text-slate-400 dark:text-slate-500'}`} />
                       <span className="text-[9px] font-black uppercase tracking-tight">Sambutan</span>
                     </button>
                     <button
                       onClick={() => onSectionChange?.('classes')}
-                      className={`flex items-center gap-2 p-2 rounded-xl border-2 transition-all col-span-2 ${sidebarMode === 'classes' && !isCoverView ? 'bg-white dark:bg-slate-800 border-slate-900 dark:border-slate-700 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] -translate-y-0.5' : 'bg-transparent border-transparent text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-white'}`}
+                      className={`flex items-center gap-2 p-2 rounded-xl border-2 transition-all col-span-2 ${sidebarMode === 'classes' && !isCoverView ? 'bg-amber-400 dark:bg-amber-600 border-slate-900 dark:border-slate-700 text-slate-900 dark:text-white shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] -translate-y-0.5' : 'bg-transparent border-transparent text-slate-400 dark:text-slate-500 hover:bg-white dark:hover:bg-slate-800 hover:border-slate-900 dark:hover:border-slate-700 hover:text-slate-900 dark:hover:text-white'}`}
                     >
                       <Users className={`w-3.5 h-3.5 ${sidebarMode === 'classes' && !isCoverView ? 'text-emerald-500 dark:text-emerald-400' : 'text-slate-400 dark:text-slate-500'}`} />
                       <span className="text-[9px] font-black uppercase tracking-tight">Kelas</span>
@@ -1036,7 +1039,7 @@ export default function YearbookClassesViewUI(props: any) {
                             }}
                             className={`flex items-center justify-between w-full px-4 py-3.5 rounded-2xl border-2 transition-all duration-300 font-black uppercase text-[10px] tracking-widest ${isActive
                               ? 'bg-amber-400 dark:bg-amber-600 border-slate-900 dark:border-slate-700 text-slate-900 dark:text-white shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] -translate-x-1 -translate-y-1'
-                              : 'bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700 text-slate-400 dark:text-slate-500 opacity-60 hover:opacity-100 hover:border-slate-900 dark:hover:border-slate-600'
+                              : 'bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700 text-slate-400 dark:text-slate-500 hover:border-indigo-400 dark:hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 hover:text-indigo-600 dark:hover:text-indigo-400'
                               }`}
                           >
                             <span className="truncate">{c.name}</span>
@@ -1450,6 +1453,15 @@ export default function YearbookClassesViewUI(props: any) {
                   currentUserId={currentUserId}
                   onUpdateRole={handleUpdateRoleWrapper}
                   onRemoveMember={handleRemoveMemberWrapper}
+                  onRefresh={async () => {
+                    if (canManage) {
+                      await Promise.all([
+                        fetchJoinRequests('approved'),
+                        fetchMembers(),
+                        fetchJoinStats(),
+                      ])
+                    }
+                  }}
                 />
               </div>
 
@@ -1760,12 +1772,12 @@ export default function YearbookClassesViewUI(props: any) {
                                       >
                                         Lihat
                                       </button>
-                                      {(canManage || (m.is_me && hasApprovedAccess)) && (
+                                      {(isGlobalAdmin || (m.is_me && hasApprovedAccess)) && (
                                         <button
                                           type="button"
                                           onClick={(e) => {
                                             e.stopPropagation()
-                                            if (canManage && !m.is_me && onStartEditMember) {
+                                            if (isGlobalAdmin && !m.is_me && onStartEditMember) {
                                               setEditingProfileClassId(currentClass.id)
                                               setEditingMemberUserId?.(m.user_id)
                                               onStartEditMember(m, currentClass.id)
@@ -1784,7 +1796,7 @@ export default function YearbookClassesViewUI(props: any) {
                                           <span>Edit</span>
                                         </button>
                                       )}
-                                      {canManage && (
+                                      {isGlobalAdmin && (
                                         <button
                                           type="button"
                                           onClick={() => setDeleteMemberConfirm({ classId: currentClass.id, userId: m.is_me ? undefined : m.user_id, memberName: m.student_name })}
@@ -1806,6 +1818,7 @@ export default function YearbookClassesViewUI(props: any) {
                                       firstPhoto={m.photos?.[0] || firstPhotoByStudent?.[m.student_name]}
                                       classId={currentClass.id}
                                       canManage={canManage}
+                                      isGlobalAdmin={isGlobalAdmin}
                                       hasApprovedAccess={hasApprovedAccess}
                                       isFlipped={editingMemberUserId === m.user_id}
                                       editPhotos={editingMemberUserId === m.user_id ? studentPhotosInCard : undefined}

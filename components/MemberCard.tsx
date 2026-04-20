@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import { Edit3, Trash2, ImagePlus, Video, Play, X, ChevronLeft, ChevronRight, Mail, Calendar, Instagram, Quote } from 'lucide-react'
+import { Edit3, Trash2, ImagePlus, Video, Play, X, ChevronLeft, ChevronRight, Mail, Calendar, Instagram, Quote, Plus } from 'lucide-react'
 import FastImage from '@/components/ui/FastImage'
 
 /** Strip surrounding quote characters (straight & curly) so the UI can add its own consistently */
@@ -27,6 +27,7 @@ type MemberCardProps = {
   firstPhoto?: string | null
   classId?: string
   canManage?: boolean
+  isGlobalAdmin?: boolean
   hasApprovedAccess?: boolean
   isFlipped?: boolean
   onStartEdit?: (m: Member) => void
@@ -36,6 +37,7 @@ type MemberCardProps = {
     email: string
     date_of_birth: string
     instagram: string
+    tiktok: string
     message: string
     video_url: string
     pendingPhotos?: File[]
@@ -54,6 +56,7 @@ export default function MemberCard({
   firstPhoto,
   classId,
   canManage,
+  isGlobalAdmin = false,
   hasApprovedAccess,
   isFlipped = false,
   onStartEdit,
@@ -93,8 +96,11 @@ export default function MemberCard({
   const [editName, setEditName] = useState(member.student_name || '')
   const [editTtl, setEditTtl] = useState(member.date_of_birth || '')
   const [editInstagram, setEditInstagram] = useState(member.instagram || '')
+  const [editEmail, setEditEmail] = useState(member.email || '')
+  const [editTiktok, setEditTiktok] = useState('')
   const [editMessage, setEditMessage] = useState(member.message || '')
   const [editVideoUrl, setEditVideoUrl] = useState(member.video_url || '')
+  const [showSocialFields, setShowSocialFields] = useState(false)
 
   // Pending (staged) files - not uploaded until Save
   const [pendingPhotos, setPendingPhotos] = useState<{ file: File; previewUrl: string }[]>([])
@@ -143,9 +149,10 @@ export default function MemberCard({
   const handleSave = () => {
     onSave?.({
       student_name: editName,
-      email: '',
+      email: editEmail,
       date_of_birth: editTtl,
       instagram: editInstagram,
+      tiktok: editTiktok,
       message: editMessage,
       video_url: editVideoUrl,
       pendingPhotos: pendingPhotos.map(p => p.file),
@@ -363,7 +370,7 @@ export default function MemberCard({
             {/* Action Buttons (Bottom) */}
             <div className="px-3 pb-3 mt-auto bg-white dark:bg-slate-900 flex-shrink-0">
               <div className="flex gap-2.5">
-                {(canManage || member.is_me || hasApprovedAccess) && (
+                {(isGlobalAdmin || member.is_me) && (
                   <button
                     type="button"
                     onClick={(e) => { e.stopPropagation(); onStartEdit?.(member) }}
@@ -372,7 +379,7 @@ export default function MemberCard({
                     <Edit3 className="w-3.5 h-3.5" /> Edit
                   </button>
                 )}
-                {canManage && (
+                {isGlobalAdmin && (
                   <button
                     type="button"
                     onClick={() => onDeleteClick?.()}
@@ -421,14 +428,49 @@ export default function MemberCard({
 
               <div className="grid grid-cols-2 gap-2.5">
                 <div className="col-span-2">
-                  <label className="text-[10px] font-black text-slate-900 dark:text-white uppercase tracking-widest mb-1 block">Instagram</label>
-                  <input
-                    type="text"
-                    value={editInstagram || ''}
-                    onChange={(e) => setEditInstagram(e.target.value)}
-                    placeholder="@ig"
-                    className="w-full px-3 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-bold placeholder:text-slate-400 dark:placeholder:text-slate-500"
-                  />
+                  <label className="text-[10px] font-black text-slate-900 dark:text-white uppercase tracking-widest mb-1 block">Social Links</label>
+                  {!showSocialFields ? (
+                    <button
+                      type="button"
+                      onClick={() => setShowSocialFields(true)}
+                      className="w-full px-3 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-600 text-slate-400 dark:text-slate-500 font-bold flex items-center justify-center gap-2 hover:border-indigo-500 hover:text-indigo-500 transition-all"
+                    >
+                      <Plus className="w-4 h-4" /> Add Social Links
+                    </button>
+                  ) : (
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Instagram className="w-4 h-4 text-pink-500 flex-shrink-0" strokeWidth={2.5} />
+                        <input
+                          type="text"
+                          value={editInstagram || ''}
+                          onChange={(e) => setEditInstagram(e.target.value)}
+                          placeholder="@username"
+                          className="flex-1 px-3 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-bold placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                        />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Mail className="w-4 h-4 text-blue-500 flex-shrink-0" strokeWidth={2.5} />
+                        <input
+                          type="text"
+                          value={editEmail || ''}
+                          onChange={(e) => setEditEmail(e.target.value)}
+                          placeholder="email@example.com"
+                          className="flex-1 px-3 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-bold placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                        />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="w-5 h-5 flex-shrink-0 flex items-center justify-center text-[10px] font-black text-black dark:text-white">TikTok</span>
+                        <input
+                          type="text"
+                          value={editTiktok || ''}
+                          onChange={(e) => setEditTiktok(e.target.value)}
+                          placeholder="@username"
+                          className="flex-1 px-3 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-bold placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -584,8 +626,49 @@ export default function MemberCard({
               </div>
               <div className="grid grid-cols-2 gap-2.5">
                 <div className="col-span-2">
-                  <label className="text-[10px] font-black text-slate-900 dark:text-white uppercase tracking-widest mb-1 block">Instagram</label>
-                  <input type="text" value={editInstagram || ''} onChange={(e) => setEditInstagram(e.target.value)} placeholder="@ig" className="w-full px-3 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-bold placeholder:text-slate-400 dark:placeholder:text-slate-500" />
+                  <label className="text-[10px] font-black text-slate-900 dark:text-white uppercase tracking-widest mb-1 block">Social Links</label>
+                  {!showSocialFields ? (
+                    <button
+                      type="button"
+                      onClick={() => setShowSocialFields(true)}
+                      className="w-full px-3 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-600 text-slate-400 dark:text-slate-500 font-bold flex items-center justify-center gap-2 hover:border-indigo-500 hover:text-indigo-500 transition-all"
+                    >
+                      <Plus className="w-4 h-4" /> Add Social Links
+                    </button>
+                  ) : (
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Instagram className="w-4 h-4 text-pink-500 flex-shrink-0" strokeWidth={2.5} />
+                        <input
+                          type="text"
+                          value={editInstagram || ''}
+                          onChange={(e) => setEditInstagram(e.target.value)}
+                          placeholder="@username"
+                          className="flex-1 px-3 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-bold placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                        />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Mail className="w-4 h-4 text-blue-500 flex-shrink-0" strokeWidth={2.5} />
+                        <input
+                          type="text"
+                          value={editEmail || ''}
+                          onChange={(e) => setEditEmail(e.target.value)}
+                          placeholder="email@example.com"
+                          className="flex-1 px-3 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-bold placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                        />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="w-5 h-5 flex-shrink-0 flex items-center justify-center text-[10px] font-black text-black dark:text-white">TikTok</span>
+                        <input
+                          type="text"
+                          value={editTiktok || ''}
+                          onChange={(e) => setEditTiktok(e.target.value)}
+                          placeholder="@username"
+                          className="flex-1 px-3 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-bold placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
               <div>

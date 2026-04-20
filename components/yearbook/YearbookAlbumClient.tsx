@@ -117,6 +117,8 @@ export default function YearbookAlbumClient({
     setEditProfileTtl,
     editProfileInstagram,
     setEditProfileInstagram,
+    editProfileTiktok,
+    setEditProfileTiktok,
     editProfilePesan,
     setEditProfilePesan,
     editProfileVideoUrl,
@@ -1056,6 +1058,7 @@ export default function YearbookAlbumClient({
       email: overrideData.email,
       date_of_birth: overrideData.date_of_birth,
       instagram: overrideData.instagram,
+      tiktok: overrideData.tiktok,
       message: overrideData.message,
       video_url: overrideData.video_url
     } : {
@@ -1063,6 +1066,7 @@ export default function YearbookAlbumClient({
       email: editProfileEmail,
       date_of_birth: editProfileTtl,
       instagram: editProfileInstagram,
+      tiktok: editProfileTiktok,
       message: editProfilePesan,
       video_url: editProfileVideoUrl
     }
@@ -1083,6 +1087,7 @@ export default function YearbookAlbumClient({
           email: dataToSave.email?.trim() || null,
           date_of_birth: dataToSave.date_of_birth?.trim() || null,
           instagram: dataToSave.instagram?.trim() || null,
+          tiktok: dataToSave.tiktok?.trim() || null,
           message: dataToSave.message?.trim() || null,
           video_url: dataToSave.video_url?.trim() || null,
         }),
@@ -1102,6 +1107,7 @@ export default function YearbookAlbumClient({
             email: d.email ?? null,
             date_of_birth: d.date_of_birth ?? null,
             instagram: d.instagram ?? null,
+            tiktok: (d as any).tiktok ?? null,
             message: d.message ?? null,
             video_url: d.video_url ?? null
           } : null,
@@ -1120,6 +1126,7 @@ export default function YearbookAlbumClient({
               email: d.email ?? null,
               date_of_birth: d.date_of_birth ?? null,
               instagram: d.instagram ?? null,
+              tiktok: (d as any).tiktok ?? null,
               message: d.message ?? null,
               video_url: d.video_url ?? m.video_url,
             } : m
@@ -1148,6 +1155,7 @@ export default function YearbookAlbumClient({
     setEditProfileEmail(member.email || '')
     setEditProfileTtl(member.date_of_birth || '')
     setEditProfileInstagram(member.instagram || '')
+    setEditProfileTiktok((member as any).tiktok || '')
     setEditProfilePesan(member.message || '')
     setEditProfileVideoUrl(member.video_url || '')
 
@@ -1165,6 +1173,7 @@ export default function YearbookAlbumClient({
       setEditProfileEmail(access.email || '')
       setEditProfileTtl(access.date_of_birth || '')
       setEditProfileInstagram(access.instagram || '')
+      setEditProfileTiktok((access as any).tiktok || '')
       setEditProfilePesan(access.message || '')
       setEditProfileVideoUrl(access.video_url || '')
     }
@@ -1789,6 +1798,8 @@ export default function YearbookAlbumClient({
             setEditProfileTtl={setEditProfileTtl}
             editProfileInstagram={editProfileInstagram}
             setEditProfileInstagram={setEditProfileInstagram}
+            editProfileTiktok={editProfileTiktok}
+            setEditProfileTiktok={setEditProfileTiktok}
             editProfilePesan={editProfilePesan}
             setEditProfilePesan={setEditProfilePesan}
             editProfileVideoUrl={editProfileVideoUrl}

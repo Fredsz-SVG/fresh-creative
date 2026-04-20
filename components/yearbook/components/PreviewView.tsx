@@ -10,6 +10,12 @@ import {
     PanInfo,
 } from 'framer-motion'
 import { Book, BookOpen, MessageSquare, Users, Play, X, Instagram, Cake } from 'lucide-react'
+
+const TiktokIcon = ({ className }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+    <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/>
+  </svg>
+)
 import FastImage from '@/components/ui/FastImage'
 
 function stripQuotes(s: string): string {
@@ -341,6 +347,7 @@ export default function PreviewView({
                     meta: [
                         ...(m.date_of_birth ? [{ icon: <Cake className="w-3.5 h-3.5" />, text: m.date_of_birth }] : []),
                         ...(m.instagram ? [{ icon: <Instagram className="w-3.5 h-3.5" />, text: m.instagram }] : []),
+                        ...((m as any).tiktok ? [{ icon: <TiktokIcon className="w-3.5 h-3.5" />, text: (m as any).tiktok }] : []),
                     ],
                 }
             })
@@ -590,28 +597,26 @@ export default function PreviewView({
                         </div>
                     )}
 
-                    {/* Meta: birthday, instagram */}
+                    {/* Meta: birthday, instagram - icon only, clickable if full URL */}
                     {card.meta && card.meta.length > 0 && (
-                        <div className="grid gap-2 mt-1" style={{ gridTemplateColumns: `repeat(${card.meta.length}, 1fr)` }}>
+                        <div className="flex flex-wrap justify-center gap-2 mt-1">
                             {card.meta.map((m, i) => {
-                                const isIg = typeof m.text === 'string' && m.text.startsWith('@')
-                                const Wrapper = isIg ? 'a' : 'div'
-                                const wrapperProps = isIg ? {
-                                    href: `https://instagram.com/${m.text.substring(1)}`,
+                                const text = typeof m.text === 'string' ? m.text : ''
+                                const isClickableUrl = /^https?:\/\//.test(text)
+                                const Wrapper = isClickableUrl ? 'a' : 'div'
+                                const wrapperProps = isClickableUrl ? {
+                                    href: text,
                                     target: '_blank',
                                     rel: 'noopener noreferrer',
                                     onClick: (e: React.MouseEvent) => e.stopPropagation(),
-                                    className: 'pointer-events-auto flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-full bg-slate-900/10 dark:bg-white/15 backdrop-blur-sm text-slate-900 dark:text-white ring-1 ring-slate-900 dark:ring-white/80 transition-all hover:bg-slate-900/20 dark:hover:bg-white/25 active:scale-95 cursor-pointer min-w-0',
+                                    className: 'pointer-events-auto flex items-center justify-center w-8 h-8 rounded-full bg-slate-900/10 dark:bg-white/15 backdrop-blur-sm text-slate-900 dark:text-white ring-1 ring-slate-900 dark:ring-white/80 transition-all hover:bg-slate-900/20 dark:hover:bg-white/25 active:scale-95 cursor-pointer',
                                 } : {
-                                    className: 'flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-full bg-slate-900/10 dark:bg-white/15 backdrop-blur-sm text-slate-700 dark:text-white/80 ring-1 ring-slate-900 dark:ring-white/80 min-w-0',
+                                    className: 'flex items-center justify-center w-8 h-8 rounded-full bg-slate-900/10 dark:bg-white/15 backdrop-blur-sm text-slate-700 dark:text-white/80 ring-1 ring-slate-900 dark:ring-white/80',
                                 }
                                 return (
                                     <Wrapper key={i} {...wrapperProps}>
-                                        <span className={`flex-shrink-0 ${isIg ? 'text-pink-500 dark:text-pink-300' : 'text-slate-400 dark:text-white/60'}`}>
-                                            {React.cloneElement(m.icon as React.ReactElement<{ size?: number }>, { size: 13 })}
-                                        </span>
-                                        <span className="text-[11px] font-semibold tracking-wide truncate">
-                                            {m.text}
+                                        <span className="flex-shrink-0 text-slate-400 dark:text-white/60">
+                                            {React.cloneElement(m.icon as React.ReactElement<{ size?: number }>, { size: 14 })}
                                         </span>
                                     </Wrapper>
                                 )

@@ -148,6 +148,12 @@ classMemberUserRoute.patch('/', async (c) => {
         ? body.instagram.trim() || null
         : null
       : undefined
+  const tiktok =
+    body?.tiktok !== undefined
+      ? typeof body.tiktok === 'string'
+        ? body.tiktok.trim() || null
+        : null
+      : undefined
   const message =
     body?.message !== undefined
       ? typeof body.message === 'string'
@@ -166,6 +172,7 @@ classMemberUserRoute.patch('/', async (c) => {
     email === undefined &&
     date_of_birth === undefined &&
     instagram === undefined &&
+    tiktok === undefined &&
     message === undefined &&
     video_url === undefined
   ) {
@@ -189,6 +196,10 @@ classMemberUserRoute.patch('/', async (c) => {
   if (instagram !== undefined) {
     sets.push('instagram = ?')
     vals.push(instagram)
+  }
+  if (tiktok !== undefined) {
+    sets.push('tiktok = ?')
+    vals.push(tiktok)
   }
   if (message !== undefined) {
     sets.push('message = ?')

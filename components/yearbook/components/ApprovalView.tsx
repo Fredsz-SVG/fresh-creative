@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useMemo } from 'react'
-import { Edit3, Plus, Minus, Check, X, Clock, ClipboardList, Copy, Link as LinkIcon, Loader2, Trash2, Search } from 'lucide-react'
+import { Edit3, Plus, Minus, Check, X, Clock, ClipboardList, Copy, Link as LinkIcon, Loader2, Trash2, Search, RefreshCw } from 'lucide-react'
 import { toast } from '@/lib/toast'
 import { apiUrl } from '../../../lib/api-url'
 import { fetchWithAuth } from '../../../lib/api-client'
@@ -57,6 +57,7 @@ interface ApprovalViewProps {
   currentUserId?: string | null
   onUpdateRole: (userId: string, newRole: 'admin' | 'member') => void | Promise<void>
   onRemoveMember: (userId: string) => void | Promise<void>
+  onRefresh?: () => void
 }
 
 export default function ApprovalView({
@@ -83,6 +84,7 @@ export default function ApprovalView({
   currentUserId,
   onUpdateRole,
   onRemoveMember,
+  onRefresh,
 }: ApprovalViewProps) {
   const [editingLimit, setEditingLimit] = useState(false)
   const [editLimitValue, setEditLimitValue] = useState('')
@@ -108,7 +110,18 @@ export default function ApprovalView({
   } | null>(null)
   const [removeConfirm, setRemoveConfirm] = useState<{ userId: string; memberName: string } | null>(null)
   const [rejectConfirm, setRejectConfirm] = useState<string | null>(null)
+  const [refreshLoading, setRefreshLoading] = useState(false)
   const statsLoading = !joinStats
+
+  const handleRefresh = async () => {
+    if (!onRefresh || refreshLoading) return
+    setRefreshLoading(true)
+    try {
+      await onRefresh()
+    } finally {
+      setRefreshLoading(false)
+    }
+  }
 
   const handleSaveLimit = async () => {
     const val = parseInt(editLimitValue)
@@ -547,15 +560,30 @@ export default function ApprovalView({
         <div className="flex flex-col gap-3 sm:gap-6">
           {approvalTab === 'approved' && (
             <div className="flex justify-end">
-              <div className="relative w-full sm:max-w-sm mb-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500" strokeWidth={3} />
-                <input
-                  type="text"
-                  value={approvedSearch}
-                  onChange={(e) => setApprovedSearch(e.target.value)}
-                  placeholder="Cari nama / email (semua kelas)..."
-                  className="w-full pl-10 pr-4 py-2.5 text-xs sm:text-sm font-bold rounded-xl bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] focus:shadow-none focus:translate-x-0.5 focus:translate-y-0.5 transition-all focus:outline-none"
-                />
+              <div className="relative w-full sm:max-w-sm mb-1 flex items-center gap-2">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500" strokeWidth={3} />
+                  <input
+                    type="text"
+                    value={approvedSearch}
+                    onChange={(e) => setApprovedSearch(e.target.value)}
+                    placeholder="Cari nama / email (semua kelas)..."
+                    className="w-full pl-10 pr-4 py-2.5 text-xs sm:text-sm font-bold rounded-xl bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] focus:shadow-none focus:translate-x-0.5 focus:translate-y-0.5 transition-all focus:outline-none"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={handleRefresh}
+                  disabled={refreshLoading}
+                  className="shrink-0 p-2.5 rounded-xl bg-slate-900 dark:bg-slate-700 text-white hover:bg-slate-800 dark:hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 active:shadow-none active:translate-x-0.5 active:translate-y-0.5"
+                  title="Refresh data payment"
+                >
+                  {refreshLoading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" strokeWidth={3} />
+                  ) : (
+                    <RefreshCw className="w-4 h-4" strokeWidth={3} />
+                  )}
+                </button>
               </div>
             </div>
           )}
@@ -662,7 +690,7 @@ export default function ApprovalView({
                           </button>
                         )
                       )}
-                      {canManage && (
+                      {(isOwner || isGlobalAdmin) && (
                         <button
                           type="button"
                           onClick={() => setRemoveConfirm({ userId: matchedMember.user_id, memberName: matchedMember.name || matchedMember.email || request.student_name })}
@@ -678,7 +706,15 @@ export default function ApprovalView({
                     <div className="flex gap-1.5 sm:gap-2 shrink-0 sm:ml-auto w-full sm:w-auto mt-2 sm:mt-0 pt-2 sm:pt-0 border-t-2 sm:border-t-0 border-slate-100 dark:border-slate-700">
                       <button
                         type="button"
-                        onClick={() => setAssigningRequest(request.id)}
+                        onClick={() => {
+                          const preSelectedClassId = request.assigned_class_id || classes.find(c => c.name === request.class_name)?.id
+                          if (preSelectedClassId) {
+                            void onApproveRequest(request.id, preSelectedClassId)
+                          } else {
+                            setSelectedClassForAssign(classes[0]?.id || '')
+                            setAssigningRequest(request.id)
+                          }
+                        }}
                         className="flex-1 sm:flex-none sm:w-12 h-10 sm:h-12 rounded-lg sm:rounded-xl bg-emerald-400 dark:bg-emerald-600 border-2 sm:border-2 border-slate-900 dark:border-slate-700 text-slate-900 dark:text-white flex items-center justify-center shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all"
                         title="Setujui"
                       >
@@ -702,11 +738,13 @@ export default function ApprovalView({
                         className="w-full sm:w-[150px] px-3 py-2 sm:py-3 text-xs sm:text-sm rounded-lg sm:rounded-xl bg-slate-50 dark:bg-slate-800 border-2 sm:border-2 border-slate-900 dark:border-slate-700 text-slate-900 dark:text-white font-black focus:outline-none focus:ring-0 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]"
                       >
                         <option value="">Pilih Kelas...</option>
-                        {classes.map((cls) => (
+                        {classes.length > 0 ? classes.map((cls) => (
                           <option key={cls.id} value={cls.id}>
                             {cls.name}
                           </option>
-                        ))}
+                        )) : request.class_name ? (
+                          <option value={request.class_name}>{request.class_name} (manual)</option>
+                        ) : null}
                       </select>
                       <div className="flex gap-2">
                         <button
