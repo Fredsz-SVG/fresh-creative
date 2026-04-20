@@ -935,9 +935,6 @@ html[data-theme="light"] body {
 }
 
 @layer utilities {
-  .nav-icon-stroke {
-    filter: drop-shadow(1px 1px 0px rgba(0, 0, 0, 0.8)) drop-shadow(-1px -1px 0px rgba(0, 0, 0, 0.8));
-  }
   .border-hsla {
     @apply border border-white/20;
   }
@@ -1154,6 +1151,11 @@ html[data-theme="light"] body {
 /* Stroke hitam pada ikon header, ketebalan sama proporsi dengan menu (nav-hover-btn 2px) */
 .nav-icon-stroke {
   filter: drop-shadow(1px 0 0 black) drop-shadow(-1px 0 0 black) drop-shadow(0 1px 0 black) drop-shadow(0 -1px 0 black);
+}
+
+html.dark .nav-icon-stroke,
+.dark .nav-icon-stroke {
+  filter: none;
 }
 
 .indicator-line {

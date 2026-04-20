@@ -93,7 +93,7 @@ export function DemoEbook() {
             </div>
             
             <div 
-              className="relative p-6 sm:p-12 flex flex-col items-center justify-center min-h-[300px] sm:min-h-[400px] overflow-hidden bg-slate-50/50 dark:bg-slate-950/50 cursor-pointer"
+              className={`relative p-6 sm:p-12 flex flex-col items-center justify-center min-h-[300px] sm:min-h-[400px] overflow-hidden bg-slate-50/50 dark:bg-slate-950/50 ${albumPreviews.length > 0 ? 'cursor-pointer' : 'cursor-default'}`}
               onClick={() => {
                 if (albumPreviews[0]) {
                   setPreviewUrl(albumPreviews[0].link);
@@ -119,11 +119,13 @@ export function DemoEbook() {
                       </div>
                     </div>
                   )}
-                  {/* Mobile Help Badge */}
-                  <div className="md:hidden absolute bottom-4 left-1/2 -translate-x-1/2 px-4 py-2 bg-yellow-300 border-2 border-slate-200 shadow-[4px_4px_0_0_#334155] rounded-xl text-black text-[10px] font-black uppercase tracking-widest flex items-center gap-2 animate-bounce">
-                    <TiLocationArrow className="w-4 h-4 rotate-45" />
-                    <span>Klik untuk demo</span>
-                  </div>
+                  {/* Mobile Help Badge — hanya jika ada data */}
+                  {albumPreviews.length > 0 && (
+                    <div className="md:hidden absolute bottom-4 left-1/2 -translate-x-1/2 px-4 py-2 bg-yellow-300 border-2 border-slate-200 shadow-[4px_4px_0_0_#334155] rounded-xl text-black text-[10px] font-black uppercase tracking-widest flex items-center gap-2 animate-bounce">
+                      <TiLocationArrow className="w-4 h-4 rotate-45" />
+                      <span>Klik untuk demo</span>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -180,7 +182,7 @@ export function DemoEbook() {
                 </div>
               ) : (
                 <div 
-                  className="relative z-10 w-full transform group-hover:scale-105 transition-all duration-500 cursor-pointer"
+                  className={`relative z-10 w-full transform group-hover:scale-105 transition-all duration-500 ${flipbookPreviewUrl ? 'cursor-pointer' : 'cursor-default'}`}
                   onClick={() => {
                     if (flipbookPreviewUrl) {
                       setPreviewUrl(flipbookPreviewUrl);
@@ -190,19 +192,23 @@ export function DemoEbook() {
                 >
                   <div className="relative w-full flex justify-center">
                     <AnimatedFlipbookMockup />
-                    <div className="absolute inset-0 hidden sm:flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300">
-                      <div className="px-6 py-3 bg-slate-900/90 dark:bg-slate-800/90 backdrop-blur-md rounded-full text-white text-sm font-black flex items-center gap-2 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300 border-2 border-slate-200 dark:border-slate-700">
-                        <BookMarked className="w-4 h-4 text-emerald-400" />
-                        <span>Buka 3D Virtual Flipbook</span>
+                    {flipbookPreviewUrl && (
+                      <div className="absolute inset-0 hidden sm:flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300">
+                        <div className="px-6 py-3 bg-slate-900/90 dark:bg-slate-800/90 backdrop-blur-md rounded-full text-white text-sm font-black flex items-center gap-2 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300 border-2 border-slate-200 dark:border-slate-700">
+                          <BookMarked className="w-4 h-4 text-emerald-400" />
+                          <span>Buka 3D Virtual Flipbook</span>
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </div>
 
-                  {/* Klik untuk demo help badge (Mobile Only) */}
-                  <div className="md:hidden absolute bottom-4 left-1/2 -translate-x-1/2 px-4 py-2 bg-yellow-300 border-2 border-slate-200 shadow-[4px_4px_0_0_#334155] rounded-xl text-black text-[10px] font-black uppercase tracking-widest flex items-center gap-2 animate-bounce">
-                    <TiLocationArrow className="w-4 h-4 rotate-45" />
-                    <span>Klik untuk demo</span>
-                  </div>
+                  {/* Klik untuk demo help badge (Mobile Only) — hanya jika ada URL */}
+                  {flipbookPreviewUrl && (
+                    <div className="md:hidden absolute bottom-4 left-1/2 -translate-x-1/2 px-4 py-2 bg-yellow-300 border-2 border-slate-200 shadow-[4px_4px_0_0_#334155] rounded-xl text-black text-[10px] font-black uppercase tracking-widest flex items-center gap-2 animate-bounce">
+                      <TiLocationArrow className="w-4 h-4 rotate-45" />
+                      <span>Klik untuk demo</span>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

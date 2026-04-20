@@ -168,11 +168,12 @@ export function About() {
                 key={item.id}
                 layoutId={`card-${item.id}`}
                 onClick={() => setActiveIndex(PORTFOLIO_ITEMS.findIndex(p => p.id === item.id))}
-                initial={{ opacity: 0, scale: 0.8, x: 50 }}
-                animate={{ opacity: 1, scale: 1, x: 0 }}
-                exit={{ opacity: 0, scale: 0.8, x: -50 }}
-                transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-                className="group relative h-20 w-16 sm:h-28 sm:w-20 lg:h-36 lg:w-28 shrink-0 rounded-2xl border-2 border-white/20 hover:border-lime-400 overflow-hidden shadow-2xl transition-colors bg-slate-900 focus:outline-none"
+                initial={{ opacity: 0, scale: 0.88 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.88 }}
+                transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+                style={{ willChange: "transform, opacity" }}
+                className="group relative h-20 w-16 sm:h-28 sm:w-20 lg:h-36 lg:w-28 shrink-0 rounded-2xl border-2 border-white/20 hover:border-lime-400 overflow-hidden bg-slate-900 focus:outline-none [filter:drop-shadow(0_8px_16px_rgba(0,0,0,0.55))] hover:[filter:drop-shadow(0_8px_20px_rgba(163,230,53,0.25))]"
               >
                 <img
                   src={item.img}
@@ -188,8 +189,6 @@ export function About() {
                     {item.title}
                   </p>
                 </div>
-
-
               </motion.button>
             ))}
           </AnimatePresence>

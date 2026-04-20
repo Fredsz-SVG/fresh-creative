@@ -16,7 +16,8 @@ export function Navbar() {
   const [isIndicatorActive, setIsIndicatorActive] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const [audioSrc, setAudioSrc] = useState<string | null>(null);
+  const [audioFiles, setAudioFiles] = useState<string[]>([]);
+  const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
 
   useEffect(() => {
     fetch("/api/audio")
@@ -24,16 +25,22 @@ export function Navbar() {
       .then((data: { files?: string[] }) => {
         const files = data?.files ?? [];
         if (files.length > 0) {
-          const pick = files[Math.floor(Math.random() * files.length)];
-          setAudioSrc(pick);
+          setAudioFiles(files);
         }
       })
       .catch(() => {});
   }, []);
 
+  const audioSrc = audioFiles[currentTrackIndex] ?? null;
+
   const toggleAudioIndicator = () => {
     setIsAudioPlaying((p) => !p);
     setIsIndicatorActive((p) => !p);
+  };
+
+  const handleTrackEnded = () => {
+    if (audioFiles.length === 0) return;
+    setCurrentTrackIndex((prev) => (prev + 1) % audioFiles.length);
   };
 
   useEffect(() => {
@@ -44,6 +51,19 @@ export function Navbar() {
     if (isAudioPlaying) void audioElementRef.current?.play();
     else audioElementRef.current?.pause();
   }, [isAudioPlaying, audioSrc]);
+
+  useEffect(() => {
+    const audio = audioElementRef.current;
+    if (!audio) return;
+    audio.addEventListener("ended", handleTrackEnded);
+    return () => audio.removeEventListener("ended", handleTrackEnded);
+  }, [audioFiles]);
+
+  useEffect(() => {
+    if (isAudioPlaying && audioElementRef.current) {
+      audioElementRef.current.play().catch(() => {});
+    }
+  }, [currentTrackIndex, isAudioPlaying]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -176,7 +196,6 @@ export function Navbar() {
                     ref={audioElementRef}
                     src={audioSrc}
                     className="hidden"
-                    loop
                     preload="none"
                   />
                 )}
