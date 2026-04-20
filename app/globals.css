@@ -959,11 +959,11 @@ html[data-theme="light"] body {
   }
 
   .floating-nav {
-    @apply rounded-none border-b backdrop-blur-2xl transition-all duration-300;
+    @apply rounded-full border backdrop-blur-2xl transition-all duration-300;
   }
 
   :root[data-theme="light"] .floating-nav {
-    @apply bg-white/70 border-slate-200 shadow-lg shadow-slate-200/50;
+    @apply bg-white/70 border-slate-800;
   }
 
   :root[data-theme="dark"] .floating-nav {
