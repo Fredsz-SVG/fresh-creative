@@ -949,8 +949,8 @@ html[data-theme="light"] body {
   }
 
   :root[data-theme="light"] .nav-hover-btn {
-    @apply text-slate-800;
-    -webkit-text-stroke: 0px transparent;
+    @apply text-white;
+    -webkit-text-stroke: 2px #000000;
   }
 
   :root[data-theme="dark"] .nav-hover-btn {
@@ -1148,9 +1148,9 @@ html[data-theme="light"] body {
   }
 }
 
-/* Stroke hitam pada ikon header, ketebalan sama proporsi dengan menu (nav-hover-btn 2px) */
+/* Stroke putih pada ikon header di mode siang */
 .nav-icon-stroke {
-  filter: drop-shadow(1px 0 0 black) drop-shadow(-1px 0 0 black) drop-shadow(0 1px 0 black) drop-shadow(0 -1px 0 black);
+  filter: drop-shadow(1px 0 0 white) drop-shadow(-1px 0 0 white) drop-shadow(0 1px 0 white) drop-shadow(0 -1px 0 white);
 }
 
 html.dark .nav-icon-stroke,

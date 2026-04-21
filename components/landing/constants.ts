@@ -17,13 +17,8 @@ export const SOCIAL_LINKS = [
 ] as const;
 
 export const VIDEO_LINKS = {
-  feature1: "/videos/feature-1.mp4",
-  feature2: "/videos/feature-2.mp4",
-  feature3: "/videos/hero-day.mp4",
-  feature4: "/videos/hero-night.mp4",
-  feature5: "/videos/feature-3.mp4",
-  hero1: "/videos/hero-day.mp4",
-  hero2: "/videos/hero-night.mp4",
+  hero1: "/videos/SIANG.mp4",
+  hero2: "/videos/MALAM.mp4",
 } as const;
 
 // Musik landing diambil dari folder public/audio via GET /api/audio (tanpa ubah code)

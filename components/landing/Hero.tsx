@@ -104,7 +104,7 @@ export function Hero() {
             muted
             playsInline
             className={cn(
-              "absolute top-0 left-0 size-full object-cover object-center transition-opacity duration-1000",
+              "absolute top-0 left-0 size-full object-cover object-[65%] md:object-center transition-opacity duration-1000",
               theme?.isDark ? "opacity-0" : "opacity-100"
             )}
             onLoadedData={handleVideoLoad}
@@ -118,7 +118,7 @@ export function Hero() {
             muted
             playsInline
             className={cn(
-              "absolute top-0 left-0 size-full object-cover object-center transition-opacity duration-1000",
+              "absolute top-0 left-0 size-full object-cover object-[65%] md:object-center transition-opacity duration-1000",
               theme?.isDark ? "opacity-100" : "opacity-0"
             )}
             onLoadedData={handleVideoLoad}
@@ -127,23 +127,23 @@ export function Hero() {
         </div>
 
         <h1
-          className="special-font hero-heading text-blue-75 absolute right-8 bottom-8 z-40 drop-shadow-2xl !text-[12vw] sm:!text-5xl md:!text-7xl lg:!text-[8rem] leading-[0.8] tracking-wide"
+          className="special-font hero-heading text-white drop-shadow-2xl absolute right-8 bottom-8 z-40 !text-[12vw] sm:!text-5xl md:!text-7xl lg:!text-[8rem] leading-[0.95] tracking-wide"
           style={{ WebkitTextStroke: '1.5px #fff', paintOrder: 'stroke fill' }}
         >
-          INDON<b>E</b>SIA
+          INDONESI<b>A</b>
         </h1>
 
         <div className="absolute top-0 left-0 z-40 flex size-full flex-col justify-between pt-6 pb-32 sm:py-10 sm:pb-24 md:pb-40 lg:pb-56 xl:pb-64">
           <div className="mt-24 sm:mt-24 px-8 sm:px-20">
             <h1
-              className="special-font hero-heading text-white drop-shadow-2xl !text-[12vw] sm:!text-5xl md:!text-7xl lg:!text-[8rem] leading-[0.8] tracking-wide"
+              className="special-font hero-heading text-white drop-shadow-2xl !text-[12vw] sm:!text-5xl md:!text-7xl lg:!text-[8rem] leading-[0.95] tracking-wide"
               style={{ WebkitTextStroke: '1.5px #fff', paintOrder: 'stroke fill' }}
             >
-              FR<b>E</b>SH CRE<b>A</b>TIVE
+              FR<b>E</b>SH <br /> CRE<b>A</b>TIVE
             </h1>
             <p className="mt-4 mb-6 sm:mb-5 max-w-lg text-base sm:text-lg font-bold leading-[1.4] text-white drop-shadow-md md:text-2xl" style={{ fontFamily: "'DM Sans', sans-serif", WebkitTextStroke: '0.5px #000', paintOrder: 'stroke fill' }}>
-              Simpan cerita sekolahmu dalam buku fisik maupun digital. <br className="hidden sm:block" />
-              Hidupkan setiap momen dengan "Living Archive" yang nyata dan anti ribet.
+              Simpan momen sekolahmu lebih nyata. <br />
+              Fisik, Digital, & Anti Ribet.
             </p>
           </div>
 
@@ -190,10 +190,10 @@ export function Hero() {
       </div>
 
       <h1
-        className="special-font hero-heading absolute right-8 bottom-8 text-black !text-[12vw] sm:!text-5xl md:!text-7xl lg:!text-[8rem] leading-[0.8] tracking-wide"
+        className="special-font hero-heading absolute right-8 bottom-8 text-black !text-[12vw] sm:!text-5xl md:!text-7xl lg:!text-[8rem] leading-[0.95] tracking-wide"
         style={{ WebkitTextStroke: '1.5px #fff', paintOrder: 'stroke fill' }}
       >
-        INDON<b>E</b>SIA
+        INDONESI<b>A</b>
       </h1>
     </section>
   );
