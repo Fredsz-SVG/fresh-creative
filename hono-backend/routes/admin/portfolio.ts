@@ -1,17 +1,23 @@
 import type { D1Database, R2Bucket } from '@cloudflare/workers-types'
 import { Hono } from 'hono'
+import type { Context } from 'hono'
 import { getSupabaseClient } from '../../lib/supabase'
 import { getRole } from '../../lib/auth'
 import { ensureUserInD1, honoEnvForSupabasePublicSync } from '../../lib/d1-users'
 import { putAlbumPhoto } from '../../lib/r2-assets'
 
-const adminPortfolio = new Hono()
+interface HonoUser {
+  id: string
+  role: string
+}
 
-function requireDb(c: any): D1Database | null {
+const adminPortfolio = new Hono<{ Variables: { user: HonoUser } }>()
+
+function requireDb(c: Context<{ Variables: { user: HonoUser } }>): D1Database | null {
   return (c.env as { DB?: D1Database }).DB ?? null
 }
 
-function requireAssets(c: any): R2Bucket | null {
+function requireAssets(c: Context<{ Variables: { user: HonoUser } }>): R2Bucket | null {
   return (c.env as { ASSETS?: R2Bucket }).ASSETS ?? null
 }
 
@@ -30,7 +36,7 @@ adminPortfolio.get('/', async (c) => {
   try {
     const { results } = await db.prepare('SELECT * FROM portfolio_items ORDER BY display_order ASC').all()
     return c.json(results)
-  } catch (e) {
+  } catch {
     return c.json({ error: 'Failed to fetch portfolio' }, 500)
   }
 })
@@ -133,7 +139,7 @@ adminPortfolio.delete('/:id', async (c) => {
   try {
     await db.prepare('DELETE FROM portfolio_items WHERE id = ?').bind(id).run()
     return c.json({ success: true })
-  } catch (e) {
+  } catch {
     return c.json({ error: 'Delete failed' }, 500)
   }
 })

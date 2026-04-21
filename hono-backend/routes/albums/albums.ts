@@ -5,6 +5,20 @@ import { invalidateUserResponseCaches } from '../../lib/user-response-cache'
 
 const albumColsUser = `a.id, a.user_id, a.name, a.type, a.status, a.created_at, a.description, a.cover_image_url, a.cover_image_position, a.pricing_package_id, a.payment_status, a.payment_url, a.total_estimated_price, a.pic_name, a.individual_payments_enabled, a.package_snapshot, (SELECT SUM(amount) FROM transactions WHERE album_id = a.id AND status IN ('PAID', 'SETTLED')) as collected_amount`
 
+interface HonoUser {
+  id: string
+  role: string
+}
+
+interface PackageData {
+  name: string
+  price_per_student: number
+  min_students: number
+  features: string
+  flipbook_enabled: number | boolean
+  ai_labs_features: string
+}
+
 function mapAlbumRow(r: Record<string, unknown>) {
   const rest = { ...r }
   let snapshot = null
@@ -27,14 +41,14 @@ function mapAlbumRow(r: Record<string, unknown>) {
   return { ...rest, package_snapshot: snapshot }
 }
 
-const albumsRoute = new Hono()
+const albumsRoute = new Hono<{ Variables: { user: HonoUser } }>()
 
 albumsRoute.get('/', requireAuthJwt, async (c) => {
   try {
     const db = getD1(c)
     if (!db) return c.json({ error: 'Database not configured' }, 503)
 
-    const user = (c as any).get('user')
+    const user = c.get('user')
     const userId = user?.id
     const role = user?.role || 'member'
 
@@ -98,7 +112,7 @@ albumsRoute.post('/', requireAuthJwt, async (c) => {
     const db = getD1(c)
     if (!db) return c.json({ error: 'Database not configured' }, 503)
 
-    const user = (c as any).get('user')
+    const user = c.get('user')
     if (!user?.id) return c.json({ error: 'Unauthorized' }, 401)
 
     const body = await c.req.json()
@@ -132,7 +146,7 @@ albumsRoute.post('/', requireAuthJwt, async (c) => {
           'SELECT name, price_per_student, min_students, features, flipbook_enabled, ai_labs_features FROM pricing_packages WHERE id = ?'
         )
         .bind(pricing_package_id)
-        .first<any>()
+        .first<PackageData>()
 
       if (pkgData) {
         packageSnapshotJson = JSON.stringify({
@@ -158,7 +172,7 @@ albumsRoute.post('/', requireAuthJwt, async (c) => {
       )
       .bind(
         newId,
-        (user as any).id,
+        user.id,
         name,
         type,
         description || null,
@@ -179,9 +193,9 @@ albumsRoute.post('/', requireAuthJwt, async (c) => {
 
     const notifId = crypto.randomUUID()
     await db.prepare('INSERT INTO notifications (id, user_id, title, message, type, action_url) VALUES (?, ?, ?, ?, ?, ?)')
-      .bind(notifId, (user as any).id, 'Menunggu Persetujuan', `Album "${name}" telah berhasil diajukan dan sedang menunggu persetujuan admin.`, 'info', '/user/riwayat')
+      .bind(notifId, user.id, 'Menunggu Persetujuan', `Album "${name}" telah berhasil diajukan dan sedang menunggu persetujuan admin.`, 'info', '/user/riwayat')
       .run()
-    invalidateUserResponseCaches((user as any).id)
+    invalidateUserResponseCaches(user.id)
     return c.json({ id: result?.id }, 201)
   } catch (error) {
     console.error('ERROR ALBUMS API:', error)
@@ -194,7 +208,7 @@ albumsRoute.delete('/:id', requireAuthJwt, async (c) => {
     const db = getD1(c)
     if (!db) return c.json({ error: 'Database not configured' }, 503)
 
-    const user = (c as any).get('user')
+    const user = c.get('user')
     if (!user?.id) return c.json({ error: 'Unauthorized' }, 401)
 
     const albumId = c.req.param('id')
@@ -221,7 +235,7 @@ albumsRoute.put('/:id', requireAuthJwt, async (c) => {
   try {
     const db = getD1(c)
     if (!db) return c.json({ error: 'Database not configured' }, 503)
-    const user = (c as any).get('user')
+    const user = c.get('user')
     if (!user?.id) return c.json({ error: 'Unauthorized' }, 401)
     if (user.role !== 'admin') return c.json({ error: 'Forbidden' }, 403)
     const albumId = c.req.param('id')

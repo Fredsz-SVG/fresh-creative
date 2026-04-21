@@ -1,4 +1,5 @@
 import type { D1Database } from '@cloudflare/workers-types'
+import type { SupabaseClient } from '@supabase/supabase-js'
 import { getAdminSupabaseClient } from './supabase'
 import { ensureUserStubInD1 } from './d1-users'
 
@@ -7,7 +8,7 @@ export async function getCreditsFromSupabase(
   userId: string
 ): Promise<number> {
   const admin = getAdminSupabaseClient(env)
-  const { data, error } = await (admin as any)
+  const { data, error } = await (admin as SupabaseClient)
     .from('users')
     .select('credits')
     .eq('id', userId)
@@ -23,7 +24,7 @@ export async function setCreditsInSupabase(
   credits: number
 ): Promise<void> {
   const admin = getAdminSupabaseClient(env)
-  const { error } = await (admin as any).from('users').update({ credits }).eq('id', userId)
+  const { error } = await (admin as SupabaseClient).from('users').update({ credits }).eq('id', userId)
   if (error) throw new Error(error.message)
 }
 
