@@ -830,7 +830,7 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
     })()
 
     if (!albumId) {
-      setPreviewError('Masukkan link preview atau Album ID yang valid.')
+      setPreviewError('Masukkan link View atau Album ID yang valid.')
       return
     }
     const isFlipbook = previewInput.toLowerCase().includes('/flipbook')
@@ -927,7 +927,7 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
         </div>
 
         <div className="flex flex-nowrap items-center gap-2 w-full md:w-auto min-w-0">
-          {/* Public Preview Toggle Button - flex-1 di mobile agar lebar sama dengan card */}
+          {/* View Toggle Button - flex-1 di mobile agar lebar sama dengan card */}
           <button
             type="button"
             onClick={() => {
@@ -938,7 +938,7 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
             className={`flex-1 min-w-0 md:flex-initial inline-flex items-center justify-center gap-1 sm:gap-2 px-2 py-2 sm:px-4 sm:py-2 text-[10px] sm:text-sm font-black rounded-lg sm:rounded-xl border-2 border-slate-900 dark:border-slate-700 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] transition-all active:scale-95 ${showPreviewForm ? 'bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-200' : 'bg-emerald-100 text-slate-900 dark:bg-slate-800 dark:text-slate-200 hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none'}`}
           >
             <Eye className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-            <span className="whitespace-nowrap truncate">{showPreviewForm ? 'Tutup' : 'Preview'}</span>
+            <span className="whitespace-nowrap truncate">{showPreviewForm ? 'Tutup' : 'View'}</span>
           </button>
 
           {/* Search Toggle Button */}
@@ -981,9 +981,9 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
         </div>
       </div>
 
-      {/* 2. Revealable Forms (Preview, Search or Join) */}
+      {/* 2. Revealable Forms (View, Search or Join) */}
       <div className="mb-8">
-        {/* Public Preview Form */}
+        {/* View Form */}
         {showPreviewForm && (
           <div className="flex flex-col sm:flex-row gap-3 p-4 bg-emerald-50 dark:bg-emerald-900/20 border-2 border-slate-900 dark:border-slate-700 rounded-2xl animate-in slide-in-from-top-2 duration-200 shadow-inner max-w-2xl mx-auto w-full">
             <div className="flex-1 relative">
@@ -993,7 +993,7 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
                 value={previewInput}
                 onChange={(e) => { setPreviewInput(e.target.value); setPreviewError(null) }}
                 onKeyDown={(e) => e.key === 'Enter' && handleOpenPreview()}
-                placeholder="Tempel link preview atau Album ID..."
+                placeholder="Tempel link View atau Album ID..."
                 className="w-full px-4 py-2.5 text-sm font-bold rounded-xl bg-white border-2 border-slate-900 shadow-inner text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-300 transition-all"
               />
               {previewError && <p className="text-[10px] text-red-500 absolute -bottom-4 left-1 font-bold">{previewError}</p>}
@@ -1012,7 +1012,7 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
                 onClick={handleOpenPreview}
                 className="px-6 py-2.5 text-sm font-black rounded-xl bg-slate-900 text-white shadow-[2px_2px_0_0_#0f172a] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all"
               >
-                Buka Preview
+                Buka View
               </button>
             </div>
           </div>

@@ -20,7 +20,7 @@ export const AI_LABS_SECTION_ADMIN: NavSection = {
 export const PRICING_SECTION_ADMIN: NavSection = {
   title: 'Pricing',
   items: [
-    { href: '/admin/pricingedit', label: 'Pricing Edit', icon: Pencil },
+    { href: '/admin/pricingedit', label: 'Pricing Settings', icon: Pencil },
     { href: '/admin/credits', label: 'Credit Settings', icon: DollarSign },
   ],
 }
@@ -33,7 +33,7 @@ export const ALBUMS_SECTION_ADMIN: NavSection = {
 
 export const SHOWCASE_SECTION_ADMIN: NavSection = {
   title: 'Tampilan User',
-  items: [{ href: '/admin/showcase', label: 'Link preview', icon: ImageIcon }],
+  items: [{ href: '/admin/showcase', label: 'View Settings', icon: ImageIcon }],
 }
 
 export const FILES_SECTION_USER: NavSection = {

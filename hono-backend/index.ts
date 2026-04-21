@@ -8,6 +8,7 @@ import adminAiEdit from './routes/admin/ai-edit'
 import adminShowcase from './routes/admin/showcase'
 import adminTransactions from './routes/admin/transactions'
 import adminUsersOverview from './routes/admin/users-overview'
+import adminPortfolio from './routes/admin/portfolio'
 
 // ── AI Features ──
 import aiFeaturesPhotogroup from './routes/ai-features/photogroup'
@@ -90,6 +91,7 @@ import realtime from './routes/realtime'
 import selectArea from './routes/select-area'
 import showcase from './routes/showcase'
 import files from './routes/files'
+import portfolio from './routes/portfolio'
 
 // ── User ──
 import userJoinRequests from './routes/user/join-requests'
@@ -179,6 +181,7 @@ app.route('/api/admin/ai-edit', adminAiEdit)
 app.route('/api/admin/showcase', adminShowcase)
 app.route('/api/admin/transactions', adminTransactions)
 app.route('/api/admin/users/overview', adminUsersOverview)
+app.route('/api/admin/portfolio', adminPortfolio)
 
 // AI Features
 app.route('/api/ai-features/photogroup', aiFeaturesPhotogroup)
@@ -269,6 +272,7 @@ app.route('/api/realtime', realtime)
 app.route('/api/select-area', selectArea)
 app.route('/api/showcase', showcase)
 app.route('/api/files', files)
+app.route('/api/portfolio', portfolio)
 
 // User
 app.route('/api/user/join-requests', userJoinRequests)

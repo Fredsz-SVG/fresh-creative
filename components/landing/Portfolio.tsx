@@ -1,53 +1,50 @@
 'use client';
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { AnimatedTitle } from "./AnimatedTitle";
 
 
 
-const PORTFOLIO_ITEMS = [
-  {
-    id: "american",
-    img: "/img/about.webp",
-    title: "American 90s",
-    subtitle: "Retro & Nostalgic",
-    desc: "Rasakan vibe nostalgia ala film remaja 90-an. Lengkap dengan varsity jackets, locker room aesthetics, dan tone warna retro vintage."
-  },
-  {
-    id: "korean",
-    img: "/img/yearbooks.png",
-    title: "Korean High School",
-    subtitle: "Clean & Aesthetic",
-    desc: "Tampil menawan dengan seragam preppies ala drakor, pencahayaan soft, dan set kelas modern yang bikin fotomu seestetik idol."
-  },
-  {
-    id: "cyberpunk",
-    img: "/img/sesifoto.jpg",
-    title: "Cyberpunk Night",
-    subtitle: "Futuristic & Edgy",
-    desc: "Berani beda dengan konsep futuristik! Menghadirkan permainan lampu neon, asap dramatis, dan angle dinamis layaknya film sci-fi."
-  },
-  {
-    id: "classic",
-    img: "/img/organizer.jpg",
-    title: "Classic Prom",
-    subtitle: "Elegant & Timeless",
-    desc: "Gayamu dalam balutan jas dan gaun malam. Mengusung konsep classic luxury dengan properti mewah yang tak lekang oleh waktu."
-  }
-];
-
 export function About() {
+  const [items, setItems] = useState<any[]>([]);
   const [activeIndex, setActiveIndex] = useState(0);
-
-  const activeItem = PORTFOLIO_ITEMS[activeIndex];
-  const total = PORTFOLIO_ITEMS.length;
+  const [loading, setLoading] = useState(true);
 
   const dragStartX = useRef<number | null>(null);
   const SWIPE_THRESHOLD = 50;
 
-  const goNext = useCallback(() => setActiveIndex(i => (i + 1) % total), [total]);
-  const goPrev = useCallback(() => setActiveIndex(i => (i - 1 + total) % total), [total]);
+  const total = items.length;
+
+  const goNext = useCallback(() => {
+    if (total === 0) return;
+    setActiveIndex(i => (i + 1) % total);
+  }, [total]);
+
+  const goPrev = useCallback(() => {
+    if (total === 0) return;
+    setActiveIndex(i => (i - 1 + total) % total);
+  }, [total]);
+
+  useEffect(() => {
+    const fetchPortfolio = async () => {
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ""}/api/portfolio`);
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data) && data.length > 0) {
+            setItems(data);
+          }
+        }
+      } catch (e) {
+        console.error("Failed to fetch portfolio:", e);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchPortfolio();
+  }, []);
 
   // Touch handlers
   const onTouchStart = (e: React.TouchEvent) => {
@@ -74,10 +71,33 @@ export function About() {
   };
   const onMouseLeave = () => { dragStartX.current = null; };
 
+  if (loading) {
+    return (
+      <section className="w-full bg-slate-100 dark:bg-slate-950 pt-24 sm:pt-32 transition-colors duration-500">
+        <div className="container mx-auto px-6 sm:px-10 mb-8 sm:mb-10">
+          <div className="h-4 w-24 bg-lime-200 dark:bg-lime-900 rounded-full mb-3 animate-pulse" />
+          <div className="h-10 sm:h-12 lg:h-14 w-64 bg-slate-200 dark:bg-slate-900 rounded-2xl animate-pulse" />
+        </div>
+        <div className="relative h-[80vh] sm:h-[85vh] w-full overflow-hidden bg-slate-200 dark:bg-slate-900 animate-pulse">
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/60 to-transparent opacity-50" />
+          <div className="absolute bottom-12 left-12 space-y-4">
+            <div className="h-4 w-32 bg-lime-400 opacity-20 rounded-lg" />
+            <div className="h-12 w-64 bg-white opacity-10 rounded-xl" />
+            <div className="h-4 w-96 bg-slate-400 opacity-10 rounded-lg" />
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (items.length === 0) return null;
+
+  const activeItem = items[activeIndex];
+
   // Helper unshift array to always show unselected items in the queue
   const queueItems = [
-    ...PORTFOLIO_ITEMS.slice(activeIndex + 1),
-    ...PORTFOLIO_ITEMS.slice(0, activeIndex)
+    ...items.slice(activeIndex + 1),
+    ...items.slice(0, activeIndex)
   ];
 
   return (
@@ -117,11 +137,11 @@ export function About() {
         </AnimatePresence>
 
         {/* OVERLAY GRADIENT */}
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/60 to-transparent pointer-events-none" />
-        <div className="absolute inset-0 bg-gradient-to-r from-slate-950/90 via-slate-900/40 to-transparent pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-900/30 to-transparent pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-r from-slate-950/70 via-slate-900/20 to-transparent pointer-events-none" />
 
         {/* MAIN CONTENT AREA */}
-        <div className="absolute inset-0 flex flex-col justify-end p-6 sm:p-12 lg:p-16 pb-32 sm:pb-36 lg:pb-16 z-10 w-full lg:w-[65%]">
+        <div className="absolute inset-0 flex flex-col justify-end p-6 sm:p-12 lg:p-16 pb-12 sm:pb-16 lg:pb-16 z-10 w-full lg:w-[65%]">
           <div className="pb-3 pr-3 mb-2">
             <motion.div
               key={`subtitle-${activeItem.id}`}
@@ -144,7 +164,7 @@ export function About() {
 
           <AnimatedTitle
             key={`title-${activeItem.id}`}
-            containerClass="text-left font-zentry !text-white text-3xl sm:text-5xl lg:text-6xl leading-[0.9] tracking-tight mb-3 drop-shadow-2xl"
+            containerClass="text-left font-zentry !text-white text-3xl sm:text-5xl lg:text-6xl leading-[0.9] tracking-tight mb-3 drop-shadow-2xl [-webkit-text-stroke:1.5px_black]"
           >
             {activeItem.title}
           </AnimatedTitle>
@@ -160,14 +180,14 @@ export function About() {
           </motion.p>
         </div>
 
-        {/* SLIDER THUMBNAILS (Neo-Brutalist inspired) */}
-        <div className="absolute bottom-4 sm:bottom-8 lg:bottom-auto lg:top-1/2 lg:-translate-y-1/2 right-2 sm:right-6 lg:right-10 z-20 flex lg:flex-col gap-3 sm:gap-4 max-w-[calc(100vw-16px)] overflow-x-auto lg:overflow-visible no-scrollbar p-6 lg:p-4">
+        {/* SLIDER THUMBNAILS (Neo-Brutalist inspired) - Desktop Only */}
+        <div className="hidden lg:flex absolute lg:top-1/2 lg:-translate-y-1/2 right-2 sm:right-6 lg:right-10 z-20 lg:flex-col gap-3 sm:gap-4 max-w-[calc(100vw-16px)] overflow-x-auto lg:overflow-visible no-scrollbar p-6 lg:p-4">
           <AnimatePresence mode="popLayout">
             {queueItems.map((item) => (
               <motion.button
                 key={item.id}
                 layoutId={`card-${item.id}`}
-                onClick={() => setActiveIndex(PORTFOLIO_ITEMS.findIndex(p => p.id === item.id))}
+                onClick={() => setActiveIndex(items.findIndex(p => p.id === item.id))}
                 initial={{ opacity: 0, scale: 0.88 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.88 }}
@@ -194,11 +214,27 @@ export function About() {
           </AnimatePresence>
         </div>
 
+        {/* MOBILE NAVIGATION ARROWS */}
+        <div className="absolute inset-y-0 inset-x-0 z-30 flex items-center justify-between px-4 lg:hidden pointer-events-none">
+          <button 
+            onClick={goPrev}
+            className="pointer-events-auto w-12 h-12 flex items-center justify-center bg-white/15 rounded-full text-white/45 hover:text-white hover:bg-white/20 transition-all active:scale-95"
+          >
+            <ChevronLeft className="w-8 h-8" />
+          </button>
+          <button 
+            onClick={goNext}
+            className="pointer-events-auto w-12 h-12 flex items-center justify-center bg-white/15 rounded-full text-white/45 hover:text-white hover:bg-white/20 transition-all active:scale-95"
+          >
+            <ChevronRight className="w-8 h-8" />
+          </button>
+        </div>
+
 
 
         {/* SLIDER PROGRESS OUTLINE */}
         <div className="absolute bottom-4 sm:bottom-6 left-6 sm:left-12 z-20 flex gap-2">
-          {PORTFOLIO_ITEMS.map((_, idx) => (
+          {items.map((_, idx) => (
             <div
               key={idx}
               onClick={() => setActiveIndex(idx)}
