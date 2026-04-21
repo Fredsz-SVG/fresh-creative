@@ -134,7 +134,7 @@ export function Hero() {
         </h1>
 
         <div className="absolute top-0 left-0 z-40 flex size-full flex-col justify-between pt-6 pb-32 sm:py-10 sm:pb-24 md:pb-40 lg:pb-56 xl:pb-64">
-          <div className="mt-10 sm:mt-24 px-8 sm:px-20">
+          <div className="mt-24 sm:mt-24 px-8 sm:px-20">
             <h1
               className="special-font hero-heading text-white drop-shadow-2xl !text-[12vw] sm:!text-5xl md:!text-7xl lg:!text-[8rem] leading-[0.8] tracking-wide"
               style={{ WebkitTextStroke: '1.5px #fff', paintOrder: 'stroke fill' }}

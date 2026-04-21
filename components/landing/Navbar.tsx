@@ -117,8 +117,8 @@ export function Navbar() {
               <img src="/img/logo.png" alt="Logo" className="w-8 sm:w-10 animate-logo-pulse shrink-0" loading="lazy" />
               <span
                 className={cn(
-                  "font-black text-sm tracking-widest uppercase transition-all duration-500 whitespace-nowrap text-slate-800 dark:text-white hidden md:inline-block",
-                  isScrolled ? "opacity-100 w-[160px] ml-3" : "opacity-0 w-0 ml-0 pointer-events-none"
+                  "font-black text-[10px] md:text-sm tracking-widest uppercase transition-all duration-500 whitespace-nowrap text-slate-800 dark:text-white",
+                  isScrolled ? "opacity-100 w-[100px] md:w-[160px] ml-2 md:ml-3" : "opacity-0 w-0 ml-0 pointer-events-none"
                 )}
               >
                 FRESHCREATIVE.ID

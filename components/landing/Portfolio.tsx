@@ -7,6 +7,8 @@ import { AnimatedTitle } from "./AnimatedTitle";
 
 
 
+import { apiUrl } from "@/lib/api-url";
+
 export function About() {
   const [items, setItems] = useState<any[]>([]);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -30,7 +32,7 @@ export function About() {
   useEffect(() => {
     const fetchPortfolio = async () => {
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ""}/api/portfolio`);
+        const res = await fetch(apiUrl("/api/portfolio"));
         if (res.ok) {
           const data = await res.json();
           if (Array.isArray(data) && data.length > 0) {
