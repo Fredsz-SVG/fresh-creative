@@ -49,6 +49,18 @@ function AnimatedCounter({ target, suffix = '', duration = 2000, formatFn }: { t
   return <span ref={ref}>{display}{suffix}</span>;
 }
 
+function SplitText({ text, boldIndices = [], className, style }: { text: string; boldIndices?: number[]; className?: string; style?: React.CSSProperties }) {
+  return (
+    <span className={cn("flex justify-between w-full items-center", className)} style={style}>
+      {text.split('').map((char, i) => (
+        <span key={i} className={cn(boldIndices.includes(i) && "font-black")}>
+          {char === ' ' ? '\u00A0' : char}
+        </span>
+      ))}
+    </span>
+  );
+}
+
 export function Hero() {
   const [isLoading, setIsLoading] = useState(true);
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -79,9 +91,12 @@ export function Hero() {
   const handleVideoError = () => hideLoader();
 
   useGSAP(() => {
+    const isMobile = window.innerWidth < 768;
     gsap.set("#video-frame", {
-      clipPath: "polygon(14% 0%, 72% 0%, 90% 90%, 0% 100%)",
-      borderRadius: "0 0 40% 10%",
+      clipPath: isMobile 
+        ? "polygon(4% 0%, 96% 0%, 100% 100%, 0% 100%)" 
+        : "polygon(14% 0%, 72% 0%, 90% 90%, 0% 100%)",
+      borderRadius: isMobile ? "0 0 5% 5%" : "0 0 40% 10%",
     });
     gsap.from("#video-frame", {
       clipPath: "polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)",
@@ -117,7 +132,7 @@ export function Hero() {
             muted
             playsInline
             className={cn(
-              "absolute top-0 left-0 size-full object-cover object-[65%] md:object-center transition-opacity duration-1000",
+              "absolute top-0 left-0 size-full object-cover object-[59%] md:object-center scale-110 md:scale-100 transition-opacity duration-1000",
               theme?.isDark ? "opacity-0" : "opacity-100"
             )}
             onLoadedData={handleVideoLoad}
@@ -131,7 +146,7 @@ export function Hero() {
             muted
             playsInline
             className={cn(
-              "absolute top-0 left-0 size-full object-cover object-[65%] md:object-center transition-opacity duration-1000",
+              "absolute top-0 left-0 size-full object-cover object-[59%] md:object-center scale-110 md:scale-100 transition-opacity duration-1000",
               theme?.isDark ? "opacity-100" : "opacity-0"
             )}
             onLoadedData={handleVideoLoad}
@@ -139,18 +154,14 @@ export function Hero() {
           />
         </div>
 
-        <h1
-          className="special-font hero-heading text-white absolute right-8 bottom-8 z-40 !text-[12vw] sm:!text-5xl md:!text-7xl lg:!text-[8rem] leading-[0.95] tracking-wide hero-double-stroke"
-        >
-          INDONESI<b>A</b>
-        </h1>
+
 
         <div className="absolute top-0 left-0 z-40 flex size-full flex-col justify-between pt-6 pb-32 sm:py-10 sm:pb-24 md:pb-40 lg:pb-56 xl:pb-64">
-          <div className="absolute top-24 sm:top-16 left-2 sm:left-1/2 sm:-translate-x-1/2 z-50 pointer-events-none flex items-center justify-center">
-            <img src="/img/JAM.png" alt="Jam" className="w-28 sm:w-28 md:w-32 lg:w-36 h-auto object-contain opacity-90 drop-shadow-2xl" />
+          <div className="absolute top-20 [@media(max-height:650px)]:top-24 [@media(min-height:700px)_and_(max-width:499px)]:top-24 [@media(min-height:700px)_and_(min-width:500px)]:top-22 [@media(min-height:800px)]:top-28 [@media(min-height:1000px)]:!top-[10rem] [@media(min-height:1100px)]:!top-[12rem] [@media(min-height:1200px)]:!top-[16rem] [@media(min-height:700px)_and_(max-width:499px)]:left-8 [@media(min-height:700px)_and_(min-width:500px)_and_(max-width:767px)]:left-32 [@media(min-height:800px)_and_(max-width:767px)]:left-4 sm:top-16 left-12 sm:left-1/2 sm:-translate-x-1/2 z-50 pointer-events-none flex items-center justify-center transition-all duration-500">
+            <img src="/img/JAM.png" alt="Jam" className="w-28 [@media(max-height:650px)]:!w-24 [@media(min-height:700px)]:!w-32 [@media(min-height:800px)]:!w-36 [@media(min-height:1100px)]:!w-[300px] [@media(min-height:1200px)]:!w-[600px] sm:w-28 md:w-32 lg:w-36 h-auto object-contain opacity-90 drop-shadow-2xl transition-all duration-500" />
             <span 
               className={cn(
-                "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 font-black text-[18px] sm:text-[20px] md:text-[22px] lg:text-[24px] tracking-tight pt-1 transition-all duration-500",
+                "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 font-black text-[18px] [@media(max-height:650px)]:!text-[14px] [@media(min-height:700px)]:!text-[21px] [@media(min-height:800px)]:!text-[24px] [@media(min-height:1100px)]:!text-[44px] [@media(min-height:1200px)]:!text-[84px] sm:text-[20px] md:text-[22px] lg:text-[24px] tracking-tight pt-1 transition-all duration-500",
                 "text-cyan-100 opacity-80", 
               )}
               style={theme?.isDark ? { 
@@ -168,15 +179,37 @@ export function Hero() {
               )}
             </span>
           </div>
-          <div className="mt-40 sm:mt-24 px-8 sm:px-20">
-            <h1
-              className="special-font hero-heading text-white !text-[12vw] sm:!text-5xl md:!text-7xl lg:!text-[8rem] leading-[0.95] tracking-wide hero-double-stroke"
-            >
-              FR<b>E</b>SH <br /> CRE<b>A</b>TIVE
-            </h1>
-            <p className="mt-4 mb-6 sm:mb-5 max-w-lg text-base sm:text-lg font-bold leading-[1.4] text-white drop-shadow-md md:text-2xl" style={{ fontFamily: "'DM Sans', sans-serif", WebkitTextStroke: '2px #000', paintOrder: 'stroke fill' }}>
-              Simpan momen sekolahmu lebih nyata. <br />
-              Fisik, Digital, & Anti Ribet.
+          <div className="mt-36 [@media(min-height:700px)]:mt-44 [@media(min-height:800px)]:mt-44 [@media(min-height:820px)_and_(max-width:499px)]:mt-52 [@media(min-height:1000px)]:!mt-[18rem] [@media(min-height:1300px)]:!mt-[26rem] [@media(max-height:650px)]:!mt-32 sm:mt-24 px-8 sm:px-20 transition-all duration-500">
+            {/* Heading wrapper — width driven by CREATIVE (widest line) */}
+            <div className="inline-flex flex-col gap-1 sm:gap-2">
+              {/* FRESH — natural width, Josefin */}
+              <span
+                className="text-white hero-orange-stroke text-[11vw] sm:text-4xl md:text-6xl lg:text-[6rem] [@media(max-height:650px)]:!text-[3.5rem] leading-none tracking-tight"
+                style={{ fontFamily: "var(--font-josefin), sans-serif", fontWeight: 700 }}
+              >
+                FR<b>E</b>SH
+              </span>
+
+              {/* CREATIVE — sets the reference width, Josefin */}
+              <span
+                id="hero-creative"
+                className="text-white hero-orange-stroke text-[11vw] sm:text-4xl md:text-6xl lg:text-[6rem] [@media(max-height:620px)]:!text-[3rem] leading-none tracking-tight"
+                style={{ fontFamily: "var(--font-josefin), sans-serif", fontWeight: 700 }}
+              >
+                CR<b>E</b>ATIVE
+              </span>
+
+              {/* INDONESIA — stretches to match CREATIVE width, Inter */}
+              <SplitText
+                text="INDONESIA"
+                className="hero-orange-stroke w-full leading-none text-[1.2em] sm:text-[2em] text-yellow-300"
+                style={{ fontFamily: "var(--font-inter), sans-serif", fontWeight: 500 }}
+              />
+            </div>
+            <p className="mt-4 [@media(min-height:700px)]:mt-8 [@media(min-height:800px)]:mt-12 mb-6 sm:mb-5 max-w-lg text-base sm:text-lg [@media(max-height:650px)]:!text-base [@media(max-height:650px)]:!mt-1 font-bold leading-[1.4] text-white drop-shadow-md md:text-2xl" style={{ fontFamily: "var(--font-inter), sans-serif", WebkitTextStroke: '2px #000', paintOrder: 'stroke fill' }}>
+              Simpan momen sekolahmu <br />
+              lebih nyata. Fisik, Digital, & <br />
+              Anti Ribet
             </p>
           </div>
 
@@ -194,7 +227,7 @@ export function Hero() {
 
             <div className="mt-6 sm:mt-10 flex flex-nowrap gap-4 sm:gap-10 md:gap-14">
               <div className="flex flex-col">
-                <span className="special-font text-2xl sm:text-4xl font-bold text-white md:text-5xl">
+                <span className="special-font text-2xl sm:text-4xl font-bold text-white md:text-5xl [@media(max-height:650px)]:!text-3xl">
                   <AnimatedCounter target={300} suffix="+" />
                 </span>
                 <span className="font-general text-[8px] sm:text-[10px] uppercase tracking-widest text-white/60">
@@ -202,7 +235,7 @@ export function Hero() {
                 </span>
               </div>
               <div className="flex flex-col">
-                <span className="special-font text-2xl sm:text-4xl font-bold text-white md:text-5xl">
+                <span className="special-font text-2xl sm:text-4xl font-bold text-white md:text-5xl [@media(max-height:650px)]:!text-3xl">
                    <AnimatedCounter target={100000} formatFn={(n) => n >= 1000 ? `${Math.floor(n / 1000)}` : `${n}`} suffix="K+" />
                 </span>
                 <span className="font-general text-[8px] sm:text-[10px] uppercase tracking-widest text-white/60">
@@ -210,7 +243,7 @@ export function Hero() {
                 </span>
               </div>
               <div className="flex flex-col">
-                <span className="special-font text-2xl sm:text-4xl font-bold text-white md:text-5xl">
+                <span className="special-font text-2xl sm:text-4xl font-bold text-white md:text-5xl [@media(max-height:650px)]:!text-3xl">
                   Lifetime
                 </span>
                 <span className="font-general text-[8px] sm:text-[10px] uppercase tracking-widest text-white/60">
@@ -222,11 +255,30 @@ export function Hero() {
         </div>
       </div>
 
-      <h1
-        className="special-font hero-heading absolute right-8 bottom-8 text-black !text-[12vw] sm:!text-5xl md:!text-7xl lg:!text-[8rem] leading-[0.95] tracking-wide hero-double-stroke"
-      >
-        INDONESI<b>A</b>
-      </h1>
+      <div className="absolute top-0 left-0 z-0 flex size-full flex-col justify-between pt-6 pb-32 sm:py-10 sm:pb-24 md:pb-40 lg:pb-56 xl:pb-64">
+        <div className="mt-36 [@media(min-height:700px)]:mt-44 [@media(min-height:800px)]:mt-44 [@media(min-height:820px)_and_(max-width:499px)]:mt-52 [@media(min-height:1000px)]:!mt-[18rem] [@media(min-height:1300px)]:!mt-[26rem] [@media(max-height:650px)]:!mt-32 sm:mt-24 px-8 sm:px-20 transition-all duration-500">
+          {/* Ghost duplicate for the black text layer (background) */}
+          <div className="inline-flex flex-col gap-1 sm:gap-2">
+            <span
+              className="text-black hero-orange-stroke text-[11vw] sm:text-4xl md:text-6xl lg:text-[6rem] [@media(max-height:650px)]:!text-[3.5rem] leading-none tracking-tight"
+              style={{ fontFamily: "var(--font-josefin), sans-serif", fontWeight: 700, visibility: 'hidden' }}
+            >
+              FR<b>E</b>SH
+            </span>
+            <span
+              className="text-black hero-orange-stroke text-[11vw] sm:text-4xl md:text-6xl lg:text-[6rem] [@media(max-height:650px)]:!text-[3.5rem] leading-none tracking-tight"
+              style={{ fontFamily: "var(--font-josefin), sans-serif", fontWeight: 700, visibility: 'hidden' }}
+            >
+              CR<b>E</b>ATIVE
+            </span>
+            <SplitText
+              text="INDONESIA"
+              className="hero-orange-stroke w-full leading-none text-[1.2em] sm:text-[2em]"
+              style={{ fontFamily: "var(--font-inter), sans-serif", fontWeight: 500 }}
+            />
+          </div>
+        </div>
+      </div>
     </section>
   );
 }
