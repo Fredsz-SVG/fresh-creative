@@ -1,6 +1,5 @@
 'use client';
 
-import { VIDEO_LINKS } from "./constants";
 import { type PropsWithChildren } from "react";
 
 function BentoCardWrap({ children, className = "" }: PropsWithChildren<{ className?: string }>) {

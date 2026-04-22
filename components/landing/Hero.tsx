@@ -51,7 +51,20 @@ function AnimatedCounter({ target, suffix = '', duration = 2000, formatFn }: { t
 
 export function Hero() {
   const [isLoading, setIsLoading] = useState(true);
+  const [currentTime, setCurrentTime] = useState(new Date());
+  const [hasMounted, setHasMounted] = useState(false);
   const theme = useContext(ThemeContext);
+
+  useEffect(() => {
+    setHasMounted(true);
+    let frameId: number;
+    const update = () => {
+      setCurrentTime(new Date());
+      frameId = requestAnimationFrame(update);
+    };
+    frameId = requestAnimationFrame(update);
+    return () => cancelAnimationFrame(frameId);
+  }, []);
 
   const hideLoader = useCallback(() => {
     setIsLoading(false);
@@ -127,21 +140,41 @@ export function Hero() {
         </div>
 
         <h1
-          className="special-font hero-heading text-white drop-shadow-2xl absolute right-8 bottom-8 z-40 !text-[12vw] sm:!text-5xl md:!text-7xl lg:!text-[8rem] leading-[0.95] tracking-wide"
-          style={{ WebkitTextStroke: '1.5px #fff', paintOrder: 'stroke fill' }}
+          className="special-font hero-heading text-white absolute right-8 bottom-8 z-40 !text-[12vw] sm:!text-5xl md:!text-7xl lg:!text-[8rem] leading-[0.95] tracking-wide hero-double-stroke"
         >
           INDONESI<b>A</b>
         </h1>
 
         <div className="absolute top-0 left-0 z-40 flex size-full flex-col justify-between pt-6 pb-32 sm:py-10 sm:pb-24 md:pb-40 lg:pb-56 xl:pb-64">
-          <div className="mt-24 sm:mt-24 px-8 sm:px-20">
+          <div className="absolute top-24 sm:top-16 left-2 sm:left-1/2 sm:-translate-x-1/2 z-50 pointer-events-none flex items-center justify-center">
+            <img src="/img/JAM.png" alt="Jam" className="w-28 sm:w-28 md:w-32 lg:w-36 h-auto object-contain opacity-90 drop-shadow-2xl" />
+            <span 
+              className={cn(
+                "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 font-black text-[18px] sm:text-[20px] md:text-[22px] lg:text-[24px] tracking-tight pt-1 transition-all duration-500",
+                "text-cyan-100 opacity-80", 
+              )}
+              style={theme?.isDark ? { 
+                textShadow: '0 0 10px rgba(59,130,246,1), 0 0 20px rgba(59,130,246,0.8)' 
+              } : {}}
+            >
+              {hasMounted ? (
+                <>
+                  {currentTime.getHours().toString().padStart(2, '0')}
+                  <span className={cn("inline-block mx-0.5 sm:mx-1", currentTime.getMilliseconds() < 500 ? "opacity-100" : "opacity-0")}>:</span>
+                  {currentTime.getMinutes().toString().padStart(2, '0')}
+                </>
+              ) : (
+                <>00<span className="mx-0.5 sm:mx-1 opacity-0">:</span>00</>
+              )}
+            </span>
+          </div>
+          <div className="mt-40 sm:mt-24 px-8 sm:px-20">
             <h1
-              className="special-font hero-heading text-white drop-shadow-2xl !text-[12vw] sm:!text-5xl md:!text-7xl lg:!text-[8rem] leading-[0.95] tracking-wide"
-              style={{ WebkitTextStroke: '1.5px #fff', paintOrder: 'stroke fill' }}
+              className="special-font hero-heading text-white !text-[12vw] sm:!text-5xl md:!text-7xl lg:!text-[8rem] leading-[0.95] tracking-wide hero-double-stroke"
             >
               FR<b>E</b>SH <br /> CRE<b>A</b>TIVE
             </h1>
-            <p className="mt-4 mb-6 sm:mb-5 max-w-lg text-base sm:text-lg font-bold leading-[1.4] text-white drop-shadow-md md:text-2xl" style={{ fontFamily: "'DM Sans', sans-serif", WebkitTextStroke: '0.5px #000', paintOrder: 'stroke fill' }}>
+            <p className="mt-4 mb-6 sm:mb-5 max-w-lg text-base sm:text-lg font-bold leading-[1.4] text-white drop-shadow-md md:text-2xl" style={{ fontFamily: "'DM Sans', sans-serif", WebkitTextStroke: '2px #000', paintOrder: 'stroke fill' }}>
               Simpan momen sekolahmu lebih nyata. <br />
               Fisik, Digital, & Anti Ribet.
             </p>
@@ -159,25 +192,25 @@ export function Hero() {
               </Button>
             </a>
 
-            <div className="mt-6 sm:mt-10 flex flex-wrap gap-6 sm:gap-10 md:gap-14">
+            <div className="mt-6 sm:mt-10 flex flex-nowrap gap-4 sm:gap-10 md:gap-14">
               <div className="flex flex-col">
-                <span className="special-font text-3xl sm:text-4xl font-bold text-white md:text-5xl">
-                  <AnimatedCounter target={5} suffix="+" />
+                <span className="special-font text-2xl sm:text-4xl font-bold text-white md:text-5xl">
+                  <AnimatedCounter target={300} suffix="+" />
                 </span>
                 <span className="font-general text-[8px] sm:text-[10px] uppercase tracking-widest text-white/60">
                   Sekolah
                 </span>
               </div>
               <div className="flex flex-col">
-                <span className="special-font text-3xl sm:text-4xl font-bold text-white md:text-5xl">
-                  <AnimatedCounter target={1500} formatFn={(n) => n >= 1000 ? `${(n / 1000).toFixed(1)}` : `${n}`} suffix="k" />
+                <span className="special-font text-2xl sm:text-4xl font-bold text-white md:text-5xl">
+                   <AnimatedCounter target={100000} formatFn={(n) => n >= 1000 ? `${Math.floor(n / 1000)}` : `${n}`} suffix="K+" />
                 </span>
                 <span className="font-general text-[8px] sm:text-[10px] uppercase tracking-widest text-white/60">
                   Siswa
                 </span>
               </div>
               <div className="flex flex-col">
-                <span className="special-font text-3xl sm:text-4xl font-bold text-white md:text-5xl">
+                <span className="special-font text-2xl sm:text-4xl font-bold text-white md:text-5xl">
                   Lifetime
                 </span>
                 <span className="font-general text-[8px] sm:text-[10px] uppercase tracking-widest text-white/60">
@@ -190,8 +223,7 @@ export function Hero() {
       </div>
 
       <h1
-        className="special-font hero-heading absolute right-8 bottom-8 text-black !text-[12vw] sm:!text-5xl md:!text-7xl lg:!text-[8rem] leading-[0.95] tracking-wide"
-        style={{ WebkitTextStroke: '1.5px #fff', paintOrder: 'stroke fill' }}
+        className="special-font hero-heading absolute right-8 bottom-8 text-black !text-[12vw] sm:!text-5xl md:!text-7xl lg:!text-[8rem] leading-[0.95] tracking-wide hero-double-stroke"
       >
         INDONESI<b>A</b>
       </h1>

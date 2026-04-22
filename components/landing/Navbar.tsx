@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, useContext } from "react";
-import { Sun, MoonStar, Menu, X } from "lucide-react";
+import { Sun, MoonStar, Menu, X, LogIn, LayoutDashboard, Volume2, VolumeX } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { TiLocationArrow } from "react-icons/ti";
 import Link from "next/link";
@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 import { ThemeContext } from "@/app/providers/ThemeProvider";
 import { supabase } from "@/lib/supabase";
 import { User } from "@supabase/supabase-js";
-import { LayoutDashboard, PlusCircle } from "lucide-react";
+
 
 export function Navbar() {
   const navContainerRef = useRef<HTMLDivElement>(null);
@@ -95,13 +95,24 @@ export function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  // Lock body scroll when mobile menu is open
+  useEffect(() => {
+    if (isMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [isMenuOpen]);
+
   return (
+    <>
     <header
       ref={navContainerRef}
       className={cn(
-        "fixed left-4 right-4 top-4 z-50 h-14 transition-all duration-300 ease-out sm:h-16 rounded-full border border-transparent",
+        "fixed left-4 right-4 top-4 z-[60] h-14 transition-all duration-300 ease-out sm:h-16 rounded-full border border-transparent",
         isScrolled && "floating-nav",
-        isMenuOpen && "!shadow-none !border-transparent !bg-transparent !backdrop-blur-none"
+        isMenuOpen && "!border-transparent !shadow-none !bg-white dark:!bg-slate-950"
       )}
     >
       <div className="absolute top-1/2 w-full -translate-y-1/2 z-50">
@@ -137,25 +148,25 @@ export function Navbar() {
 
             <div className="flex items-center gap-1 sm:gap-4">
               {!user ? (
-                <a
-                  href="#pricing"
-                  className="hidden md:inline-flex items-center gap-2 px-7 py-3 bg-yellow-300 text-black font-black text-xs uppercase tracking-wide border border-slate-200 dark:border-white rounded-full shadow-[2px_2px_0_0_#000] dark:shadow-[2px_2px_0_0_#a3e635] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[3px_3px_0_0_#000] dark:hover:shadow-[3px_3px_0_0_#a3e635] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all duration-200"
+                <Link
+                  href="/login"
+                  className="hidden md:inline-flex items-center gap-2 px-7 py-3 bg-yellow-300 text-black font-black text-xs uppercase tracking-wide border-2 border-black rounded-full shadow-[2px_2px_0_0_#000] dark:shadow-[2px_2px_0_0_#fff] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[3px_3px_0_0_#000] dark:hover:shadow-[3px_3px_0_0_#fff] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all duration-200"
                 >
-                  <TiLocationArrow className="text-base" />
-                  <span className="font-general text-xs uppercase">Buat Project</span>
-                </a>
+                  <LogIn size={14} />
+                  <span className="font-general text-xs uppercase">Login</span>
+                </Link>
               ) : (
                 <Link
                   href="/user"
-                  className="hidden md:inline-flex items-center gap-2 px-7 py-3 bg-yellow-300 text-black font-black text-xs uppercase tracking-wide border border-slate-200 dark:border-white rounded-full shadow-[2px_2px_0_0_#000] dark:shadow-[2px_2px_0_0_#a3e635] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[3px_3px_0_0_#000] dark:hover:shadow-[3px_3px_0_0_#a3e635] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all duration-200"
+                  className="hidden md:inline-flex items-center gap-2 px-7 py-3 bg-yellow-300 text-black font-black text-xs uppercase tracking-wide border-2 border-black rounded-full shadow-[2px_2px_0_0_#000] dark:shadow-[2px_2px_0_0_#fff] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[3px_3px_0_0_#000] dark:hover:shadow-[3px_3px_0_0_#fff] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all duration-200"
                 >
-                  <TiLocationArrow className="text-base" />
-                  <span className="font-general text-xs uppercase">Masuk Dashboard</span>
+                  <LayoutDashboard size={14} />
+                  <span className="font-general text-xs uppercase">Dashboard</span>
                 </Link>
               )}
               <button
                 onClick={theme?.toggleTheme}
-                className="nav-icon-stroke md:ml-4 flex items-center justify-center p-2 text-slate-800 dark:text-white transition hover:opacity-100 active:scale-90 rounded-none w-10 h-10 overflow-hidden"
+                className="md:ml-4 flex items-center justify-center p-2 text-slate-800 dark:text-white transition hover:opacity-100 active:scale-90 rounded-none w-10 h-10 overflow-hidden"
                 title="Toggle Theme"
               >
                 <AnimatePresence mode="wait">
@@ -207,7 +218,11 @@ export function Navbar() {
                           viewBox="0 0 24 24"
                           className="sm:size-[20px]"
                           aria-hidden
-                          fill="currentColor"
+                          fill="white"
+                          stroke="black"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
                         >
                           <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z" />
                         </svg>
@@ -218,7 +233,7 @@ export function Navbar() {
 
               <button
                 onClick={toggleAudioIndicator}
-                className="nav-icon-stroke flex items-center space-x-1 p-2 text-slate-800 dark:text-white transition hover:opacity-100 active:scale-90 rounded-none"
+                className="flex items-center space-x-1 p-2 text-slate-800 dark:text-white transition hover:opacity-100 active:scale-90 rounded-none"
                 title="Play Audio"
               >
                 {audioSrc && (
@@ -235,10 +250,13 @@ export function Navbar() {
                     <div
                       key={i}
                       className={cn(
-                        "indicator-line bg-slate-900 dark:bg-white",
+                        "indicator-line",
                         isIndicatorActive && "active"
                       )}
-                      style={{ animationDelay: `${(i + 1) * 0.1}s` }}
+                      style={{ 
+                        animationDelay: `${(i + 1) * 0.1}s`,
+                        height: isIndicatorActive ? undefined : ['12px', '6px', '10px', '8px'][i]
+                      }}
                     />
                   ))}
               </button>
@@ -247,24 +265,43 @@ export function Navbar() {
             {/* Mobile Menu Toggle Button */}
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="md:hidden ml-2 flex items-center p-2 text-slate-800 dark:text-white transition hover:opacity-100 rounded-none nav-icon-stroke"
+              className="md:hidden ml-2 flex items-center p-2 text-slate-800 dark:text-white transition hover:opacity-100 rounded-none"
               aria-label="Toggle Menu"
             >
-              {isMenuOpen ? <X size={24} strokeWidth={2.5} /> : <Menu size={24} strokeWidth={2.5} />}
+              {isMenuOpen ? (
+                <X 
+                  size={24} 
+                  strokeWidth={2.5} 
+                  className={cn(
+                    "transition-all duration-300",
+                    !theme?.isDark ? "text-white [filter:drop-shadow(1px_0_0_#000)_drop-shadow(-1px_0_0_#000)_drop-shadow(0_1px_0_#000)_drop-shadow(0_-1px_0_#000)]" : "text-white"
+                  )}
+                />
+              ) : (
+                <Menu 
+                  size={24} 
+                  strokeWidth={2.5} 
+                  className={cn(
+                    "transition-all duration-300",
+                    !theme?.isDark ? "text-white [filter:drop-shadow(1px_0_0_#000)_drop-shadow(-1px_0_0_#000)_drop-shadow(0_1px_0_#000)_drop-shadow(0_-1px_0_#000)]" : "text-white"
+                  )}
+                />
+              )}
             </button>
           </div>
         </nav>
       </div>
+    </header>
 
-      {/* Mobile Menu Overlay */}
+      {/* Mobile Menu Overlay - outside header to avoid pill containing block */}
       <AnimatePresence>
         {isMenuOpen && (
           <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-            className="fixed inset-x-0 top-0 bg-white dark:bg-slate-950 md:hidden flex flex-col items-center gap-6 pt-[100px] sm:pt-[120px] pb-12 z-[40] shadow-2xl border-b-2 border-slate-200 dark:border-white/20"
+            initial={{ opacity: 0, clipPath: "inset(0 0 100% 0)" }}
+            animate={{ opacity: 1, clipPath: "inset(0 0 0% 0)" }}
+            exit={{ opacity: 0, clipPath: "inset(0 0 100% 0)" }}
+            transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+            className="fixed inset-0 bg-white dark:bg-slate-950 md:hidden flex flex-col items-center justify-center gap-6 pb-12 z-[55] transition-colors duration-300"
           >
             {NAV_ITEMS.map(({ label, href }) => (
               <a
@@ -278,28 +315,28 @@ export function Navbar() {
             ))}
             <div className="w-full px-8 mt-4">
               {!user ? (
-                <a
-                  href="#pricing"
-                  className="flex items-center justify-center gap-2 px-7 py-4 bg-yellow-300 text-black font-black text-sm uppercase tracking-wide border-2 border-slate-200 rounded-full shadow-[4px_4px_0_0_#000] dark:shadow-[4px_4px_0_0_#fff] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all duration-200 w-full"
+                <Link
+                  href="/login"
+                  className="flex items-center justify-center gap-2 px-7 py-4 bg-yellow-300 text-black font-black text-sm uppercase tracking-wide border-2 border-black rounded-full shadow-[3px_3px_0_0_#000] dark:shadow-[3px_3px_0_0_#fff] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all duration-200 w-full"
                   onClick={() => setIsMenuOpen(false)}
                 >
-                  <TiLocationArrow className="text-xl" />
-                  Buat Project
-                </a>
+                  <LogIn size={18} />
+                  Login
+                </Link>
               ) : (
                 <Link
                   href="/user"
-                  className="flex items-center justify-center gap-3 px-7 py-4 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-black text-sm uppercase tracking-wide border-2 border-slate-900 dark:border-white/20 rounded-full shadow-[4px_4px_0_0_#000] dark:shadow-[4px_4px_0_0_#fff] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all duration-200 w-full"
+                  className="flex items-center justify-center gap-3 px-7 py-4 bg-yellow-300 text-black font-black text-sm uppercase tracking-wide border-2 border-black rounded-full shadow-[3px_3px_0_0_#000] dark:shadow-[3px_3px_0_0_#fff] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all duration-200 w-full"
                   onClick={() => setIsMenuOpen(false)}
                 >
-                  <LayoutDashboard className="size-5 text-orange-500" />
-                  Masuk Dashboard
+                  <LayoutDashboard size={18} />
+                  Dashboard
                 </Link>
               )}
             </div>
           </motion.div>
         )}
       </AnimatePresence>
-    </header>
+    </>
   );
 }
