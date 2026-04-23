@@ -119,7 +119,8 @@ export function Hero() {
     "[@media(width:412px)]:!mt-52 [@media(width:414px)]:!mt-56 [@media(width:430px)]:!mt-56 [@media(width:540px)]:!mt-52",
     "[@media(max-height:650px)]:!mt-24 [@media(min-height:700px)]:mt-36 [@media(min-height:800px)]:mt-36",
     "[@media(min-height:820px)_and_(max-width:499px)]:mt-44 [@media(min-height:1000px)]:!mt-[16rem]",
-    "[@media(min-height:1100px)]:!mt-[22rem] [@media(min-height:1200px)]:!mt-[32rem] [@media(min-height:1300px)]:!mt-[40rem]"
+    "[@media(min-height:1100px)]:!mt-[22rem] [@media(min-height:1200px)]:!mt-[32rem] [@media(min-height:1300px)]:!mt-[40rem]",
+    "[@media(min-width:2400px)_and_(max-height:1200px)]:!mt-[32rem] [@media(min-width:1920px)]:!mt-[24rem] [@media(min-width:2400px)]:!mt-[36rem]"
   );
 
   return (
