@@ -93,8 +93,8 @@ export function Hero() {
   useGSAP(() => {
     const isMobile = window.innerWidth < 768;
     gsap.set("#video-frame", {
-      clipPath: isMobile 
-        ? "polygon(4% 0%, 96% 0%, 100% 100%, 0% 100%)" 
+      clipPath: isMobile
+        ? "polygon(4% 0%, 96% 0%, 100% 100%, 0% 100%)"
         : "polygon(14% 0%, 72% 0%, 90% 90%, 0% 100%)",
       borderRadius: isMobile ? "0 0 5% 5%" : "0 0 40% 10%",
     });
@@ -110,6 +110,17 @@ export function Hero() {
       },
     });
   }, [isLoading]);
+
+  // // teks setting
+  const headingContainerClasses = cn(
+    "mt-28 px-8 transition-all duration-500",
+    "sm:mt-16 sm:px-20",
+    "[@media(width:344px)]:!mt-52 [@media(width:360px)]:!mt-56 [@media(width:375px)]:!mt-56 [@media(width:390px)]:!mt-56",
+    "[@media(width:412px)]:!mt-52 [@media(width:414px)]:!mt-56 [@media(width:430px)]:!mt-56 [@media(width:540px)]:!mt-52",
+    "[@media(max-height:650px)]:!mt-24 [@media(min-height:700px)]:mt-36 [@media(min-height:800px)]:mt-36",
+    "[@media(min-height:820px)_and_(max-width:499px)]:mt-44 [@media(min-height:1000px)]:!mt-[16rem]",
+    "[@media(min-height:1100px)]:!mt-[22rem] [@media(min-height:1200px)]:!mt-[32rem] [@media(min-height:1300px)]:!mt-[40rem]"
+  );
 
   return (
     <section id="hero" className="relative h-dvh w-full overflow-x-hidden bg-slate-100 dark:bg-slate-950 transition-colors duration-500">
@@ -157,15 +168,35 @@ export function Hero() {
 
 
         <div className="absolute top-0 left-0 z-40 flex size-full flex-col justify-between pt-6 pb-12 sm:py-10 sm:pb-10 md:pb-12 lg:pb-14 xl:pb-16">
-          <div className="absolute top-20 [@media(max-height:650px)]:top-24 [@media(min-height:700px)_and_(max-width:499px)]:top-24 [@media(min-height:700px)_and_(min-width:500px)]:top-22 [@media(min-height:800px)]:top-28 [@media(min-height:1000px)]:!top-[10rem] [@media(min-height:1100px)]:!top-[12rem] [@media(min-height:1200px)]:!top-[16rem] [@media(min-height:700px)_and_(max-width:499px)]:left-8 [@media(min-height:700px)_and_(min-width:500px)_and_(max-width:767px)]:left-32 [@media(min-height:800px)_and_(max-width:767px)]:left-4 sm:top-16 left-12 sm:left-1/2 sm:-translate-x-1/2 z-50 pointer-events-none flex items-center justify-center transition-all duration-500">
-            <img src="/img/JAM.png" alt="Jam" className="w-28 [@media(max-height:650px)]:!w-24 [@media(min-height:700px)]:!w-32 [@media(min-height:800px)]:!w-36 [@media(min-height:1100px)]:!w-[300px] [@media(min-height:1200px)]:!w-[600px] sm:w-28 md:w-32 lg:w-36 h-auto object-contain opacity-90 drop-shadow-2xl transition-all duration-500" />
-            <span 
+
+          {/* // jam setting (posisi) */}
+          <div className={cn(
+            "absolute top-20 left-12 z-50 pointer-events-none flex items-center justify-center transition-all duration-500",
+            "sm:top-16 sm:left-1/2 sm:-translate-x-1/2",
+            "[@media(min-height:700px)_and_(max-width:499px)]:top-24 [@media(min-height:700px)_and_(max-width:499px)]:left-8",
+            "[@media(min-height:700px)_and_(min-width:500px)]:top-22 [@media(min-height:700px)_and_(min-width:500px)_and_(max-width:767px)]:left-32",
+            "[@media(min-height:800px)_and_(max-width:767px)]:left-4",
+            "[@media(max-height:650px)]:top-24 [@media(min-height:800px)]:top-28 [@media(min-height:1000px)]:!top-[10rem] [@media(min-height:1100px)]:!top-[12rem] [@media(min-height:1200px)]:!top-[16rem]"
+          )}>
+
+            {/* // jam setting (ukuran) */}
+            <img
+              src="/img/JAM.png"
+              alt="Jam"
+              className={cn(
+                "w-28 h-auto object-contain opacity-90 drop-shadow-2xl transition-all duration-500",
+                "sm:w-28 md:w-32 lg:w-36",
+                "[@media(max-height:650px)]:!w-24 [@media(min-height:700px)]:!w-32 [@media(min-height:800px)]:!w-36",
+                "[@media(min-height:1100px)]:!w-[300px] [@media(min-height:1200px)]:!w-[600px]"
+              )}
+            />
+            <span
               className={cn(
                 "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 font-black text-[18px] [@media(max-height:650px)]:!text-[14px] [@media(min-height:700px)]:!text-[21px] [@media(min-height:800px)]:!text-[24px] [@media(min-height:1100px)]:!text-[44px] [@media(min-height:1200px)]:!text-[84px] sm:text-[20px] md:text-[22px] lg:text-[24px] tracking-tight pt-1 transition-all duration-500",
-                "text-cyan-100 opacity-80", 
+                "text-cyan-100 opacity-80",
               )}
-              style={theme?.isDark ? { 
-                textShadow: '0 0 10px rgba(59,130,246,1), 0 0 20px rgba(59,130,246,0.8)' 
+              style={theme?.isDark ? {
+                textShadow: '0 0 10px rgba(59,130,246,1), 0 0 20px rgba(59,130,246,0.8)'
               } : {}}
             >
               {hasMounted ? (
@@ -179,7 +210,8 @@ export function Hero() {
               )}
             </span>
           </div>
-          <div className="mt-28 [@media(min-height:700px)]:mt-36 [@media(min-height:800px)]:mt-36 [@media(min-height:820px)_and_(max-width:499px)]:mt-44 [@media(min-height:1000px)]:!mt-[14rem] [@media(min-height:1300px)]:!mt-[20rem] [@media(max-height:650px)]:!mt-24 [@media(width:412px)]:!mt-52 [@media(width:344px)]:!mt-52 [@media(width:540px)]:!mt-52 [@media(width:360px)]:!mt-56 [@media(width:430px)]:!mt-56 [@media(width:390px)]:!mt-56 [@media(width:414px)]:!mt-56 [@media(width:375px)]:!mt-56 sm:mt-16 px-8 sm:px-20 transition-all duration-500">
+
+          <div className={headingContainerClasses}>
             {/* Heading wrapper — width driven by CREATIVE (widest line) */}
             <div className="inline-flex flex-col gap-0 sm:gap-1">
               {/* FRESH — natural width, Josefin */}
@@ -236,7 +268,7 @@ export function Hero() {
               </div>
               <div className="flex flex-col">
                 <span className="special-font text-2xl sm:text-4xl font-bold text-white md:text-5xl [@media(max-height:650px)]:!text-3xl">
-                   <AnimatedCounter target={100000} formatFn={(n) => n >= 1000 ? `${Math.floor(n / 1000)}` : `${n}`} suffix="K+" />
+                  <AnimatedCounter target={100000} formatFn={(n) => n >= 1000 ? `${Math.floor(n / 1000)}` : `${n}`} suffix="K+" />
                 </span>
                 <span className="font-general text-[8px] sm:text-[10px] uppercase tracking-widest text-white/60">
                   Siswa
@@ -256,8 +288,9 @@ export function Hero() {
       </div>
 
       <div className="absolute top-0 left-0 z-0 flex size-full flex-col justify-between pt-6 pb-12 sm:py-10 sm:pb-10 md:pb-12 lg:pb-14 xl:pb-16">
-        <div className="mt-28 [@media(min-height:700px)]:mt-36 [@media(min-height:800px)]:mt-36 [@media(min-height:820px)_and_(max-width:499px)]:mt-44 [@media(min-height:1000px)]:!mt-[14rem] [@media(min-height:1300px)]:!mt-[20rem] [@media(max-height:650px)]:!mt-24 [@media(width:412px)]:!mt-52 [@media(width:344px)]:!mt-52 [@media(width:540px)]:!mt-52 [@media(width:360px)]:!mt-56 [@media(width:430px)]:!mt-56 [@media(width:390px)]:!mt-56 [@media(width:414px)]:!mt-56 [@media(width:375px)]:!mt-56 sm:mt-16 px-8 sm:px-20 transition-all duration-500">
-            {/* Ghost duplicate for the black text layer (background) */}
+
+        <div className={headingContainerClasses}>
+          {/* Ghost duplicate for the black text layer (background) */}
           <div className="inline-flex flex-col gap-0 sm:gap-1">
             <span
               className="text-black hero-orange-stroke text-[11vw] sm:text-4xl md:text-6xl lg:text-[6rem] [@media(max-height:650px)]:!text-[3.5rem] leading-none tracking-tight"

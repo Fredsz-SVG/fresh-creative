@@ -5,8 +5,8 @@ export const NAV_ITEMS = [
 ] as const;
 
 export const VIDEO_LINKS = {
-  hero1: "/videos/SIANG.mp4",
-  hero2: "/videos/MALAM.mp4",
+  hero1: "/videos/SIANG.webm",
+  hero2: "/videos/MALAM.webm",
 } as const;
 
 
