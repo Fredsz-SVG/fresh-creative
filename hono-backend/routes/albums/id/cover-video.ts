@@ -2,8 +2,9 @@ import { Hono } from 'hono'
 import { getSupabaseClient } from '../../../lib/supabase'
 import { getRole } from '../../../lib/auth'
 import { getD1, getAssets } from '../../../lib/edge-env'
-import { putAlbumPhoto } from '../../../lib/r2-assets'
-import { publicAlbumAssetUrl } from '../../../lib/public-file-url'
+import { putAlbumPhoto, deleteAlbumObject } from '../../../lib/r2-assets'
+import { publicAlbumAssetUrl, getR2KeyFromPublicUrl } from '../../../lib/public-file-url'
+import { albumPathFromR2Key } from '../../../lib/storage-layout'
 
 const albumCoverVideoRoute = new Hono()
 
@@ -45,9 +46,9 @@ albumCoverVideoRoute.post('/', async (c) => {
   if (fileData.byteLength > MAX_VIDEO_BYTES) return c.json({ error: 'Video maksimal 20MB' }, 413)
 
   const album = await db
-    .prepare(`SELECT id, user_id FROM albums WHERE id = ?`)
+    .prepare(`SELECT id, user_id, cover_video_url FROM albums WHERE id = ?`)
     .bind(albumId)
-    .first<{ id: string; user_id: string }>()
+    .first<{ id: string; user_id: string; cover_video_url: string | null }>()
   if (!album) return c.json({ error: 'Album not found' }, 404)
   const role = await getRole(c, user)
   if (album.user_id !== user.id && role !== 'admin') {
@@ -57,6 +58,18 @@ albumCoverVideoRoute.post('/', async (c) => {
   const ext = filename.split('.').pop()?.toLowerCase() || 'mp4'
   const safeExt = ['mp4', 'webm', 'mov', 'avi'].includes(ext) ? ext : 'mp4'
   const relPath = `${albumId}/cover-video.${safeExt}`
+
+  // Cleanup old video if exists
+  if (album.cover_video_url) {
+    const oldKey = getR2KeyFromPublicUrl(c, album.cover_video_url)
+    if (oldKey) {
+      try {
+        await deleteAlbumObject(bucket, albumPathFromR2Key(oldKey))
+      } catch (e) {
+        console.error('Failed to cleanup old cover video:', e)
+      }
+    }
+  }
 
   try {
     await putAlbumPhoto(bucket, relPath, fileData, {
@@ -92,13 +105,25 @@ albumCoverVideoRoute.delete('/', async (c) => {
   if (!albumId) return c.json({ error: 'Album ID required' }, 400)
 
   const album = await db
-    .prepare(`SELECT id, user_id FROM albums WHERE id = ?`)
+    .prepare(`SELECT id, user_id, cover_video_url FROM albums WHERE id = ?`)
     .bind(albumId)
-    .first<{ id: string; user_id: string }>()
+    .first<{ id: string; user_id: string; cover_video_url: string | null }>()
   if (!album) return c.json({ error: 'Album not found' }, 404)
   const role = await getRole(c, user)
   if (album.user_id !== user.id && role !== 'admin') {
     return c.json({ error: 'Hanya pemilik album yang dapat menghapus video sampul' }, 403)
+  }
+
+  const assets = getAssets(c)
+  if (assets && album.cover_video_url) {
+    const oldKey = getR2KeyFromPublicUrl(c, album.cover_video_url)
+    if (oldKey) {
+      try {
+        await deleteAlbumObject(assets, albumPathFromR2Key(oldKey))
+      } catch (e) {
+        console.error('Failed to delete cover video from R2:', e)
+      }
+    }
   }
 
   const upd = await db

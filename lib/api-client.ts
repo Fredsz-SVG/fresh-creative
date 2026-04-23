@@ -4,6 +4,7 @@
  */
 import { apiUrl } from './api-url'
 import { supabase } from './supabase'
+import { convertToWebP } from './image-conversion'
 
 type CachedResponse = {
   expiresAt: number
@@ -117,6 +118,39 @@ export async function fetchWithAuth(
     if (inflight) {
       const shared = await inflight
       return shared.clone()
+    }
+  }
+
+  // GLOBAL IMAGE OPTIMIZATION: Convert any image in FormData to WebP before sending
+  const isBrowser = typeof window !== 'undefined' && typeof document !== 'undefined'
+  if (isBrowser && rest.body instanceof FormData) {
+    const originalFormData = rest.body
+    const newFormData = new FormData()
+    let hasChanged = false
+
+    for (const [key, value] of (originalFormData as any).entries()) {
+      if (
+        value instanceof File &&
+        value.type.startsWith('image/') &&
+        value.type !== 'image/gif' &&
+        value.type !== 'image/webp' // Skip if already webp
+      ) {
+        try {
+          const webpBlob = await convertToWebP(value)
+          const newName = value.name.replace(/\.[^/.]+$/, '') + '.webp'
+          newFormData.append(key, webpBlob, newName)
+          hasChanged = true
+        } catch (e) {
+          console.error('Global WebP conversion failed for', value.name, e)
+          newFormData.append(key, value)
+        }
+      } else {
+        newFormData.append(key, value)
+      }
+    }
+
+    if (hasChanged) {
+      rest.body = newFormData
     }
   }
 

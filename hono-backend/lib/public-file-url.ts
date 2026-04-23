@@ -13,3 +13,16 @@ export function publicFileUrlFromR2Key(c: Context, r2ObjectKey: string): string 
 export function publicAlbumAssetUrl(c: Context, relativePathInsideAlbumBucket: string): string {
   return publicFileUrlFromR2Key(c, r2ObjectKeyFromAlbumPath(relativePathInsideAlbumBucket))
 }
+/** Extract R2 object key from public URL formatted as `/api/files/...`. */
+export function getR2KeyFromPublicUrl(c: Context, publicUrl: string): string | null {
+  try {
+    const u = new URL(publicUrl, 'http://localhost') // second arg for relative URLs
+    const prefix = '/api/files/'
+    if (u.pathname.startsWith(prefix)) {
+      return decodeURIComponent(u.pathname.slice(prefix.length))
+    }
+  } catch {
+    // ignore
+  }
+  return null
+}

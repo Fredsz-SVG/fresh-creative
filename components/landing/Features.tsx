@@ -74,7 +74,10 @@ function BentoCard({ media, src, title, description }: BentoCardProps) {
       {/* Content */}
       <div className="relative z-20 flex size-full flex-col justify-end p-6 md:p-8">
         <div>
-          <h2 className="font-zentry text-4xl md:text-5xl lg:text-6xl text-white uppercase tracking-tight drop-shadow-lg leading-none">
+          <h2 
+            className="font-zentry text-2xl md:text-3xl lg:text-4xl text-white uppercase tracking-tight drop-shadow-lg leading-none"
+            style={{ WebkitTextStroke: '1px black' } as any}
+          >
             {title}
           </h2>
           {description && (
@@ -110,7 +113,7 @@ export function Features() {
             media="image"
             src="/img/yearbooks.png"
             title={<>YEARBOOK</>}
-            description="Digital Swipe Carousel, Digital Flipbook, serta Cetak Buku Fisik."
+            description="What can we do?"
           />
         </BentoCardWrap>
 

@@ -75,12 +75,12 @@ export function About() {
 
   if (loading) {
     return (
-      <section className="w-full bg-slate-100 dark:bg-slate-950 pt-24 sm:pt-32 transition-colors duration-500">
+      <section className="w-full bg-slate-100 dark:bg-slate-950 pt-16 sm:pt-20 transition-colors duration-500">
         <div className="container mx-auto px-6 sm:px-10 mb-8 sm:mb-10">
           <div className="h-4 w-24 bg-lime-200 dark:bg-lime-900 rounded-full mb-3 animate-pulse" />
           <div className="h-10 sm:h-12 lg:h-14 w-64 bg-slate-200 dark:bg-slate-900 rounded-2xl animate-pulse" />
         </div>
-        <div className="relative h-[80vh] sm:h-[85vh] w-full overflow-hidden bg-slate-200 dark:bg-slate-900 animate-pulse">
+        <div className="relative h-[90vh] sm:h-screen w-full overflow-hidden bg-slate-200 dark:bg-slate-900 animate-pulse">
           <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/60 to-transparent opacity-50" />
           <div className="absolute bottom-12 left-12 space-y-4">
             <div className="h-4 w-32 bg-lime-400 opacity-20 rounded-lg" />
@@ -103,7 +103,7 @@ export function About() {
   ];
 
   return (
-    <section id="about" className="w-full bg-slate-100 dark:bg-slate-950 pt-24 sm:pt-32 transition-colors duration-500">
+    <section id="about" className="w-full bg-slate-100 dark:bg-slate-950 pt-16 sm:pt-20 transition-colors duration-500">
       <div className="container mx-auto px-6 sm:px-10 mb-8 sm:mb-10 text-center sm:text-left">
         <p className="font-general text-[10px] sm:text-xs uppercase tracking-[0.2em] text-lime-600 dark:text-lime-400 font-black mb-3">
           Discover
@@ -114,7 +114,7 @@ export function About() {
       </div>
 
       <div
-        className="group/hero relative h-[80vh] sm:h-[85vh] w-full overflow-hidden shadow-[0_-20px_50px_-20px_rgba(0,0,0,0.3)] dark:shadow-[0_-20px_50px_-20px_rgba(0,0,0,0.8)] border-t border-slate-200 dark:border-white/10 bg-slate-950 select-none"
+        className="group/hero relative h-[90vh] sm:h-screen w-full overflow-hidden shadow-[0_-20px_50px_-20px_rgba(0,0,0,0.3)] dark:shadow-[0_-20px_50px_-20px_rgba(0,0,0,0.8)] border-t border-slate-200 dark:border-white/10 bg-slate-950 select-none"
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
         onMouseDown={onMouseDown}
@@ -182,53 +182,19 @@ export function About() {
           </motion.p>
         </div>
 
-        {/* SLIDER THUMBNAILS (Neo-Brutalist inspired) - Desktop Only */}
-        <div className="hidden lg:flex absolute lg:top-1/2 lg:-translate-y-1/2 right-2 sm:right-6 lg:right-10 z-20 lg:flex-col gap-3 sm:gap-4 max-w-[calc(100vw-16px)] overflow-x-auto lg:overflow-visible no-scrollbar p-6 lg:p-4">
-          <AnimatePresence mode="popLayout">
-            {queueItems.map((item) => (
-              <motion.button
-                key={item.id}
-                layoutId={`card-${item.id}`}
-                onClick={() => setActiveIndex(items.findIndex(p => p.id === item.id))}
-                initial={{ opacity: 0, scale: 0.88 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.88 }}
-                transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-                style={{ willChange: "transform, opacity" }}
-                className="group relative h-20 w-16 sm:h-28 sm:w-20 lg:h-36 lg:w-28 shrink-0 rounded-2xl border-2 border-white/20 hover:border-lime-400 overflow-hidden bg-slate-900 focus:outline-none [filter:drop-shadow(0_8px_16px_rgba(0,0,0,0.55))] hover:[filter:drop-shadow(0_8px_20px_rgba(163,230,53,0.25))]"
-              >
-                <img
-                  src={item.img}
-                  alt={item.title}
-                  className="absolute inset-0 size-full object-cover"
-                  loading="lazy"
-                  decoding="async"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-                
-                <div className="absolute inset-x-0 bottom-0 p-2 sm:p-3 text-left">
-                  <p className="font-zentry text-[10px] sm:text-xs text-white leading-tight drop-shadow-md">
-                    {item.title}
-                  </p>
-                </div>
-              </motion.button>
-            ))}
-          </AnimatePresence>
-        </div>
-
-        {/* MOBILE NAVIGATION ARROWS */}
-        <div className="absolute inset-y-0 inset-x-0 z-30 flex items-center justify-between px-4 lg:hidden pointer-events-none">
+        {/* NAVIGATION ARROWS - Visible on all sizes */}
+        <div className="absolute inset-y-0 inset-x-0 z-30 flex items-center justify-between px-4 sm:px-8 lg:px-12 pointer-events-none">
           <button 
             onClick={goPrev}
-            className="pointer-events-auto w-12 h-12 flex items-center justify-center bg-white/15 rounded-full text-white/45 hover:text-white hover:bg-white/20 transition-all active:scale-95"
+            className="pointer-events-auto w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center bg-white/15 backdrop-blur-sm rounded-full text-white/50 hover:text-white hover:bg-white/25 transition-all active:scale-90 border border-white/10 shadow-lg"
           >
-            <ChevronLeft className="w-8 h-8" />
+            <ChevronLeft className="w-8 h-8 sm:w-10 sm:h-10" />
           </button>
           <button 
             onClick={goNext}
-            className="pointer-events-auto w-12 h-12 flex items-center justify-center bg-white/15 rounded-full text-white/45 hover:text-white hover:bg-white/20 transition-all active:scale-95"
+            className="pointer-events-auto w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center bg-white/15 backdrop-blur-sm rounded-full text-white/50 hover:text-white hover:bg-white/25 transition-all active:scale-90 border border-white/10 shadow-lg"
           >
-            <ChevronRight className="w-8 h-8" />
+            <ChevronRight className="w-8 h-8 sm:w-10 sm:h-10" />
           </button>
         </div>
 

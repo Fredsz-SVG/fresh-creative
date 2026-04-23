@@ -2,8 +2,9 @@ import { Hono } from 'hono'
 import { getSupabaseClient } from '../../../lib/supabase'
 import { getRole } from '../../../lib/auth'
 import { getD1, getAssets } from '../../../lib/edge-env'
-import { putAlbumPhoto } from '../../../lib/r2-assets'
-import { publicAlbumAssetUrl } from '../../../lib/public-file-url'
+import { putAlbumPhoto, deleteAlbumObject } from '../../../lib/r2-assets'
+import { publicAlbumAssetUrl, getR2KeyFromPublicUrl } from '../../../lib/public-file-url'
+import { albumPathFromR2Key } from '../../../lib/storage-layout'
 
 const albumCoverRoute = new Hono()
 
@@ -57,9 +58,9 @@ albumCoverRoute.post('/', async (c) => {
       : null
 
   const album = await db
-    .prepare(`SELECT id, user_id FROM albums WHERE id = ?`)
+    .prepare(`SELECT id, user_id, cover_image_url FROM albums WHERE id = ?`)
     .bind(albumId)
-    .first<{ id: string; user_id: string }>()
+    .first<{ id: string; user_id: string; cover_image_url: string | null }>()
   if (!album) return c.json({ error: 'Album not found' }, 404)
 
   const role = await getRole(c, user)
@@ -70,6 +71,18 @@ albumCoverRoute.post('/', async (c) => {
   const ext = filename.split('.').pop()?.toLowerCase() || 'jpg'
   const safeExt = ['jpg', 'jpeg', 'png', 'webp', 'gif'].includes(ext) ? ext : 'jpg'
   const relPath = `${albumId}/cover.${safeExt}`
+
+  // Cleanup old cover if exists
+  if (album.cover_image_url) {
+    const oldKey = getR2KeyFromPublicUrl(c, album.cover_image_url)
+    if (oldKey) {
+      try {
+        await deleteAlbumObject(bucket, albumPathFromR2Key(oldKey))
+      } catch (e) {
+        console.error('Failed to cleanup old cover:', e)
+      }
+    }
+  }
 
   try {
     await putAlbumPhoto(bucket, relPath, fileData, { contentType: mimetype })
@@ -106,14 +119,26 @@ albumCoverRoute.delete('/', async (c) => {
   if (!albumId) return c.json({ error: 'Album ID required' }, 400)
 
   const album = await db
-    .prepare(`SELECT id, user_id FROM albums WHERE id = ?`)
+    .prepare(`SELECT id, user_id, cover_image_url FROM albums WHERE id = ?`)
     .bind(albumId)
-    .first<{ id: string; user_id: string }>()
+    .first<{ id: string; user_id: string; cover_image_url: string | null }>()
   if (!album) return c.json({ error: 'Album not found' }, 404)
 
   const role = await getRole(c, user)
   if (album.user_id !== user.id && role !== 'admin') {
     return c.json({ error: 'Hanya pemilik album yang dapat menghapus sampul' }, 403)
+  }
+
+  const assets = getAssets(c)
+  if (assets && album.cover_image_url) {
+    const oldKey = getR2KeyFromPublicUrl(c, album.cover_image_url)
+    if (oldKey) {
+      try {
+        await deleteAlbumObject(assets, albumPathFromR2Key(oldKey))
+      } catch (e) {
+        console.error('Failed to delete cover from R2:', e)
+      }
+    }
   }
 
   const r = await db

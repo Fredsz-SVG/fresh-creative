@@ -4,7 +4,9 @@ import type { Context } from 'hono'
 import { getSupabaseClient } from '../../lib/supabase'
 import { getRole } from '../../lib/auth'
 import { ensureUserInD1, honoEnvForSupabasePublicSync } from '../../lib/d1-users'
-import { putAlbumPhoto } from '../../lib/r2-assets'
+import { putAlbumPhoto, deleteAlbumObject } from '../../lib/r2-assets'
+import { albumPathFromR2Key } from '../../lib/storage-layout'
+import { getR2KeyFromPublicUrl } from '../../lib/public-file-url'
 
 interface HonoUser {
   id: string
@@ -104,7 +106,22 @@ adminPortfolio.put('/:id', async (c) => {
     const imageFile = formData.image as File
     let imageUrl = formData.imageUrl as string
 
+    // 0. Fetch existing item to know the old image_url
+    const oldItem = await db.prepare('SELECT image_url FROM portfolio_items WHERE id = ?').bind(id).first() as { image_url?: string } | null
+    const oldImageUrl = oldItem?.image_url
+
     if (imageFile && typeof imageFile !== 'string') {
+      // 1. Delete old image from R2 if it exists and is an internal file
+      const oldKey = getR2KeyFromPublicUrl(c, oldImageUrl || '')
+      if (oldKey) {
+        const relativePath = albumPathFromR2Key(oldKey)
+        try {
+          await deleteAlbumObject(assets, relativePath)
+        } catch (e) {
+          console.error('Failed to delete old portfolio image from R2:', e)
+        }
+      }
+
       const fileName = `${id}-${Date.now()}-${imageFile.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`
       const r2Key = `landing/portfolio/${fileName}`
       const { key } = await putAlbumPhoto(assets, r2Key, imageFile, { contentType: imageFile.type })
@@ -137,6 +154,22 @@ adminPortfolio.delete('/:id', async (c) => {
   if (await getRole(c, user) !== 'admin') return c.json({ error: 'Forbidden' }, 403)
 
   try {
+    const assets = requireAssets(c)
+    // 0. Fetch existing item to know the image_url
+    const oldItem = await db.prepare('SELECT image_url FROM portfolio_items WHERE id = ?').bind(id).first() as { image_url?: string } | null
+    const oldImageUrl = oldItem?.image_url
+
+    // 1. Delete from R2 if it exists and we have bucket access
+    const oldKey = getR2KeyFromPublicUrl(c, oldImageUrl || '')
+    if (assets && oldKey) {
+      const relativePath = albumPathFromR2Key(oldKey)
+      try {
+        await deleteAlbumObject(assets, relativePath)
+      } catch (e) {
+        console.error('Failed to delete portfolio image from R2 on delete:', e)
+      }
+    }
+
     await db.prepare('DELETE FROM portfolio_items WHERE id = ?').bind(id).run()
     return c.json({ success: true })
   } catch {

@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from
 import { fetchWithAuth } from '../../../lib/api-client'
 import { Loader2, Eye, BookOpen, Save, MessageCircle, Plus, Trash2, Edit2, Upload, GripVertical, ImageIcon, AlertTriangle } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { convertToWebP } from '../../../lib/image-conversion'
 
 interface PortfolioItem {
   id: string
@@ -153,6 +154,26 @@ export default function AdminShowcasePage() {
     fetchPortfolio(hasCachePortfolioRef.current)
   }, [fetchPortfolio])
 
+  // Realtime Sync Listener - Durable Objects & WebSocket
+  useEffect(() => {
+    const onRealtime = (event: Event) => {
+      const detail = (event as CustomEvent<{ type?: string; channel?: string; payload?: Record<string, unknown> }>).detail
+      if (!detail?.type || detail.channel !== 'global') return
+
+      const path = typeof detail.payload?.path === 'string' ? detail.payload.path : ''
+
+      if (path.startsWith('/api/admin/portfolio') || path.startsWith('/api/portfolio')) {
+        fetchPortfolio(true)
+      }
+      if (path.startsWith('/api/admin/showcase')) {
+        fetchShowcase(true)
+      }
+    }
+
+    window.addEventListener('fresh:realtime', onRealtime)
+    return () => window.removeEventListener('fresh:realtime', onRealtime)
+  }, [fetchPortfolio, fetchShowcase])
+
   const handleSaveSection = async (section: 'flipbook' | 'album' | 'fonnte') => {
     const latestAlbumLink = (albumInputRef.current?.value ?? albumCarouselLink).trim()
     const latestFlipbookLink = (flipbookInputRef.current?.value ?? flipbookPreviewUrl).trim()
@@ -197,7 +218,6 @@ export default function AdminShowcasePage() {
     if (!editingItem) return
 
     setIsSavingPortfolio(true)
-    setUploadProgress('Uploading...')
     try {
       const formData = new FormData()
       if (editingItem.id) formData.append('id', editingItem.id)
@@ -209,7 +229,13 @@ export default function AdminShowcasePage() {
 
       const file = fileInputRef.current?.files?.[0]
       if (file) {
-        formData.append('image', file)
+        try {
+          const webpBlob = await convertToWebP(file)
+          formData.append('image', webpBlob, `${editingItem.title?.replace(/\s+/g, '_') || 'portfolio'}.webp`)
+        } catch (webpErr) {
+          console.error('WebP conversion failed, using original:', webpErr)
+          formData.append('image', file)
+        }
       }
 
       const url = editingItem.id ? `/api/admin/portfolio/${editingItem.id}` : '/api/admin/portfolio'
@@ -233,7 +259,6 @@ export default function AdminShowcasePage() {
       alert('Error saving portfolio')
     } finally {
       setIsSavingPortfolio(false)
-      setUploadProgress(null)
     }
   }
 
@@ -285,7 +310,10 @@ export default function AdminShowcasePage() {
 
         {activeTab === 'portfolio' && !editingItem && (
           <button
-            onClick={() => setEditingItem({ id: '', title: '', subtitle: '', description: '', display_order: portfolio.length, image_url: '' })}
+            onClick={() => {
+              setEditingItem({ id: '', title: '', subtitle: '', description: '', display_order: portfolio.length, image_url: '' });
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
             className="flex items-center gap-2 px-5 py-3 bg-violet-500 text-white rounded-2xl text-sm font-bold hover:bg-violet-600 transition-all shadow-[4px_4px_0_0_#2e1065] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none animate-in fade-in zoom-in-95"
           >
             <Plus className="w-4 h-4" />
@@ -556,8 +584,17 @@ export default function AdminShowcasePage() {
                         disabled={isSavingPortfolio}
                         className="flex-1 flex items-center justify-center gap-2 px-5 py-3.5 rounded-2xl bg-violet-500 text-white border-2 border-slate-900 dark:border-slate-700 font-bold shadow-[4px_4px_0_0_#2e1065] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all disabled:opacity-50"
                       >
-                        {isSavingPortfolio ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                        {editingItem.id ? 'Simpan Perubahan' : 'Tambah Portfolio'}
+                        {isSavingPortfolio ? (
+                          <div className="flex items-center gap-2">
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            <span>Menyimpan...</span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <Save className="w-4 h-4" />
+                            <span>{editingItem.id ? 'Simpan Perubahan' : 'Tambah Portfolio'}</span>
+                          </div>
+                        )}
                       </button>
                     </div>
                   </div>
@@ -585,7 +622,10 @@ export default function AdminShowcasePage() {
                             </div>
                             <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-all translate-y-2 group-hover:translate-y-0">
                               <button 
-                                onClick={() => setEditingItem(p)}
+                                onClick={() => {
+                                  setEditingItem(p);
+                                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                                }}
                                 className="p-3 bg-white text-slate-900 rounded-2xl shadow-xl hover:bg-violet-500 hover:text-white transition-colors"
                               >
                                 <Edit2 className="w-4 h-4" />

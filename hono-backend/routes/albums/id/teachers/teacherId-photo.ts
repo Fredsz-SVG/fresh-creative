@@ -3,7 +3,8 @@ import { getSupabaseClient } from '../../../../lib/supabase'
 import { getRole } from '../../../../lib/auth'
 import { getD1, getAssets } from '../../../../lib/edge-env'
 import { deleteAlbumObject, putAlbumPhoto } from '../../../../lib/r2-assets'
-import { publicAlbumAssetUrl } from '../../../../lib/public-file-url'
+import { publicAlbumAssetUrl, getR2KeyFromPublicUrl } from '../../../../lib/public-file-url'
+import { albumPathFromR2Key } from '../../../../lib/storage-layout'
 
 const teacherIdPhoto = new Hono()
 
@@ -58,12 +59,13 @@ teacherIdPhoto.post('/', async (c) => {
     if (file.size > 10 * 1024 * 1024) return c.json({ error: 'Foto maksimal 10MB' }, 413)
 
     if (teacher.photo_url) {
-      try {
-        const urlParts = teacher.photo_url.split('/')
-        const oldFileName = urlParts[urlParts.length - 1]
-        await deleteAlbumObject(bucket, `teachers/${teacherId}/${oldFileName}`)
-      } catch {
-        /* ignore */
+      const oldKey = getR2KeyFromPublicUrl(c, teacher.photo_url)
+      if (oldKey) {
+        try {
+          await deleteAlbumObject(bucket, albumPathFromR2Key(oldKey))
+        } catch (e) {
+          console.error('Failed to cleanup old teacher photo:', e)
+        }
       }
     }
 
@@ -150,12 +152,15 @@ teacherIdPhoto.delete('/', async (c) => {
     if (!teacher) return c.json({ error: 'Teacher not found' }, 404)
     if (!teacher.photo_url) return c.json({ error: 'No photo to delete' }, 400)
 
-    try {
-      const urlParts = teacher.photo_url.split('/')
-      const fileName = urlParts[urlParts.length - 1]
-      await deleteAlbumObject(bucket, `teachers/${teacherId}/${fileName}`)
-    } catch {
-      /* ignore */
+    if (teacher.photo_url) {
+      const oldKey = getR2KeyFromPublicUrl(c, teacher.photo_url)
+      if (oldKey) {
+        try {
+          await deleteAlbumObject(bucket, albumPathFromR2Key(oldKey))
+        } catch (e) {
+          console.error('Failed to delete teacher photo from R2:', e)
+        }
+      }
     }
 
     const upd = await db
