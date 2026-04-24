@@ -7,7 +7,7 @@ import { TiLocationArrow } from "react-icons/ti";
 export function Contact() {
   return (
     <section id="contact" className="py-20 min-h-96 w-full px-10 bg-slate-100 dark:bg-slate-950 transition-colors duration-500">
-      <div className="relative rounded-[2rem] bg-slate-950 dark:bg-slate-900/50 border border-white/5 py-24 text-blue-50 sm:overflow-hidden transition-colors duration-500">
+      <div className="relative rounded-[2rem] bg-slate-950 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-800 py-24 text-blue-50 sm:overflow-hidden transition-all duration-300 hover:-translate-x-1 hover:-translate-y-1 dark:shadow-neo-glow shadow-xl">
         <div className="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden z-20">
           {/* Phone Frame Mockup */}
           <div className="absolute 
@@ -15,7 +15,7 @@ export function Contact() {
             left-1/2 md:left-10 lg:left-20 xl:left-32
             -translate-x-1/2 md:-translate-x-0 md:-translate-y-1/2 
             w-[220px] h-[440px] md:w-[200px] md:h-[400px] lg:w-[240px] lg:h-[480px] 
-            opacity-30 md:opacity-100 transition-all duration-700">
+            opacity-100 transition-all duration-700">
             <div className="relative mx-auto border-black bg-black border-[6px] md:border-[10px] lg:border-[12px] rounded-[1.8rem] md:rounded-[2rem] lg:rounded-[2.5rem] h-full w-full shadow-[10px_10px_30px_rgba(0,0,0,0.5)]">
               {/* Notch */}
               <div className="w-[60px] md:w-[70px] lg:w-[80px] h-[10px] md:h-[12px] lg:h-[14px] bg-black top-0 left-1/2 -translate-x-1/2 rounded-b-[0.6rem] md:rounded-b-[0.8rem] absolute z-20"></div>
@@ -55,7 +55,7 @@ export function Contact() {
             </p>
             <a
               href="#pricing"
-              className="font-general group relative z-10 mt-10 inline-flex items-center gap-1 cursor-pointer overflow-hidden rounded-full bg-yellow-300 px-7 py-3 text-center text-xs font-black uppercase text-black border border-slate-200 shadow-[2px_2px_0_0_#000] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[3px_3px_0_0_#000] dark:shadow-[2px_2px_0_0_#a3e635] dark:hover:shadow-[3px_3px_0_0_#a3e635] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all"
+              className="font-general group relative z-10 mt-10 inline-flex items-center gap-1 cursor-pointer overflow-hidden rounded-full bg-yellow-300 px-7 py-3 text-center text-xs font-black uppercase text-black border border-slate-900 shadow-[2px_2px_0_0_#000] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[3px_3px_0_0_#000] dark:shadow-neo-glow-sm dark:hover-shadow-neo-glow-sm active:translate-x-0 active:translate-y-0 active:shadow-none transition-all"
             >
               <TiLocationArrow className="text-lg" />
               Buat Project

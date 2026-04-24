@@ -15,14 +15,14 @@ export default function PrivacyPolicyPage() {
           <header className="mb-10 text-center md:text-left border-b border-slate-100 pb-8">
             <h2 className="text-sm font-black uppercase tracking-widest text-indigo-500 mb-2">Legal Information</h2>
             <h1 className="text-3xl md:text-4xl font-black text-slate-900 leading-tight">Agreement on Privacy Policy</h1>
-            <p className="mt-4 text-slate-400 font-medium italic text-sm">Last updated: February 29, 2024</p>
+            <p className="mt-4 text-slate-400 font-medium italic text-sm">Last updated: April 24, 2026</p>
           </header>
 
           <article className="prose prose-slate max-w-none text-slate-600 space-y-8 leading-relaxed">
             <section>
               <h3 className="text-xl font-black text-slate-900 uppercase tracking-wide mb-4">Privacy Policy</h3>
               <p>
-                This Privacy Policy governs the manner in which PT Indonesia Creative Technology ("we" or "our") collects, uses, maintains, and discloses information collected from users ("users" or "you") of the Live Photo website (<a href="https://livephoto.id/" className="text-indigo-600 hover:underline">https://livephoto.id/</a>) and any related digital products and services.
+                This Privacy Policy governs the manner in which PT Fresh Creative Indonesia ("we" or "our") collects, uses, maintains, and discloses information collected from users ("users" or "you") of the Fresh Creative website (<a href="https://freshcreative.id/" className="text-indigo-600 hover:underline">https://freshcreative.id/</a>) and any related digital products and services.
               </p>
             </section>
 
@@ -69,7 +69,7 @@ export default function PrivacyPolicyPage() {
             <section>
               <h3 className="text-lg font-black text-slate-900 uppercase tracking-wide mb-4">Changes to this Privacy Policy</h3>
               <p>
-                PT Indonesia Creative Technology has the discretion to update this Privacy Policy at any time. When we do, we will revise the updated date at the bottom of this page. We encourage users to frequently check this page for any changes to stay informed about how we are helping to protect the personal information we collect. You acknowledge and agree that it is your responsibility to review this Privacy Policy periodically and become aware of modifications.
+                PT Fresh Creative Indonesia has the discretion to update this Privacy Policy at any time. When we do, we will revise the updated date at the bottom of this page. We encourage users to frequently check this page for any changes to stay informed about how we are helping to protect the personal information we collect. You acknowledge and agree that it is your responsibility to review this Privacy Policy periodically and become aware of modifications.
               </p>
             </section>
 
@@ -86,7 +86,7 @@ export default function PrivacyPolicyPage() {
                 If you have any questions about this Privacy Policy, the practices of this website, or your dealings with this website, please contact us at:
               </p>
               <p className="mt-4 font-bold text-slate-900">
-                Email: <a href="mailto:admin@livephoto.id" className="text-indigo-600 hover:underline">admin@livephoto.id</a>
+                Email: <a href="mailto:admin@freshcreative.id" className="text-indigo-600 hover:underline">admin@freshcreative.id</a>
               </p>
             </section>
           </article>

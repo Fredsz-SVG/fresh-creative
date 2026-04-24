@@ -1,7 +1,8 @@
 export const NAV_ITEMS = [
-  { label: "Fitur", href: "#features" },
-  { label: "Harga", href: "#pricing" },
-  { label: "E-Book", href: "#demo-ebook" },
+  { label: "About", href: "#about" },
+  { label: "Features", href: "#features" },
+  { label: "Pricing", href: "#pricing" },
+  { label: "Smart Digital", href: "#demo-ebook" },
 ] as const;
 
 export const VIDEO_LINKS = {

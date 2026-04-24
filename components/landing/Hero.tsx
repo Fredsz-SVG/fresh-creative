@@ -115,11 +115,12 @@ export function Hero() {
   const headingContainerClasses = cn(
     "mt-28 px-8 transition-all duration-500",
     "sm:mt-16 sm:px-20",
-    "[@media(width:344px)]:!mt-52 [@media(width:360px)]:!mt-56 [@media(width:375px)]:!mt-56 [@media(width:390px)]:!mt-56",
-    "[@media(width:412px)]:!mt-52 [@media(width:414px)]:!mt-56 [@media(width:430px)]:!mt-56 [@media(width:540px)]:!mt-52 [@media(width:393px)]:!mt-56",
-    "[@media(max-height:650px)]:!mt-24 [@media(min-height:700px)]:mt-36 [@media(min-height:800px)]:mt-36",
-    "[@media(min-height:820px)_and_(max-width:499px)]:mt-44 [@media(min-height:1000px)]:!mt-[16rem]",
-    "[@media(min-height:1100px)]:!mt-[22rem] [@media(min-height:1200px)]:!mt-[32rem] [@media(min-height:1300px)]:!mt-[40rem]"
+    "[@media(width:344px)]:!mt-[18rem] [@media(width:360px)]:!mt-56 [@media(width:375px)]:!mt-56 [@media(width:390px)]:!mt-56",
+    "[@media(width:412px)]:!mt-[18rem] [@media(width:414px)]:!mt-56 [@media(width:430px)]:!mt-56 [@media(width:540px)]:!mt-52 [@media(width:393px)]:!mt-56",
+    "[@media(max-height:650px)]:!mt-20 [@media(width:1024px)_and_(height:600px)]:!mt-36 [@media(min-height:651px)]:mt-24 [@media(min-height:700px)]:mt-28 [@media(min-height:800px)]:mt-32 xl:mt-32",
+    "[@media(width:1280px)_and_(height:800px)]:!mt-48",
+    "[@media(min-height:820px)_and_(max-width:499px)]:!mt-[17rem] [@media(min-height:1000px)]:!mt-[28rem]",
+    "[@media(min-height:1100px)]:!mt-[32rem] [@media(min-height:1200px)]:!mt-[36rem] [@media(min-height:1300px)]:!mt-[40rem]"
   );
 
   return (
@@ -143,7 +144,7 @@ export function Hero() {
             muted
             playsInline
             className={cn(
-              "absolute top-0 left-0 size-full object-cover object-[59%] md:object-center scale-110 md:scale-100 transition-opacity duration-1000",
+              "absolute top-0 left-0 size-full object-cover object-[59%] md:object-center transition-opacity duration-1000",
               theme?.isDark ? "opacity-0" : "opacity-100"
             )}
             onLoadedData={handleVideoLoad}
@@ -157,7 +158,7 @@ export function Hero() {
             muted
             playsInline
             className={cn(
-              "absolute top-0 left-0 size-full object-cover object-[59%] md:object-center scale-110 md:scale-100 transition-opacity duration-1000",
+              "absolute top-0 left-0 size-full object-cover object-[59%] md:object-center transition-opacity duration-1000",
               theme?.isDark ? "opacity-100" : "opacity-0"
             )}
             onLoadedData={handleVideoLoad}
@@ -171,12 +172,12 @@ export function Hero() {
 
           {/* // jam setting (posisi) */}
           <div className={cn(
-            "absolute top-20 left-12 z-50 pointer-events-none flex items-center justify-center transition-all duration-500",
-            "sm:top-16 sm:left-1/2 sm:-translate-x-1/2",
-            "[@media(min-height:700px)_and_(max-width:499px)]:top-24 [@media(min-height:700px)_and_(max-width:499px)]:left-8",
-            "[@media(min-height:700px)_and_(min-width:500px)]:top-22 [@media(min-height:700px)_and_(min-width:500px)_and_(max-width:767px)]:left-32",
-            "[@media(min-height:800px)_and_(max-width:767px)]:left-4",
-            "[@media(max-height:650px)]:top-24 [@media(min-height:800px)]:top-28 [@media(min-height:1000px)]:!top-[10rem] [@media(min-height:1100px)]:!top-[12rem] [@media(min-height:1200px)]:!top-[16rem]"
+            "absolute top-28 left-12 z-50 pointer-events-none flex items-center justify-center transition-all duration-500",
+            "sm:top-28 [@media(min-width:1300px)]:!top-16 sm:left-1/2 sm:-translate-x-1/2",
+            "[@media(min-height:700px)_and_(max-width:499px)]:top-32 [@media(min-height:700px)_and_(max-width:499px)]:left-8",
+            "[@media(min-height:700px)_and_(min-width:500px)]:top-32 [@media(min-height:700px)_and_(min-width:500px)_and_(max-width:767px)]:left-40",
+            "[@media(min-height:800px)_and_(max-width:767px)]:left-4 [@media(min-height:820px)_and_(max-width:499px)]:!top-40 [@media(min-height:820px)_and_(max-width:499px)]:!left-8",
+            "[@media(max-height:650px)]:top-32 [@media(width:1024px)_and_(height:600px)]:!top-24 [@media(min-height:800px)]:top-36 [@media(width:1280px)_and_(height:800px)]:!top-28 [@media(min-width:1300px)_and_(min-height:800px)]:!top-28 [@media(min-height:1000px)]:!top-[10rem] [@media(min-height:1100px)]:!top-[11rem] [@media(min-height:1200px)]:!top-[12rem] [@media(min-height:1300px)]:!top-[13rem]"
           )}>
 
             {/* // jam setting (ukuran) */}
@@ -185,14 +186,21 @@ export function Hero() {
               alt="Jam"
               className={cn(
                 "w-28 h-auto object-contain opacity-90 drop-shadow-2xl transition-all duration-500",
-                "sm:w-28 md:w-32 lg:w-36",
-                "[@media(max-height:650px)]:!w-24 [@media(min-height:700px)]:!w-32 [@media(min-height:800px)]:!w-36",
-                "[@media(min-height:1100px)]:!w-[300px] [@media(min-height:1200px)]:!w-[600px]"
+                "sm:w-24 md:w-24 lg:w-28",
+                "[@media(max-height:650px)]:!w-20",
+                "[@media(min-height:700px)_and_(max-height:799px)]:!w-24",
+                "[@media(min-height:800px)_and_(max-height:999px)]:!w-28",
+                "[@media(min-height:1000px)_and_(max-width:1023px)]:!w-44",
+                "[@media(min-height:1200px)_and_(max-width:900px)]:!w-64",
+                "[@media(min-height:800px)_and_(min-width:1200px)_and_(max-height:899px)]:!w-40",
+                "[@media(width:1280px)_and_(height:800px)]:!w-32",
+                "[@media(min-height:1100px)_and_(min-width:1024px)]:!w-44",
+                "[@media(min-height:1200px)_and_(min-width:1024px)]:!w-52"
               )}
             />
             <span
               className={cn(
-                "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 font-black text-[18px] [@media(max-height:650px)]:!text-[14px] [@media(min-height:700px)]:!text-[21px] [@media(min-height:800px)]:!text-[24px] [@media(min-height:1100px)]:!text-[44px] [@media(min-height:1200px)]:!text-[84px] sm:text-[20px] md:text-[22px] lg:text-[24px] tracking-tight pt-1 transition-all duration-500",
+                "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 font-black whitespace-nowrap flex items-center justify-center text-[16px] [@media(max-height:650px)]:!text-[12px] [@media(min-height:700px)_and_(max-height:799px)]:!text-[16px] [@media(min-height:800px)_and_(max-height:999px)]:!text-[18px] [@media(min-height:1000px)_and_(max-width:1023px)]:!text-[28px] [@media(min-height:1200px)_and_(max-width:900px)]:!text-[40px] [@media(min-height:800px)_and_(min-width:1200px)_and_(max-height:899px)]:!text-[24px] [@media(width:1280px)_and_(height:800px)]:!text-[20px] [@media(min-height:1100px)_and_(min-width:1024px)]:!text-[28px] [@media(min-height:1200px)_and_(min-width:1024px)]:!text-[32px] sm:text-[18px] md:text-[18px] lg:text-[18px] tracking-tight pt-1 transition-all duration-500",
                 "text-cyan-100 opacity-80",
               )}
               style={theme?.isDark ? {
@@ -213,35 +221,30 @@ export function Hero() {
 
           <div className={headingContainerClasses}>
             {/* Heading wrapper — width driven by CREATIVE (widest line) */}
-            <div className="inline-flex flex-col gap-0 sm:gap-1">
-              {/* FRESH — natural width, Josefin */}
+            <div className="flex flex-col gap-2 sm:gap-3">
               <span
-                className="text-white hero-orange-stroke text-[11vw] sm:text-4xl md:text-6xl lg:text-[6rem] [@media(max-height:650px)]:!text-[3.5rem] leading-none tracking-tight"
+                className="text-white hero-orange-stroke text-[9vw] sm:text-4xl md:text-5xl lg:text-[3.5rem] xl:text-[4rem] [@media(max-height:650px)]:!text-[2.5rem] leading-[1.2] tracking-tight"
                 style={{ fontFamily: "var(--font-josefin), sans-serif", fontWeight: 700 }}
               >
-                FR<b>E</b>SH
+                Yearbook Masa
               </span>
-
-              {/* CREATIVE — sets the reference width, Josefin */}
               <span
-                id="hero-creative"
-                className="text-white hero-orange-stroke text-[11vw] sm:text-4xl md:text-6xl lg:text-[6rem] [@media(max-height:620px)]:!text-[3rem] leading-none tracking-tight"
+                className="text-white hero-orange-stroke text-[9vw] sm:text-4xl md:text-5xl lg:text-[3.5rem] xl:text-[4rem] [@media(max-height:650px)]:!text-[2.5rem] leading-[1.2] tracking-tight"
                 style={{ fontFamily: "var(--font-josefin), sans-serif", fontWeight: 700 }}
               >
-                CR<b>E</b>ATIVE
+                Lalu? Cringe.
               </span>
-
-              {/* INDONESIA — stretches to match CREATIVE width, Inter */}
-              <SplitText
-                text="INDONESIA"
-                className="hero-orange-stroke w-full leading-none text-[1.2em] sm:text-[2em] text-yellow-300"
-                style={{ fontFamily: "var(--font-inter), sans-serif", fontWeight: 500 }}
-              />
+              <span
+                className="text-white hero-orange-stroke text-[9vw] sm:text-4xl md:text-5xl lg:text-[3.5rem] xl:text-[4rem] [@media(max-height:650px)]:!text-[2.5rem] leading-[1.2] tracking-tight"
+                style={{ fontFamily: "var(--font-josefin), sans-serif", fontWeight: 700 }}
+              >
+                Saatnya <span className="text-yellow-300">Phygital.</span>
+              </span>
             </div>
-            <p className="mt-2 sm:mt-4 mb-6 sm:mb-5 max-w-lg text-base sm:text-lg [@media(max-height:650px)]:!text-base font-bold leading-[1.4] text-white drop-shadow-md md:text-2xl" style={{ fontFamily: "var(--font-inter), sans-serif", WebkitTextStroke: '2px #000', paintOrder: 'stroke fill' }}>
-              Simpan momen sekolahmu <br />
-              lebih nyata. Fisik, Digital, & <br />
-              Anti Ribet
+            <p className="mt-3 sm:mt-4 mb-5 sm:mb-6 max-w-sm sm:max-w-md text-slate-300/80 text-xs sm:text-sm md:text-base font-medium leading-relaxed drop-shadow-sm" style={{ fontFamily: "var(--font-inter), sans-serif" }}>
+              Ubah kenangan sekolahmu jadi &apos;Living Archive&apos;.<br />
+              Gabungan buku fisik premium, teknologi AR,<br />
+              dan AI Photo labs. Anti ribet, 100% transparan.
             </p>
           </div>
 
@@ -251,7 +254,7 @@ export function Hero() {
               <Button
                 id="watch-trailer"
                 leftIcon={TiLocationArrow}
-                containerClass="bg-yellow-300 flex-center gap-1 border border-slate-200 rounded-full shadow-[2px_2px_0_0_#000] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[3px_3px_0_0_#000] transition-all active:translate-x-0 active:translate-y-0 active:shadow-none font-black text-base"
+                containerClass="bg-yellow-300 flex-center gap-1 border border-slate-900 rounded-full shadow-[2px_2px_0_0_#000] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[3px_3px_0_0_#000] transition-all active:translate-x-0 active:translate-y-0 active:shadow-none font-black text-base"
               >
                 Buat Project
               </Button>
@@ -291,24 +294,25 @@ export function Hero() {
 
         <div className={headingContainerClasses}>
           {/* Ghost duplicate for the black text layer (background) */}
-          <div className="inline-flex flex-col gap-0 sm:gap-1">
+          <div className="flex flex-col gap-2 sm:gap-3">
             <span
-              className="text-black hero-orange-stroke text-[11vw] sm:text-4xl md:text-6xl lg:text-[6rem] [@media(max-height:650px)]:!text-[3.5rem] leading-none tracking-tight"
+              className="text-black hero-orange-stroke text-[9vw] sm:text-4xl md:text-5xl lg:text-[3.5rem] xl:text-[4rem] [@media(max-height:650px)]:!text-[2.5rem] leading-[1.2] tracking-tight"
               style={{ fontFamily: "var(--font-josefin), sans-serif", fontWeight: 700, visibility: 'hidden' }}
             >
-              FR<b>E</b>SH
+              Yearbook Masa
             </span>
             <span
-              className="text-black hero-orange-stroke text-[11vw] sm:text-4xl md:text-6xl lg:text-[6rem] [@media(max-height:650px)]:!text-[3.5rem] leading-none tracking-tight"
+              className="text-black hero-orange-stroke text-[9vw] sm:text-4xl md:text-5xl lg:text-[3.5rem] xl:text-[4rem] [@media(max-height:650px)]:!text-[2.5rem] leading-[1.2] tracking-tight"
               style={{ fontFamily: "var(--font-josefin), sans-serif", fontWeight: 700, visibility: 'hidden' }}
             >
-              CR<b>E</b>ATIVE
+              Lalu? Cringe.
             </span>
-            <SplitText
-              text="INDONESIA"
-              className="hero-orange-stroke w-full leading-none text-[1.2em] sm:text-[2em]"
-              style={{ fontFamily: "var(--font-inter), sans-serif", fontWeight: 500 }}
-            />
+            <span
+              className="text-black hero-orange-stroke text-[9vw] sm:text-4xl md:text-5xl lg:text-[3.5rem] xl:text-[4rem] [@media(max-height:650px)]:!text-[2.5rem] leading-[1.2] tracking-tight"
+              style={{ fontFamily: "var(--font-josefin), sans-serif", fontWeight: 700 }}
+            >
+              Saatnya Phygital.
+            </span>
           </div>
         </div>
       </div>

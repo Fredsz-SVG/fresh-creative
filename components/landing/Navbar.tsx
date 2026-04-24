@@ -107,191 +107,191 @@ export function Navbar() {
 
   return (
     <>
-    <header
-      ref={navContainerRef}
-      className={cn(
-        "fixed left-4 right-4 top-4 z-[60] h-14 transition-all duration-300 ease-out sm:h-16 rounded-full border border-transparent",
-        isScrolled && "floating-nav",
-        isMenuOpen && "!border-transparent !shadow-none !bg-white dark:!bg-slate-950"
-      )}
-    >
-      <div className="absolute top-1/2 w-full -translate-y-1/2 z-50">
-        <nav className="flex size-full items-center justify-between px-4 sm:p-4">
-          <div className="flex items-center gap-4 sm:gap-7">
-            <a
-              href="#hero"
-              className={cn(
-                "transition hover:opacity-100 flex items-center",
-                theme?.isDark && "drop-shadow-[0_0_8px_rgba(0,0,0,0.8)]"
-              )}
-            >
-              <img src="/img/logo.png" alt="Logo" className="w-8 sm:w-10 animate-logo-pulse shrink-0" loading="lazy" />
-              <span
+      <header
+        ref={navContainerRef}
+        className={cn(
+          "fixed left-4 right-4 top-4 z-[60] h-14 transition-all duration-300 ease-out sm:h-16 rounded-full border border-transparent",
+          isScrolled && !isMenuOpen && "floating-nav",
+          isMenuOpen && "border-transparent shadow-none !bg-white dark:!bg-slate-950"
+        )}
+      >
+        <div className="absolute top-1/2 w-full -translate-y-1/2 z-50">
+          <nav className="flex size-full items-center justify-between px-4 sm:p-4">
+            <div className="flex items-center gap-4 sm:gap-7">
+              <a
+                href="#hero"
                 className={cn(
-                  "font-black text-[10px] md:text-sm tracking-widest uppercase transition-all duration-500 whitespace-nowrap text-slate-800 dark:text-white",
-                  isScrolled ? "opacity-100 w-[100px] md:w-[160px] ml-2 md:ml-3" : "opacity-0 w-0 ml-0 pointer-events-none"
+                  "transition hover:opacity-100 flex items-center",
+                  theme?.isDark && "drop-shadow-[0_0_8px_rgba(0,0,0,0.8)]"
                 )}
               >
-                FRESHCREATIVE.ID
-              </span>
-            </a>
-          </div>
-
-          <div className="flex h-full items-center">
-            <div className="hidden md:flex items-center gap-8 mr-8">
-              {NAV_ITEMS.map(({ label, href }) => (
-                <a key={href} href={href} className="nav-hover-btn !ms-0">
-                  {label}
-                </a>
-              ))}
+                <img src="/img/logo.png" alt="Logo" className="w-8 sm:w-10 animate-logo-pulse shrink-0" loading="lazy" />
+                <span
+                  className={cn(
+                    "nav-logo-text font-black text-[9px] xs:text-[10px] md:text-sm tracking-widest uppercase transition-all duration-500 whitespace-nowrap overflow-visible p-1",
+                    "opacity-100 w-[70px] xs:w-[110px] md:w-[170px] ml-1.5 xs:ml-2 md:ml-3"
+                  )}
+                >
+                  FRESHCREATIVE.ID
+                </span>
+              </a>
             </div>
 
-            <div className="flex items-center gap-1 sm:gap-4">
-              {!user ? (
-                <Link
-                  href="/login"
-                  className="hidden md:inline-flex items-center gap-2 px-7 py-3 bg-yellow-300 text-black font-black text-xs uppercase tracking-wide border-2 border-black rounded-full shadow-[2px_2px_0_0_#000] dark:shadow-[2px_2px_0_0_#fff] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[3px_3px_0_0_#000] dark:hover:shadow-[3px_3px_0_0_#fff] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all duration-200"
-                >
-                  <LogIn size={14} />
-                  <span className="font-general text-xs uppercase">Login</span>
-                </Link>
-              ) : (
-                <Link
-                  href="/user"
-                  className="hidden md:inline-flex items-center gap-2 px-7 py-3 bg-yellow-300 text-black font-black text-xs uppercase tracking-wide border-2 border-black rounded-full shadow-[2px_2px_0_0_#000] dark:shadow-[2px_2px_0_0_#fff] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[3px_3px_0_0_#000] dark:hover:shadow-[3px_3px_0_0_#fff] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all duration-200"
-                >
-                  <LayoutDashboard size={14} />
-                  <span className="font-general text-xs uppercase">Dashboard</span>
-                </Link>
-              )}
-              <button
-                onClick={theme?.toggleTheme}
-                className="md:ml-4 flex items-center justify-center p-2 text-slate-800 dark:text-white transition hover:opacity-100 active:scale-90 rounded-none w-10 h-10 overflow-hidden"
-                title="Toggle Theme"
-              >
-                <AnimatePresence mode="wait">
-                  {mounted &&
-                    (theme?.isDark ? (
-                      <motion.div
-                        key="sun"
-                        initial={{ opacity: 0, scale: 0.5, rotate: -90 }}
-                        animate={{ opacity: 1, scale: 1, rotate: 0 }}
-                        exit={{ opacity: 0, scale: 0.5, rotate: 90 }}
-                        transition={{ duration: 0.2 }}
-                        className="flex items-center justify-center"
-                      >
-                        <svg
-                          width="18"
-                          height="18"
-                          viewBox="0 0 24 24"
-                          className="sm:size-[20px]"
-                          aria-hidden
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <circle cx="12" cy="12" r="4" fill="currentColor" />
-                          <path d="M12 2v2" />
-                          <path d="M12 20v2" />
-                          <path d="M4.93 4.93l1.41 1.41" />
-                          <path d="M17.66 17.66l1.41 1.41" />
-                          <path d="M2 12h2" />
-                          <path d="M20 12h2" />
-                          <path d="M4.93 19.07l1.41-1.41" />
-                          <path d="M17.66 6.34l1.41-1.41" />
-                        </svg>
-                      </motion.div>
-                    ) : (
-                      <motion.div
-                        key="moon"
-                        initial={{ opacity: 0, scale: 0.5, rotate: 90 }}
-                        animate={{ opacity: 1, scale: 1, rotate: 0 }}
-                        exit={{ opacity: 0, scale: 0.5, rotate: -90 }}
-                        transition={{ duration: 0.2 }}
-                        className="flex items-center justify-center"
-                      >
-                        <svg
-                          width="18"
-                          height="18"
-                          viewBox="0 0 24 24"
-                          className="sm:size-[20px]"
-                          aria-hidden
-                          fill="white"
-                          stroke="black"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z" />
-                        </svg>
-                      </motion.div>
-                    ))}
-                </AnimatePresence>
-              </button>
+            <div className="flex h-full items-center">
+              <div className="hidden lg:flex items-center gap-4 mr-4">
+                {NAV_ITEMS.map(({ label, href }) => (
+                  <a key={href} href={href} className="nav-hover-btn !ms-0 text-[13px] uppercase font-bold tracking-wider">
+                    {label}
+                  </a>
+                ))}
+              </div>
 
+              <div className="flex items-center gap-0.5 xs:gap-1 sm:gap-4">
+                {!user ? (
+                  <Link
+                    href="/login"
+                    className="hidden lg:inline-flex items-center gap-2 px-7 py-3 bg-yellow-300 text-black font-black text-sm uppercase tracking-wide border-2 border-black rounded-full shadow-[2px_2px_0_0_#000] dark:shadow-[2px_2px_0_0_#fff] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[3px_3px_0_0_#000] dark:hover:shadow-[3px_3px_0_0_#000] dark:hover:shadow-[3px_3px_0_0_#fff] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all duration-200"
+                  >
+                    <LogIn size={14} />
+                    <span className="font-general text-sm uppercase">Login</span>
+                  </Link>
+                ) : (
+                  <Link
+                    href="/user"
+                    className="hidden lg:inline-flex items-center gap-2 px-7 py-3 bg-yellow-300 text-black font-black text-sm uppercase tracking-wide border-2 border-black rounded-full shadow-[2px_2px_0_0_#000] dark:shadow-[2px_2px_0_0_#fff] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[3px_3px_0_0_#000] dark:hover:shadow-[3px_3px_0_0_#fff] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all duration-200"
+                  >
+                    <LayoutDashboard size={14} />
+                    <span className="font-general text-sm uppercase">Dashboard</span>
+                  </Link>
+                )}
+                <button
+                  onClick={theme?.toggleTheme}
+                  className="md:ml-2 flex items-center justify-center p-1.5 xs:p-2 text-slate-800 dark:text-white transition hover:opacity-100 active:scale-90 rounded-none w-8 h-8 xs:w-10 xs:h-10 overflow-hidden"
+                  title="Toggle Theme"
+                >
+                  <AnimatePresence mode="wait">
+                    {mounted &&
+                      (theme?.isDark ? (
+                        <motion.div
+                          key="sun"
+                          initial={{ opacity: 0, scale: 0.5, rotate: -90 }}
+                          animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                          exit={{ opacity: 0, scale: 0.5, rotate: 90 }}
+                          transition={{ duration: 0.2 }}
+                          className="flex items-center justify-center"
+                        >
+                          <svg
+                            width="18"
+                            height="18"
+                            viewBox="0 0 24 24"
+                            className="sm:size-[20px]"
+                            aria-hidden
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <circle cx="12" cy="12" r="4" fill="currentColor" />
+                            <path d="M12 2v2" />
+                            <path d="M12 20v2" />
+                            <path d="M4.93 4.93l1.41 1.41" />
+                            <path d="M17.66 17.66l1.41 1.41" />
+                            <path d="M2 12h2" />
+                            <path d="M20 12h2" />
+                            <path d="M4.93 19.07l1.41-1.41" />
+                            <path d="M17.66 6.34l1.41-1.41" />
+                          </svg>
+                        </motion.div>
+                      ) : (
+                        <motion.div
+                          key="moon"
+                          initial={{ opacity: 0, scale: 0.5, rotate: 90 }}
+                          animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                          exit={{ opacity: 0, scale: 0.5, rotate: -90 }}
+                          transition={{ duration: 0.2 }}
+                          className="flex items-center justify-center"
+                        >
+                          <svg
+                            width="18"
+                            height="18"
+                            viewBox="0 0 24 24"
+                            className="sm:size-[20px]"
+                            aria-hidden
+                            fill="white"
+                            stroke="black"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z" />
+                          </svg>
+                        </motion.div>
+                      ))}
+                  </AnimatePresence>
+                </button>
+
+                <button
+                  onClick={toggleAudioIndicator}
+                  className="flex items-center space-x-0.5 xs:space-x-1 p-1.5 xs:p-2 text-slate-800 dark:text-white transition hover:opacity-100 active:scale-90 rounded-none"
+                  title="Play Audio"
+                >
+                  {audioSrc && (
+                    <audio
+                      ref={audioElementRef}
+                      src={audioSrc}
+                      className="hidden"
+                      preload="none"
+                    />
+                  )}
+                  {Array(4)
+                    .fill("")
+                    .map((_, i) => (
+                      <div
+                        key={i}
+                        className={cn(
+                          "indicator-line",
+                          isIndicatorActive && "active"
+                        )}
+                        style={{
+                          animationDelay: `${(i + 1) * 0.1}s`,
+                          height: isIndicatorActive ? undefined : ['12px', '6px', '10px', '8px'][i]
+                        }}
+                      />
+                    ))}
+                </button>
+              </div>
+
+              {/* Mobile Menu Toggle Button */}
               <button
-                onClick={toggleAudioIndicator}
-                className="flex items-center space-x-1 p-2 text-slate-800 dark:text-white transition hover:opacity-100 active:scale-90 rounded-none"
-                title="Play Audio"
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                className="lg:hidden ml-1 flex items-center p-1.5 xs:p-2 text-slate-800 dark:text-white transition hover:opacity-100 rounded-none"
+                aria-label="Toggle Menu"
               >
-                {audioSrc && (
-                  <audio
-                    ref={audioElementRef}
-                    src={audioSrc}
-                    className="hidden"
-                    preload="none"
+                {isMenuOpen ? (
+                  <X
+                    size={24}
+                    strokeWidth={2.5}
+                    className={cn(
+                      "transition-all duration-300",
+                      !theme?.isDark ? "text-white [filter:drop-shadow(1px_0_0_#000)_drop-shadow(-1px_0_0_#000)_drop-shadow(0_1px_0_#000)_drop-shadow(0_-1px_0_#000)]" : "text-white"
+                    )}
+                  />
+                ) : (
+                  <Menu
+                    size={24}
+                    strokeWidth={2.5}
+                    className={cn(
+                      "transition-all duration-300",
+                      !theme?.isDark ? "text-white [filter:drop-shadow(1px_0_0_#000)_drop-shadow(-1px_0_0_#000)_drop-shadow(0_1px_0_#000)_drop-shadow(0_-1px_0_#000)]" : "text-white"
+                    )}
                   />
                 )}
-                {Array(4)
-                  .fill("")
-                  .map((_, i) => (
-                    <div
-                      key={i}
-                      className={cn(
-                        "indicator-line",
-                        isIndicatorActive && "active"
-                      )}
-                      style={{ 
-                        animationDelay: `${(i + 1) * 0.1}s`,
-                        height: isIndicatorActive ? undefined : ['12px', '6px', '10px', '8px'][i]
-                      }}
-                    />
-                  ))}
               </button>
             </div>
-
-            {/* Mobile Menu Toggle Button */}
-            <button
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="md:hidden ml-2 flex items-center p-2 text-slate-800 dark:text-white transition hover:opacity-100 rounded-none"
-              aria-label="Toggle Menu"
-            >
-              {isMenuOpen ? (
-                <X 
-                  size={24} 
-                  strokeWidth={2.5} 
-                  className={cn(
-                    "transition-all duration-300",
-                    !theme?.isDark ? "text-white [filter:drop-shadow(1px_0_0_#000)_drop-shadow(-1px_0_0_#000)_drop-shadow(0_1px_0_#000)_drop-shadow(0_-1px_0_#000)]" : "text-white"
-                  )}
-                />
-              ) : (
-                <Menu 
-                  size={24} 
-                  strokeWidth={2.5} 
-                  className={cn(
-                    "transition-all duration-300",
-                    !theme?.isDark ? "text-white [filter:drop-shadow(1px_0_0_#000)_drop-shadow(-1px_0_0_#000)_drop-shadow(0_1px_0_#000)_drop-shadow(0_-1px_0_#000)]" : "text-white"
-                  )}
-                />
-              )}
-            </button>
-          </div>
-        </nav>
-      </div>
-    </header>
+          </nav>
+        </div>
+      </header>
 
       {/* Mobile Menu Overlay - outside header to avoid pill containing block */}
       <AnimatePresence>
@@ -301,13 +301,13 @@ export function Navbar() {
             animate={{ opacity: 1, clipPath: "inset(0 0 0% 0)" }}
             exit={{ opacity: 0, clipPath: "inset(0 0 100% 0)" }}
             transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-            className="fixed inset-0 bg-white dark:bg-slate-950 md:hidden flex flex-col items-center justify-center gap-6 pb-12 z-[55] transition-colors duration-300"
+            className="fixed inset-0 bg-white dark:bg-slate-950 lg:hidden flex flex-col items-center justify-center gap-4 pb-12 z-[55] transition-colors duration-300"
           >
             {NAV_ITEMS.map(({ label, href }) => (
               <a
                 key={href}
                 href={href}
-                className="text-lg font-bold text-slate-900 dark:text-white hover:text-lime-500 transition-colors py-2 uppercase tracking-wide w-full text-center"
+                className="text-xs font-bold text-slate-900 dark:text-white hover:text-lime-500 transition-colors py-1.5 uppercase tracking-widest w-full text-center"
                 onClick={() => setIsMenuOpen(false)}
               >
                 {label}

@@ -51,8 +51,8 @@ export function FAQ() {
                 className={cn(
                   'rounded-xl border transition-all duration-300',
                   isOpen
-                    ? 'border-lime-500/50 dark:border-lime-400/50 bg-white dark:bg-slate-900 shadow-sm'
-                    : 'border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900/80'
+                    ? "border-slate-900 dark:border-white bg-white dark:bg-slate-800/80 shadow-sm dark:shadow-neo-glow-sm"
+                    : "border-slate-900 dark:border-slate-800 bg-white dark:bg-slate-800/80 hover:-translate-x-1 hover:-translate-y-1 transition-all duration-300"
                 )}
               >
                 <button

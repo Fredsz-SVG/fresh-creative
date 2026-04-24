@@ -9,12 +9,12 @@ import { AnimatedTitle } from "./AnimatedTitle";
 
 import { apiUrl } from "@/lib/api-url";
 
-export function About() {
+export function Portfolio() {
   const [items, setItems] = useState<any[]>([]);
   const [activeIndex, setActiveIndex] = useState(0);
   const [loading, setLoading] = useState(true);
 
-  const dragStartX = useRef<number | null>(null);
+  const dragStartPos = useRef<{x: number, y: number} | null>(null);
   const SWIPE_THRESHOLD = 50;
 
   const total = items.length;
@@ -50,28 +50,35 @@ export function About() {
 
   // Touch handlers
   const onTouchStart = (e: React.TouchEvent) => {
-    dragStartX.current = e.touches[0].clientX;
+    dragStartPos.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
   };
   const onTouchEnd = (e: React.TouchEvent) => {
-    if (dragStartX.current === null) return;
-    const delta = e.changedTouches[0].clientX - dragStartX.current;
-    dragStartX.current = null;
-    if (Math.abs(delta) < SWIPE_THRESHOLD) return;
-    delta < 0 ? goNext() : goPrev();
+    if (!dragStartPos.current) return;
+    const deltaX = e.changedTouches[0].clientX - dragStartPos.current.x;
+    const deltaY = e.changedTouches[0].clientY - dragStartPos.current.y;
+    dragStartPos.current = null;
+    
+    // Only trigger swipe if horizontal movement is greater than vertical movement
+    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) >= SWIPE_THRESHOLD) {
+      deltaX < 0 ? goNext() : goPrev();
+    }
   };
 
   // Mouse drag handlers
   const onMouseDown = (e: React.MouseEvent) => {
-    dragStartX.current = e.clientX;
+    dragStartPos.current = { x: e.clientX, y: e.clientY };
   };
   const onMouseUp = (e: React.MouseEvent) => {
-    if (dragStartX.current === null) return;
-    const delta = e.clientX - dragStartX.current;
-    dragStartX.current = null;
-    if (Math.abs(delta) < SWIPE_THRESHOLD) return;
-    delta < 0 ? goNext() : goPrev();
+    if (!dragStartPos.current) return;
+    const deltaX = e.clientX - dragStartPos.current.x;
+    const deltaY = e.clientY - dragStartPos.current.y;
+    dragStartPos.current = null;
+    
+    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) >= SWIPE_THRESHOLD) {
+      deltaX < 0 ? goNext() : goPrev();
+    }
   };
-  const onMouseLeave = () => { dragStartX.current = null; };
+  const onMouseLeave = () => { dragStartPos.current = null; };
 
   if (loading) {
     return (
@@ -111,6 +118,13 @@ export function About() {
         <h2 className="text-4xl sm:text-5xl lg:text-6xl font-black text-slate-900 dark:text-white tracking-tight uppercase">
           Port<span className="text-lime-500">folio</span>.
         </h2>
+        
+        {/* PRELOAD ALL IMAGES TO PREVENT BLANK DELAYS */}
+        <div className="hidden">
+          {items.map((item, idx) => (
+            <img key={`preload-${item.id || idx}`} src={item.img} alt="" loading="eager" fetchPriority="high" />
+          ))}
+        </div>
       </div>
 
       <div

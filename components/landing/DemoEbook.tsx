@@ -74,7 +74,7 @@ export function DemoEbook() {
             Digital Experience
           </p>
           <h2 className="text-4xl sm:text-5xl lg:text-6xl font-black text-slate-900 dark:text-white tracking-tight uppercase">
-            Eksplorasi E-Book <br className="hidden lg:block" /><span className="text-orange-500">Interaktif.</span>
+            Eksplorasi Smart Digital <br className="hidden lg:block" /><span className="text-orange-500">Interaktif.</span>
           </h2>
           <p className="mt-4 sm:mt-6 text-sm sm:text-base font-medium text-slate-600 dark:text-slate-400 max-w-2xl mx-auto sm:mx-0">
             Pengalaman melihat masa lalu dengan teknologi masa depan yang intuitif.
@@ -83,9 +83,9 @@ export function DemoEbook() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
           {/* Card Swipe Demo */}
-          <div className="group rounded-[1.5rem] sm:rounded-[2rem] border-2 border-slate-200 bg-white dark:bg-slate-900 dark:border-white shadow-[4px_4px_0_0_#334155] dark:shadow-[#a3e635] overflow-hidden hover:-translate-y-0.5 hover:-translate-x-0.5 hover:shadow-[4px_4px_0_0_#334155] dark:hover:shadow-[#a3e635] transition-all duration-300 flex flex-col">
-            <div className="p-6 sm:p-8 flex flex-col items-center justify-center bg-white dark:bg-slate-900 relative z-10 w-full text-center">
-              <div className="shrink-0 w-14 h-14 sm:w-16 sm:h-16 mb-4 sm:mb-5 rounded-2xl bg-orange-400 border-2 border-slate-200 dark:border-white shadow-[4px_4px_0_0_#334155] dark:shadow-[2px_2px_0_0_#a3e635] flex items-center justify-center transition-transform group-hover:scale-105 group-hover:-rotate-3">
+          <div className="group rounded-[1.5rem] sm:rounded-[2rem] border-2 border-slate-900 dark:border-slate-800 bg-white dark:bg-slate-800/80 shadow-[4px_4px_0_0_#334155] dark:shadow-neo-glow overflow-hidden transition-all duration-300 hover:-translate-x-1 hover:-translate-y-1 flex flex-col">
+            <div className="p-6 sm:p-8 flex flex-col items-center justify-center bg-white dark:bg-slate-800/80 relative z-10 w-full text-center">
+              <div className="shrink-0 w-14 h-14 sm:w-16 sm:h-16 mb-4 sm:mb-5 rounded-2xl bg-orange-400 border-2 border-slate-900 dark:border-white shadow-[4px_4px_0_0_#334155] dark:shadow-neo-glow-sm flex items-center justify-center transition-transform group-hover:scale-105 group-hover:-rotate-3">
                 <GalleryHorizontal className="w-7 h-7 sm:w-8 sm:h-8 text-slate-900" strokeWidth={2.5} />
               </div>
               <h3 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight uppercase">Interactive Swipe</h3>
@@ -104,7 +104,7 @@ export function DemoEbook() {
               <div className="absolute inset-0 bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] dark:bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:24px_24px] opacity-40" />
               
               {showcaseLoading ? (
-                <div className="relative z-10 w-48 aspect-[3/4] bg-white dark:bg-slate-800 rounded-2xl border-2 border-slate-200 dark:border-white flex items-center justify-center animate-pulse">
+                <div className="relative z-10 w-48 aspect-[3/4] bg-white dark:bg-slate-800 rounded-2xl border-2 border-slate-900 dark:border-white flex items-center justify-center animate-pulse">
                   <Loader2 className="w-8 h-8 animate-spin text-slate-300 dark:text-slate-600" />
                 </div>
               ) : (
@@ -113,7 +113,7 @@ export function DemoEbook() {
                   {/* Desktop Hover Hint */}
                   {albumPreviews.length > 0 && (
                     <div className="absolute inset-0 hidden sm:flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300">
-                      <div className="px-6 py-3 bg-slate-900/90 dark:bg-slate-800/90 backdrop-blur-md rounded-full text-white text-sm font-black flex items-center gap-2 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300 border-2 border-slate-200 dark:border-slate-700">
+                      <div className="px-6 py-3 bg-slate-900/90 dark:bg-slate-800/90 backdrop-blur-md rounded-full text-white text-sm font-black flex items-center gap-2 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300 border-2 border-slate-900 dark:border-slate-700">
                         <GalleryHorizontal className="w-4 h-4 text-orange-400 dark:text-orange-500" />
                         <span>Buka Interactive Swipe</span>
                       </div>
@@ -121,7 +121,7 @@ export function DemoEbook() {
                   )}
                   {/* Mobile Help Badge — hanya jika ada data */}
                   {albumPreviews.length > 0 && (
-                    <div className="md:hidden absolute bottom-4 left-1/2 -translate-x-1/2 px-4 py-2 bg-yellow-300 border-2 border-slate-200 shadow-[4px_4px_0_0_#334155] rounded-xl text-black text-[10px] font-black uppercase tracking-widest flex items-center gap-2 animate-bounce">
+                    <div className="md:hidden absolute bottom-4 left-1/2 -translate-x-1/2 px-4 py-2 bg-yellow-300 border-2 border-slate-900 shadow-[4px_4px_0_0_#334155] rounded-xl text-black text-[10px] font-black uppercase tracking-widest flex items-center gap-2 animate-bounce">
                       <TiLocationArrow className="w-4 h-4 rotate-45" />
                       <span>Klik untuk demo</span>
                     </div>
@@ -164,9 +164,9 @@ export function DemoEbook() {
           )}
 
           {/* Flipbook Demo */}
-          <div className="group rounded-[1.5rem] sm:rounded-[2rem] border-2 border-slate-200 bg-white dark:bg-slate-900 dark:border-white shadow-[4px_4px_0_0_#334155] dark:shadow-[#a3e635] overflow-hidden hover:-translate-y-0.5 hover:-translate-x-0.5 hover:shadow-[4px_4px_0_0_#334155] dark:hover:shadow-[#a3e635] transition-all duration-300 flex flex-col">
-            <div className="p-6 sm:p-8 flex flex-col items-center justify-center bg-white dark:bg-slate-900 relative z-10 w-full text-center">
-              <div className="shrink-0 w-14 h-14 sm:w-16 sm:h-16 mb-4 sm:mb-5 rounded-2xl bg-emerald-400 border-2 border-slate-200 dark:border-white shadow-[4px_4px_0_0_#334155] dark:shadow-[2px_2px_0_0_#a3e635] flex items-center justify-center transition-transform group-hover:scale-105 group-hover:rotate-3">
+          <div className="group rounded-[1.5rem] sm:rounded-[2rem] border-2 border-slate-900 bg-white dark:bg-slate-800/80 dark:border-slate-800 shadow-[4px_4px_0_0_#334155] dark:shadow-neo-glow overflow-hidden hover:-translate-x-1 hover:-translate-y-1 hover:shadow-[4px_4px_0_0_#334155] dark:hover:shadow-neo-glow transition-all duration-300 flex flex-col">
+            <div className="p-6 sm:p-8 flex flex-col items-center justify-center bg-white dark:bg-slate-800/80 relative z-10 w-full text-center">
+              <div className="shrink-0 w-14 h-14 sm:w-16 sm:h-16 mb-4 sm:mb-5 rounded-2xl bg-emerald-400 border-2 border-slate-900 shadow-[4px_4px_0_0_#334155] dark:shadow-neo-glow-sm flex items-center justify-center transition-transform group-hover:scale-105 group-hover:rotate-3">
                 <BookMarked className="w-7 h-7 sm:w-8 sm:h-8 text-slate-900" strokeWidth={2.5} />
               </div>
               <h3 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight uppercase">3D Virtual Flipbook</h3>
@@ -177,7 +177,7 @@ export function DemoEbook() {
               <div className="absolute inset-0 bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] dark:bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:24px_24px] opacity-40" />
               
               {showcaseLoading ? (
-                <div className="relative z-10 w-64 aspect-[4/3] bg-white dark:bg-slate-800 rounded-xl border-2 border-slate-200 dark:border-white flex items-center justify-center animate-pulse">
+                <div className="relative z-10 w-64 aspect-[4/3] bg-white dark:bg-slate-800 rounded-xl border-2 border-slate-900 dark:border-white flex items-center justify-center animate-pulse">
                   <Loader2 className="w-8 h-8 animate-spin text-slate-300 dark:text-slate-600" />
                 </div>
               ) : (
@@ -194,7 +194,7 @@ export function DemoEbook() {
                     <AnimatedFlipbookMockup />
                     {flipbookPreviewUrl && (
                       <div className="absolute inset-0 hidden sm:flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300">
-                        <div className="px-6 py-3 bg-slate-900/90 dark:bg-slate-800/90 backdrop-blur-md rounded-full text-white text-sm font-black flex items-center gap-2 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300 border-2 border-slate-200 dark:border-slate-700">
+                        <div className="px-6 py-3 bg-slate-900/90 dark:bg-slate-800/90 backdrop-blur-md rounded-full text-white text-sm font-black flex items-center gap-2 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300 border-2 border-slate-900 dark:border-slate-700">
                           <BookMarked className="w-4 h-4 text-emerald-400" />
                           <span>Buka 3D Virtual Flipbook</span>
                         </div>
@@ -204,7 +204,7 @@ export function DemoEbook() {
 
                   {/* Klik untuk demo help badge (Mobile Only) — hanya jika ada URL */}
                   {flipbookPreviewUrl && (
-                    <div className="md:hidden absolute bottom-4 left-1/2 -translate-x-1/2 px-4 py-2 bg-yellow-300 border-2 border-slate-200 shadow-[4px_4px_0_0_#334155] rounded-xl text-black text-[10px] font-black uppercase tracking-widest flex items-center gap-2 animate-bounce">
+                    <div className="md:hidden absolute bottom-4 left-1/2 -translate-x-1/2 px-4 py-2 bg-yellow-300 border-2 border-slate-900 shadow-[4px_4px_0_0_#334155] rounded-xl text-black text-[10px] font-black uppercase tracking-widest flex items-center gap-2 animate-bounce">
                       <TiLocationArrow className="w-4 h-4 rotate-45" />
                       <span>Klik untuk demo</span>
                     </div>

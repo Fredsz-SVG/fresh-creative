@@ -7,23 +7,23 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 mb-12">
           {/* Tentang Kami Section */}
           <div className="flex flex-col gap-4">
-            <h3 className="text-lg font-black uppercase tracking-wider text-white">Tentang Kami</h3>
+            <h3 className="text-lg font-black uppercase tracking-wider text-white">About Us</h3>
             <nav className="flex flex-col gap-2">
-              <a href="#hero" className="text-sm transition hover:text-white hover:underline">
-                Apa itu Fresh Creative?
+              <a href="#about" className="text-sm transition hover:text-white hover:underline">
+                What is Fresh Creative?
               </a>
               <a href="#demo-ebook" className="text-sm transition hover:text-white hover:underline">
-                Coba Produk Demo
+                Try Demo Product
               </a>
             </nav>
           </div>
 
           {/* Bantuan Section */}
           <div className="flex flex-col gap-4">
-            <h3 className="text-lg font-black uppercase tracking-wider text-white">Bantuan</h3>
+            <h3 className="text-lg font-black uppercase tracking-wider text-white">Support</h3>
             <nav className="flex flex-col gap-2">
               <a href="mailto:admin@livephoto.id" className="text-sm transition hover:text-white hover:underline">
-                Hubungi Kami
+                Contact Us
               </a>
               <a href="/privacy-policy" className="text-sm transition hover:text-white hover:underline">
                 Privacy Policy
