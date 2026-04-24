@@ -98,42 +98,53 @@ export function Hero() {
         : "polygon(14% 0%, 72% 0%, 90% 90%, 0% 100%)",
       borderRadius: isMobile ? "0 0 5% 5%" : "0 0 40% 10%",
     });
-    gsap.from("#video-frame", {
-      clipPath: "polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)",
-      borderRadius: "0 0 0 0",
-      ease: "power1.inOut",
-      scrollTrigger: {
-        trigger: "#video-frame",
-        start: "center center",
-        end: "bottom center",
-        scrub: true,
-      },
-    });
+
+    if (!isMobile) {
+      gsap.from("#video-frame", {
+        clipPath: "polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)",
+        borderRadius: "0 0 0 0",
+        ease: "power1.inOut",
+        scrollTrigger: {
+          trigger: "#video-frame",
+          start: "center center",
+          end: "bottom center",
+          scrub: true,
+          invalidateOnRefresh: true,
+        },
+      });
+    }
   }, [isLoading]);
+
+  useEffect(() => {
+    ScrollTrigger.refresh();
+    const handleResize = () => ScrollTrigger.refresh();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // // teks setting
   const headingContainerClasses = cn(
     "mt-28 px-8 transition-all duration-500",
     "sm:mt-16 sm:px-20",
     "[@media(width:344px)]:!mt-[18rem] [@media(width:360px)]:!mt-56 [@media(width:375px)]:!mt-56 [@media(width:390px)]:!mt-56",
-    "[@media(width:412px)]:!mt-[18rem] [@media(width:414px)]:!mt-56 [@media(width:430px)]:!mt-56 [@media(width:540px)]:!mt-52 [@media(width:393px)]:!mt-56",
+    "[@media(width:412px)]:!mt-[18rem] [@media(width:414px)]:!mt-56 [@media(width:430px)]:!mt-56 [@media(width:540px)]:!mt-52 [@media(width:393px)]:!mt-[18rem]",
     "[@media(max-height:650px)]:!mt-20 [@media(width:1024px)_and_(height:600px)]:!mt-36 [@media(min-height:651px)]:mt-24 [@media(min-height:700px)]:mt-28 [@media(min-height:800px)]:mt-32 xl:mt-32",
     "[@media(width:1280px)_and_(height:800px)]:!mt-48",
-    "[@media(min-height:820px)_and_(max-width:499px)]:!mt-[17rem] [@media(min-height:1000px)]:!mt-[28rem]",
+    "[@media(min-height:820px)_and_(max-width:499px)]:!mt-[23rem] [@media(min-height:1000px)]:!mt-[28rem]",
     "[@media(min-height:1100px)]:!mt-[32rem] [@media(min-height:1200px)]:!mt-[36rem] [@media(min-height:1300px)]:!mt-[40rem]"
   );
 
   return (
-    <section id="hero" className="relative h-dvh w-full overflow-x-hidden bg-slate-100 dark:bg-slate-950 transition-colors duration-500">
+    <section id="hero" className="relative h-screen w-full overflow-x-hidden bg-slate-100 dark:bg-slate-950 transition-colors duration-500">
       {isLoading && (
-        <div className="flex-center absolute z-[100] h-dvh w-full overflow-hidden bg-white dark:bg-slate-950 transition-colors duration-500">
+        <div className="flex-center absolute z-[100] h-screen w-full overflow-hidden bg-white dark:bg-slate-950 transition-colors duration-500">
           <img src="/img/logo.png" alt="Loading..." className="w-24 sm:w-32 animate-logo-pulse !opacity-100" loading="eager" fetchPriority="high" decoding="async" />
         </div>
       )}
 
       <div
         id="video-frame"
-        className="bg-slate-100 dark:bg-slate-950 relative z-10 h-dvh w-full overflow-hidden transition-colors duration-500"
+        className="bg-slate-100 dark:bg-slate-950 relative z-10 h-screen w-full overflow-hidden transition-colors duration-500"
       >
         <div className="relative size-full">
           <video

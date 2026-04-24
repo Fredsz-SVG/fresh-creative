@@ -103,12 +103,6 @@ export function Portfolio() {
 
   const activeItem = items[activeIndex];
 
-  // Helper unshift array to always show unselected items in the queue
-  const queueItems = [
-    ...items.slice(activeIndex + 1),
-    ...items.slice(0, activeIndex)
-  ];
-
   return (
     <section id="about" className="w-full bg-slate-100 dark:bg-slate-950 pt-16 sm:pt-20 transition-colors duration-500">
       <div className="container mx-auto px-6 sm:px-10 mb-8 sm:mb-10 text-center sm:text-left">
@@ -119,16 +113,29 @@ export function Portfolio() {
           Port<span className="text-lime-500">folio</span>.
         </h2>
         
-        {/* PRELOAD ALL IMAGES TO PREVENT BLANK DELAYS */}
+        {/* PRELOAD ONLY NEIGHBOR IMAGES TO SAVE BANDWIDTH */}
         <div className="hidden">
-          {items.map((item, idx) => (
-            <img key={`preload-${item.id || idx}`} src={item.img} alt="" loading="eager" fetchPriority="high" />
-          ))}
+          {items.length > 0 && (
+            <>
+              <img 
+                src={items[(activeIndex + 1) % items.length].img} 
+                alt="" 
+                loading="lazy" 
+                decoding="async"
+              />
+              <img 
+                src={items[(activeIndex - 1 + items.length) % items.length].img} 
+                alt="" 
+                loading="lazy"
+                decoding="async"
+              />
+            </>
+          )}
         </div>
       </div>
 
       <div
-        className="group/hero relative h-[90vh] sm:h-screen w-full overflow-hidden shadow-[0_-20px_50px_-20px_rgba(0,0,0,0.3)] dark:shadow-[0_-20px_50px_-20px_rgba(0,0,0,0.8)] border-t border-slate-200 dark:border-white/10 bg-slate-950 select-none"
+        className="group/hero relative h-[80vh] sm:h-screen w-full overflow-hidden shadow-[0_-20px_50px_-20px_rgba(0,0,0,0.3)] dark:shadow-[0_-20px_50px_-20px_rgba(0,0,0,0.8)] border-t border-slate-200 dark:border-white/10 bg-slate-950 select-none"
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
         onMouseDown={onMouseDown}
@@ -136,7 +143,7 @@ export function Portfolio() {
         onMouseLeave={onMouseLeave}
       >
         {/* BACKGROUND IMAGE WITH SMOOTH CROSSFADE */}
-        <AnimatePresence initial={false}>
+        <AnimatePresence initial={false} mode="wait">
           <motion.img
             key={activeItem.id}
             src={activeItem.img}
@@ -144,56 +151,71 @@ export function Portfolio() {
             loading="eager"
             fetchPriority="high"
             decoding="async"
-            initial={{ opacity: 0, scale: 1.1 }}
-            animate={{ opacity: 1, scale: 1 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-            className="absolute inset-0 size-full object-cover object-center"
+            transition={{ duration: 0.4, ease: "easeInOut" }}
+            className="absolute inset-0 size-full object-cover object-center will-change-opacity"
           />
         </AnimatePresence>
 
         {/* OVERLAY GRADIENT */}
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-900/30 to-transparent pointer-events-none" />
-        <div className="absolute inset-0 bg-gradient-to-r from-slate-950/70 via-slate-900/20 to-transparent pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-900/30 to-transparent pointer-events-none z-[5]" />
+        <div className="absolute inset-0 bg-gradient-to-r from-slate-950/70 via-slate-900/20 to-transparent pointer-events-none z-[5]" />
 
         {/* MAIN CONTENT AREA */}
-        <div className="absolute inset-0 flex flex-col justify-end p-6 sm:p-12 lg:p-16 pb-12 sm:pb-16 lg:pb-16 z-10 w-full lg:w-[65%]">
+        <div className="absolute inset-0 flex flex-col justify-end p-6 sm:p-12 lg:p-16 pb-12 sm:pb-16 lg:pb-16 z-10 w-full lg:w-[65%] pointer-events-none">
           <div className="pb-3 pr-3 mb-2">
-            <motion.div
-              key={`subtitle-${activeItem.id}`}
-              initial={{ x: -16, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              transition={{ duration: 0.45, delay: 0.2 }}
-              className="inline-flex items-center -rotate-[1deg] origin-left"
-              style={{ filter: "drop-shadow(2px 0px 0px #000) drop-shadow(-2px 0px 0px #000) drop-shadow(0px 2px 0px #000) drop-shadow(0px -2px 0px #000) drop-shadow(6px 6px 0px #ffffff)" }}
-            >
-              <div
-                className="bg-lime-400 pl-3 pr-5 py-[5px]"
-                style={{ clipPath: "polygon(0 0, 100% 0, calc(100% - 8px) 100%, 0 100%)" }}
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={`subtitle-${activeItem.id}`}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.3 }}
+                className="inline-flex items-center -rotate-[1deg] origin-left"
+                style={{ filter: "drop-shadow(2px 0px 0px #000) drop-shadow(-2px 0px 0px #000) drop-shadow(0px 2px 0px #000) drop-shadow(0px -2px 0px #000) drop-shadow(6px 6px 0px #ffffff)" }}
               >
-                <span className="font-general text-[9px] sm:text-[10px] font-black uppercase tracking-[0.28em] text-slate-950">
-                  {activeItem.subtitle}
-                </span>
-              </div>
-            </motion.div>
+                <div
+                  className="bg-lime-400 pl-3 pr-5 py-[5px]"
+                  style={{ clipPath: "polygon(0 0, 100% 0, calc(100% - 8px) 100%, 0 100%)" }}
+                >
+                  <span className="font-general text-[9px] sm:text-[10px] font-black uppercase tracking-[0.28em] text-slate-950">
+                    {activeItem.subtitle}
+                  </span>
+                </div>
+              </motion.div>
+            </AnimatePresence>
           </div>
 
-          <AnimatedTitle
-            key={`title-${activeItem.id}`}
-            containerClass="text-left font-zentry !text-white text-3xl sm:text-5xl lg:text-6xl leading-[0.9] tracking-tight mb-3 drop-shadow-2xl [-webkit-text-stroke:1.5px_black]"
-          >
-            {activeItem.title}
-          </AnimatedTitle>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={`title-${activeItem.id}`}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.4 }}
+            >
+              <AnimatedTitle
+                containerClass="text-left font-zentry !text-white text-3xl sm:text-5xl lg:text-6xl leading-[0.9] tracking-tight mb-3 drop-shadow-2xl [-webkit-text-stroke:1.5px_black]"
+              >
+                {activeItem.title}
+              </AnimatedTitle>
+            </motion.div>
+          </AnimatePresence>
 
-          <motion.p
-            key={`desc-${activeItem.id}`}
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.4 }}
-            className="max-w-lg font-general text-xs sm:text-sm md:text-base font-bold text-slate-300 leading-relaxed drop-shadow-md"
-          >
-            {activeItem.desc}
-          </motion.p>
+          <AnimatePresence mode="wait">
+            <motion.p
+              key={`desc-${activeItem.id}`}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="max-w-lg font-general text-xs sm:text-sm md:text-base font-bold text-slate-300 leading-relaxed drop-shadow-md"
+            >
+              {activeItem.desc}
+            </motion.p>
+          </AnimatePresence>
         </div>
 
         {/* NAVIGATION ARROWS - Visible on all sizes */}
