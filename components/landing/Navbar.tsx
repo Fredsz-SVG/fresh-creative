@@ -150,18 +150,18 @@ export function Navbar() {
                 {!user ? (
                   <Link
                     href="/login"
-                    className="hidden lg:inline-flex items-center gap-2 px-7 py-3 bg-yellow-300 text-black font-black text-sm uppercase tracking-wide border-2 border-black rounded-full shadow-[2px_2px_0_0_#000] dark:shadow-[2px_2px_0_0_#fff] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[3px_3px_0_0_#000] dark:hover:shadow-[3px_3px_0_0_#000] dark:hover:shadow-[3px_3px_0_0_#fff] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all duration-200"
+                    className="hidden lg:inline-flex items-center justify-center gap-2 w-[150px] py-2 bg-yellow-300 text-black font-black text-[13px] uppercase tracking-wide border-2 border-black rounded-full shadow-[2px_2px_0_0_#000] dark:shadow-[2px_2px_0_0_#fff] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[3px_3px_0_0_#000] dark:hover:shadow-[3px_3px_0_0_#000] dark:hover:shadow-[3px_3px_0_0_#fff] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all duration-200"
                   >
                     <LogIn size={14} />
-                    <span className="font-general text-sm uppercase">Login</span>
+                    <span className="font-general text-[13px] uppercase">Login</span>
                   </Link>
                 ) : (
                   <Link
                     href="/user"
-                    className="hidden lg:inline-flex items-center gap-2 px-7 py-3 bg-yellow-300 text-black font-black text-sm uppercase tracking-wide border-2 border-black rounded-full shadow-[2px_2px_0_0_#000] dark:shadow-[2px_2px_0_0_#fff] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[3px_3px_0_0_#000] dark:hover:shadow-[3px_3px_0_0_#fff] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all duration-200"
+                    className="hidden lg:inline-flex items-center justify-center gap-2 w-[150px] py-2 bg-yellow-300 text-black font-black text-[13px] uppercase tracking-wide border-2 border-black rounded-full shadow-[2px_2px_0_0_#000] dark:shadow-[2px_2px_0_0_#fff] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[3px_3px_0_0_#000] dark:hover:shadow-[3px_3px_0_0_#fff] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all duration-200"
                   >
                     <LayoutDashboard size={14} />
-                    <span className="font-general text-sm uppercase">Dashboard</span>
+                    <span className="font-general text-[13px] uppercase">Dashboard</span>
                   </Link>
                 )}
                 <button

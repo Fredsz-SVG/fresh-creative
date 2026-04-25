@@ -29,6 +29,7 @@
   --accent-mint: #34d399;
   --accent-peach: #fb923c;
   --accent-sky: #38bdf8;
+  color-scheme: light;
 }
 
 :root[data-theme="light"] {
@@ -40,6 +41,7 @@
   --muted: 100 116 139;
   --primary: 120 90 220;
   --primaryText: 255 255 255;
+  color-scheme: light;
 }
 
 :root[data-theme="dark"] {
@@ -51,6 +53,7 @@
   --muted: 156 163 175;
   --primary: 155 130 255;
   --primaryText: 255 255 255;
+  color-scheme: dark;
 }
 
 /* ===== Base Styles ===== */

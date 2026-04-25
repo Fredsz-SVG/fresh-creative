@@ -124,27 +124,35 @@ export function Hero() {
 
   // // teks setting
   const headingContainerClasses = cn(
-    "mt-28 px-8 transition-all duration-500",
-    "sm:mt-16 sm:px-20",
-    "[@media(width:344px)]:!mt-[18rem] [@media(width:360px)]:!mt-56 [@media(width:375px)]:!mt-56 [@media(width:390px)]:!mt-56",
-    "[@media(width:412px)]:!mt-[18rem] [@media(width:414px)]:!mt-56 [@media(width:430px)]:!mt-56 [@media(width:540px)]:!mt-52 [@media(width:393px)]:!mt-[18rem]",
-    "[@media(max-height:650px)]:!mt-20 [@media(width:1024px)_and_(height:600px)]:!mt-36 [@media(min-height:651px)]:mt-24 [@media(min-height:700px)]:mt-28 [@media(min-height:800px)]:mt-32 xl:mt-32",
+    "mt-28 px-8 transition-all duration-500 sm:mt-16 sm:px-20",
+    "[@media(max-width:767px)_and_(max-height:650px)]:!mt-[10rem]",
+    "[@media(max-width:767px)_and_(min-height:651px)]:!mt-[13rem]",
+    "[@media(max-width:767px)_and_(min-height:700px)]:!mt-[16rem]",
+    "[@media(max-width:767px)_and_(min-height:740px)]:!mt-[19rem]",
+    "[@media(max-width:767px)_and_(min-height:780px)]:!mt-[21rem]",
+    "[@media(max-width:767px)_and_(min-height:820px)]:!mt-[23.5rem]",
+    "[@media(max-width:767px)_and_(min-height:860px)]:!mt-[25rem]",
+    "[@media(width:1024px)_and_(height:600px)]:!mt-36",
+    "[@media(min-width:768px)_and_(min-height:700px)]:mt-28",
+    "[@media(min-width:768px)_and_(min-height:800px)]:mt-32 xl:mt-32",
     "[@media(width:1280px)_and_(height:800px)]:!mt-48",
-    "[@media(min-height:820px)_and_(max-width:499px)]:!mt-[23rem] [@media(min-height:1000px)]:!mt-[28rem]",
-    "[@media(min-height:1100px)]:!mt-[32rem] [@media(min-height:1200px)]:!mt-[36rem] [@media(min-height:1300px)]:!mt-[40rem]"
+    "[@media(min-width:768px)_and_(min-height:1000px)]:!mt-[28rem]",
+    "[@media(min-width:768px)_and_(min-height:1100px)]:!mt-[32rem]",
+    "[@media(min-width:768px)_and_(min-height:1200px)]:!mt-[36rem]",
+    "[@media(min-width:768px)_and_(min-height:1300px)]:!mt-[40rem]"
   );
 
   return (
-    <section id="hero" className="relative h-screen w-full overflow-x-hidden bg-slate-100 dark:bg-slate-950 transition-colors duration-500">
+    <section id="hero" className="relative h-[100dvh] w-full overflow-x-hidden bg-slate-100 dark:bg-slate-950 transition-colors duration-500">
       {isLoading && (
-        <div className="flex-center absolute z-[100] h-screen w-full overflow-hidden bg-white dark:bg-slate-950 transition-colors duration-500">
+        <div className="flex-center absolute z-[100] h-[100dvh] w-full overflow-hidden bg-white dark:bg-slate-950 transition-colors duration-500">
           <img src="/img/logo.png" alt="Loading..." className="w-24 sm:w-32 animate-logo-pulse !opacity-100" loading="eager" fetchPriority="high" decoding="async" />
         </div>
       )}
 
       <div
         id="video-frame"
-        className="bg-slate-100 dark:bg-slate-950 relative z-10 h-screen w-full overflow-hidden transition-colors duration-500"
+        className="bg-slate-100 dark:bg-slate-950 relative z-10 h-[100dvh] w-full overflow-hidden transition-colors duration-500"
       >
         <div className="relative size-full">
           <video
@@ -155,7 +163,7 @@ export function Hero() {
             muted
             playsInline
             className={cn(
-              "absolute top-0 left-0 size-full object-cover object-[59%] md:object-center transition-opacity duration-1000",
+              "absolute top-0 left-0 size-full object-cover object-[59%] lg:object-center transition-opacity duration-1000",
               theme?.isDark ? "opacity-0" : "opacity-100"
             )}
             onLoadedData={handleVideoLoad}
@@ -169,7 +177,7 @@ export function Hero() {
             muted
             playsInline
             className={cn(
-              "absolute top-0 left-0 size-full object-cover object-[59%] md:object-center transition-opacity duration-1000",
+              "absolute top-0 left-0 size-full object-cover object-[59%] lg:object-center transition-opacity duration-1000",
               theme?.isDark ? "opacity-100" : "opacity-0"
             )}
             onLoadedData={handleVideoLoad}

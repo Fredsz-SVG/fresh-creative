@@ -26,7 +26,7 @@ const inter = Inter({
 })
 
 export const viewport: Viewport = {
-  colorScheme: 'light',
+  colorScheme: 'dark light',
 }
 
 export const metadata: Metadata = {
