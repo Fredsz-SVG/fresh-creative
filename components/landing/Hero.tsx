@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 
 gsap.registerPlugin(useGSAP, ScrollTrigger);
 
-// [DIPERBAIKI] 4: Konfigurasi global agar GSAP mengabaikan efek naik-turunnya address bar di mobile
+// Konfigurasi global agar GSAP mengabaikan efek naik-turunnya address bar di mobile
 if (typeof window !== "undefined") {
   ScrollTrigger.config({ ignoreMobileResize: true });
 }
@@ -135,7 +135,7 @@ export function Hero() {
     return () => mm.revert();
   }, [isLoading]);
 
-  // [DIPERBAIKI] 2: Hapus event listener window 'resize' agar GSAP tidak me-refresh animasi berulang kali saat scroll di mobile
+  // Hapus event listener window 'resize' agar GSAP tidak me-refresh animasi berulang kali saat scroll di mobile
   useEffect(() => {
     ScrollTrigger.refresh();
   }, []);
@@ -161,7 +161,7 @@ export function Hero() {
   );
 
   return (
-    {/* [DIPERBAIKI] 1: Ubah h-[100dvh] menjadi h-[100svh] agar container stabil */}
+    // Ubah h-[100dvh] menjadi h-[100svh] agar container stabil
     <section id="hero" className="relative h-[100svh] w-full overflow-x-hidden bg-slate-100 dark:bg-slate-950 transition-colors duration-500">
       {isLoading && (
         <div className="flex-center absolute z-[100] h-[100svh] w-full overflow-hidden bg-white dark:bg-slate-950 transition-colors duration-500">
@@ -169,7 +169,7 @@ export function Hero() {
         </div>
       )}
 
-      {/* [DIPERBAIKI] 1 & 3: Ubah 100dvh jadi 100svh, lalu tambahkan will-change-[clip-path,border-radius] dan transform-gpu untuk optimasi render HP */}
+      {/* Ubah 100dvh jadi 100svh, lalu tambahkan will-change-[clip-path,border-radius] dan transform-gpu untuk optimasi render HP */}
       <div
         id="video-frame"
         className="bg-slate-100 dark:bg-slate-950 relative z-10 h-[100svh] w-full overflow-hidden transition-colors duration-500 will-change-[clip-path,border-radius] transform-gpu"
@@ -359,4 +359,4 @@ export function Hero() {
       </div>
     </section>
   );
-}
+            }
