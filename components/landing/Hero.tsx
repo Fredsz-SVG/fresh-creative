@@ -49,17 +49,7 @@ function AnimatedCounter({ target, suffix = '', duration = 2000, formatFn }: { t
   return <span ref={ref}>{display}{suffix}</span>;
 }
 
-function SplitText({ text, boldIndices = [], className, style }: { text: string; boldIndices?: number[]; className?: string; style?: React.CSSProperties }) {
-  return (
-    <span className={cn("flex justify-between w-full items-center", className)} style={style}>
-      {text.split('').map((char, i) => (
-        <span key={i} className={cn(boldIndices.includes(i) && "font-black")}>
-          {char === ' ' ? '\u00A0' : char}
-        </span>
-      ))}
-    </span>
-  );
-}
+
 
 export function Hero() {
   const [isLoading, setIsLoading] = useState(true);
@@ -69,13 +59,10 @@ export function Hero() {
 
   useEffect(() => {
     setHasMounted(true);
-    let frameId: number;
-    const update = () => {
+    const interval = setInterval(() => {
       setCurrentTime(new Date());
-      frameId = requestAnimationFrame(update);
-    };
-    frameId = requestAnimationFrame(update);
-    return () => cancelAnimationFrame(frameId);
+    }, 500);
+    return () => clearInterval(interval);
   }, []);
 
   const hideLoader = useCallback(() => {
@@ -91,28 +78,58 @@ export function Hero() {
   const handleVideoError = () => hideLoader();
 
   useGSAP(() => {
-    const isMobile = window.innerWidth < 768;
-    gsap.set("#video-frame", {
-      clipPath: isMobile
-        ? "polygon(4% 0%, 96% 0%, 100% 100%, 0% 100%)"
-        : "polygon(14% 0%, 72% 0%, 90% 90%, 0% 100%)",
-      borderRadius: isMobile ? "0 0 5% 5%" : "0 0 40% 10%",
+    const mm = gsap.matchMedia();
+
+    mm.add({
+      isDesktop: "(min-width: 768px)",
+      isMobile: "(max-width: 767px)"
+    }, (context) => {
+      const { isDesktop } = context.conditions!;
+
+      if (isDesktop) {
+        // Desktop Animation
+        gsap.fromTo("#video-frame", 
+          {
+            clipPath: "polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)",
+            borderRadius: "0 0 0 0",
+          },
+          {
+            clipPath: "polygon(14% 0%, 72% 0%, 90% 90%, 0% 100%)",
+            borderRadius: "0 0 40% 10%",
+            ease: "none",
+            scrollTrigger: {
+              trigger: "#video-frame",
+              start: "center center",
+              end: "bottom center",
+              scrub: true,
+              invalidateOnRefresh: true,
+            },
+          }
+        );
+      } else {
+        // Mobile Animation: Keep it smooth and light
+        gsap.fromTo("#video-frame",
+          {
+            clipPath: "polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)",
+            borderRadius: "0 0 0 0",
+          },
+          {
+            clipPath: "polygon(4% 0%, 96% 0%, 100% 100%, 0% 100%)",
+            borderRadius: "0 0 5% 5%",
+            ease: "none",
+            scrollTrigger: {
+              trigger: "#video-frame",
+              start: "top top",
+              end: "bottom center",
+              scrub: 1, // Add slight delay for smoothness on mobile
+              invalidateOnRefresh: true,
+            },
+          }
+        );
+      }
     });
 
-    if (!isMobile) {
-      gsap.from("#video-frame", {
-        clipPath: "polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)",
-        borderRadius: "0 0 0 0",
-        ease: "power1.inOut",
-        scrollTrigger: {
-          trigger: "#video-frame",
-          start: "center center",
-          end: "bottom center",
-          scrub: true,
-          invalidateOnRefresh: true,
-        },
-      });
-    }
+    return () => mm.revert();
   }, [isLoading]);
 
   useEffect(() => {
@@ -193,9 +210,13 @@ export function Hero() {
           <div className={cn(
             "absolute top-28 left-12 z-50 pointer-events-none flex items-center justify-center transition-all duration-500",
             "sm:top-28 [@media(min-width:1300px)]:!top-16 sm:left-1/2 sm:-translate-x-1/2",
-            "[@media(min-height:700px)_and_(max-width:499px)]:top-32 [@media(min-height:700px)_and_(max-width:499px)]:left-8",
+            "[@media(min-height:700px)_and_(max-width:499px)]:top-32",
+            "[@media(min-height:700px)_and_(max-width:389px)]:left-8 [@media(min-height:700px)_and_(min-width:390px)_and_(max-width:499px)]:left-14",
             "[@media(min-height:700px)_and_(min-width:500px)]:top-32 [@media(min-height:700px)_and_(min-width:500px)_and_(max-width:767px)]:left-40",
-            "[@media(min-height:800px)_and_(max-width:767px)]:left-4 [@media(min-height:820px)_and_(max-width:499px)]:!top-40 [@media(min-height:820px)_and_(max-width:499px)]:!left-8",
+            "[@media(min-height:800px)_and_(max-height:819px)_and_(max-width:389px)]:!left-6 [@media(min-height:800px)_and_(max-height:819px)_and_(min-width:390px)_and_(max-width:499px)]:!left-12",
+            "[@media(min-height:820px)_and_(max-width:499px)]:!top-40",
+            "[@media(min-height:820px)_and_(max-width:389px)]:!left-8 [@media(min-height:820px)_and_(min-width:390px)_and_(max-width:499px)]:!left-10",
+            "[@media(min-width:768px)_and_(max-width:1050px)_and_(min-height:1000px)]:!left-[35%]",
             "[@media(max-height:650px)]:top-32 [@media(width:1024px)_and_(height:600px)]:!top-24 [@media(min-height:800px)]:top-36 [@media(width:1280px)_and_(height:800px)]:!top-28 [@media(min-width:1300px)_and_(min-height:800px)]:!top-28 [@media(min-height:1000px)]:!top-[10rem] [@media(min-height:1100px)]:!top-[11rem] [@media(min-height:1200px)]:!top-[12rem] [@media(min-height:1300px)]:!top-[13rem]"
           )}>
 

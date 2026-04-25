@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Check, Book, BookOpen, Sparkles, Star } from "lucide-react";
+import { ArrowLeft, Check, Book, BookOpen, Sparkles, Star, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import DashboardTitle from "@/components/dashboard/DashboardTitle";
 import { apiUrl } from '../../lib/api-url'
@@ -310,7 +310,7 @@ export default function PricingView({
                       setSelectedPackageId(isSelected ? null : pkg.id);
                     }
                   }}
-                  className={`text-left cursor-pointer relative w-[85vw] sm:w-full shrink-0 snap-center rounded-3xl border-4 p-6 transition-all duration-200 ${isSelected
+                  className={`text-left cursor-pointer relative w-[85vw] sm:w-full shrink-0 snap-center rounded-3xl border-4 p-6 transition-all duration-200 flex flex-col ${isSelected
                     ? "border-slate-200 dark:border-slate-600 bg-emerald-200 dark:bg-emerald-900/40 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] scale-100 sm:scale-[1.02] translate-x-1 translate-y-1 sm:translate-x-0 sm:translate-y-0"
                     : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:translate-x-1 hover:translate-y-1 hover:shadow-none"
                     }`}
@@ -379,42 +379,44 @@ export default function PricingView({
                     </div>
                   )}
 
-                  {/* Addon (opsional, di bawah fitur) */}
-                  {parsedFeatures.some((p) => p.price > 0) && (
-                    <div className="mt-4 pt-4 border-t-2 border-slate-100 dark:border-slate-700 px-1">
-                      <div className="flex items-center justify-between mb-3">
-                        <p className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Addon</p>
-                        {chosenAddons.length > 0 && (
-                          <span className="bg-emerald-400 dark:bg-emerald-500 text-slate-900 text-[10px] px-2 py-0.5 rounded-full font-black border-2 border-slate-200 dark:border-slate-700 shadow-[4px_4px_0_0_#334155]">
-                            {chosenAddons.length} Dipilih
-                          </span>
-                        )}
+                  <div className="mt-auto pt-6">
+                    {/* Addon (opsional, di bawah fitur) */}
+                    {parsedFeatures.some((p) => p.price > 0) && (
+                      <div className="pt-2 border-t-2 border-slate-100 dark:border-slate-700 px-1">
+                        <div className="flex items-center justify-between mb-3">
+                          <p className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Addon</p>
+                          {chosenAddons.length > 0 && (
+                            <span className="bg-emerald-400 dark:bg-emerald-500 text-slate-900 text-[10px] px-2 py-0.5 rounded-full font-black border-2 border-slate-200 dark:border-slate-700 shadow-[4px_4px_0_0_#334155]">
+                              {chosenAddons.length} Dipilih
+                            </span>
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setOpenAddonPkgId(pkg.id);
+                          }}
+                          className={`w-full py-2.5 px-4 rounded-xl border-2 transition-all font-black uppercase text-[11px] tracking-wider ${
+                            isSelected
+                              ? "bg-white dark:bg-emerald-900/30 border-slate-200 dark:border-slate-600 text-slate-900 dark:text-emerald-300"
+                              : "bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:border-slate-200 dark:hover:border-slate-500 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]"
+                          } active:translate-x-0 active:translate-y-0 active:shadow-none`}
+                        >
+                          {chosenAddons.length > 0 ? "Ubah Add-on" : "Pilih Add-on"}
+                        </button>
                       </div>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setOpenAddonPkgId(pkg.id);
-                        }}
-                        className={`w-full py-2.5 px-4 rounded-xl border-2 transition-all font-black uppercase text-[11px] tracking-wider ${
-                          isSelected
-                            ? "bg-white dark:bg-emerald-900/30 border-slate-200 dark:border-slate-600 text-slate-900 dark:text-emerald-300"
-                            : "bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:border-slate-200 dark:hover:border-slate-500 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]"
-                        } active:translate-x-0 active:translate-y-0 active:shadow-none`}
-                      >
-                        {chosenAddons.length > 0 ? "Ubah Add-on" : "Pilih Add-on"}
-                      </button>
-                    </div>
-                  )}
+                    )}
 
-                  {/* Estimasi total */}
-                  <div className={`mt-5 pt-4 border-t-2 ${isSelected ? 'border-emerald-300 dark:border-emerald-600' : 'border-slate-100 dark:border-slate-700'} flex items-center justify-between px-1`}>
-                    <span className="text-[13px] font-black text-slate-600 dark:text-slate-300 uppercase tracking-widest">
-                      Harga total per siswa
-                    </span>
-                    <span className="text-[17px] font-black text-slate-900 dark:text-white">
-                      Rp {totalPerStudent.toLocaleString("id-ID")}
-                    </span>
+                    {/* Estimasi total */}
+                    <div className={`mt-5 pt-4 border-t-2 ${isSelected ? 'border-emerald-300 dark:border-emerald-600' : 'border-slate-100 dark:border-slate-700'} flex items-center justify-between px-1`}>
+                      <span className="text-[13px] font-black text-slate-600 dark:text-slate-300 uppercase tracking-widest">
+                        Harga total per siswa
+                      </span>
+                      <span className="text-[17px] font-black text-slate-900 dark:text-white">
+                        Rp {totalPerStudent.toLocaleString("id-ID")}
+                      </span>
+                    </div>
                   </div>
                 </div>
               );
@@ -435,15 +437,41 @@ export default function PricingView({
         {draft && (
           <div className="mt-8 border-t-4 border-slate-200 dark:border-slate-700 pt-8">
             {saveError ? <p className="text-[14px] font-bold text-red-500 dark:text-red-400 mb-4">{saveError}</p> : null}
+            
+            {selectedPkg ? (
+              <div className="mb-6 flex flex-col items-center justify-center p-3 sm:p-4 rounded-xl border-2 border-slate-900 dark:border-white bg-lime-300 dark:bg-slate-800 text-center shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] transition-all animate-in zoom-in-95 duration-300 -rotate-1 hover:rotate-0">
+                <p className="text-[10px] sm:text-[11px] font-black text-slate-800 dark:text-slate-400 uppercase tracking-widest mb-0.5">
+                  Paket Smart Digital
+                </p>
+                <p className="text-lg sm:text-xl font-black text-slate-900 dark:text-white leading-tight uppercase tracking-tight">
+                  {selectedPkg.name}
+                </p>
+              </div>
+            ) : (
+              <div className="mb-6 flex flex-col items-center justify-center p-3 sm:p-4 rounded-xl border-2 border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/40 text-center border-dashed">
+                <p className="text-[10px] sm:text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest animate-pulse">
+                  Belum ada paket yang dipilih
+                </p>
+              </div>
+            )}
+
             <button
               type="button"
               onClick={handleSaveToDb}
               disabled={saving || !selectedPackageId}
-              className="w-full px-6 py-4 bg-indigo-400 dark:bg-indigo-600 text-slate-900 dark:text-white border-2 border-slate-200 dark:border-slate-700 rounded-2xl text-[18px] font-black uppercase tracking-widest shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:translate-x-1 hover:translate-y-1 hover:shadow-[4px_4px_0_0_#334155] dark:hover:shadow-[2px_2px_0_0_#334155] disabled:opacity-50 transition-all"
+              className="group flex items-center justify-center gap-3 w-full px-6 py-3 sm:py-4 bg-indigo-400 dark:bg-indigo-600 text-slate-900 dark:text-white border-2 border-slate-200 dark:border-slate-700 rounded-xl sm:rounded-2xl text-[14px] sm:text-[18px] font-black uppercase tracking-widest shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:translate-x-1 hover:translate-y-1 hover:shadow-none disabled:opacity-50 disabled:hover:translate-x-0 disabled:hover:translate-y-0 disabled:hover:shadow-[4px_4px_0_0_#334155] transition-all"
             >
-              {saving ? "Menyimpan..." : afterSaveRedirect ? "Ajukan Pendaftaran" : "Simpan dan Lihat Album"}
+              {saving ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" strokeWidth={3} />
+                  <span>Memproses...</span>
+                </>
+              ) : afterSaveRedirect ? (
+                "Ajukan Pendaftaran"
+              ) : (
+                "Simpan dan Lihat Album"
+              )}
             </button>
-            <p className="text-[13px] font-bold text-slate-500 dark:text-slate-400 mt-4 text-center">Pilih paket di atas lalu klik ajukan.</p>
           </div>
         )}
 

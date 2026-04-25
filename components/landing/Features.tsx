@@ -94,11 +94,12 @@ function BentoCard({ media, src, title, description }: BentoCardProps) {
 export function Features() {
   return (
     <section
+      id="features"
       className="pb-10 bg-slate-100 dark:bg-slate-950 transition-colors duration-500"
     >
       <div className="container mx-auto px-3 md:px-10">
 
-        <div className="px-3 md:px-5 py-10 md:py-16 text-center sm:text-left" id="features">
+        <div className="px-3 md:px-5 py-10 md:py-16 text-center sm:text-left">
           <p className="font-general text-[10px] sm:text-xs uppercase tracking-[0.2em] text-lime-600 dark:text-lime-400 font-black mb-3">
             Our Services
           </p>

@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from "framer-motion";
-import { Telescope, Flag, Award, Sparkles, Cpu, Shield, Box, Zap, Share2, Smile, Shirt, Wand2, MousePointer2, BadgeCheck } from "lucide-react";
+import { Telescope, Flag, Award, Cpu, Smile, Shirt, Wand2, MousePointer2, BadgeCheck } from "lucide-react";
 
 export function About() {
   return (
@@ -16,19 +16,19 @@ export function About() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-100px" }}
           transition={{ duration: 0.6 }}
-          className="text-center mb-12 sm:mb-16 md:mb-20"
+          className="text-center mb-16 sm:mb-20 md:mb-24 px-4"
         >
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-lime-200 dark:bg-lime-900/50 text-lime-700 dark:text-lime-300 text-xs sm:text-sm font-bold uppercase tracking-wide mb-4 sm:mb-6 border border-lime-600/20">
+          <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-lime-200 dark:bg-lime-900/50 text-lime-700 dark:text-lime-300 text-[10px] sm:text-xs font-black uppercase tracking-[0.2em] mb-6 sm:mb-8 border-2 border-lime-600/20">
             <Award size={14} />
             Established Since 2013
           </div>
-          <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-slate-900 dark:text-white tracking-tight uppercase leading-tight">
-            Fresh Creative <span className="text-orange-500 whitespace-nowrap">Indonesia</span>
+          <h2 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-slate-900 dark:text-white tracking-tight uppercase leading-[1.1]">
+            Fresh Creative <br className="sm:hidden" /> <span className="text-orange-500">Indonesia</span>
           </h2>
-          <h3 className="mt-2 text-xl sm:text-2xl font-bold text-orange-500/80 dark:text-orange-400/80 italic">
+          <h3 className="mt-4 text-lg sm:text-2xl md:text-3xl font-bold text-orange-500/80 dark:text-orange-400/80 italic leading-snug">
             Elevating Digital Creativity through Generative AI
           </h3>
-          <p className="mt-8 text-base sm:text-lg md:text-xl text-slate-600 dark:text-slate-400 max-w-4xl mx-auto leading-relaxed font-medium">
+          <p className="mt-10 text-base sm:text-lg md:text-xl text-slate-600 dark:text-slate-400 max-w-4xl mx-auto leading-relaxed font-medium px-2">
             Didirikan pada tahun 2013 dan kini beroperasi sebagai PT Perseorangan sejak 2022, Fresh Creative Indonesia adalah perusahaan kreatif digital berbasis di Salatiga. Kami berfokus pada pengembangan ekosistem SaaS yang mengintegrasikan kecerdasan buatan (Generative AI) untuk menciptakan produk kreatif yang inovatif dan relevan dengan perkembangan zaman.
           </p>
         </motion.div>
@@ -40,12 +40,12 @@ export function About() {
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            className="relative p-6 sm:p-8 md:p-10 rounded-2xl bg-white dark:bg-slate-800/80 border-2 border-slate-950 dark:border-slate-800 shadow-[6px_6px_0_0_#334155] dark:shadow-neo-glow transition-all duration-300 hover:-translate-x-1 hover:-translate-y-1"
+            className="relative p-8 sm:p-10 rounded-2xl bg-white dark:bg-slate-800/80 border-2 border-slate-950 dark:border-slate-800 shadow-[8px_8px_0_0_#334155] dark:shadow-neo-glow transition-all duration-300 hover:-translate-x-1 hover:-translate-y-1"
           >
             <div className="w-14 h-14 rounded-xl bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center mb-6">
               <Telescope className="text-orange-500" size={28} />
             </div>
-            <h3 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tight mb-4">
+            <h3 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tight mb-4 leading-none">
               Visi
             </h3>
             <p className="text-lg sm:text-xl text-slate-600 dark:text-slate-400 font-medium leading-relaxed">
@@ -58,12 +58,12 @@ export function About() {
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="relative p-6 sm:p-8 md:p-10 rounded-2xl bg-white dark:bg-slate-800/80 border-2 border-slate-950 dark:border-slate-800 shadow-[6px_6px_0_0_#334155] dark:shadow-neo-glow transition-all duration-300 hover:-translate-x-1 hover:-translate-y-1"
+            className="relative p-8 sm:p-10 rounded-2xl bg-white dark:bg-slate-800/80 border-2 border-slate-950 dark:border-slate-800 shadow-[8px_8px_0_0_#334155] dark:shadow-neo-glow transition-all duration-300 hover:-translate-x-1 hover:-translate-y-1"
           >
             <div className="w-14 h-14 rounded-xl bg-lime-100 dark:bg-lime-900/30 flex items-center justify-center mb-6">
               <Flag className="text-lime-500" size={28} />
             </div>
-            <h3 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tight mb-4">
+            <h3 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tight mb-4 leading-none">
               Misi
             </h3>
             <ul className="space-y-4 text-base sm:text-lg text-slate-600 dark:text-slate-400 font-medium leading-relaxed">
@@ -100,33 +100,33 @@ export function About() {
             </p>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <div className="group p-8 rounded-2xl bg-white dark:bg-slate-800/80 border-2 border-slate-900 dark:border-slate-800 shadow-[4px_4px_0_0_#334155] dark:shadow-neo-glow transition-all duration-300 hover:-translate-x-1 hover:-translate-y-1">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 sm:gap-10">
+            <div className="group p-8 sm:p-10 rounded-2xl bg-white dark:bg-slate-800/80 border-2 border-slate-900 dark:border-slate-800 shadow-[6px_6px_0_0_#334155] dark:shadow-neo-glow transition-all duration-300 hover:-translate-x-1 hover:-translate-y-1">
               <div className="w-12 h-12 rounded-xl bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center mb-6">
                 <Shirt className="text-violet-500" size={24} />
               </div>
-              <h4 className="text-xl font-black text-slate-900 dark:text-white uppercase mb-4">AI Fashion & OOTD</h4>
-              <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+              <h4 className="text-xl font-black text-slate-900 dark:text-white uppercase mb-4 tracking-tight">AI Fashion & OOTD</h4>
+              <p className="text-slate-600 dark:text-slate-400 leading-relaxed font-medium">
                 Siswa dapat mengekspresikan gaya personal mereka tanpa batas melalui virtual try-on dan modifikasi busana digital.
               </p>
             </div>
 
-            <div className="group p-8 rounded-2xl bg-white dark:bg-slate-800/80 border-2 border-slate-900 dark:border-slate-800 shadow-[4px_4px_0_0_#334155] dark:shadow-neo-glow transition-all duration-300 hover:-translate-x-1 hover:-translate-y-1">
+            <div className="group p-8 sm:p-10 rounded-2xl bg-white dark:bg-slate-800/80 border-2 border-slate-900 dark:border-slate-800 shadow-[6px_6px_0_0_#334155] dark:shadow-neo-glow transition-all duration-300 hover:-translate-x-1 hover:-translate-y-1">
               <div className="w-12 h-12 rounded-xl bg-pink-100 dark:bg-pink-900/30 flex items-center justify-center mb-6">
                 <Wand2 className="text-pink-500" size={24} />
               </div>
-              <h4 className="text-xl font-black text-slate-900 dark:text-white uppercase mb-4">Thematic Transformation</h4>
-              <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+              <h4 className="text-xl font-black text-slate-900 dark:text-white uppercase mb-4 tracking-tight">Thematic Transformation</h4>
+              <p className="text-slate-600 dark:text-slate-400 leading-relaxed font-medium">
                 Mengubah foto individu atau grup menjadi karya seni bertema khusus secara instan (contoh: Tema Budaya Nusantara, Sci-Fi, Cyberpunk).
               </p>
             </div>
 
-            <div className="group p-8 rounded-2xl bg-white dark:bg-slate-800/80 border-2 border-slate-900 dark:border-slate-800 shadow-[4px_4px_0_0_#334155] dark:shadow-neo-glow transition-all duration-300 hover:-translate-x-1 hover:-translate-y-1">
+            <div className="group p-8 sm:p-10 rounded-2xl bg-white dark:bg-slate-800/80 border-2 border-slate-900 dark:border-slate-800 shadow-[6px_6px_0_0_#334155] dark:shadow-neo-glow transition-all duration-300 hover:-translate-x-1 hover:-translate-y-1">
               <div className="w-12 h-12 rounded-xl bg-sky-100 dark:bg-sky-900/30 flex items-center justify-center mb-6">
                 <MousePointer2 className="text-sky-500" size={24} />
               </div>
-              <h4 className="text-xl font-black text-slate-900 dark:text-white uppercase mb-4">Interactive Memories</h4>
-              <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+              <h4 className="text-xl font-black text-slate-900 dark:text-white uppercase mb-4 tracking-tight">Interactive Memories</h4>
+              <p className="text-slate-600 dark:text-slate-400 leading-relaxed font-medium">
                 Bukan sekadar foto statis, album ini merupakan ekosistem digital yang dinamis dan mudah diakses kapan saja.
               </p>
             </div>
@@ -139,15 +139,15 @@ export function About() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            className="text-center mb-12"
+            className="text-center mb-16 sm:mb-20"
           >
-            <h3 className="text-2xl sm:text-4xl font-black text-slate-900 dark:text-white uppercase tracking-tight">
-              Kenapa Memilih <span className="text-orange-500">Fresh Creative?</span>
+            <h3 className="text-3xl sm:text-4xl md:text-5xl font-black text-slate-900 dark:text-white uppercase tracking-tight leading-tight">
+              Kenapa Memilih <br className="sm:hidden" /> <span className="text-orange-500">Fresh Creative?</span>
             </h3>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="group p-8 rounded-2xl bg-white dark:bg-slate-800/80 border-2 border-slate-900 dark:border-slate-800 shadow-[4px_4px_0_0_#334155] dark:shadow-neo-glow transition-all duration-300 hover:-translate-x-1 hover:-translate-y-1">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 sm:gap-10">
+            <div className="group p-8 sm:p-10 rounded-2xl bg-white dark:bg-slate-800/80 border-2 border-slate-900 dark:border-slate-800 shadow-[6px_6px_0_0_#334155] dark:shadow-neo-glow transition-all duration-300 hover:-translate-x-1 hover:-translate-y-1">
               <div className="w-12 h-12 rounded-xl bg-lime-100 dark:bg-lime-900/30 flex items-center justify-center mb-6">
                 <BadgeCheck className="text-lime-500" size={24} />
               </div>
@@ -157,7 +157,7 @@ export function About() {
               </p>
             </div>
 
-            <div className="group p-8 rounded-2xl bg-white dark:bg-slate-800/80 border-2 border-slate-900 dark:border-slate-800 shadow-[4px_4px_0_0_#334155] dark:shadow-neo-glow transition-all duration-300 hover:-translate-x-1 hover:-translate-y-1">
+            <div className="group p-8 sm:p-10 rounded-2xl bg-white dark:bg-slate-800/80 border-2 border-slate-900 dark:border-slate-800 shadow-[6px_6px_0_0_#334155] dark:shadow-neo-glow transition-all duration-300 hover:-translate-x-1 hover:-translate-y-1">
               <div className="w-12 h-12 rounded-xl bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center mb-6">
                 <Cpu className="text-orange-500" size={24} />
               </div>
@@ -167,7 +167,7 @@ export function About() {
               </p>
             </div>
 
-            <div className="group p-8 rounded-2xl bg-white dark:bg-slate-800/80 border-2 border-slate-900 dark:border-slate-800 shadow-[4px_4px_0_0_#334155] dark:shadow-neo-glow transition-all duration-300 hover:-translate-x-1 hover:-translate-y-1">
+            <div className="group p-8 sm:p-10 rounded-2xl bg-white dark:bg-slate-800/80 border-2 border-slate-900 dark:border-slate-800 shadow-[6px_6px_0_0_#334155] dark:shadow-neo-glow transition-all duration-300 hover:-translate-x-1 hover:-translate-y-1">
               <div className="w-12 h-12 rounded-xl bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center mb-6">
                 <Smile className="text-indigo-500" size={24} />
               </div>

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, AlertTriangle } from "lucide-react";
+import { ArrowLeft, AlertTriangle, Loader2 } from "lucide-react";
 import { apiUrl } from '../../lib/api-url'
 import { fetchWithAuth } from '../../lib/api-client'
 import { asObject } from '@/components/yearbook/utils/response-narrowing'
@@ -269,9 +269,11 @@ export default function ShowroomForm({ backHref, pricingPath, draftKey, source }
       if (typeof window !== "undefined") {
         sessionStorage.setItem(draftKey, JSON.stringify(draft));
       }
+      setSubmitted(true);
       router.push(pricingPath);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Network error");
+      setSubmitted(false);
     }
   };
 
@@ -471,9 +473,16 @@ export default function ShowroomForm({ backHref, pricingPath, draftKey, source }
           <button
             type="submit"
             disabled={submitted}
-            className="w-full mt-4 px-6 py-4 text-lg font-black rounded-2xl bg-indigo-300 dark:bg-indigo-600 border-2 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all disabled:opacity-50"
+            className="flex items-center justify-center gap-2 w-full mt-4 px-6 py-4 text-lg font-black rounded-2xl bg-indigo-300 dark:bg-indigo-600 border-2 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all disabled:opacity-50 disabled:hover:translate-x-0 disabled:hover:translate-y-0 disabled:hover:shadow-[4px_4px_0_0_#334155] dark:disabled:hover:shadow-[4px_4px_0_0_#1e293b]"
           >
-            {submitted ? "Mengirim..." : "Lanjut ke Pricing"}
+            {submitted ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" strokeWidth={3} />
+                <span>Memproses...</span>
+              </>
+            ) : (
+              "Lanjut ke Pricing"
+            )}
           </button>
         </form>
       </div>

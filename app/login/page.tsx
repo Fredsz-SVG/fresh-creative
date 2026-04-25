@@ -11,7 +11,7 @@ import { asObject } from '@/components/yearbook/utils/response-narrowing'
 import { AnimatedLoginPage } from '@/components/animated-characters-login-page'
 
 function LoginContent() {
-  const [checkingSession, setCheckingSession] = useState(false)
+  const [checkingSession, setCheckingSession] = useState(true)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -227,6 +227,14 @@ function LoginContent() {
     } finally {
       setGoogleLoading(false)
     }
+  }
+
+  if (checkingSession) {
+    return (
+      <div className="min-h-screen bg-white dark:bg-slate-950 flex items-center justify-center transition-colors duration-300">
+        <div className="w-8 h-8 border-2 border-slate-200 dark:border-white/10 border-t-indigo-500 dark:border-t-indigo-400 rounded-full animate-spin" />
+      </div>
+    )
   }
 
   return (

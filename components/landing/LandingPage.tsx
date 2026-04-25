@@ -18,8 +18,8 @@ export default function LandingPage() {
     <main className="relative min-h-screen w-full overflow-x-hidden bg-slate-100 dark:bg-slate-950 transition-colors duration-500">
       <Navbar />
       <Hero />
-      <AboutSection />
       <Portfolio />
+      <AboutSection />
       <Features />
       <Pricing />
       <DemoEbook />

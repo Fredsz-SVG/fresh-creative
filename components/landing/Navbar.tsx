@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { ThemeContext } from "@/app/providers/ThemeProvider";
 import { supabase } from "@/lib/supabase";
 import { User } from "@supabase/supabase-js";
+import { getRole } from "@/lib/auth";
 
 
 export function Navbar() {
@@ -23,7 +24,9 @@ export function Navbar() {
   const [audioFiles, setAudioFiles] = useState<string[]>([]);
   const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
   const [user, setUser] = useState<User | null>(null);
+  const [role, setRole] = useState<'admin' | 'user' | null>(null);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [activeSection, setActiveSection] = useState("");
 
   useEffect(() => {
     fetch("/api/audio")
@@ -55,13 +58,27 @@ export function Navbar() {
     // Check initial session
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      setUser(session?.user ?? null);
+      const currentUser = session?.user ?? null;
+      setUser(currentUser);
+      if (currentUser) {
+        const userRole = await getRole(supabase, currentUser);
+        setRole(userRole);
+      } else {
+        setRole(null);
+      }
     };
     checkSession();
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      const currentUser = session?.user ?? null;
+      setUser(currentUser);
+      if (currentUser) {
+        const userRole = await getRole(supabase, currentUser);
+        setRole(userRole);
+      } else {
+        setRole(null);
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -90,8 +107,23 @@ export function Navbar() {
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 5);
+      
+      // Hitung section yang sedang aktif (scroll-spy)
+      const sections = document.querySelectorAll("section[id]");
+      let current = "";
+      
+      sections.forEach((section) => {
+        const sectionTop = section.getBoundingClientRect().top;
+        if (sectionTop <= 350) {
+          current = section.getAttribute("id") || "";
+        }
+      });
+      
+      setActiveSection(current);
     };
+    
     window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll(); // Trigger sekali saat mount
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
@@ -139,11 +171,23 @@ export function Navbar() {
 
             <div className="flex h-full items-center">
               <div className="hidden lg:flex items-center gap-4 mr-4">
-                {NAV_ITEMS.map(({ label, href }) => (
-                  <a key={href} href={href} className="nav-hover-btn !ms-0 text-[13px] uppercase font-bold tracking-wider">
-                    {label}
-                  </a>
-                ))}
+                {NAV_ITEMS.map(({ label, href }) => {
+                  const isActive = activeSection === href.replace('#', '');
+                  return (
+                    <a 
+                      key={href} 
+                      href={href} 
+                      className={cn(
+                        "nav-hover-btn !ms-0 text-[13px] uppercase tracking-wider transition-all duration-300",
+                        isActive 
+                          ? "!font-black !text-lime-600 dark:!text-lime-400 !opacity-100 after:!scale-x-100 after:!origin-bottom-left after:!bg-lime-600 dark:after:!bg-lime-400" 
+                          : "font-bold opacity-75 hover:opacity-100"
+                      )}
+                    >
+                      {label}
+                    </a>
+                  );
+                })}
               </div>
 
               <div className="flex items-center gap-0.5 xs:gap-1 sm:gap-4">
@@ -157,7 +201,7 @@ export function Navbar() {
                   </Link>
                 ) : (
                   <Link
-                    href="/user"
+                    href={role === 'admin' ? "/admin" : "/user"}
                     className="hidden lg:inline-flex items-center justify-center gap-2 w-[150px] py-2 bg-yellow-300 text-black font-black text-[13px] uppercase tracking-wide border-2 border-black rounded-full shadow-[2px_2px_0_0_#000] dark:shadow-[2px_2px_0_0_#fff] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[3px_3px_0_0_#000] dark:hover:shadow-[3px_3px_0_0_#fff] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all duration-200"
                   >
                     <LayoutDashboard size={14} />
@@ -303,16 +347,22 @@ export function Navbar() {
             transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
             className="fixed inset-0 bg-white dark:bg-slate-950 lg:hidden flex flex-col items-center justify-center gap-4 pb-12 z-[55] transition-colors duration-300"
           >
-            {NAV_ITEMS.map(({ label, href }) => (
-              <a
-                key={href}
-                href={href}
-                className="text-xs font-bold text-slate-900 dark:text-white hover:text-lime-500 transition-colors py-1.5 uppercase tracking-widest w-full text-center"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                {label}
-              </a>
-            ))}
+            {NAV_ITEMS.map(({ label, href }) => {
+              const isActive = activeSection === href.replace('#', '');
+              return (
+                <a
+                  key={href}
+                  href={href}
+                  className={cn(
+                    "text-xs transition-colors py-1.5 uppercase tracking-widest w-full text-center",
+                    isActive ? "text-lime-500 font-extrabold" : "font-bold text-slate-900 dark:text-white hover:text-lime-500"
+                  )}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  {label}
+                </a>
+              );
+            })}
             <div className="w-full px-8 mt-4">
               {!user ? (
                 <Link
@@ -325,7 +375,7 @@ export function Navbar() {
                 </Link>
               ) : (
                 <Link
-                  href="/user"
+                  href={role === 'admin' ? "/admin" : "/user"}
                   className="flex items-center justify-center gap-3 px-7 py-4 bg-yellow-300 text-black font-black text-sm uppercase tracking-wide border-2 border-black rounded-full shadow-[3px_3px_0_0_#000] dark:shadow-[3px_3px_0_0_#fff] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all duration-200 w-full"
                   onClick={() => setIsMenuOpen(false)}
                 >

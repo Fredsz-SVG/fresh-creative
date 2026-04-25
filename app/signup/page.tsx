@@ -8,6 +8,7 @@ import { toast } from '@/lib/toast'
 import { AnimatedSignupPage } from '@/components/animated-characters-login-page'
 
 function SignUpContent() {
+  const [checkingSession, setCheckingSession] = useState(true)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [fullName, setFullName] = useState('')
@@ -26,11 +27,14 @@ function SignUpContent() {
       if (session?.user) {
         if (!session.user.email_confirmed_at && session.user.app_metadata?.provider === 'email') {
           await supabase.auth.signOut()
+          setCheckingSession(false)
           return
         }
         const role = await getRole(supabase, session.user)
         router.replace(role === 'admin' ? '/admin' : '/user')
+        return
       }
+      setCheckingSession(false)
     }
     redirectIfLoggedIn()
   }, [router])
@@ -100,6 +104,14 @@ function SignUpContent() {
 
   const handleTogglePassword = () => {
     setShowPassword(!showPassword)
+  }
+
+  if (checkingSession) {
+    return (
+      <div className="min-h-screen bg-white dark:bg-slate-950 flex items-center justify-center transition-colors duration-300">
+        <div className="w-8 h-8 border-2 border-slate-200 dark:border-white/10 border-t-indigo-500 dark:border-t-indigo-400 rounded-full animate-spin" />
+      </div>
+    )
   }
 
   return (

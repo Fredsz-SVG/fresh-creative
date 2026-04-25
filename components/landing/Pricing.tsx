@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useMemo, useEffect } from "react";
-import { Check, Book, BookOpen, Sparkles, Star, X } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Check, Book, BookOpen, Sparkles, Star, X, Loader2 } from "lucide-react";
 import { TiLocationArrow } from "react-icons/ti";
 import { motion, AnimatePresence } from "framer-motion";
 import { apiUrl } from "@/lib/api-url";
@@ -69,6 +70,8 @@ function normalizeWhatsappForDedupe(value: string): string {
 }
 
 export function Pricing() {
+  const router = useRouter();
+  const [isLanjutLoading, setIsLanjutLoading] = useState(false);
   const [tab, setTab] = useState<TabType>("digital");
   const [digitalPackages, setDigitalPackages] = useState<DigitalPackage[]>([]);
   const [loadingDigital, setLoadingDigital] = useState(true);
@@ -389,7 +392,7 @@ export function Pricing() {
                           Popular
                         </span>
                       )}
-                      <div className="flex-grow">
+                      <div className="flex-grow flex flex-col">
                         <div className="mb-4 pr-10">
                           <h4 className="font-general text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight">
                             {pkg.name}
@@ -443,7 +446,7 @@ export function Pricing() {
                           </div>
                         )}
                         {parsedFeatures.some((p) => p.price > 0) && (
-                          <div className="mt-4 pt-4 border-t border-slate-100 dark:border-white/10 group/addon">
+                          <div className="mt-auto pt-4 border-t border-slate-100 dark:border-white/10 group/addon">
                             <div className="flex items-center justify-between mb-3">
                               <p className="text-[11px] font-black text-slate-500 dark:text-white/50 uppercase tracking-widest">Addon</p>
                               {chosenAddons.length > 0 && (
@@ -514,12 +517,24 @@ export function Pricing() {
                     </p>
                     <p className="text-xs sm:text-sm font-bold text-slate-700 mt-1">Siap untuk diproses sekarang juga.</p>
                   </div>
-                  <a
-                    href="/login?next=/user/showroom"
-                    className="group inline-flex items-center justify-center gap-2 w-full sm:w-auto rounded-xl sm:rounded-3xl border-2 sm:border border-slate-900 bg-white px-5 sm:px-8 py-3 sm:py-3.5 text-[11px] sm:text-base font-black text-slate-900 transition-all hover:-translate-y-0.5 hover:-translate-x-0.5 hover:shadow-[4px_4px_0_0_#334155] active:translate-x-0 active:translate-y-0 active:shadow-none whitespace-nowrap sm:mr-6"
+                  <button
+                    onClick={() => {
+                       setIsLanjutLoading(true);
+                       router.push("/login?next=/user/showroom");
+                    }}
+                    disabled={isLanjutLoading}
+                    className="group inline-flex items-center justify-center gap-2 w-full sm:w-auto rounded-xl sm:rounded-3xl border-2 sm:border border-slate-900 bg-white px-5 sm:px-8 py-3 sm:py-3.5 text-[11px] sm:text-base font-black text-slate-900 transition-all hover:-translate-y-0.5 hover:-translate-x-0.5 hover:shadow-[4px_4px_0_0_#334155] active:translate-x-0 active:translate-y-0 active:shadow-none whitespace-nowrap sm:mr-6 disabled:opacity-75 disabled:hover:translate-x-0 disabled:hover:translate-y-0 disabled:hover:shadow-none"
                   >
-                    Lanjut Sekarang <TiLocationArrow className="h-4 w-4 sm:h-5 sm:w-5 transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />
-                  </a>
+                    {isLanjutLoading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" strokeWidth={3} /> Memproses...
+                      </>
+                    ) : (
+                      <>
+                        Lanjut Sekarang <TiLocationArrow className="h-4 w-4 sm:h-5 sm:w-5 transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />
+                      </>
+                    )}
+                  </button>
                 </div>
               )}
               </>

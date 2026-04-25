@@ -1,33 +1,47 @@
 'use client';
 
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import { AnimatedTitle } from "./AnimatedTitle";
-
-
-
+import { ChevronLeft, ChevronRight, X, Maximize2 } from "lucide-react";
 import { apiUrl } from "@/lib/api-url";
 
+interface PortfolioItem {
+  id: string | number;
+  img: string;
+  title: string;
+  subtitle: string;
+  desc: string;
+}
+
 export function Portfolio() {
-  const [items, setItems] = useState<any[]>([]);
-  const [activeIndex, setActiveIndex] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const [items, setItems] = useState<PortfolioItem[]>(() => {
+    if (typeof window !== 'undefined') {
+      const cached = localStorage.getItem('portfolio-data');
+      if (cached) return JSON.parse(cached);
+    }
+    return [];
+  });
+  const [loading, setLoading] = useState(items.length === 0);
+  const [selectedImg, setSelectedImg] = useState<string | null>(null);
 
-  const dragStartPos = useRef<{x: number, y: number} | null>(null);
-  const SWIPE_THRESHOLD = 50;
+  const sliderRef = useRef<HTMLDivElement>(null);
+  const isDragging = useRef(false);
+  const startX = useRef(0);
+  const scrollLeft = useRef(0);
+  const isJumping = useRef(false);
 
-  const total = items.length;
+  // Triple the items for mathematical infinite scrolling
+  const infiniteItems = items.length > 0 ? [...items, ...items, ...items] : [];
 
-  const goNext = useCallback(() => {
-    if (total === 0) return;
-    setActiveIndex(i => (i + 1) % total);
-  }, [total]);
-
-  const goPrev = useCallback(() => {
-    if (total === 0) return;
-    setActiveIndex(i => (i - 1 + total) % total);
-  }, [total]);
+  useEffect(() => {
+    // Quietly position at the middle set on load to allow immediate left-scrolling
+    requestAnimationFrame(() => {
+      if (sliderRef.current && infiniteItems.length > 0) {
+        sliderRef.current.scrollLeft = sliderRef.current.scrollWidth / 3;
+      }
+    });
+  }, [items]);
 
   useEffect(() => {
     const fetchPortfolio = async () => {
@@ -37,6 +51,7 @@ export function Portfolio() {
           const data = await res.json();
           if (Array.isArray(data) && data.length > 0) {
             setItems(data);
+            localStorage.setItem('portfolio-data', JSON.stringify(data));
           }
         }
       } catch (e) {
@@ -48,51 +63,69 @@ export function Portfolio() {
     fetchPortfolio();
   }, []);
 
-  // Touch handlers
-  const onTouchStart = (e: React.TouchEvent) => {
-    dragStartPos.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-  };
-  const onTouchEnd = (e: React.TouchEvent) => {
-    if (!dragStartPos.current) return;
-    const deltaX = e.changedTouches[0].clientX - dragStartPos.current.x;
-    const deltaY = e.changedTouches[0].clientY - dragStartPos.current.y;
-    dragStartPos.current = null;
-    
-    // Only trigger swipe if horizontal movement is greater than vertical movement
-    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) >= SWIPE_THRESHOLD) {
-      deltaX < 0 ? goNext() : goPrev();
+  const slideLeft = () => {
+    if (sliderRef.current) {
+      const cardWidth = (sliderRef.current.children[0] as HTMLElement)?.offsetWidth || 300;
+      sliderRef.current.scrollBy({ left: -(cardWidth + 32), behavior: "smooth" }); 
     }
   };
 
-  // Mouse drag handlers
-  const onMouseDown = (e: React.MouseEvent) => {
-    dragStartPos.current = { x: e.clientX, y: e.clientY };
-  };
-  const onMouseUp = (e: React.MouseEvent) => {
-    if (!dragStartPos.current) return;
-    const deltaX = e.clientX - dragStartPos.current.x;
-    const deltaY = e.clientY - dragStartPos.current.y;
-    dragStartPos.current = null;
-    
-    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) >= SWIPE_THRESHOLD) {
-      deltaX < 0 ? goNext() : goPrev();
+  const slideRight = () => {
+    if (sliderRef.current) {
+      const cardWidth = (sliderRef.current.children[0] as HTMLElement)?.offsetWidth || 300;
+      sliderRef.current.scrollBy({ left: cardWidth + 32, behavior: "smooth" });
     }
   };
-  const onMouseLeave = () => { dragStartPos.current = null; };
+
+  const handleInfiniteScroll = () => {
+    const el = sliderRef.current;
+    if (!el || isJumping.current || items.length === 0) return;
+
+    const oneSetWidth = el.scrollWidth / 3;
+
+    // Jump forward if user hits the left wall
+    if (el.scrollLeft <= 5) {
+      isJumping.current = true;
+      el.scrollLeft += oneSetWidth;
+      requestAnimationFrame(() => { isJumping.current = false; });
+    } 
+    // Jump backward if user hits the right wall
+    else if (el.scrollLeft + el.clientWidth >= el.scrollWidth - 5) {
+      isJumping.current = true;
+      el.scrollLeft -= oneSetWidth;
+      requestAnimationFrame(() => { isJumping.current = false; });
+    }
+  };
+
+  const startDrag = (e: React.MouseEvent) => {
+    isDragging.current = true;
+    if (sliderRef.current) {
+      startX.current = e.pageX - sliderRef.current.offsetLeft;
+      scrollLeft.current = sliderRef.current.scrollLeft;
+    }
+  };
+
+  const endDrag = () => {
+    isDragging.current = false;
+  };
+
+  const onDragMove = (e: React.MouseEvent) => {
+    if (!isDragging.current || !sliderRef.current) return;
+    e.preventDefault();
+    const x = e.pageX - sliderRef.current.offsetLeft;
+    const walk = (x - startX.current) * 1.5;
+    sliderRef.current.scrollLeft = scrollLeft.current - walk;
+  };
 
   if (loading) {
     return (
-      <section className="w-full bg-slate-100 dark:bg-slate-950 pt-16 sm:pt-20 transition-colors duration-500">
-        <div className="container mx-auto px-6 sm:px-10 mb-8 sm:mb-10">
-          <div className="h-4 w-24 bg-lime-200 dark:bg-lime-900 rounded-full mb-3 animate-pulse" />
-          <div className="h-10 sm:h-12 lg:h-14 w-64 bg-slate-200 dark:bg-slate-900 rounded-2xl animate-pulse" />
-        </div>
-        <div className="relative h-[90vh] sm:h-screen w-full overflow-hidden bg-slate-200 dark:bg-slate-900 animate-pulse">
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/60 to-transparent opacity-50" />
-          <div className="absolute bottom-12 left-12 space-y-4">
-            <div className="h-4 w-32 bg-lime-400 opacity-20 rounded-lg" />
-            <div className="h-12 w-64 bg-white opacity-10 rounded-xl" />
-            <div className="h-4 w-96 bg-slate-400 opacity-10 rounded-lg" />
+      <section className="w-full bg-slate-100 dark:bg-slate-950 py-16 sm:py-24 transition-colors duration-500">
+        <div className="container mx-auto px-6 sm:px-10">
+          <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 sm:mb-16 gap-6">
+            <div>
+              <div className="h-4 w-24 bg-lime-200 dark:bg-lime-900 rounded-full mb-3 animate-pulse" />
+              <div className="h-10 sm:h-12 lg:h-16 w-64 bg-slate-200 dark:bg-slate-900 rounded-2xl animate-pulse" />
+            </div>
           </div>
         </div>
       </section>
@@ -101,156 +134,147 @@ export function Portfolio() {
 
   if (items.length === 0) return null;
 
-  const activeItem = items[activeIndex];
-
   return (
-    <section id="about" className="w-full bg-slate-100 dark:bg-slate-950 pt-16 sm:pt-20 transition-colors duration-500">
-      <div className="container mx-auto px-6 sm:px-10 mb-8 sm:mb-10 text-center sm:text-left">
-        <p className="font-general text-[10px] sm:text-xs uppercase tracking-[0.2em] text-lime-600 dark:text-lime-400 font-black mb-3">
-          Discover
-        </p>
-        <h2 className="text-4xl sm:text-5xl lg:text-6xl font-black text-slate-900 dark:text-white tracking-tight uppercase">
-          Port<span className="text-lime-500">folio</span>.
-        </h2>
-        
-        {/* PRELOAD ONLY NEIGHBOR IMAGES TO SAVE BANDWIDTH */}
-        <div className="hidden">
-          {items.length > 0 && (
-            <>
-              <img 
-                src={items[(activeIndex + 1) % items.length].img} 
-                alt="" 
-                loading="lazy" 
-                decoding="async"
-              />
-              <img 
-                src={items[(activeIndex - 1 + items.length) % items.length].img} 
-                alt="" 
-                loading="lazy"
-                decoding="async"
-              />
-            </>
-          )}
+    <section id="portfolio" className="w-full bg-slate-100 dark:bg-slate-950 py-16 sm:py-24 transition-colors duration-500 overflow-hidden relative">
+      <div className="container mx-auto px-6 sm:px-10">
+        <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 sm:mb-10 gap-6 relative z-10">
+          <div className="text-left">
+            <p className="text-[10px] sm:text-xs uppercase tracking-[0.2em] text-lime-600 dark:text-lime-400 font-black mb-3 drop-shadow-sm">
+              Discover
+            </p>
+            <h2 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-slate-900 dark:text-white tracking-tight uppercase leading-[1.1]">
+              Port<span className="text-lime-500">folio</span>.
+            </h2>
+            <p className="font-general max-w-2xl mt-4 text-sm sm:text-base text-slate-600 dark:text-slate-400 font-medium leading-relaxed">
+              Kumpulan momen dan karya fotografi terbaik yang diabadikan oleh Fresh Creative.
+            </p>
+          </div>
+          
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={slideLeft}
+              className="w-12 h-12 flex items-center justify-center bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 shadow-[4px_4px_0px_#0f172a] dark:shadow-[4px_4px_0px_rgba(255,255,255,0.05)] hover:shadow-[6px_6px_0px_#0f172a] dark:hover:shadow-[6px_6px_0px_rgba(132,204,22,0.4)] hover:-translate-y-0.5 active:translate-y-0 active:shadow-[2px_2px_0px_#0f172a] transition-all text-slate-900 dark:text-lime-400 outline-none"
+              aria-label="Previous portfolio item"
+            >
+              <ChevronLeft className="w-6 h-6" />
+            </button>
+            <button 
+              onClick={slideRight}
+              className="w-12 h-12 flex items-center justify-center bg-lime-400 border-2 border-slate-900 shadow-[4px_4px_0px_#0f172a] hover:shadow-[6px_6px_0px_#0f172a] hover:-translate-y-0.5 active:translate-y-0 active:shadow-[2px_2px_0px_#0f172a] transition-all text-slate-900 outline-none"
+              aria-label="Next portfolio item"
+            >
+              <ChevronRight className="w-6 h-6" />
+            </button>
+          </div>
         </div>
       </div>
 
-      <div
-        className="group/hero relative h-[80vh] sm:h-screen w-full overflow-hidden shadow-[0_-20px_50px_-20px_rgba(0,0,0,0.3)] dark:shadow-[0_-20px_50px_-20px_rgba(0,0,0,0.8)] border-t border-slate-200 dark:border-white/10 bg-slate-950 select-none"
-        onTouchStart={onTouchStart}
-        onTouchEnd={onTouchEnd}
-        onMouseDown={onMouseDown}
-        onMouseUp={onMouseUp}
-        onMouseLeave={onMouseLeave}
+      {/* Carousel Container - Full Bleed Edge-to-Edge Infinite Loop */}
+      <div 
+        ref={sliderRef}
+        onMouseDown={startDrag}
+        onMouseUp={endDrag}
+        onMouseLeave={endDrag}
+        onMouseMove={onDragMove}
+        onScroll={handleInfiniteScroll}
+        className="flex overflow-x-auto gap-6 sm:gap-8 pt-10 pb-16 px-6 sm:px-8 hide-scrollbar cursor-grab active:cursor-grabbing select-none relative z-0 w-full"
+        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
       >
-        {/* BACKGROUND IMAGE WITH SMOOTH CROSSFADE */}
-        <AnimatePresence initial={false} mode="wait">
-          <motion.img
-            key={activeItem.id}
-            src={activeItem.img}
-            alt={activeItem.title}
-            loading="eager"
-            fetchPriority="high"
-            decoding="async"
+        {infiniteItems.map((item, idx) => (
+          <motion.div
+            key={`${item.id}-${idx}`}
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-50px" }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
+            className="flex-none w-[85vw] sm:w-[60vw] md:w-[45vw] lg:w-[31vw] xl:w-[28vw] group flex flex-col bg-white dark:bg-slate-800/80 border-2 border-slate-900 dark:border-slate-800 rounded-2xl overflow-hidden shadow-[6px_6px_0_0_#334155] dark:shadow-neo-glow transition-all duration-300 hover:-translate-x-1 hover:-translate-y-1"
+          >
+            <div className="relative aspect-[4/3] w-full overflow-hidden border-b-2 border-slate-900 dark:border-slate-800 bg-slate-200 dark:bg-slate-900">
+              <Image
+                src={item.img}
+                alt={item.title}
+                fill
+                draggable={false}
+                className="object-cover group-hover:scale-110 group-hover:rotate-1 transition-transform duration-700 ease-in-out"
+                sizes="(max-width: 768px) 85vw, (max-width: 1024px) 50vw, 33vw"
+              />
+              
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-0 pointer-events-none" />
+
+              <div className="absolute top-4 left-4 z-10 transition-transform duration-300 group-hover:-translate-y-1">
+                <div className="bg-lime-400 text-slate-950 text-[10px] sm:text-xs font-black uppercase tracking-widest px-3 py-1.5 shadow-[2px_2px_0px_#000] border-2 border-slate-900 -rotate-2 group-hover:rotate-0 transition-transform duration-300">
+                  {item.subtitle}
+                </div>
+              </div>
+            </div>
+
+            <div className="p-6 sm:p-7 flex flex-col flex-grow relative z-10">
+              <h3 className="font-zentry text-2xl sm:text-3xl font-black text-white [-webkit-text-stroke:1px_black] sm:[-webkit-text-stroke:1.5px_black] mb-2 leading-none tracking-wide group-hover:text-lime-400 transition-colors duration-300 line-clamp-1 drop-shadow-sm pointer-events-none">
+                {item.title}
+              </h3>
+              <p className="font-general text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-400 line-clamp-3 leading-relaxed mb-6 pointer-events-none">
+                {item.desc}
+              </p>
+              <div className="mt-auto w-full">
+                <button
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onTouchStart={(e) => e.stopPropagation()}
+                  onClick={(e) => { e.stopPropagation(); setSelectedImg(item.img); }}
+                  className="flex items-center justify-center gap-2 w-full py-3 bg-white dark:bg-slate-900 hover:bg-lime-400 dark:hover:bg-lime-400 text-slate-900 dark:text-white dark:hover:text-slate-900 font-bold text-xs uppercase tracking-widest border-2 border-slate-900 dark:border-slate-800 dark:hover:border-slate-900 shadow-[4px_4px_0_0_#0f172a] hover:shadow-[6px_6px_0_0_#0f172a] hover:-translate-y-0.5 active:translate-y-0 transition-all outline-none"
+                >
+                  <Maximize2 size={16} strokeWidth={3} className="shrink-0" />
+                  Full View
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        ))}
+      </div>
+
+      {/* Lightbox Modal */}
+      <AnimatePresence>
+        {selectedImg && (
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.4, ease: "easeInOut" }}
-            className="absolute inset-0 size-full object-cover object-center will-change-opacity"
-          />
-        </AnimatePresence>
-
-        {/* OVERLAY GRADIENT */}
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-900/30 to-transparent pointer-events-none z-[5]" />
-        <div className="absolute inset-0 bg-gradient-to-r from-slate-950/70 via-slate-900/20 to-transparent pointer-events-none z-[5]" />
-
-        {/* MAIN CONTENT AREA */}
-        <div className="absolute inset-0 flex flex-col justify-end p-6 sm:p-12 lg:p-16 pb-12 sm:pb-16 lg:pb-16 z-10 w-full lg:w-[65%] pointer-events-none">
-          <div className="pb-3 pr-3 mb-2">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={`subtitle-${activeItem.id}`}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.3 }}
-                className="inline-flex items-center -rotate-[1deg] origin-left"
-                style={{ filter: "drop-shadow(2px 0px 0px #000) drop-shadow(-2px 0px 0px #000) drop-shadow(0px 2px 0px #000) drop-shadow(0px -2px 0px #000) drop-shadow(6px 6px 0px #ffffff)" }}
-              >
-                <div
-                  className="bg-lime-400 pl-3 pr-5 py-[5px]"
-                  style={{ clipPath: "polygon(0 0, 100% 0, calc(100% - 8px) 100%, 0 100%)" }}
-                >
-                  <span className="font-general text-[9px] sm:text-[10px] font-black uppercase tracking-[0.28em] text-slate-950">
-                    {activeItem.subtitle}
-                  </span>
-                </div>
-              </motion.div>
-            </AnimatePresence>
-          </div>
-
-          <AnimatePresence mode="wait">
+            transition={{ duration: 0.2 }}
+            onClick={() => setSelectedImg(null)}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/90 backdrop-blur-sm p-4 sm:p-8"
+          >
+            <button 
+              onClick={() => setSelectedImg(null)}
+              className="absolute top-6 right-6 sm:top-10 sm:right-10 z-[101] w-12 h-12 flex items-center justify-center bg-white text-slate-950 border-2 border-slate-900 shadow-[4px_4px_0_0_#0f172a] hover:bg-lime-400 hover:-translate-y-1 transition-all rounded-full outline-none"
+              aria-label="Close modal"
+            >
+              <X size={24} strokeWidth={3} />
+            </button>
             <motion.div
-              key={`title-${activeItem.id}`}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.4 }}
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              transition={{ duration: 0.3, type: "spring" }}
+              onClick={(e) => e.stopPropagation()}
+              className="relative w-full max-w-7xl h-full max-h-[90vh] outline-none"
             >
-              <AnimatedTitle
-                containerClass="text-left font-zentry !text-white text-3xl sm:text-5xl lg:text-6xl leading-[0.9] tracking-tight mb-3 drop-shadow-2xl [-webkit-text-stroke:1.5px_black]"
-              >
-                {activeItem.title}
-              </AnimatedTitle>
+              <Image
+                src={selectedImg}
+                alt="Enlarged Portfolio View"
+                fill
+                quality={100}
+                className="object-contain drop-shadow-2xl"
+                sizes="100vw"
+              />
             </motion.div>
-          </AnimatePresence>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-          <AnimatePresence mode="wait">
-            <motion.p
-              key={`desc-${activeItem.id}`}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.3 }}
-              className="max-w-lg font-general text-xs sm:text-sm md:text-base font-bold text-slate-300 leading-relaxed drop-shadow-md"
-            >
-              {activeItem.desc}
-            </motion.p>
-          </AnimatePresence>
-        </div>
-
-        {/* NAVIGATION ARROWS - Visible on all sizes */}
-        <div className="absolute inset-y-0 inset-x-0 z-30 flex items-center justify-between px-4 sm:px-8 lg:px-12 pointer-events-none">
-          <button 
-            onClick={goPrev}
-            className="pointer-events-auto w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center bg-white/15 backdrop-blur-sm rounded-full text-white/50 hover:text-white hover:bg-white/25 transition-all active:scale-90 border border-white/10 shadow-lg"
-          >
-            <ChevronLeft className="w-8 h-8 sm:w-10 sm:h-10" />
-          </button>
-          <button 
-            onClick={goNext}
-            className="pointer-events-auto w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center bg-white/15 backdrop-blur-sm rounded-full text-white/50 hover:text-white hover:bg-white/25 transition-all active:scale-90 border border-white/10 shadow-lg"
-          >
-            <ChevronRight className="w-8 h-8 sm:w-10 sm:h-10" />
-          </button>
-        </div>
-
-
-
-        {/* SLIDER PROGRESS OUTLINE */}
-        <div className="absolute bottom-4 sm:bottom-6 left-6 sm:left-12 z-20 flex gap-2">
-          {items.map((_, idx) => (
-            <div
-              key={idx}
-              onClick={() => setActiveIndex(idx)}
-              className={`cursor-pointer transition-all duration-300 h-1 sm:h-1.5 rounded-full ${
-                idx === activeIndex
-                  ? "w-8 sm:w-12 bg-lime-400"
-                  : "w-2 sm:w-3 bg-white/30 hover:bg-white/60"
-              }`}
-            />
-          ))}
-        </div>
-      </div>
+      <style dangerouslySetInnerHTML={{__html: `
+        .hide-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
+      `}} />
     </section>
   );
 }
