@@ -313,7 +313,7 @@ function VerifyOtpContent() {
 
           {error && <p className="auth-error">{error}</p>}
 
-          <button disabled={loading} className="auth-button">
+          <button disabled={loading} className="w-full h-11 text-sm font-bold bg-sky-500 hover:bg-sky-600 text-white rounded-xl transition-all disabled:opacity-50">
             {loading ? 'Memverifikasi...' : 'Verifikasi & Masuk'}
           </button>
 

@@ -1,7 +1,7 @@
 'use client'
 
 import { Suspense, useState, useEffect } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { getRole } from '@/lib/auth'
 import { toast } from '@/lib/toast'
@@ -15,11 +15,8 @@ function SignUpContent() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [googleLoading, setGoogleLoading] = useState(false)
   const [error, setError] = useState('')
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const nextPath = searchParams?.get('next') ?? ''
 
   useEffect(() => {
     const redirectIfLoggedIn = async () => {
@@ -76,32 +73,6 @@ function SignUpContent() {
     }
   }
 
-  const handleGoogleSignUp = async () => {
-    setGoogleLoading(true)
-    setError('')
-    try {
-      const origin = typeof window !== 'undefined' ? window.location.origin : ''
-      const url = new URL(origin ? `${origin}/auth/callback` : window.location.href)
-      url.searchParams.set('type', 'signup')
-      if (nextPath && nextPath.startsWith('/') && !nextPath.startsWith('//')) {
-        url.searchParams.set('next', nextPath)
-      }
-
-      const { error: oauthError } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: url.toString(),
-          queryParams: { prompt: 'select_account' },
-        },
-      })
-      if (oauthError) setError(oauthError.message)
-    } catch {
-      setError('Terjadi kesalahan saat login dengan Google')
-    } finally {
-      setGoogleLoading(false)
-    }
-  }
-
   const handleTogglePassword = () => {
     setShowPassword(!showPassword)
   }
@@ -127,8 +98,6 @@ function SignUpContent() {
       onConfirmPasswordChange={setConfirmPassword}
       onTogglePassword={handleTogglePassword}
       onSubmit={handleSignUp}
-      onGoogleLogin={handleGoogleSignUp}
-      googleLoading={googleLoading}
     />
   )
 }

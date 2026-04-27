@@ -12,6 +12,16 @@ import { supabase } from "@/lib/supabase";
 import { User } from "@supabase/supabase-js";
 import { getRole, getRoleFromSession } from "@/lib/auth";
 
+function getClientOrigin(): string {
+  const explicit = process.env.NEXT_PUBLIC_APP_URL?.trim();
+  if (explicit) return explicit.replace(/\/$/, "");
+  return "http://localhost:3001";
+}
+
+function dashboardUrlForRole(role: "admin" | "user"): string {
+  const origin = getClientOrigin();
+  return `${origin}${role === "admin" ? "/admin" : "/user"}`;
+}
 
 export function Navbar() {
   const navContainerRef = useRef<HTMLDivElement>(null);
@@ -25,6 +35,7 @@ export function Navbar() {
   const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
   const [user, setUser] = useState<User | null>(null);
   const [role, setRole] = useState<'admin' | 'user' | null>(null);
+  const [isResolvingDashboard, setIsResolvingDashboard] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [activeSection, setActiveSection] = useState("");
 
@@ -144,6 +155,23 @@ export function Navbar() {
     return () => { document.body.style.overflow = ''; };
   }, [isMenuOpen]);
 
+  const handleDashboardClick = async () => {
+    if (!user) {
+      window.location.assign("/login");
+      return;
+    }
+
+    if (isResolvingDashboard) return;
+    setIsResolvingDashboard(true);
+    try {
+      const resolvedRole = role ?? (await getRole(supabase, user));
+      if (resolvedRole) setRole(resolvedRole);
+      window.location.assign(dashboardUrlForRole(resolvedRole === "admin" ? "admin" : "user"));
+    } finally {
+      setIsResolvingDashboard(false);
+    }
+  };
+
   return (
     <>
       <header
@@ -201,19 +229,21 @@ export function Navbar() {
                 {!user ? (
                   <Link
                     href="/login"
-                    className="hidden lg:inline-flex items-center justify-center gap-2 w-[150px] py-2 bg-yellow-300 text-black font-black text-[13px] uppercase tracking-wide border-2 border-black rounded-full shadow-[2px_2px_0_0_#000] dark:shadow-[2px_2px_0_0_#fff] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[3px_3px_0_0_#000] dark:hover:shadow-[3px_3px_0_0_#000] dark:hover:shadow-[3px_3px_0_0_#fff] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all duration-200"
+                    className="hidden lg:inline-flex items-center justify-center gap-2 w-[150px] py-2 bg-yellow-300 text-black font-black text-[13px] uppercase tracking-wide border-2 border-black rounded-full shadow-[2px_2px_0_0_#000] dark:shadow-[2px_2px_0_0_#fff] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[3px_3px_0_0_#000] dark:hover:shadow-[3px_3px_0_0_#fff] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all duration-200"
                   >
                     <LogIn size={14} />
                     <span className="font-general text-[13px] uppercase">Login</span>
                   </Link>
                 ) : (
-                  <Link
-                    href={role === 'admin' ? "/admin" : "/user"}
-                    className="hidden lg:inline-flex items-center justify-center gap-2 w-[150px] py-2 bg-yellow-300 text-black font-black text-[13px] uppercase tracking-wide border-2 border-black rounded-full shadow-[2px_2px_0_0_#000] dark:shadow-[2px_2px_0_0_#fff] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[3px_3px_0_0_#000] dark:hover:shadow-[3px_3px_0_0_#fff] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all duration-200"
+                  <button
+                    type="button"
+                    onClick={handleDashboardClick}
+                    disabled={isResolvingDashboard}
+                    className="hidden lg:inline-flex items-center justify-center gap-2 w-[150px] py-2 bg-yellow-300 text-black font-black text-[13px] uppercase tracking-wide border-2 border-black rounded-full shadow-[2px_2px_0_0_#000] dark:shadow-[2px_2px_0_0_#fff] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[3px_3px_0_0_#000] dark:hover:shadow-[3px_3px_0_0_#fff] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all duration-200 disabled:opacity-70 disabled:pointer-events-none"
                   >
                     <LayoutDashboard size={14} />
                     <span className="font-general text-[13px] uppercase">Dashboard</span>
-                  </Link>
+                  </button>
                 )}
                 <button
                   onClick={theme?.toggleTheme}
@@ -381,14 +411,18 @@ export function Navbar() {
                   Login
                 </Link>
               ) : (
-                <Link
-                  href={role === 'admin' ? "/admin" : "/user"}
-                  className="flex items-center justify-center gap-3 px-7 py-4 bg-yellow-300 text-black font-black text-sm uppercase tracking-wide border-2 border-black rounded-full shadow-[3px_3px_0_0_#000] dark:shadow-[3px_3px_0_0_#fff] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all duration-200 w-full"
-                  onClick={() => setIsMenuOpen(false)}
+                <button
+                  type="button"
+                  onClick={async () => {
+                    setIsMenuOpen(false);
+                    await handleDashboardClick();
+                  }}
+                  disabled={isResolvingDashboard}
+                  className="flex items-center justify-center gap-3 px-7 py-4 bg-yellow-300 text-black font-black text-sm uppercase tracking-wide border-2 border-black rounded-full shadow-[3px_3px_0_0_#000] dark:shadow-[3px_3px_0_0_#fff] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all duration-200 w-full disabled:opacity-70 disabled:pointer-events-none"
                 >
                   <LayoutDashboard size={18} />
                   Dashboard
-                </Link>
+                </button>
               )}
             </div>
           </motion.div>

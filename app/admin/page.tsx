@@ -418,8 +418,8 @@ export default function AdminPage() {
         ) : (
           <>
             {[
-              { id: 'total', label: 'Total User', value: stats?.totalUsers.toLocaleString() ?? '0', color: 'bg-indigo-300 dark:bg-slate-800', shadow: 'shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155]', text: 'text-slate-900 dark:text-white', active: roleFilter === null && sortFilter === null && daysFilter === null },
-              { id: 'admin', label: 'Admin', value: stats?.totalAdmins.toLocaleString() ?? '0', color: 'bg-purple-300 dark:bg-slate-800', shadow: 'shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155]', text: 'text-slate-900 dark:text-white', active: roleFilter === 'admin' },
+              { id: 'total', label: 'Total User', value: stats?.totalUsers.toLocaleString() ?? '0', color: 'bg-sky-500 dark:bg-slate-800', shadow: 'shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155]', text: 'text-slate-900 dark:text-white', active: roleFilter === null && sortFilter === null && daysFilter === null },
+              { id: 'admin', label: 'Admin', value: stats?.totalAdmins.toLocaleString() ?? '0', color: 'bg-rose-300 dark:bg-slate-800', shadow: 'shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155]', text: 'text-slate-900 dark:text-white', active: roleFilter === 'admin' },
               { id: 'credits', label: 'Total Credit', value: stats?.totalCredits.toLocaleString() ?? '0', color: 'bg-amber-300 dark:bg-slate-800', shadow: 'shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155]', text: 'text-slate-900 dark:text-white', active: sortFilter === 'credits' },
               { id: 'new', label: 'New User (7d)', value: stats?.newUsers7d.toLocaleString() ?? '0', color: 'bg-emerald-300 dark:bg-slate-800', shadow: 'shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155]', text: 'text-slate-900 dark:text-white', active: daysFilter === 7 }
             ].map((sc) => (
@@ -461,7 +461,7 @@ export default function AdminPage() {
       </div>
 
       <div className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-[24px] md:rounded-[32px] overflow-hidden shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] md:shadow-[2px_2px_0_0_#0f172a] dark:md:shadow-[2px_2px_0_0_#0f172a] mx-4 md:mx-0">
-        <div className="px-5 py-4 md:px-8 md:py-6 border-b-4 border-slate-900 dark:border-slate-700 flex items-center justify-between gap-4 flex-wrap bg-violet-300 dark:bg-slate-800">
+        <div className="px-5 py-4 md:px-8 md:py-6 border-b-4 border-slate-900 dark:border-slate-700 flex items-center justify-between gap-4 flex-wrap bg-sky-500 dark:bg-slate-800">
           <div className="flex flex-col gap-1">
             <h2 className="text-xl md:text-2xl font-black text-slate-900 dark:text-white leading-none">
               {roleFilter === 'admin' ? 'Manage Admins' : sortFilter === 'credits' ? 'Users by Credits' : daysFilter === 7 ? 'New Users (Last 7 Days)' : 'Manage Users'}

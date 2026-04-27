@@ -191,7 +191,7 @@ function ResetPasswordForm() {
                 </Button>
               </Link>
               <Link href="/login" className="flex-1">
-                <Button className="w-full h-10 text-sm font-bold bg-indigo-600 hover:bg-indigo-700">
+                <Button className="w-full h-10 text-sm font-bold bg-sky-500 hover:bg-sky-600 text-white">
                   Kembali
                 </Button>
               </Link>
@@ -345,7 +345,7 @@ function ResetPasswordForm() {
 
             <Button
               type="submit"
-              className="w-full h-10 text-sm font-bold bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50"
+              className="w-full h-10 text-sm font-bold bg-sky-500 hover:bg-sky-600 text-white disabled:opacity-50"
               disabled={loading}
             >
               {loading ? "Menyimpan..." : "Simpan Password"}
@@ -353,7 +353,7 @@ function ResetPasswordForm() {
           </form>
 
           <div className="text-center mt-4">
-            <Link href="/login" className="text-indigo-600 dark:text-indigo-400 font-bold hover:underline text-xs">
+            <Link href="/login" className="text-sky-500 dark:text-sky-400 font-bold hover:underline text-xs">
               ← Kembali ke Login
             </Link>
           </div>

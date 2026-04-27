@@ -51,19 +51,6 @@ export async function GET(request: NextRequest) {
       const now = Date.now()
       const isNewUser = (now - createdAt) < 1000 * 60 // Kurang dari 1 menit
 
-      if (type === 'login' && isNewUser && user.app_metadata?.provider === 'google') {
-        // User mencoba "Login dengan Google" tapi belum terdaftar.
-        // Karena Supabase otomatis membuat akun, kita harus HAPUS akunnya lagi.
-        const { createAdminClient } = await import('@/lib/supabase-admin')
-        const adminDb = createAdminClient()
-        if (adminDb) {
-          await adminDb.from('users').delete().eq('id', user.id)
-          await adminDb.auth.admin.deleteUser(user.id)
-        }
-        await supabase.auth.signOut()
-        return NextResponse.redirect(new URL('/login?error=Akun+belum+terdaftar.+Silakan+Sign+Up+terlebih+dahulu.', requestUrl.origin))
-      }
-
       const { data: profile } = await supabase
         .from('users')
         .select('is_suspended, role')
@@ -89,7 +76,7 @@ export async function GET(request: NextRequest) {
       const role = profile?.role || user.user_metadata?.role || user.app_metadata?.role
       const defaultPath = role === 'admin' ? '/admin' : '/user'
       let finalUrl = nextPath && nextPath.startsWith('/') && !nextPath.startsWith('//') ? nextPath : defaultPath
-      if (type === 'signup' && isNewUser) {
+      if (type === 'signup' && isNewUser && user.app_metadata?.provider === 'google') {
         finalUrl = finalUrl.includes('?') ? `${finalUrl}&toast=google_signup_success` : `${finalUrl}?toast=google_signup_success`
       }
       return NextResponse.redirect(new URL(finalUrl, requestUrl.origin))
