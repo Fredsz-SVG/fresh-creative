@@ -19,8 +19,8 @@ export async function getRole(
     if (!error && data?.role === 'admin') return 'admin'
     if (!error && data?.role === 'user') return 'user'
 
-    const metaRole = (user.user_metadata?.role as string) || (user.app_metadata?.role as string)
-    if (metaRole === 'admin' || metaRole === 'user') return metaRole
+    const metaRole = ((user.user_metadata?.role as string) || (user.app_metadata?.role as string))?.toLowerCase()
+    if (metaRole === 'admin' || metaRole === 'user') return metaRole as 'admin' | 'user'
   } catch {
     // tabel users belum ada / query gagal — anggap user
   }
@@ -30,6 +30,6 @@ export async function getRole(
 /** Role dari session metadata saja (tanpa query DB). Untuk fallback cepat. */
 export function getRoleFromSession(session: Session | null): 'admin' | 'user' {
   if (!session?.user) return 'user'
-  const role = (session.user.user_metadata?.role as string) || (session.user.app_metadata?.role as string)
+  const role = ((session.user.user_metadata?.role as string) || (session.user.app_metadata?.role as string))?.toLowerCase()
   return role === 'admin' ? 'admin' : 'user'
 }

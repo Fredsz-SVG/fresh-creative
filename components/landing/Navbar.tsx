@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 import { ThemeContext } from "@/app/providers/ThemeProvider";
 import { supabase } from "@/lib/supabase";
 import { User } from "@supabase/supabase-js";
-import { getRole } from "@/lib/auth";
+import { getRole, getRoleFromSession } from "@/lib/auth";
 
 
 export function Navbar() {
@@ -60,7 +60,11 @@ export function Navbar() {
       const { data: { session } } = await supabase.auth.getSession();
       const currentUser = session?.user ?? null;
       setUser(currentUser);
-      if (currentUser) {
+      if (session) {
+        // Set role immediately from session metadata for fast response
+        setRole(getRoleFromSession(session));
+        
+        // Then fetch/verify from DB for accuracy
         const userRole = await getRole(supabase, currentUser);
         setRole(userRole);
       } else {
@@ -73,7 +77,10 @@ export function Navbar() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       const currentUser = session?.user ?? null;
       setUser(currentUser);
-      if (currentUser) {
+      if (session) {
+        // Set role immediately from session metadata for fast response
+        setRole(getRoleFromSession(session));
+        
         const userRole = await getRole(supabase, currentUser);
         setRole(userRole);
       } else {

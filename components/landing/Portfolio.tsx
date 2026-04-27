@@ -15,14 +15,8 @@ interface PortfolioItem {
 }
 
 export function Portfolio() {
-  const [items, setItems] = useState<PortfolioItem[]>(() => {
-    if (typeof window !== 'undefined') {
-      const cached = localStorage.getItem('portfolio-data');
-      if (cached) return JSON.parse(cached);
-    }
-    return [];
-  });
-  const [loading, setLoading] = useState(items.length === 0);
+  const [items, setItems] = useState<PortfolioItem[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedImg, setSelectedImg] = useState<string | null>(null);
 
   const sliderRef = useRef<HTMLDivElement>(null);
@@ -44,6 +38,20 @@ export function Portfolio() {
   }, [items]);
 
   useEffect(() => {
+    // Attempt to load from cache immediately on mount to prevent loading flash if data exists
+    try {
+      const cached = localStorage.getItem('portfolio-data');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setItems(parsed);
+          setLoading(false);
+        }
+      }
+    } catch (e) {
+      // Quietly ignore parse errors
+    }
+
     const fetchPortfolio = async () => {
       try {
         const res = await fetch(apiUrl("/api/portfolio"));
@@ -119,7 +127,7 @@ export function Portfolio() {
 
   if (loading) {
     return (
-      <section className="w-full bg-slate-100 dark:bg-slate-950 py-16 sm:py-24 transition-colors duration-500">
+      <section id="portfolio" className="w-full bg-slate-100 dark:bg-slate-950 py-16 sm:py-24 transition-colors duration-500">
         <div className="container mx-auto px-6 sm:px-10">
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 sm:mb-16 gap-6">
             <div>
