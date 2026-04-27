@@ -54,8 +54,7 @@ function AnimatedCounter({ target, suffix = '', duration = 2000, formatFn }: { t
   return <span ref={ref}>{display}{suffix}</span>;
 }
 
-export function Hero() {
-  const [isLoading, setIsLoading] = useState(true);
+function Clock() {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [hasMounted, setHasMounted] = useState(false);
   const theme = useContext(ThemeContext);
@@ -68,6 +67,51 @@ export function Hero() {
     return () => clearInterval(interval);
   }, []);
 
+  return (
+    <span
+      className={cn(
+        "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 font-black whitespace-nowrap flex items-center justify-center text-[16px] [@media(max-height:650px)]:!text-[12px] [@media(min-height:700px)_and_(max-height:799px)]:!text-[16px] [@media(min-height:800px)_and_(max-height:999px)]:!text-[18px] [@media(min-height:1000px)_and_(max-width:1023px)]:!text-[28px] [@media(min-height:1200px)_and_(max-width:900px)]:!text-[40px] [@media(min-height:800px)_and_(min-width:1200px)_and_(max-height:899px)]:!text-[24px] [@media(width:1280px)_and_(height:800px)]:!text-[20px] [@media(min-height:1100px)_and_(min-width:1024px)]:!text-[28px] [@media(min-height:1200px)_and_(min-width:1024px)]:!text-[32px] sm:text-[18px] md:text-[18px] lg:text-[18px] tracking-tight pt-1 transition-all duration-500",
+        "text-cyan-100 opacity-80",
+      )}
+      style={theme?.isDark ? {
+        textShadow: '0 0 10px rgba(59,130,246,1), 0 0 20px rgba(59,130,246,0.8)'
+      } : {}}
+    >
+      {hasMounted ? (
+        <>
+          {currentTime.getHours().toString().padStart(2, '0')}
+          <span className={cn("inline-block mx-0.5 sm:mx-1", currentTime.getMilliseconds() < 500 ? "opacity-100" : "opacity-0")}>:</span>
+          {currentTime.getMinutes().toString().padStart(2, '0')}
+        </>
+      ) : (
+        <>00<span className="mx-0.5 sm:mx-1 opacity-0">:</span>00</>
+      )}
+    </span>
+  );
+}
+
+export function Hero() {
+  const [isLoading, setIsLoading] = useState(true);
+  const theme = useContext(ThemeContext);
+
+  const videoLightRef = useRef<HTMLVideoElement>(null);
+  const videoDarkRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+    if (theme?.isDark) {
+      videoDarkRef.current?.play().catch(() => { });
+      timeoutId = setTimeout(() => {
+        if (theme?.isDark) videoLightRef.current?.pause();
+      }, 1000);
+    } else {
+      videoLightRef.current?.play().catch(() => { });
+      timeoutId = setTimeout(() => {
+        if (!theme?.isDark) videoDarkRef.current?.pause();
+      }, 1000);
+    }
+    return () => clearTimeout(timeoutId);
+  }, [theme?.isDark]);
   const hideLoader = useCallback(() => {
     setIsLoading(false);
   }, []);
@@ -91,7 +135,7 @@ export function Hero() {
 
       if (isDesktop) {
         // Desktop Animation
-        gsap.fromTo("#video-frame", 
+        gsap.fromTo("#video-frame",
           {
             clipPath: "polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)",
             borderRadius: "0 0 0 0",
@@ -174,11 +218,12 @@ export function Hero() {
         id="video-frame"
         className="bg-slate-100 dark:bg-slate-950 relative z-10 h-[100svh] w-full overflow-hidden transition-colors duration-500 will-change-[clip-path,border-radius] transform-gpu"
       >
-        <div className="relative size-full">
+        <div className="relative size-full bg-slate-900">
           <video
+            ref={videoLightRef}
             src={VIDEO_LINKS.hero1}
             preload="auto"
-            autoPlay
+            autoPlay={!theme?.isDark}
             loop
             muted
             playsInline
@@ -190,9 +235,10 @@ export function Hero() {
             onError={handleVideoError}
           />
           <video
+            ref={videoDarkRef}
             src={VIDEO_LINKS.hero2}
             preload="auto"
-            autoPlay
+            autoPlay={theme?.isDark}
             loop
             muted
             playsInline
@@ -239,25 +285,7 @@ export function Hero() {
                 "[@media(min-height:1200px)_and_(min-width:1024px)]:!w-52"
               )}
             />
-            <span
-              className={cn(
-                "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 font-black whitespace-nowrap flex items-center justify-center text-[16px] [@media(max-height:650px)]:!text-[12px] [@media(min-height:700px)_and_(max-height:799px)]:!text-[16px] [@media(min-height:800px)_and_(max-height:999px)]:!text-[18px] [@media(min-height:1000px)_and_(max-width:1023px)]:!text-[28px] [@media(min-height:1200px)_and_(max-width:900px)]:!text-[40px] [@media(min-height:800px)_and_(min-width:1200px)_and_(max-height:899px)]:!text-[24px] [@media(width:1280px)_and_(height:800px)]:!text-[20px] [@media(min-height:1100px)_and_(min-width:1024px)]:!text-[28px] [@media(min-height:1200px)_and_(min-width:1024px)]:!text-[32px] sm:text-[18px] md:text-[18px] lg:text-[18px] tracking-tight pt-1 transition-all duration-500",
-                "text-cyan-100 opacity-80",
-              )}
-              style={theme?.isDark ? {
-                textShadow: '0 0 10px rgba(59,130,246,1), 0 0 20px rgba(59,130,246,0.8)'
-              } : {}}
-            >
-              {hasMounted ? (
-                <>
-                  {currentTime.getHours().toString().padStart(2, '0')}
-                  <span className={cn("inline-block mx-0.5 sm:mx-1", currentTime.getMilliseconds() < 500 ? "opacity-100" : "opacity-0")}>:</span>
-                  {currentTime.getMinutes().toString().padStart(2, '0')}
-                </>
-              ) : (
-                <>00<span className="mx-0.5 sm:mx-1 opacity-0">:</span>00</>
-              )}
-            </span>
+            <Clock />
           </div>
 
           <div className={headingContainerClasses}>
@@ -282,7 +310,7 @@ export function Hero() {
                 Saatnya <span className="text-yellow-300">Phygital.</span>
               </span>
             </div>
-            <p className="mt-3 sm:mt-4 mb-5 sm:mb-6 max-w-sm sm:max-w-md text-slate-300/80 text-xs sm:text-sm md:text-base font-medium leading-relaxed drop-shadow-sm" style={{ fontFamily: "var(--font-inter), sans-serif" }}>
+            <p className="mt-3 sm:mt-4 mb-5 sm:mb-6 max-w-sm sm:max-w-md text-white hero-black-outline text-xs sm:text-sm md:text-base font-medium leading-relaxed" style={{ fontFamily: "var(--font-inter), sans-serif" }}>
               Ubah kenangan sekolahmu jadi &apos;Living Archive&apos;.<br />
               Gabungan buku fisik premium, teknologi AR,<br />
               dan AI Photo labs. Anti ribet, 100% transparan.
@@ -359,4 +387,4 @@ export function Hero() {
       </div>
     </section>
   );
-                                                                }
+}

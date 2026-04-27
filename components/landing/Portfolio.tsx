@@ -18,6 +18,7 @@ export function Portfolio() {
   const [items, setItems] = useState<PortfolioItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedImg, setSelectedImg] = useState<string | null>(null);
+  const [activeIndex, setActiveIndex] = useState(0);
 
   const sliderRef = useRef<HTMLDivElement>(null);
   const isDragging = useRef(false);
@@ -87,7 +88,13 @@ export function Portfolio() {
 
   const handleInfiniteScroll = () => {
     const el = sliderRef.current;
-    if (!el || isJumping.current || items.length === 0) return;
+    if (!el || items.length === 0) return;
+
+    const proportion = el.scrollLeft / el.scrollWidth;
+    let index = Math.round(proportion * infiniteItems.length);
+    setActiveIndex(index % items.length);
+
+    if (isJumping.current) return;
 
     const oneSetWidth = el.scrollWidth / 3;
 
@@ -146,7 +153,7 @@ export function Portfolio() {
     <section id="portfolio" className="w-full bg-slate-100 dark:bg-slate-950 py-16 sm:py-24 transition-colors duration-500 overflow-hidden relative">
       <div className="container mx-auto px-6 sm:px-10">
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 sm:mb-10 gap-6 relative z-10">
-          <div className="text-left">
+          <div className="text-left w-full">
             <p className="text-[10px] sm:text-xs uppercase tracking-[0.2em] text-lime-600 dark:text-lime-400 font-black mb-3 drop-shadow-sm">
               Discover
             </p>
@@ -156,23 +163,6 @@ export function Portfolio() {
             <p className="font-general max-w-2xl mt-4 text-sm sm:text-base text-slate-600 dark:text-slate-400 font-medium leading-relaxed">
               Kumpulan momen dan karya fotografi terbaik yang diabadikan oleh Fresh Creative.
             </p>
-          </div>
-          
-          <div className="flex items-center gap-3">
-            <button 
-              onClick={slideLeft}
-              className="w-12 h-12 flex items-center justify-center bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 shadow-[4px_4px_0px_#0f172a] dark:shadow-[4px_4px_0px_rgba(255,255,255,0.05)] hover:shadow-[6px_6px_0px_#0f172a] dark:hover:shadow-[6px_6px_0px_rgba(132,204,22,0.4)] hover:-translate-y-0.5 active:translate-y-0 active:shadow-[2px_2px_0px_#0f172a] transition-all text-slate-900 dark:text-lime-400 outline-none"
-              aria-label="Previous portfolio item"
-            >
-              <ChevronLeft className="w-6 h-6" />
-            </button>
-            <button 
-              onClick={slideRight}
-              className="w-12 h-12 flex items-center justify-center bg-lime-400 border-2 border-slate-900 shadow-[4px_4px_0px_#0f172a] hover:shadow-[6px_6px_0px_#0f172a] hover:-translate-y-0.5 active:translate-y-0 active:shadow-[2px_2px_0px_#0f172a] transition-all text-slate-900 outline-none"
-              aria-label="Next portfolio item"
-            >
-              <ChevronRight className="w-6 h-6" />
-            </button>
           </div>
         </div>
       </div>
@@ -237,6 +227,42 @@ export function Portfolio() {
             </div>
           </motion.div>
         ))}
+      </div>
+      
+      {/* Navigation Controls Relocated Belows */}
+      <div className="container mx-auto px-6 sm:px-10 mt-2 md:-mt-2 flex flex-col sm:flex-row items-center justify-between gap-6 pb-4 relative z-20">
+        <div className="flex gap-1.5 sm:gap-2 items-center">
+          {items.map((_, i) => (
+            <div
+              key={i}
+              onClick={() => {
+                if (sliderRef.current) {
+                   const itemWidth = sliderRef.current.scrollWidth / infiniteItems.length;
+                   // scroll to the center set version of this item
+                   sliderRef.current.scrollTo({ left: itemWidth * (items.length + i), behavior: "smooth" });
+                }
+              }}
+              className={`h-1.5 sm:h-2 rounded-full cursor-pointer transition-all duration-300 ${activeIndex === i ? "w-6 sm:w-8 bg-lime-500 shadow-[1px_1px_0px_#0f172a] dark:shadow-none" : "w-1.5 sm:w-2 bg-slate-300 dark:bg-slate-700 hover:bg-slate-400 dark:hover:bg-slate-600"}`}
+            />
+          ))}
+        </div>
+        
+        <div className="flex items-center gap-2 sm:gap-3">
+          <button 
+            onClick={slideLeft}
+            className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 shadow-[4px_4px_0px_#0f172a] dark:shadow-[4px_4px_0px_rgba(0,0,0,0.5)] hover:shadow-[6px_6px_0px_#0f172a] dark:hover:shadow-[6px_6px_0px_rgba(132,204,22,0.4)] hover:-translate-y-0.5 active:translate-y-0 active:shadow-[2px_2px_0px_#0f172a] transition-all text-slate-900 dark:text-lime-400 outline-none"
+            aria-label="Previous portfolio item"
+          >
+            <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
+          </button>
+          <button 
+            onClick={slideRight}
+            className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center bg-lime-400 border-2 border-slate-900 shadow-[4px_4px_0px_#0f172a] hover:shadow-[6px_6px_0px_#0f172a] hover:-translate-y-0.5 active:translate-y-0 active:shadow-[2px_2px_0px_#0f172a] transition-all text-slate-900 outline-none"
+            aria-label="Next portfolio item"
+          >
+            <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
+          </button>
+        </div>
       </div>
 
       {/* Lightbox Modal */}
