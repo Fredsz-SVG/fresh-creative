@@ -134,12 +134,12 @@ export function Portfolio() {
 
   if (loading) {
     return (
-      <section id="portfolio" className="w-full bg-slate-100 dark:bg-slate-950 py-16 sm:py-24 transition-colors duration-500">
+      <section id="portfolio" className="w-full bg-slate-100 dark:bg-[#0a0c37] py-16 sm:py-24 transition-colors duration-500">
         <div className="container mx-auto px-6 sm:px-10">
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 sm:mb-16 gap-6">
             <div>
               <div className="h-4 w-24 bg-lime-200 dark:bg-lime-900 rounded-full mb-3 animate-pulse" />
-              <div className="h-10 sm:h-12 lg:h-16 w-64 bg-slate-200 dark:bg-slate-900 rounded-2xl animate-pulse" />
+              <div className="h-10 sm:h-12 lg:h-16 w-64 bg-slate-200 dark:bg-[#0d1148] rounded-2xl animate-pulse" />
             </div>
           </div>
         </div>
@@ -150,7 +150,7 @@ export function Portfolio() {
   if (items.length === 0) return null;
 
   return (
-    <section id="portfolio" className="w-full bg-slate-100 dark:bg-slate-950 py-16 sm:py-24 transition-colors duration-500 overflow-hidden relative">
+    <section id="portfolio" className="w-full bg-slate-100 dark:bg-[#0a0c37] py-16 sm:py-24 transition-colors duration-500 overflow-hidden relative">
       <div className="container mx-auto px-6 sm:px-10">
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 sm:mb-10 gap-6 relative z-10">
           <div className="text-left w-full">
@@ -185,9 +185,9 @@ export function Portfolio() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-50px" }}
             transition={{ duration: 0.5, ease: "easeOut" }}
-            className="flex-none w-[85vw] sm:w-[60vw] md:w-[45vw] lg:w-[31vw] xl:w-[28vw] group flex flex-col bg-white dark:bg-slate-800/80 border-2 border-slate-900 dark:border-slate-800 rounded-2xl overflow-hidden shadow-[6px_6px_0_0_#334155] dark:shadow-neo-glow transition-all duration-300 hover:-translate-x-1 hover:-translate-y-1"
+            className="flex-none w-[85vw] sm:w-[60vw] md:w-[45vw] lg:w-[31vw] xl:w-[28vw] group flex flex-col bg-white dark:bg-[#131a68]/70 border-2 border-slate-900 dark:border-[#5cecff]/20 rounded-2xl overflow-hidden shadow-[6px_6px_0_0_#334155] dark:shadow-neo-glow transition-all duration-300 hover:-translate-x-1 hover:-translate-y-1"
           >
-            <div className="relative aspect-[4/3] w-full overflow-hidden border-b-2 border-slate-900 dark:border-slate-800 bg-slate-200 dark:bg-slate-900">
+            <div className="relative aspect-[4/3] w-full overflow-hidden border-b-2 border-slate-900 dark:border-[#5cecff]/15 bg-slate-200 dark:bg-[#0d1148]">
               <Image
                 src={item.img}
                 alt={item.title}
@@ -218,7 +218,7 @@ export function Portfolio() {
                   onMouseDown={(e) => e.stopPropagation()}
                   onTouchStart={(e) => e.stopPropagation()}
                   onClick={(e) => { e.stopPropagation(); setSelectedImg(item.img); }}
-                  className="flex items-center justify-center gap-2 w-full py-3 bg-white dark:bg-slate-900 hover:bg-lime-400 dark:hover:bg-lime-400 text-slate-900 dark:text-white dark:hover:text-slate-900 font-bold text-xs uppercase tracking-widest border-2 border-slate-900 dark:border-slate-800 dark:hover:border-slate-900 shadow-[4px_4px_0_0_#0f172a] hover:shadow-[6px_6px_0_0_#0f172a] hover:-translate-y-0.5 active:translate-y-0 transition-all outline-none"
+                  className="flex items-center justify-center gap-2 w-full py-3 bg-white dark:bg-[#0d1148] hover:bg-lime-400 dark:hover:bg-[#5cecff]/20 text-slate-900 dark:text-[#5cecff] dark:hover:text-white font-bold text-xs uppercase tracking-widest border-2 border-slate-900 dark:border-[#5cecff]/25 dark:hover:border-[#5cecff]/60 shadow-[4px_4px_0_0_#0f172a] hover:shadow-[6px_6px_0_0_#0f172a] dark:hover:shadow-[0_0_12px_rgba(92,236,255,0.4)] hover:-translate-y-0.5 active:translate-y-0 transition-all outline-none"
                 >
                   <Maximize2 size={16} strokeWidth={3} className="shrink-0" />
                   Full View
@@ -250,7 +250,7 @@ export function Portfolio() {
         <div className="flex items-center gap-2 sm:gap-3">
           <button 
             onClick={slideLeft}
-            className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 shadow-[4px_4px_0px_#0f172a] dark:shadow-[4px_4px_0px_rgba(0,0,0,0.5)] hover:shadow-[6px_6px_0px_#0f172a] dark:hover:shadow-[6px_6px_0px_rgba(132,204,22,0.4)] hover:-translate-y-0.5 active:translate-y-0 active:shadow-[2px_2px_0px_#0f172a] transition-all text-slate-900 dark:text-lime-400 outline-none"
+            className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center bg-white dark:bg-[#0d1148] border-2 border-slate-900 dark:border-[#5cecff]/30 shadow-[4px_4px_0px_#0f172a] dark:shadow-[0_0_10px_rgba(92,236,255,0.3)] hover:shadow-[6px_6px_0px_#0f172a] dark:hover:shadow-[0_0_18px_rgba(92,236,255,0.6),4px_4px_0_0_#ff61c6] hover:-translate-y-0.5 active:translate-y-0 active:shadow-[2px_2px_0px_#0f172a] transition-all text-slate-900 dark:text-[#5cecff] outline-none"
             aria-label="Previous portfolio item"
           >
             <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />

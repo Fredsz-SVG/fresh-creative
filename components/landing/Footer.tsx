@@ -2,7 +2,7 @@
 
 export function Footer() {
   return (
-    <footer className="w-full bg-slate-900 dark:bg-black py-16 text-slate-400 dark:text-slate-500 transition-colors duration-500 border-t border-slate-200 dark:border-white/5">
+    <footer className="w-full bg-slate-900 dark:bg-[#060720] py-16 text-slate-400 dark:text-[#5cecff]/50 transition-colors duration-500 border-t border-slate-200 dark:border-[#5cecff]/10">
       <div className="container mx-auto px-6 md:px-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 mb-12">
           {/* Tentang Kami Section */}
@@ -42,7 +42,7 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="pt-8 border-t border-slate-200 dark:border-white/10 flex flex-col md:flex-row justify-between items-center gap-4 text-xs font-medium uppercase tracking-widest">
+        <div className="pt-8 border-t border-slate-200 dark:border-[#5cecff]/10 flex flex-col md:flex-row justify-between items-center gap-4 text-xs font-medium uppercase tracking-widest">
           <p>
             © {new Date().getFullYear()} Fresh Creative Indonesia. All rights reserved.
           </p>

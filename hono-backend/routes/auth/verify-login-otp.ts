@@ -57,7 +57,7 @@ verifyLoginOtp.post('/', async (c) => {
 
   if (row) {
     await db.prepare(`DELETE FROM login_otps WHERE user_id = ?`).bind(userId).run()
-    const role = await getRole(c, { id: userId, user_metadata: {}, app_metadata: {} } as any)
+    const role = await getRole(c, { id: userId, user_metadata: {}, app_metadata: {} })
     let finalNext = safeNext
     if (role === 'admin' && finalNext.startsWith('/user')) {
       finalNext = finalNext.replace('/user', '/admin')

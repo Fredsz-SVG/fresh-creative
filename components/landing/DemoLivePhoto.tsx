@@ -5,7 +5,7 @@ import { RoundedCorners } from "./RoundedCorners";
 
 export function DemoLivePhoto() {
   return (
-    <section id="demo-livephoto" className="min-h-screen sm:min-h-dvh w-full bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-blue-50 transition-colors duration-500 overflow-hidden">
+    <section id="demo-livephoto" className="min-h-screen sm:min-h-dvh w-full bg-slate-100 dark:bg-[#0a0c37] text-slate-900 dark:text-blue-50 transition-colors duration-500 overflow-hidden">
       <div className="flex size-full flex-col items-center pt-16 pb-4 sm:py-20 px-4 sm:px-0">
         <p className="font-general text-sm sm:text-base uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2 sm:mb-4 scroll-mt-[100px] sm:scroll-mt-[120px]" id="demo-ar">
           Coba Demo Interaktif

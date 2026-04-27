@@ -38,7 +38,7 @@ export function ScrollToTop() {
           whileHover={{ scale: 1.1, rotate: 5 }}
           whileTap={{ scale: 0.9 }}
           onClick={scrollToTop}
-          className="fixed bottom-6 right-6 z-50 flex h-12 w-12 items-center justify-center rounded-xl bg-yellow-300 text-black shadow-[4px_4px_0px_#000] border-2 border-black focus:outline-none transition-colors hover:bg-yellow-200"
+          className="fixed bottom-6 right-6 z-50 flex h-12 w-12 items-center justify-center rounded-xl bg-yellow-300 dark:bg-[#0d1148] text-black dark:text-[#5cecff] shadow-[4px_4px_0px_#000] dark:shadow-[0_0_12px_rgba(92,236,255,0.7),0_0_24px_rgba(255,97,198,0.4),4px_4px_0px_#ff61c6] border-2 border-black dark:border-[#5cecff]/60 focus:outline-none transition-all hover:bg-yellow-200 dark:hover:bg-[#131a68] dark:hover:shadow-[0_0_18px_rgba(92,236,255,0.9),0_0_36px_rgba(255,97,198,0.5)]"
           aria-label="Scroll to top"
         >
           <ArrowUp size={24} strokeWidth={3} />

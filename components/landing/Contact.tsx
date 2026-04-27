@@ -4,8 +4,8 @@ import { TiLocationArrow } from "react-icons/ti";
 
 export function Contact() {
   return (
-    <section id="contact" className="py-20 min-h-96 w-full px-4 sm:px-10 bg-slate-100 dark:bg-slate-950 transition-colors duration-500 overflow-hidden">
-      <div className="relative rounded-[2.5rem] bg-orange-400 dark:bg-slate-900 border-4 border-slate-950 dark:border-slate-800 py-24 text-white sm:overflow-hidden transition-all duration-300 hover:-translate-x-0.5 hover:-translate-y-0.5 dark:shadow-neo-glow shadow-[6px_6px_0_0_#334155]">
+    <section id="contact" className="py-20 min-h-96 w-full px-4 sm:px-10 bg-slate-100 dark:bg-[#0a0c37] transition-colors duration-500 overflow-hidden">
+      <div className="relative rounded-[2.5rem] bg-orange-400 dark:bg-[#0d1148] border-4 border-slate-950 dark:border-[#ff61c6]/35 py-24 text-white sm:overflow-hidden transition-all duration-300 hover:-translate-x-0.5 hover:-translate-y-0.5 dark:shadow-neo-glow shadow-[6px_6px_0_0_#334155]">
         <div className="container mx-auto flex flex-col md:flex-row items-center justify-center gap-12 lg:gap-20 relative z-10 px-6 sm:px-12">
           {/* Phone Frame Mockup - Now Relative to Flex */}
           <div className="relative w-[220px] h-[440px] md:w-[240px] md:h-[480px] shrink-0 transition-all duration-700">

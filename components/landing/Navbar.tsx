@@ -169,7 +169,7 @@ export function Navbar() {
         className={cn(
           "fixed left-4 right-4 top-4 z-[60] h-14 transition-all duration-300 ease-out sm:h-16 rounded-full border border-transparent",
           isScrolled && !isMenuOpen && "floating-nav",
-          isMenuOpen && "border-transparent shadow-none !bg-white dark:!bg-slate-950"
+          isMenuOpen && "border-transparent shadow-none !bg-white dark:!bg-[#0a0c37]"
         )}
       >
         <div className="absolute top-1/2 w-full -translate-y-1/2 z-50">
@@ -219,7 +219,7 @@ export function Navbar() {
                 {!user ? (
                   <Link
                     href="/login"
-                    className="hidden lg:inline-flex items-center justify-center gap-2 w-[150px] py-2 bg-yellow-300 text-black font-black text-[13px] uppercase tracking-wide border-2 border-black rounded-full shadow-[2px_2px_0_0_#000] dark:shadow-[2px_2px_0_0_#fff] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[3px_3px_0_0_#000] dark:hover:shadow-[3px_3px_0_0_#fff] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all duration-200"
+                    className="hidden lg:inline-flex items-center justify-center gap-2 w-[150px] py-2 bg-yellow-300 text-black font-black text-[13px] uppercase tracking-wide border-2 border-black rounded-full shadow-[2px_2px_0_0_#000] dark:shadow-[2px_2px_0_0_#5cecff] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[3px_3px_0_0_#000] dark:hover:shadow-[3px_3px_0_0_#ff61c6] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all duration-200"
                   >
                     <LogIn size={14} />
                     <span className="font-general text-[13px] uppercase">Login</span>
@@ -229,7 +229,7 @@ export function Navbar() {
                     type="button"
                     onClick={handleDashboardClick}
                     disabled={isResolvingDashboard}
-                    className="hidden lg:inline-flex items-center justify-center gap-2 w-[150px] py-2 bg-yellow-300 text-black font-black text-[13px] uppercase tracking-wide border-2 border-black rounded-full shadow-[2px_2px_0_0_#000] dark:shadow-[2px_2px_0_0_#fff] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[3px_3px_0_0_#000] dark:hover:shadow-[3px_3px_0_0_#fff] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all duration-200 disabled:opacity-70 disabled:pointer-events-none"
+                    className="hidden lg:inline-flex items-center justify-center gap-2 w-[150px] py-2 bg-yellow-300 text-black font-black text-[13px] uppercase tracking-wide border-2 border-black rounded-full shadow-[2px_2px_0_0_#000] dark:shadow-[2px_2px_0_0_#5cecff] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[3px_3px_0_0_#000] dark:hover:shadow-[3px_3px_0_0_#ff61c6] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all duration-200 disabled:opacity-70 disabled:pointer-events-none"
                   >
                     <LayoutDashboard size={14} />
                     <span className="font-general text-[13px] uppercase">Dashboard</span>
@@ -372,7 +372,7 @@ export function Navbar() {
             animate={{ opacity: 1, clipPath: "inset(0 0 0% 0)" }}
             exit={{ opacity: 0, clipPath: "inset(0 0 100% 0)" }}
             transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-            className="fixed inset-0 bg-white dark:bg-slate-950 lg:hidden flex flex-col items-center justify-center gap-4 pb-12 z-[55] transition-colors duration-300"
+            className="fixed inset-0 bg-white dark:bg-[#0a0c37] lg:hidden flex flex-col items-center justify-center gap-4 pb-12 z-[55] transition-colors duration-300"
           >
             {NAV_ITEMS.map(({ label, href }) => {
               const isActive = activeSection === href.replace('#', '');
@@ -394,7 +394,7 @@ export function Navbar() {
               {!user ? (
                 <Link
                   href="/login"
-                  className="flex items-center justify-center gap-2 px-7 py-4 bg-yellow-300 text-black font-black text-sm uppercase tracking-wide border-2 border-black rounded-full shadow-[3px_3px_0_0_#000] dark:shadow-[3px_3px_0_0_#fff] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all duration-200 w-full"
+                  className="flex items-center justify-center gap-2 px-7 py-4 bg-yellow-300 text-black font-black text-sm uppercase tracking-wide border-2 border-black rounded-full shadow-[3px_3px_0_0_#000] dark:shadow-[3px_3px_0_0_#5cecff] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all duration-200 w-full"
                   onClick={() => setIsMenuOpen(false)}
                 >
                   <LogIn size={18} />
@@ -408,7 +408,7 @@ export function Navbar() {
                     await handleDashboardClick();
                   }}
                   disabled={isResolvingDashboard}
-                  className="flex items-center justify-center gap-3 px-7 py-4 bg-yellow-300 text-black font-black text-sm uppercase tracking-wide border-2 border-black rounded-full shadow-[3px_3px_0_0_#000] dark:shadow-[3px_3px_0_0_#fff] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all duration-200 w-full disabled:opacity-70 disabled:pointer-events-none"
+                  className="flex items-center justify-center gap-3 px-7 py-4 bg-yellow-300 text-black font-black text-sm uppercase tracking-wide border-2 border-black rounded-full shadow-[3px_3px_0_0_#000] dark:shadow-[3px_3px_0_0_#5cecff] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all duration-200 w-full disabled:opacity-70 disabled:pointer-events-none"
                 >
                   <LayoutDashboard size={18} />
                   Dashboard

@@ -28,7 +28,7 @@ export function FAQ() {
   const [openId, setOpenId] = useState<number | null>(0);
 
   return (
-    <section id="faq" className="w-full bg-slate-100 dark:bg-slate-950 py-16 md:py-24 transition-colors duration-500">
+    <section id="faq" className="w-full bg-slate-100 dark:bg-[#0a0c37] py-16 md:py-24 transition-colors duration-500">
       <div className="container mx-auto px-4 md:px-8">
         <div className="text-center sm:text-left mb-12 sm:mb-16">
           <p className="font-general text-[10px] sm:text-xs uppercase tracking-[0.2em] text-lime-600 dark:text-lime-400 font-black mb-3">
@@ -51,8 +51,8 @@ export function FAQ() {
                 className={cn(
                   'rounded-xl border transition-all duration-300',
                   isOpen
-                    ? "border-slate-900 dark:border-white bg-white dark:bg-slate-800/80 shadow-sm dark:shadow-neo-glow-sm"
-                    : "border-slate-900 dark:border-slate-800 bg-white dark:bg-slate-800/80 hover:-translate-x-1 hover:-translate-y-1 transition-all duration-300"
+                    ? "border-slate-900 dark:border-[#5cecff]/60 bg-white dark:bg-[#131a68]/80 shadow-sm dark:shadow-neo-glow-sm"
+                    : "border-slate-900 dark:border-[#5cecff]/20 bg-white dark:bg-[#0d1148]/80 hover:-translate-x-1 hover:-translate-y-1 transition-all duration-300"
                 )}
               >
                 <button

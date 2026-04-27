@@ -4,7 +4,7 @@ import { type PropsWithChildren } from "react";
 
 function BentoCardWrap({ children, className = "" }: PropsWithChildren<{ className?: string }>) {
   return (
-    <div className={`group relative transition-all duration-300 border border-slate-900 dark:border-slate-800 shadow-[4px_4px_0_0_#334155] md:shadow-[4px_4px_0_0_#334155] dark:shadow-neo-glow hover:-translate-x-1 hover:-translate-y-1 hover:shadow-[4px_4px_0_0_#334155] dark:hover-shadow-neo-glow overflow-hidden rounded-[1.5rem] md:rounded-[2rem] bg-white dark:bg-slate-800/80 ${className}`}>
+    <div className={`group relative transition-all duration-300 border border-slate-900 dark:border-[#5cecff]/20 shadow-[4px_4px_0_0_#334155] md:shadow-[4px_4px_0_0_#334155] dark:shadow-neo-glow hover:-translate-x-1 hover:-translate-y-1 hover:shadow-[4px_4px_0_0_#334155] dark:hover-shadow-neo-glow overflow-hidden rounded-[1.5rem] md:rounded-[2rem] bg-white dark:bg-[#131a68]/70 ${className}`}>
       {children}
     </div>
   );
@@ -95,7 +95,7 @@ export function Features() {
   return (
     <section
       id="features"
-      className="pb-10 bg-slate-100 dark:bg-slate-950 transition-colors duration-500"
+      className="pb-10 bg-slate-100 dark:bg-[#0a0c37] transition-colors duration-500"
     >
       <div className="container mx-auto px-3 md:px-10">
 

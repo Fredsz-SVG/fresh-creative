@@ -8,7 +8,7 @@ export function About() {
   return (
     <section
       id="about"
-      className="relative w-full bg-slate-100 dark:bg-slate-950 py-16 sm:py-20 md:py-24 lg:py-32 transition-colors duration-500 overflow-hidden"
+      className="relative w-full bg-slate-100 dark:bg-[#0a0c37] py-16 sm:py-20 md:py-24 lg:py-32 transition-colors duration-500 overflow-hidden"
     >
       <div className="container mx-auto px-6 sm:px-10 md:px-16">
         {/* Intro Section */}
@@ -19,8 +19,8 @@ export function About() {
           transition={{ duration: 0.6 }}
           className="text-center mb-16 sm:mb-20 md:mb-24 px-4"
         >
-          <div className="inline-grid grid-cols-[auto_1fr] items-center mb-10 sm:mb-14 border-2 border-slate-950 dark:border-slate-700 rounded-xl overflow-hidden bg-white dark:bg-slate-900 shadow-[3px_3px_0_0_#334155] dark:shadow-neo-glow transition-all duration-300 hover:-translate-x-0.5 hover:-translate-y-0.5">
-            <div className="bg-slate-950 dark:bg-slate-800 p-2.5 sm:p-3 border-r-2 border-slate-950 dark:border-slate-700 text-lime-400">
+          <div className="inline-grid grid-cols-[auto_1fr] items-center mb-10 sm:mb-14 border-2 border-slate-950 dark:border-[#5cecff]/30 rounded-xl overflow-hidden bg-white dark:bg-[#0d1148] shadow-[3px_3px_0_0_#334155] dark:shadow-neo-glow transition-all duration-300 hover:-translate-x-0.5 hover:-translate-y-0.5">
+            <div className="bg-slate-950 dark:bg-[#131a68] p-2.5 sm:p-3 border-r-2 border-slate-950 dark:border-[#5cecff]/30 text-lime-400">
               <Award size={18} />
             </div>
             <div className="px-5 py-2 font-black text-[10px] sm:text-xs uppercase tracking-[0.25em] text-slate-900 dark:text-white">
@@ -45,9 +45,9 @@ export function About() {
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            className="relative p-8 sm:p-10 rounded-tl-[40px] rounded-br-[40px] rounded-tr-xl rounded-bl-xl bg-gradient-to-br from-sky-300 to-sky-100 dark:from-slate-800 dark:to-slate-900 border-2 border-slate-900 dark:border-slate-700 shadow-[4px_4px_0_0_#334155] dark:shadow-neo-glow transition-all duration-300 hover:-translate-x-0.5 hover:-translate-y-0.5 overflow-hidden"
+            className="relative p-8 sm:p-10 rounded-tl-[40px] rounded-br-[40px] rounded-tr-xl rounded-bl-xl bg-gradient-to-br from-sky-300 to-sky-100 dark:from-[#131a68] dark:to-[#0d1148] border-2 border-slate-900 dark:border-[#5cecff]/25 shadow-[4px_4px_0_0_#334155] dark:shadow-neo-glow transition-all duration-300 hover:-translate-x-0.5 hover:-translate-y-0.5 overflow-hidden"
           >
-            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl bg-sky-400 dark:bg-sky-500/20 border-2 border-sky-500 dark:border-sky-400/50 shadow-md flex items-center justify-center mb-6 sm:mb-8 overflow-hidden shrink-0">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl bg-sky-400 dark:bg-[#5cecff]/15 border-2 border-sky-500 dark:border-[#5cecff]/40 shadow-md flex items-center justify-center mb-6 sm:mb-8 overflow-hidden shrink-0">
               <DotLottieReact src="/lottie/community.json" loop autoplay className="w-full h-full p-2 sm:p-3" />
             </div>
             <h3 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tight mb-4 leading-none">
@@ -63,9 +63,9 @@ export function About() {
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="relative p-8 sm:p-10 rounded-tl-[40px] rounded-br-[40px] rounded-tr-xl rounded-bl-xl bg-gradient-to-br from-emerald-300 to-emerald-100 dark:from-slate-800 dark:to-slate-900 border-2 border-slate-900 dark:border-slate-700 shadow-[4px_4px_0_0_#334155] dark:shadow-neo-glow transition-all duration-300 hover:-translate-x-0.5 hover:-translate-y-0.5 overflow-hidden"
+            className="relative p-8 sm:p-10 rounded-tl-[40px] rounded-br-[40px] rounded-tr-xl rounded-bl-xl bg-gradient-to-br from-emerald-300 to-emerald-100 dark:from-[#131a68] dark:to-[#0d1148] border-2 border-slate-900 dark:border-[#ff61c6]/25 shadow-[4px_4px_0_0_#334155] dark:shadow-neo-glow transition-all duration-300 hover:-translate-x-0.5 hover:-translate-y-0.5 overflow-hidden"
           >
-            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl bg-emerald-400 dark:bg-emerald-500/20 border-2 border-emerald-500 dark:border-emerald-400/50 shadow-md flex items-center justify-center mb-6 sm:mb-8 overflow-hidden shrink-0">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl bg-emerald-400 dark:bg-[#f4ff61]/10 border-2 border-emerald-500 dark:border-[#f4ff61]/35 shadow-md flex items-center justify-center mb-6 sm:mb-8 overflow-hidden shrink-0">
               <DotLottieReact src="/lottie/roket.json" loop autoplay className="w-full h-full p-2 sm:p-3" />
             </div>
             <h3 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tight mb-4 leading-none">
@@ -106,8 +106,8 @@ export function About() {
           </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 sm:gap-10">
-            <div className="group relative p-8 sm:p-10 rounded-tr-[40px] rounded-bl-[40px] rounded-tl-xl rounded-br-xl bg-gradient-to-bl from-pink-300 to-pink-100 dark:from-slate-800 dark:to-slate-900 border-2 border-slate-900 dark:border-slate-700 shadow-[3px_3px_0_0_#334155] dark:shadow-neo-glow transition-all duration-300 hover:-translate-x-0.5 hover:-translate-y-0.5 isolation z-10 hover:z-20">
-              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl bg-pink-400 dark:bg-pink-500/20 border-2 border-pink-500 dark:border-pink-400/50 shadow-md flex items-center justify-center mb-6 sm:mb-8 overflow-hidden shrink-0">
+            <div className="group relative p-8 sm:p-10 rounded-tr-[40px] rounded-bl-[40px] rounded-tl-xl rounded-br-xl bg-gradient-to-bl from-pink-300 to-pink-100 dark:from-[#1a0d4a] dark:to-[#0d1148] border-2 border-slate-900 dark:border-[#ff61c6]/30 shadow-[3px_3px_0_0_#334155] dark:shadow-neo-glow transition-all duration-300 hover:-translate-x-0.5 hover:-translate-y-0.5 isolation z-10 hover:z-20">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl bg-pink-400 dark:bg-[#ff61c6]/15 border-2 border-pink-500 dark:border-[#ff61c6]/45 shadow-md flex items-center justify-center mb-6 sm:mb-8 overflow-hidden shrink-0">
                 <DotLottieReact src="/lottie/shirt.json" loop autoplay className="w-full h-full p-2 sm:p-3" />
               </div>
               <h4 className="text-xl font-black text-slate-900 dark:text-white uppercase mb-4 tracking-tight">AI Fashion & OOTD</h4>
@@ -116,8 +116,8 @@ export function About() {
               </p>
             </div>
 
-            <div className="group relative p-8 sm:p-10 rounded-tr-[40px] rounded-bl-[40px] rounded-tl-xl rounded-br-xl bg-gradient-to-bl from-fuchsia-300 to-fuchsia-100 dark:from-slate-800 dark:to-slate-900 border-2 border-slate-900 dark:border-slate-700 shadow-[3px_3px_0_0_#334155] dark:shadow-neo-glow transition-all duration-300 hover:-translate-x-0.5 hover:-translate-y-0.5 isolation z-10 hover:z-20">
-              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl bg-fuchsia-400 dark:bg-fuchsia-500/20 border-2 border-fuchsia-500 dark:border-fuchsia-400/50 shadow-md flex items-center justify-center mb-6 sm:mb-8 overflow-hidden shrink-0">
+            <div className="group relative p-8 sm:p-10 rounded-tr-[40px] rounded-bl-[40px] rounded-tl-xl rounded-br-xl bg-gradient-to-bl from-fuchsia-300 to-fuchsia-100 dark:from-[#1a0d4a] dark:to-[#0d1148] border-2 border-slate-900 dark:border-[#ff61c6]/25 shadow-[3px_3px_0_0_#334155] dark:shadow-neo-glow transition-all duration-300 hover:-translate-x-0.5 hover:-translate-y-0.5 isolation z-10 hover:z-20">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl bg-fuchsia-400 dark:bg-[#ff61c6]/15 border-2 border-fuchsia-500 dark:border-[#ff61c6]/40 shadow-md flex items-center justify-center mb-6 sm:mb-8 overflow-hidden shrink-0">
                 <DotLottieReact src="/lottie/sparkle.json" loop autoplay className="w-full h-full p-2 sm:p-3" />
               </div>
               <h4 className="text-xl font-black text-slate-900 dark:text-white uppercase mb-4 tracking-tight">Thematic Transformation</h4>
@@ -126,8 +126,8 @@ export function About() {
               </p>
             </div>
 
-            <div className="group relative p-8 sm:p-10 rounded-tr-[40px] rounded-bl-[40px] rounded-tl-xl rounded-br-xl bg-gradient-to-bl from-violet-300 to-violet-100 dark:from-slate-800 dark:to-slate-900 border-2 border-slate-900 dark:border-slate-700 shadow-[3px_3px_0_0_#334155] dark:shadow-neo-glow transition-all duration-300 hover:-translate-x-0.5 hover:-translate-y-0.5 isolation z-10 hover:z-20">
-              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl bg-violet-400 dark:bg-violet-500/20 border-2 border-violet-500 dark:border-violet-400/50 shadow-md flex items-center justify-center mb-6 sm:mb-8 overflow-hidden shrink-0">
+            <div className="group relative p-8 sm:p-10 rounded-tr-[40px] rounded-bl-[40px] rounded-tl-xl rounded-br-xl bg-gradient-to-bl from-violet-300 to-violet-100 dark:from-[#1a0d4a] dark:to-[#0d1148] border-2 border-slate-900 dark:border-[#5cecff]/25 shadow-[3px_3px_0_0_#334155] dark:shadow-neo-glow transition-all duration-300 hover:-translate-x-0.5 hover:-translate-y-0.5 isolation z-10 hover:z-20">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl bg-violet-400 dark:bg-[#5cecff]/15 border-2 border-violet-500 dark:border-[#5cecff]/40 shadow-md flex items-center justify-center mb-6 sm:mb-8 overflow-hidden shrink-0">
                 <DotLottieReact src="/lottie/image.json" loop autoplay className="w-full h-full p-2 sm:p-3" />
               </div>
               <h4 className="text-xl font-black text-slate-900 dark:text-white uppercase mb-4 tracking-tight">Interactive Memories</h4>
@@ -152,8 +152,8 @@ export function About() {
           </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 sm:gap-10">
-            <div className="group relative p-8 sm:p-10 rounded-tr-[40px] rounded-bl-[40px] rounded-tl-xl rounded-br-xl bg-gradient-to-bl from-lime-300 to-lime-100 dark:from-slate-800 dark:to-slate-900 border-2 border-slate-900 dark:border-slate-700 shadow-[3px_3px_0_0_#334155] dark:shadow-neo-glow transition-all duration-300 hover:-translate-x-0.5 hover:-translate-y-0.5 isolation z-10 hover:z-20">
-              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl bg-lime-400 dark:bg-lime-500/20 border-2 border-lime-500 dark:border-lime-400/50 shadow-md flex items-center justify-center mb-6 sm:mb-8 overflow-hidden shrink-0">
+            <div className="group relative p-8 sm:p-10 rounded-tr-[40px] rounded-bl-[40px] rounded-tl-xl rounded-br-xl bg-gradient-to-bl from-lime-300 to-lime-100 dark:from-[#131a68] dark:to-[#0d1148] border-2 border-slate-900 dark:border-[#f4ff61]/25 shadow-[3px_3px_0_0_#334155] dark:shadow-neo-glow transition-all duration-300 hover:-translate-x-0.5 hover:-translate-y-0.5 isolation z-10 hover:z-20">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl bg-lime-400 dark:bg-[#f4ff61]/10 border-2 border-lime-500 dark:border-[#f4ff61]/35 shadow-md flex items-center justify-center mb-6 sm:mb-8 overflow-hidden shrink-0">
                 <DotLottieReact src="/lottie/success.json" loop autoplay className="w-full h-full p-2 sm:p-3" />
               </div>
               <h4 className="text-xl font-black text-slate-900 dark:text-white uppercase mb-4">Pengalaman & Integritas</h4>
@@ -162,8 +162,8 @@ export function About() {
               </p>
             </div>
 
-            <div className="group relative p-8 sm:p-10 rounded-tr-[40px] rounded-bl-[40px] rounded-tl-xl rounded-br-xl bg-gradient-to-bl from-amber-300 to-amber-100 dark:from-slate-800 dark:to-slate-900 border-2 border-slate-900 dark:border-slate-700 shadow-[3px_3px_0_0_#334155] dark:shadow-neo-glow transition-all duration-300 hover:-translate-x-0.5 hover:-translate-y-0.5 isolation z-10 hover:z-20">
-              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl bg-amber-400 dark:bg-amber-500/20 border-2 border-amber-500 dark:border-amber-400/50 shadow-md flex items-center justify-center mb-6 sm:mb-8 overflow-hidden shrink-0">
+            <div className="group relative p-8 sm:p-10 rounded-tr-[40px] rounded-bl-[40px] rounded-tl-xl rounded-br-xl bg-gradient-to-bl from-amber-300 to-amber-100 dark:from-[#131a68] dark:to-[#0d1148] border-2 border-slate-900 dark:border-[#ff9900]/30 shadow-[3px_3px_0_0_#334155] dark:shadow-neo-glow transition-all duration-300 hover:-translate-x-0.5 hover:-translate-y-0.5 isolation z-10 hover:z-20">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl bg-amber-400 dark:bg-[#ff9900]/15 border-2 border-amber-500 dark:border-[#ff9900]/40 shadow-md flex items-center justify-center mb-6 sm:mb-8 overflow-hidden shrink-0">
                 <DotLottieReact src="/lottie/ai.json" loop autoplay className="w-full h-full p-2 sm:p-3" />
               </div>
               <h4 className="text-xl font-black text-slate-900 dark:text-white uppercase mb-4">Teknologi Terkini</h4>
@@ -172,8 +172,8 @@ export function About() {
               </p>
             </div>
 
-            <div className="group relative p-8 sm:p-10 rounded-tr-[40px] rounded-bl-[40px] rounded-tl-xl rounded-br-xl bg-gradient-to-bl from-rose-300 to-rose-100 dark:from-slate-800 dark:to-slate-900 border-2 border-slate-900 dark:border-slate-700 shadow-[3px_3px_0_0_#334155] dark:shadow-neo-glow transition-all duration-300 hover:-translate-x-0.5 hover:-translate-y-0.5 isolation z-10 hover:z-20">
-              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl bg-rose-400 dark:bg-rose-500/20 border-2 border-rose-500 dark:border-rose-400/50 shadow-md flex items-center justify-center mb-6 sm:mb-8 overflow-hidden shrink-0">
+            <div className="group relative p-8 sm:p-10 rounded-tr-[40px] rounded-bl-[40px] rounded-tl-xl rounded-br-xl bg-gradient-to-bl from-rose-300 to-rose-100 dark:from-[#1a0d4a] dark:to-[#0d1148] border-2 border-slate-900 dark:border-[#ff61c6]/25 shadow-[3px_3px_0_0_#334155] dark:shadow-neo-glow transition-all duration-300 hover:-translate-x-0.5 hover:-translate-y-0.5 isolation z-10 hover:z-20">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl bg-rose-400 dark:bg-[#ff61c6]/15 border-2 border-rose-500 dark:border-[#ff61c6]/40 shadow-md flex items-center justify-center mb-6 sm:mb-8 overflow-hidden shrink-0">
                 <DotLottieReact src="/lottie/emoji.json" loop autoplay className="w-full h-full p-2 sm:p-3" />
               </div>
               <h4 className="text-xl font-black text-slate-900 dark:text-white uppercase mb-4">Fokus pada Ekspresi</h4>

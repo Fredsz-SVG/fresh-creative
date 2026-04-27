@@ -51,8 +51,8 @@ export async function ensureUserInD1(
     (user.user_metadata?.name as string | undefined) ||
     null
 
-  let metaRole = roleFromJwt(user)
-  let fullName: string | null = fullNameFromJwt
+  const metaRole = roleFromJwt(user)
+  const fullName: string | null = fullNameFromJwt
 
   const existing = await db
     .prepare(`SELECT role, full_name, credits, is_suspended, updated_at FROM users WHERE id = ?`)

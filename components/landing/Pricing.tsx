@@ -276,7 +276,7 @@ export function Pricing() {
   }, [cover, packaging, videoCinematic, fotografer, tebalBuku, jumlahSiswa]);
 
   return (
-    <section id="pricing" className="w-full bg-slate-100 dark:bg-slate-950 py-16 md:py-24 transition-colors duration-500">
+    <section id="pricing" className="w-full bg-slate-100 dark:bg-[#0a0c37] py-16 md:py-24 transition-colors duration-500">
       <div className="container mx-auto px-4 md:px-8">
         <div className="text-center sm:text-left mb-12 sm:mb-16">
           <p className="font-general text-[10px] sm:text-xs uppercase tracking-[0.2em] text-lime-600 dark:text-lime-400 font-black mb-3">
@@ -292,7 +292,7 @@ export function Pricing() {
 
         {/* Tab: Digital | Fisik */}
         <div className="flex justify-center mb-10">
-          <div className="relative flex items-center rounded-xl border border-slate-900 bg-white dark:bg-slate-800/80 p-1 shadow-[4px_4px_0_0_#334155] dark:shadow-neo-glow">
+          <div className="relative flex items-center rounded-xl border border-slate-900 bg-white dark:bg-[#0d1148]/80 p-1 shadow-[4px_4px_0_0_#334155] dark:shadow-neo-glow">
             <button
               type="button"
               onClick={() => setTab("digital")}
@@ -378,7 +378,7 @@ export function Pricing() {
                         className={`relative w-full h-full rounded-[1.5rem] sm:rounded-[2rem] border-2 p-6 sm:p-8 text-left transition-all duration-300 focus:outline-none flex flex-col ${
                           isSelected
                             ? "border-slate-900 dark:border-white bg-lime-400/10 shadow-none translate-x-[3px] translate-y-[3px]"
-                            : "border-slate-900 dark:border-slate-800 bg-white dark:bg-slate-800/80 shadow-[4px_4px_0_0_#334155] dark:shadow-neo-glow-sm transition-all duration-300 hover:-translate-x-1 hover:-translate-y-1"
+                            : "border-slate-900 dark:border-[#5cecff]/20 bg-white dark:bg-[#0d1148]/80 shadow-[4px_4px_0_0_#334155] dark:shadow-neo-glow-sm transition-all duration-300 hover:-translate-x-1 hover:-translate-y-1"
                         }`}
                       >
                       {isSelected && (
@@ -546,7 +546,7 @@ export function Pricing() {
         {tab === "fisik" && (
         <>
         {!showFisikEstimator ? (
-          <div className="mx-auto max-w-3xl rounded-[1.5rem] sm:rounded-[2.5rem] border-2 border-slate-900 dark:border-slate-800 bg-white dark:bg-slate-800/80 shadow-[4px_4px_0_0_#334155] dark:shadow-neo-glow p-5 sm:p-8 md:p-12">
+          <div className="mx-auto max-w-3xl rounded-[1.5rem] sm:rounded-[2.5rem] border-2 border-slate-900 dark:border-[#5cecff]/25 bg-white dark:bg-[#0d1148]/90 shadow-[4px_4px_0_0_#334155] dark:shadow-neo-glow p-5 sm:p-8 md:p-12">
             <h3 className="font-sans text-lg sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white mb-2 sm:mb-3 flex items-center gap-3">
               <span className="h-6 sm:h-8 w-2 bg-lime-500" /> Data Awal Phygital
             </h3>
@@ -567,7 +567,7 @@ export function Pricing() {
                     if (fisikIntroError) setFisikIntroError(null);
                   }}
                   placeholder="Contoh: SMA Negeri 1 Jakarta"
-                  className="w-full rounded-xl border border-slate-900 bg-slate-50 dark:bg-slate-800 px-3 sm:px-4 py-2.5 sm:py-3 text-slate-900 dark:text-white text-xs sm:text-sm font-bold focus:shadow-[4px_4px_0_0_#334155] dark:focus-shadow-neo-glow-sm focus:outline-none transition-all shadow-[4px_4px_0_0_#334155] dark:shadow-neo-glow-sm"
+                  className="w-full rounded-xl border border-slate-900 bg-slate-50 dark:bg-[#131a68] px-3 sm:px-4 py-2.5 sm:py-3 text-slate-900 dark:text-white text-xs sm:text-sm font-bold focus:shadow-[4px_4px_0_0_#334155] dark:focus-shadow-neo-glow-sm focus:outline-none transition-all shadow-[4px_4px_0_0_#334155] dark:shadow-neo-glow-sm"
                 />
               </div>
 
@@ -583,7 +583,7 @@ export function Pricing() {
                     if (fisikIntroError) setFisikIntroError(null);
                   }}
                   placeholder="Contoh: 081234567890"
-                  className="w-full rounded-xl border border-slate-900 bg-slate-50 dark:bg-slate-800 px-3 sm:px-4 py-2.5 sm:py-3 text-slate-900 dark:text-white text-xs sm:text-sm font-bold focus:shadow-[4px_4px_0_0_#334155] dark:focus-shadow-neo-glow-sm focus:outline-none transition-all shadow-[4px_4px_0_0_#334155] dark:shadow-neo-glow-sm"
+                  className="w-full rounded-xl border border-slate-900 bg-slate-50 dark:bg-[#131a68] px-3 sm:px-4 py-2.5 sm:py-3 text-slate-900 dark:text-white text-xs sm:text-sm font-bold focus:shadow-[4px_4px_0_0_#334155] dark:focus-shadow-neo-glow-sm focus:outline-none transition-all shadow-[4px_4px_0_0_#334155] dark:shadow-neo-glow-sm"
                 />
               </div>
 
@@ -599,7 +599,7 @@ export function Pricing() {
                     if (fisikIntroError) setFisikIntroError(null);
                   }}
                   placeholder="Contoh: Budi Prasetyo"
-                  className="w-full rounded-xl border border-slate-900 dark:border-slate-800 bg-slate-50 dark:bg-slate-700/50 px-3 sm:px-4 py-2.5 sm:py-3 text-slate-900 dark:text-white text-xs sm:text-sm font-bold focus:shadow-[4px_4px_0_0_#334155] dark:focus-shadow-neo-glow-sm focus:outline-none transition-all shadow-[4px_4px_0_0_#334155] dark:shadow-neo-glow-sm"
+                  className="w-full rounded-xl border border-slate-900 dark:border-[#5cecff]/20 bg-slate-50 dark:bg-[#131a68] px-3 sm:px-4 py-2.5 sm:py-3 text-slate-900 dark:text-white text-xs sm:text-sm font-bold focus:shadow-[4px_4px_0_0_#334155] dark:focus-shadow-neo-glow-sm focus:outline-none transition-all shadow-[4px_4px_0_0_#334155] dark:shadow-neo-glow-sm"
                 />
               </div>
 
@@ -617,7 +617,7 @@ export function Pricing() {
             </div>
           </div>
         ) : (
-        <div className="mx-auto max-w-6xl rounded-[1.5rem] sm:rounded-[2.5rem] border-2 border-slate-900 dark:border-slate-800 bg-white dark:bg-slate-800/80 shadow-[4px_4px_0_0_#334155] dark:shadow-neo-glow p-5 sm:p-8 md:p-12">
+        <div className="mx-auto max-w-6xl rounded-[1.5rem] sm:rounded-[2.5rem] border-2 border-slate-900 dark:border-[#ff61c6]/25 bg-white dark:bg-[#0d1148]/90 shadow-[4px_4px_0_0_#334155] dark:shadow-neo-glow p-5 sm:p-8 md:p-12">
           <div className="mb-5 sm:mb-6 rounded-xl border border-cyan-300 dark:border-cyan-500/50 bg-cyan-50 dark:bg-cyan-900/20 p-3 sm:p-4 text-xs sm:text-sm text-cyan-900 dark:text-cyan-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <span>
               <strong>{fisikIntro.schoolName}</strong> • {fisikIntro.contactName} ({fisikIntro.whatsapp})
@@ -739,7 +739,7 @@ export function Pricing() {
                         type="checkbox"
                         checked={videoCinematic}
                         onChange={(e) => setVideoCinematic(e.target.checked)}
-                        className="h-5 w-5 sm:h-6 sm:w-6 rounded-none border border-slate-900 dark:border-white bg-white dark:bg-slate-800 text-lime-500 focus:ring-0 shadow-[4px_4px_0_0_#334155] dark:shadow-neo-glow-sm checked:bg-lime-500"
+                          className="h-5 w-5 sm:h-6 sm:w-6 rounded-none border border-slate-900 dark:border-[#5cecff]/50 bg-white dark:bg-[#131a68] text-lime-500 focus:ring-0 shadow-[4px_4px_0_0_#334155] dark:shadow-neo-glow-sm checked:bg-lime-500"
                       />
                       <span className="text-xs sm:text-sm text-slate-700 dark:text-white/90">
                         Video Cinematic
@@ -757,7 +757,7 @@ export function Pricing() {
                 <select
                   value={fotografer}
                   onChange={(e) => setFotografer(e.target.value as typeof fotografer)}
-                  className="w-full rounded-xl border border-slate-900 bg-slate-50 dark:bg-slate-800 px-3 sm:px-4 py-2 sm:py-2.5 text-slate-900 dark:text-white text-xs sm:text-sm font-bold focus:shadow-[4px_4px_0_0_#334155] dark:focus-shadow-neo-glow-sm focus:outline-none transition-all shadow-[4px_4px_0_0_#334155] dark:shadow-neo-glow-sm"
+                  className="w-full rounded-xl border border-slate-900 bg-slate-50 dark:bg-[#131a68] px-3 sm:px-4 py-2 sm:py-2.5 text-slate-900 dark:text-white text-xs sm:text-sm font-bold focus:shadow-[4px_4px_0_0_#334155] dark:focus-shadow-neo-glow-sm focus:outline-none transition-all shadow-[4px_4px_0_0_#334155] dark:shadow-neo-glow-sm"
                 >
                   {FOTOGRAFER_OPTIONS.map((opt) => (
                     <option key={opt.id} value={opt.id} className="bg-white dark:bg-gray-900 text-slate-900 dark:text-white">
@@ -849,7 +849,7 @@ export function Pricing() {
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="relative w-full max-w-md bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-white p-6 sm:p-8 rounded-[2rem] shadow-[8px_8px_0_0_#000] dark:shadow-neo-glow"
+              className="relative w-full max-w-md bg-white dark:bg-[#0d1148] border-2 border-slate-900 dark:border-[#5cecff]/50 p-6 sm:p-8 rounded-[2rem] shadow-[8px_8px_0_0_#000] dark:shadow-neo-glow"
             >
               <div className="flex items-center justify-between mb-6">
                 <h3 className="font-general text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">
@@ -886,7 +886,7 @@ export function Pricing() {
                         className={`flex items-center gap-4 p-4 rounded-2xl border-2 transition-all cursor-pointer ${
                           checked
                             ? "border-slate-900 dark:border-white bg-lime-400/10 shadow-none translate-x-[2px] translate-y-[2px]"
-                            : "border-slate-900 dark:border-slate-900 bg-slate-50 dark:bg-slate-800/50 hover:border-slate-400 shadow-[4px_4px_0_0_#334155] dark:shadow-neo-glow-sm"
+                            : "border-slate-900 dark:border-[#ff61c6]/20 bg-slate-50 dark:bg-[#131a68]/50 hover:border-slate-400 shadow-[4px_4px_0_0_#334155] dark:shadow-neo-glow-sm"
                         }`}
                       >
                         <div className="relative flex items-center">
