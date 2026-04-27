@@ -1,21 +1,24 @@
 import { Hono } from 'hono'
-import { getSupabaseClient } from '../../lib/supabase'
-import { ensureUserInD1, honoEnvForSupabasePublicSync } from '../../lib/d1-users'
+import { ensureUserInD1 } from '../../lib/d1-users'
 import { getD1 } from '../../lib/edge-env'
+import { AppEnv, requireAuthJwt } from '../../middleware'
 
-const inviteTokenJoin = new Hono()
+const inviteTokenJoin = new Hono<AppEnv>()
+inviteTokenJoin.use('*', requireAuthJwt)
 
 inviteTokenJoin.post('/:token/join', async (c) => {
-  const supabase = getSupabaseClient(c)
   const db = getD1(c)
   if (!db) return c.json({ error: 'Database not configured' }, 503)
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) {
+  const user0 = c.get('user')
+  if (!user0?.id) {
     return c.json({ error: 'Unauthorized. Please log in to join.' }, 401)
   }
-  await ensureUserInD1(db, user, honoEnvForSupabasePublicSync(c.env))
+  await ensureUserInD1(db, {
+    id: user0.id,
+    email: user0.email ?? null,
+    user_metadata: {},
+    app_metadata: user0.role ? { role: user0.role } : {},
+  })
 
   const token = c.req.param('token')
   if (!token) {

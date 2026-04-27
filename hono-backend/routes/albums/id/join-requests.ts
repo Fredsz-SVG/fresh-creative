@@ -1,20 +1,19 @@
 import { Hono } from 'hono'
-import { getSupabaseClient } from '../../../lib/supabase'
 import { getD1 } from '../../../lib/edge-env'
 import { publishRealtimeEventFromContext } from '../../../lib/realtime'
+import { AppEnv, requireAuthJwt } from '../../../middleware'
+import { getAuthUserFromContext } from '../../../lib/auth-user'
 
-const albumJoinRequestsRoute = new Hono()
+const albumJoinRequestsRoute = new Hono<AppEnv>()
+albumJoinRequestsRoute.use('*', requireAuthJwt)
 
 albumJoinRequestsRoute.get('/', async (c) => {
   const albumId = c.req.param('id')
   try {
-    const supabase = getSupabaseClient(c)
     const db = getD1(c)
     if (!db) return c.json({ error: 'Database not configured' }, 503)
     const status = c.req.query('status')
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
+    const user = getAuthUserFromContext(c)
     if (!user) {
       return c.json({ error: 'Unauthorized' }, 401)
     }
@@ -71,14 +70,10 @@ albumJoinRequestsRoute.post('/', async (c) => {
     if (!student_name || !email) {
       return c.json({ error: 'Nama dan email wajib diisi' }, 400)
     }
-    const supabase = getSupabaseClient(c)
     const db = getD1(c)
     if (!db) return c.json({ error: 'Database not configured' }, 503)
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
-    if (authError || !user) {
+    const user = getAuthUserFromContext(c)
+    if (!user) {
       return c.json({ error: 'Unauthorized - silakan login terlebih dahulu' }, 401)
     }
 

@@ -1,12 +1,12 @@
 import { Hono } from 'hono'
-import { getSupabaseClient } from '../../lib/supabase'
 import { getD1 } from '../../lib/edge-env'
 import { fileToDataUri, requestIsMultipart } from '../../lib/ai-multipart'
-import { deductCreditsFromSupabaseAndMirrorToD1 } from '../../lib/credits'
+import { deductCreditsFromD1 } from '../../lib/credits'
 import { imageStringToGeminiInput, type GeminiImageInput } from '../../lib/gemini-tryon'
 import { generatePhotoGroupGemini } from '../../lib/gemini-photogroup'
 import { respondWithReplicateFriendlyError } from '../../lib/replicate-error-response'
 import Replicate from 'replicate'
+import { AppEnv, requireAuthJwt } from '../../middleware'
 
 type ReplicateEnv = {
   REPLICATE_API_TOKEN?: string
@@ -18,18 +18,15 @@ type PhotoGroupBody = {
   notes?: string
 }
 
-const photogroup = new Hono()
+const photogroup = new Hono<AppEnv>()
+photogroup.use('*', requireAuthJwt)
 
 photogroup.post('/', async (c) => {
   try {
-    const supabase = getSupabaseClient(c)
     const db = getD1(c)
     if (!db) return c.json({ ok: false, error: 'Database not configured' }, 503)
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
-    if (authError || !user) return c.json({ ok: false, error: 'Unauthorized' }, 401)
+    const user = c.get('user')
+    if (!user?.id) return c.json({ ok: false, error: 'Unauthorized' }, 401)
 
     const REPLICATE_API_TOKEN = ((c.env as ReplicateEnv).REPLICATE_API_TOKEN || '').trim()
     if (!REPLICATE_API_TOKEN)
@@ -78,8 +75,7 @@ photogroup.post('/', async (c) => {
       .first<{ credits_per_use: number }>()
     const creditsPerUse = pricing?.credits_per_use ?? 0
     if (creditsPerUse > 0) {
-      const r = await deductCreditsFromSupabaseAndMirrorToD1({
-        env: c.env as Record<string, string>,
+      const r = await deductCreditsFromD1({
         db,
         userId: user.id,
         amount: creditsPerUse,

@@ -15,8 +15,7 @@ port = 8787
 
 # Lokal: salin hono-backend/.dev.vars.example ke .dev.vars (Wrangler memuat .dev.vars saat `wrangler dev`).
 
-# Auth: tetap Supabase (login/session). Worker memverifikasi access JWT dengan SUPABASE_JWT_SECRET
-# (Dashboard Supabase → Settings → API → JWT Secret). Client kirim Bearer token atau cookie SSR.
+# Auth: Firebase Auth-only. Worker memverifikasi Firebase ID token via Google JWKS (jose).
 
 # D1 — binding "DB" dipakai di routes (mis. select-area). Migrasi: d1/migrations/
 [[d1_databases]]
@@ -41,4 +40,4 @@ tag = "v1"
 new_sqlite_classes = ["RealtimeHubDurableObject"]
 
 # [vars]
-# SUPABASE_JWT_SECRET = "isi-dari-supabase-dashboard"
+# FIREBASE_PROJECT_ID = "your-firebase-project-id"

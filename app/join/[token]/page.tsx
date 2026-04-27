@@ -3,9 +3,9 @@
 import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
-import { supabase } from '@/lib/supabase'
 import { fetchWithAuth } from '../../../lib/api-client'
 import { asObject, asString, getErrorMessage } from '@/components/yearbook/utils/response-narrowing'
+import { onAuthChange } from '@/lib/auth-client'
 
 export default function JoinAlbumPage() {
   const router = useRouter()
@@ -23,8 +23,13 @@ export default function JoinAlbumPage() {
     }
 
     const run = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session?.user) {
+      const user = await new Promise<import('@/lib/auth-client').AuthUser | null>((resolve) => {
+        const unsub = onAuthChange((u) => {
+          unsub()
+          resolve(u)
+        })
+      })
+      if (!user) {
         const res = await fetchWithAuth(`/api/albums/invite/${encodeURIComponent(token)}`)
         const data = asObject(await res.json().catch(() => ({})))
         const name = asString(data.name)

@@ -1,24 +1,22 @@
 import { Hono } from 'hono'
-import { getSupabaseClient } from '../../lib/supabase'
 import { getRole } from '../../lib/auth'
 import { getD1 } from '../../lib/edge-env'
-import { ensureUserInD1, honoEnvForSupabasePublicSync } from '../../lib/d1-users'
+import { ensureUserInD1 } from '../../lib/d1-users'
+import { AppEnv, requireAuthJwt } from '../../middleware'
+import { getAuthUserFromContext } from '../../lib/auth-user'
 
-const transactions = new Hono()
+const transactions = new Hono<AppEnv>()
+transactions.use('*', requireAuthJwt)
 
 const txSelect = `t.id, t.user_id, t.external_id, t.amount, t.status, t.payment_method, t.invoice_url, t.created_at, t.album_id, t.description, a.package_snapshot, t.new_students_count, a.students_count as total_students,
   cp.credits as pkg_credits, a.name as album_name`
 
 transactions.get('/', async (c) => {
-  const supabase = getSupabaseClient(c)
   const db = getD1(c)
   if (!db) return c.json({ error: 'Database not configured' }, 503)
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser()
-  if (authError || !user) return c.json({ error: 'Unauthorized' }, 401)
-  await ensureUserInD1(db, user, honoEnvForSupabasePublicSync(c.env))
+  const user = getAuthUserFromContext(c)
+  if (!user) return c.json({ error: 'Unauthorized' }, 401)
+  await ensureUserInD1(db, user)
   if ((await getRole(c, user)) !== 'admin') return c.json({ error: 'Forbidden' }, 403)
   const url = new URL(c.req.url)
   const scope = url.searchParams.get('scope')

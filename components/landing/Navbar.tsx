@@ -8,9 +8,8 @@ import Link from "next/link";
 import { NAV_ITEMS } from "./constants";
 import { cn } from "@/lib/utils";
 import { ThemeContext } from "@/app/providers/ThemeProvider";
-import { supabase } from "@/lib/supabase";
-import { User } from "@supabase/supabase-js";
-import { getRole, getRoleFromSession } from "@/lib/auth";
+import { onAuthChange, type AuthUser } from "@/lib/auth-client";
+import { fetchWithAuth } from "@/lib/api-client";
 
 function getClientOrigin(): string {
   const explicit = process.env.NEXT_PUBLIC_APP_URL?.trim();
@@ -33,7 +32,7 @@ export function Navbar() {
   const [mounted, setMounted] = useState(false);
   const [audioFiles, setAudioFiles] = useState<string[]>([]);
   const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [role, setRole] = useState<'admin' | 'user' | null>(null);
   const [isResolvingDashboard, setIsResolvingDashboard] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -66,40 +65,22 @@ export function Navbar() {
   useEffect(() => {
     setMounted(true);
 
-    // Check initial session
-    const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      const currentUser = session?.user ?? null;
-      setUser(currentUser);
-      if (session) {
-        // Set role immediately from session metadata for fast response
-        setRole(getRoleFromSession(session));
-        
-        // Then fetch/verify from DB for accuracy
-        const userRole = await getRole(supabase, currentUser);
-        setRole(userRole);
-      } else {
+    const unsub = onAuthChange(async (u) => {
+      setUser(u);
+      if (!u) {
         setRole(null);
+        return;
       }
-    };
-    checkSession();
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      const currentUser = session?.user ?? null;
-      setUser(currentUser);
-      if (session) {
-        // Set role immediately from session metadata for fast response
-        setRole(getRoleFromSession(session));
-        
-        const userRole = await getRole(supabase, currentUser);
-        setRole(userRole);
-      } else {
-        setRole(null);
+      try {
+        const res = await fetchWithAuth('/api/user/bootstrap');
+        const data = (await res.json().catch(() => ({}))) as any;
+        setRole(data?.me?.role === 'admin' ? 'admin' : 'user');
+      } catch {
+        setRole('user');
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => unsub();
   }, []);
 
 
@@ -164,7 +145,16 @@ export function Navbar() {
     if (isResolvingDashboard) return;
     setIsResolvingDashboard(true);
     try {
-      const resolvedRole = role ?? (await getRole(supabase, user));
+      let resolvedRole: 'admin' | 'user' = role ?? 'user';
+      if (!role) {
+        try {
+          const res = await fetchWithAuth('/api/user/bootstrap');
+          const data = (await res.json().catch(() => ({}))) as any;
+          resolvedRole = data?.me?.role === 'admin' ? 'admin' : 'user';
+        } catch {
+          resolvedRole = 'user';
+        }
+      }
       if (resolvedRole) setRole(resolvedRole);
       window.location.assign(dashboardUrlForRole(resolvedRole === "admin" ? "admin" : "user"));
     } finally {

@@ -1,24 +1,22 @@
 import { Hono } from 'hono'
-import { getSupabaseClient } from '../../../lib/supabase'
 import { getD1 } from '../../../lib/edge-env'
 import { publishRealtimeEventFromContext } from '../../../lib/realtime'
+import { AppEnv, requireAuthJwt } from '../../../middleware'
+import { getAuthUserFromContext } from '../../../lib/auth-user'
 
-const memberCheckoutRoute = new Hono()
+const memberCheckoutRoute = new Hono<AppEnv>()
+memberCheckoutRoute.use('*', requireAuthJwt)
 
 memberCheckoutRoute.post('/', async (c) => {
   try {
     const albumId = c.req.param('id')
     if (!albumId) return c.json({ error: 'Album ID required' }, 400)
 
-    const supabase = getSupabaseClient(c)
     const db = getD1(c)
     if (!db) return c.json({ error: 'Database not configured' }, 503)
 
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
-    if (authError || !user) return c.json({ error: 'Unauthorized' }, 401)
+    const user = getAuthUserFromContext(c)
+    if (!user) return c.json({ error: 'Unauthorized' }, 401)
 
     const body = await c.req.json().catch(() => ({}))
     const { access_id } = body

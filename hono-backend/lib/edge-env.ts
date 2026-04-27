@@ -10,9 +10,3 @@ export function getD1(c: Context): D1Database | undefined {
 export function getAssets(c: Context): R2Bucket | undefined {
   return (c.env as { ASSETS?: R2Bucket }).ASSETS
 }
-
-/** Edge cepat: tanpa hop ke Supabase Auth API jika JWT secret ada. */
-export function hasJwtSecret(c: Context): boolean {
-  const s = (c.env as { SUPABASE_JWT_SECRET?: string }).SUPABASE_JWT_SECRET
-  return typeof s === 'string' && s.length > 0
-}

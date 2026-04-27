@@ -78,16 +78,10 @@ graph LR
 ## Migration Steps
 
 ### Required
-```sql
--- Run this first
-\i supabase/migrations/21_add_student_invite_token.sql
-```
+Database sudah memakai D1 migration (`hono-backend/d1/migrations/*`). Tidak ada langkah migrasi Supabase lagi.
 
 ### Optional Cleanup
-```sql
--- Only run if you want to remove old invite system completely
-\i supabase/migrations/22_cleanup_deprecated_album_invites.sql
-```
+Tidak diperlukan (sudah dihapus dari D1 schema).
 
 ## API Endpoints Status
 

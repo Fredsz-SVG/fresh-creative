@@ -1,17 +1,16 @@
 import { Hono } from 'hono'
-import { getSupabaseClient } from '../../../../lib/supabase'
 import { getD1 } from '../../../../lib/edge-env'
 import { publishRealtimeEventFromContext } from '../../../../lib/realtime'
+import { AppEnv, requireAuthJwt } from '../../../../middleware'
+import { getAuthUserFromContext } from '../../../../lib/auth-user'
 
-const classRequestRoute = new Hono()
+const classRequestRoute = new Hono<AppEnv>()
+classRequestRoute.use('*', requireAuthJwt)
 
 classRequestRoute.post('/', async (c) => {
-  const supabase = getSupabaseClient(c)
   const db = getD1(c)
   if (!db) return c.json({ error: 'Database not configured' }, 503)
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const user = getAuthUserFromContext(c)
   if (!user) return c.json({ error: 'Unauthorized' }, 401)
 
   const albumId = c.req.param('id')

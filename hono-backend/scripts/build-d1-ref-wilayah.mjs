@@ -8,7 +8,7 @@ import { fileURLToPath } from 'url'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const root = path.join(__dirname, '../..')
-const legacyPath = path.join(root, 'supabase/migrations/_legacy/0001_ref_indonesia_wilayah.sql')
+const legacyPath = path.join(root, 'scripts/ref-indonesia-wilayah.postgres.sql')
 const outPath = path.join(__dirname, '../d1/migrations/0003_seed_ref_indonesia.sql')
 
 const legacy = fs.readFileSync(legacyPath, 'utf8')

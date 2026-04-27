@@ -1,19 +1,16 @@
 import { Hono } from 'hono'
-import { getSupabaseClient } from '../../../../lib/supabase'
 import { getD1 } from '../../../../lib/edge-env'
+import { AppEnv, requireAuthJwt } from '../../../../middleware'
+import { getAuthUserFromContext } from '../../../../lib/auth-user'
 
-const joinAsOwnerRoute = new Hono()
+const joinAsOwnerRoute = new Hono<AppEnv>()
+joinAsOwnerRoute.use('*', requireAuthJwt)
 
 joinAsOwnerRoute.post('/', async (c) => {
-  const supabase = getSupabaseClient(c)
   const db = getD1(c)
   if (!db) return c.json({ error: 'Database not configured' }, 503)
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) {
-    return c.json({ error: 'Unauthorized' }, 401)
-  }
+  const user = getAuthUserFromContext(c)
+  if (!user) return c.json({ error: 'Unauthorized' }, 401)
 
   const albumId = c.req.param('id')
   const classId = c.req.param('classId')
@@ -70,8 +67,8 @@ joinAsOwnerRoute.post('/', async (c) => {
   }
 
   const body = await c.req.json().catch(() => ({}))
-  const fullName = (user.user_metadata?.full_name as string)?.trim() || ''
-  const userEmail = (user.email as string)?.trim() || null
+  const fullName = (user.user_metadata?.full_name as string | undefined)?.trim() || ''
+  const userEmail = (user.email as string | null | undefined)?.trim() || null
   const studentName =
     typeof body?.student_name === 'string' && body.student_name.trim()
       ? body.student_name.trim()

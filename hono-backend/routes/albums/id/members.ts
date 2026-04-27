@@ -1,18 +1,17 @@
 import { Hono } from 'hono'
-import { getSupabaseClient } from '../../../lib/supabase'
 import { getRole } from '../../../lib/auth'
 import { getD1 } from '../../../lib/edge-env'
+import { AppEnv, requireAuthJwt } from '../../../middleware'
+import { getAuthUserFromContext } from '../../../lib/auth-user'
 
-const albumsIdMembers = new Hono()
+const albumsIdMembers = new Hono<AppEnv>()
+albumsIdMembers.use('*', requireAuthJwt)
 
 // GET /api/albums/:id/members
 albumsIdMembers.get('/', async (c) => {
-  const supabase = getSupabaseClient(c)
   const db = getD1(c)
   if (!db) return c.json({ error: 'Database not configured' }, 503)
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const user = getAuthUserFromContext(c)
   if (!user) return c.json({ error: 'Unauthorized' }, 401)
 
   const albumId = c.req.param('id')
@@ -123,12 +122,9 @@ albumsIdMembers.get('/', async (c) => {
 
 // POST /api/albums/:id/members
 albumsIdMembers.post('/', async (c) => {
-  const supabase = getSupabaseClient(c)
   const db = getD1(c)
   if (!db) return c.json({ error: 'Database not configured' }, 503)
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const user = getAuthUserFromContext(c)
   if (!user) return c.json({ error: 'Unauthorized' }, 401)
 
   const albumId = c.req.param('id')
@@ -177,12 +173,9 @@ albumsIdMembers.post('/', async (c) => {
 
 // PATCH /api/albums/:id/members
 albumsIdMembers.patch('/', async (c) => {
-  const supabase = getSupabaseClient(c)
   const db = getD1(c)
   if (!db) return c.json({ error: 'Database not configured' }, 503)
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const user = getAuthUserFromContext(c)
   if (!user) return c.json({ error: 'Unauthorized' }, 401)
 
   const albumId = c.req.param('id')
@@ -216,12 +209,9 @@ albumsIdMembers.patch('/', async (c) => {
 
 // DELETE /api/albums/:id/members
 albumsIdMembers.delete('/', async (c) => {
-  const supabase = getSupabaseClient(c)
   const db = getD1(c)
   if (!db) return c.json({ error: 'Database not configured' }, 503)
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const user = getAuthUserFromContext(c)
   if (!user) return c.json({ error: 'Unauthorized' }, 401)
   const albumId = c.req.param('id')
   const searchParams = c.req.query()

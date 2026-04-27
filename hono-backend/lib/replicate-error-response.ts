@@ -89,9 +89,8 @@ export function respondWithReplicateFriendlyError(
     )
   }
 
-  // Bukan Replicate: sering error Supabase/D1/jaringan — tetap JSON jelas, hindari 500 generik tanpa isi.
+  // Bukan Replicate: sering error D1/jaringan — tetap JSON jelas, hindari 500 generik tanpa isi.
   if (
-    lower.includes('supabase') ||
     lower.includes('jwt') ||
     lower.includes('network') ||
     lower.includes('fetch') ||

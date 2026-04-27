@@ -1,16 +1,17 @@
 import { Hono } from 'hono'
-import { getSupabaseClient } from '../../../../lib/supabase'
 import { getRole } from '../../../../lib/auth'
 import { getD1, getAssets } from '../../../../lib/edge-env'
 import { putAlbumPhoto } from '../../../../lib/r2-assets'
 import { publicAlbumAssetUrl } from '../../../../lib/public-file-url'
+import { AppEnv, requireAuthJwt } from '../../../../middleware'
+import { getAuthUserFromContext } from '../../../../lib/auth-user'
 
-const teacherIdPhotos = new Hono()
+const teacherIdPhotos = new Hono<AppEnv>()
+teacherIdPhotos.use('*', requireAuthJwt)
 
 // POST /api/albums/:id/teachers/:teacherId/photos
 teacherIdPhotos.post('/', async (c) => {
   try {
-    const supabase = getSupabaseClient(c)
     const db = getD1(c)
     const bucket = getAssets(c)
     if (!db) return c.json({ error: 'Database not configured' }, 503)
@@ -37,11 +38,8 @@ teacherIdPhotos.post('/', async (c) => {
 
     if (!fileData || fileData.byteLength === 0) return c.json({ error: 'No file provided' }, 400)
 
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
-    if (authError || !user) return c.json({ error: 'Unauthorized' }, 401)
+    const user = getAuthUserFromContext(c)
+    if (!user) return c.json({ error: 'Unauthorized' }, 401)
 
     const isGlobalAdmin = (await getRole(c, user)) === 'admin'
 

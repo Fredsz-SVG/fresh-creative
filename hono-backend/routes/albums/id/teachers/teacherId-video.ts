@@ -1,15 +1,16 @@
 import { Hono } from 'hono'
-import { getSupabaseClient } from '../../../../lib/supabase'
 import { getRole } from '../../../../lib/auth'
 import { getD1, getAssets } from '../../../../lib/edge-env'
 import { deleteAlbumObject, putAlbumPhoto } from '../../../../lib/r2-assets'
 import { publicAlbumAssetUrl } from '../../../../lib/public-file-url'
+import { AppEnv, requireAuthJwt } from '../../../../middleware'
+import { getAuthUserFromContext } from '../../../../lib/auth-user'
 
-const teacherVideo = new Hono()
+const teacherVideo = new Hono<AppEnv>()
+teacherVideo.use('*', requireAuthJwt)
 
 teacherVideo.post('/', async (c) => {
   try {
-    const supabase = getSupabaseClient(c)
     const db = getD1(c)
     const bucket = getAssets(c)
     if (!db) return c.json({ error: 'Database not configured' }, 503)
@@ -33,13 +34,8 @@ teacherVideo.post('/', async (c) => {
       return c.json({ error: 'Video maksimal 20MB' }, 413)
     }
 
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
-    if (authError || !user) {
-      return c.json({ error: 'Unauthorized' }, 401)
-    }
+    const user = getAuthUserFromContext(c)
+    if (!user) return c.json({ error: 'Unauthorized' }, 401)
 
     const isGlobalAdmin = (await getRole(c, user)) === 'admin'
 
@@ -126,7 +122,6 @@ teacherVideo.post('/', async (c) => {
 
 teacherVideo.delete('/', async (c) => {
   try {
-    const supabase = getSupabaseClient(c)
     const db = getD1(c)
     const bucket = getAssets(c)
     if (!db) return c.json({ error: 'Database not configured' }, 503)
@@ -134,13 +129,8 @@ teacherVideo.delete('/', async (c) => {
     const albumId = c.req.param('id')
     const teacherId = c.req.param('teacherId')
 
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
-    if (authError || !user) {
-      return c.json({ error: 'Unauthorized' }, 401)
-    }
+    const user = getAuthUserFromContext(c)
+    if (!user) return c.json({ error: 'Unauthorized' }, 401)
 
     const isGlobalAdmin = (await getRole(c, user)) === 'admin'
 

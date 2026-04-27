@@ -2,9 +2,9 @@
 
 import { Suspense, useState, useEffect, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
 import { fetchWithAuth } from '../../../lib/api-client'
 import { asObject, asString, getErrorMessage } from '@/components/yearbook/utils/response-narrowing'
+import { onAuthChange, signOut } from '@/lib/auth-client'
 
 const OTP_COOLDOWN_KEY = 'otp_cooldown_by_email'
 /** Debounce: jangan kirim OTP otomatis lagi ke email yang sama dalam jangka waktu ini (Strict Mode / remount) */
@@ -107,8 +107,13 @@ function VerifyOtpContent() {
     const { signal } = controller
 
     const run = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session?.user) {
+      const user = await new Promise<import('@/lib/auth-client').AuthUser | null>((resolve) => {
+        const unsub = onAuthChange((u) => {
+          unsub()
+          resolve(u)
+        })
+      })
+      if (!user) {
         router.replace('/login')
         return
       }
@@ -116,14 +121,15 @@ function VerifyOtpContent() {
       const data = asObject(await res.json().catch(() => ({})))
       if (data.suspended) {
         await fetchWithAuth('/api/auth/logout')
-        await supabase.auth.signOut()
+        await signOut()
         router.replace('/login?error=account_suspended')
         return
       }
       if (data.verified) {
         const safeNext = nextPath.startsWith('/') && !nextPath.startsWith('//') ? nextPath : ''
-        const { getRole } = await import('@/lib/auth')
-        const role = await getRole(supabase, session.user)
+        const resBootstrap = await fetchWithAuth('/api/user/bootstrap')
+        const bootstrap = asObject(await resBootstrap.json().catch(() => ({}))) as any
+        const role = bootstrap?.me?.role === 'admin' ? 'admin' : 'user'
         let finalNext = safeNext
         if (role === 'admin' && finalNext.startsWith('/user')) {
           finalNext = finalNext.replace('/user', '/admin')
@@ -131,7 +137,7 @@ function VerifyOtpContent() {
         router.replace(finalNext || (role === 'admin' ? '/admin' : '/user'))
         return
       }
-      const userEmail = session.user.email ?? ''
+      const userEmail = user.email ?? ''
       if (mountedRef.current) {
         setEmail(userEmail)
         setChecking(false)
@@ -230,7 +236,7 @@ function VerifyOtpContent() {
     setBackLoading(true)
     try {
       await fetchWithAuth('/api/auth/logout')
-      await supabase.auth.signOut()
+      await signOut()
       window.location.href = '/login'
     } catch {
       window.location.href = '/login'

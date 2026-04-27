@@ -2,13 +2,12 @@
 
 import { useEffect, useLayoutEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
-import { getRole } from '@/lib/auth'
 import DashboardShell from '@/components/dashboard/DashboardShell'
 import { LayoutDashboard, History } from 'lucide-react'
 import type { NavSection } from '@/components/dashboard/DashboardShell'
 import { PRICING_SECTION_ADMIN, ALBUMS_SECTION_ADMIN, SHOWCASE_SECTION_ADMIN } from '@/lib/dashboard-nav'
 import { fetchWithAuth } from '../../lib/api-client'
+import { onAuthChange, signOut } from '@/lib/auth-client'
 
 /** Session cache: after first successful admin gate, skip full-screen spinner when layout remounts (e.g. back from /album/.../preview). */
 const ADMIN_GATE_STORAGE_KEY = 'fresh_admin_layout_verified_v1'
@@ -87,8 +86,13 @@ export default function AdminLayoutClient({
     useEffect(() => {
         let unsubscribed = false
         const check = async () => {
-            const { data: { session } } = await supabase.auth.getSession()
-            if (!session) {
+            const user = await new Promise<import('@/lib/auth-client').AuthUser | null>((resolve) => {
+                const unsub = onAuthChange((u) => {
+                    unsub()
+                    resolve(u)
+                })
+            })
+            if (!user) {
                 clearAdminGate()
                 if (!unsubscribed) setOk(false)
                 if (!unsubscribed) router.replace('/login')
@@ -105,7 +109,7 @@ export default function AdminLayoutClient({
                     clearAdminGate()
                     if (!unsubscribed) setOk(false)
                     await fetchWithAuth('/api/auth/logout')
-                    await supabase.auth.signOut()
+                    await signOut()
                     if (!unsubscribed) router.replace('/login?error=account_suspended')
                     return
                 }
@@ -118,7 +122,14 @@ export default function AdminLayoutClient({
             } catch {
             }
 
-            const role = await getRole(supabase, session.user)
+            let role: 'admin' | 'user' = 'user'
+            try {
+                const resBootstrap = await fetchWithAuth('/api/user/bootstrap')
+                const bootstrap = (await resBootstrap.json().catch(() => ({}))) as any
+                role = bootstrap?.me?.role === 'admin' ? 'admin' : 'user'
+            } catch {
+                role = 'user'
+            }
             if (role !== 'admin') {
                 clearAdminGate()
                 if (!unsubscribed) setOk(false)
@@ -126,9 +137,9 @@ export default function AdminLayoutClient({
                 return
             }
 
-            setUserEmail(session.user?.email ?? '')
-            setUserName(session.user?.user_metadata?.full_name ?? session.user?.email ?? 'Admin')
-            setUserId(session.user?.id ?? '')
+            setUserEmail(user.email ?? '')
+            setUserName(user.displayName ?? user.email ?? 'Admin')
+            setUserId(user.uid ?? '')
             setOk(true)
             writeAdminGate()
         }
@@ -148,7 +159,7 @@ export default function AdminLayoutClient({
                     clearAdminGate()
                     setOk(false)
                     await fetchWithAuth('/api/auth/logout')
-                    await supabase.auth.signOut()
+                    await signOut()
                     router.replace('/login?error=account_suspended')
                 }
             }
@@ -161,7 +172,7 @@ export default function AdminLayoutClient({
     const handleLogout = async () => {
         clearAdminGate()
         await fetchWithAuth('/api/auth/logout')
-        await supabase.auth.signOut()
+        await signOut()
         router.refresh()
         router.push('/login')
     }

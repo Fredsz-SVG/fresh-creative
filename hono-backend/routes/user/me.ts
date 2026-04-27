@@ -3,7 +3,7 @@ import { getD1 } from '../../lib/edge-env'
 import { ensureUserStubInD1, getUserRow } from '../../lib/d1-users'
 import { requireAuthJwt, getAuthUserId } from '../../middleware'
 import { getUserMeCache, setUserMeCache } from '../../lib/user-response-cache'
-import { getCreditsFromSupabase, mirrorCreditsToD1 } from '../../lib/credits'
+import { getCreditsFromD1 } from '../../lib/credits'
 
 const userMe = new Hono()
 userMe.use('*', requireAuthJwt)
@@ -29,16 +29,7 @@ userMe.get('/', async (c) => {
   }
 
   await ensureUserStubInD1(db, userId)
-  // Source of truth: Supabase public.users.credits
-  let credits = 0
-  try {
-    credits = await getCreditsFromSupabase(c.env as Record<string, string>, userId)
-    await mirrorCreditsToD1(db, userId, credits)
-  } catch {
-    // fallback to D1 if env missing
-    const rowFallback = await getUserRow(db, userId)
-    credits = rowFallback?.credits ?? 0
-  }
+  const credits = await getCreditsFromD1(db, userId)
   const row = await getUserRow(db, userId)
   const payload = {
     id: userId,

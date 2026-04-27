@@ -1,10 +1,9 @@
 -- D1 (SQLite) — struktur bisnis tunggal (greenfield, tanpa impor data lama).
--- Acuan model: supabase/migrations/_legacy/0000_freshcreative_full_schema.sql (Postgres).
--- UUID → TEXT (sama string dengan Supabase). Tanpa RLS di DB — akses lewat Worker + JWT.
+-- UUID → TEXT. Tanpa RLS di DB — akses lewat Worker + Firebase ID token.
 -- Urutan migrasi: lihat hono-backend/d1/README.md
 
 -- =============================================================================
--- Users (sinkron manual dari auth Supabase / baris public.users)
+-- Users
 -- =============================================================================
 CREATE TABLE IF NOT EXISTS users (
   id TEXT PRIMARY KEY NOT NULL,

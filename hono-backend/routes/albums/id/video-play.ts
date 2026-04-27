@@ -1,9 +1,10 @@
 import type { Context } from 'hono'
 import { Hono } from 'hono'
-import { getSupabaseClient } from '../../../lib/supabase'
 import { getD1, getAssets } from '../../../lib/edge-env'
 import { getAlbumObject } from '../../../lib/r2-assets'
 import { albumPathFromR2Key } from '../../../lib/storage-layout'
+import { AppEnv, requireAuthJwt } from '../../../middleware'
+import { getAuthUserFromContext } from '../../../lib/auth-user'
 
 function tryDecodeURIComponent(str: string): string {
   try {
@@ -33,7 +34,7 @@ function relativeAlbumPathFromUrl(videoUrl: string): string | null {
   return null
 }
 
-const albumsIdVideoPlay = new Hono()
+const albumsIdVideoPlay = new Hono<AppEnv>()
 
 async function streamVideoFromR2(c: Context, videoUrl: string): Promise<Response> {
   const bucket = getAssets(c)
@@ -102,10 +103,8 @@ albumsIdVideoPlay.get('/public', async (c) => {
 })
 
 albumsIdVideoPlay.get('/', async (c) => {
-  const supabase = getSupabaseClient(c)
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  await requireAuthJwt(c, async () => {})
+  const user = getAuthUserFromContext(c)
   if (!user) return c.json({ error: 'Unauthorized' }, 401)
 
   const albumId = c.req.param('id')

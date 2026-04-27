@@ -18,7 +18,6 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import TopUpModal from './TopUpModal'
-import { supabase } from '@/lib/supabase'
 import { fetchWithAuth } from '../../lib/api-client'
 import { ThemeContext } from '@/app/providers/ThemeProvider'
 import { asObject } from '@/components/yearbook/utils/response-narrowing'

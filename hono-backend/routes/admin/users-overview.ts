@@ -1,36 +1,33 @@
 import type { Context } from 'hono'
 import { Hono } from 'hono'
-import { getSupabaseClient, getAdminSupabaseClient } from '../../lib/supabase'
 import { getRole } from '../../lib/auth'
 import { getD1 } from '../../lib/edge-env'
-import { ensureUserInD1, honoEnvForSupabasePublicSync } from '../../lib/d1-users'
-import { mirrorUserFieldsToSupabase } from '../../lib/supabase-user-mirror'
+import { ensureUserInD1 } from '../../lib/d1-users'
 import { publishRealtimeEventFromContext } from '../../lib/realtime'
 import type { D1Database } from '@cloudflare/workers-types'
+import { AppEnv, requireAuthJwt } from '../../middleware'
+import { getAuthUserFromContext } from '../../lib/auth-user'
 
-const overview = new Hono()
+const overview = new Hono<AppEnv>()
+overview.use('*', requireAuthJwt)
 
-async function verifyAdmin(c: Context): Promise<
+async function verifyAdmin(c: Context<AppEnv>): Promise<
   | Response
   | {
       user: { id: string; email?: string; user_metadata?: Record<string, unknown> }
       db: D1Database
     }
 > {
-  const supabase = getSupabaseClient(c)
   const db = getD1(c)
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser()
-  if (authError || !user) {
+  const user = getAuthUserFromContext(c)
+  if (!user) {
     return c.json({ error: 'Unauthorized' }, 401)
   }
   if (!db) {
     return c.json({ error: 'Database not configured' }, 503)
   }
   // Sinkron JWT → D1 dulu; tanpa ini getRole bisa baca D1 lama (user) walau JWT sudah admin.
-  await ensureUserInD1(db, user, honoEnvForSupabasePublicSync(c.env))
+  await ensureUserInD1(db, user)
   if ((await getRole(c, user)) !== 'admin') {
     return c.json({ error: 'Forbidden' }, 403)
   }
@@ -48,18 +45,6 @@ overview.get('/', async (c) => {
   const page = Number.isNaN(pageParam) || pageParam < 1 ? 1 : pageParam
   const perPage = Number.isNaN(perPageParam) || perPageParam < 1 ? 10 : perPageParam
   try {
-    const adminAuth = getAdminSupabaseClient(c?.env as Record<string, string>)
-    const authUsers = await adminAuth.auth.admin.listUsers({ perPage: 1000 })
-    if (!authUsers.error && authUsers.data?.users?.length) {
-      for (const u of authUsers.data.users) {
-        await ensureUserInD1(
-          db,
-          u as Parameters<typeof ensureUserInD1>[1],
-          honoEnvForSupabasePublicSync(c.env)
-        )
-      }
-    }
-
     const totalUsers =
       (await db.prepare(`SELECT COUNT(*) as c FROM users`).first<{ c: number }>())?.c ?? 0
     const totalAdmins =
@@ -167,8 +152,6 @@ overview.put('/', async (c) => {
   const { id, credits, role, isSuspended } = body as Record<string, unknown>
   if (!id || typeof id !== 'string') return c.json({ error: 'Invalid payload' }, 400)
 
-  // Source of truth: update Supabase `public.users` first.
-  // UI admin ini memodifikasi credits/role/suspend; sebelumnya hanya mengubah D1.
   if (typeof credits === 'number' && credits < 0)
     return c.json({ error: 'Credits must be >= 0' }, 400)
 
@@ -181,25 +164,6 @@ overview.put('/', async (c) => {
   // Safety: admin tidak boleh suspend/unsuspend dirinya sendiri.
   if (id === currentUser.id && typeof isSuspended !== 'undefined') {
     return c.json({ error: 'Forbidden: cannot change your own suspension status' }, 403)
-  }
-
-  const supaUpdate: Record<string, unknown> = {}
-  if (typeof credits === 'number') supaUpdate.credits = credits
-  if (role === 'admin' || role === 'user') supaUpdate.role = role
-  else if (role !== undefined) return c.json({ error: 'Invalid role' }, 400)
-  if (typeof isSuspended === 'boolean') supaUpdate.is_suspended = isSuspended
-
-  if (Object.keys(supaUpdate).length > 0) {
-    try {
-      await mirrorUserFieldsToSupabase(c?.env as Record<string, string>, id, {
-        credits: typeof credits === 'number' ? credits : undefined,
-        role: role === 'admin' || role === 'user' ? role : undefined,
-        is_suspended: typeof isSuspended === 'boolean' ? isSuspended : undefined,
-      })
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Supabase mirror update failed'
-      return c.json({ error: message }, 500)
-    }
   }
 
   const update: string[] = []
@@ -255,9 +219,8 @@ overview.delete('/', async (c) => {
   const body = await c.req.json().catch(() => ({}))
   const id = typeof body?.id === 'string' ? body.id : ''
   if (!id) return c.json({ error: 'Invalid payload' }, 400)
-  const adminAuth = getAdminSupabaseClient(c?.env as Record<string, string>)
-  const { error } = await adminAuth.auth.admin.deleteUser(id)
-  if (error) return c.json({ error: error.message }, 500)
+  // NOTE: Auth user deletion is not handled here (Firebase Admin SDK isn't available on Workers).
+  // This deletes the app profile row only.
   await db.prepare(`DELETE FROM users WHERE id = ?`).bind(id).run()
   return c.json({ success: true })
 })

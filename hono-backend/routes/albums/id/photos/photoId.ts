@@ -1,22 +1,21 @@
 import { Hono } from 'hono'
-import { getSupabaseClient } from '../../../../lib/supabase'
 import { getRole } from '../../../../lib/auth'
 import { getD1, getAssets } from '../../../../lib/edge-env'
 import { deleteAlbumObject } from '../../../../lib/r2-assets'
 import { parseJsonArray } from '../../../../lib/d1-json'
+import { AppEnv, requireAuthJwt } from '../../../../middleware'
+import { getAuthUserFromContext } from '../../../../lib/auth-user'
 
-const albumsIdPhotosPhotoId = new Hono()
+const albumsIdPhotosPhotoId = new Hono<AppEnv>()
+albumsIdPhotosPhotoId.use('*', requireAuthJwt)
 
 // DELETE /api/albums/:id/photos/:photoId — photoId format: "studentName-index" (index is last -\\d+$)
 albumsIdPhotosPhotoId.delete('/', async (c) => {
-  const supabase = getSupabaseClient(c)
   const db = getD1(c)
   const bucket = getAssets(c)
   if (!db) return c.json({ error: 'Database not configured' }, 503)
   if (!bucket) return c.json({ error: 'Storage not configured' }, 503)
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const user = getAuthUserFromContext(c)
   if (!user) return c.json({ error: 'Unauthorized' }, 401)
 
   const albumId = c.req.param('id')

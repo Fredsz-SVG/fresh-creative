@@ -1,7 +1,8 @@
 import { Hono } from 'hono'
-import { getSupabaseClient } from '../../../lib/supabase'
 import { getRole } from '../../../lib/auth'
 import { getD1 } from '../../../lib/edge-env'
+import { AppEnv, requireAuthJwt } from '../../../middleware'
+import { getAuthUserFromContext } from '../../../lib/auth-user'
 
 function generateShortInviteCode(): string {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
@@ -10,15 +11,13 @@ function generateShortInviteCode(): string {
   return code
 }
 
-const albumInviteRoute = new Hono()
+const albumInviteRoute = new Hono<AppEnv>()
+albumInviteRoute.use('*', requireAuthJwt)
 
 albumInviteRoute.post('/', async (c) => {
-  const supabase = getSupabaseClient(c)
   const db = getD1(c)
   if (!db) return c.json({ error: 'Database not configured' }, 503)
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const user = getAuthUserFromContext(c)
   if (!user) return c.json({ error: 'Unauthorized' }, 401)
 
   const albumId = c.req.param('id')

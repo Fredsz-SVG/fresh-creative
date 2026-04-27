@@ -1,13 +1,15 @@
 import type { D1Database } from '@cloudflare/workers-types'
 import { Hono } from 'hono'
-import { getSupabaseClient } from '../../../../lib/supabase'
 import { getRole } from '../../../../lib/auth'
 import { getD1, getAssets } from '../../../../lib/edge-env'
 import { deleteAlbumObject, putAlbumPhoto } from '../../../../lib/r2-assets'
 import { publicAlbumAssetUrl, getR2KeyFromPublicUrl } from '../../../../lib/public-file-url'
 import { albumPathFromR2Key } from '../../../../lib/storage-layout'
+import { AppEnv, requireAuthJwt } from '../../../../middleware'
+import { getAuthUserFromContext } from '../../../../lib/auth-user'
 
-const classIdPhoto = new Hono()
+const classIdPhoto = new Hono<AppEnv>()
+classIdPhoto.use('*', requireAuthJwt)
 
 async function canManageClass(
   db: D1Database,
@@ -31,7 +33,6 @@ async function canManageClass(
 // POST /api/albums/:id/classes/:classId/photo
 classIdPhoto.post('/', async (c) => {
   try {
-    const supabase = getSupabaseClient(c)
     const db = getD1(c)
     const bucket = getAssets(c)
     if (!db) return c.json({ error: 'Database not configured' }, 503)
@@ -39,11 +40,8 @@ classIdPhoto.post('/', async (c) => {
     const albumId = c.req.param('id')
     const classId = c.req.param('classId')
 
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
-    if (authError || !user) return c.json({ error: 'Unauthorized' }, 401)
+    const user = getAuthUserFromContext(c)
+    if (!user) return c.json({ error: 'Unauthorized' }, 401)
 
     const sysRole = await getRole(c, user)
     if (!(await canManageClass(db, albumId, user.id, sysRole))) {
@@ -112,7 +110,6 @@ classIdPhoto.post('/', async (c) => {
 // DELETE /api/albums/:id/classes/:classId/photo
 classIdPhoto.delete('/', async (c) => {
   try {
-    const supabase = getSupabaseClient(c)
     const db = getD1(c)
     const bucket = getAssets(c)
     if (!db) return c.json({ error: 'Database not configured' }, 503)
@@ -120,11 +117,8 @@ classIdPhoto.delete('/', async (c) => {
     const albumId = c.req.param('id')
     const classId = c.req.param('classId')
 
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
-    if (authError || !user) return c.json({ error: 'Unauthorized' }, 401)
+    const user = getAuthUserFromContext(c)
+    if (!user) return c.json({ error: 'Unauthorized' }, 401)
 
     const sysRole = await getRole(c, user)
     if (!(await canManageClass(db, albumId, user.id, sysRole))) {

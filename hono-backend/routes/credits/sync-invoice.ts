@@ -1,20 +1,17 @@
 import { Hono } from 'hono'
-import { getSupabaseClient } from '../../lib/supabase'
 import { getD1 } from '../../lib/edge-env'
-import { getCreditsFromSupabase, mirrorCreditsToD1, setCreditsInSupabase } from '../../lib/credits'
+import { getCreditsFromD1, setCreditsInD1 } from '../../lib/credits'
+import { AppEnv, requireAuthJwt } from '../../middleware'
 
-const creditsSyncInvoice = new Hono()
+const creditsSyncInvoice = new Hono<AppEnv>()
+creditsSyncInvoice.use('*', requireAuthJwt)
 
 creditsSyncInvoice.post('/', async (c) => {
   try {
-    const supabase = getSupabaseClient(c)
     const db = getD1(c)
     if (!db) return c.json({ error: 'Database not configured' }, 503)
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
-    if (authError || !user) return c.json({ error: 'Unauthorized' }, 401)
+    const user = c.get('user')
+    if (!user?.id) return c.json({ error: 'Unauthorized' }, 401)
 
     const { results: pendingRows } = await db
       .prepare(
@@ -78,19 +75,9 @@ creditsSyncInvoice.post('/', async (c) => {
             .bind(invStatus, paymentMethod, paidAt, externalId)
             .run()
 
-          const currentCredits = await getCreditsFromSupabase(
-            c.env as Record<string, string>,
-            userId
-          ).catch(async () => {
-            const row = await db
-              .prepare(`SELECT credits FROM users WHERE id = ?`)
-              .bind(userId)
-              .first<{ credits: number | null }>()
-            return row?.credits ?? 0
-          })
+          const currentCredits = await getCreditsFromD1(db, userId)
           const newCredits = currentCredits + (pkg.credits ?? 0)
-          await setCreditsInSupabase(c.env as Record<string, string>, userId, newCredits)
-          await mirrorCreditsToD1(db, userId, newCredits)
+          await setCreditsInD1(db, userId, newCredits)
           synced++
         } else if (isAlbum) {
           const match = externalId.match(/^album_(.+?)_user_(.+?)_ts_/)

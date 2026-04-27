@@ -2,10 +2,10 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { supabase } from '@/lib/supabase'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { requestPasswordReset } from '@/lib/auth-client'
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('')
@@ -19,12 +19,12 @@ export default function ForgotPasswordPage() {
     setError('')
     setMessage('')
 
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${location.origin}/auth/callback?next=${encodeURIComponent('/reset-password')}`,
-    })
-
-    if (error) setError(error.message)
-    else setMessage('Link reset password telah dikirim ke email Anda.')
+    try {
+      await requestPasswordReset(email)
+      setMessage('Link reset password telah dikirim ke email Anda.')
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Gagal mengirim link reset password.')
+    }
 
     setLoading(false)
   }

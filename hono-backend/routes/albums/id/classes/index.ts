@@ -1,20 +1,19 @@
 import { Hono } from 'hono'
-import { getSupabaseClient } from '../../../../lib/supabase'
 import { getRole } from '../../../../lib/auth'
 import { getD1 } from '../../../../lib/edge-env'
 import { parseJsonArray } from '../../../../lib/d1-json'
+import { AppEnv, requireAuthJwt } from '../../../../middleware'
+import { getAuthUserFromContext } from '../../../../lib/auth-user'
 
-const albumClasses = new Hono()
+const albumClasses = new Hono<AppEnv>()
+albumClasses.use('*', requireAuthJwt)
 
 // Mounted at `/api/albums/:id/classes` in `hono-backend/index.ts`, so handlers should use `/`.
 albumClasses.get('/', async (c) => {
-  const supabase = getSupabaseClient(c)
   const db = getD1(c)
   if (!db) return c.json({ error: 'Database not configured' }, 503)
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const user = getAuthUserFromContext(c)
   if (!user) return c.json({ error: 'Unauthorized' }, 401)
   const albumId = c.req.param('id')
   if (!albumId) return c.json({ error: 'Album ID required' }, 400)
@@ -57,13 +56,10 @@ albumClasses.get('/', async (c) => {
 })
 
 albumClasses.post('/', async (c) => {
-  const supabase = getSupabaseClient(c)
   const db = getD1(c)
   if (!db) return c.json({ error: 'Database not configured' }, 503)
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const user = getAuthUserFromContext(c)
   if (!user) return c.json({ error: 'Unauthorized' }, 401)
   const albumId = c.req.param('id')
   if (!albumId) return c.json({ error: 'Album ID required' }, 400)

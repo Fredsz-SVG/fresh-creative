@@ -2,10 +2,10 @@
 
 import { Suspense, useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
-import { getRole } from '@/lib/auth'
 import { toast } from '@/lib/toast'
 import { AnimatedSignupPage } from '@/components/animated-characters-login-page'
+import { onAuthChange, signUpWithPassword } from '@/lib/auth-client'
+import { fetchWithAuth } from '@/lib/api-client'
 
 function SignUpContent() {
   const [checkingSession, setCheckingSession] = useState(true)
@@ -19,21 +19,32 @@ function SignUpContent() {
   const router = useRouter()
 
   useEffect(() => {
-    const redirectIfLoggedIn = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (session?.user) {
-        if (!session.user.email_confirmed_at && session.user.app_metadata?.provider === 'email') {
-          await supabase.auth.signOut()
-          setCheckingSession(false)
-          return
-        }
-        const role = await getRole(supabase, session.user)
-        router.replace(role === 'admin' ? '/admin' : '/user')
+    let cancelled = false
+    const unsub = onAuthChange(async (user) => {
+      if (!user) {
+        if (!cancelled) setCheckingSession(false)
         return
       }
-      setCheckingSession(false)
+      try {
+        const resBootstrap = await fetchWithAuth('/api/user/bootstrap')
+        const bootstrap = (await resBootstrap.json().catch(() => ({}))) as {
+          me?: { role?: 'admin' | 'user' }
+          otp?: { verified?: boolean }
+        }
+        const role = bootstrap?.me?.role === 'admin' ? 'admin' : 'user'
+        if (!bootstrap?.otp?.verified) {
+          router.replace('/auth/verify-otp')
+          return
+        }
+        router.replace(role === 'admin' ? '/admin' : '/user')
+      } finally {
+        if (!cancelled) setCheckingSession(false)
+      }
+    })
+    return () => {
+      cancelled = true
+      unsub()
     }
-    redirectIfLoggedIn()
   }, [router])
 
   const handleSignUp = async (e: React.FormEvent) => {
@@ -48,24 +59,11 @@ function SignUpContent() {
     }
 
     try {
-      const origin = typeof window !== 'undefined' ? window.location.origin : ''
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: { role: 'user', full_name: fullName },
-          emailRedirectTo: origin ? `${origin}/auth/callback` : undefined,
-        },
-      })
-
-      if (error) {
-        setError(error.message)
-      } else {
-        toast.success('Registrasi berhasil! Silakan cek email untuk verifikasi.')
+      await signUpWithPassword({ email, password, fullName })
+      toast.success('Registrasi berhasil! Silakan cek email untuk verifikasi (jika diaktifkan), lalu login.')
         setTimeout(() => {
           router.push('/login')
         }, 2000)
-      }
     } catch {
       setError('Terjadi kesalahan saat registrasi')
     } finally {

@@ -1,19 +1,18 @@
 import { Hono } from 'hono'
-import { getSupabaseClient } from '../../../lib/supabase'
 import { getRole } from '../../../lib/auth'
 import { getD1 } from '../../../lib/edge-env'
 import { parseJsonArray } from '../../../lib/d1-json'
+import { tryGetAuthUser } from '../../../lib/auth-user'
+import type { AppEnv } from '../../../middleware'
 
-const albumIdRoute = new Hono()
+const albumIdRoute = new Hono<AppEnv>()
 
 // Mounted at `/api/albums/:id` in `hono-backend/index.ts`, so handlers should use `/`.
 albumIdRoute.get('/', async (c) => {
-  const supabase = getSupabaseClient(c)
   const db = getD1(c)
   if (!db) return c.json({ error: 'Database not configured' }, 503)
 
-  const authRes = await supabase.auth.getUser()
-  const user = authRes.data?.user || null
+  const user = await tryGetAuthUser(c)
   const id = c.req.param('id')
   if (!id) return c.json({ error: 'Album ID required' }, 400)
 
@@ -141,12 +140,10 @@ albumIdRoute.get('/', async (c) => {
 })
 
 albumIdRoute.patch('/', async (c) => {
-  const supabase = getSupabaseClient(c)
   const db = getD1(c)
   if (!db) return c.json({ error: 'Database not configured' }, 503)
 
-  const { data: authRes } = await supabase.auth.getUser()
-  const user = authRes?.user || null
+  const user = await tryGetAuthUser(c)
   if (!user) return c.json({ error: 'Unauthorized' }, 401)
   const id = c.req.param('id')
   if (!id) return c.json({ error: 'Album ID required' }, 400)

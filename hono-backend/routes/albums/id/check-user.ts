@@ -1,21 +1,19 @@
 import { Hono } from 'hono'
-import { getSupabaseClient } from '../../../lib/supabase'
 import { getD1 } from '../../../lib/edge-env'
+import { AppEnv, requireAuthJwt } from '../../../middleware'
+import { getAuthUserFromContext } from '../../../lib/auth-user'
 
-const checkUserRoute = new Hono()
+const checkUserRoute = new Hono<AppEnv>()
+checkUserRoute.use('*', requireAuthJwt)
 
 checkUserRoute.get('/', async (c) => {
   try {
     const albumId = c.req.param('id')
-    const supabase = getSupabaseClient(c)
     const db = getD1(c)
     if (!db) return c.json({ error: 'Database not configured' }, 503)
 
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
-    if (authError || !user) {
+    const user = getAuthUserFromContext(c)
+    if (!user) {
       return c.json({ hasRequest: false }, 200)
     }
 

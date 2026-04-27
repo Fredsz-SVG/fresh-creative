@@ -10,6 +10,7 @@ export default function FastImage({ priority = false, loading, fetchPriority, de
   return (
     <img
       {...props}
+      alt={props.alt ?? ''}
       loading={loading ?? (priority ? 'eager' : 'lazy')}
       fetchPriority={fetchPriority ?? (priority ? 'high' : 'auto')}
       decoding={decoding ?? 'async'}

@@ -1,17 +1,18 @@
 import { Hono } from 'hono'
-import { getSupabaseClient } from '../../../../lib/supabase'
 import { getRole } from '../../../../lib/auth'
 import { getD1, getAssets } from '../../../../lib/edge-env'
 import { deleteAlbumObject, putAlbumPhoto } from '../../../../lib/r2-assets'
 import { publicAlbumAssetUrl, getR2KeyFromPublicUrl } from '../../../../lib/public-file-url'
 import { albumPathFromR2Key } from '../../../../lib/storage-layout'
+import { AppEnv, requireAuthJwt } from '../../../../middleware'
+import { getAuthUserFromContext } from '../../../../lib/auth-user'
 
-const teacherIdPhoto = new Hono()
+const teacherIdPhoto = new Hono<AppEnv>()
+teacherIdPhoto.use('*', requireAuthJwt)
 
 // POST /api/albums/:id/teachers/:teacherId/photo
 teacherIdPhoto.post('/', async (c) => {
   try {
-    const supabase = getSupabaseClient(c)
     const db = getD1(c)
     const bucket = getAssets(c)
     if (!db) return c.json({ error: 'Database not configured' }, 503)
@@ -19,11 +20,8 @@ teacherIdPhoto.post('/', async (c) => {
     const albumId = c.req.param('id')
     const teacherId = c.req.param('teacherId')
 
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
-    if (authError || !user) return c.json({ error: 'Unauthorized' }, 401)
+    const user = getAuthUserFromContext(c)
+    if (!user) return c.json({ error: 'Unauthorized' }, 401)
 
     const isGlobalAdmin = (await getRole(c, user)) === 'admin'
 
@@ -113,7 +111,6 @@ teacherIdPhoto.post('/', async (c) => {
 // DELETE /api/albums/:id/teachers/:teacherId/photo
 teacherIdPhoto.delete('/', async (c) => {
   try {
-    const supabase = getSupabaseClient(c)
     const db = getD1(c)
     const bucket = getAssets(c)
     if (!db) return c.json({ error: 'Database not configured' }, 503)
@@ -121,11 +118,8 @@ teacherIdPhoto.delete('/', async (c) => {
     const albumId = c.req.param('id')
     const teacherId = c.req.param('teacherId')
 
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
-    if (authError || !user) return c.json({ error: 'Unauthorized' }, 401)
+    const user = getAuthUserFromContext(c)
+    if (!user) return c.json({ error: 'Unauthorized' }, 401)
 
     const isGlobalAdmin = (await getRole(c, user)) === 'admin'
 

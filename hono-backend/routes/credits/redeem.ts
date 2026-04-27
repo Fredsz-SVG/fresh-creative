@@ -1,11 +1,7 @@
 import { Hono } from 'hono'
-import { getSupabaseClient } from '../../lib/supabase'
 import { getD1 } from '../../lib/edge-env'
-import {
-  getCreditsFromSupabase,
-  mirrorCreditsToD1,
-  setCreditsInSupabase,
-} from '../../lib/credits'
+import { getCreditsFromD1, setCreditsInD1 } from '../../lib/credits'
+import { AppEnv, requireAuthJwt } from '../../middleware'
 
 async function checkIsAdmin(c: import('hono').Context, userId: string): Promise<boolean> {
   const db = getD1(c)
@@ -17,17 +13,15 @@ async function checkIsAdmin(c: import('hono').Context, userId: string): Promise<
   return row?.role === 'admin'
 }
 
-const creditsRedeem = new Hono()
+const creditsRedeem = new Hono<AppEnv>()
+creditsRedeem.use('*', requireAuthJwt)
 
 // GET: list redeem codes (admin)
 creditsRedeem.get('/', async (c) => {
-  const supabase = getSupabaseClient(c)
   const db = getD1(c)
   if (!db) return c.json({ error: 'Database not configured' }, 503)
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) return c.json({ error: 'Unauthorized' }, 401)
+  const user = c.get('user')
+  if (!user?.id) return c.json({ error: 'Unauthorized' }, 401)
 
   if (!(await checkIsAdmin(c, user.id))) return c.json({ error: 'Forbidden' }, 403)
 
@@ -62,13 +56,10 @@ creditsRedeem.get('/', async (c) => {
 
 // POST: create redeem code (admin) OR redeem code (user)
 creditsRedeem.post('/', async (c) => {
-  const supabase = getSupabaseClient(c)
   const db = getD1(c)
   if (!db) return c.json({ error: 'Database not configured' }, 503)
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) return c.json({ error: 'Unauthorized' }, 401)
+  const user = c.get('user')
+  if (!user?.id) return c.json({ error: 'Unauthorized' }, 401)
 
   const body = await c.req.json().catch(() => ({}))
   const { action } = body
@@ -100,19 +91,9 @@ creditsRedeem.post('/', async (c) => {
     if (existing) return c.json({ error: 'Kamu sudah pernah menggunakan kode ini.' }, 409)
 
     const add = redeemCode.credits as number
-    const currentCredits = await getCreditsFromSupabase(
-      c.env as Record<string, string>,
-      user.id
-    ).catch(async () => {
-      const row = await db
-        .prepare(`SELECT credits FROM users WHERE id = ?`)
-        .bind(user.id)
-        .first<{ credits: number | null }>()
-      return row?.credits ?? 0
-    })
+    const currentCredits = await getCreditsFromD1(db, user.id)
     const newCredits = currentCredits + add
-    await setCreditsInSupabase(c.env as Record<string, string>, user.id, newCredits)
-    await mirrorCreditsToD1(db, user.id, newCredits)
+    await setCreditsInD1(db, user.id, newCredits)
 
     const histId = crypto.randomUUID()
     await db
@@ -162,13 +143,10 @@ creditsRedeem.post('/', async (c) => {
 
 // PUT: update redeem code (admin)
 creditsRedeem.put('/', async (c) => {
-  const supabase = getSupabaseClient(c)
   const db = getD1(c)
   if (!db) return c.json({ error: 'Database not configured' }, 503)
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) return c.json({ error: 'Unauthorized' }, 401)
+  const user = c.get('user')
+  if (!user?.id) return c.json({ error: 'Unauthorized' }, 401)
 
   if (!(await checkIsAdmin(c, user.id))) return c.json({ error: 'Forbidden' }, 403)
 
@@ -209,13 +187,10 @@ creditsRedeem.put('/', async (c) => {
 
 // DELETE: delete redeem code (admin)
 creditsRedeem.delete('/', async (c) => {
-  const supabase = getSupabaseClient(c)
   const db = getD1(c)
   if (!db) return c.json({ error: 'Database not configured' }, 503)
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) return c.json({ error: 'Unauthorized' }, 401)
+  const user = c.get('user')
+  if (!user?.id) return c.json({ error: 'Unauthorized' }, 401)
 
   if (!(await checkIsAdmin(c, user.id))) return c.json({ error: 'Forbidden' }, 403)
 

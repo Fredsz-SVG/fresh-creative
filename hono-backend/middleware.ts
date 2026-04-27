@@ -1,68 +1,72 @@
 import { Context, Next } from 'hono'
 import { getAccessTokenFromContext } from './lib/get-access-token'
-import { verifySupabaseAccessToken } from './lib/verify-supabase-jwt'
+import { verifyFirebaseIdToken } from './lib/verify-firebase-jwt'
+import { getD1 } from './lib/edge-env'
 
 // Simple auth middleware example
 export async function requireAuth(c: Context, next: Next) {
-  const { getSupabaseClient } = await import('./lib/supabase')
-  const supabase = getSupabaseClient(c)
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) return c.json({ error: 'Unauthorized' }, 401)
-  c.set('user', user)
-  await next()
+  return await requireAuthJwt(c, next)
 }
 
-type EnvWithJwt = {
-  SUPABASE_JWT_SECRET?: string
-  NEXT_PUBLIC_SUPABASE_URL?: string
+type EnvWithFirebase = {
+  FIREBASE_PROJECT_ID?: string
+}
+
+export type AuthContextUser = {
+  id: string
+  email?: string | null
+  role?: 'admin' | 'user'
+}
+
+export type AppEnv = {
+  Bindings: EnvWithFirebase & Record<string, unknown>
+  Variables: {
+    userId: string
+    user: AuthContextUser
+  }
 }
 
 /**
- * Verifikasi JWT lokal: HS256 (legacy secret) atau ES256 lewat JWKS (JWT Signing Keys).
- * Fallback: `getUser()` ke Supabase jika verifikasi lokal gagal / env kurang.
+ * Firebase Auth-only: verifikasi Firebase ID token secara lokal via JWKS.
  */
-export async function requireAuthJwt(c: Context, next: Next) {
+export async function requireAuthJwt(c: Context<AppEnv>, next: Next) {
   const token = getAccessTokenFromContext(c)
   if (!token) return c.json({ error: 'Unauthorized' }, 401)
 
-  const env = c.env as EnvWithJwt
-  const supabaseUrl = env?.NEXT_PUBLIC_SUPABASE_URL
+  const env = c.env as EnvWithFirebase
+  const projectId = env?.FIREBASE_PROJECT_ID
+  const result = await verifyFirebaseIdToken(token, { projectId: projectId ?? '' })
+  if ('error' in result) return c.json({ error: 'Unauthorized' }, 401)
 
-  if (supabaseUrl) {
-    const result = await verifySupabaseAccessToken(token, {
-      supabaseUrl,
-      jwtSecret: env?.SUPABASE_JWT_SECRET,
-    })
-    if (!('error' in result)) {
-      const sub = result.payload.sub!
-      c.set('userId', sub)
-      // Resolve app role from D1 (admin/user), fallback to JWT metadata
-      const { getRole } = await import('./lib/auth')
-      const payload = result.payload as Record<string, unknown>
-      const appRole = await getRole(c, {
-        id: sub,
-        user_metadata: (payload.user_metadata as Record<string, unknown>) ?? {},
-        app_metadata: (payload.app_metadata as Record<string, unknown>) ?? {},
-      })
-      c.set('user', { id: sub, role: appRole })
-      await next()
-      return
-    }
-  }
+  const uid = result.payload.sub!
+  const email = typeof result.payload.email === 'string' ? result.payload.email : null
+  const name = typeof result.payload.name === 'string' ? result.payload.name : null
 
-  const { getSupabaseClient } = await import('./lib/supabase')
-  const supabase = getSupabaseClient(c)
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser()
-  if (error || !user) return c.json({ error: 'Unauthorized' }, 401)
-  c.set('userId', user.id)
+  c.set('userId', uid)
+
+  // Resolve app role from D1 (admin/user), fallback to custom claim `role`
   const { getRole } = await import('./lib/auth')
-  const appRole = await getRole(c, user)
-  c.set('user', { id: user.id, role: appRole })
+  const claimRole = (typeof result.payload.role === 'string' ? result.payload.role : '').toLowerCase()
+
+  // Keep D1 users row up-to-date (email/full_name/role from token).
+  // This fixes empty email/full_name rows when user first signs in via Google.
+  const db = getD1(c)
+  if (db) {
+    const { ensureUserInD1 } = await import('./lib/d1-users')
+    await ensureUserInD1(db, {
+      id: uid,
+      email,
+      user_metadata: name ? { full_name: name, name } : {},
+      app_metadata: claimRole ? { role: claimRole } : {},
+    })
+  }
+  const appRole = await getRole(c, {
+    id: uid,
+    user_metadata: name ? { full_name: name, name } : {},
+    app_metadata: claimRole ? { role: claimRole } : {},
+  })
+
+  c.set('user', { id: uid, email, role: appRole } satisfies AuthContextUser)
   await next()
 }
 
@@ -72,22 +76,12 @@ export async function getAuthUserId(c: Context): Promise<string | null> {
   if (fromVar) return fromVar
 
   const token = getAccessTokenFromContext(c)
-  const env = c.env as EnvWithJwt
-  const url = env?.NEXT_PUBLIC_SUPABASE_URL
-  if (token && url) {
-    const result = await verifySupabaseAccessToken(token, {
-      supabaseUrl: url,
-      jwtSecret: env?.SUPABASE_JWT_SECRET,
-    })
-    if (!('error' in result) && result.payload.sub) return result.payload.sub
-  }
-
-  const { getSupabaseClient } = await import('./lib/supabase')
-  const supabase = getSupabaseClient(c)
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  return user?.id ?? null
+  const env = c.env as EnvWithFirebase
+  const projectId = env?.FIREBASE_PROJECT_ID
+  if (!token || !projectId) return null
+  const result = await verifyFirebaseIdToken(token, { projectId })
+  if (!('error' in result) && result.payload.sub) return result.payload.sub
+  return null
 }
 
 // Simple logging middleware example

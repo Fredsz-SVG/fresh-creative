@@ -6,12 +6,14 @@ import {
   saveFonnteConfigToD1,
   type FonnteConfigPayload,
 } from '../../lib/fonnte-config-d1'
-import { getSupabaseClient } from '../../lib/supabase'
 import { getRole } from '../../lib/auth'
-import { ensureUserInD1, honoEnvForSupabasePublicSync } from '../../lib/d1-users'
+import { ensureUserInD1 } from '../../lib/d1-users'
 import { publishRealtimeEventFromContext } from '../../lib/realtime'
+import { AppEnv, requireAuthJwt } from '../../middleware'
+import { getAuthUserFromContext } from '../../lib/auth-user'
 
-const adminShowcase = new Hono()
+const adminShowcase = new Hono<AppEnv>()
+adminShowcase.use('*', requireAuthJwt)
 
 function normalizeShowcaseLink(value: string): string {
   const trimmed = value.trim()
@@ -35,16 +37,12 @@ function requireDb(c: { env: unknown }): D1Database | null {
 
 // GET /api/admin/showcase
 adminShowcase.get('/', async (c) => {
-  const supabase = getSupabaseClient(c)
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser()
-  if (authError || !user) return c.json({ error: 'Unauthorized' }, 401)
+  const user = getAuthUserFromContext(c)
+  if (!user) return c.json({ error: 'Unauthorized' }, 401)
 
   const db = requireDb(c)
   if (!db) return c.json({ error: 'D1 tidak terkonfigurasi' }, 503)
-  await ensureUserInD1(db, user, honoEnvForSupabasePublicSync(c.env))
+  await ensureUserInD1(db, user)
   if ((await getRole(c, user)) !== 'admin') return c.json({ error: 'Forbidden' }, 403)
   try {
     const [showcase, fonnte] = await Promise.all([getShowcaseFromD1(db), getFonnteConfigFromD1(db)])
@@ -56,16 +54,12 @@ adminShowcase.get('/', async (c) => {
 
 // PUT /api/admin/showcase
 adminShowcase.put('/', async (c) => {
-  const supabase = getSupabaseClient(c)
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser()
-  if (authError || !user) return c.json({ error: 'Unauthorized' }, 401)
+  const user = getAuthUserFromContext(c)
+  if (!user) return c.json({ error: 'Unauthorized' }, 401)
 
   const db = requireDb(c)
   if (!db) return c.json({ error: 'D1 tidak terkonfigurasi' }, 503)
-  await ensureUserInD1(db, user, honoEnvForSupabasePublicSync(c.env))
+  await ensureUserInD1(db, user)
   if ((await getRole(c, user)) !== 'admin') return c.json({ error: 'Forbidden' }, 403)
 
   const body = await c.req.json().catch(() => ({}))

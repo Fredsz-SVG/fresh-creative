@@ -7,11 +7,11 @@ import { toast } from '@/lib/toast'
 import DashboardTitle from '@/components/dashboard/DashboardTitle'
 import { AnimatedCarouselMockup, AnimatedFlipbookMockup } from '@/components/dashboard/AnimatedMockups'
 import { GalleryHorizontal, BookMarked, PlusCircle, UserPlus, Plus, Loader2, BookOpen } from 'lucide-react'
-import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import { apiUrl } from '../../lib/api-url'
 import { fetchWithAuth } from '../../lib/api-client'
 import { asObject, asString, getErrorMessage } from '@/components/yearbook/utils/response-narrowing'
+import { onAuthChange } from '@/lib/auth-client'
 
 /** Extract token from URL atau kode */
 function parseInviteToken(input: string): { token: string; type: 'join' | 'invite' | 'code' } | null {
@@ -193,9 +193,14 @@ export default function UserPage() {
   useEffect(() => {
     let isActive = true
     const loadUserName = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await new Promise<import('@/lib/auth-client').AuthUser | null>((resolve) => {
+        const unsub = onAuthChange((u) => {
+          unsub()
+          resolve(u)
+        })
+      })
       if (!isActive) return
-      const name = user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email?.split('@')[0]
+      const name = user?.displayName || user?.email?.split('@')[0]
       if (name) {
         setUserName(String(name))
         try { window.sessionStorage.setItem('user_display_name', String(name)) } catch { /* ignore */ }

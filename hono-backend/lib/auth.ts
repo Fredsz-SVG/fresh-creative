@@ -1,6 +1,11 @@
 import type { Context } from 'hono'
-import type { User, Session } from '@supabase/supabase-js'
 import { getD1 } from './edge-env'
+
+export type AuthUserLike = {
+  id: string
+  user_metadata?: Record<string, unknown>
+  app_metadata?: Record<string, unknown>
+}
 
 /**
  * Role dari D1 `users.role`, fallback metadata JWT (tanpa Postgres Supabase).
@@ -8,12 +13,7 @@ import { getD1 } from './edge-env'
 export async function getRole(
   c: Context,
   user:
-    | User
-    | {
-        id: string
-        user_metadata?: Record<string, unknown>
-        app_metadata?: Record<string, unknown>
-      }
+    | AuthUserLike
 ): Promise<'admin' | 'user'> {
   const db = getD1(c)
   if (db) {
@@ -33,10 +33,10 @@ export async function getRole(
   return 'user'
 }
 
-/** Role dari session metadata saja (tanpa query DB). Untuk fallback cepat. */
-export function getRoleFromSession(session: Session | null): 'admin' | 'user' {
-  if (!session?.user) return 'user'
-  const role =
-    (session.user.user_metadata?.role as string) || (session.user.app_metadata?.role as string)
+/** Back-compat: role dari object "session-like" (tanpa query DB). */
+export function getRoleFromSession(session: { user?: AuthUserLike } | null): 'admin' | 'user' {
+  const u = session?.user
+  if (!u) return 'user'
+  const role = (u.user_metadata?.role as string) || (u.app_metadata?.role as string)
   return role === 'admin' ? 'admin' : 'user'
 }

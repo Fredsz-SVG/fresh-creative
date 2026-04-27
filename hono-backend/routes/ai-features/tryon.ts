@@ -1,12 +1,12 @@
 import { Hono } from 'hono'
 import type { Context } from 'hono'
-import { getSupabaseClient } from '../../lib/supabase'
 import { getD1 } from '../../lib/edge-env'
 import { fileToDataUri, formDataString, requestIsMultipart } from '../../lib/ai-multipart'
-import { deductCreditsFromSupabaseAndMirrorToD1 } from '../../lib/credits'
+import { deductCreditsFromD1 } from '../../lib/credits'
 import { generateVirtualTryOnGemini, imageStringToGeminiInput } from '../../lib/gemini-tryon'
 import { respondWithReplicateFriendlyError } from '../../lib/replicate-error-response'
 import Replicate from 'replicate'
+import { AppEnv, requireAuthJwt } from '../../middleware'
 
 type ReplicateEnv = {
   REPLICATE_API_TOKEN?: string
@@ -61,21 +61,18 @@ async function parseTryOnBody(c: Context): Promise<TryOnBody> {
   return out
 }
 
-const tryon = new Hono()
+const tryon = new Hono<AppEnv>()
+tryon.use('*', requireAuthJwt)
 
 const MAX_GARMENTS = 3
 
 // POST /api/ai-features/tryon
 tryon.post('/', async (c) => {
   try {
-    const supabase = getSupabaseClient(c)
     const db = getD1(c)
     if (!db) return c.json({ ok: false, error: 'Database not configured' }, 503)
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
-    if (authError || !user) return c.json({ ok: false, error: 'Unauthorized' }, 401)
+    const user = c.get('user')
+    if (!user?.id) return c.json({ ok: false, error: 'Unauthorized' }, 401)
 
     const REPLICATE_API_TOKEN = ((c.env as ReplicateEnv).REPLICATE_API_TOKEN || '').trim()
     if (!REPLICATE_API_TOKEN)
@@ -109,8 +106,7 @@ tryon.post('/', async (c) => {
     const totalCreditsNeeded = creditsPerUse * itemsCount
 
     if (totalCreditsNeeded > 0) {
-      const r = await deductCreditsFromSupabaseAndMirrorToD1({
-        env: c.env as Record<string, string>,
+      const r = await deductCreditsFromD1({
         db,
         userId: user.id,
         amount: totalCreditsNeeded,

@@ -1,11 +1,13 @@
 import { Hono } from 'hono'
-import { getSupabaseClient } from '../../lib/supabase'
 import { getRole } from '../../lib/auth'
 import { getD1 } from '../../lib/edge-env'
-import { ensureUserInD1, honoEnvForSupabasePublicSync } from '../../lib/d1-users'
-import { deductCreditsFromSupabaseAndMirrorToD1 } from '../../lib/credits'
+import { ensureUserInD1 } from '../../lib/d1-users'
+import { deductCreditsFromD1 } from '../../lib/credits'
+import { AppEnv, requireAuthJwt } from '../../middleware'
+import { getAuthUserFromContext } from '../../lib/auth-user'
 
-const aiEdit = new Hono()
+const aiEdit = new Hono<AppEnv>()
+aiEdit.use('*', requireAuthJwt)
 
 // GET - list ai_feature_pricing
 aiEdit.get('/', async (c) => {
@@ -28,14 +30,10 @@ aiEdit.get('/', async (c) => {
 // POST — potong credit sekali pakai (Image Editor remove-bg, dll.; Try On utama lewat /api/ai-features/tryon)
 aiEdit.post('/', async (c) => {
   try {
-    const supabase = getSupabaseClient(c)
     const db = getD1(c)
     if (!db) return c.json({ ok: false, error: 'Database not configured' }, 503)
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
-    if (authError || !user) return c.json({ ok: false, error: 'Unauthorized' }, 401)
+    const user = getAuthUserFromContext(c)
+    if (!user) return c.json({ ok: false, error: 'Unauthorized' }, 401)
 
     const body = (await c.req.json().catch(() => ({}))) as { feature_slug?: string }
     const feature_slug = typeof body.feature_slug === 'string' ? body.feature_slug.trim() : ''
@@ -47,8 +45,7 @@ aiEdit.post('/', async (c) => {
       .first<{ credits_per_use: number }>()
     const creditsPerUse = pricing?.credits_per_use ?? 0
     if (creditsPerUse > 0) {
-      const r = await deductCreditsFromSupabaseAndMirrorToD1({
-        env: c.env as Record<string, string>,
+      const r = await deductCreditsFromD1({
         db,
         userId: user.id,
         amount: creditsPerUse,
@@ -64,15 +61,11 @@ aiEdit.post('/', async (c) => {
 
 // PUT - update pricing (admin only)
 aiEdit.put('/', async (c) => {
-  const supabase = getSupabaseClient(c)
   const db = getD1(c)
   if (!db) return c.json({ error: 'Database not configured' }, 503)
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser()
-  if (authError || !user) return c.json({ error: 'Unauthorized' }, 401)
-  await ensureUserInD1(db, user, honoEnvForSupabasePublicSync(c.env))
+  const user = getAuthUserFromContext(c)
+  if (!user) return c.json({ error: 'Unauthorized' }, 401)
+  await ensureUserInD1(db, user)
   if ((await getRole(c, user)) !== 'admin') return c.json({ error: 'Forbidden' }, 403)
   const body = await c.req.json()
   const { id, feature_slug, credits_per_use, credits_per_unlock, duration_credits_json } = body as {

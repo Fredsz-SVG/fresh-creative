@@ -1,4 +1,4 @@
-import { supabase } from './supabase'
+import { getCurrentUser } from './auth-client'
 
 export type InvoiceTransaction = {
   id: string
@@ -47,13 +47,13 @@ export async function generateAndPrintInvoice(tx: InvoiceTransaction) {
 
   if (!finalName || !finalEmail) {
     try {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (session?.user) {
+      const user = getCurrentUser()
+      if (user) {
         if (!finalName) {
-          finalName = session.user.user_metadata?.full_name || session.user.user_metadata?.name || session.user.email
+          finalName = user.displayName || user.email || undefined
         }
         if (!finalEmail) {
-          finalEmail = session.user.email
+          finalEmail = user.email || undefined
         }
       }
     } catch (err) {

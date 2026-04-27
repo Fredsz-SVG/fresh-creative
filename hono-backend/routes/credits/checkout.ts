@@ -1,12 +1,13 @@
 import { Hono } from 'hono'
-import { getSupabaseClient } from '../../lib/supabase'
 import { getRole } from '../../lib/auth'
 import { getD1 } from '../../lib/edge-env'
+import { getAuthUserFromContext } from '../../lib/auth-user'
+import { AppEnv, requireAuthJwt } from '../../middleware'
 
-const creditsCheckout = new Hono()
+const creditsCheckout = new Hono<AppEnv>()
+creditsCheckout.use('*', requireAuthJwt)
 
 creditsCheckout.post('/', async (c) => {
-  const supabase = getSupabaseClient(c)
   const db = getD1(c)
   if (!db) return c.json({ error: 'Database not configured' }, 503)
   try {
@@ -14,9 +15,7 @@ creditsCheckout.post('/', async (c) => {
     const { packageId } = body
     if (!packageId) return c.json({ error: 'Package ID required' }, 400)
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
+    const user = getAuthUserFromContext(c)
     if (!user) return c.json({ error: 'Unauthorized' }, 401)
     const userId = user.id
 

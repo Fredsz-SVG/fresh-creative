@@ -1,23 +1,21 @@
 import { Hono } from 'hono'
-import { getSupabaseClient } from '../../../lib/supabase'
 import { getRole } from '../../../lib/auth'
 import { getD1 } from '../../../lib/edge-env'
+import { AppEnv, requireAuthJwt } from '../../../middleware'
+import { getAuthUserFromContext } from '../../../lib/auth-user'
 
-const checkoutRoute = new Hono()
+const checkoutRoute = new Hono<AppEnv>()
+checkoutRoute.use('*', requireAuthJwt)
 
 checkoutRoute.post('/', async (c) => {
   try {
     const albumId = c.req.param('id')
     if (!albumId) return c.json({ error: 'Album ID required' }, 400)
 
-    const supabase = getSupabaseClient(c)
     const db = getD1(c)
     if (!db) return c.json({ error: 'Database not configured' }, 503)
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
-    if (authError || !user) return c.json({ error: 'Unauthorized' }, 401)
+    const user = getAuthUserFromContext(c)
+    if (!user) return c.json({ error: 'Unauthorized' }, 401)
 
     const album = await db
       .prepare(`SELECT * FROM albums WHERE id = ?`)

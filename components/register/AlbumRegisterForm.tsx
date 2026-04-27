@@ -4,10 +4,10 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from '@/lib/toast'
 import { Check, Loader2, X, ChevronDown } from 'lucide-react'
-import { supabase } from '@/lib/supabase'
 import { apiUrl } from '../../lib/api-url'
 import { fetchWithAuth } from '../../lib/api-client'
 import { asObject, asString, getErrorMessage } from '@/components/yearbook/utils/response-narrowing'
+import { onAuthChange } from '@/lib/auth-client'
 
 export type AlbumRegisterFormProps = {
   /** Langsung pakai albumId (halaman /register/[id]) */
@@ -73,8 +73,12 @@ export default function AlbumRegisterForm({ albumId: albumIdProp, token, loginRe
 
     const checkAuthAndFetchData = async () => {
       try {
-        const authResult = await supabase.auth.getUser()
-        const currentUser = authResult.data.user
+        const currentUser = await new Promise<import('@/lib/auth-client').AuthUser | null>((resolve) => {
+          const unsub = onAuthChange((u) => {
+            unsub()
+            resolve(u)
+          })
+        })
         if (!currentUser) {
           toast.error('Silakan login terlebih dahulu untuk mendaftar')
           router.push(`/login?next=${encodeURIComponent(loginReturnPath ?? defaultReturnPath)}`)

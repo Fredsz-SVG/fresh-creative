@@ -1,38 +1,34 @@
 import type { D1Database, R2Bucket } from '@cloudflare/workers-types'
 import { Hono } from 'hono'
 import type { Context } from 'hono'
-import { getSupabaseClient } from '../../lib/supabase'
 import { getRole } from '../../lib/auth'
-import { ensureUserInD1, honoEnvForSupabasePublicSync } from '../../lib/d1-users'
+import { ensureUserInD1 } from '../../lib/d1-users'
 import { putAlbumPhoto, deleteAlbumObject } from '../../lib/r2-assets'
 import { albumPathFromR2Key } from '../../lib/storage-layout'
 import { getR2KeyFromPublicUrl } from '../../lib/public-file-url'
+import { AppEnv, requireAuthJwt } from '../../middleware'
+import { getAuthUserFromContext } from '../../lib/auth-user'
 
-interface HonoUser {
-  id: string
-  role: string
-}
+const adminPortfolio = new Hono<AppEnv>()
+adminPortfolio.use('*', requireAuthJwt)
 
-const adminPortfolio = new Hono<{ Variables: { user: HonoUser } }>()
-
-function requireDb(c: Context<{ Variables: { user: HonoUser } }>): D1Database | null {
+function requireDb(c: Context): D1Database | null {
   return (c.env as { DB?: D1Database }).DB ?? null
 }
 
-function requireAssets(c: Context<{ Variables: { user: HonoUser } }>): R2Bucket | null {
+function requireAssets(c: Context): R2Bucket | null {
   return (c.env as { ASSETS?: R2Bucket }).ASSETS ?? null
 }
 
 // GET /api/admin/portfolio
 adminPortfolio.get('/', async (c) => {
-  const supabase = getSupabaseClient(c)
-  const { data: { user }, error: authError } = await supabase.auth.getUser()
-  if (authError || !user) return c.json({ error: 'Unauthorized' }, 401)
+  const user = getAuthUserFromContext(c)
+  if (!user) return c.json({ error: 'Unauthorized' }, 401)
 
   const db = requireDb(c)
   if (!db) return c.json({ error: 'D1 not configured' }, 503)
   
-  await ensureUserInD1(db, user, honoEnvForSupabasePublicSync(c.env))
+  await ensureUserInD1(db, user)
   if (await getRole(c, user) !== 'admin') return c.json({ error: 'Forbidden' }, 403)
 
   try {
@@ -45,8 +41,7 @@ adminPortfolio.get('/', async (c) => {
 
 // POST /api/admin/portfolio
 adminPortfolio.post('/', async (c) => {
-  const supabase = getSupabaseClient(c)
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = getAuthUserFromContext(c)
   if (!user) return c.json({ error: 'Unauthorized' }, 401)
 
   const db = requireDb(c)
@@ -87,8 +82,7 @@ adminPortfolio.post('/', async (c) => {
 // PUT /api/admin/portfolio/:id
 adminPortfolio.put('/:id', async (c) => {
   const id = c.req.param('id')
-  const supabase = getSupabaseClient(c)
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = getAuthUserFromContext(c)
   if (!user) return c.json({ error: 'Unauthorized' }, 401)
 
   const db = requireDb(c)
@@ -144,8 +138,7 @@ adminPortfolio.put('/:id', async (c) => {
 // DELETE /api/admin/portfolio/:id
 adminPortfolio.delete('/:id', async (c) => {
   const id = c.req.param('id')
-  const supabase = getSupabaseClient(c)
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = getAuthUserFromContext(c)
   if (!user) return c.json({ error: 'Unauthorized' }, 401)
 
   const db = requireDb(c)

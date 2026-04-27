@@ -1,21 +1,19 @@
 import { Hono } from 'hono'
-import { getSupabaseClient } from '../../../lib/supabase'
 import { getD1 } from '../../../lib/edge-env'
+import { AppEnv, requireAuthJwt } from '../../../middleware'
+import { getAuthUserFromContext } from '../../../lib/auth-user'
 
-const albumsIdJoinStats = new Hono()
+const albumsIdJoinStats = new Hono<AppEnv>()
+albumsIdJoinStats.use('*', requireAuthJwt)
 
 albumsIdJoinStats.get('/', async (c) => {
   const albumId = c.req.param('id')
-  const supabase = getSupabaseClient(c)
   const db = getD1(c)
   if (!db) return c.json({ error: 'Database not configured' }, 503)
 
   try {
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
-    if (authError || !user) return c.json({ error: 'Unauthorized' }, 401)
+    const user = getAuthUserFromContext(c)
+    if (!user) return c.json({ error: 'Unauthorized' }, 401)
 
     const album = await db
       .prepare(`SELECT id, user_id, students_count FROM albums WHERE id = ?`)

@@ -2,9 +2,9 @@
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Pencil, X, Sparkles, Trash2, ShieldCheck, UserCheck, LayoutDashboard, RefreshCw } from 'lucide-react'
-import { supabase } from '@/lib/supabase'
 import { apiUrl } from '../../lib/api-url'
 import { fetchWithAuth } from '../../lib/api-client'
+import { onAuthChange } from '@/lib/auth-client'
 
 type OverviewStats = {
   totalUsers: number
@@ -81,11 +81,10 @@ export default function AdminPage() {
 
   // Needed to hide actions for the currently logged-in admin.
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setCurrentAdminId(session?.user?.id ?? null)
-    }).catch(() => {
-      setCurrentAdminId(null)
+    const unsub = onAuthChange((user) => {
+      setCurrentAdminId(user?.uid ?? null)
     })
+    return () => unsub()
   }, [])
 
   const fetchOverview = useCallback(async (silent = false) => {

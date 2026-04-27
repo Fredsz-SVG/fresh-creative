@@ -1,21 +1,20 @@
 import { Hono } from 'hono'
-import { getSupabaseClient } from '../../../../lib/supabase'
 import { getRole } from '../../../../lib/auth'
 import { getD1, getAssets } from '../../../../lib/edge-env'
 import { deleteAlbumObject, putAlbumPhoto } from '../../../../lib/r2-assets'
 import { publicAlbumAssetUrl } from '../../../../lib/public-file-url'
 import { parseJsonArray } from '../../../../lib/d1-json'
+import { AppEnv, requireAuthJwt } from '../../../../middleware'
+import { getAuthUserFromContext } from '../../../../lib/auth-user'
 
-const albumsIdPhotos = new Hono()
+const albumsIdPhotos = new Hono<AppEnv>()
+albumsIdPhotos.use('*', requireAuthJwt)
 
 // GET /api/albums/:id/photos
 albumsIdPhotos.get('/', async (c) => {
-  const supabase = getSupabaseClient(c)
   const db = getD1(c)
   if (!db) return c.json({ error: 'Database not configured' }, 503)
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const user = getAuthUserFromContext(c)
   if (!user) return c.json({ error: 'Unauthorized' }, 401)
 
   const albumId = c.req.param('id')
@@ -75,14 +74,11 @@ albumsIdPhotos.get('/', async (c) => {
 
 // DELETE /api/albums/:id/photos?class_id=&student_name=&index=
 albumsIdPhotos.delete('/', async (c) => {
-  const supabase = getSupabaseClient(c)
   const db = getD1(c)
   const bucket = getAssets(c)
   if (!db) return c.json({ error: 'Database not configured' }, 503)
   if (!bucket) return c.json({ error: 'Storage not configured' }, 503)
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const user = getAuthUserFromContext(c)
   if (!user) return c.json({ error: 'Unauthorized' }, 401)
 
   const albumId = c.req.param('id')
@@ -151,14 +147,11 @@ albumsIdPhotos.delete('/', async (c) => {
 
 // POST /api/albums/:id/photos
 albumsIdPhotos.post('/', async (c) => {
-  const supabase = getSupabaseClient(c)
   const db = getD1(c)
   const bucket = getAssets(c)
   if (!db) return c.json({ error: 'Database not configured' }, 503)
   if (!bucket) return c.json({ error: 'Storage not configured' }, 503)
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const user = getAuthUserFromContext(c)
   if (!user) return c.json({ error: 'Unauthorized' }, 401)
 
   const albumId = c.req.param('id')

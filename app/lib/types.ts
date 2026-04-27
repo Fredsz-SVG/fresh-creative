@@ -1,5 +1,10 @@
 
-import { User } from "@supabase/supabase-js";
+export type AuthUser = {
+  id: string
+  email?: string | null
+  user_metadata?: Record<string, unknown>
+  app_metadata?: Record<string, unknown>
+}
 
 // Base interface for items with a name, useful for packages or other entities
 export interface NamedItem {
@@ -39,7 +44,7 @@ export interface Album {
   user_id: string;
   pricing_package_id: string | null;
   package_snapshot: PackageSnapshot | null;
-  users: User | null;
+  users: AuthUser | null;
 }
 
 // A combined type for data that can be either an Album or a Lead

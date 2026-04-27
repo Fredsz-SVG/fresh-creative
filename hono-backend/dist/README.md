@@ -1,1 +1,0 @@
-This folder contains the built output assets for the worker "fresh-creative" generated at 2026-04-16T02:36:37.591Z.

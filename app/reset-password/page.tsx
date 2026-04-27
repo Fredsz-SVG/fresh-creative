@@ -3,77 +3,33 @@
 import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { supabase } from '@/lib/supabase'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { finishPasswordReset } from '@/lib/auth-client'
 
 function ResetPasswordForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const code = searchParams.get('code')
-  const tokenHash = searchParams.get('token_hash')
-  const type = searchParams.get('type')
+  const oobCode = searchParams.get('oobCode') || searchParams.get('oobcode')
 
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [exchanging, setExchanging] = useState(!!(code || (tokenHash && type === 'recovery')))
   const [ready, setReady] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
 
   useEffect(() => {
-    if (code) {
-      const url = new URL('/auth/callback', window.location.origin)
-      url.searchParams.set('code', code)
-      url.searchParams.set('next', '/reset-password')
-      window.location.replace(url.toString())
+    if (!oobCode) {
+      setReady(false)
+      setError('Link tidak valid atau kadaluarsa. Silakan minta link reset password baru.')
       return
     }
-  }, [code])
-
-  useEffect(() => {
-    if (code) return
-
-    if (!(tokenHash && type === 'recovery')) {
-      const checkSession = async () => {
-        const { data: { session } } = await supabase.auth.getSession()
-        if (session?.user) {
-          setReady(true)
-          setExchanging(false)
-          return
-        }
-        setExchanging(false)
-        setError('Link tidak valid atau kadaluarsa. Silakan minta link reset password baru.')
-      }
-      checkSession()
-      return
-    }
-
-    const verifyToken = async () => {
-      setExchanging(true)
-      setError('')
-      try {
-        const { error: verifyError } = await supabase.auth.verifyOtp({
-          token_hash: tokenHash!,
-          type: 'recovery',
-        })
-        if (verifyError) {
-          setError(verifyError.message === 'Token has expired or is invalid' ? 'Link sudah kadaluarsa. Silakan minta link reset password baru.' : verifyError.message)
-        } else {
-          setReady(true)
-        }
-      } catch {
-        setError('Gagal memverifikasi link. Silakan coba lagi atau minta link baru.')
-      } finally {
-        setExchanging(false)
-      }
-    }
-
-    verifyToken()
-  }, [code, tokenHash, type])
+    setError('')
+    setReady(true)
+  }, [oobCode])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -88,14 +44,12 @@ function ResetPasswordForm() {
     }
     setLoading(true)
     try {
-      const { error: updateError } = await supabase.auth.updateUser({ password })
-      if (updateError) {
-        setError(updateError.message)
-        setLoading(false)
+      if (!oobCode) {
+        setError('Link reset tidak valid atau kadaluarsa.')
         return
       }
+      await finishPasswordReset(oobCode, password)
       setSuccess(true)
-      await supabase.auth.signOut()
       setTimeout(() => {
         router.push('/login?message=' + encodeURIComponent('Password berhasil diubah. Silakan login dengan password baru.'))
       }, 1500)
@@ -106,7 +60,7 @@ function ResetPasswordForm() {
     }
   }
 
-  if (code || exchanging) {
+  if (!ready && !error) {
     return (
       <div className="min-h-screen grid lg:grid-cols-2 -m-4 lg:m-0">
         <div className="relative hidden lg:flex flex-col justify-between bg-gradient-to-br from-indigo-600 via-indigo-500 to-indigo-400 p-12 text-white min-h-screen">
@@ -120,7 +74,7 @@ function ResetPasswordForm() {
           <div className="relative z-20 flex items-center justify-center flex-1">
             <div className="text-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4" />
-              <h2 className="text-2xl font-bold">{code ? 'Mengalihkan...' : 'Memverifikasi link...'}</h2>
+              <h2 className="text-2xl font-bold">Memverifikasi link...</h2>
             </div>
           </div>
 
@@ -137,9 +91,7 @@ function ResetPasswordForm() {
 
             <div className="text-center mb-6">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500 mx-auto mb-4" />
-              <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-                {code ? 'Mengalihkan...' : 'Memverifikasi...'}
-              </h1>
+              <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Memverifikasi...</h1>
             </div>
           </div>
         </div>

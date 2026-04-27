@@ -1,13 +1,15 @@
 import { Hono } from 'hono'
 import type { Context } from 'hono'
-import { getSupabaseClient } from '../../../lib/supabase'
 import { getRole } from '../../../lib/auth'
 import { getD1 } from '../../../lib/edge-env'
 import { getAssets } from '../../../lib/edge-env'
 import { putAlbumPhoto } from '../../../lib/r2-assets'
 import { publicAlbumAssetUrl } from '../../../lib/public-file-url'
+import { AppEnv, requireAuthJwt } from '../../../middleware'
+import { getAuthUserFromContext } from '../../../lib/auth-user'
 
-const albumFlipbookRoute = new Hono()
+const albumFlipbookRoute = new Hono<AppEnv>()
+albumFlipbookRoute.use('*', requireAuthJwt)
 
 type FlipbookManageDenied = {
   ok: false
@@ -24,12 +26,9 @@ type FlipbookManageAllowed = {
 type FlipbookManageResult = FlipbookManageDenied | FlipbookManageAllowed
 
 async function canManageFlipbook(c: Context, albumId: string): Promise<FlipbookManageResult> {
-  const supabase = getSupabaseClient(c)
   const db = getD1(c)
   if (!db) return { ok: false, status: 503, error: 'Database not configured' }
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const user = getAuthUserFromContext(c as unknown as import('hono').Context<AppEnv>)
   if (!user) return { ok: false, status: 401, error: 'Unauthorized' }
   const album = await db
     .prepare(`SELECT id, user_id FROM albums WHERE id = ?`)
@@ -53,15 +52,12 @@ function denyFlipbookManage(c: Context, perm: FlipbookManageDenied) {
 
 // POST /api/albums/:id/flipbook/upload — upload flipbook file to R2 (owner/admin/album-admin)
 albumFlipbookRoute.post('/upload', async (c) => {
-  const supabase = getSupabaseClient(c)
   const db = getD1(c)
   const bucket = getAssets(c)
   if (!db) return c.json({ error: 'Database not configured' }, 503)
   if (!bucket) return c.json({ error: 'Storage not configured' }, 503)
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const user = getAuthUserFromContext(c)
   if (!user) return c.json({ error: 'Unauthorized' }, 401)
 
   const albumId = c.req.param('id')
@@ -356,12 +352,9 @@ albumFlipbookRoute.get('/public', async (c) => {
 
 // POST /api/albums/:id/flipbook — clean flipbook assets (admin/owner only)
 albumFlipbookRoute.post('/', async (c) => {
-  const supabase = getSupabaseClient(c)
   const db = getD1(c)
   if (!db) return c.json({ error: 'Database not configured' }, 503)
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const user = getAuthUserFromContext(c)
   if (!user) return c.json({ error: 'Unauthorized' }, 401)
   const albumId = c.req.param('id')
   if (!albumId) return c.json({ error: 'Album ID required' }, 400)

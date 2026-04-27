@@ -1,19 +1,10 @@
-import { createClient } from '@/lib/supabase-server'
-import { redirect, notFound } from 'next/navigation'
+import { notFound } from 'next/navigation'
 import YearbookAlbumClient from '@/components/yearbook/YearbookAlbumClient'
-import { getAlbumOverview, getMyAccessAndRequests } from '@/lib/services/yearbook-service'
+import { getAlbumOverview } from '@/lib/services/yearbook-service'
 
 export default async function AdminYearbookAlbumPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) {
-    redirect('/login')
-  }
-  const [album, accessData] = await Promise.all([
-    getAlbumOverview(id),
-    getMyAccessAndRequests(id, user.id)
-  ])
+  const album = await getAlbumOverview(id)
   if (!album) {
     return notFound()
   }
@@ -21,7 +12,7 @@ export default async function AdminYearbookAlbumPage({ params }: { params: Promi
     <YearbookAlbumClient
       initialAlbum={album as any}
       initialMembers={{}}
-      initialAccess={accessData as any}
+      initialAccess={{ access: {}, requests: {} } as any}
       backHref="/admin/albums"
       backLabel="Ke Manajemen Album"
     />

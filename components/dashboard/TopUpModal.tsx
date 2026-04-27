@@ -3,7 +3,6 @@
 import { X, CreditCard, Wallet, Loader2, Gift, ChevronDown } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { toast } from '@/lib/toast'
-import { supabase } from '@/lib/supabase'
 import { fetchWithAuth } from '../../lib/api-client'
 import { asObject, asString } from '@/components/yearbook/utils/response-narrowing'
 

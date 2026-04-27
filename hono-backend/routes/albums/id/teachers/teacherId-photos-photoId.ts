@@ -1,15 +1,16 @@
 import { Hono } from 'hono'
-import { getSupabaseClient } from '../../../../lib/supabase'
 import { getRole } from '../../../../lib/auth'
 import { getD1, getAssets } from '../../../../lib/edge-env'
 import { deleteAlbumObject } from '../../../../lib/r2-assets'
+import { AppEnv, requireAuthJwt } from '../../../../middleware'
+import { getAuthUserFromContext } from '../../../../lib/auth-user'
 
-const albumsIdTeachersTeacherIdPhotosPhotoId = new Hono()
+const albumsIdTeachersTeacherIdPhotosPhotoId = new Hono<AppEnv>()
+albumsIdTeachersTeacherIdPhotosPhotoId.use('*', requireAuthJwt)
 
 // DELETE /api/albums/:id/teachers/:teacherId/photos/:photoId
 albumsIdTeachersTeacherIdPhotosPhotoId.delete('/', async (c) => {
   try {
-    const supabase = getSupabaseClient(c)
     const db = getD1(c)
     const bucket = getAssets(c)
     if (!db) return c.json({ error: 'Database not configured' }, 503)
@@ -17,13 +18,8 @@ albumsIdTeachersTeacherIdPhotosPhotoId.delete('/', async (c) => {
     const albumId = c.req.param('id')
     const teacherId = c.req.param('teacherId')
     const photoId = c.req.param('photoId')
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
-    if (authError || !user) {
-      return c.json({ error: 'Unauthorized' }, 401)
-    }
+    const user = getAuthUserFromContext(c)
+    if (!user) return c.json({ error: 'Unauthorized' }, 401)
     const isGlobalAdmin = (await getRole(c, user)) === 'admin'
     if (!isGlobalAdmin) {
       const album = await db

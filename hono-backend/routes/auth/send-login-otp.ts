@@ -1,7 +1,7 @@
 import { Hono } from 'hono'
-import { getSupabaseClient } from '../../lib/supabase'
 import { getD1 } from '../../lib/edge-env'
-import { ensureUserInD1, honoEnvForSupabasePublicSync } from '../../lib/d1-users'
+import { ensureUserInD1 } from '../../lib/d1-users'
+import { AppEnv, requireAuthJwt } from '../../middleware'
 
 const OTP_EXPIRY_MINUTES = 5
 
@@ -34,7 +34,8 @@ function generateOtp(): string {
   return Math.floor(100000 + Math.random() * 900000).toString()
 }
 
-const sendLoginOtp = new Hono()
+const sendLoginOtp = new Hono<AppEnv>()
+sendLoginOtp.use('*', requireAuthJwt)
 
 sendLoginOtp.post('/', async (c) => {
   // Dev mode: benar-benar skip OTP flow (hindari 500 saat tabel/login_otps belum siap).
@@ -42,18 +43,22 @@ sendLoginOtp.post('/', async (c) => {
     return c.json({ ok: true, skipped: true })
   }
 
-  const supabase = getSupabaseClient(c)
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser()
-
-  if (authError || !user?.email) {
+  const authUser = c.get('user')
+  const userId = authUser?.id
+  const email = authUser?.email ?? ''
+  if (!userId || !email) {
     return c.json({ error: 'Unauthorized' }, 401)
   }
 
   const db0 = getD1(c)
-  if (db0) await ensureUserInD1(db0, user, honoEnvForSupabasePublicSync(c.env))
+  if (db0) {
+    await ensureUserInD1(db0, {
+      id: userId,
+      email,
+      user_metadata: {},
+      app_metadata: authUser?.role ? { role: authUser.role } : {},
+    })
+  }
 
   const env = c.env as ResendEnv
   const apiKey = env.RESEND_API_KEY
@@ -72,7 +77,7 @@ sendLoginOtp.post('/', async (c) => {
         `INSERT INTO login_otps (user_id, code, expires_at) VALUES (?, ?, ?)
          ON CONFLICT(user_id) DO UPDATE SET code = excluded.code, expires_at = excluded.expires_at, created_at = datetime('now')`
       )
-      .bind(user.id, code, expiresAt)
+      .bind(userId, code, expiresAt)
       .run()
 
     if (!r.success) {
@@ -84,7 +89,7 @@ sendLoginOtp.post('/', async (c) => {
       const resend = new Resend(apiKey)
       const { error: resendError } = await resend.emails.send({
         from: fromEmail,
-        to: user.email,
+        to: email,
         subject: 'Kode OTP masuk dashboard',
         html: `<p>Kode OTP Anda: <strong>${code}</strong></p><p>Berlaku ${OTP_EXPIRY_MINUTES} menit.</p>`,
       })
@@ -100,15 +105,7 @@ sendLoginOtp.post('/', async (c) => {
     return c.json({ ok: true })
   }
 
-  // Fallback: Supabase OTP
-  const { error } = await supabase.auth.signInWithOtp({
-    email: user.email,
-    options: { shouldCreateUser: false },
-  })
-  if (error) {
-    return c.json({ error: error.message }, 400)
-  }
-  return c.json({ ok: true })
+  return c.json({ error: 'OTP email provider not configured' }, 503)
 })
 
 export default sendLoginOtp

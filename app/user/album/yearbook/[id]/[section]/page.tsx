@@ -1,4 +1,3 @@
-import { createClient } from '@/lib/supabase-server'
 import { redirect, notFound } from 'next/navigation'
 import { isValidSectionSlug } from '@/components/yearbook/lib/yearbook-paths'
 
@@ -10,10 +9,6 @@ export default async function YearbookSectionRedirect(props: {
   if (!isValidSectionSlug(section)) {
     return notFound()
   }
-
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/auth/login')
 
   redirect(`/user/album/yearbook/${id}?section=${section}`)
 }

@@ -1,19 +1,18 @@
 import { Hono } from 'hono'
-import { getSupabaseClient } from '../../../lib/supabase'
 import { getRole } from '../../../lib/auth'
 import { getD1 } from '../../../lib/edge-env'
 import { parseJsonArray } from '../../../lib/d1-json'
+import { tryGetAuthUser } from '../../../lib/auth-user'
+import type { AppEnv } from '../../../middleware'
 
-const allClassMembersRoute = new Hono()
+const allClassMembersRoute = new Hono<AppEnv>()
 
 allClassMembersRoute.get('/', async (c) => {
   const albumId = c.req.param('id')
   try {
-    const supabase = getSupabaseClient(c)
     const db = getD1(c)
     if (!db) return c.json({ error: 'Database not configured' }, 503)
-    const { data: authRes } = await supabase.auth.getUser()
-    const user = authRes?.user || null
+    const user = await tryGetAuthUser(c)
 
     const album = await db
       .prepare(`SELECT user_id FROM albums WHERE id = ?`)

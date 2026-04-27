@@ -1,11 +1,13 @@
 import type { D1Database } from '@cloudflare/workers-types'
 import { Hono } from 'hono'
-import { getSupabaseClient } from '../../../../lib/supabase'
 import { getRole } from '../../../../lib/auth'
 import { getD1, getAssets } from '../../../../lib/edge-env'
 import { deleteAlbumObject } from '../../../../lib/r2-assets'
+import { AppEnv, requireAuthJwt } from '../../../../middleware'
+import { getAuthUserFromContext } from '../../../../lib/auth-user'
 
-const albumsIdTeachersTeacherId = new Hono()
+const albumsIdTeachersTeacherId = new Hono<AppEnv>()
+albumsIdTeachersTeacherId.use('*', requireAuthJwt)
 
 async function canManageTeacher(
   db: D1Database,
@@ -30,20 +32,14 @@ async function canManageTeacher(
 // PATCH /api/albums/:id/teachers/:teacherId
 albumsIdTeachersTeacherId.patch('/', async (c) => {
   try {
-    const supabase = getSupabaseClient(c)
     const db = getD1(c)
     if (!db) return c.json({ error: 'Database not configured' }, 503)
     const albumId = c.req.param('id')
     const teacherId = c.req.param('teacherId')
     const body = await c.req.json()
     const { name, title, message, video_url } = body
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
-    if (authError || !user) {
-      return c.json({ error: 'Unauthorized' }, 401)
-    }
+    const user = getAuthUserFromContext(c)
+    if (!user) return c.json({ error: 'Unauthorized' }, 401)
     const isGlobalAdmin = (await getRole(c, user)) === 'admin'
     if (!(await canManageTeacher(db, albumId, user.id, isGlobalAdmin))) {
       return c.json({ error: 'Forbidden' }, 403)
@@ -89,19 +85,13 @@ albumsIdTeachersTeacherId.patch('/', async (c) => {
 // DELETE /api/albums/:id/teachers/:teacherId
 albumsIdTeachersTeacherId.delete('/', async (c) => {
   try {
-    const supabase = getSupabaseClient(c)
     const db = getD1(c)
     const bucket = getAssets(c)
     if (!db) return c.json({ error: 'Database not configured' }, 503)
     const albumId = c.req.param('id')
     const teacherId = c.req.param('teacherId')
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
-    if (authError || !user) {
-      return c.json({ error: 'Unauthorized' }, 401)
-    }
+    const user = getAuthUserFromContext(c)
+    if (!user) return c.json({ error: 'Unauthorized' }, 401)
     const isGlobalAdmin = (await getRole(c, user)) === 'admin'
     if (!(await canManageTeacher(db, albumId, user.id, isGlobalAdmin))) {
       return c.json({ error: 'Forbidden' }, 403)

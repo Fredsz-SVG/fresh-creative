@@ -2,8 +2,6 @@
 
 import { useEffect, useLayoutEffect, useState } from 'react'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
-import { getRole } from '@/lib/auth'
 import DashboardShell from '@/components/dashboard/DashboardShell'
 import {
     LayoutDashboard,
@@ -12,6 +10,7 @@ import {
 import type { NavSection } from '@/components/dashboard/DashboardShell'
 import { ALBUMS_SECTION_USER } from '@/lib/dashboard-nav'
 import { fetchWithAuth } from '../../lib/api-client'
+import { onAuthChange, signOut } from '@/lib/auth-client'
 
 const userNavSections: NavSection[] = [
     {
@@ -89,8 +88,13 @@ export default function UserLayoutClient({
     useEffect(() => {
         let unsubscribed = false
         const check = async () => {
-            const { data: { session } } = await supabase.auth.getSession()
-            if (!session) {
+            const user = await new Promise<import('@/lib/auth-client').AuthUser | null>((resolve) => {
+                const unsub = onAuthChange((u) => {
+                    unsub()
+                    resolve(u)
+                })
+            })
+            if (!user) {
                 clearUserGate()
                 if (!unsubscribed) setOk(false)
                 if (!unsubscribed) router.replace('/login')
@@ -107,7 +111,7 @@ export default function UserLayoutClient({
                     clearUserGate()
                     if (!unsubscribed) setOk(false)
                     await fetchWithAuth('/api/auth/logout')
-                    await supabase.auth.signOut()
+                    await signOut()
                     if (!unsubscribed) router.replace('/login?error=account_suspended')
                     return
                 }
@@ -120,7 +124,15 @@ export default function UserLayoutClient({
             } catch {
             }
 
-            const role = await getRole(supabase, session.user)
+            const role = (await (async () => {
+                try {
+                    const resBootstrap = await fetchWithAuth('/api/user/bootstrap')
+                    const bootstrap = (await resBootstrap.json().catch(() => ({}))) as any
+                    return bootstrap?.me?.role === 'admin' ? 'admin' : 'user'
+                } catch {
+                    return 'user'
+                }
+            })())
             if (role === 'admin') {
                 clearUserGate()
                 if (!unsubscribed) setOk(false)
@@ -139,9 +151,9 @@ export default function UserLayoutClient({
                 }
             }
 
-            setUserEmail(session.user?.email ?? '')
-            setUserName(session.user?.user_metadata?.full_name ?? session.user?.email ?? 'User')
-            setUserId(session.user?.id ?? '')
+            setUserEmail(user.email ?? '')
+            setUserName(user.displayName ?? user.email ?? 'User')
+            setUserId(user.uid ?? '')
             setOk(true)
             writeUserGate()
 
@@ -168,7 +180,7 @@ export default function UserLayoutClient({
                     clearUserGate()
                     setOk(false)
                     await fetchWithAuth('/api/auth/logout')
-                    await supabase.auth.signOut()
+                    await signOut()
                     router.replace('/login?error=account_suspended')
                 }
             }
@@ -181,7 +193,7 @@ export default function UserLayoutClient({
     const handleLogout = async () => {
         clearUserGate()
         await fetchWithAuth('/api/auth/logout')
-        await supabase.auth.signOut()
+        await signOut()
         router.refresh()
         router.push('/login')
     }

@@ -1,10 +1,10 @@
 /**
  * API client untuk backend Hono (origin terpisah).
- * Mengirim Supabase access token di header Authorization bila cookie tidak ikut cross-origin.
+ * Mengirim Firebase ID token di header Authorization bila cookie tidak ikut cross-origin.
  */
 import { apiUrl } from './api-url'
-import { supabase } from './supabase'
 import { convertToWebP } from './image-conversion'
+import { getIdToken } from './auth-client'
 
 type CachedResponse = {
   expiresAt: number
@@ -57,12 +57,10 @@ function buildRequestKey(method: string, fullUrl: string): string {
  * Use for all requests to the API that require auth.
  */
 export async function getAuthHeaders(): Promise<Record<string, string>> {
-  const {
-    data: { session },
-  } = await supabase.auth.getSession()
   const headers: Record<string, string> = {}
-  if (session?.access_token) {
-    headers['Authorization'] = `Bearer ${session.access_token}`
+  const token = await getIdToken()
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`
   }
   return headers
 }

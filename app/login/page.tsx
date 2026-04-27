@@ -3,12 +3,11 @@
 import { Suspense, useState, useEffect, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { supabase } from '@/lib/supabase'
-import { getRole } from '@/lib/auth'
 import { toast } from '@/lib/toast'
 import { fetchWithAuth } from '../../lib/api-client'
 import { asObject } from '@/components/yearbook/utils/response-narrowing'
 import { AnimatedLoginPage } from '@/components/animated-characters-login-page'
+import { onAuthChange, signInWithGoogle, signInWithPassword, signOut } from '@/lib/auth-client'
 
 function LoginContent() {
   const [checkingSession, setCheckingSession] = useState(true)
@@ -78,51 +77,61 @@ function LoginContent() {
   }
 
   useEffect(() => {
-    let cancelled = false;
-    const redirectIfLoggedIn = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) {
-        if (!cancelled) setCheckingSession(false);
-        return;
+    let cancelled = false
+    const unsub = onAuthChange(async (user) => {
+      if (!user) {
+        if (!cancelled) setCheckingSession(false)
+        return
       }
-      if (!session.user.email_confirmed_at && session.user.app_metadata?.provider === 'email') {
-        await supabase.auth.signOut();
-        if (!cancelled) setCheckingSession(false);
-        return;
-      }
-      const { data: profile, error: profileError } = await supabase
-        .from('users')
-        .select('is_suspended')
-        .eq('id', session.user.id)
-        .maybeSingle();
-      if (!profileError && profile?.is_suspended) {
-        await fetchWithAuth('/api/auth/logout');
-        await supabase.auth.signOut();
-        setSuspended(true);
-        setSuspendedMessage('Akun Anda sedang disuspend. Silakan hubungi admin.');
-        if (!cancelled) setCheckingSession(false);
-        return;
-      }
-      const res = await fetchWithAuth('/api/auth/otp-status');
-      const data = asObject(await res.json().catch(() => ({})));
-      if (data.verified) {
-        const safeNext = nextPath.startsWith('/') && !nextPath.startsWith('//') ? nextPath : '';
-        const role = await getRole(supabase, session.user);
-        let finalNext = safeNext;
-        if (role === 'admin' && finalNext.startsWith('/user')) {
-          finalNext = finalNext.replace('/user', '/admin');
+
+      try {
+        const resBootstrap = await fetchWithAuth('/api/user/bootstrap')
+        const bootstrap = (await resBootstrap.json().catch(() => ({}))) as {
+          me?: { isSuspended?: boolean; role?: 'admin' | 'user' }
+          otp?: { verified?: boolean; suspended?: boolean }
         }
-        router.replace(finalNext || (role === 'admin' ? '/admin' : '/user'));
-        return;
+
+        if (resBootstrap.ok && bootstrap?.me?.isSuspended) {
+          await fetchWithAuth('/api/auth/logout')
+          await signOut()
+          setSuspended(true)
+          setSuspendedMessage('Akun Anda sedang disuspend. Silakan hubungi admin.')
+          if (!cancelled) setCheckingSession(false)
+          return
+        }
+
+        if (bootstrap?.otp?.suspended) {
+          await fetchWithAuth('/api/auth/logout')
+          await signOut()
+          setSuspended(true)
+          setSuspendedMessage('Akun Anda sedang disuspend. Silakan hubungi admin.')
+          if (!cancelled) setCheckingSession(false)
+          return
+        }
+
+        if (bootstrap?.otp?.verified) {
+          const safeNext = nextPath.startsWith('/') && !nextPath.startsWith('//') ? nextPath : ''
+          const role = bootstrap?.me?.role === 'admin' ? 'admin' : 'user'
+          let finalNext = safeNext
+          if (role === 'admin' && finalNext.startsWith('/user')) {
+            finalNext = finalNext.replace('/user', '/admin')
+          }
+          router.replace(finalNext || (role === 'admin' ? '/admin' : '/user'))
+          return
+        }
+
+        const q = nextPath ? `?next=${encodeURIComponent(nextPath)}` : ''
+        router.replace(`/auth/verify-otp${q}`)
+      } finally {
+        if (!cancelled) setCheckingSession(false)
       }
-      const q = nextPath ? `?next=${encodeURIComponent(nextPath)}` : '';
-      router.replace(`/auth/verify-otp${q}`);
-    };
-    redirectIfLoggedIn();
+    })
+
     return () => {
-      cancelled = true;
-    };
-  }, [router, nextPath]);
+      cancelled = true
+      unsub()
+    }
+  }, [router, nextPath])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -130,71 +139,36 @@ function LoginContent() {
     setError('')
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      })
+      const cred = await signInWithPassword(email, password)
+      const user = cred.user
 
-      if (error) {
-        if (error.message.includes('Email not confirmed')) {
-          setPopupState({
-            show: true,
-            title: 'Verifikasi Email',
-            message: 'Silakan verifikasi email Anda terlebih dahulu dengan mengklik link yang dikirim ke email Anda.',
-          })
-          setError('')
-        } else {
-          setError(error.message)
-        }
-      } else if (data.user) {
-        if (!data.user.email_confirmed_at && data.user.app_metadata?.provider === 'email') {
-          await supabase.auth.signOut()
-          setPopupState({
-            show: true,
-            title: 'Verifikasi Email',
-            message: 'Silakan verifikasi email Anda terlebih dahulu dengan mengklik link yang dikirim ke email Anda.',
-          })
-          setLoading(false)
-          return
-        }
+      if (!user) {
+        setError('Login gagal. Silakan coba lagi.')
+        return
+      }
 
-        const { data: profile, error: profileError } = await supabase
-          .from('users')
-          .select('is_suspended')
-          .eq('id', data.user.id)
-          .maybeSingle()
+      const resBootstrap = await fetchWithAuth('/api/user/bootstrap')
+      const bootstrap = asObject(await resBootstrap.json().catch(() => ({}))) as any
+      if (bootstrap?.me?.isSuspended || bootstrap?.otp?.suspended) {
+        await fetchWithAuth('/api/auth/logout')
+        await signOut()
+        setSuspended(true)
+        setSuspendedMessage('Akun Anda sedang disuspend. Silakan hubungi admin.')
+        setDismissedSuspended(false)
+        return
+      }
 
-        if (!profileError && profile?.is_suspended) {
-          await supabase.auth.signOut()
-          setSuspended(true)
-          setSuspendedMessage('Akun Anda sedang disuspend. Silakan hubungi admin.')
-          setDismissedSuspended(false)
-          setLoading(false)
-          return
+      if (bootstrap?.otp?.verified) {
+        const role = bootstrap?.me?.role === 'admin' ? 'admin' : 'user'
+        const safeNext = nextPath.startsWith('/') && !nextPath.startsWith('//') ? nextPath : ''
+        let finalNext = safeNext
+        if (role === 'admin' && finalNext.startsWith('/user')) {
+          finalNext = finalNext.replace('/user', '/admin')
         }
-
-        const statusRes = await fetchWithAuth('/api/auth/otp-status')
-        const statusData = asObject(await statusRes.json().catch(() => ({})))
-        if (statusData.suspended) {
-          await supabase.auth.signOut()
-          setSuspended(true)
-          setSuspendedMessage('Akun Anda sedang disuspend. Silakan hubungi admin.')
-          setDismissedSuspended(false)
-          setLoading(false)
-          return
-        }
-        if (statusData.verified) {
-          const role = await getRole(supabase, data.user)
-          const safeNext = nextPath.startsWith('/') && !nextPath.startsWith('//') ? nextPath : ''
-          let finalNext = safeNext
-          if (role === 'admin' && finalNext.startsWith('/user')) {
-            finalNext = finalNext.replace('/user', '/admin')
-          }
-          router.replace(finalNext || (role === 'admin' ? '/admin' : '/user'))
-        } else {
-          const q = nextPath ? `?next=${encodeURIComponent(nextPath)}` : ''
-          router.push(`/auth/verify-otp${q}`)
-        }
+        router.replace(finalNext || (role === 'admin' ? '/admin' : '/user'))
+      } else {
+        const q = nextPath ? `?next=${encodeURIComponent(nextPath)}` : ''
+        router.push(`/auth/verify-otp${q}`)
       }
     } catch {
       setError('Unexpected error occurred')
@@ -207,21 +181,7 @@ function LoginContent() {
     setGoogleLoading(true)
     setError('')
     try {
-      const origin = typeof window !== 'undefined' ? window.location.origin : ''
-      const url = new URL(origin ? `${origin}/auth/callback` : window.location.href)
-      url.searchParams.set('type', 'login')
-      if (nextPath && nextPath.startsWith('/') && !nextPath.startsWith('//')) {
-        url.searchParams.set('next', nextPath)
-      }
-
-      const { error: oauthError } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: url.toString(),
-          queryParams: { prompt: 'select_account' },
-        },
-      })
-      if (oauthError) setError(oauthError.message)
+      await signInWithGoogle()
     } catch {
       setError('Unexpected error occurred')
     } finally {

@@ -1,25 +1,17 @@
 import { Hono } from 'hono'
-import { getSupabaseClient } from '../../../lib/supabase'
 import { getD1 } from '../../../lib/edge-env'
-import {
-  deductCreditsFromSupabaseAndMirrorToD1,
-  getCreditsFromSupabase,
-} from '../../../lib/credits'
+import { deductCreditsFromD1, getCreditsFromD1 } from '../../../lib/credits'
+import { AppEnv, requireAuthJwt } from '../../../middleware'
 
-const albumsIdUnlockFeature = new Hono()
+const albumsIdUnlockFeature = new Hono<AppEnv>()
+albumsIdUnlockFeature.use('*', requireAuthJwt)
 
 // GET /api/albums/:id/unlock-feature
 albumsIdUnlockFeature.get('/', async (c) => {
-  const supabase = getSupabaseClient(c)
   const db = getD1(c)
   if (!db) return c.json({ error: 'Database not configured' }, 503)
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser()
-  if (authError || !user) {
-    return c.json({ error: 'Unauthorized' }, 401)
-  }
+  const user = c.get('user')
+  if (!user?.id) return c.json({ error: 'Unauthorized' }, 401)
   const albumId = c.req.param('id')
 
   // Satu query untuk baris user + album, plus baris flipbook tingkat album (OR); paket & pricing global dijalankan paralel.
@@ -97,14 +89,10 @@ albumsIdUnlockFeature.get('/', async (c) => {
 
 // POST /api/albums/:id/unlock-feature
 albumsIdUnlockFeature.post('/', async (c) => {
-  const supabase = getSupabaseClient(c)
   const db = getD1(c)
   if (!db) return c.json({ error: 'Database not configured' }, 503)
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser()
-  if (authError || !user) return c.json({ error: 'Unauthorized' }, 401)
+  const user = c.get('user')
+  if (!user?.id) return c.json({ error: 'Unauthorized' }, 401)
   const albumId = c.req.param('id')
   const body = await c.req.json()
   const featureType = body?.feature_type
@@ -146,16 +134,7 @@ albumsIdUnlockFeature.post('/', async (c) => {
   const cost = pricing?.credits_per_unlock ?? 0
   if (cost <= 0) return c.json({ error: 'Fitur tidak dapat dibuka dengan credit.' }, 400)
 
-  // Source of truth: Supabase credits
-  const credits = await getCreditsFromSupabase(c.env as Record<string, string>, user.id).catch(
-    async () => {
-      const row = await db
-        .prepare(`SELECT credits FROM users WHERE id = ?`)
-        .bind(user.id)
-        .first<{ credits: number | null }>()
-      return row?.credits ?? 0
-    }
-  )
+  const credits = await getCreditsFromD1(db, user.id)
   if (credits < cost)
     return c.json({ error: 'Credit tidak cukup. Silakan top up terlebih dahulu.' }, 402)
 
@@ -169,8 +148,7 @@ albumsIdUnlockFeature.post('/', async (c) => {
     .bind(fid, user.id, albumId, featureType, cost, unlockedAt)
     .run()
   if (!ins.success) return c.json({ error: 'Insert failed' }, 500)
-  const r = await deductCreditsFromSupabaseAndMirrorToD1({
-    env: c.env as Record<string, string>,
+  const r = await deductCreditsFromD1({
     db,
     userId: user.id,
     amount: cost,

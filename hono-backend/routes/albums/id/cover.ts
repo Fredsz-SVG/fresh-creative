@@ -1,24 +1,23 @@
 import { Hono } from 'hono'
-import { getSupabaseClient } from '../../../lib/supabase'
 import { getRole } from '../../../lib/auth'
 import { getD1, getAssets } from '../../../lib/edge-env'
 import { putAlbumPhoto, deleteAlbumObject } from '../../../lib/r2-assets'
 import { publicAlbumAssetUrl, getR2KeyFromPublicUrl } from '../../../lib/public-file-url'
 import { albumPathFromR2Key } from '../../../lib/storage-layout'
+import { AppEnv, requireAuthJwt } from '../../../middleware'
+import { getAuthUserFromContext } from '../../../lib/auth-user'
 
-const albumCoverRoute = new Hono()
+const albumCoverRoute = new Hono<AppEnv>()
+albumCoverRoute.use('*', requireAuthJwt)
 
 // POST /api/albums/:id/cover
 albumCoverRoute.post('/', async (c) => {
-  const supabase = getSupabaseClient(c)
   const db = getD1(c)
   const bucket = getAssets(c)
   if (!db) return c.json({ error: 'Database not configured' }, 503)
   if (!bucket) return c.json({ error: 'Storage not configured' }, 503)
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const user = getAuthUserFromContext(c)
   if (!user) return c.json({ error: 'Unauthorized' }, 401)
 
   const albumId = c.req.param('id')
@@ -106,13 +105,10 @@ albumCoverRoute.post('/', async (c) => {
 
 // DELETE /api/albums/:id/cover
 albumCoverRoute.delete('/', async (c) => {
-  const supabase = getSupabaseClient(c)
   const db = getD1(c)
   if (!db) return c.json({ error: 'Database not configured' }, 503)
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const user = getAuthUserFromContext(c)
   if (!user) return c.json({ error: 'Unauthorized' }, 401)
 
   const albumId = c.req.param('id')
