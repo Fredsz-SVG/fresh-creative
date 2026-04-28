@@ -44,7 +44,7 @@ export function Contact() {
             </p>
             <a
               href="#pricing"
-              className="font-general group relative z-10 mt-10 inline-flex items-center gap-2 cursor-pointer overflow-hidden rounded-full bg-yellow-300 px-8 py-3.5 text-center text-xs font-black uppercase text-black border-2 border-slate-950 shadow-[2px_2px_0_0_#000] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[3px_3px_0_0_#000] dark:shadow-neo-glow-sm transition-all"
+              className="font-general group relative z-10 mt-10 inline-flex items-center gap-2 cursor-pointer overflow-hidden rounded-full bg-yellow-300 px-8 py-3.5 text-center text-xs font-black uppercase text-black border-2 border-slate-950 shadow-[2px_2px_0_0_#000] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[3px_3px_0_0_#000] transition-all"
             >
               <TiLocationArrow className="text-xl" />
               Buat Project

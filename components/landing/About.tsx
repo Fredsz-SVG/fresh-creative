@@ -48,7 +48,12 @@ export function About() {
             className="relative p-8 sm:p-10 rounded-tl-[40px] rounded-br-[40px] rounded-tr-xl rounded-bl-xl bg-gradient-to-br from-sky-300 to-sky-100 dark:from-[#131a68] dark:to-[#0d1148] border-2 border-slate-900 dark:border-[#5cecff]/25 shadow-[4px_4px_0_0_#334155] dark:shadow-neo-glow transition-all duration-300 hover:-translate-x-0.5 hover:-translate-y-0.5 overflow-hidden"
           >
             <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl bg-sky-400 dark:bg-[#5cecff]/15 border-2 border-sky-500 dark:border-[#5cecff]/40 shadow-md flex items-center justify-center mb-6 sm:mb-8 overflow-hidden shrink-0">
-              <DotLottieReact src="/lottie/community.json" loop autoplay className="w-full h-full p-2 sm:p-3" />
+              <DotLottieReact
+                src="/lottie/community.json"
+                loop
+                autoplay
+                className="w-full h-full p-2 sm:p-3 dark:invert dark:brightness-110 dark:contrast-125"
+              />
             </div>
             <h3 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tight mb-4 leading-none">
               Visi
@@ -66,7 +71,12 @@ export function About() {
             className="relative p-8 sm:p-10 rounded-tl-[40px] rounded-br-[40px] rounded-tr-xl rounded-bl-xl bg-gradient-to-br from-emerald-300 to-emerald-100 dark:from-[#131a68] dark:to-[#0d1148] border-2 border-slate-900 dark:border-[#ff61c6]/25 shadow-[4px_4px_0_0_#334155] dark:shadow-neo-glow transition-all duration-300 hover:-translate-x-0.5 hover:-translate-y-0.5 overflow-hidden"
           >
             <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl bg-emerald-400 dark:bg-[#f4ff61]/10 border-2 border-emerald-500 dark:border-[#f4ff61]/35 shadow-md flex items-center justify-center mb-6 sm:mb-8 overflow-hidden shrink-0">
-              <DotLottieReact src="/lottie/roket.json" loop autoplay className="w-full h-full p-2 sm:p-3" />
+              <DotLottieReact
+                src="/lottie/roket.json"
+                loop
+                autoplay
+                className="w-full h-full p-2 sm:p-3 dark:invert dark:brightness-110 dark:contrast-125"
+              />
             </div>
             <h3 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tight mb-4 leading-none">
               Misi
@@ -108,7 +118,12 @@ export function About() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 sm:gap-10">
             <div className="group relative p-8 sm:p-10 rounded-tr-[40px] rounded-bl-[40px] rounded-tl-xl rounded-br-xl bg-gradient-to-bl from-pink-300 to-pink-100 dark:from-[#1a0d4a] dark:to-[#0d1148] border-2 border-slate-900 dark:border-[#ff61c6]/30 shadow-[3px_3px_0_0_#334155] dark:shadow-neo-glow transition-all duration-300 hover:-translate-x-0.5 hover:-translate-y-0.5 isolation z-10 hover:z-20">
               <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl bg-pink-400 dark:bg-[#ff61c6]/15 border-2 border-pink-500 dark:border-[#ff61c6]/45 shadow-md flex items-center justify-center mb-6 sm:mb-8 overflow-hidden shrink-0">
-                <DotLottieReact src="/lottie/shirt.json" loop autoplay className="w-full h-full p-2 sm:p-3" />
+                <DotLottieReact
+                  src="/lottie/shirt.json"
+                  loop
+                  autoplay
+                  className="w-full h-full p-2 sm:p-3 dark:invert dark:brightness-110 dark:contrast-125"
+                />
               </div>
               <h4 className="text-xl font-black text-slate-900 dark:text-white uppercase mb-4 tracking-tight">AI Fashion & OOTD</h4>
               <p className="text-slate-600 dark:text-slate-400 leading-relaxed font-medium">
@@ -118,7 +133,12 @@ export function About() {
 
             <div className="group relative p-8 sm:p-10 rounded-tr-[40px] rounded-bl-[40px] rounded-tl-xl rounded-br-xl bg-gradient-to-bl from-fuchsia-300 to-fuchsia-100 dark:from-[#1a0d4a] dark:to-[#0d1148] border-2 border-slate-900 dark:border-[#ff61c6]/25 shadow-[3px_3px_0_0_#334155] dark:shadow-neo-glow transition-all duration-300 hover:-translate-x-0.5 hover:-translate-y-0.5 isolation z-10 hover:z-20">
               <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl bg-fuchsia-400 dark:bg-[#ff61c6]/15 border-2 border-fuchsia-500 dark:border-[#ff61c6]/40 shadow-md flex items-center justify-center mb-6 sm:mb-8 overflow-hidden shrink-0">
-                <DotLottieReact src="/lottie/sparkle.json" loop autoplay className="w-full h-full p-2 sm:p-3" />
+                <DotLottieReact
+                  src="/lottie/sparkle.json"
+                  loop
+                  autoplay
+                  className="w-full h-full p-2 sm:p-3 dark:invert dark:brightness-110 dark:contrast-125"
+                />
               </div>
               <h4 className="text-xl font-black text-slate-900 dark:text-white uppercase mb-4 tracking-tight">Thematic Transformation</h4>
               <p className="text-slate-600 dark:text-slate-400 leading-relaxed font-medium">
@@ -128,7 +148,12 @@ export function About() {
 
             <div className="group relative p-8 sm:p-10 rounded-tr-[40px] rounded-bl-[40px] rounded-tl-xl rounded-br-xl bg-gradient-to-bl from-violet-300 to-violet-100 dark:from-[#1a0d4a] dark:to-[#0d1148] border-2 border-slate-900 dark:border-[#5cecff]/25 shadow-[3px_3px_0_0_#334155] dark:shadow-neo-glow transition-all duration-300 hover:-translate-x-0.5 hover:-translate-y-0.5 isolation z-10 hover:z-20">
               <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl bg-violet-400 dark:bg-[#5cecff]/15 border-2 border-violet-500 dark:border-[#5cecff]/40 shadow-md flex items-center justify-center mb-6 sm:mb-8 overflow-hidden shrink-0">
-                <DotLottieReact src="/lottie/image.json" loop autoplay className="w-full h-full p-2 sm:p-3" />
+                <DotLottieReact
+                  src="/lottie/image.json"
+                  loop
+                  autoplay
+                  className="w-full h-full p-2 sm:p-3 dark:invert dark:brightness-110 dark:contrast-125"
+                />
               </div>
               <h4 className="text-xl font-black text-slate-900 dark:text-white uppercase mb-4 tracking-tight">Interactive Memories</h4>
               <p className="text-slate-600 dark:text-slate-400 leading-relaxed font-medium">
@@ -154,7 +179,12 @@ export function About() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 sm:gap-10">
             <div className="group relative p-8 sm:p-10 rounded-tr-[40px] rounded-bl-[40px] rounded-tl-xl rounded-br-xl bg-gradient-to-bl from-lime-300 to-lime-100 dark:from-[#131a68] dark:to-[#0d1148] border-2 border-slate-900 dark:border-[#f4ff61]/25 shadow-[3px_3px_0_0_#334155] dark:shadow-neo-glow transition-all duration-300 hover:-translate-x-0.5 hover:-translate-y-0.5 isolation z-10 hover:z-20">
               <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl bg-lime-400 dark:bg-[#f4ff61]/10 border-2 border-lime-500 dark:border-[#f4ff61]/35 shadow-md flex items-center justify-center mb-6 sm:mb-8 overflow-hidden shrink-0">
-                <DotLottieReact src="/lottie/success.json" loop autoplay className="w-full h-full p-2 sm:p-3" />
+                <DotLottieReact
+                  src="/lottie/success.json"
+                  loop
+                  autoplay
+                  className="w-full h-full p-2 sm:p-3 dark:invert dark:brightness-110 dark:contrast-125"
+                />
               </div>
               <h4 className="text-xl font-black text-slate-900 dark:text-white uppercase mb-4">Pengalaman & Integritas</h4>
               <p className="text-slate-600 dark:text-slate-400 leading-relaxed font-medium">
@@ -164,7 +194,12 @@ export function About() {
 
             <div className="group relative p-8 sm:p-10 rounded-tr-[40px] rounded-bl-[40px] rounded-tl-xl rounded-br-xl bg-gradient-to-bl from-amber-300 to-amber-100 dark:from-[#131a68] dark:to-[#0d1148] border-2 border-slate-900 dark:border-[#ff9900]/30 shadow-[3px_3px_0_0_#334155] dark:shadow-neo-glow transition-all duration-300 hover:-translate-x-0.5 hover:-translate-y-0.5 isolation z-10 hover:z-20">
               <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl bg-amber-400 dark:bg-[#ff9900]/15 border-2 border-amber-500 dark:border-[#ff9900]/40 shadow-md flex items-center justify-center mb-6 sm:mb-8 overflow-hidden shrink-0">
-                <DotLottieReact src="/lottie/ai.json" loop autoplay className="w-full h-full p-2 sm:p-3" />
+                <DotLottieReact
+                  src="/lottie/ai.json"
+                  loop
+                  autoplay
+                  className="w-full h-full p-2 sm:p-3 dark:invert dark:brightness-110 dark:contrast-125"
+                />
               </div>
               <h4 className="text-xl font-black text-slate-900 dark:text-white uppercase mb-4">Teknologi Terkini</h4>
               <p className="text-slate-600 dark:text-slate-400 leading-relaxed font-medium">
@@ -174,7 +209,12 @@ export function About() {
 
             <div className="group relative p-8 sm:p-10 rounded-tr-[40px] rounded-bl-[40px] rounded-tl-xl rounded-br-xl bg-gradient-to-bl from-rose-300 to-rose-100 dark:from-[#1a0d4a] dark:to-[#0d1148] border-2 border-slate-900 dark:border-[#ff61c6]/25 shadow-[3px_3px_0_0_#334155] dark:shadow-neo-glow transition-all duration-300 hover:-translate-x-0.5 hover:-translate-y-0.5 isolation z-10 hover:z-20">
               <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl bg-rose-400 dark:bg-[#ff61c6]/15 border-2 border-rose-500 dark:border-[#ff61c6]/40 shadow-md flex items-center justify-center mb-6 sm:mb-8 overflow-hidden shrink-0">
-                <DotLottieReact src="/lottie/emoji.json" loop autoplay className="w-full h-full p-2 sm:p-3" />
+                <DotLottieReact
+                  src="/lottie/emoji.json"
+                  loop
+                  autoplay
+                  className="w-full h-full p-2 sm:p-3 dark:invert dark:brightness-110 dark:contrast-125"
+                />
               </div>
               <h4 className="text-xl font-black text-slate-900 dark:text-white uppercase mb-4">Fokus pada Ekspresi</h4>
               <p className="text-slate-600 dark:text-slate-400 leading-relaxed font-medium">
