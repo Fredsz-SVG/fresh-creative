@@ -52,7 +52,7 @@ export function About() {
                 src="/lottie/community.json"
                 loop
                 autoplay
-                className="w-full h-full p-2 sm:p-3 dark:bg-white/90 dark:rounded-lg"
+                className="w-full h-full p-2 sm:p-3 dark:bg-white/25 dark:rounded-lg"
               />
             </div>
             <h3 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tight mb-4 leading-none">
@@ -75,7 +75,7 @@ export function About() {
                 src="/lottie/roket.json"
                 loop
                 autoplay
-                className="w-full h-full p-2 sm:p-3 dark:bg-white/90 dark:rounded-lg"
+                className="w-full h-full p-2 sm:p-3 dark:bg-white/25 dark:rounded-lg"
               />
             </div>
             <h3 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tight mb-4 leading-none">
@@ -122,7 +122,7 @@ export function About() {
                   src="/lottie/shirt.json"
                   loop
                   autoplay
-                  className="w-full h-full p-2 sm:p-3 dark:bg-white/90 dark:rounded-lg"
+                  className="w-full h-full p-2 sm:p-3 dark:bg-white/25 dark:rounded-lg"
                 />
               </div>
               <h4 className="text-xl font-black text-slate-900 dark:text-white uppercase mb-4 tracking-tight">AI Fashion & OOTD</h4>
@@ -137,7 +137,7 @@ export function About() {
                   src="/lottie/sparkle.json"
                   loop
                   autoplay
-                  className="w-full h-full p-2 sm:p-3 dark:bg-white/90 dark:rounded-lg"
+                  className="w-full h-full p-2 sm:p-3 dark:bg-white/25 dark:rounded-lg"
                 />
               </div>
               <h4 className="text-xl font-black text-slate-900 dark:text-white uppercase mb-4 tracking-tight">Thematic Transformation</h4>
@@ -152,7 +152,7 @@ export function About() {
                   src="/lottie/image.json"
                   loop
                   autoplay
-                  className="w-full h-full p-2 sm:p-3 dark:bg-white/90 dark:rounded-lg"
+                  className="w-full h-full p-2 sm:p-3 dark:bg-white/25 dark:rounded-lg"
                 />
               </div>
               <h4 className="text-xl font-black text-slate-900 dark:text-white uppercase mb-4 tracking-tight">Interactive Memories</h4>
@@ -183,7 +183,7 @@ export function About() {
                   src="/lottie/success.json"
                   loop
                   autoplay
-                  className="w-full h-full p-2 sm:p-3 dark:bg-white/90 dark:rounded-lg"
+                  className="w-full h-full p-2 sm:p-3 dark:bg-white/25 dark:rounded-lg"
                 />
               </div>
               <h4 className="text-xl font-black text-slate-900 dark:text-white uppercase mb-4">Pengalaman & Integritas</h4>
@@ -198,7 +198,7 @@ export function About() {
                   src="/lottie/ai.json"
                   loop
                   autoplay
-                  className="w-full h-full p-2 sm:p-3 dark:bg-white/90 dark:rounded-lg"
+                  className="w-full h-full p-2 sm:p-3 dark:bg-white/25 dark:rounded-lg"
                 />
               </div>
               <h4 className="text-xl font-black text-slate-900 dark:text-white uppercase mb-4">Teknologi Terkini</h4>
@@ -213,7 +213,7 @@ export function About() {
                   src="/lottie/emoji.json"
                   loop
                   autoplay
-                  className="w-full h-full p-2 sm:p-3 dark:bg-white/90 dark:rounded-lg"
+                  className="w-full h-full p-2 sm:p-3 dark:bg-white/25 dark:rounded-lg"
                 />
               </div>
               <h4 className="text-xl font-black text-slate-900 dark:text-white uppercase mb-4">Fokus pada Ekspresi</h4>
