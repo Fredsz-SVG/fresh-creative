@@ -86,6 +86,11 @@ export default function PricingView({
   const [activeIdx, setActiveIdx] = useState(0);
   const [openAddonPkgId, setOpenAddonPkgId] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [voucherCode, setVoucherCode] = useState('')
+  const [voucherApplying, setVoucherApplying] = useState(false)
+  const [voucherPercentOff, setVoucherPercentOff] = useState<number | null>(null)
+  const [voucherError, setVoucherError] = useState<string>('')
+  const voucherStorageKey = `pricing_voucher_v1:${source}`
 
   const toggleAddon = (pkgId: string, addonIndex: number) => {
     setSelectedAddonIndices((prev) => {
@@ -107,6 +112,71 @@ export default function PricingView({
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (!mounted || typeof window === 'undefined') return
+    try {
+      const raw = window.sessionStorage.getItem(voucherStorageKey)
+      if (raw) {
+        const parsed = JSON.parse(raw) as { code?: string; percent_off?: number }
+        if (typeof parsed?.code === 'string') setVoucherCode(parsed.code)
+        if (typeof parsed?.percent_off === 'number') setVoucherPercentOff(parsed.percent_off)
+      }
+    } catch {
+      // ignore
+    }
+  }, [mounted, voucherStorageKey])
+
+  // Re-validate persisted voucher on refresh so expired vouchers don't "stick".
+  useEffect(() => {
+    if (!mounted || typeof window === 'undefined') return
+    const code = voucherCode.trim()
+    const pct = voucherPercentOff ?? 0
+    if (!code || pct <= 0) return
+
+    let cancelled = false
+    ;(async () => {
+      try {
+        const res = await fetchWithAuth('/api/discount-vouchers/validate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code }),
+          skipAuth: true,
+        })
+        const data = (await res.json().catch(() => ({}))) as any
+        if (cancelled) return
+        if (!res.ok) {
+          setVoucherPercentOff(null)
+          setVoucherError(String(data?.error || 'Voucher tidak valid.'))
+          try {
+            window.sessionStorage.removeItem(voucherStorageKey)
+          } catch {
+            // ignore
+          }
+          return
+        }
+        const nextPct = Number(data?.percent_off)
+        if (Number.isFinite(nextPct) && nextPct > 0) {
+          setVoucherPercentOff(nextPct)
+          setVoucherCode(String(data?.code || code).toUpperCase())
+          try {
+            window.sessionStorage.setItem(
+              voucherStorageKey,
+              JSON.stringify({ code: String(data?.code || code).toUpperCase(), percent_off: nextPct })
+            )
+          } catch {
+            // ignore
+          }
+        }
+      } catch {
+        // Ignore network issues on refresh; we'll validate again on submit.
+      }
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [mounted, voucherCode, voucherPercentOff, voucherStorageKey])
 
   useEffect(() => {
     if (!mounted || typeof window === "undefined") return;
@@ -160,6 +230,43 @@ export default function PricingView({
     () => packages.find((p) => p.id === selectedPackageId),
     [selectedPackageId, packages]
   );
+
+  const selectedPkgParsedFeatures = useMemo(() => {
+    if (!selectedPkg) return []
+    return selectedPkg.features.map((f) => {
+      try {
+        const j = JSON.parse(f)
+        return { name: j.name || f, price: Number(j.price) || 0 }
+      } catch {
+        return { name: f, price: 0 }
+      }
+    })
+  }, [selectedPkg])
+
+  const selectedAddonsBreakdown = useMemo(() => {
+    if (!selectedPkg) return []
+    const chosen = selectedAddonIndices[selectedPkg.id] ?? []
+    return chosen
+      .map((idx) => selectedPkgParsedFeatures[idx])
+      .filter((x): x is { name: string; price: number } => !!x && typeof x.price === 'number' && x.price > 0)
+  }, [selectedPkg, selectedAddonIndices, selectedPkgParsedFeatures])
+
+  const pricePerStudentBreakdown = useMemo(() => {
+    if (!selectedPkg) return null
+    const addonsTotal = selectedAddonsBreakdown.reduce((sum, a) => sum + (a.price ?? 0), 0)
+    const basePerStudent = selectedPkg.pricePerStudent
+    const subtotalPerStudent = basePerStudent + addonsTotal
+    const pct = voucherPercentOff ?? 0
+    const discountedPerStudent = pct > 0 ? Math.max(0, Math.round(subtotalPerStudent * (1 - pct / 100))) : subtotalPerStudent
+    return {
+      basePerStudent,
+      addonsTotal,
+      subtotalPerStudent,
+      discountedPerStudent,
+      percentOff: pct,
+      discountAmountPerStudent: Math.max(0, subtotalPerStudent - discountedPerStudent),
+    }
+  }, [selectedPkg, selectedAddonsBreakdown, voucherPercentOff])
   const totalPrice = useMemo(() => {
     if (!selectedPkg) return null;
     const parsed = selectedPkg.features.map((f) => {
@@ -175,8 +282,68 @@ export default function PricingView({
     // Harga per siswa
     const pricePerStudent = selectedPkg.pricePerStudent + addonsTotal;
     // Total estimasi seluruh album = harga per siswa * jumlah siswa
-    return pricePerStudent * (draft?.students_count || 1);
-  }, [selectedPkg, selectedAddonIndices, draft?.students_count]);
+    const baseTotal = pricePerStudent * (draft?.students_count || 1);
+    const pct = voucherPercentOff ?? 0
+    if (pct > 0) {
+      const discounted = Math.round(baseTotal * (1 - pct / 100))
+      return Math.max(0, discounted)
+    }
+    return baseTotal;
+  }, [selectedPkg, selectedAddonIndices, draft?.students_count, voucherPercentOff]);
+
+  const handleApplyVoucher = async () => {
+    const clean = voucherCode.trim()
+    if (!clean) {
+      setVoucherError('Masukkan kode voucher.')
+      setVoucherPercentOff(null)
+      return
+    }
+    setVoucherApplying(true)
+    setVoucherError('')
+    try {
+      const res = await fetchWithAuth('/api/discount-vouchers/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: clean }),
+        skipAuth: true,
+      })
+      const data = (await res.json().catch(() => ({}))) as any
+      if (!res.ok) {
+        setVoucherPercentOff(null)
+        setVoucherError(String(data?.error || 'Voucher tidak valid.'))
+        return
+      }
+      const pct = Number(data?.percent_off)
+      if (!Number.isFinite(pct) || pct <= 0) {
+        setVoucherPercentOff(null)
+        setVoucherError('Voucher tidak valid.')
+        return
+      }
+      setVoucherPercentOff(pct)
+      setVoucherCode(String(data?.code || clean).toUpperCase())
+      try {
+        window.sessionStorage.setItem(voucherStorageKey, JSON.stringify({ code: String(data?.code || clean).toUpperCase(), percent_off: pct }))
+      } catch {
+        // ignore
+      }
+    } catch {
+      setVoucherPercentOff(null)
+      setVoucherError('Gagal memvalidasi voucher.')
+    } finally {
+      setVoucherApplying(false)
+    }
+  }
+
+  const handleClearVoucher = () => {
+    setVoucherPercentOff(null)
+    setVoucherError('')
+    setVoucherCode('')
+    try {
+      window.sessionStorage.removeItem(voucherStorageKey)
+    } catch {
+      // ignore
+    }
+  }
 
   const handleSaveToDb = async () => {
     if (!draft) return;
@@ -201,6 +368,9 @@ export default function PricingView({
       if (selectedPackageId && totalPrice != null) {
         body.pricing_package_id = selectedPackageId;
         body.total_estimated_price = totalPrice;
+      }
+      if ((voucherPercentOff ?? 0) > 0 && voucherCode.trim()) {
+        body.discount_voucher_code = voucherCode.trim()
       }
 
       // DIRECTLY call /api/albums instead of /api/leads
@@ -297,6 +467,8 @@ export default function PricingView({
               const chosenAddons = selectedAddonIndices[pkg.id] ?? [];
               const addonsTotal = chosenAddons.reduce((sum, idx) => sum + (parsedFeatures[idx]?.price ?? 0), 0);
               const totalPerStudent = pkg.pricePerStudent + addonsTotal;
+              const pct = voucherPercentOff ?? 0
+              const discountedPerStudent = pct > 0 ? Math.round(totalPerStudent * (1 - pct / 100)) : null
               const isSelected = selectedPackageId === pkg.id;
               return (
                 <div
@@ -334,7 +506,18 @@ export default function PricingView({
                     <div className="text-left sm:text-right shrink-0 mt-2 sm:mt-0 pl-12 sm:pl-0">
                       <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Harga dasar</p>
                       <p className="text-[20px] font-black text-slate-900 dark:text-white leading-tight">
-                        Rp {pkg.pricePerStudent.toLocaleString("id-ID")}
+                        {pct > 0 ? (
+                          <span className="inline-flex flex-col items-start sm:items-end leading-tight">
+                            <span className="text-[12px] font-black text-slate-600 dark:text-slate-400 line-through">
+                              Rp {pkg.pricePerStudent.toLocaleString("id-ID")}
+                            </span>
+                            <span className="text-[20px] font-black text-slate-900 dark:text-white">
+                              Rp {Math.max(0, Math.round(pkg.pricePerStudent * (1 - pct / 100))).toLocaleString("id-ID")}
+                            </span>
+                          </span>
+                        ) : (
+                          <>Rp {pkg.pricePerStudent.toLocaleString("id-ID")}</>
+                        )}
                       </p>
                       <p className="text-[12px] font-bold text-slate-500 dark:text-slate-400 mt-0.5">/ siswa</p>
                     </div>
@@ -413,9 +596,20 @@ export default function PricingView({
                       <span className="text-[13px] font-black text-slate-600 dark:text-slate-300 uppercase tracking-widest">
                         Harga total per siswa
                       </span>
-                      <span className="text-[17px] font-black text-slate-900 dark:text-white">
-                        Rp {totalPerStudent.toLocaleString("id-ID")}
-                      </span>
+                      {pct > 0 && discountedPerStudent != null ? (
+                        <span className="text-right leading-tight">
+                          <span className="block text-[11px] font-black text-slate-600 dark:text-slate-400 line-through">
+                            Rp {totalPerStudent.toLocaleString("id-ID")}
+                          </span>
+                          <span className="block text-[17px] font-black text-slate-900 dark:text-white">
+                            Rp {Math.max(0, discountedPerStudent).toLocaleString("id-ID")}
+                          </span>
+                        </span>
+                      ) : (
+                        <span className="text-[17px] font-black text-slate-900 dark:text-white">
+                          Rp {totalPerStudent.toLocaleString("id-ID")}
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -454,6 +648,118 @@ export default function PricingView({
                 </p>
               </div>
             )}
+
+            {selectedPkg && pricePerStudentBreakdown && (
+              <div className="mb-6 rounded-2xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">
+                      Ringkasan biaya
+                    </p>
+                    <p className="mt-1 text-sm font-black text-slate-900 dark:text-white">
+                      {draft.students_count || 0} siswa
+                    </p>
+                  </div>
+                  {(voucherPercentOff ?? 0) > 0 && voucherCode.trim() ? (
+                    <div className="text-right">
+                      <p className="text-[10px] font-black text-emerald-700 dark:text-emerald-400 uppercase tracking-widest">
+                        Voucher aktif
+                      </p>
+                      <p className="mt-1 text-xs font-black text-slate-900 dark:text-white font-mono tracking-wider">
+                        {voucherCode.trim()}
+                      </p>
+                    </div>
+                  ) : null}
+                </div>
+
+                <div className="mt-4 space-y-2">
+                  <div className="flex items-center justify-between text-xs font-bold text-slate-700 dark:text-slate-300">
+                    <span>Harga dasar / siswa</span>
+                    <span>Rp {pricePerStudentBreakdown.basePerStudent.toLocaleString('id-ID')}</span>
+                  </div>
+                  {pricePerStudentBreakdown.addonsTotal > 0 && (
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between text-xs font-bold text-slate-700 dark:text-slate-300">
+                        <span>Add-on dipilih</span>
+                        <span>+Rp {pricePerStudentBreakdown.addonsTotal.toLocaleString('id-ID')}</span>
+                      </div>
+                      <ul className="pl-4 list-disc text-[11px] font-bold text-slate-500 dark:text-slate-400 space-y-0.5">
+                        {selectedAddonsBreakdown.map((a, i) => (
+                          <li key={`${a.name}-${i}`} className="flex items-center justify-between gap-3">
+                            <span className="truncate">{a.name}</span>
+                            <span className="shrink-0">+Rp {a.price.toLocaleString('id-ID')}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  <div className="h-px bg-slate-100 dark:bg-slate-800 my-2" />
+
+                  <div className="flex items-center justify-between text-xs font-black text-slate-900 dark:text-white uppercase tracking-widest">
+                    <span>Subtotal / siswa</span>
+                    <span>Rp {pricePerStudentBreakdown.subtotalPerStudent.toLocaleString('id-ID')}</span>
+                  </div>
+
+                  {(pricePerStudentBreakdown.percentOff ?? 0) > 0 && (
+                    <div className="flex items-center justify-between text-xs font-black text-emerald-700 dark:text-emerald-400 uppercase tracking-widest">
+                      <span>Diskon {pricePerStudentBreakdown.percentOff}%</span>
+                      <span>-Rp {pricePerStudentBreakdown.discountAmountPerStudent.toLocaleString('id-ID')}</span>
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-between text-sm font-black text-slate-900 dark:text-white">
+                    <span>Total / siswa</span>
+                    <span>Rp {pricePerStudentBreakdown.discountedPerStudent.toLocaleString('id-ID')}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="mb-6 rounded-2xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]">
+              <p className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-3">
+                Voucher diskon (opsional)
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <input
+                  value={voucherCode}
+                  onChange={(e) => {
+                    setVoucherCode(e.target.value.toUpperCase())
+                    setVoucherError('')
+                    setVoucherPercentOff(null)
+                  }}
+                  placeholder="KODEVOUCHER"
+                  className="flex-1 px-4 py-3 rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white font-black tracking-widest uppercase text-sm focus:outline-none focus:ring-4 focus:ring-emerald-200 dark:focus:ring-emerald-900"
+                />
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={handleApplyVoucher}
+                    disabled={voucherApplying || !voucherCode.trim()}
+                    className="flex-1 sm:flex-none px-4 py-3 rounded-xl bg-emerald-400 text-emerald-950 font-black uppercase tracking-widest border-2 border-slate-200 dark:border-slate-700 shadow-[4px_4px_0_0_#334155] hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all disabled:opacity-60 disabled:hover:translate-x-0 disabled:hover:translate-y-0 disabled:hover:shadow-[4px_4px_0_0_#334155] flex items-center justify-center gap-2"
+                  >
+                    {voucherApplying ? <Loader2 className="w-4 h-4 animate-spin" strokeWidth={3} /> : null}
+                    Terapkan
+                  </button>
+                  {(voucherPercentOff ?? 0) > 0 && (
+                    <button
+                      type="button"
+                      onClick={handleClearVoucher}
+                      className="px-4 py-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-black uppercase tracking-widest border-2 border-slate-200 dark:border-slate-700"
+                    >
+                      Hapus
+                    </button>
+                  )}
+                </div>
+              </div>
+              {voucherError ? (
+                <p className="mt-2 text-xs font-bold text-rose-600 dark:text-rose-400">{voucherError}</p>
+              ) : (voucherPercentOff ?? 0) > 0 ? (
+                <p className="mt-2 text-xs font-black text-emerald-700 dark:text-emerald-400 uppercase tracking-widest">
+                  Diskon diterapkan: {voucherPercentOff}% OFF
+                </p>
+              ) : null}
+            </div>
 
             <button
               type="button"

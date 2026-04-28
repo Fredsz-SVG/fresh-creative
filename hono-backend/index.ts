@@ -80,6 +80,9 @@ import creditsPackages from './routes/credits/packages'
 import creditsRedeem from './routes/credits/redeem'
 import creditsSyncInvoice from './routes/credits/sync-invoice'
 
+// ── Discount Vouchers ──
+import discountVouchers from './routes/discount-vouchers'
+
 // ── Landing ──
 import landingConfig from './routes/landing/config'
 
@@ -260,6 +263,9 @@ app.route('/api/credits/checkout', creditsCheckout)
 app.route('/api/credits/packages', creditsPackages)
 app.route('/api/credits/redeem', creditsRedeem)
 app.route('/api/credits/sync-invoice', creditsSyncInvoice)
+
+// Discount vouchers (pricing promo)
+app.route('/api/discount-vouchers', discountVouchers)
 
 // Landing
 app.route('/api/landing', landingConfig)

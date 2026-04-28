@@ -322,7 +322,18 @@ export default function PricingEditPage() {
   const [editingPackage, setEditingPackage] = useState<Partial<PricingPackage> | null>(null)
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null)
   const [deleting, setDeleting] = useState(false)
-  const [activeTab, setActiveTab] = useState<'yearbook' | 'ai'>('yearbook')
+  type ActiveTab = 'yearbook' | 'ai'
+  const VALID_TABS: ActiveTab[] = ['yearbook', 'ai']
+  const getTabFromHash = (): ActiveTab => {
+    if (typeof window === 'undefined') return 'yearbook'
+    const hash = window.location.hash.replace('#', '') as ActiveTab
+    return VALID_TABS.includes(hash) ? hash : 'yearbook'
+  }
+  const [activeTab, setActiveTab] = useState<ActiveTab>(getTabFromHash)
+  const switchTab = (tab: ActiveTab) => {
+    setActiveTab(tab)
+    window.location.hash = tab
+  }
   const [aiPricing, setAiPricing] = useState<AiFeaturePricing[]>([])
   const [loadingAi, setLoadingAi] = useState(true)
   const [editingAi, setEditingAi] = useState<AiFeaturePricing | null>(null)
@@ -781,7 +792,7 @@ export default function PricingEditPage() {
           />
           <button
             type="button"
-            onClick={() => setActiveTab('yearbook')}
+            onClick={() => switchTab('yearbook')}
             className={`relative z-10 flex items-center justify-center gap-1.5 md:gap-2 px-3 py-2 md:px-5 md:py-2.5 rounded-xl text-[10px] md:text-sm font-bold transition-all duration-200 ${
               activeTab === 'yearbook'
                 ? 'text-slate-900'
@@ -796,7 +807,7 @@ export default function PricingEditPage() {
           </button>
           <button
             type="button"
-            onClick={() => setActiveTab('ai')}
+            onClick={() => switchTab('ai')}
             className={`relative z-10 flex items-center justify-center gap-1.5 md:gap-2 px-3 py-2 md:px-5 md:py-2.5 rounded-xl text-[10px] md:text-sm font-bold transition-all duration-200 ${
               activeTab === 'ai'
                 ? 'text-slate-900'

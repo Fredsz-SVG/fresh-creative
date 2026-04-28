@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { Edit, Plus, Save, Trash2, X, Loader2, Check, Copy, Gift, ToggleLeft, ToggleRight, Clock, ChevronRight, Layout, Zap, Hash, Calendar, AlertCircle, Users, Star } from 'lucide-react'
+import { Edit, Plus, Save, Trash2, X, Loader2, Check, Copy, Gift, ToggleLeft, ToggleRight, Clock, ChevronRight, Layout, Zap, Hash, Calendar, AlertCircle, Users, Star, Percent } from 'lucide-react'
 import { fetchWithAuth } from '../../../lib/api-client'
 
 interface CreditPackage {
@@ -21,6 +21,46 @@ interface RedeemCode {
     expires_at: string | null
     created_at: string
     redeem_history?: { id: string; user_id: string; credits_received: number; redeemed_at: string }[]
+}
+
+interface DiscountVoucher {
+    id: string
+    code: string
+    percent_off: number
+    max_uses: number
+    used_count: number
+    is_active: boolean
+    expires_at: string | null
+    created_at: string
+    updated_at?: string
+}
+
+function formatIdDateTimeNoPukul(input: string): string {
+    const d = new Date(input)
+    if (Number.isNaN(d.getTime())) return input
+
+    // Some browsers include "pukul" in id-ID for toLocaleString; build output manually.
+    const parts = new Intl.DateTimeFormat('id-ID', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+    }).formatToParts(d)
+
+    const get = (type: Intl.DateTimeFormatPartTypes) =>
+        parts.find((p) => p.type === type)?.value ?? ''
+
+    const day = get('day')
+    const month = get('month')
+    const year = get('year')
+    const hour = get('hour')
+    const minute = get('minute')
+
+    const date = [day, month, year].filter(Boolean).join(' ')
+    const time = [hour, minute].filter(Boolean).join(':')
+    return time ? `${date} ${time}` : date
 }
 
 const PackageForm = ({ pkg, onSave, onCancel }: { pkg: Partial<CreditPackage> | null, onSave: (p: Partial<CreditPackage>) => void, onCancel: () => void }) => {
@@ -116,10 +156,21 @@ export default function AdminCreditSettingsPage() {
     const [packages, setPackages] = useState<CreditPackage[]>([])
     const [loading, setLoading] = useState(true)
     const [editingPackage, setEditingPackage] = useState<Partial<CreditPackage> | null>(null)
-    const [activeTab, setActiveTab] = useState<'packages' | 'redeem'>('packages')
+    type ActiveTab = 'packages' | 'redeem' | 'discount'
+    const VALID_TABS: ActiveTab[] = ['packages', 'redeem', 'discount']
+    const getTabFromHash = (): ActiveTab => {
+        if (typeof window === 'undefined') return 'packages'
+        const hash = window.location.hash.replace('#', '') as ActiveTab
+        return VALID_TABS.includes(hash) ? hash : 'packages'
+    }
+    const [activeTab, setActiveTab] = useState<ActiveTab>(getTabFromHash)
+    const switchTab = (tab: ActiveTab) => {
+        setActiveTab(tab)
+        window.location.hash = tab
+    }
 
     // Delete confirmation state
-    const [deletePrompt, setDeletePrompt] = useState<{ id: string, type: 'package' | 'redeem', title: string, text: string } | null>(null)
+    const [deletePrompt, setDeletePrompt] = useState<{ id: string, type: 'package' | 'redeem' | 'discount', title: string, text: string } | null>(null)
     const [isDeleting, setIsDeleting] = useState(false)
 
     // Redeem code state
@@ -129,16 +180,25 @@ export default function AdminCreditSettingsPage() {
     const [newCode, setNewCode] = useState({ code: '', credits: 10, max_uses: 1, expires_at: '' })
     const [statusBanner, setStatusBanner] = useState<string | null>(null)
 
+    // Discount voucher state
+    const [discountVouchers, setDiscountVouchers] = useState<DiscountVoucher[]>([])
+    const [loadingDiscount, setLoadingDiscount] = useState(true)
+    const [showCreateDiscount, setShowCreateDiscount] = useState(false)
+    const [newDiscount, setNewDiscount] = useState({ code: '', percent_off: 10, max_uses: 1, expires_at: '' })
+
     const cacheKeyPackages = 'admin_credit_packages_v1'
     const cacheKeyRedeem = 'admin_redeem_codes_v1'
+    const cacheKeyDiscount = 'admin_discount_vouchers_v1'
     const hasCachePackagesRef = useRef(false)
     const hasCacheRedeemRef = useRef(false)
+    const hasCacheDiscountRef = useRef(false)
 
     useLayoutEffect(() => {
         if (typeof window === 'undefined') return
         try {
             const pkgRaw = window.sessionStorage.getItem(cacheKeyPackages)
             const redeemRaw = window.sessionStorage.getItem(cacheKeyRedeem)
+            const discountRaw = window.sessionStorage.getItem(cacheKeyDiscount)
             if (pkgRaw) {
                 const parsed = JSON.parse(pkgRaw) as { ts: number; data: CreditPackage[] }
                 if (Array.isArray(parsed?.data)) {
@@ -153,6 +213,14 @@ export default function AdminCreditSettingsPage() {
                     setRedeemCodes(parsed.data)
                     setLoadingRedeem(false)
                     hasCacheRedeemRef.current = true
+                }
+            }
+            if (discountRaw) {
+                const parsed = JSON.parse(discountRaw) as { ts: number; data: DiscountVoucher[] }
+                if (Array.isArray(parsed?.data)) {
+                    setDiscountVouchers(parsed.data)
+                    setLoadingDiscount(false)
+                    hasCacheDiscountRef.current = true
                 }
             }
         } catch {
@@ -186,6 +254,7 @@ export default function AdminCreditSettingsPage() {
     useEffect(() => {
         fetchPackages(hasCachePackagesRef.current)
         fetchRedeemCodes(hasCacheRedeemRef.current)
+        fetchDiscountVouchers(hasCacheDiscountRef.current)
     }, [])
 
     const handleSave = async (pkg: Partial<CreditPackage>) => {
@@ -239,6 +308,27 @@ export default function AdminCreditSettingsPage() {
             console.error(err)
         } finally {
             setLoadingRedeem(false)
+        }
+    }
+
+    const fetchDiscountVouchers = async (silent = false) => {
+        if (!silent) setLoadingDiscount(true)
+        try {
+            const res = await fetchWithAuth(`/api/discount-vouchers?t=${Date.now()}`)
+            if (!res.ok) throw new Error('Failed to fetch discount vouchers')
+            const data = (await res.json()) as unknown
+            setDiscountVouchers(Array.isArray(data) ? (data as DiscountVoucher[]) : [])
+            if (typeof window !== 'undefined') {
+                try {
+                    window.sessionStorage.setItem(cacheKeyDiscount, JSON.stringify({ ts: Date.now(), data }))
+                } catch {
+                    // ignore
+                }
+            }
+        } catch (err) {
+            console.error(err)
+        } finally {
+            setLoadingDiscount(false)
         }
     }
 
@@ -309,6 +399,66 @@ export default function AdminCreditSettingsPage() {
         })
     }
 
+    const handleCreateDiscount = async () => {
+        const code = newDiscount.code.trim() || generateRandomCode()
+        setStatusBanner('creating-discount')
+
+        let expiresAtISO = null;
+        if (newDiscount.expires_at) {
+            expiresAtISO = new Date(newDiscount.expires_at).toISOString();
+        }
+
+        try {
+            const res = await fetchWithAuth('/api/discount-vouchers', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    code,
+                    percent_off: newDiscount.percent_off,
+                    max_uses: newDiscount.max_uses,
+                    expires_at: expiresAtISO,
+                }),
+            })
+            const data = (await res.json().catch(() => ({}))) as { error?: string; code?: string }
+            if (!res.ok) throw new Error(data?.error || 'Gagal membuat voucher')
+            setStatusBanner(`create-discount-success:${data?.code ?? code}`)
+            setShowCreateDiscount(false)
+            setNewDiscount({ code: '', percent_off: 10, max_uses: 1, expires_at: '' })
+            fetchDiscountVouchers(true)
+            setTimeout(() => setStatusBanner(null), 3000)
+        } catch (err) {
+            setStatusBanner(`error: ${err instanceof Error ? err.message : 'Gagal membuat voucher'}`)
+            setTimeout(() => setStatusBanner(null), 3000)
+        }
+    }
+
+    const handleToggleDiscount = async (item: DiscountVoucher) => {
+        setStatusBanner('updating-discount-status')
+        try {
+            const res = await fetchWithAuth('/api/discount-vouchers', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: item.id, is_active: !item.is_active }),
+            })
+            if (!res.ok) throw new Error(await res.text())
+            setStatusBanner(item.is_active ? 'discount-disabled-success' : 'discount-enabled-success')
+            fetchDiscountVouchers(true)
+            setTimeout(() => setStatusBanner(null), 3000)
+        } catch (err) {
+            setStatusBanner('error: Gagal mengubah status voucher')
+            setTimeout(() => setStatusBanner(null), 3000)
+        }
+    }
+
+    const handleDeleteDiscount = (id: string, code: string) => {
+        setDeletePrompt({
+            id,
+            type: 'discount',
+            title: 'Hapus Voucher Diskon',
+            text: `Yakin ingin menghapus voucher diskon "${code}"? Tindakan ini tidak dapat dibatalkan.`
+        })
+    }
+
     const executeDelete = async () => {
         if (!deletePrompt) return
         setIsDeleting(true)
@@ -332,11 +482,20 @@ export default function AdminCreditSettingsPage() {
                 if (!res.ok) throw new Error(await res.text())
                 setStatusBanner('delete-redeem-success')
                 fetchRedeemCodes(true)
+            } else if (deletePrompt.type === 'discount') {
+                const res = await fetchWithAuth('/api/discount-vouchers', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: deletePrompt.id }),
+                })
+                if (!res.ok) throw new Error(await res.text())
+                setStatusBanner('delete-discount-success')
+                fetchDiscountVouchers(true)
             }
             setTimeout(() => setStatusBanner(null), 3000)
         } catch (err) {
             console.error('Delete failed:', err)
-            setStatusBanner(`error: Gagal menghapus ${deletePrompt.type === 'package' ? 'paket' : 'kode'}`)
+            setStatusBanner(`error: Gagal menghapus ${deletePrompt.type === 'package' ? 'paket' : deletePrompt.type === 'redeem' ? 'kode' : 'voucher'}`)
             setTimeout(() => setStatusBanner(null), 3000)
         } finally {
             setIsDeleting(false)
@@ -359,21 +518,27 @@ export default function AdminCreditSettingsPage() {
             {statusBanner && (
                 <div className={`fixed bottom-4 md:bottom-6 left-1/2 -translate-x-1/2 z-[200] max-w-[90%] md:max-w-sm w-full px-4 py-3 rounded-xl border-2 shadow-[4px_4px_0_0_#334155] transform transition-all animate-bounce-subtle ${statusBanner.startsWith('error:') ? 'bg-rose-100 border-rose-300 text-rose-700' : statusBanner.includes('success') ? 'bg-emerald-100 border-emerald-300 text-emerald-700' : 'bg-amber-100 border-amber-300 text-amber-700'}`}>
                     <div className="flex items-center gap-2 font-bold text-xs md:text-sm">
-                        {statusBanner === 'saving-package' || statusBanner === 'creating-redeem' || statusBanner === 'updating-redeem-status' || statusBanner === 'deleting-item'
+                        {statusBanner === 'saving-package' || statusBanner === 'creating-redeem' || statusBanner === 'updating-redeem-status' || statusBanner === 'creating-discount' || statusBanner === 'updating-discount-status' || statusBanner === 'deleting-item'
                             ? <Loader2 className="animate-spin w-4 h-4" />
                             : null}
                         {statusBanner === 'saving-package' ? 'Menyimpan package...' :
                             statusBanner === 'creating-redeem' ? 'Membuat kode redeem...' :
                                 statusBanner === 'updating-redeem-status' ? 'Mengubah status kode...' :
+                                    statusBanner === 'creating-discount' ? 'Membuat voucher diskon...' :
+                                        statusBanner === 'updating-discount-status' ? 'Mengubah status voucher...' :
                                     statusBanner === 'deleting-item' ? 'Menghapus data...' :
                                         statusBanner === 'create-package-success' ? 'Package berhasil dibuat.' :
                                             statusBanner === 'update-package-success' ? 'Package berhasil diperbarui.' :
                                                 statusBanner === 'delete-package-success' ? 'Package berhasil dihapus.' :
                                                     statusBanner === 'delete-redeem-success' ? 'Kode redeem berhasil dihapus.' :
+                                                        statusBanner === 'delete-discount-success' ? 'Voucher diskon berhasil dihapus.' :
                                                         statusBanner === 'redeem-enabled-success' ? 'Kode redeem berhasil diaktifkan.' :
                                                             statusBanner === 'redeem-disabled-success' ? 'Kode redeem berhasil dinonaktifkan.' :
+                                                                statusBanner === 'discount-enabled-success' ? 'Voucher diskon berhasil diaktifkan.' :
+                                                                    statusBanner === 'discount-disabled-success' ? 'Voucher diskon berhasil dinonaktifkan.' :
                                                                 statusBanner === 'copy-success' ? 'Kode berhasil disalin.' :
                                                                     statusBanner.startsWith('create-redeem-success:') ? `Kode ${statusBanner.replace('create-redeem-success:', '')} berhasil dibuat!` :
+                                                                        statusBanner.startsWith('create-discount-success:') ? `Voucher ${statusBanner.replace('create-discount-success:', '')} berhasil dibuat!` :
                                                                         statusBanner.startsWith('error: ') ? `Error: ${statusBanner.replace('error: ', '')}` : statusBanner}
                     </div>
                 </div>
@@ -467,6 +632,95 @@ export default function AdminCreditSettingsPage() {
                 </div>
             )}
 
+            {/* Create Discount Voucher Modal */}
+            {showCreateDiscount && (
+                <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-[120]">
+                    <div className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-2xl shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] p-5 md:p-6 w-full max-w-md">
+                        <div className="flex justify-between items-center mb-5">
+                            <h2 className="text-lg font-bold text-slate-900 dark:text-white">Buat Voucher Diskon</h2>
+                            <button onClick={() => setShowCreateDiscount(false)} className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                                <X size={20} className="text-slate-700 dark:text-slate-200" strokeWidth={2.5} />
+                            </button>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div>
+                                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 block">Kode Voucher</label>
+                                <div className="flex gap-2">
+                                    <input
+                                        value={newDiscount.code}
+                                        onChange={(e) => setNewDiscount({ ...newDiscount, code: e.target.value.toUpperCase() })}
+                                        placeholder="AUTO-GENERATE"
+                                        className="flex-1 px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-bold placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-200 uppercase font-mono text-sm"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setNewDiscount({ ...newDiscount, code: generateRandomCode() })}
+                                        className="px-3 py-2 bg-sky-100 text-sky-700 rounded-xl text-[10px] font-bold hover:bg-sky-200 transition-all shadow-[2px_2px_0_0_#0284c7] hover:shadow-none"
+                                    >
+                                        GENERATE
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 block">Diskon (%)</label>
+                                    <input
+                                        type="number"
+                                        min={1}
+                                        max={100}
+                                        value={newDiscount.percent_off}
+                                        onChange={(e) => setNewDiscount({ ...newDiscount, percent_off: Number(e.target.value) })}
+                                        className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-sky-200"
+                                        required
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 block">Limit Pakai</label>
+                                    <input
+                                        type="number"
+                                        min={1}
+                                        value={newDiscount.max_uses}
+                                        onChange={(e) => setNewDiscount({ ...newDiscount, max_uses: Number(e.target.value) })}
+                                        className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-sky-200"
+                                        required
+                                    />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 block">Kadaluarsa (Opsional)</label>
+                                <input
+                                    type="datetime-local"
+                                    value={newDiscount.expires_at}
+                                    onChange={(e) => setNewDiscount({ ...newDiscount, expires_at: e.target.value })}
+                                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-sky-200"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="flex gap-3 pt-5">
+                            <button
+                                type="button"
+                                onClick={() => setShowCreateDiscount(false)}
+                                className="flex-1 px-4 py-2.5 border-2 border-slate-900 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200 font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-[4px_4px_0_0_#334155] hover:shadow-none"
+                            >
+                                Batal
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleCreateDiscount}
+                                className="flex-1 px-4 py-2.5 bg-sky-400 text-sky-900 rounded-xl font-bold hover:bg-sky-300 transition-all shadow-[2px_2px_0_0_#0284c7] hover:shadow-none flex items-center justify-center gap-2"
+                            >
+                                <Percent size={16} strokeWidth={2.5} />
+                                Buat Voucher
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Delete Confirmation Modal */}
             {deletePrompt && (
                 <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-[200]">
@@ -512,13 +766,21 @@ export default function AdminCreditSettingsPage() {
                         <Plus size={18} className="md:w-5 md:h-5" strokeWidth={2.5} />
                         Tambah Paket Credit
                     </button>
-                ) : (
+                ) : activeTab === 'redeem' ? (
                     <button
                         onClick={() => setShowCreateRedeem(true)}
                         className="flex items-center justify-center gap-2 px-5 py-2.5 md:px-6 md:py-3 bg-pink-400 text-pink-900 rounded-xl font-bold hover:bg-pink-300 transition-all shadow-[2px_2px_0_0_#db2777] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 text-sm md:text-base"
                     >
                         <Gift size={18} className="md:w-5 md:h-5" strokeWidth={2.5} />
                         Buat Kode Redeem
+                    </button>
+                ) : (
+                    <button
+                        onClick={() => setShowCreateDiscount(true)}
+                        className="flex items-center justify-center gap-2 px-5 py-2.5 md:px-6 md:py-3 bg-sky-400 text-sky-900 rounded-xl font-bold hover:bg-sky-300 transition-all shadow-[2px_2px_0_0_#0284c7] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 text-sm md:text-base"
+                    >
+                        <Percent size={18} className="md:w-5 md:h-5" strokeWidth={2.5} />
+                        Buat Voucher Diskon
                     </button>
                 )}
             </div>
@@ -529,13 +791,18 @@ export default function AdminCreditSettingsPage() {
                 <div
                   className="absolute top-1 bottom-1 rounded-xl bg-violet-400 transition-all duration-300 ease-out"
                   style={{
-                    transform: activeTab === 'packages' ? 'translateX(0)' : 'translateX(100%)',
-                    width: 'calc(50% - 6px)',
+                    transform:
+                      activeTab === 'packages'
+                        ? 'translateX(0)'
+                        : activeTab === 'redeem'
+                          ? 'translateX(100%)'
+                          : 'translateX(200%)',
+                    width: 'calc(33.333333% - 6px)',
                   }}
                 />
                 <button
                   type="button"
-                  onClick={() => setActiveTab('packages')}
+                  onClick={() => switchTab('packages')}
                   className={`relative z-10 flex items-center justify-center gap-1.5 md:gap-2 px-3 py-2 md:px-5 md:py-2.5 rounded-xl text-[10px] md:text-sm font-bold transition-all duration-200 ${
                     activeTab === 'packages'
                       ? 'text-slate-900'
@@ -550,7 +817,7 @@ export default function AdminCreditSettingsPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setActiveTab('redeem')}
+                  onClick={() => switchTab('redeem')}
                   className={`relative z-10 flex items-center justify-center gap-1.5 md:gap-2 px-3 py-2 md:px-5 md:py-2.5 rounded-xl text-[10px] md:text-sm font-bold transition-all duration-200 ${
                     activeTab === 'redeem'
                       ? 'text-slate-900'
@@ -561,6 +828,21 @@ export default function AdminCreditSettingsPage() {
                   <span className="truncate">Redeems</span>
                   <span className="px-1.5 py-0.5 bg-slate-900 dark:bg-slate-700 text-white text-[9px] md:text-xs rounded-lg border-2 border-slate-900 dark:border-slate-600 ml-0.5">
                     {redeemCodes.length}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => switchTab('discount')}
+                  className={`relative z-10 flex items-center justify-center gap-1.5 md:gap-2 px-3 py-2 md:px-5 md:py-2.5 rounded-xl text-[10px] md:text-sm font-bold transition-all duration-200 ${
+                    activeTab === 'discount'
+                      ? 'text-slate-900'
+                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+                  }`}
+                >
+                  <Percent className="w-3.5 h-3.5 md:w-5 md:h-5" strokeWidth={2.5} />
+                  <span className="truncate">Discount</span>
+                  <span className="px-1.5 py-0.5 bg-slate-900 dark:bg-slate-700 text-white text-[9px] md:text-xs rounded-lg border-2 border-slate-900 dark:border-slate-600 ml-0.5">
+                    {discountVouchers.length}
                   </span>
                 </button>
               </div>
@@ -628,7 +910,7 @@ export default function AdminCreditSettingsPage() {
                         </div>
                     )}
                 </>
-            ) : (
+            ) : activeTab === 'redeem' ? (
                 <>
                     {loadingRedeem ? (
                         <div className="space-y-6">
@@ -737,7 +1019,7 @@ export default function AdminCreditSettingsPage() {
                                                             <div>
                                                                 <p className="text-[9px] md:text-[10px] font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest">Expiry</p>
                                                                 <p className="text-xs md:text-sm font-black text-slate-900 dark:text-white">
-                                                                    {new Date(item.expires_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}
+                                                                    {formatIdDateTimeNoPukul(item.expires_at)}
                                                                 </p>
                                                             </div>
                                                         </div>
@@ -756,6 +1038,147 @@ export default function AdminCreditSettingsPage() {
                                                 </button>
                                                 <button
                                                     onClick={() => handleDeleteRedeem(item.id, item.code)}
+                                                    className="flex items-center justify-center w-9 h-9 md:w-10 md:h-10 rounded-xl bg-rose-100 dark:bg-rose-900/50 border-2 border-rose-300 dark:border-rose-700 text-rose-600 dark:text-rose-400 shadow-[2px_2px_0_0_#e11d48] hover:shadow-none hover:-translate-x-0.5 hover:-translate-y-0.5 transition-all"
+                                                    title="Hapus"
+                                                >
+                                                    <Trash2 size={16} className="md:w-4 md:h-4" strokeWidth={2} />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )
+                            })}
+                        </div>
+                    )}
+                </>
+            ) : (
+                <>
+                    {loadingDiscount ? (
+                        <div className="space-y-6">
+                            {[1, 2, 3].map((i) => (
+                                <div key={i} className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-[24px] md:rounded-[32px] p-5 md:p-8 animate-pulse shadow-[#64748b] dark:shadow-[4px_4px_0_0_#1e293b] md:shadow-[#64748b] dark:md:shadow-[6px_6px_0_0_#334155]">
+                                    <div className="flex justify-between items-center">
+                                        <div className="space-y-3">
+                                            <div className="h-5 md:h-6 bg-slate-100 dark:bg-slate-800 rounded-lg w-32 md:w-40" />
+                                            <div className="h-3 md:h-4 bg-slate-50 dark:bg-slate-800 rounded-lg w-48 md:w-64" />
+                                        </div>
+                                        <div className="h-8 md:h-10 bg-slate-100 dark:bg-slate-800 rounded-xl w-20 md:w-24" />
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : discountVouchers.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-16 px-4 md:px-8 text-center bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-3xl border-dashed shadow-[4px_4px_0_0_#94a3b8] dark:shadow-[4px_4px_0_0_#1e293b]">
+                            <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-2xl flex items-center justify-center mb-4 transform -rotate-3 border-2 border-slate-900 dark:border-slate-700">
+                                <Percent size={32} className="text-slate-400 dark:text-slate-500" strokeWidth={1.5} />
+                            </div>
+                            <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-2">Belum ada voucher diskon</h3>
+                            <p className="text-sm font-medium text-slate-500 dark:text-slate-400 max-w-md mb-6">
+                                Buat voucher diskon persentase untuk promo di halaman pricing.
+                            </p>
+                            <button
+                                onClick={() => setShowCreateDiscount(true)}
+                                className="flex items-center gap-2 bg-sky-400 hover:bg-sky-300 text-sky-900 px-5 py-2.5 rounded-xl font-bold text-sm shadow-[3px_3px_0_0_#0284c7] hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all"
+                            >
+                                <Plus size={18} strokeWidth={2.5} />
+                                Buat Voucher Diskon
+                            </button>
+                        </div>
+                    ) : (
+                        <div className="space-y-4 pb-20">
+                            {discountVouchers.map((item) => {
+                                const isExpired = item.expires_at && new Date(item.expires_at) < new Date()
+                                const isFull = item.used_count >= item.max_uses
+                                const statusColor = !item.is_active || isExpired
+                                    ? 'rose'
+                                    : isFull
+                                        ? 'amber'
+                                        : 'emerald'
+                                const statusText = !item.is_active
+                                    ? 'Nonaktif'
+                                    : isExpired
+                                        ? 'Kadaluarsa'
+                                        : isFull
+                                            ? 'Habis'
+                                            : 'Aktif'
+
+                                return (
+                                    <div
+                                        key={item.id}
+                                        className={`group relative bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-2xl p-4 md:p-5 transition-all shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:shadow-none hover:-translate-x-0.5 hover:-translate-y-0.5 ${!item.is_active || isExpired || isFull ? 'opacity-60 grayscale-[0.3]' : ''
+                                            }`}
+                                    >
+                                        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 md:gap-4">
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex flex-wrap items-center gap-2 mb-2 md:mb-3">
+                                                    <div className="px-3 py-1.5 md:px-4 md:py-2 bg-slate-900 dark:bg-slate-700 text-white rounded-lg md:rounded-xl font-mono text-sm md:text-lg font-bold tracking-wider shadow-[2px_2px_0_0_#475569]">
+                                                        {item.code}
+                                                    </div>
+                                                    <div className="flex items-center gap-1.5">
+                                                        <button
+                                                            onClick={() => copyCode(item.code)}
+                                                            className="p-1.5 md:p-2 rounded-lg bg-sky-50 dark:bg-sky-950/30 text-sky-600 hover:bg-sky-100 dark:hover:bg-sky-900/50 transition-all shadow-[2px_2px_0_0_#0284c7] hover:shadow-none"
+                                                            title="Copy Code"
+                                                        >
+                                                            <Copy size={14} className="md:w-4 md:h-4" strokeWidth={2} />
+                                                        </button>
+                                                        <span className={`text-[9px] md:text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full ${statusColor === 'emerald' ? 'bg-emerald-100 text-emerald-700' :
+                                                            statusColor === 'amber' ? 'bg-amber-100 text-amber-700' :
+                                                                'bg-rose-100 text-rose-700'
+                                                            }`}>
+                                                            {statusText}
+                                                        </span>
+                                                    </div>
+                                                </div>
+
+                                                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="w-8 h-8 md:w-9 md:h-9 rounded-lg bg-sky-50 dark:bg-sky-950/30 flex items-center justify-center shrink-0">
+                                                            <Percent className="w-4 h-4 md:w-5 md:h-5 text-sky-600" strokeWidth={2} />
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-wider">Diskon</p>
+                                                            <p className="text-xs md:text-sm font-bold text-slate-900 dark:text-white">{item.percent_off}%</p>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="w-8 h-8 md:w-9 md:h-9 rounded-lg bg-orange-50 dark:bg-orange-950/30 flex items-center justify-center shrink-0">
+                                                            <Users className="w-4 h-4 md:w-5 md:h-5 text-orange-500" strokeWidth={2} />
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-[9px] md:text-[10px] font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest">Usage</p>
+                                                            <p className="text-xs md:text-sm font-black text-slate-900 dark:text-white">{item.used_count}/{item.max_uses}</p>
+                                                        </div>
+                                                    </div>
+
+                                                    {item.expires_at && (
+                                                        <div className="flex items-center gap-2 md:gap-3 col-span-2 md:col-span-1">
+                                                            <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl bg-blue-100 dark:bg-blue-900/50 border-2 border-slate-900 dark:border-slate-700 flex items-center justify-center shadow-[#64748b] dark:shadow-[4px_4px_0_0_#1e293b]">
+                                                                <Clock className="w-4 h-4 md:w-5 md:h-5 text-blue-600 dark:text-blue-400" strokeWidth={2.5} />
+                                                            </div>
+                                                            <div>
+                                                                <p className="text-[9px] md:text-[10px] font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest">Expiry</p>
+                                                                <p className="text-xs md:text-sm font-black text-slate-900 dark:text-white">
+                                                                    {formatIdDateTimeNoPukul(item.expires_at)}
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            <div className="flex lg:flex-col items-center justify-end gap-2 lg:pl-4 lg:border-l-2 lg:border-slate-100 dark:lg:border-slate-700 shrink-0 mt-2 lg:mt-0">
+                                                <button
+                                                    onClick={() => handleToggleDiscount(item)}
+                                                    className={`flex items-center justify-center w-9 h-9 md:w-10 md:h-10 rounded-xl border-2 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:shadow-none hover:-translate-x-0.5 hover:-translate-y-0.5 transition-all ${item.is_active ? 'bg-emerald-100 dark:bg-emerald-900/50 border-emerald-300 dark:border-emerald-700 text-emerald-600 dark:text-emerald-400' : 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-slate-400 dark:text-slate-500'
+                                                        }`}
+                                                    title={item.is_active ? 'Nonaktifkan' : 'Aktifkan'}
+                                                >
+                                                    {item.is_active ? <ToggleRight size={18} className="md:w-5 md:h-5" strokeWidth={2} /> : <ToggleLeft size={18} className="md:w-5 md:h-5" strokeWidth={2} />}
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDeleteDiscount(item.id, item.code)}
                                                     className="flex items-center justify-center w-9 h-9 md:w-10 md:h-10 rounded-xl bg-rose-100 dark:bg-rose-900/50 border-2 border-rose-300 dark:border-rose-700 text-rose-600 dark:text-rose-400 shadow-[2px_2px_0_0_#e11d48] hover:shadow-none hover:-translate-x-0.5 hover:-translate-y-0.5 transition-all"
                                                     title="Hapus"
                                                 >

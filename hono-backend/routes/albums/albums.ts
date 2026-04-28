@@ -121,6 +121,7 @@ albumsRoute.post('/', requireAuthJwt, async (c) => {
       type,
       description,
       pricing_package_id,
+      discount_voucher_code,
       school_city,
       kab_kota,
       wa_e164,
@@ -160,15 +161,123 @@ albumsRoute.post('/', requireAuthJwt, async (c) => {
       }
     }
 
+    const cleanVoucherCode =
+      typeof discount_voucher_code === 'string'
+        ? discount_voucher_code.toUpperCase().trim().replace(/\s+/g, '')
+        : ''
+    let appliedDiscountPercent: number | null = null
+
     const newId = crypto.randomUUID()
+
+    // If voucher provided, validate and increment used_count atomically with album insert.
+    if (cleanVoucherCode) {
+      // D1 disallows BEGIN/COMMIT/ROLLBACK. Use a guarded UPDATE as the "claim" step.
+      // This also enforces 1x per user by checking history in the UPDATE condition.
+      const claimed = await db
+        .prepare(
+          `UPDATE discount_vouchers
+           SET used_count = used_count + 1, updated_at = datetime('now')
+           WHERE code = ?
+             AND is_active = 1
+             AND (expires_at IS NULL OR julianday(expires_at) >= julianday('now'))
+             AND used_count < max_uses
+             AND NOT EXISTS (
+               SELECT 1 FROM discount_voucher_history h
+               WHERE h.discount_voucher_id = discount_vouchers.id
+                 AND h.user_id = ?
+             )
+           RETURNING id, percent_off, max_uses, used_count, expires_at`
+        )
+        .bind(cleanVoucherCode, user.id)
+        .first<Record<string, unknown>>()
+
+      if (!claimed) {
+        // Provide a more specific message for UX.
+        const row = await db
+          .prepare(`SELECT id, percent_off, max_uses, used_count, is_active, expires_at FROM discount_vouchers WHERE code = ?`)
+          .bind(cleanVoucherCode)
+          .first<Record<string, unknown>>()
+
+        if (!row) return c.json({ error: 'Voucher tidak valid.' }, 400)
+        if (Number(row.is_active) !== 1) return c.json({ error: 'Voucher sudah tidak aktif.' }, 410)
+        if (row.expires_at && new Date(String(row.expires_at)) < new Date()) return c.json({ error: 'Voucher sudah kadaluarsa.' }, 410)
+        if (Number(row.used_count ?? 0) >= Number(row.max_uses ?? 1)) return c.json({ error: 'Voucher sudah mencapai batas pemakaian.' }, 410)
+
+        const already = await db
+          .prepare(`SELECT 1 FROM discount_voucher_history WHERE discount_voucher_id = ? AND user_id = ? LIMIT 1`)
+          .bind(String(row.id ?? ''), user.id)
+          .first()
+        if (already) return c.json({ error: 'Kamu sudah pernah menggunakan voucher ini.' }, 409)
+
+        return c.json({ error: 'Voucher sudah tidak tersedia.' }, 410)
+      }
+
+      const voucherId = String(claimed.id ?? '')
+      const pct = Number(claimed.percent_off)
+      if (!voucherId || !Number.isFinite(pct) || pct < 1 || pct > 100) {
+        return c.json({ error: 'Voucher tidak valid.' }, 400)
+      }
+      appliedDiscountPercent = Math.round(pct)
+
+      const result = await db
+        .prepare(
+          `INSERT INTO albums (
+          id, user_id, name, type, description, pricing_package_id, package_snapshot,
+          discount_voucher_code, discount_percent_off,
+          school_city, kab_kota, wa_e164, province_id,
+          province_name, pic_name, students_count, source,
+          total_estimated_price, individual_payments_enabled
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id`
+        )
+        .bind(
+          newId,
+          user.id,
+          name,
+          type,
+          description || null,
+          pricing_package_id || null,
+          packageSnapshotJson,
+          cleanVoucherCode,
+          appliedDiscountPercent,
+          school_city || null,
+          kab_kota || null,
+          wa_e164 || null,
+          province_id || null,
+          province_name || null,
+          pic_name || null,
+          students_count || 0,
+          source || null,
+          total_estimated_price || 0,
+          individual_payments_enabled
+        )
+        .first()
+
+      const histId = crypto.randomUUID()
+      await db
+        .prepare(
+          `INSERT INTO discount_voucher_history (id, discount_voucher_id, user_id, album_id, percent_off, used_at)
+           VALUES (?, ?, ?, ?, ?, datetime('now'))`
+        )
+        .bind(histId, voucherId, user.id, newId, appliedDiscountPercent)
+        .run()
+
+      const notifId = crypto.randomUUID()
+      await db.prepare('INSERT INTO notifications (id, user_id, title, message, type, action_url) VALUES (?, ?, ?, ?, ?, ?)')
+        .bind(notifId, user.id, 'Menunggu Persetujuan', `Album "${name}" telah berhasil diajukan dan sedang menunggu persetujuan admin.`, 'info', '/user/riwayat')
+        .run()
+      invalidateUserResponseCaches(user.id)
+      return c.json({ id: (result as any)?.id }, 201)
+    }
+
     const result = await db
       .prepare(
         `INSERT INTO albums (
         id, user_id, name, type, description, pricing_package_id, package_snapshot,
+        discount_voucher_code, discount_percent_off,
         school_city, kab_kota, wa_e164, province_id,
         province_name, pic_name, students_count, source,
         total_estimated_price, individual_payments_enabled
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id`
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id`
       )
       .bind(
         newId,
@@ -178,6 +287,8 @@ albumsRoute.post('/', requireAuthJwt, async (c) => {
         description || null,
         pricing_package_id || null,
         packageSnapshotJson,
+        null,
+        null,
         school_city || null,
         kab_kota || null,
         wa_e164 || null,

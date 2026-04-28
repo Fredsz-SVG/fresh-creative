@@ -19,8 +19,39 @@ export function getCurrentUser(): AuthUser | null {
   return getFirebaseClient().auth.currentUser
 }
 
+let waitForAuthStateOncePromise: Promise<AuthUser | null> | null = null
+
+function waitForAuthStateOnce(timeoutMs = 1500): Promise<AuthUser | null> {
+  if (typeof window === 'undefined') return Promise.resolve(null)
+  if (waitForAuthStateOncePromise) return waitForAuthStateOncePromise
+
+  waitForAuthStateOncePromise = new Promise<AuthUser | null>((resolve) => {
+    const { auth } = getFirebaseClient()
+    let done = false
+
+    const cleanup = (result: AuthUser | null) => {
+      if (done) return
+      done = true
+      try {
+        unsub()
+      } catch {
+        // ignore
+      }
+      resolve(result)
+    }
+
+    const unsub = onAuthStateChanged(auth, (user) => cleanup(user))
+    window.setTimeout(() => cleanup(auth.currentUser), timeoutMs)
+  })
+
+  return waitForAuthStateOncePromise
+}
+
 export async function getIdToken(forceRefresh = false): Promise<string | null> {
-  const user = getCurrentUser()
+  let user = getCurrentUser()
+  if (!user) {
+    user = await waitForAuthStateOnce()
+  }
   if (!user) return null
   return await user.getIdToken(forceRefresh)
 }
