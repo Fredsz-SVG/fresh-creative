@@ -209,7 +209,7 @@ export function Hero() {
     <section id="hero" className="relative h-[100svh] w-full overflow-x-hidden bg-slate-100 dark:bg-[#0a0c37] transition-colors duration-500">
       {isLoading && (
         <div className="flex-center absolute z-[100] h-[100svh] w-full overflow-hidden bg-white dark:bg-[#0a0c37] transition-colors duration-500">
-          <img src="/img/logo.png" alt="Loading..." className="w-24 sm:w-32 animate-logo-pulse !opacity-100" loading="eager" fetchPriority="high" decoding="async" />
+          <img src="/img/logo.webp" alt="Loading..." className="w-24 sm:w-32 animate-logo-pulse !opacity-100" loading="eager" fetchPriority="high" decoding="async" />
         </div>
       )}
 
@@ -269,7 +269,7 @@ export function Hero() {
 
             {/* // jam setting (ukuran) */}
             <img
-              src="/img/JAM.png"
+              src="/img/jam.webp"
               alt="Jam"
               className={cn(
                 "w-28 h-auto object-contain opacity-90 drop-shadow-2xl transition-all duration-500",

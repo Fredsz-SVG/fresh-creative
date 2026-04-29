@@ -160,7 +160,7 @@ export default function PublicFlipbookPage() {
         )}
         <span className="flex-1 text-sm sm:text-base font-black text-slate-900 dark:text-white uppercase tracking-tight truncate text-center">{albumName}</span>
         <div className="flex-shrink-0 flex items-center justify-end w-8 lg:w-10">
-          <img src="/img/logo.png" alt="Logo" className="w-6 h-6 object-contain opacity-80" />
+          <img src="/img/logo.webp" alt="Logo" className="w-6 h-6 object-contain opacity-80" />
         </div>
       </header>
       <main className="flex-1 min-h-0 flex flex-col p-0 bg-transparent">

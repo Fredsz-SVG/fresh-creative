@@ -306,7 +306,7 @@ export function AnimatedLoginPage({
       <div className="relative hidden lg:flex flex-col justify-between bg-gradient-to-br from-indigo-600 via-indigo-500 to-indigo-400 p-12 text-white min-h-screen">
         <div className="relative z-20">
           <div className="flex items-center gap-3">
-            <img src="/img/logo.png" alt="FreshCreative.ID" className="w-10 h-10 object-contain" />
+            <img src="/img/logo.webp" alt="FreshCreative.ID" className="w-10 h-10 object-contain" />
             <span className="text-xl font-black tracking-tight">FRESHCREATIVE.ID</span>
           </div>
         </div>
@@ -484,7 +484,7 @@ export function AnimatedLoginPage({
       <div className="flex items-center justify-center p-4 sm:p-6 md:p-8 bg-white dark:bg-slate-950">
         <div className="w-full max-w-[380px]">
           <div className="lg:hidden flex items-center gap-2 text-lg font-semibold mb-4 pl-2">
-            <img src="/img/logo.png" alt="FreshCreative.ID" className="w-7 h-7 object-contain" />
+            <img src="/img/logo.webp" alt="FreshCreative.ID" className="w-7 h-7 object-contain" />
           </div>
 
           <div className="text-center mb-6">
@@ -736,7 +736,7 @@ export function AnimatedSignupPage({
       <div className="relative hidden lg:flex flex-col justify-between bg-gradient-to-br from-indigo-600 via-indigo-500 to-indigo-400 p-12 text-white min-h-screen">
         <div className="relative z-20">
           <div className="flex items-center gap-3">
-            <img src="/img/logo.png" alt="FreshCreative.ID" className="w-10 h-10 object-contain" />
+            <img src="/img/logo.webp" alt="FreshCreative.ID" className="w-10 h-10 object-contain" />
             <span className="text-xl font-black tracking-tight">FRESHCREATIVE.ID</span>
           </div>
         </div>
@@ -914,7 +914,7 @@ export function AnimatedSignupPage({
       <div className="flex items-center justify-center p-4 sm:p-6 md:p-8 bg-white dark:bg-slate-950">
         <div className="w-full max-w-[380px]">
           <div className="lg:hidden flex items-center gap-2 text-lg font-semibold mb-4 pl-2">
-            <img src="/img/logo.png" alt="FreshCreative.ID" className="w-7 h-7 object-contain" />
+            <img src="/img/logo.webp" alt="FreshCreative.ID" className="w-7 h-7 object-contain" />
           </div>
 
           <div className="text-center mb-6">

@@ -686,7 +686,7 @@ export default function PreviewView({
                     )}
                 </div>
                 <div className="flex items-center gap-3">
-                    <img src="/img/logo.png" alt="Logo" className="w-5 h-5 object-contain opacity-70" />
+                    <img src="/img/logo.webp" alt="Logo" className="w-5 h-5 object-contain opacity-70" />
                     <button
                         type="button"
                         onClick={onClose}

@@ -182,7 +182,7 @@ export function Navbar() {
                   theme?.isDark && "drop-shadow-[0_0_8px_rgba(0,0,0,0.8)]"
                 )}
               >
-                <img src="/img/logo.png" alt="Logo" className="w-8 sm:w-10 animate-logo-pulse shrink-0" loading="lazy" />
+                <img src="/img/logo.webp" alt="Logo" className="w-8 sm:w-10 animate-logo-pulse shrink-0" loading="lazy" />
                 <span
                   className={cn(
                     "nav-logo-text font-black text-[9px] xs:text-[10px] md:text-sm tracking-widest uppercase transition-all duration-500 whitespace-nowrap overflow-visible p-1",

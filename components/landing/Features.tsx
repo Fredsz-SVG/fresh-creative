@@ -125,7 +125,7 @@ export function Features() {
           <BentoCardWrap className="h-80 md:h-full">
             <BentoCard
               media="image"
-              src="/img/sesifoto.jpg"
+              src="/img/sesifoto.webp"
               title={<>Video &amp; Fotografi</>}
               description="Sesi pemotretan dan video dengan tim kreatif berpengalaman."
             />
@@ -135,7 +135,7 @@ export function Features() {
           <BentoCardWrap className="h-80 md:h-full">
             <BentoCard
               media="image"
-              src="/img/organizer.jpg"
+              src="/img/organizer.webp"
               title={<>Event Organizer</>}
               description="Kami urus semua acara yearbook-mu, dari konsep sampai eksekusi."
             />

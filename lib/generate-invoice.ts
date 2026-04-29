@@ -177,7 +177,7 @@ export async function generateAndPrintInvoice(tx: InvoiceTransaction) {
     <div class="header">
       <div>
         <div class="logo-container">
-          <img src="${window.location.origin}/img/logo.png" alt="Logo" class="logo" />
+          <img src="${window.location.origin}/img/logo.webp" alt="Logo" class="logo" />
           <h2 class="title">Fresh Creative<br/>Indonesia</h2>
         </div>
         <p class="subtext">Platform Pembuatan Buku Kenangan Digital</p>

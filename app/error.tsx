@@ -31,7 +31,7 @@ export default function Error({
 
       {/* Logo */}
       <Link href="/" className="absolute top-6 left-6 sm:top-8 sm:left-8 flex items-center gap-2 opacity-80 hover:opacity-100 transition-opacity">
-        <img src="/img/logo.png" alt="Fresh Creative" className="w-8 h-8 sm:w-10 sm:h-10" />
+        <img src="/img/logo.webp" alt="Fresh Creative" className="w-8 h-8 sm:w-10 sm:h-10" />
       </Link>
 
       {/* Content */}

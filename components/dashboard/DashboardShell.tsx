@@ -490,7 +490,7 @@ export default function DashboardShell({
             className="flex items-center gap-2 shrink-0 min-h-[44px]"
           >
             <img
-              src="/img/logo.png"
+              src="/img/logo.webp"
               alt="Fresh Creative"
               className="w-7 h-7 md:w-8 md:h-8 object-contain"
             />
