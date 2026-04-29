@@ -337,7 +337,7 @@ export default function PricingEditPage() {
   const [aiPricing, setAiPricing] = useState<AiFeaturePricing[]>([])
   const [loadingAi, setLoadingAi] = useState(true)
   const [editingAi, setEditingAi] = useState<AiFeaturePricing | null>(null)
-  const isAnyModalOpen = !!editingPackage || !!deletePrompt || !!editingAi
+  const isAnyModalOpen = !!editingPackage || !!deleteTargetId || !!editingAi
 
   useEffect(() => {
     if (typeof document === 'undefined') return
