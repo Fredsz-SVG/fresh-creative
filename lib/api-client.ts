@@ -48,6 +48,18 @@ function getDefaultGetTtlMs(path: string): number {
   return DEFAULT_GET_TTL_MS_BY_PATH[pathname] ?? 0
 }
 
+/**
+ * WebP + resize di client hanya untuk upload persisten (mis. ke R2).
+ * AI Labs (try-on, pose, photo group, photo-to-video, image editor / credit ai-edit) mengirim
+ * gambar untuk Replicate atau proses lokal — hindari re-encode agar kualitas input tidak turun.
+ */
+function shouldOptimizeFormDataImages(path: string): boolean {
+  const pathname = getPathname(path)
+  if (pathname.startsWith('/api/ai-features/')) return false
+  if (pathname.startsWith('/api/admin/ai-edit')) return false
+  return true
+}
+
 function buildRequestKey(method: string, fullUrl: string): string {
   return `${method.toUpperCase()}::${fullUrl}`
 }
@@ -119,20 +131,16 @@ export async function fetchWithAuth(
     }
   }
 
-  // GLOBAL IMAGE OPTIMIZATION: Convert any image in FormData to WebP before sending
+  // R2-bound uploads: raster di FormData → WebP + clamp long edge + target ≤1000 KiB (lib/image-conversion).
+  // Lewati untuk AI Labs & ai-edit (bukan destinasi R2). GIF tidak disentuh; decode gagal → file asli.
   const isBrowser = typeof window !== 'undefined' && typeof document !== 'undefined'
-  if (isBrowser && rest.body instanceof FormData) {
+  if (isBrowser && rest.body instanceof FormData && shouldOptimizeFormDataImages(path)) {
     const originalFormData = rest.body
     const newFormData = new FormData()
     let hasChanged = false
 
     for (const [key, value] of (originalFormData as any).entries()) {
-      if (
-        value instanceof File &&
-        value.type.startsWith('image/') &&
-        value.type !== 'image/gif' &&
-        value.type !== 'image/webp' // Skip if already webp
-      ) {
+      if (value instanceof File && value.type.startsWith('image/') && value.type !== 'image/gif') {
         try {
           const webpBlob = await convertToWebP(value)
           const newName = value.name.replace(/\.[^/.]+$/, '') + '.webp'

@@ -1,10 +1,9 @@
 'use client'
 
-import React, { memo, startTransition, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import React, { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { fetchWithAuth } from '../../../lib/api-client'
 import { Loader2, Eye, BookOpen, Save, MessageCircle, Plus, Trash2, Edit2, Upload, ImageIcon } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { convertToWebP } from '../../../lib/image-conversion'
 import { cn } from '@/lib/utils'
 
 interface PortfolioItem {
@@ -115,7 +114,7 @@ const PortfolioCard = memo(function PortfolioCard({
           </button>
         </div>
         <div className="absolute top-4 left-4 pointer-events-none">
-          <div className="px-3 py-1 bg-slate-900/80 backdrop-blur-md rounded-full border border-white/20 text-[10px] font-bold text-white">
+          <div className="px-3 py-1 bg-slate-900/90 rounded-full border border-white/20 text-[10px] font-bold text-white">
             #{item.display_order}
           </div>
         </div>
@@ -141,7 +140,6 @@ export default function AdminShowcasePage() {
   const [loadingPortfolio, setLoadingPortfolio] = useState(true)
   const [editingItem, setEditingItem] = useState<Partial<PortfolioItem> | null>(null)
   const [isSavingPortfolio, setIsSavingPortfolio] = useState(false)
-  const [uploadProgress, setUploadProgress] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
 
   // Portfolio Pagination
@@ -157,15 +155,14 @@ export default function AdminShowcasePage() {
     [portfolio, currentPage]
   )
 
-  // Sync active tab dari URL hash sekali di client (hindari hydration mismatch).
-  useEffect(() => {
+  // Sync tab dari hash sebelum paint (useLayoutEffect) supaya effect pushState tidak
+  // sempat menimpa #portfolio menjadi #ebook saat mount.
+  useLayoutEffect(() => {
     if (typeof window === 'undefined') return
     const hash = window.location.hash.replace('#', '') as ActiveTab
-    if (VALID_TABS.includes(hash) && hash !== activeTab) {
+    if (VALID_TABS.includes(hash)) {
       setActiveTab(hash)
     }
-    // hanya jalan saat mount
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
@@ -180,21 +177,25 @@ export default function AdminShowcasePage() {
   }, [isAnyModalOpen])
 
   const switchTab = useCallback((tab: ActiveTab) => {
-    setActiveTab((prev) => {
-      if (prev === tab) return prev
-      const newHash = `#${tab}`
-      if (typeof window !== 'undefined' && window.location.hash !== newHash) {
-        history.pushState(null, '', newHash)
-      }
-      return tab
-    })
+    setActiveTab((prev) => (prev === tab ? prev : tab))
   }, [])
 
-  const handleTabClick = useCallback((tab: ActiveTab) => {
-    // Mark tab switch sebagai non-urgent agar UI tetap responsif (transform indikator
-    // tab langsung jalan, panel di-render di transition berikutnya tanpa nge-block).
-    startTransition(() => switchTab(tab))
-  }, [switchTab])
+  // Jangan panggil history.pushState di dalam updater setState (Strict Mode bisa memanggil
+  // updater dua kali). Sinkronkan hash di effect agar switch tab tetap instant & deterministik.
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const newHash = `#${activeTab}`
+    if (window.location.hash !== newHash) {
+      history.pushState(null, '', newHash)
+    }
+  }, [activeTab])
+
+  const handleTabClick = useCallback(
+    (tab: ActiveTab) => {
+      switchTab(tab)
+    },
+    [switchTab]
+  )
 
   const handleEditItem = useCallback((item: PortfolioItem) => {
     setEditingItem(item)
@@ -375,13 +376,8 @@ export default function AdminShowcasePage() {
 
       const file = fileInputRef.current?.files?.[0]
       if (file) {
-        try {
-          const webpBlob = await convertToWebP(file)
-          formData.append('image', webpBlob, `${editingItem.title?.replace(/\s+/g, '_') || 'portfolio'}.webp`)
-        } catch (webpErr) {
-          console.error('WebP conversion failed, using original:', webpErr)
-          formData.append('image', file)
-        }
+        // fetchWithAuth mengonversi gambar di FormData ke WebP + resize long edge (lib/api-client + image-conversion).
+        formData.append('image', file)
       }
 
       const url = editingItem.id ? `/api/admin/portfolio/${editingItem.id}` : '/api/admin/portfolio'
@@ -537,7 +533,10 @@ export default function AdminShowcasePage() {
         </div>
       ) : (
         <div className="space-y-8">
-          <div className={cn('grid grid-cols-1 md:grid-cols-2 gap-8', activeTab !== 'ebook' && 'hidden')}>
+          <div
+            className={cn('grid grid-cols-1 md:grid-cols-2 gap-8 [contain:layout]', activeTab !== 'ebook' && 'hidden')}
+            inert={activeTab !== 'ebook' ? true : undefined}
+          >
           {/* Flipbook View */}
           <div className="rounded-2xl border-2 border-slate-900 dark:border-slate-700 bg-white dark:bg-slate-900 p-6 md:p-8 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] relative overflow-hidden group">
             <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
@@ -611,7 +610,10 @@ export default function AdminShowcasePage() {
           </div>
           </div>
 
-          <div className={cn(activeTab !== 'phygital' && 'hidden')}>
+          <div
+            className={cn('[contain:layout]', activeTab !== 'phygital' && 'hidden')}
+            inert={activeTab !== 'phygital' ? true : undefined}
+          >
             <div>
               {/* Fonnte WhatsApp Target */}
               <div className="rounded-2xl border-2 border-slate-900 dark:border-slate-700 bg-green-50 dark:bg-slate-800 p-6 md:p-8 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] relative overflow-hidden group max-w-2xl">
@@ -651,7 +653,10 @@ export default function AdminShowcasePage() {
             </div>
           </div>
 
-          <div className={cn(activeTab !== 'portfolio' && 'hidden')}>
+          <div
+            className={cn('[contain:layout]', activeTab !== 'portfolio' && 'hidden')}
+            inert={activeTab !== 'portfolio' ? true : undefined}
+          >
             <div>
               {editingItem && (
               <div className="fixed inset-0 z-[260] bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setEditingItem(null)}>
