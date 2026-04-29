@@ -72,6 +72,7 @@ export default function AdminShowcasePage() {
   const [activeTab, setActiveTab] = useState<ActiveTab>(getTabFromHash)
   const [itemToDelete, setItemToDelete] = useState<string | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [portfolioReady, setPortfolioReady] = useState(activeTab !== 'portfolio')
   const isAnyModalOpen = !!editingItem || !!itemToDelete
   const totalPages = useMemo(() => Math.max(1, Math.ceil(portfolio.length / ITEMS_PER_PAGE)), [portfolio.length])
   const currentItems = useMemo(
@@ -91,14 +92,14 @@ export default function AdminShowcasePage() {
   }, [isAnyModalOpen])
 
   useEffect(() => {
-    // Preload visible card images to reduce stutter when entering Portfolio tab.
-    if (typeof window === 'undefined' || activeTab !== 'portfolio') return
-    for (const item of currentItems) {
-      const img = new window.Image()
-      img.decoding = 'async'
-      img.src = item.image_url
+    if (activeTab !== 'portfolio') {
+      setPortfolioReady(true)
+      return
     }
-  }, [activeTab, currentItems])
+    setPortfolioReady(false)
+    const raf = window.requestAnimationFrame(() => setPortfolioReady(true))
+    return () => window.cancelAnimationFrame(raf)
+  }, [activeTab])
 
   const switchTab = (tab: ActiveTab) => {
     setActiveTab(tab)
@@ -551,6 +552,14 @@ export default function AdminShowcasePage() {
 
           {activeTab === 'portfolio' && (
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-300">
+              {!portfolioReady ? (
+                <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6">
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <div key={i} className="aspect-[4/5] rounded-3xl border-2 border-slate-200 dark:border-slate-800 animate-pulse bg-slate-50 dark:bg-slate-900" />
+                  ))}
+                </div>
+              ) : (
+                <>
               {editingItem && (
               <div className="fixed inset-0 z-[260] bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setEditingItem(null)}>
                 <div className="w-full max-w-5xl max-h-[92vh] overflow-y-auto p-6 md:p-8 rounded-3xl border-2 border-slate-900 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-[8px_8px_0_0_#2e1065] animate-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
@@ -747,6 +756,8 @@ export default function AdminShowcasePage() {
                 </div>
               )}
               </div>
+              </>
+              )}
             </div>
           )}
         </div>
