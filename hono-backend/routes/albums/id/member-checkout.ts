@@ -139,12 +139,11 @@ memberCheckoutRoute.post('/', async (c) => {
       items: lineItems,
     }
     if (hasDiscount && discountAmount > 0) {
-      invoicePayload.fees = [
-        {
-          type: 'DISCOUNT',
-          value: -discountAmount,
-        },
-      ]
+      lineItems.push({
+        name: `Diskon ${discountPercent}%`,
+        quantity: 1,
+        price: -discountAmount,
+      })
       invoicePayload.metadata = {
         discount_percent_off: discountPercent,
         subtotal_before_discount: subtotalBeforeDiscount,
@@ -162,7 +161,7 @@ memberCheckoutRoute.post('/', async (c) => {
     }
 
     const auth = btoa(xenditKey + ':')
-    let xenditRes = await fetch('https://api.xendit.co/v2/invoices', {
+    const xenditRes = await fetch('https://api.xendit.co/v2/invoices', {
       method: 'POST',
       headers: {
         Authorization: 'Basic ' + auth,
@@ -171,21 +170,7 @@ memberCheckoutRoute.post('/', async (c) => {
       body: JSON.stringify(invoicePayload),
     })
 
-    let invoice = (await xenditRes.json()) as { message?: string; invoice_url?: string }
-    // Fallback aman jika fees diskon tidak diterima.
-    if (!xenditRes.ok && hasDiscount && discountAmount > 0) {
-      const fallbackPayload = { ...invoicePayload }
-      delete (fallbackPayload as { fees?: unknown }).fees
-      xenditRes = await fetch('https://api.xendit.co/v2/invoices', {
-        method: 'POST',
-        headers: {
-          Authorization: 'Basic ' + auth,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(fallbackPayload),
-      })
-      invoice = (await xenditRes.json()) as { message?: string; invoice_url?: string }
-    }
+    const invoice = (await xenditRes.json()) as { message?: string; invoice_url?: string }
     if (!xenditRes.ok) {
       return c.json({ error: invoice?.message || 'Failed to create invoice' }, 500)
     }
