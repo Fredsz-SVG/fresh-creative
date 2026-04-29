@@ -119,6 +119,17 @@ export async function generateAndPrintInvoice(tx: InvoiceTransaction) {
           <td class="text-right" style="white-space: nowrap;">${formatMoney(parsedAmount)}</td>
         </tr>`
 
+  const subtotalBeforeDiscount = lineItems.length
+    ? lineItems.reduce((sum, item) => sum + item.total, 0)
+    : parsedAmount
+  const inferredDiscountAmount =
+    subtotalBeforeDiscount > parsedAmount ? subtotalBeforeDiscount - parsedAmount : 0
+  const hasDiscount = inferredDiscountAmount > 0
+  const discountPercent =
+    hasDiscount && subtotalBeforeDiscount > 0
+      ? Math.round((inferredDiscountAmount / subtotalBeforeDiscount) * 100)
+      : 0
+
   const html = `
 <!DOCTYPE html>
 <html lang="id">
@@ -227,6 +238,15 @@ export async function generateAndPrintInvoice(tx: InvoiceTransaction) {
     <!-- Totals -->
     <div class="totals">
       <div class="totals-box">
+        ${hasDiscount ? `
+        <div class="tot-row">
+          <span class="tot-label">Subtotal</span>
+          <span class="tot-val">${formatMoney(subtotalBeforeDiscount)}</span>
+        </div>
+        <div class="tot-row">
+          <span class="tot-label">Diskon${discountPercent > 0 ? ` (${discountPercent}%)` : ''}</span>
+          <span class="tot-val" style="color:#16a34a;">- ${formatMoney(inferredDiscountAmount)}</span>
+        </div>` : ''}
         <div class="tot-row final">
           <span class="tot-label final">Total Dibayar</span>
           <span class="tot-val final">${formatMoney(parsedAmount)}</span>
