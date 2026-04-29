@@ -35,54 +35,54 @@ function isSamePortfolio(a: PortfolioItem[], b: PortfolioItem[]): boolean {
   return true
 }
 
-/** Hanya decode gambar saat kartu mendekati viewport — kurangi spike saat buka tab Portfolio. */
+/** Progressive loading: 2 pertama langsung, sisanya stagger 150ms per item. */
 const PortfolioCardImage = memo(function PortfolioCardImage({
   src,
   alt,
-  eager,
+  index,
 }: {
   src: string
   alt: string
-  eager?: boolean
+  index: number
 }) {
-  const rootRef = useRef<HTMLDivElement>(null)
-  const [show, setShow] = useState(!!eager)
+  const imgRef = useRef<HTMLImageElement>(null)
+  const [loaded, setLoaded] = useState(false)
+  const [errored, setErrored] = useState(false)
+  const [srcSet, setSrcSet] = useState('')
 
   useEffect(() => {
-    if (show) return
-    const el = rootRef.current
-    if (!el || typeof IntersectionObserver === 'undefined') {
-      setShow(true)
+    if (index < 2) {
+      setSrcSet(src)
       return
     }
-    const io = new IntersectionObserver(
-      (entries) => {
-        for (const e of entries) {
-          if (e.isIntersecting) {
-            setShow(true)
-            io.disconnect()
-            break
-          }
-        }
-      },
-      { root: null, rootMargin: '120px 0px', threshold: 0.01 }
-    )
-    io.observe(el)
-    return () => io.disconnect()
-  }, [show])
+    const delay = (index - 1) * 150
+    const timer = setTimeout(() => setSrcSet(src), delay)
+    return () => clearTimeout(timer)
+  }, [src, index])
 
   return (
-    <div ref={rootRef} className="absolute inset-0 bg-slate-200 dark:bg-slate-800">
-      {show ? (
+    <div className="absolute inset-0 bg-slate-200 dark:bg-slate-800">
+      {srcSet && (
         <img
-          src={src}
+          ref={imgRef}
+          src={srcSet}
           alt={alt}
-          loading={eager ? 'eager' : 'lazy'}
+          loading="eager"
           decoding="async"
-          fetchPriority={eager ? 'high' : 'low'}
-          className="absolute inset-0 h-full w-full object-cover"
+          fetchPriority={index < 2 ? 'high' : 'low'}
+          onLoad={() => setLoaded(true)}
+          onError={() => setErrored(true)}
+          className={cn(
+            'absolute inset-0 h-full w-full object-cover transition-opacity duration-300',
+            loaded && !errored ? 'opacity-100' : 'opacity-0'
+          )}
         />
-      ) : null}
+      )}
+      {errored && (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <ImageIcon className="w-8 h-8 text-slate-400" />
+        </div>
+      )}
     </div>
   )
 })
@@ -752,7 +752,7 @@ export default function AdminShowcasePage() {
                       {currentItems.map((p, idx) => (
                         <div key={p.id} className="group relative rounded-3xl border-2 border-slate-900 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-hidden shadow-[3px_3px_0_0_#334155] md:shadow-[6px_6px_0_0_#334155] dark:shadow-[3px_3px_0_0_#1e293b] dark:md:shadow-[6px_6px_0_0_#1e293b] md:hover:translate-x-[-2px] md:hover:translate-y-[-2px] md:hover:shadow-[8px_8px_0_0_#334155] transition-all [content-visibility:auto] [contain-intrinsic-size:280px_360px]">
                           <div className="aspect-[4/5] relative bg-slate-100 dark:bg-slate-800">
-                            <PortfolioCardImage src={p.image_url} alt={p.title} eager={idx < 2} />
+                            <PortfolioCardImage src={p.image_url} alt={p.title} index={idx} />
                             <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/30 to-transparent opacity-90" />
                             <div className="absolute inset-x-0 bottom-0 p-3 md:p-6">
                               <p className="text-[8px] md:text-[10px] font-black text-lime-400 uppercase tracking-[0.12em] md:tracking-[0.2em] mb-0.5 md:mb-1 truncate">{p.subtitle}</p>
