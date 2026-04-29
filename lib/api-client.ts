@@ -131,7 +131,7 @@ export async function fetchWithAuth(
     }
   }
 
-  // R2-bound uploads: raster di FormData → WebP + clamp long edge + target ≤1000 KiB (lib/image-conversion).
+  // R2-bound uploads: raster di FormData → WebP + clamp long edge + target ~1-2 MiB (lib/image-conversion).
   // Lewati untuk AI Labs & ai-edit (bukan destinasi R2). GIF tidak disentuh; decode gagal → file asli.
   const isBrowser = typeof window !== 'undefined' && typeof document !== 'undefined'
   if (isBrowser && rest.body instanceof FormData && shouldOptimizeFormDataImages(path)) {

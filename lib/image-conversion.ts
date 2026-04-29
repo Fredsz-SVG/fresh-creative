@@ -1,17 +1,19 @@
 /**
  * Client-side image prep untuk upload persisten: decode → resize (long edge) → WebP,
- * dengan iterasi kualitas/resolusi agar ukuran file mendekati batas `maxBytes` (default 1000 KiB).
+ * dengan iterasi kualitas/resolusi agar ukuran file mendekati rentang target (default 1–2 MiB).
  */
 
 /** Default long-edge cap (px); aspect ratio preserved, tidak pernah di-upscale. */
 export const DEFAULT_WEBP_MAX_EDGE = 2560
 
-/** Target maks ukuran file setelah encode (1000 KiB = 1024×1000 byte). */
-export const DEFAULT_MAX_UPLOAD_BYTES = 1000 * 1024
+/** Target minimal ukuran hasil encode (best effort). */
+export const DEFAULT_MIN_UPLOAD_BYTES = 1 * 1024 * 1024
+/** Target maksimal ukuran hasil encode (best effort). */
+export const DEFAULT_MAX_UPLOAD_BYTES = 2 * 1024 * 1024
 
-const MIN_WEBP_QUALITY = 0.42
+const MIN_WEBP_QUALITY = 0.58
 const MIN_LONG_EDGE = 640
-const QUALITY_STEP = 0.065
+const QUALITY_STEP = 0.05
 const EDGE_SHRINK = 0.82
 
 export type ConvertToWebPOptions = {
@@ -27,27 +29,34 @@ export type ConvertToWebPOptions = {
    * Set `0` untuk menonaktifkan (satu kali encode dengan quality/maxEdge saja).
    */
   maxBytes?: number
+  /** Target minimal ukuran blob (byte), best effort (tidak meng-inflate file). */
+  minBytes?: number
 }
 
 type NormalizedOptions = {
   quality: number
   maxEdge: number
+  minBytes: number
   maxBytes: number
 }
 
 function normalizeOptions(qualityOrOptions?: number | ConvertToWebPOptions): NormalizedOptions {
   if (typeof qualityOrOptions === 'number') {
     return {
-      quality: qualityOrOptions,
+      quality: Math.max(0.8, qualityOrOptions),
       maxEdge: DEFAULT_WEBP_MAX_EDGE,
+      minBytes: DEFAULT_MIN_UPLOAD_BYTES,
       maxBytes: DEFAULT_MAX_UPLOAD_BYTES,
     }
   }
   const o = qualityOrOptions ?? {}
+  const minBytes = o.minBytes === undefined ? DEFAULT_MIN_UPLOAD_BYTES : o.minBytes
+  const maxBytes = o.maxBytes === undefined ? DEFAULT_MAX_UPLOAD_BYTES : o.maxBytes
   return {
-    quality: o.quality ?? 0.82,
+    quality: o.quality ?? 0.9,
     maxEdge: o.maxEdge ?? DEFAULT_WEBP_MAX_EDGE,
-    maxBytes: o.maxBytes === undefined ? DEFAULT_MAX_UPLOAD_BYTES : o.maxBytes,
+    minBytes,
+    maxBytes: Math.max(maxBytes, minBytes),
   }
 }
 
@@ -124,7 +133,8 @@ function encodeCanvasToWebpUnderBudget(
 
 /**
  * Converts a File (raster image) ke WebP via Canvas.
- * Secara default: clamp long edge, lalu iterasi kualitas + penurunan resolusi sampai ≤ {@link DEFAULT_MAX_UPLOAD_BYTES}.
+ * Secara default: clamp long edge, lalu iterasi kualitas + penurunan resolusi sampai berada
+ * dalam rentang target {@link DEFAULT_MIN_UPLOAD_BYTES} - {@link DEFAULT_MAX_UPLOAD_BYTES} (best effort).
  */
 export async function convertToWebP(
   file: File,
@@ -153,7 +163,21 @@ export async function convertToWebP(
   }
 
   let maxEdge = opts.maxEdge > 0 ? opts.maxEdge : DEFAULT_WEBP_MAX_EDGE
-  let smallestBlob: Blob | null = null
+  let closestBlob: Blob | null = null
+  let closestDistance = Number.POSITIVE_INFINITY
+
+  const pickClosest = (blob: Blob) => {
+    const distance =
+      blob.size < opts.minBytes
+        ? opts.minBytes - blob.size
+        : blob.size > opts.maxBytes
+          ? blob.size - opts.maxBytes
+          : 0
+    if (!closestBlob || distance < closestDistance) {
+      closestBlob = blob
+      closestDistance = distance
+    }
+  }
 
   for (;;) {
     const { width, height } = computeDrawSize(nw, nh, maxEdge)
@@ -167,8 +191,10 @@ export async function convertToWebP(
     ctx.drawImage(img, 0, 0, width, height)
 
     const blob = await encodeCanvasToWebpUnderBudget(canvas, opts.quality, opts.maxBytes)
-    if (!smallestBlob || blob.size < smallestBlob.size) smallestBlob = blob
-    if (blob.size <= opts.maxBytes) return blob
+    pickClosest(blob)
+    if (blob.size >= opts.minBytes && blob.size <= opts.maxBytes) return blob
+    // Sudah di bawah target minimal: jangan kompres lagi supaya tidak makin blur.
+    if (blob.size < opts.minBytes) return blob
 
     if (maxEdge <= MIN_LONG_EDGE) break
 
@@ -178,6 +204,6 @@ export async function convertToWebP(
     maxEdge = next
   }
 
-  if (!smallestBlob) throw new Error('Failed to produce WebP blob')
-  return smallestBlob
+  if (!closestBlob) throw new Error('Failed to produce WebP blob')
+  return closestBlob
 }
