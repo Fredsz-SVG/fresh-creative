@@ -74,9 +74,20 @@ checkoutRoute.post('/', async (c) => {
 
     const externalId = `album_${album.id}_user_${user.id}_ts_${Date.now()}`
     const txId = crypto.randomUUID()
-    const desc = isUpgradeRequest
+    const discountPercent = !isUpgradeRequest ? Number(album.discount_percent_off ?? 0) : 0
+    const hasDiscount = Number.isFinite(discountPercent) && discountPercent > 0 && discountPercent < 100
+    const amountNumber = Number(amount)
+    const subtotalBeforeDiscount = hasDiscount
+      ? Math.round(amountNumber / (1 - discountPercent / 100))
+      : amountNumber
+    const discountAmount = hasDiscount ? Math.max(0, subtotalBeforeDiscount - amountNumber) : 0
+
+    const descBase = isUpgradeRequest
       ? `Penambahan ${body.added_students || 0} Anggota Album: ${album.name}`
       : `Pembayaran Album (Akses Kreator): ${album.name}`
+    const desc = !isUpgradeRequest && hasDiscount
+      ? `${descBase} | Subtotal Rp${subtotalBeforeDiscount.toLocaleString('id-ID')} | Diskon ${discountPercent}% (hemat Rp${discountAmount.toLocaleString('id-ID')}) | Total Rp${amountNumber.toLocaleString('id-ID')}`
+      : descBase
 
     const xenditKey = (c.env as { XENDIT_SECRET_KEY?: string }).XENDIT_SECRET_KEY || ''
     if (!xenditKey) return c.json({ error: 'XENDIT_SECRET_KEY missing' }, 500)
@@ -122,10 +133,15 @@ checkoutRoute.post('/', async (c) => {
       }
     } catch { /* ignore snapshot parse error */ }
 
-    if (lineItems.length === 0 || totalCalculated !== amount) {
+    const amountForCompare = hasDiscount ? subtotalBeforeDiscount : amountNumber
+    if (lineItems.length === 0 || totalCalculated !== amountForCompare) {
       lineItems = [
         {
-          name: isUpgradeRequest ? `Penambahan ${itemsQuantity} Anggota: ${album.name}` : `Pembayaran Album: ${album.name}`,
+          name: isUpgradeRequest
+            ? `Penambahan ${itemsQuantity} Anggota: ${album.name}`
+            : hasDiscount
+              ? `Pembayaran Album: ${album.name} (diskon ${discountPercent}% sudah diterapkan)`
+              : `Pembayaran Album: ${album.name}`,
           quantity: 1,
           price: amount,
         },

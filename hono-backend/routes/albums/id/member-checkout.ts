@@ -36,13 +36,13 @@ memberCheckoutRoute.post('/', async (c) => {
     const album = await db
       .prepare(
         `
-        SELECT a.name, a.individual_payments_enabled, a.package_snapshot
+        SELECT a.name, a.individual_payments_enabled, a.package_snapshot, a.discount_percent_off
         FROM albums a
         WHERE a.id = ?
       `
       )
       .bind(albumId)
-      .first<{ name: string; individual_payments_enabled?: number; package_snapshot?: string }>()
+      .first<{ name: string; individual_payments_enabled?: number; package_snapshot?: string; discount_percent_off?: number }>()
 
     if (!album) return c.json({ error: 'Album not found' }, 404)
     if (album.individual_payments_enabled === 0) {
@@ -114,7 +114,16 @@ memberCheckoutRoute.post('/', async (c) => {
 
     const externalId = `member_${access_id}_user_${user.id}_ts_${Date.now()}`
     const txId = crypto.randomUUID()
-    const desc = `Pembayaran Akses Anggota Album: ${album.name}`
+    const discountPercent = Number(album.discount_percent_off ?? 0)
+    const hasDiscount = Number.isFinite(discountPercent) && discountPercent > 0 && discountPercent < 100
+    const subtotalBeforeDiscount = hasDiscount
+      ? Math.round(amount / (1 - discountPercent / 100))
+      : amount
+    const discountAmount = hasDiscount ? Math.max(0, subtotalBeforeDiscount - amount) : 0
+    const descBase = `Pembayaran Akses Anggota Album: ${album.name}`
+    const desc = hasDiscount
+      ? `${descBase} | Subtotal Rp${subtotalBeforeDiscount.toLocaleString('id-ID')} | Diskon ${discountPercent}% (hemat Rp${discountAmount.toLocaleString('id-ID')}) | Total Rp${amount.toLocaleString('id-ID')}`
+      : descBase
 
     const xenditKey = (c.env as { XENDIT_SECRET_KEY?: string }).XENDIT_SECRET_KEY || ''
     if (!xenditKey) return c.json({ error: 'XENDIT_SECRET_KEY missing' }, 500)
