@@ -1,8 +1,8 @@
 'use client'
 
-import React, { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import React, { memo, startTransition, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { fetchWithAuth } from '../../../lib/api-client'
-import { Loader2, Eye, BookOpen, Save, MessageCircle, Plus, Trash2, Edit2, Upload, GripVertical, ImageIcon, AlertTriangle } from 'lucide-react'
+import { Loader2, Eye, BookOpen, Save, MessageCircle, Plus, Trash2, Edit2, Upload, ImageIcon } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { convertToWebP } from '../../../lib/image-conversion'
 import { cn } from '@/lib/utils'
@@ -15,6 +15,11 @@ interface PortfolioItem {
   image_url: string
   display_order: number
 }
+
+type ActiveTab = 'ebook' | 'phygital' | 'portfolio'
+
+const VALID_TABS: ActiveTab[] = ['ebook', 'phygital', 'portfolio']
+const ITEMS_PER_PAGE = 6
 
 function isSamePortfolio(a: PortfolioItem[], b: PortfolioItem[]): boolean {
   if (a.length !== b.length) return false
@@ -35,47 +40,33 @@ function isSamePortfolio(a: PortfolioItem[], b: PortfolioItem[]): boolean {
   return true
 }
 
-/** Progressive loading: 2 pertama langsung, sisanya stagger 150ms per item. */
+/**
+ * Lightweight image renderer.
+ * - Native browser lazy-loading untuk gambar di luar 2 pertama (off-screen friendly).
+ * - Tidak ada setTimeout/setState berantai → tidak memicu re-render saat tab switch.
+ */
 const PortfolioCardImage = memo(function PortfolioCardImage({
   src,
   alt,
-  index,
+  eager,
 }: {
   src: string
   alt: string
-  index: number
+  eager: boolean
 }) {
-  const imgRef = useRef<HTMLImageElement>(null)
-  const [loaded, setLoaded] = useState(false)
   const [errored, setErrored] = useState(false)
-  const [srcSet, setSrcSet] = useState('')
-
-  useEffect(() => {
-    if (index < 2) {
-      setSrcSet(src)
-      return
-    }
-    const delay = (index - 1) * 150
-    const timer = setTimeout(() => setSrcSet(src), delay)
-    return () => clearTimeout(timer)
-  }, [src, index])
 
   return (
     <div className="absolute inset-0 bg-slate-200 dark:bg-slate-800">
-      {srcSet && (
+      {!errored && (
         <img
-          ref={imgRef}
-          src={srcSet}
+          src={src}
           alt={alt}
-          loading="eager"
+          loading={eager ? 'eager' : 'lazy'}
           decoding="async"
-          fetchPriority={index < 2 ? 'high' : 'low'}
-          onLoad={() => setLoaded(true)}
+          fetchPriority={eager ? 'high' : 'low'}
           onError={() => setErrored(true)}
-          className={cn(
-            'absolute inset-0 h-full w-full object-cover transition-opacity duration-300',
-            loaded && !errored ? 'opacity-100' : 'opacity-0'
-          )}
+          className="absolute inset-0 h-full w-full object-cover"
         />
       )}
       {errored && (
@@ -87,7 +78,51 @@ const PortfolioCardImage = memo(function PortfolioCardImage({
   )
 })
 
-type ActiveTab = 'ebook' | 'phygital' | 'portfolio'
+const PortfolioCard = memo(function PortfolioCard({
+  item,
+  eager,
+  onEdit,
+  onDelete,
+}: {
+  item: PortfolioItem
+  eager: boolean
+  onEdit: (item: PortfolioItem) => void
+  onDelete: (id: string) => void
+}) {
+  return (
+    <div className="group relative rounded-3xl border-2 border-slate-900 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-hidden shadow-[3px_3px_0_0_#334155] md:shadow-[6px_6px_0_0_#334155] dark:shadow-[3px_3px_0_0_#1e293b] dark:md:shadow-[6px_6px_0_0_#1e293b] md:hover:translate-x-[-2px] md:hover:translate-y-[-2px] md:hover:shadow-[8px_8px_0_0_#334155] transition-transform [content-visibility:auto] [contain-intrinsic-size:280px_360px]">
+      <div className="aspect-[4/5] relative bg-slate-100 dark:bg-slate-800">
+        <PortfolioCardImage src={item.image_url} alt={item.title} eager={eager} />
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/30 to-transparent opacity-90 pointer-events-none" />
+        <div className="absolute inset-x-0 bottom-0 p-3 md:p-6 pointer-events-none">
+          <p className="text-[8px] md:text-[10px] font-black text-lime-400 uppercase tracking-[0.12em] md:tracking-[0.2em] mb-0.5 md:mb-1 truncate">{item.subtitle}</p>
+          <h4 className="text-sm md:text-lg font-black text-white leading-tight overflow-hidden [display:-webkit-box] [-webkit-line-clamp:2] [-webkit-box-orient:vertical]">{item.title}</h4>
+        </div>
+        <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+          <button
+            type="button"
+            onClick={() => onEdit(item)}
+            className="p-3 bg-white text-slate-900 rounded-2xl shadow-xl hover:bg-violet-500 hover:text-white transition-colors"
+          >
+            <Edit2 className="w-4 h-4" />
+          </button>
+          <button
+            type="button"
+            onClick={() => onDelete(item.id)}
+            className="p-3 bg-white text-rose-500 rounded-2xl shadow-xl hover:bg-rose-500 hover:text-white transition-colors"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        </div>
+        <div className="absolute top-4 left-4 pointer-events-none">
+          <div className="px-3 py-1 bg-slate-900/80 backdrop-blur-md rounded-full border border-white/20 text-[10px] font-bold text-white">
+            #{item.display_order}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+})
 
 export default function AdminShowcasePage() {
   const [loading, setLoading] = useState(true)
@@ -111,26 +146,27 @@ export default function AdminShowcasePage() {
 
   // Portfolio Pagination
   const [currentPage, setCurrentPage] = useState(1)
-  const ITEMS_PER_PAGE = 6
 
-  const VALID_TABS: ActiveTab[] = ['ebook', 'phygital', 'portfolio']
-
-  const getTabFromHash = (): ActiveTab => {
-    if (typeof window === 'undefined') return 'ebook'
-    const hash = window.location.hash.replace('#', '') as ActiveTab
-    return VALID_TABS.includes(hash) ? hash : 'ebook'
-  }
-
-  const [activeTab, setActiveTab] = useState<ActiveTab>(getTabFromHash)
+  const [activeTab, setActiveTab] = useState<ActiveTab>('ebook')
   const [itemToDelete, setItemToDelete] = useState<string | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
-  const [portfolioReady, setPortfolioReady] = useState(activeTab !== 'portfolio')
   const isAnyModalOpen = !!editingItem || !!itemToDelete
   const totalPages = useMemo(() => Math.max(1, Math.ceil(portfolio.length / ITEMS_PER_PAGE)), [portfolio.length])
   const currentItems = useMemo(
     () => portfolio.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE),
     [portfolio, currentPage]
   )
+
+  // Sync active tab dari URL hash sekali di client (hindari hydration mismatch).
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const hash = window.location.hash.replace('#', '') as ActiveTab
+    if (VALID_TABS.includes(hash) && hash !== activeTab) {
+      setActiveTab(hash)
+    }
+    // hanya jalan saat mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   useEffect(() => {
     if (typeof document === 'undefined') return
@@ -143,24 +179,30 @@ export default function AdminShowcasePage() {
     }
   }, [isAnyModalOpen])
 
-  useEffect(() => {
-    if (activeTab !== 'portfolio') {
-      setPortfolioReady(true)
-      return
-    }
-    setPortfolioReady(false)
-    const raf = window.requestAnimationFrame(() => setPortfolioReady(true))
-    return () => window.cancelAnimationFrame(raf)
-  }, [activeTab])
+  const switchTab = useCallback((tab: ActiveTab) => {
+    setActiveTab((prev) => {
+      if (prev === tab) return prev
+      const newHash = `#${tab}`
+      if (typeof window !== 'undefined' && window.location.hash !== newHash) {
+        history.pushState(null, '', newHash)
+      }
+      return tab
+    })
+  }, [])
 
-  const switchTab = (tab: ActiveTab) => {
-    if (tab === activeTab) return
-    setActiveTab(tab)
-    const newHash = `#${tab}`
-    if (window.location.hash !== newHash) {
-      history.pushState(null, '', newHash)
-    }
-  }
+  const handleTabClick = useCallback((tab: ActiveTab) => {
+    // Mark tab switch sebagai non-urgent agar UI tetap responsif (transform indikator
+    // tab langsung jalan, panel di-render di transition berikutnya tanpa nge-block).
+    startTransition(() => switchTab(tab))
+  }, [switchTab])
+
+  const handleEditItem = useCallback((item: PortfolioItem) => {
+    setEditingItem(item)
+  }, [])
+
+  const handleDeleteItem = useCallback((id: string) => {
+    setItemToDelete(id)
+  }, [])
 
   const cacheKey = 'admin_showcase_v1'
   const portfolioCacheKey = 'admin_portfolio_v1'
@@ -449,7 +491,7 @@ export default function AdminShowcasePage() {
             <button
               key={tab}
               type="button"
-              onClick={() => switchTab(tab)}
+              onClick={() => handleTabClick(tab)}
               className={`relative z-10 flex flex-1 md:flex-none min-w-0 items-center justify-center gap-1.5 md:gap-2 px-3 py-2 md:px-5 md:py-2.5 rounded-xl text-[10px] md:text-sm font-bold uppercase tracking-wider ${
                 activeTab === tab
                   ? 'text-slate-900 dark:text-white'
@@ -495,8 +537,7 @@ export default function AdminShowcasePage() {
         </div>
       ) : (
         <div className="space-y-8">
-          {activeTab === 'ebook' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-in fade-in slide-in-from-bottom-4 duration-300">
+          <div className={cn('grid grid-cols-1 md:grid-cols-2 gap-8', activeTab !== 'ebook' && 'hidden')}>
           {/* Flipbook View */}
           <div className="rounded-2xl border-2 border-slate-900 dark:border-slate-700 bg-white dark:bg-slate-900 p-6 md:p-8 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] relative overflow-hidden group">
             <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
@@ -568,11 +609,10 @@ export default function AdminShowcasePage() {
               </button>
             </div>
           </div>
-            </div>
-          )}
+          </div>
 
-          {activeTab === 'phygital' && (
-            <div className="transition-opacity duration-200">
+          <div className={cn(activeTab !== 'phygital' && 'hidden')}>
+            <div>
               {/* Fonnte WhatsApp Target */}
               <div className="rounded-2xl border-2 border-slate-900 dark:border-slate-700 bg-green-50 dark:bg-slate-800 p-6 md:p-8 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] relative overflow-hidden group max-w-2xl">
                 <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
@@ -609,18 +649,10 @@ export default function AdminShowcasePage() {
                 </div>
               </div>
             </div>
-          )}
+          </div>
 
-          {activeTab === 'portfolio' && (
+          <div className={cn(activeTab !== 'portfolio' && 'hidden')}>
             <div>
-              {!portfolioReady ? (
-                <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6">
-                  {Array.from({ length: 6 }).map((_, i) => (
-                    <div key={i} className="aspect-[4/5] rounded-3xl border-2 border-slate-200 dark:border-slate-800 animate-pulse bg-slate-50 dark:bg-slate-900" />
-                  ))}
-                </div>
-              ) : (
-                <>
               {editingItem && (
               <div className="fixed inset-0 z-[260] bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setEditingItem(null)}>
                 <div className="w-full max-w-5xl max-h-[92vh] overflow-y-auto p-6 md:p-8 rounded-3xl border-2 border-slate-900 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-[8px_8px_0_0_#2e1065] animate-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
@@ -743,43 +775,15 @@ export default function AdminShowcasePage() {
 
             <div className="space-y-8">
               <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6">
-                {/* Paginated Content */}
-                    <>
-                      {currentItems.map((p, idx) => (
-                        <div key={p.id} className="group relative rounded-3xl border-2 border-slate-900 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-hidden shadow-[3px_3px_0_0_#334155] md:shadow-[6px_6px_0_0_#334155] dark:shadow-[3px_3px_0_0_#1e293b] dark:md:shadow-[6px_6px_0_0_#1e293b] md:hover:translate-x-[-2px] md:hover:translate-y-[-2px] md:hover:shadow-[8px_8px_0_0_#334155] transition-all [content-visibility:auto] [contain-intrinsic-size:280px_360px]">
-                          <div className="aspect-[4/5] relative bg-slate-100 dark:bg-slate-800">
-                            <PortfolioCardImage src={p.image_url} alt={p.title} index={idx} />
-                            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/30 to-transparent opacity-90" />
-                            <div className="absolute inset-x-0 bottom-0 p-3 md:p-6">
-                              <p className="text-[8px] md:text-[10px] font-black text-lime-400 uppercase tracking-[0.12em] md:tracking-[0.2em] mb-0.5 md:mb-1 truncate">{p.subtitle}</p>
-                              <h4 className="text-sm md:text-lg font-black text-white leading-tight overflow-hidden [display:-webkit-box] [-webkit-line-clamp:2] [-webkit-box-orient:vertical]">{p.title}</h4>
-                            </div>
-                            <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-all translate-y-2 group-hover:translate-y-0">
-                              <button 
-                                onClick={() => {
-                                  setEditingItem(p);
-                                }}
-                                className="p-3 bg-white text-slate-900 rounded-2xl shadow-xl hover:bg-violet-500 hover:text-white transition-colors"
-                              >
-                                <Edit2 className="w-4 h-4" />
-                              </button>
-                              <button 
-                                onClick={() => setItemToDelete(p.id)}
-                                className="p-3 bg-white text-rose-500 rounded-2xl shadow-xl hover:bg-rose-500 hover:text-white transition-colors"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
-                            <div className="absolute top-4 left-4">
-                              <div className="px-3 py-1 bg-slate-900/80 backdrop-blur-md rounded-full border border-white/20 text-[10px] font-bold text-white">
-                                #{p.display_order}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </>
-                
+                {currentItems.map((p, idx) => (
+                  <PortfolioCard
+                    key={p.id}
+                    item={p}
+                    eager={idx < 2}
+                    onEdit={handleEditItem}
+                    onDelete={handleDeleteItem}
+                  />
+                ))}
 
                 {loadingPortfolio && portfolio.length === 0 && Array.from({ length: 4 }).map((_, i) => (
                   <div key={i} className="aspect-[4/5] rounded-3xl border-2 border-slate-200 dark:border-slate-800 animate-pulse bg-slate-50 dark:bg-slate-900" />
@@ -808,11 +812,9 @@ export default function AdminShowcasePage() {
                   </button>
                 </div>
               )}
-              </div>
-              </>
-              )}
             </div>
-          )}
+            </div>
+          </div>
         </div>
       )}
 
