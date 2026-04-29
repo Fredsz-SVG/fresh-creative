@@ -450,7 +450,7 @@ export default function AdminShowcasePage() {
               key={tab}
               type="button"
               onClick={() => switchTab(tab)}
-              className={`relative z-10 flex flex-1 md:flex-none min-w-0 items-center justify-center gap-1.5 md:gap-2 px-3 py-2 md:px-5 md:py-2.5 rounded-xl text-[10px] md:text-sm font-bold uppercase tracking-wider transition-colors duration-300 ${
+              className={`relative z-10 flex flex-1 md:flex-none min-w-0 items-center justify-center gap-1.5 md:gap-2 px-3 py-2 md:px-5 md:py-2.5 rounded-xl text-[10px] md:text-sm font-bold uppercase tracking-wider ${
                 activeTab === tab
                   ? 'text-slate-900 dark:text-white'
                   : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
