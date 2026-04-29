@@ -9,7 +9,14 @@ import { AppEnv, requireAuthJwt } from '../../../middleware'
 import { getAuthUserFromContext } from '../../../lib/auth-user'
 
 const albumFlipbookRoute = new Hono<AppEnv>()
-albumFlipbookRoute.use('*', requireAuthJwt)
+albumFlipbookRoute.use('*', async (c, next) => {
+  // Keep public flipbook endpoint accessible without auth.
+  if (c.req.path.endsWith('/flipbook/public')) {
+    await next()
+    return
+  }
+  return requireAuthJwt(c, next)
+})
 
 type FlipbookManageDenied = {
   ok: false
