@@ -85,9 +85,7 @@ checkoutRoute.post('/', async (c) => {
     const descBase = isUpgradeRequest
       ? `Penambahan ${body.added_students || 0} Anggota Album: ${album.name}`
       : `Pembayaran Album (Akses Kreator): ${album.name}`
-    const desc = !isUpgradeRequest && hasDiscount
-      ? `${descBase} | Subtotal Rp${subtotalBeforeDiscount.toLocaleString('id-ID')} | Diskon ${discountPercent}% (hemat Rp${discountAmount.toLocaleString('id-ID')}) | Total Rp${amountNumber.toLocaleString('id-ID')}`
-      : descBase
+    const desc = descBase
 
     const xenditKey = (c.env as { XENDIT_SECRET_KEY?: string }).XENDIT_SECRET_KEY || ''
     if (!xenditKey) return c.json({ error: 'XENDIT_SECRET_KEY missing' }, 500)
@@ -157,6 +155,20 @@ checkoutRoute.post('/', async (c) => {
       failure_redirect_url: `${baseUrl}${redirectPath}?status=failed`,
       items: lineItems,
     }
+    if (!isUpgradeRequest && hasDiscount && discountAmount > 0) {
+      invoicePayload.fees = [
+        {
+          type: 'DISCOUNT',
+          value: -discountAmount,
+        },
+      ]
+      invoicePayload.metadata = {
+        discount_percent_off: discountPercent,
+        subtotal_before_discount: subtotalBeforeDiscount,
+        discount_amount: discountAmount,
+        total_after_discount: amountNumber,
+      }
+    }
 
     if (user.email) {
       invoicePayload.payer_email = user.email
@@ -167,7 +179,7 @@ checkoutRoute.post('/', async (c) => {
     }
 
     const auth = btoa(xenditKey + ':')
-    const xenditRes = await fetch('https://api.xendit.co/v2/invoices', {
+    let xenditRes = await fetch('https://api.xendit.co/v2/invoices', {
       method: 'POST',
       headers: {
         Authorization: 'Basic ' + auth,
@@ -175,10 +187,30 @@ checkoutRoute.post('/', async (c) => {
       },
       body: JSON.stringify(invoicePayload),
     })
-    const invoice = (await xenditRes.json()) as {
+    let invoice = (await xenditRes.json()) as {
       message?: string
       invoice_url?: string
       status?: string
+    }
+
+    // Fallback aman: jika akun/endpoint tidak menerima fees diskon, retry tanpa fees
+    // agar checkout tetap berjalan (description tetap clean).
+    if (!xenditRes.ok && !isUpgradeRequest && hasDiscount && discountAmount > 0) {
+      const fallbackPayload = { ...invoicePayload }
+      delete (fallbackPayload as { fees?: unknown }).fees
+      xenditRes = await fetch('https://api.xendit.co/v2/invoices', {
+        method: 'POST',
+        headers: {
+          Authorization: 'Basic ' + auth,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(fallbackPayload),
+      })
+      invoice = (await xenditRes.json()) as {
+        message?: string
+        invoice_url?: string
+        status?: string
+      }
     }
 
     if (!xenditRes.ok) {
