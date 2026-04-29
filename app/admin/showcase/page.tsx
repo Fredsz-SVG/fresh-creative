@@ -5,6 +5,7 @@ import { fetchWithAuth } from '../../../lib/api-client'
 import { Loader2, Eye, BookOpen, Save, MessageCircle, Plus, Trash2, Edit2, Upload, GripVertical, ImageIcon, AlertTriangle } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { convertToWebP } from '../../../lib/image-conversion'
+import { cn } from '@/lib/utils'
 
 interface PortfolioItem {
   id: string
@@ -154,10 +155,14 @@ export default function AdminShowcasePage() {
   }, [activeTab])
 
   const switchTab = (tab: ActiveTab) => {
+    if (tab === activeTab) return
     startTabTransition(() => {
       setActiveTab(tab)
-      window.location.hash = tab
     })
+    const newHash = `#${tab}`
+    if (window.location.hash !== newHash) {
+      history.pushState(null, '', newHash)
+    }
   }
 
   const cacheKey = 'admin_showcase_v1'
@@ -571,7 +576,7 @@ export default function AdminShowcasePage() {
           )}
 
           {activeTab === 'phygital' && (
-            <div className="animate-in fade-in slide-in-from-bottom-4 duration-300">
+            <div className="transition-opacity duration-200">
               {/* Fonnte WhatsApp Target */}
               <div className="rounded-2xl border-2 border-slate-900 dark:border-slate-700 bg-green-50 dark:bg-slate-800 p-6 md:p-8 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] relative overflow-hidden group max-w-2xl">
                 <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
