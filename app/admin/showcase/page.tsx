@@ -1,6 +1,7 @@
 'use client'
 
-import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import Image from 'next/image'
 import { fetchWithAuth } from '../../../lib/api-client'
 import { Loader2, Eye, BookOpen, Save, MessageCircle, Plus, Trash2, Edit2, Upload, GripVertical, ImageIcon, AlertTriangle } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -13,6 +14,25 @@ interface PortfolioItem {
   description: string
   image_url: string
   display_order: number
+}
+
+function isSamePortfolio(a: PortfolioItem[], b: PortfolioItem[]): boolean {
+  if (a.length !== b.length) return false
+  for (let i = 0; i < a.length; i++) {
+    const left = a[i]
+    const right = b[i]
+    if (
+      left.id !== right.id ||
+      left.image_url !== right.image_url ||
+      left.display_order !== right.display_order ||
+      left.title !== right.title ||
+      left.subtitle !== right.subtitle ||
+      left.description !== right.description
+    ) {
+      return false
+    }
+  }
+  return true
 }
 
 type ActiveTab = 'ebook' | 'phygital' | 'portfolio'
@@ -39,7 +59,7 @@ export default function AdminShowcasePage() {
 
   // Portfolio Pagination
   const [currentPage, setCurrentPage] = useState(1)
-  const ITEMS_PER_PAGE = 8
+  const ITEMS_PER_PAGE = 6
 
   const VALID_TABS: ActiveTab[] = ['ebook', 'phygital', 'portfolio']
 
@@ -53,6 +73,11 @@ export default function AdminShowcasePage() {
   const [itemToDelete, setItemToDelete] = useState<string | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
   const isAnyModalOpen = !!editingItem || !!itemToDelete
+  const totalPages = useMemo(() => Math.max(1, Math.ceil(portfolio.length / ITEMS_PER_PAGE)), [portfolio.length])
+  const currentItems = useMemo(
+    () => portfolio.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE),
+    [portfolio, currentPage]
+  )
 
   useEffect(() => {
     if (typeof document === 'undefined') return
@@ -64,6 +89,16 @@ export default function AdminShowcasePage() {
       document.body.style.overflow = previousOverflow
     }
   }, [isAnyModalOpen])
+
+  useEffect(() => {
+    // Preload visible card images to reduce stutter when entering Portfolio tab.
+    if (typeof window === 'undefined' || activeTab !== 'portfolio') return
+    for (const item of currentItems) {
+      const img = new window.Image()
+      img.decoding = 'async'
+      img.src = item.image_url
+    }
+  }, [activeTab, currentItems])
 
   const switchTab = (tab: ActiveTab) => {
     setActiveTab(tab)
@@ -149,8 +184,8 @@ export default function AdminShowcasePage() {
       const res = await fetchWithAuth('/api/admin/portfolio')
       if (res.ok) {
         const data = await res.json()
-        const list = Array.isArray(data) ? data : []
-        setPortfolio(list)
+        const list = Array.isArray(data) ? (data as PortfolioItem[]) : []
+        setPortfolio((prev) => (isSamePortfolio(prev, list) ? prev : list))
         try {
           window.sessionStorage.setItem(portfolioCacheKey, JSON.stringify(list))
         } catch { /* ignore */ }
@@ -639,26 +674,23 @@ export default function AdminShowcasePage() {
             <div className="space-y-8">
               <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6">
                 {/* Paginated Content */}
-                {(() => {
-                  const totalPages = Math.ceil(portfolio.length / ITEMS_PER_PAGE)
-                  const currentItems = portfolio.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)
-
-                  return (
                     <>
                       {currentItems.map((p) => (
-                        <div key={p.id} className="group relative rounded-3xl border-2 border-slate-900 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-hidden shadow-[6px_6px_0_0_#334155] dark:shadow-[6px_6px_0_0_#1e293b] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[8px_8px_0_0_#334155] transition-all">
+                        <div key={p.id} className="group relative rounded-3xl border-2 border-slate-900 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-hidden shadow-[3px_3px_0_0_#334155] md:shadow-[6px_6px_0_0_#334155] dark:shadow-[3px_3px_0_0_#1e293b] dark:md:shadow-[6px_6px_0_0_#1e293b] md:hover:translate-x-[-2px] md:hover:translate-y-[-2px] md:hover:shadow-[8px_8px_0_0_#334155] transition-all">
                           <div className="aspect-[4/5] relative bg-slate-100 dark:bg-slate-800">
-                            <img
+                            <Image
                               src={p.image_url}
                               alt={p.title}
-                              loading="lazy"
-                              decoding="async"
-                              className="absolute inset-0 w-full h-full object-contain md:object-cover"
+                              fill
+                              unoptimized
+                              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                              quality={65}
+                              className="object-cover"
                             />
                             <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/30 to-transparent opacity-90" />
-                            <div className="absolute inset-x-0 bottom-0 p-6">
-                              <p className="text-[10px] font-black text-lime-400 uppercase tracking-[0.2em] mb-1">{p.subtitle}</p>
-                              <h4 className="text-lg font-black text-white leading-tight">{p.title}</h4>
+                            <div className="absolute inset-x-0 bottom-0 p-3 md:p-6">
+                              <p className="text-[8px] md:text-[10px] font-black text-lime-400 uppercase tracking-[0.12em] md:tracking-[0.2em] mb-0.5 md:mb-1 truncate">{p.subtitle}</p>
+                              <h4 className="text-sm md:text-lg font-black text-white leading-tight overflow-hidden [display:-webkit-box] [-webkit-line-clamp:2] [-webkit-box-orient:vertical]">{p.title}</h4>
                             </div>
                             <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-all translate-y-2 group-hover:translate-y-0">
                               <button 
@@ -685,8 +717,7 @@ export default function AdminShowcasePage() {
                         </div>
                       ))}
                     </>
-                  )
-                })()}
+                
 
                 {loadingPortfolio && Array.from({ length: 4 }).map((_, i) => (
                   <div key={i} className="aspect-[4/5] rounded-3xl border-2 border-slate-200 dark:border-slate-800 animate-pulse bg-slate-50 dark:bg-slate-900" />
@@ -704,10 +735,10 @@ export default function AdminShowcasePage() {
                     Prev
                   </button>
                   <span className="text-xs font-black text-slate-500 uppercase tracking-widest">
-                    Page {currentPage} of {Math.ceil(portfolio.length / ITEMS_PER_PAGE)}
+                    Page {currentPage} of {totalPages}
                   </span>
                   <button
-                    disabled={currentPage === Math.ceil(portfolio.length / ITEMS_PER_PAGE)}
+                    disabled={currentPage === totalPages}
                     onClick={() => setCurrentPage(p => p + 1)}
                     className="px-4 py-2 rounded-xl border-2 border-slate-900 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm font-bold disabled:opacity-30 hover:bg-slate-50 transition-all"
                   >
