@@ -1,7 +1,6 @@
 'use client'
 
-import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useTransition } from 'react'
-import Image from 'next/image'
+import React, { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useTransition } from 'react'
 import { fetchWithAuth } from '../../../lib/api-client'
 import { Loader2, Eye, BookOpen, Save, MessageCircle, Plus, Trash2, Edit2, Upload, GripVertical, ImageIcon, AlertTriangle } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
@@ -34,6 +33,58 @@ function isSamePortfolio(a: PortfolioItem[], b: PortfolioItem[]): boolean {
   }
   return true
 }
+
+/** Hanya decode gambar saat kartu mendekati viewport — kurangi spike saat buka tab Portfolio. */
+const PortfolioCardImage = memo(function PortfolioCardImage({
+  src,
+  alt,
+  eager,
+}: {
+  src: string
+  alt: string
+  eager?: boolean
+}) {
+  const rootRef = useRef<HTMLDivElement>(null)
+  const [show, setShow] = useState(!!eager)
+
+  useEffect(() => {
+    if (show) return
+    const el = rootRef.current
+    if (!el || typeof IntersectionObserver === 'undefined') {
+      setShow(true)
+      return
+    }
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (e.isIntersecting) {
+            setShow(true)
+            io.disconnect()
+            break
+          }
+        }
+      },
+      { root: null, rootMargin: '120px 0px', threshold: 0.01 }
+    )
+    io.observe(el)
+    return () => io.disconnect()
+  }, [show])
+
+  return (
+    <div ref={rootRef} className="absolute inset-0 bg-slate-200 dark:bg-slate-800">
+      {show ? (
+        <img
+          src={src}
+          alt={alt}
+          loading={eager ? 'eager' : 'lazy'}
+          decoding="async"
+          fetchPriority={eager ? 'high' : 'low'}
+          className="absolute inset-0 h-full w-full object-cover"
+        />
+      ) : null}
+    </div>
+  )
+})
 
 type ActiveTab = 'ebook' | 'phygital' | 'portfolio'
 
@@ -560,7 +611,7 @@ export default function AdminShowcasePage() {
           )}
 
           {activeTab === 'portfolio' && (
-            <div className="animate-in fade-in slide-in-from-bottom-4 duration-300">
+            <div>
               {!portfolioReady ? (
                 <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6">
                   {Array.from({ length: 6 }).map((_, i) => (
@@ -693,18 +744,10 @@ export default function AdminShowcasePage() {
               <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6">
                 {/* Paginated Content */}
                     <>
-                      {currentItems.map((p) => (
+                      {currentItems.map((p, idx) => (
                         <div key={p.id} className="group relative rounded-3xl border-2 border-slate-900 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-hidden shadow-[3px_3px_0_0_#334155] md:shadow-[6px_6px_0_0_#334155] dark:shadow-[3px_3px_0_0_#1e293b] dark:md:shadow-[6px_6px_0_0_#1e293b] md:hover:translate-x-[-2px] md:hover:translate-y-[-2px] md:hover:shadow-[8px_8px_0_0_#334155] transition-all [content-visibility:auto] [contain-intrinsic-size:280px_360px]">
                           <div className="aspect-[4/5] relative bg-slate-100 dark:bg-slate-800">
-                            <Image
-                              src={p.image_url}
-                              alt={p.title}
-                              fill
-                              unoptimized
-                              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                              quality={65}
-                              className="object-cover"
-                            />
+                            <PortfolioCardImage src={p.image_url} alt={p.title} eager={idx < 2} />
                             <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/30 to-transparent opacity-90" />
                             <div className="absolute inset-x-0 bottom-0 p-3 md:p-6">
                               <p className="text-[8px] md:text-[10px] font-black text-lime-400 uppercase tracking-[0.12em] md:tracking-[0.2em] mb-0.5 md:mb-1 truncate">{p.subtitle}</p>
@@ -737,7 +780,7 @@ export default function AdminShowcasePage() {
                     </>
                 
 
-                {loadingPortfolio && Array.from({ length: 4 }).map((_, i) => (
+                {loadingPortfolio && portfolio.length === 0 && Array.from({ length: 4 }).map((_, i) => (
                   <div key={i} className="aspect-[4/5] rounded-3xl border-2 border-slate-200 dark:border-slate-800 animate-pulse bg-slate-50 dark:bg-slate-900" />
                 ))}
               </div>
