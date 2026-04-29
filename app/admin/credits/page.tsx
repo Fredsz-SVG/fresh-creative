@@ -139,10 +139,10 @@ const PackageForm = ({ pkg, onSave, onCancel }: { pkg: Partial<CreditPackage> | 
                         </div>
                     </div>
                     <div className="flex gap-3 pt-2">
-                        <button type="button" onClick={onCancel} className="flex-1 px-4 py-2.5 border-2 border-slate-900 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200 font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-[4px_4px_0_0_#334155] hover:shadow-none">
+                        <button type="button" onClick={onCancel} className="flex-1 inline-flex items-center justify-center min-h-[44px] px-4 py-2.5 border-2 border-slate-900 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200 font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-[4px_4px_0_0_#334155] hover:shadow-none whitespace-nowrap">
                             Cancel
                         </button>
-                        <button type="submit" className="flex-1 px-4 py-2.5 bg-emerald-400 text-emerald-900 rounded-xl font-bold hover:bg-emerald-300 transition-all shadow-[2px_2px_0_0_#059669] hover:shadow-none">
+                        <button type="submit" className="flex-1 inline-flex items-center justify-center min-h-[44px] px-4 py-2.5 bg-emerald-400 text-emerald-900 rounded-xl font-bold hover:bg-emerald-300 transition-all shadow-[2px_2px_0_0_#059669] hover:shadow-none whitespace-nowrap">
                             Save
                         </button>
                     </div>
@@ -185,6 +185,19 @@ export default function AdminCreditSettingsPage() {
     const [loadingDiscount, setLoadingDiscount] = useState(true)
     const [showCreateDiscount, setShowCreateDiscount] = useState(false)
     const [newDiscount, setNewDiscount] = useState({ code: '', percent_off: 10, max_uses: 1, expires_at: '' })
+
+    const isAnyModalOpen = !!editingPackage || showCreateRedeem || showCreateDiscount || !!deletePrompt
+
+    useEffect(() => {
+        if (typeof document === 'undefined') return
+        const previousOverflow = document.body.style.overflow
+        if (isAnyModalOpen) {
+            document.body.style.overflow = 'hidden'
+        }
+        return () => {
+            document.body.style.overflow = previousOverflow
+        }
+    }, [isAnyModalOpen])
 
     const cacheKeyPackages = 'admin_credit_packages_v1'
     const cacheKeyRedeem = 'admin_redeem_codes_v1'
@@ -255,6 +268,41 @@ export default function AdminCreditSettingsPage() {
         fetchPackages(hasCachePackagesRef.current)
         fetchRedeemCodes(hasCacheRedeemRef.current)
         fetchDiscountVouchers(hasCacheDiscountRef.current)
+    }, [])
+
+    useEffect(() => {
+        const lastFetchRef = { packages: 0, redeem: 0, discount: 0 }
+        const onRealtime = (event: Event) => {
+            const detail = (event as CustomEvent<{ type?: string; channel?: string; payload?: Record<string, unknown> }>).detail
+            if (!detail?.type || detail.channel !== 'global') return
+            if (detail.type !== 'api.mutated') return
+
+            const path = typeof detail.payload?.path === 'string' ? detail.payload.path : ''
+            const now = Date.now()
+
+            if (path.startsWith('/api/credits/packages')) {
+                if (now - lastFetchRef.packages < 800) return
+                lastFetchRef.packages = now
+                fetchPackages(true)
+                return
+            }
+
+            if (path.startsWith('/api/credits/redeem')) {
+                if (now - lastFetchRef.redeem < 800) return
+                lastFetchRef.redeem = now
+                fetchRedeemCodes(true)
+                return
+            }
+
+            if (path.startsWith('/api/discount-vouchers')) {
+                if (now - lastFetchRef.discount < 800) return
+                lastFetchRef.discount = now
+                fetchDiscountVouchers(true)
+            }
+        }
+
+        window.addEventListener('fresh:realtime', onRealtime)
+        return () => window.removeEventListener('fresh:realtime', onRealtime)
     }, [])
 
     const handleSave = async (pkg: Partial<CreditPackage>) => {
@@ -615,14 +663,14 @@ export default function AdminCreditSettingsPage() {
                             <button
                                 type="button"
                                 onClick={() => setShowCreateRedeem(false)}
-                                className="flex-1 px-4 py-2.5 border-2 border-slate-900 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200 font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-[4px_4px_0_0_#334155] hover:shadow-none"
+                                className="flex-1 inline-flex items-center justify-center min-h-[44px] px-4 py-2.5 border-2 border-slate-900 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200 font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-[4px_4px_0_0_#334155] hover:shadow-none whitespace-nowrap"
                             >
                                 Batal
                             </button>
                             <button
                                 type="button"
                                 onClick={handleCreateRedeem}
-                                className="flex-1 px-4 py-2.5 bg-pink-400 text-pink-900 rounded-xl font-bold hover:bg-pink-300 transition-all shadow-[2px_2px_0_0_#db2777] hover:shadow-none flex items-center justify-center gap-2"
+                                className="flex-1 inline-flex items-center justify-center min-h-[44px] px-4 py-2.5 bg-pink-400 text-pink-900 rounded-xl font-bold hover:bg-pink-300 transition-all shadow-[2px_2px_0_0_#db2777] hover:shadow-none gap-2 whitespace-nowrap"
                             >
                                 <Gift size={16} strokeWidth={2.5} />
                                 Buat Kode
@@ -704,14 +752,14 @@ export default function AdminCreditSettingsPage() {
                             <button
                                 type="button"
                                 onClick={() => setShowCreateDiscount(false)}
-                                className="flex-1 px-4 py-2.5 border-2 border-slate-900 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200 font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-[4px_4px_0_0_#334155] hover:shadow-none"
+                                className="flex-1 inline-flex items-center justify-center min-h-[44px] px-4 py-2.5 border-2 border-slate-900 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200 font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-[4px_4px_0_0_#334155] hover:shadow-none whitespace-nowrap"
                             >
                                 Batal
                             </button>
                             <button
                                 type="button"
                                 onClick={handleCreateDiscount}
-                                className="flex-1 px-4 py-2.5 bg-sky-400 text-sky-900 rounded-xl font-bold hover:bg-sky-300 transition-all shadow-[2px_2px_0_0_#0284c7] hover:shadow-none flex items-center justify-center gap-2"
+                                className="flex-1 inline-flex items-center justify-center min-h-[44px] px-4 py-2.5 bg-sky-400 text-sky-900 rounded-xl font-bold hover:bg-sky-300 transition-all shadow-[2px_2px_0_0_#0284c7] hover:shadow-none gap-2 whitespace-nowrap"
                             >
                                 <Percent size={16} strokeWidth={2.5} />
                                 Buat Voucher
@@ -726,17 +774,29 @@ export default function AdminCreditSettingsPage() {
                 <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-[200]">
                     <div className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-2xl shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] p-5 md:p-6 w-full max-w-sm" onClick={e => e.stopPropagation()}>
                         <h3 className="text-base md:text-lg font-bold text-slate-900 dark:text-white">
-                            Hapus {deletePrompt.type === 'package' ? 'Package' : 'Kode Redeem'}?
+                            Hapus{' '}
+                            {deletePrompt.type === 'package'
+                                ? 'Package'
+                                : deletePrompt.type === 'redeem'
+                                    ? 'Kode Redeem'
+                                    : 'Voucher Diskon'}
+                            ?
                         </h3>
                         <p className="mt-2 text-xs md:text-sm text-slate-500 dark:text-slate-400">
-                            Aksi ini tidak bisa dibatalkan. {deletePrompt.type === 'package' ? 'Data' : 'Kode'} yang dipilih akan dihapus permanen.
+                            Aksi ini tidak bisa dibatalkan.{' '}
+                            {deletePrompt.type === 'package'
+                                ? 'Data'
+                                : deletePrompt.type === 'redeem'
+                                    ? 'Kode'
+                                    : 'Voucher'}{' '}
+                            yang dipilih akan dihapus permanen.
                         </p>
                         <div className="mt-4 flex gap-3">
                             <button
                                 type="button"
                                 onClick={() => setDeletePrompt(null)}
                                 disabled={isDeleting}
-                                className="flex-1 px-4 py-2.5 border-2 border-slate-900 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200 font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:shadow-none disabled:opacity-60"
+                                className="flex-1 inline-flex items-center justify-center min-h-[44px] px-4 py-2.5 border-2 border-slate-900 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200 font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:shadow-none disabled:opacity-60 whitespace-nowrap"
                             >
                                 Batal
                             </button>
@@ -744,7 +804,7 @@ export default function AdminCreditSettingsPage() {
                                 type="button"
                                 onClick={executeDelete}
                                 disabled={isDeleting}
-                                className="flex-1 px-4 py-2.5 bg-rose-400 text-rose-900 rounded-xl font-bold hover:bg-rose-300 transition-all shadow-[2px_2px_0_0_#e11d48] hover:shadow-none disabled:opacity-60 flex justify-center items-center gap-2"
+                                className="flex-1 inline-flex items-center justify-center min-h-[44px] px-4 py-2.5 bg-rose-400 text-rose-900 rounded-xl font-bold hover:bg-rose-300 transition-all shadow-[2px_2px_0_0_#e11d48] hover:shadow-none disabled:opacity-60 gap-2 whitespace-nowrap"
                             >
                                 {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Hapus'}
                             </button>
@@ -761,7 +821,7 @@ export default function AdminCreditSettingsPage() {
                 {activeTab === 'packages' ? (
                     <button
                         onClick={() => setEditingPackage({})}
-                        className="flex items-center justify-center gap-2 px-5 py-2.5 md:px-6 md:py-3 bg-emerald-400 text-emerald-900 rounded-xl font-bold hover:bg-emerald-300 transition-all shadow-[2px_2px_0_0_#059669] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 text-sm md:text-base"
+                        className="inline-flex items-center justify-center gap-2 min-h-[44px] md:min-h-[48px] px-5 py-2.5 md:px-6 md:py-3 bg-emerald-400 text-emerald-900 rounded-xl font-bold hover:bg-emerald-300 transition-all shadow-[2px_2px_0_0_#059669] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 text-sm md:text-base whitespace-nowrap"
                     >
                         <Plus size={18} className="md:w-5 md:h-5" strokeWidth={2.5} />
                         Tambah Paket Credit
@@ -769,7 +829,7 @@ export default function AdminCreditSettingsPage() {
                 ) : activeTab === 'redeem' ? (
                     <button
                         onClick={() => setShowCreateRedeem(true)}
-                        className="flex items-center justify-center gap-2 px-5 py-2.5 md:px-6 md:py-3 bg-pink-400 text-pink-900 rounded-xl font-bold hover:bg-pink-300 transition-all shadow-[2px_2px_0_0_#db2777] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 text-sm md:text-base"
+                        className="inline-flex items-center justify-center gap-2 min-h-[44px] md:min-h-[48px] px-5 py-2.5 md:px-6 md:py-3 bg-pink-400 text-pink-900 rounded-xl font-bold hover:bg-pink-300 transition-all shadow-[2px_2px_0_0_#db2777] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 text-sm md:text-base whitespace-nowrap"
                     >
                         <Gift size={18} className="md:w-5 md:h-5" strokeWidth={2.5} />
                         Buat Kode Redeem
@@ -777,7 +837,7 @@ export default function AdminCreditSettingsPage() {
                 ) : (
                     <button
                         onClick={() => setShowCreateDiscount(true)}
-                        className="flex items-center justify-center gap-2 px-5 py-2.5 md:px-6 md:py-3 bg-sky-400 text-sky-900 rounded-xl font-bold hover:bg-sky-300 transition-all shadow-[2px_2px_0_0_#0284c7] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 text-sm md:text-base"
+                        className="inline-flex items-center justify-center gap-2 min-h-[44px] md:min-h-[48px] px-5 py-2.5 md:px-6 md:py-3 bg-sky-400 text-sky-900 rounded-xl font-bold hover:bg-sky-300 transition-all shadow-[2px_2px_0_0_#0284c7] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 text-sm md:text-base whitespace-nowrap"
                     >
                         <Percent size={18} className="md:w-5 md:h-5" strokeWidth={2.5} />
                         Buat Voucher Diskon
@@ -787,7 +847,7 @@ export default function AdminCreditSettingsPage() {
 
             {/* Tabs */}
             <div className="mb-8">
-              <div className="relative inline-flex items-center gap-1 p-1 bg-white dark:bg-slate-800 rounded-2xl border-2 border-slate-900 dark:border-slate-700 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]">
+              <div className="relative flex w-full md:w-fit items-center gap-1 p-1 bg-white dark:bg-slate-800 rounded-2xl border-2 border-slate-900 dark:border-slate-700 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]">
                 <div
                   className="absolute top-1 bottom-1 rounded-xl bg-violet-400 transition-all duration-300 ease-out"
                   style={{
@@ -803,7 +863,7 @@ export default function AdminCreditSettingsPage() {
                 <button
                   type="button"
                   onClick={() => switchTab('packages')}
-                  className={`relative z-10 flex items-center justify-center gap-1.5 md:gap-2 px-3 py-2 md:px-5 md:py-2.5 rounded-xl text-[10px] md:text-sm font-bold transition-all duration-200 ${
+                  className={`relative z-10 flex flex-1 md:flex-none min-w-0 items-center justify-center gap-1.5 md:gap-2 px-3 py-2 md:px-5 md:py-2.5 rounded-xl text-[10px] md:text-sm font-bold transition-all duration-200 ${
                     activeTab === 'packages'
                       ? 'text-slate-900'
                       : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
@@ -818,7 +878,7 @@ export default function AdminCreditSettingsPage() {
                 <button
                   type="button"
                   onClick={() => switchTab('redeem')}
-                  className={`relative z-10 flex items-center justify-center gap-1.5 md:gap-2 px-3 py-2 md:px-5 md:py-2.5 rounded-xl text-[10px] md:text-sm font-bold transition-all duration-200 ${
+                  className={`relative z-10 flex flex-1 md:flex-none min-w-0 items-center justify-center gap-1.5 md:gap-2 px-3 py-2 md:px-5 md:py-2.5 rounded-xl text-[10px] md:text-sm font-bold transition-all duration-200 ${
                     activeTab === 'redeem'
                       ? 'text-slate-900'
                       : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
@@ -833,7 +893,7 @@ export default function AdminCreditSettingsPage() {
                 <button
                   type="button"
                   onClick={() => switchTab('discount')}
-                  className={`relative z-10 flex items-center justify-center gap-1.5 md:gap-2 px-3 py-2 md:px-5 md:py-2.5 rounded-xl text-[10px] md:text-sm font-bold transition-all duration-200 ${
+                  className={`relative z-10 flex flex-1 md:flex-none min-w-0 items-center justify-center gap-1.5 md:gap-2 px-3 py-2 md:px-5 md:py-2.5 rounded-xl text-[10px] md:text-sm font-bold transition-all duration-200 ${
                     activeTab === 'discount'
                       ? 'text-slate-900'
                       : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
@@ -851,7 +911,7 @@ export default function AdminCreditSettingsPage() {
             {activeTab === 'packages' ? (
                 <>
                     {loading ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 min-h-[320px] sm:min-h-[360px]">
                             {[1, 2, 3, 4].map((i) => (
                                 <div key={i} className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-2xl p-5 md:p-6 animate-pulse shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]">
                                     <div className="space-y-3">
@@ -861,8 +921,9 @@ export default function AdminCreditSettingsPage() {
                                     </div>
                                 </div>
                             ))}
-                        </div>                      ) : packages.length === 0 ? (
-                          <div className="flex flex-col items-center justify-center py-16 px-4 md:px-8 text-center bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-3xl border-dashed shadow-[4px_4px_0_0_#94a3b8] dark:shadow-[4px_4px_0_0_#1e293b]">
+                        </div>
+                    ) : packages.length === 0 ? (
+                          <div className="flex flex-col items-center justify-center min-h-[320px] sm:min-h-[360px] py-16 px-4 md:px-8 text-center bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-3xl border-dashed shadow-[4px_4px_0_0_#94a3b8] dark:shadow-[4px_4px_0_0_#1e293b]">
                               <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-2xl flex items-center justify-center mb-4 transform -rotate-3 border-2 border-slate-900 dark:border-slate-700">
                                   <Layout size={32} className="text-slate-400 dark:text-slate-500" strokeWidth={1.5} />
                               </div>
@@ -872,12 +933,13 @@ export default function AdminCreditSettingsPage() {
                               </p>
                               <button
                                   onClick={() => setEditingPackage({ credits: 0, price: 0, popular: false })}
-                                  className="flex items-center gap-2 bg-emerald-400 hover:bg-emerald-300 text-emerald-900 px-5 py-2.5 rounded-xl font-bold text-sm shadow-[3px_3px_0_0_#059669] hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all"
+                                  className="inline-flex items-center justify-center gap-2 min-h-[44px] px-5 py-2.5 bg-emerald-400 hover:bg-emerald-300 text-emerald-900 rounded-xl font-bold text-sm shadow-[3px_3px_0_0_#059669] hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all whitespace-nowrap"
                               >
                                   <Plus size={18} strokeWidth={2.5} />
                                   Buat Paket Credit
                               </button>
-                          </div>                    ) : (
+                          </div>
+                    ) : (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 pb-12">
                             {packages.map((pkg) => (
                                 <div key={pkg.id} className="group relative bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-2xl p-5 md:p-6 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:shadow-none hover:-translate-x-0.5 hover:-translate-y-0.5 transition-all overflow-hidden">
@@ -898,11 +960,11 @@ export default function AdminCreditSettingsPage() {
                                     </div>
 
                                     <div className="absolute top-3 right-3 md:top-4 md:right-4 flex gap-1.5 md:gap-2 lg:opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all">
-                                        <button onClick={() => setEditingPackage(pkg)} className="p-1.5 md:p-2 rounded-xl bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-900 shadow-[2px_2px_0_0_#d97706] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all">
-                                            <Edit size={14} className="md:w-4 md:h-4" strokeWidth={2.5} />
+                                        <button onClick={() => setEditingPackage(pkg)} className="inline-flex items-center justify-center w-8 h-8 md:w-9 md:h-9 rounded-xl bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-900 shadow-[2px_2px_0_0_#d97706] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all">
+                                            <Edit className="w-4 h-4" strokeWidth={2.5} />
                                         </button>
-                                        <button onClick={() => handleDelete(pkg.id, pkg.credits)} className="p-1.5 md:p-2 rounded-xl bg-rose-100 dark:bg-rose-900/50 text-rose-600 dark:text-rose-300 hover:bg-rose-200 dark:hover:bg-rose-900 shadow-[2px_2px_0_0_#e11d48] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all">
-                                            <Trash2 size={14} className="md:w-4 md:h-4" strokeWidth={2.5} />
+                                        <button onClick={() => handleDelete(pkg.id, pkg.credits)} className="inline-flex items-center justify-center w-8 h-8 md:w-9 md:h-9 rounded-xl bg-rose-100 dark:bg-rose-900/50 text-rose-600 dark:text-rose-300 hover:bg-rose-200 dark:hover:bg-rose-900 shadow-[2px_2px_0_0_#e11d48] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all">
+                                            <Trash2 className="w-4 h-4" strokeWidth={2.5} />
                                         </button>
                                     </div>
                                 </div>
@@ -913,7 +975,7 @@ export default function AdminCreditSettingsPage() {
             ) : activeTab === 'redeem' ? (
                 <>
                     {loadingRedeem ? (
-                        <div className="space-y-6">
+                        <div className="space-y-6 min-h-[320px] sm:min-h-[360px]">
                             {[1, 2, 3].map((i) => (
                                 <div key={i} className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-[24px] md:rounded-[32px] p-5 md:p-8 animate-pulse shadow-[#64748b] dark:shadow-[4px_4px_0_0_#1e293b] md:shadow-[#64748b] dark:md:shadow-[6px_6px_0_0_#334155]">
                                     <div className="flex justify-between items-center">
@@ -927,7 +989,7 @@ export default function AdminCreditSettingsPage() {
                             ))}
                         </div>
                     ) : redeemCodes.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center py-16 px-4 md:px-8 text-center bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-3xl border-dashed shadow-[4px_4px_0_0_#94a3b8] dark:shadow-[4px_4px_0_0_#1e293b]">
+                        <div className="flex flex-col items-center justify-center min-h-[320px] sm:min-h-[360px] py-16 px-4 md:px-8 text-center bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-3xl border-dashed shadow-[4px_4px_0_0_#94a3b8] dark:shadow-[4px_4px_0_0_#1e293b]">
                             <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-2xl flex items-center justify-center mb-4 transform -rotate-3 border-2 border-slate-900 dark:border-slate-700">
                                 <Gift size={32} className="text-slate-400 dark:text-slate-500" strokeWidth={1.5} />
                             </div>
@@ -937,7 +999,7 @@ export default function AdminCreditSettingsPage() {
                             </p>
                             <button
                                 onClick={() => setShowCreateRedeem(true)}
-                                className="flex items-center gap-2 bg-pink-500 hover:bg-pink-600 text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow-[3px_3px_0_0_#9d174d] hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all"
+                                className="inline-flex items-center justify-center gap-2 min-h-[44px] px-5 py-2.5 bg-pink-400 hover:bg-pink-300 text-pink-900 rounded-xl font-bold text-sm shadow-[3px_3px_0_0_#db2777] hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all whitespace-nowrap"
                             >
                                 <Gift size={18} strokeWidth={2.5} />
                                 Buat Kode Redeem
@@ -1054,7 +1116,7 @@ export default function AdminCreditSettingsPage() {
             ) : (
                 <>
                     {loadingDiscount ? (
-                        <div className="space-y-6">
+                        <div className="space-y-6 min-h-[320px] sm:min-h-[360px]">
                             {[1, 2, 3].map((i) => (
                                 <div key={i} className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-[24px] md:rounded-[32px] p-5 md:p-8 animate-pulse shadow-[#64748b] dark:shadow-[4px_4px_0_0_#1e293b] md:shadow-[#64748b] dark:md:shadow-[6px_6px_0_0_#334155]">
                                     <div className="flex justify-between items-center">
@@ -1068,7 +1130,7 @@ export default function AdminCreditSettingsPage() {
                             ))}
                         </div>
                     ) : discountVouchers.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center py-16 px-4 md:px-8 text-center bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-3xl border-dashed shadow-[4px_4px_0_0_#94a3b8] dark:shadow-[4px_4px_0_0_#1e293b]">
+                        <div className="flex flex-col items-center justify-center min-h-[320px] sm:min-h-[360px] py-16 px-4 md:px-8 text-center bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-3xl border-dashed shadow-[4px_4px_0_0_#94a3b8] dark:shadow-[4px_4px_0_0_#1e293b]">
                             <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-2xl flex items-center justify-center mb-4 transform -rotate-3 border-2 border-slate-900 dark:border-slate-700">
                                 <Percent size={32} className="text-slate-400 dark:text-slate-500" strokeWidth={1.5} />
                             </div>
@@ -1078,7 +1140,7 @@ export default function AdminCreditSettingsPage() {
                             </p>
                             <button
                                 onClick={() => setShowCreateDiscount(true)}
-                                className="flex items-center gap-2 bg-sky-400 hover:bg-sky-300 text-sky-900 px-5 py-2.5 rounded-xl font-bold text-sm shadow-[3px_3px_0_0_#0284c7] hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all"
+                                className="inline-flex items-center justify-center gap-2 min-h-[44px] px-5 py-2.5 bg-sky-400 hover:bg-sky-300 text-sky-900 rounded-xl font-bold text-sm shadow-[3px_3px_0_0_#0284c7] hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all whitespace-nowrap"
                             >
                                 <Plus size={18} strokeWidth={2.5} />
                                 Buat Voucher Diskon

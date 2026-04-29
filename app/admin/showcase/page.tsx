@@ -52,6 +52,18 @@ export default function AdminShowcasePage() {
   const [activeTab, setActiveTab] = useState<ActiveTab>(getTabFromHash)
   const [itemToDelete, setItemToDelete] = useState<string | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
+  const isAnyModalOpen = !!editingItem || !!itemToDelete
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return
+    const previousOverflow = document.body.style.overflow
+    if (isAnyModalOpen) {
+      document.body.style.overflow = 'hidden'
+    }
+    return () => {
+      document.body.style.overflow = previousOverflow
+    }
+  }, [isAnyModalOpen])
 
   const switchTab = (tab: ActiveTab) => {
     setActiveTab(tab)
@@ -262,6 +274,10 @@ export default function AdminShowcasePage() {
     }
   }
 
+  const openAddPortfolio = () => {
+    setEditingItem({ id: '', title: '', subtitle: '', description: '', display_order: portfolio.length, image_url: '' })
+  }
+
   const confirmDelete = async () => {
     if (!itemToDelete) return
     setIsDeleting(true)
@@ -309,46 +325,62 @@ export default function AdminShowcasePage() {
         </div>
 
         {activeTab === 'portfolio' && !editingItem && (
-          <button
-            onClick={() => {
-              setEditingItem({ id: '', title: '', subtitle: '', description: '', display_order: portfolio.length, image_url: '' });
-              window.scrollTo({ top: 0, behavior: 'smooth' });
-            }}
-            className="flex items-center gap-2 px-5 py-3 bg-violet-500 text-white rounded-2xl text-sm font-bold hover:bg-violet-600 transition-all shadow-[4px_4px_0_0_#2e1065] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none animate-in fade-in zoom-in-95"
-          >
-            <Plus className="w-4 h-4" />
-            Tambah Portfolio
-          </button>
+          <div className="hidden sm:block shrink-0">
+            <button
+              type="button"
+              onClick={openAddPortfolio}
+              className="flex items-center gap-2 px-5 py-3 bg-violet-500 text-white rounded-2xl text-sm font-bold hover:bg-violet-600 transition-all shadow-[4px_4px_0_0_#2e1065] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none animate-in fade-in zoom-in-95 whitespace-nowrap"
+            >
+              <Plus className="w-4 h-4 shrink-0" />
+              Tambah Portfolio
+            </button>
+          </div>
         )}
       </div>
 
-      {/* Tab Switcher */}
-      <div className="flex flex-wrap gap-2 mb-8 p-1.5 bg-slate-100 dark:bg-slate-900/50 rounded-2xl border-2 border-slate-900 dark:border-slate-800 w-fit relative">
-        {(['ebook', 'phygital', 'portfolio'] as const).map((tab) => (
-          <button
-            key={tab}
-            onClick={() => switchTab(tab)}
-            className={`relative flex items-center gap-2 px-6 py-2.5 text-xs font-black uppercase tracking-widest rounded-xl transition-colors duration-300 z-10 ${
-              activeTab === tab
-                ? 'text-slate-900 dark:text-white'
-                : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
-            }`}
-          >
-            {activeTab === tab && (
-              <motion.div
-                layoutId="activeTabPill"
-                className="absolute inset-0 bg-white dark:bg-slate-800 shadow-[3px_3px_0_0_#0f172a] border border-slate-900 rounded-xl"
-                transition={{ type: 'spring', bounce: 0.2, duration: 0.5 }}
-              />
-            )}
-            <span className="relative z-20 flex items-center gap-2">
-              {tab === 'ebook' && <BookOpen className="w-3.5 h-3.5" />}
-              {tab === 'phygital' && <MessageCircle className="w-3.5 h-3.5" />}
-              {tab === 'portfolio' && <ImageIcon className="w-3.5 h-3.5" />}
-              {tab === 'ebook' ? 'Ebook' : tab === 'phygital' ? 'Phygital' : 'Portfolio'}
-            </span>
-          </button>
-        ))}
+      {/* Tab Switcher — mobile: satu baris penuh; tombol portfolio di bawah (mobile) supaya tab tidak naik-turun */}
+      <div className="mb-8">
+        <div className="flex w-full md:w-fit max-w-full flex-nowrap gap-1 p-1 bg-slate-100 dark:bg-slate-900/50 rounded-2xl border-2 border-slate-900 dark:border-slate-800 relative min-w-0">
+          {(['ebook', 'phygital', 'portfolio'] as const).map((tab) => (
+            <button
+              key={tab}
+              type="button"
+              onClick={() => switchTab(tab)}
+              className={`relative z-10 flex flex-1 md:flex-none min-w-0 items-center justify-center gap-1.5 md:gap-2 px-3 py-2 md:px-5 md:py-2.5 rounded-xl text-[10px] md:text-sm font-bold uppercase tracking-wider transition-colors duration-300 ${
+                activeTab === tab
+                  ? 'text-slate-900 dark:text-white'
+                  : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+              }`}
+            >
+              {activeTab === tab && (
+                <motion.div
+                  layoutId="activeTabPill"
+                  className="absolute inset-0 bg-white dark:bg-slate-800 shadow-[3px_3px_0_0_#0f172a] border border-slate-900 rounded-xl"
+                  transition={{ type: 'spring', bounce: 0.2, duration: 0.5 }}
+                />
+              )}
+              <span className="relative z-20 flex min-w-0 items-center justify-center gap-1.5 md:gap-2">
+                {tab === 'ebook' && <BookOpen className="w-3.5 h-3.5 md:w-5 md:h-5 shrink-0" />}
+                {tab === 'phygital' && <MessageCircle className="w-3.5 h-3.5 md:w-5 md:h-5 shrink-0" />}
+                {tab === 'portfolio' && <ImageIcon className="w-3.5 h-3.5 md:w-5 md:h-5 shrink-0" />}
+                <span className="truncate">{tab === 'ebook' ? 'Ebook' : tab === 'phygital' ? 'Phygital' : 'Portfolio'}</span>
+              </span>
+            </button>
+          ))}
+        </div>
+
+        {activeTab === 'portfolio' && !editingItem && (
+          <div className="mt-4 sm:hidden">
+            <button
+              type="button"
+              onClick={openAddPortfolio}
+              className="flex w-full items-center justify-center gap-2 px-5 py-3 bg-violet-500 text-white rounded-2xl text-sm font-bold hover:bg-violet-600 transition-all shadow-[4px_4px_0_0_#2e1065] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none animate-in fade-in zoom-in-95"
+            >
+              <Plus className="w-4 h-4 shrink-0" />
+              Tambah Portfolio
+            </button>
+          </div>
+        )}
       </div>
 
       {loading ? (
@@ -485,7 +517,8 @@ export default function AdminShowcasePage() {
           {activeTab === 'portfolio' && (
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-300">
               {editingItem && (
-              <div className="mb-10 p-6 md:p-8 rounded-3xl border-2 border-slate-900 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-[8px_8px_0_0_#2e1065] animate-in zoom-in-95 duration-200">
+              <div className="fixed inset-0 z-[260] bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setEditingItem(null)}>
+                <div className="w-full max-w-5xl max-h-[92vh] overflow-y-auto p-6 md:p-8 rounded-3xl border-2 border-slate-900 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-[8px_8px_0_0_#2e1065] animate-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
                 <form onSubmit={handleSavePortfolioItem} className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-4">
                     <div>
@@ -599,11 +632,12 @@ export default function AdminShowcasePage() {
                     </div>
                   </div>
                 </form>
+                </div>
               </div>
             )}
 
             <div className="space-y-8">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6">
                 {/* Paginated Content */}
                 {(() => {
                   const totalPages = Math.ceil(portfolio.length / ITEMS_PER_PAGE)
@@ -613,9 +647,15 @@ export default function AdminShowcasePage() {
                     <>
                       {currentItems.map((p) => (
                         <div key={p.id} className="group relative rounded-3xl border-2 border-slate-900 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-hidden shadow-[6px_6px_0_0_#334155] dark:shadow-[6px_6px_0_0_#1e293b] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[8px_8px_0_0_#334155] transition-all">
-                          <div className="aspect-[4/5] relative">
-                            <img src={p.image_url} alt={p.title} className="absolute inset-0 w-full h-full object-cover" />
-                            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent opacity-90" />
+                          <div className="aspect-[4/5] relative bg-slate-100 dark:bg-slate-800">
+                            <img
+                              src={p.image_url}
+                              alt={p.title}
+                              loading="lazy"
+                              decoding="async"
+                              className="absolute inset-0 w-full h-full object-contain md:object-cover"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/30 to-transparent opacity-90" />
                             <div className="absolute inset-x-0 bottom-0 p-6">
                               <p className="text-[10px] font-black text-lime-400 uppercase tracking-[0.2em] mb-1">{p.subtitle}</p>
                               <h4 className="text-lg font-black text-white leading-tight">{p.title}</h4>
@@ -624,7 +664,6 @@ export default function AdminShowcasePage() {
                               <button 
                                 onClick={() => {
                                   setEditingItem(p);
-                                  window.scrollTo({ top: 0, behavior: 'smooth' });
                                 }}
                                 className="p-3 bg-white text-slate-900 rounded-2xl shadow-xl hover:bg-violet-500 hover:text-white transition-colors"
                               >

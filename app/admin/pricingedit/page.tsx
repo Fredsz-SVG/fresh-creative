@@ -228,8 +228,8 @@ const PackageForm = ({ pkg, onSave, onCancel }: { pkg: Partial<PricingPackage> |
                       placeholder="Rp"
                       className="w-20 p-2 text-xs bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-violet-200"
                     />
-                    <button type="button" onClick={() => removeAddon(idx)} className="text-rose-500 hover:bg-rose-50 p-1.5 rounded-lg transition-colors">
-                      <Trash2 size={14} strokeWidth={2} />
+                    <button type="button" onClick={() => removeAddon(idx)} className="inline-flex items-center justify-center w-8 h-8 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors">
+                      <Trash2 className="w-4 h-4" strokeWidth={2} />
                     </button>
                   </div>
                 ))}
@@ -337,6 +337,18 @@ export default function PricingEditPage() {
   const [aiPricing, setAiPricing] = useState<AiFeaturePricing[]>([])
   const [loadingAi, setLoadingAi] = useState(true)
   const [editingAi, setEditingAi] = useState<AiFeaturePricing | null>(null)
+  const isAnyModalOpen = !!editingPackage || !!deletePrompt || !!editingAi
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return
+    const previousOverflow = document.body.style.overflow
+    if (isAnyModalOpen) {
+      document.body.style.overflow = 'hidden'
+    }
+    return () => {
+      document.body.style.overflow = previousOverflow
+    }
+  }, [isAnyModalOpen])
   const [ptvDurRows, setPtvDurRows] = useState<PtvDurRow[]>([
     { id: newPtvRowId(), sec: 5, credits: 1 },
     { id: newPtvRowId(), sec: 10, credits: 1 },
@@ -424,18 +436,28 @@ export default function PricingEditPage() {
   }, [])
 
   useEffect(() => {
-    const lastFetchRef = { ts: 0 }
+    const lastFetchRef = { ai: 0, pricing: 0 }
     const onRealtime = (event: Event) => {
       const detail = (event as CustomEvent<{ type?: string; channel?: string; payload?: Record<string, unknown> }>).detail
       if (!detail?.type || detail.channel !== 'global') return
       if (detail.type !== 'api.mutated') return
       const path = typeof detail.payload?.path === 'string' ? (detail.payload.path as string) : ''
-      if (path !== '/api/admin/ai-edit') return
       const now = Date.now()
-      if (now - lastFetchRef.ts < 800) return
-      lastFetchRef.ts = now
-      // Auto-refresh AI pricing across devices
-      fetchAiPricing(true)
+
+      if (path === '/api/admin/ai-edit') {
+        if (now - lastFetchRef.ai < 800) return
+        lastFetchRef.ai = now
+        // Auto-refresh AI pricing across devices
+        fetchAiPricing(true)
+        return
+      }
+
+      if (path === '/api/pricing') {
+        if (now - lastFetchRef.pricing < 800) return
+        lastFetchRef.pricing = now
+        // Auto-refresh yearbook pricing across devices
+        fetchPackages(true)
+      }
     }
     window.addEventListener('fresh:realtime', onRealtime)
     return () => window.removeEventListener('fresh:realtime', onRealtime)
@@ -715,10 +737,10 @@ export default function PricingEditPage() {
                                   prev.filter((r) => r.id !== row.id)
                                 )
                               }
-                              className="shrink-0 p-2 rounded-xl bg-rose-100 text-rose-600 hover:bg-rose-200 disabled:opacity-40 disabled:pointer-events-none transition-colors shadow-[2px_2px_0_0_#e11d48] hover:shadow-none"
+                              className="shrink-0 inline-flex items-center justify-center w-10 h-10 rounded-xl bg-rose-100 text-rose-600 hover:bg-rose-200 disabled:opacity-40 disabled:pointer-events-none transition-colors shadow-[2px_2px_0_0_#e11d48] hover:shadow-none"
                               title="Hapus baris"
                             >
-                              <Trash2 size={18} className="md:w-5 md:h-5" strokeWidth={3} />
+                              <Trash2 className="w-4 h-4 md:w-5 md:h-5" strokeWidth={3} />
                             </button>
                           </div>
                         ))}
@@ -773,7 +795,7 @@ export default function PricingEditPage() {
             </p>
           </div>
           {activeTab === 'yearbook' && (
-            <button onClick={() => setEditingPackage({})} className="flex items-center justify-center gap-2 px-5 py-2.5 md:px-6 md:py-3 bg-emerald-400 text-emerald-900 rounded-xl font-bold hover:bg-emerald-300 transition-all shadow-[2px_2px_0_0_#059669] hover:shadow-none hover:-translate-x-0.5 hover:-translate-y-0.5 text-sm">
+            <button onClick={() => setEditingPackage({})} className="hidden sm:flex items-center justify-center gap-2 px-5 py-2.5 md:px-6 md:py-3 bg-emerald-400 text-emerald-900 rounded-xl font-bold hover:bg-emerald-300 transition-all shadow-[2px_2px_0_0_#059669] hover:shadow-none hover:-translate-x-0.5 hover:-translate-y-0.5 text-sm">
               <Plus size={18} className="md:w-5 md:h-5" strokeWidth={2.5} />
                 Buat Paket
             </button>
@@ -782,7 +804,7 @@ export default function PricingEditPage() {
 
       {/* Tabs */}
       <div className="mb-8 px-4 md:px-0">
-        <div className="relative inline-flex items-center gap-1 p-1 bg-white dark:bg-slate-800 rounded-2xl border-2 border-slate-900 dark:border-slate-700 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]">
+        <div className="relative flex w-full md:w-fit items-center gap-1 p-1 bg-white dark:bg-slate-800 rounded-2xl border-2 border-slate-900 dark:border-slate-700 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]">
           <div
             className="absolute top-1 bottom-1 rounded-xl bg-violet-400 transition-all duration-300 ease-out"
             style={{
@@ -793,7 +815,7 @@ export default function PricingEditPage() {
           <button
             type="button"
             onClick={() => switchTab('yearbook')}
-            className={`relative z-10 flex items-center justify-center gap-1.5 md:gap-2 px-3 py-2 md:px-5 md:py-2.5 rounded-xl text-[10px] md:text-sm font-bold transition-all duration-200 ${
+            className={`relative z-10 flex flex-1 md:flex-none min-w-0 items-center justify-center gap-1.5 md:gap-2 px-3 py-2 md:px-5 md:py-2.5 rounded-xl text-[10px] md:text-sm font-bold transition-all duration-200 ${
               activeTab === 'yearbook'
                 ? 'text-slate-900'
                 : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
@@ -808,7 +830,7 @@ export default function PricingEditPage() {
           <button
             type="button"
             onClick={() => switchTab('ai')}
-            className={`relative z-10 flex items-center justify-center gap-1.5 md:gap-2 px-3 py-2 md:px-5 md:py-2.5 rounded-xl text-[10px] md:text-sm font-bold transition-all duration-200 ${
+            className={`relative z-10 flex flex-1 md:flex-none min-w-0 items-center justify-center gap-1.5 md:gap-2 px-3 py-2 md:px-5 md:py-2.5 rounded-xl text-[10px] md:text-sm font-bold transition-all duration-200 ${
               activeTab === 'ai'
                 ? 'text-slate-900'
                 : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
@@ -821,6 +843,15 @@ export default function PricingEditPage() {
             </span>
           </button>
         </div>
+        {activeTab === 'yearbook' && (
+          <button
+            onClick={() => setEditingPackage({})}
+            className="sm:hidden mt-4 w-full inline-flex items-center justify-center gap-2 min-h-[44px] px-5 py-2.5 bg-emerald-400 text-emerald-900 rounded-xl font-bold hover:bg-emerald-300 transition-all shadow-[2px_2px_0_0_#059669] hover:shadow-none text-sm whitespace-nowrap"
+          >
+            <Plus size={18} strokeWidth={2.5} />
+            Buat Paket
+          </button>
+        )}
       </div>
 
       {activeTab === 'yearbook' ? (
@@ -876,15 +907,15 @@ export default function PricingEditPage() {
                   <div className="absolute top-3 right-3 md:top-4 md:right-4 flex gap-1.5">
                     <button
                       onClick={() => setEditingPackage(pkg)}
-                      className="p-1.5 md:p-2 rounded-xl bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-900 shadow-[2px_2px_0_0_#d97706] hover:shadow-none transition-all"
+                      className="inline-flex items-center justify-center w-8 h-8 md:w-9 md:h-9 rounded-xl bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-900 shadow-[2px_2px_0_0_#d97706] hover:shadow-none transition-all"
                     >
-                      <Edit size={14} className="md:w-4 md:h-4" strokeWidth={2} />
+                      <Edit className="w-4 h-4" strokeWidth={2} />
                     </button>
                     <button
                       onClick={() => handleDelete(pkg.id)}
-                      className="p-1.5 md:p-2 rounded-xl bg-rose-100 dark:bg-rose-900/50 text-rose-700 dark:text-rose-300 hover:bg-rose-200 dark:hover:bg-rose-900 shadow-[2px_2px_0_0_#e11d48] hover:shadow-none transition-all"
+                      className="inline-flex items-center justify-center w-8 h-8 md:w-9 md:h-9 rounded-xl bg-rose-100 dark:bg-rose-900/50 text-rose-700 dark:text-rose-300 hover:bg-rose-200 dark:hover:bg-rose-900 shadow-[2px_2px_0_0_#e11d48] hover:shadow-none transition-all"
                     >
-                      <Trash2 size={14} className="md:w-4 md:h-4" strokeWidth={2} />
+                      <Trash2 className="w-4 h-4" strokeWidth={2} />
                     </button>
                   </div>
 
@@ -1008,9 +1039,9 @@ export default function PricingEditPage() {
                   </div>
                   <button
                     onClick={() => setEditingAi(item)}
-                    className="p-2 md:p-2.5 rounded-xl bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-900 shadow-[2px_2px_0_0_#d97706] hover:shadow-none transition-all flex items-center justify-center shrink-0 ml-2"
+                    className="inline-flex items-center justify-center w-9 h-9 md:w-10 md:h-10 rounded-xl bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-900 shadow-[2px_2px_0_0_#d97706] hover:shadow-none transition-all shrink-0 ml-2"
                   >
-                    <Edit size={16} className="md:w-5 md:h-5" strokeWidth={2} />
+                    <Edit className="w-4 h-4 md:w-5 md:h-5" strokeWidth={2} />
                   </button>
                 </div>
               )
