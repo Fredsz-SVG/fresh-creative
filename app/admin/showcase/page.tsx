@@ -1,6 +1,6 @@
 'use client'
 
-import React, { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useTransition } from 'react'
+import React, { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { fetchWithAuth } from '../../../lib/api-client'
 import { Loader2, Eye, BookOpen, Save, MessageCircle, Plus, Trash2, Edit2, Upload, GripVertical, ImageIcon, AlertTriangle } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
@@ -122,7 +122,6 @@ export default function AdminShowcasePage() {
   }
 
   const [activeTab, setActiveTab] = useState<ActiveTab>(getTabFromHash)
-  const [isTabPending, startTabTransition] = useTransition()
   const [itemToDelete, setItemToDelete] = useState<string | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
   const [portfolioReady, setPortfolioReady] = useState(activeTab !== 'portfolio')
@@ -156,9 +155,7 @@ export default function AdminShowcasePage() {
 
   const switchTab = (tab: ActiveTab) => {
     if (tab === activeTab) return
-    startTabTransition(() => {
-      setActiveTab(tab)
-    })
+    setActiveTab(tab)
     const newHash = `#${tab}`
     if (window.location.hash !== newHash) {
       history.pushState(null, '', newHash)
@@ -453,7 +450,6 @@ export default function AdminShowcasePage() {
               key={tab}
               type="button"
               onClick={() => switchTab(tab)}
-              disabled={isTabPending}
               className={`relative z-10 flex flex-1 md:flex-none min-w-0 items-center justify-center gap-1.5 md:gap-2 px-3 py-2 md:px-5 md:py-2.5 rounded-xl text-[10px] md:text-sm font-bold uppercase tracking-wider transition-colors duration-300 ${
                 activeTab === tab
                   ? 'text-slate-900 dark:text-white'
