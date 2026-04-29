@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useSta
 import Image from 'next/image'
 import { fetchWithAuth } from '../../../lib/api-client'
 import { Loader2, Eye, BookOpen, Save, MessageCircle, Plus, Trash2, Edit2, Upload, GripVertical, ImageIcon, AlertTriangle } from 'lucide-react'
-import { AnimatePresence } from 'framer-motion'
+import { AnimatePresence, motion } from 'framer-motion'
 import { convertToWebP } from '../../../lib/image-conversion'
 
 interface PortfolioItem {
