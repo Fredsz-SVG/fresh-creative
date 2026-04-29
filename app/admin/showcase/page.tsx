@@ -1,6 +1,7 @@
 'use client'
 
 import React, { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { fetchWithAuth } from '../../../lib/api-client'
 import { Loader2, Eye, BookOpen, Save, MessageCircle, Plus, Trash2, Edit2, Upload, ImageIcon } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
@@ -657,127 +658,6 @@ export default function AdminShowcasePage() {
             className={cn('[contain:layout]', activeTab !== 'portfolio' && 'hidden')}
             inert={activeTab !== 'portfolio' ? true : undefined}
           >
-            <div>
-              {editingItem && (
-              <div className="fixed inset-0 z-[260] bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setEditingItem(null)}>
-                <div className="w-full max-w-5xl max-h-[92vh] overflow-y-auto p-6 md:p-8 rounded-3xl border-2 border-slate-900 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-[8px_8px_0_0_#2e1065] animate-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
-                <form onSubmit={handleSavePortfolioItem} className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-4">
-                    <div>
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Judul Portfolio</label>
-                      <input
-                        type="text"
-                        required
-                        value={editingItem.title || ''}
-                        onChange={e => setEditingItem({ ...editingItem, title: e.target.value })}
-                        placeholder="Contoh: American 90s"
-                        className="w-full px-5 py-3.5 text-sm font-bold rounded-xl bg-slate-50 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-violet-200 dark:focus:ring-violet-900 transition-all"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Sub-judul / Konsep</label>
-                      <input
-                        type="text"
-                        required
-                        value={editingItem.subtitle || ''}
-                        onChange={e => setEditingItem({ ...editingItem, subtitle: e.target.value })}
-                        placeholder="Contoh: Retro & Nostalgic"
-                        className="w-full px-5 py-3.5 text-sm font-bold rounded-xl bg-slate-50 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-violet-200 dark:focus:ring-violet-900 transition-all"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Deskripsi Singkat</label>
-                      <textarea
-                        required
-                        rows={3}
-                        value={editingItem.description || ''}
-                        onChange={e => setEditingItem({ ...editingItem, description: e.target.value })}
-                        placeholder="Ceritakan tentang konsep portfolio ini..."
-                        className="w-full px-5 py-3.5 text-sm font-bold rounded-xl bg-slate-50 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-violet-200 dark:focus:ring-violet-900 transition-all resize-none [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
-                      />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Urutan Tampil</label>
-                        <input
-                          type="number"
-                          value={editingItem.display_order ?? 0}
-                          onChange={e => setEditingItem({ ...editingItem, display_order: parseInt(e.target.value) || 0 })}
-                          className="w-full px-5 py-3.5 text-sm font-bold rounded-xl bg-slate-50 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-violet-200 dark:focus:ring-violet-900 transition-all"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    <div>
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Cover Photo</label>
-                      <div 
-                        onClick={() => fileInputRef.current?.click()}
-                        className="relative aspect-video w-full rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 overflow-hidden group cursor-pointer hover:border-violet-400 transition-all"
-                      >
-                        {editingItem.image_url ? (
-                          <>
-                            <img src={editingItem.image_url} alt="Preview" className="absolute inset-0 w-full h-full object-cover" />
-                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                              <Upload className="w-8 h-8 text-white" />
-                            </div>
-                          </>
-                        ) : (
-                          <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-400">
-                            <Upload className="w-10 h-10 mb-2" />
-                            <p className="text-xs font-bold">Klik untuk upload foto</p>
-                          </div>
-                        )}
-                        <input
-                          ref={fileInputRef}
-                          type="file"
-                          accept="image/*"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0]
-                            if (file) {
-                              const reader = new FileReader()
-                              reader.onloadend = () => setEditingItem({ ...editingItem, image_url: reader.result as string })
-                              reader.readAsDataURL(file)
-                            }
-                          }}
-                          className="hidden"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="flex gap-3 pt-4">
-                      <button
-                        type="button"
-                        onClick={() => setEditingItem(null)}
-                        className="flex-1 px-5 py-3.5 rounded-2xl border-2 border-slate-900 dark:border-slate-700 text-slate-600 dark:text-slate-400 font-bold hover:bg-slate-50 transition-all"
-                      >
-                        Batal
-                      </button>
-                      <button
-                        type="submit"
-                        disabled={isSavingPortfolio}
-                        className="flex-1 flex items-center justify-center gap-2 px-5 py-3.5 rounded-2xl bg-violet-500 text-white border-2 border-slate-900 dark:border-slate-700 font-bold shadow-[4px_4px_0_0_#2e1065] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all disabled:opacity-50"
-                      >
-                        {isSavingPortfolio ? (
-                          <div className="flex items-center gap-2">
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                            <span>Menyimpan...</span>
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-2">
-                            <Save className="w-4 h-4" />
-                            <span>{editingItem.id ? 'Simpan Perubahan' : 'Tambah Portfolio'}</span>
-                          </div>
-                        )}
-                      </button>
-                    </div>
-                  </div>
-                </form>
-                </div>
-              </div>
-            )}
-
             <div className="space-y-8">
               <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6">
                 {currentItems.map((p, idx) => (
@@ -818,10 +698,169 @@ export default function AdminShowcasePage() {
                 </div>
               )}
             </div>
-            </div>
           </div>
         </div>
       )}
+
+      {editingItem && typeof document !== 'undefined'
+        ? createPortal(
+            <div
+              className="fixed inset-0 z-[260] flex min-h-dvh items-center justify-center overflow-y-auto overscroll-contain bg-slate-900/40 px-4 py-6 backdrop-blur-sm sm:px-5 sm:py-8"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="portfolio-edit-title"
+              onClick={() => setEditingItem(null)}
+            >
+              <div
+                className="w-full max-w-5xl max-h-[min(92dvh,920px)] overflow-y-auto rounded-3xl border-2 border-slate-900 bg-white p-6 shadow-[8px_8px_0_0_#2e1065] animate-in zoom-in-95 duration-200 dark:border-slate-700 dark:bg-slate-900 md:p-8"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <h2 id="portfolio-edit-title" className="sr-only">
+                  {editingItem.id ? 'Edit portfolio' : 'Tambah portfolio'}
+                </h2>
+                <form onSubmit={handleSavePortfolioItem} className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                  <div className="space-y-4">
+                    <div>
+                      <label className="mb-2 block text-[10px] font-black uppercase tracking-widest text-slate-400">
+                        Judul Portfolio
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={editingItem.title || ''}
+                        onChange={(e) => setEditingItem({ ...editingItem, title: e.target.value })}
+                        placeholder="Contoh: American 90s"
+                        className="w-full rounded-xl border-2 border-slate-900 bg-slate-50 px-5 py-3.5 text-sm font-bold text-slate-900 transition-all focus:outline-none focus:ring-4 focus:ring-violet-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:focus:ring-violet-900"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-2 block text-[10px] font-black uppercase tracking-widest text-slate-400">
+                        Sub-judul / Konsep
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={editingItem.subtitle || ''}
+                        onChange={(e) => setEditingItem({ ...editingItem, subtitle: e.target.value })}
+                        placeholder="Contoh: Retro & Nostalgic"
+                        className="w-full rounded-xl border-2 border-slate-900 bg-slate-50 px-5 py-3.5 text-sm font-bold text-slate-900 transition-all focus:outline-none focus:ring-4 focus:ring-violet-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:focus:ring-violet-900"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-2 block text-[10px] font-black uppercase tracking-widest text-slate-400">
+                        Deskripsi Singkat
+                      </label>
+                      <textarea
+                        required
+                        rows={3}
+                        value={editingItem.description || ''}
+                        onChange={(e) => setEditingItem({ ...editingItem, description: e.target.value })}
+                        placeholder="Ceritakan tentang konsep portfolio ini..."
+                        className="w-full resize-none rounded-xl border-2 border-slate-900 bg-slate-50 px-5 py-3.5 text-sm font-bold text-slate-900 transition-all focus:outline-none focus:ring-4 focus:ring-violet-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:focus:ring-violet-900 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="mb-2 block text-[10px] font-black uppercase tracking-widest text-slate-400">
+                          Urutan Tampil
+                        </label>
+                        <input
+                          type="number"
+                          value={editingItem.display_order ?? 0}
+                          onChange={(e) =>
+                            setEditingItem({ ...editingItem, display_order: parseInt(e.target.value, 10) || 0 })
+                          }
+                          className="w-full rounded-xl border-2 border-slate-900 bg-slate-50 px-5 py-3.5 text-sm font-bold text-slate-900 transition-all focus:outline-none focus:ring-4 focus:ring-violet-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:focus:ring-violet-900"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div>
+                      <label className="mb-2 block text-[10px] font-black uppercase tracking-widest text-slate-400">
+                        Cover Photo
+                      </label>
+                      <div
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => fileInputRef.current?.click()}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault()
+                            fileInputRef.current?.click()
+                          }
+                        }}
+                        className="group relative aspect-video w-full cursor-pointer overflow-hidden rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 transition-all hover:border-violet-400 dark:border-slate-700 dark:bg-slate-800"
+                      >
+                        {editingItem.image_url ? (
+                          <>
+                            <img
+                              src={editingItem.image_url}
+                              alt="Preview"
+                              className="absolute inset-0 h-full w-full object-cover"
+                            />
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
+                              <Upload className="h-8 w-8 text-white" />
+                            </div>
+                          </>
+                        ) : (
+                          <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-400">
+                            <Upload className="mb-2 h-10 w-10" />
+                            <p className="text-xs font-bold">Klik untuk upload foto</p>
+                          </div>
+                        )}
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0]
+                            if (file) {
+                              const reader = new FileReader()
+                              reader.onloadend = () =>
+                                setEditingItem({ ...editingItem, image_url: reader.result as string })
+                              reader.readAsDataURL(file)
+                            }
+                          }}
+                          className="hidden"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex gap-3 pt-4">
+                      <button
+                        type="button"
+                        onClick={() => setEditingItem(null)}
+                        className="flex-1 rounded-2xl border-2 border-slate-900 px-5 py-3.5 font-bold text-slate-600 transition-all hover:bg-slate-50 dark:border-slate-700 dark:text-slate-400"
+                      >
+                        Batal
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={isSavingPortfolio}
+                        className="flex flex-1 items-center justify-center gap-2 rounded-2xl border-2 border-slate-900 bg-violet-500 px-5 py-3.5 font-bold text-white shadow-[4px_4px_0_0_#2e1065] transition-all hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none disabled:opacity-50 dark:border-slate-700"
+                      >
+                        {isSavingPortfolio ? (
+                          <div className="flex items-center gap-2">
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            <span>Menyimpan...</span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <Save className="h-4 w-4" />
+                            <span>{editingItem.id ? 'Simpan Perubahan' : 'Tambah Portfolio'}</span>
+                          </div>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </form>
+              </div>
+            </div>,
+            document.body
+          )
+        : null}
 
       {/* Delete Confirmation Modal */}
       <AnimatePresence>
