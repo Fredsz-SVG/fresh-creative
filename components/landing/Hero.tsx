@@ -292,25 +292,25 @@ export function Hero() {
             {/* Heading wrapper — width driven by CREATIVE (widest line) */}
             <div className="flex flex-col gap-2 sm:gap-3">
               <span
-                className="text-white hero-orange-stroke text-[9vw] sm:text-4xl md:text-5xl lg:text-[3.5rem] xl:text-[4rem] [@media(max-height:650px)]:!text-[2.5rem] leading-[1.2] tracking-tight"
+                className="text-white hero-orange-stroke text-[6.5vw] sm:text-4xl md:text-5xl lg:text-[3.5rem] xl:text-[4rem] [@media(max-height:650px)]:!text-[2rem] leading-[1.1] tracking-tight"
                 style={{ fontFamily: "var(--font-josefin), sans-serif", fontWeight: 700 }}
               >
                 Yearbook Masa
               </span>
               <span
-                className="text-white hero-orange-stroke text-[9vw] sm:text-4xl md:text-5xl lg:text-[3.5rem] xl:text-[4rem] [@media(max-height:650px)]:!text-[2.5rem] leading-[1.2] tracking-tight"
+                className="text-white hero-orange-stroke text-[6.5vw] sm:text-4xl md:text-5xl lg:text-[3.5rem] xl:text-[4rem] [@media(max-height:650px)]:!text-[2rem] leading-[1.1] tracking-tight"
                 style={{ fontFamily: "var(--font-josefin), sans-serif", fontWeight: 700 }}
               >
                 Lalu? Cringe.
               </span>
               <span
-                className="text-white hero-orange-stroke text-[9vw] sm:text-4xl md:text-5xl lg:text-[3.5rem] xl:text-[4rem] [@media(max-height:650px)]:!text-[2.5rem] leading-[1.2] tracking-tight"
+                className="text-white hero-orange-stroke text-[6.5vw] sm:text-4xl md:text-5xl lg:text-[3.5rem] xl:text-[4rem] [@media(max-height:650px)]:!text-[2rem] leading-[1.1] tracking-tight"
                 style={{ fontFamily: "var(--font-josefin), sans-serif", fontWeight: 700 }}
               >
                 Saatnya <span className="text-yellow-300">Phygital.</span>
               </span>
             </div>
-            <p className="mt-3 sm:mt-4 mb-5 sm:mb-6 max-w-sm sm:max-w-md text-white hero-black-outline text-xs sm:text-sm md:text-base font-medium leading-relaxed" style={{ fontFamily: "var(--font-inter), sans-serif" }}>
+            <p className="mt-3 sm:mt-4 mb-5 sm:mb-6 max-w-sm sm:max-w-md text-white hero-black-outline text-[9px] sm:text-sm md:text-base font-medium leading-snug sm:leading-relaxed" style={{ fontFamily: "var(--font-inter), sans-serif" }}>
               Ubah kenangan sekolahmu jadi &apos;Living Archive&apos;.<br />
               Gabungan buku fisik premium, teknologi AR,<br />
               dan AI Photo labs. Anti ribet, 100% transparan.
@@ -323,7 +323,7 @@ export function Hero() {
               <Button
                 id="watch-trailer"
                 leftIcon={TiLocationArrow}
-                containerClass="bg-yellow-300 flex-center gap-1 border border-slate-900 rounded-full shadow-[2px_2px_0_0_#000] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[3px_3px_0_0_#000] transition-all active:translate-x-0 active:translate-y-0 active:shadow-none font-black text-base"
+                containerClass="bg-yellow-300 flex-center gap-1 border border-slate-900 rounded-full shadow-[2px_2px_0_0_#000] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[3px_3px_0_0_#000] transition-all active:translate-x-0 active:translate-y-0 active:shadow-none font-black text-sm sm:text-base"
               >
                 Buat Project
               </Button>
@@ -331,7 +331,7 @@ export function Hero() {
 
             <div className="mt-4 sm:mt-6 flex flex-nowrap gap-4 sm:gap-10 md:gap-14">
               <div className="flex flex-col">
-                <span className="special-font text-2xl sm:text-4xl font-bold text-white md:text-5xl [@media(max-height:650px)]:!text-3xl">
+                <span className="special-font text-xl sm:text-4xl font-bold text-white md:text-5xl [@media(max-height:650px)]:!text-2xl">
                   <AnimatedCounter target={300} suffix="+" />
                 </span>
                 <span className="font-general text-[8px] sm:text-[10px] uppercase tracking-widest text-white/60">
@@ -339,7 +339,7 @@ export function Hero() {
                 </span>
               </div>
               <div className="flex flex-col">
-                <span className="special-font text-2xl sm:text-4xl font-bold text-white md:text-5xl [@media(max-height:650px)]:!text-3xl">
+                <span className="special-font text-xl sm:text-4xl font-bold text-white md:text-5xl [@media(max-height:650px)]:!text-2xl">
                   <AnimatedCounter target={100000} formatFn={(n) => n >= 1000 ? `${Math.floor(n / 1000)}` : `${n}`} suffix="K+" />
                 </span>
                 <span className="font-general text-[8px] sm:text-[10px] uppercase tracking-widest text-white/60">
@@ -347,7 +347,7 @@ export function Hero() {
                 </span>
               </div>
               <div className="flex flex-col">
-                <span className="special-font text-2xl sm:text-4xl font-bold text-white md:text-5xl [@media(max-height:650px)]:!text-3xl">
+                <span className="special-font text-xl sm:text-4xl font-bold text-white md:text-5xl [@media(max-height:650px)]:!text-2xl">
                   Lifetime
                 </span>
                 <span className="font-general text-[8px] sm:text-[10px] uppercase tracking-widest text-white/60">
@@ -365,19 +365,19 @@ export function Hero() {
           {/* Ghost duplicate for the black text layer (background) */}
           <div className="flex flex-col gap-2 sm:gap-3">
             <span
-              className="text-black hero-orange-stroke text-[9vw] sm:text-4xl md:text-5xl lg:text-[3.5rem] xl:text-[4rem] [@media(max-height:650px)]:!text-[2.5rem] leading-[1.2] tracking-tight"
+              className="text-black hero-orange-stroke text-[6.5vw] sm:text-4xl md:text-5xl lg:text-[3.5rem] xl:text-[4rem] [@media(max-height:650px)]:!text-[2rem] leading-[1.1] tracking-tight"
               style={{ fontFamily: "var(--font-josefin), sans-serif", fontWeight: 700, visibility: 'hidden' }}
             >
               Yearbook Masa
             </span>
             <span
-              className="text-black hero-orange-stroke text-[9vw] sm:text-4xl md:text-5xl lg:text-[3.5rem] xl:text-[4rem] [@media(max-height:650px)]:!text-[2.5rem] leading-[1.2] tracking-tight"
+              className="text-black hero-orange-stroke text-[6.5vw] sm:text-4xl md:text-5xl lg:text-[3.5rem] xl:text-[4rem] [@media(max-height:650px)]:!text-[2rem] leading-[1.1] tracking-tight"
               style={{ fontFamily: "var(--font-josefin), sans-serif", fontWeight: 700, visibility: 'hidden' }}
             >
               Lalu? Cringe.
             </span>
             <span
-              className="text-black hero-orange-stroke text-[9vw] sm:text-4xl md:text-5xl lg:text-[3.5rem] xl:text-[4rem] [@media(max-height:650px)]:!text-[2.5rem] leading-[1.2] tracking-tight"
+              className="text-black hero-orange-stroke text-[6.5vw] sm:text-4xl md:text-5xl lg:text-[3.5rem] xl:text-[4rem] [@media(max-height:650px)]:!text-[2rem] leading-[1.1] tracking-tight"
               style={{ fontFamily: "var(--font-josefin), sans-serif", fontWeight: 700 }}
             >
               Saatnya Phygital.

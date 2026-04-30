@@ -510,7 +510,7 @@ export default function AdminShowcasePage() {
                 {tab === 'ebook' && <BookOpen className="w-3.5 h-3.5 md:w-5 md:h-5 shrink-0" />}
                 {tab === 'phygital' && <MessageCircle className="w-3.5 h-3.5 md:w-5 md:h-5 shrink-0" />}
                 {tab === 'portfolio' && <ImageIcon className="w-3.5 h-3.5 md:w-5 md:h-5 shrink-0" />}
-                <span className="truncate">{tab === 'ebook' ? 'Ebook' : tab === 'phygital' ? 'Phygital' : 'Portfolio'}</span>
+                <span className="truncate">{tab === 'ebook' ? 'Ebook' : tab === 'phygital' ? 'Contact' : 'Portfolio'}</span>
               </span>
             </button>
           ))}
