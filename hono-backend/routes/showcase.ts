@@ -12,6 +12,7 @@ const SHOWCASE_CACHE_TTL_MS = 20_000
 type ShowcasePayload = {
   albumPreviews: unknown[]
   flipbookPreviewUrl: string
+  contactUrl: string
 }
 
 let showcaseCache: ShowcasePayload | null = null
@@ -35,6 +36,7 @@ showcase.get('/', async (c) => {
     const payload: ShowcasePayload = {
       albumPreviews: enrichedPreviews,
       flipbookPreviewUrl: base.flipbookPreviewUrl,
+      contactUrl: base.contactUrl,
     }
     showcaseCache = payload
     showcaseCacheExpiresAt = now + SHOWCASE_CACHE_TTL_MS

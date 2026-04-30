@@ -137,7 +137,7 @@ export function Features() {
               media="image"
               src="/img/organizer.webp"
               title={<>Event Organizer</>}
-              description="Kami urus semua acara yearbook-mu, dari konsep sampai eksekusi."
+              description="Kami urus semua acara yearbook-mu, dari konsep sampai eksekusi, seperti prom night, wisuda, perpisahan, pentas seni, dan lainnya."
             />
           </BentoCardWrap>
 

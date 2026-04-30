@@ -5,11 +5,13 @@ export const SHOWCASE_KEY = 'showcase'
 export type ShowcasePayload = {
   albumPreviews: { title: string; imageUrl: string; link: string }[]
   flipbookPreviewUrl: string
+  contactUrl: string
 }
 
 export const defaultShowcase: ShowcasePayload = {
   albumPreviews: [],
   flipbookPreviewUrl: '',
+  contactUrl: '',
 }
 
 export async function getShowcaseFromD1(db: D1Database): Promise<ShowcasePayload> {
@@ -27,9 +29,11 @@ export async function getShowcaseFromD1(db: D1Database): Promise<ShowcasePayload
       typeof raw.flipbookPreviewUrl === 'string'
         ? raw.flipbookPreviewUrl
         : defaultShowcase.flipbookPreviewUrl
+    const contactUrl = typeof raw.contactUrl === 'string' ? raw.contactUrl : defaultShowcase.contactUrl
     return {
       albumPreviews: albumPreviews as ShowcasePayload['albumPreviews'],
       flipbookPreviewUrl,
+      contactUrl,
     }
   } catch {
     return defaultShowcase

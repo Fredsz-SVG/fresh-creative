@@ -126,15 +126,17 @@ const PortfolioCard = memo(function PortfolioCard({
 
 export default function AdminShowcasePage() {
   const [loading, setLoading] = useState(true)
-  const [savingSection, setSavingSection] = useState<'flipbook' | 'album' | 'fonnte' | null>(null)
+  const [savingSection, setSavingSection] = useState<'flipbook' | 'album' | 'fonnte' | 'contact' | null>(null)
   const [albumCarouselLink, setAlbumCarouselLink] = useState('')
   const [flipbookPreviewUrl, setFlipbookPreviewUrl] = useState('')
   const [fonnteTarget, setFonnteTarget] = useState('')
+  const [contactUrl, setContactUrl] = useState('')
   const [statusBanner, setStatusBanner] = useState<string | null>(null)
   const hasCacheRef = React.useRef(false)
   const albumInputRef = useRef<HTMLInputElement | null>(null)
   const flipbookInputRef = useRef<HTMLInputElement | null>(null)
   const fonnteInputRef = useRef<HTMLInputElement | null>(null)
+  const contactInputRef = useRef<HTMLInputElement | null>(null)
 
   // Portfolio State
   const [portfolio, setPortfolio] = useState<PortfolioItem[]>([])
@@ -217,11 +219,12 @@ export default function AdminShowcasePage() {
     try {
       const raw = window.sessionStorage.getItem(cacheKey)
       if (raw) {
-        const parsed = JSON.parse(raw) as { ts: number; data: { albumCarouselLink: string; flipbookPreviewUrl: string; target: string } }
+        const parsed = JSON.parse(raw) as { ts: number; data: { albumCarouselLink: string; flipbookPreviewUrl: string; target: string; contactUrl?: string } }
         if (parsed?.data) {
           setAlbumCarouselLink(parsed.data.albumCarouselLink || '')
           setFlipbookPreviewUrl(parsed.data.flipbookPreviewUrl || '')
           setFonnteTarget(parsed.data.target || '')
+          setContactUrl(parsed.data.contactUrl || '')
           setLoading(false)
           hasCacheRef.current = true
         }
@@ -252,12 +255,17 @@ export default function AdminShowcasePage() {
         const albumLink = list[0]?.link ? String(list[0].link) : ''
         const flipbookLink = typeof obj.flipbookPreviewUrl === 'string' ? obj.flipbookPreviewUrl : ''
         const target = typeof obj.target === 'string' ? obj.target : ''
+        const contact = typeof obj.contactUrl === 'string' ? obj.contactUrl : ''
         setAlbumCarouselLink(albumLink)
         setFlipbookPreviewUrl(flipbookLink)
         setFonnteTarget(target)
+        setContactUrl(contact)
         if (typeof window !== 'undefined') {
           try {
-            window.sessionStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), data: { albumCarouselLink: albumLink, flipbookPreviewUrl: flipbookLink, target } }))
+            window.sessionStorage.setItem(
+              cacheKey,
+              JSON.stringify({ ts: Date.now(), data: { albumCarouselLink: albumLink, flipbookPreviewUrl: flipbookLink, target, contactUrl: contact } })
+            )
           } catch {
             // ignore
           }
@@ -322,14 +330,16 @@ export default function AdminShowcasePage() {
     return () => window.removeEventListener('fresh:realtime', onRealtime)
   }, [fetchPortfolio, fetchShowcase])
 
-  const handleSaveSection = async (section: 'flipbook' | 'album' | 'fonnte') => {
+  const handleSaveSection = async (section: 'flipbook' | 'album' | 'fonnte' | 'contact') => {
     const latestAlbumLink = (albumInputRef.current?.value ?? albumCarouselLink).trim()
     const latestFlipbookLink = (flipbookInputRef.current?.value ?? flipbookPreviewUrl).trim()
     const latestFonnteTarget = (fonnteInputRef.current?.value ?? fonnteTarget).trim()
+    const latestContactUrl = (contactInputRef.current?.value ?? contactUrl).trim()
     // Keep state synced with actual input DOM values before sending.
     setAlbumCarouselLink(latestAlbumLink)
     setFlipbookPreviewUrl(latestFlipbookLink)
     setFonnteTarget(latestFonnteTarget)
+    setContactUrl(latestContactUrl)
 
     setSavingSection(section)
     setStatusBanner(`saving-${section}`)
@@ -341,6 +351,7 @@ export default function AdminShowcasePage() {
           albumPreviews: latestAlbumLink ? [{ title: '', imageUrl: '', link: latestAlbumLink }] : [],
           flipbookPreviewUrl: latestFlipbookLink,
           target: latestFonnteTarget,
+          contactUrl: latestContactUrl,
         }),
       })
       const data = (await res.json().catch(() => ({}))) as unknown
@@ -616,6 +627,44 @@ export default function AdminShowcasePage() {
             inert={activeTab !== 'phygital' ? true : undefined}
           >
             <div>
+              {/* Contact URL */}
+              <div className="rounded-2xl border-2 border-slate-900 dark:border-slate-700 bg-amber-50 dark:bg-slate-800 p-6 md:p-8 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] relative overflow-hidden group max-w-2xl mb-8">
+                <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                  <MessageCircle className="w-16 h-16 text-amber-300 dark:text-amber-900" />
+                </div>
+                <div className="relative">
+                  <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                    <MessageCircle className="w-4 h-4" />
+                    Contact Button URL
+                  </h3>
+                  <p className="text-[13px] font-bold text-slate-600 dark:text-slate-300 mb-4 leading-relaxed">
+                    URL untuk tombol Contact di landing page (muncul terus di kanan bawah). Contoh: <br />
+                    <code className="text-amber-700 dark:text-amber-300 bg-white/60 dark:bg-slate-900/60 px-1.5 py-0.5 rounded border border-amber-200 dark:border-amber-700">
+                      https://wa.me/628xxxxxxxxxx
+                    </code>
+                  </p>
+                  <div className="relative">
+                    <input
+                      ref={contactInputRef}
+                      type="text"
+                      value={contactUrl}
+                      onChange={(e) => setContactUrl(e.target.value)}
+                      placeholder="https://wa.me/628xxxxxxxxxx"
+                      className="w-full px-5 py-4 text-sm font-bold rounded-2xl bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-4 focus:ring-amber-200 dark:focus:ring-amber-900 transition-all shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] focus:shadow-none"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleSaveSection('contact')}
+                    disabled={savingSection !== null}
+                    className="mt-4 w-full flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-amber-400 dark:bg-amber-700 text-slate-900 dark:text-white border-2 border-slate-900 dark:border-slate-700 text-sm font-bold hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] transition-all disabled:opacity-50"
+                  >
+                    {savingSection === 'contact' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                    Simpan Contact URL
+                  </button>
+                </div>
+              </div>
+
               {/* Fonnte WhatsApp Target */}
               <div className="rounded-2xl border-2 border-slate-900 dark:border-slate-700 bg-green-50 dark:bg-slate-800 p-6 md:p-8 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] relative overflow-hidden group max-w-2xl">
                 <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">

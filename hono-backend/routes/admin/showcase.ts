@@ -31,6 +31,10 @@ function normalizeShowcaseLink(value: string): string {
   }
 }
 
+function normalizeContactUrl(value: string): string {
+  return value.trim()
+}
+
 function requireDb(c: { env: unknown }): D1Database | null {
   return (c.env as { DB?: D1Database }).DB ?? null
 }
@@ -84,7 +88,8 @@ adminShowcase.put('/', async (c) => {
     typeof body?.flipbookPreviewUrl === 'string'
       ? normalizeShowcaseLink(body.flipbookPreviewUrl)
       : ''
-  const showcasePayload: ShowcasePayload = { albumPreviews, flipbookPreviewUrl }
+  const contactUrl = typeof body?.contactUrl === 'string' ? normalizeContactUrl(body.contactUrl) : ''
+  const showcasePayload: ShowcasePayload = { albumPreviews, flipbookPreviewUrl, contactUrl }
 
   // Fonnte config payload
   const target = typeof body?.target === 'string' ? body.target.trim() : ''
