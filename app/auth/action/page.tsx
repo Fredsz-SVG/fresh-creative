@@ -89,7 +89,7 @@ function AuthActionContent() {
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
-                  Memverifikasi Email...
+                  {searchParams.get('mode') === 'resetPassword' ? 'Memproses Permintaan...' : 'Memverifikasi Email...'}
                 </h1>
                 <p className="text-slate-500 dark:text-slate-400">
                   Mohon tunggu sebentar, kami sedang memproses permintaan Anda.
