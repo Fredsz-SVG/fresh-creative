@@ -1,6 +1,7 @@
 'use client';
 
-import { type PropsWithChildren } from "react";
+import { type PropsWithChildren, useState, useEffect } from "react";
+import { Images, X, ChevronRight, ChevronLeft } from "lucide-react";
 
 function BentoCardWrap({ children, className = "" }: PropsWithChildren<{ className?: string }>) {
   return (
@@ -15,9 +16,10 @@ interface BentoCardProps {
   src: string;
   title: React.ReactNode;
   description?: string;
+  action?: React.ReactNode;
 }
 
-function BentoCard({ media, src, title, description }: BentoCardProps) {
+function BentoCard({ media, src, title, description, action }: BentoCardProps) {
   return (
     <article className="relative size-full group">
       {/* Media layer */}
@@ -73,17 +75,24 @@ function BentoCard({ media, src, title, description }: BentoCardProps) {
 
       {/* Content */}
       <div className="relative z-20 flex size-full flex-col justify-end p-6 md:p-8">
-        <div>
-          <h2 
-            className="font-zentry text-2xl md:text-3xl lg:text-4xl text-white uppercase tracking-tight drop-shadow-lg leading-none"
-            style={{ WebkitTextStroke: '1px black' } as any}
-          >
-            {title}
-          </h2>
-          {description && (
-            <p className="mt-2 md:mt-3 max-w-sm font-general text-sm md:text-base font-bold text-slate-200 drop-shadow-md leading-relaxed">
-              {description}
-            </p>
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-4">
+          <div>
+            <h2 
+              className="font-zentry text-2xl md:text-3xl lg:text-4xl text-white uppercase tracking-tight drop-shadow-lg leading-none"
+              style={{ WebkitTextStroke: '1px black' } as any}
+            >
+              {title}
+            </h2>
+            {description && (
+              <p className="mt-2 md:mt-3 max-w-sm font-general text-sm md:text-base font-bold text-slate-200 drop-shadow-md leading-relaxed">
+                {description}
+              </p>
+            )}
+          </div>
+          {action && (
+            <div className="shrink-0 pointer-events-auto z-30">
+              {action}
+            </div>
           )}
         </div>
       </div>
@@ -92,6 +101,37 @@ function BentoCard({ media, src, title, description }: BentoCardProps) {
 }
 
 export function Features() {
+  const [showGallery, setShowGallery] = useState(false);
+  
+  // Nanti array ini bisa ditambah dengan URL foto-foto lainnya
+  const galleryImages = [
+    "/img/yearbooks.png",
+    // "/img/foto2.jpg",
+    // "/img/foto3.jpg",
+  ];
+  
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  // Mencegah scroll pada halaman utama saat popup terbuka
+  useEffect(() => {
+    if (showGallery) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [showGallery]);
+
+  const handleNext = () => {
+    setCurrentIndex((prev) => (prev + 1) % galleryImages.length);
+  };
+
+  const handlePrev = () => {
+    setCurrentIndex((prev) => (prev - 1 + galleryImages.length) % galleryImages.length);
+  };
+
   return (
     <section
       id="features"
@@ -115,6 +155,18 @@ export function Features() {
             src="/img/yearbooks.png"
             title={<>YEARBOOK</>}
             description="What can we do?"
+            action={
+              <button 
+                onClick={(e) => {
+                  e.preventDefault();
+                  setShowGallery(true);
+                }}
+                className="flex items-center gap-2 bg-black/60 hover:bg-black/90 backdrop-blur-md text-white px-5 py-3 rounded-full font-bold transition-all duration-300 border border-white/20 hover:scale-105 shadow-xl"
+              >
+                <Images size={20} />
+                Lihat Gallery
+              </button>
+            }
           />
         </BentoCardWrap>
 
@@ -143,6 +195,50 @@ export function Features() {
 
         </div>
       </div>
+
+      {/* Gallery Popup Overlay */}
+      {showGallery && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 backdrop-blur-md p-4 animate-in fade-in duration-300">
+          <button 
+            onClick={() => setShowGallery(false)}
+            className="absolute top-6 right-6 text-white/70 hover:text-white bg-white/10 hover:bg-white/20 p-3 rounded-full transition-colors z-50 backdrop-blur-sm"
+          >
+            <X size={28} />
+          </button>
+
+          <div className="relative w-full max-w-7xl h-[85vh] flex items-center justify-center">
+            {galleryImages.length > 1 && (
+              <button 
+                onClick={handlePrev}
+                className="absolute left-2 md:left-8 text-white/70 hover:text-white bg-white/10 hover:bg-white/20 p-4 rounded-full transition-all z-10 hover:scale-110 backdrop-blur-sm"
+              >
+                <ChevronLeft size={32} />
+              </button>
+            )}
+
+            <img 
+              src={galleryImages[currentIndex]} 
+              alt={`Gallery Image ${currentIndex + 1}`}
+              className="max-w-full max-h-full object-contain rounded-2xl shadow-2xl transition-opacity duration-300"
+            />
+
+            {galleryImages.length > 1 && (
+              <button 
+                onClick={handleNext}
+                className="absolute right-2 md:right-8 text-white/70 hover:text-white bg-white/10 hover:bg-white/20 p-4 rounded-full transition-all z-10 hover:scale-110 backdrop-blur-sm"
+              >
+                <ChevronRight size={32} />
+              </button>
+            )}
+            
+            {galleryImages.length > 1 && (
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/80 backdrop-blur-md px-5 py-2 rounded-full text-white text-sm font-bold tracking-widest border border-white/10">
+                {currentIndex + 1} / {galleryImages.length}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </section>
   );
 }
