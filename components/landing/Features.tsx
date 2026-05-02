@@ -106,8 +106,12 @@ export function Features() {
   // Nanti array ini bisa ditambah dengan URL foto-foto lainnya
   const galleryImages = [
     "/img/yearbooks.png",
-    // "/img/foto2.jpg",
-    // "/img/foto3.jpg",
+    "/img/yearbook-1.png",
+    "/img/yearbook-2.png",
+    "/img/yearbook-3.png",
+    "/img/sesifoto.webp",
+    "/img/organizer.webp",
+    "/img/about.webp",
   ];
   
   const [currentIndex, setCurrentIndex] = useState(0);
