@@ -211,8 +211,14 @@ function LoginContent() {
         const q = nextPath ? `?next=${encodeURIComponent(nextPath)}` : ''
         router.push(`/auth/verify-otp${q}`)
       }
-    } catch {
-      setError('Unexpected error occurred')
+    } catch (err: any) {
+      if (err.code === 'auth/invalid-credential' || err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') {
+        setError('Email atau password salah, atau akun belum terdaftar.')
+      } else if (err.code === 'auth/too-many-requests') {
+        setError('Terlalu banyak percobaan gagal. Silakan coba lagi nanti.')
+      } else {
+        setError('Terjadi kesalahan. Silakan coba lagi.')
+      }
     } finally {
       setLoading(false)
     }
@@ -223,8 +229,12 @@ function LoginContent() {
     setError('')
     try {
       await signInWithGoogle()
-    } catch {
-      setError('Unexpected error occurred')
+    } catch (err: any) {
+      if (err.code === 'auth/popup-closed-by-user') {
+        setError('Login dibatalkan.')
+      } else {
+        setError('Gagal login dengan Google. Coba lagi.')
+      }
     } finally {
       setGoogleLoading(false)
     }

@@ -26,9 +26,14 @@ function AuthActionContent() {
       !window.location.origin.includes('localhost') && 
       continueUrl?.startsWith('http://localhost')
     ) {
-      // Redirect ke localhost agar dev experience tetap mulus
-      window.location.href = `${continueUrl}/auth/action?mode=${mode}&oobCode=${oobCode}&apiKey=${apiKey}`
-      return
+      try {
+        const continueOrigin = new URL(continueUrl).origin
+        // Redirect ke localhost agar dev experience tetap mulus
+        window.location.href = `${continueOrigin}/auth/action?mode=${mode}&oobCode=${oobCode}&apiKey=${apiKey}`
+        return
+      } catch (e) {
+        // ignore if not valid URL
+      }
     }
 
     if (!mode || !oobCode) {
