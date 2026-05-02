@@ -25,6 +25,12 @@ function SignUpContent() {
         if (!cancelled) setCheckingSession(false)
         return
       }
+      if (!user.emailVerified) {
+        await fetchWithAuth('/api/auth/logout')
+        import('@/lib/auth-client').then((m) => m.signOut())
+        if (!cancelled) setCheckingSession(false)
+        return
+      }
       try {
         const resBootstrap = await fetchWithAuth('/api/user/bootstrap')
         const bootstrap = (await resBootstrap.json().catch(() => ({}))) as {
@@ -60,7 +66,7 @@ function SignUpContent() {
 
     try {
       await signUpWithPassword({ email, password, fullName })
-      toast.success('Registrasi berhasil! Silakan cek email untuk verifikasi (jika diaktifkan), lalu login.')
+      toast.success('Registrasi berhasil! Silakan cek email untuk verifikasi, lalu login.')
         setTimeout(() => {
           router.push('/login')
         }, 2000)

@@ -13,6 +13,21 @@ function LoginContent() {
   const [checkingSession, setCheckingSession] = useState(true)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+
+  useEffect(() => {
+    const savedEmail = sessionStorage.getItem('login_email')
+    const savedPassword = sessionStorage.getItem('login_password')
+    if (savedEmail) setEmail(savedEmail)
+    if (savedPassword) setPassword(savedPassword)
+  }, [])
+
+  useEffect(() => {
+    sessionStorage.setItem('login_email', email)
+  }, [email])
+
+  useEffect(() => {
+    sessionStorage.setItem('login_password', password)
+  }, [password])
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
@@ -84,6 +99,20 @@ function LoginContent() {
         return
       }
 
+      if (!user.emailVerified) {
+        await fetchWithAuth('/api/auth/logout')
+        await signOut()
+        if (!cancelled) {
+          setPopupState({
+            show: true,
+            title: 'Email Belum Diverifikasi',
+            message: 'Silakan cek kotak masuk email Anda (atau folder Spam) dan klik link verifikasi sebelum login.',
+          })
+          setCheckingSession(false)
+        }
+        return
+      }
+
       try {
         const resBootstrap = await fetchWithAuth('/api/user/bootstrap')
         const bootstrap = (await resBootstrap.json().catch(() => ({}))) as {
@@ -144,6 +173,18 @@ function LoginContent() {
 
       if (!user) {
         setError('Login gagal. Silakan coba lagi.')
+        return
+      }
+
+      if (!user.emailVerified) {
+        await fetchWithAuth('/api/auth/logout')
+        await signOut()
+        setPopupState({
+          show: true,
+          title: 'Email Belum Diverifikasi',
+          message: 'Silakan cek kotak masuk email Anda (atau folder Spam) dan klik link verifikasi sebelum login.',
+        })
+        setLoading(false)
         return
       }
 

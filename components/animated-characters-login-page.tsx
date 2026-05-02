@@ -196,6 +196,16 @@ export function AnimatedLoginPage({
   googleLoading = false,
 }: AnimatedLoginProps) {
   const [isTyping, setIsTyping] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
+
+  useEffect(() => {
+    const savedTerms = sessionStorage.getItem('login_terms')
+    if (savedTerms === 'true') setTermsAccepted(true)
+  }, [])
+
+  useEffect(() => {
+    sessionStorage.setItem('login_terms', termsAccepted.toString())
+  }, [termsAccepted])
   const [isLookingAtEachOther, setIsLookingAtEachOther] = useState(false);
   const [isPurplePeeking, setIsPurplePeeking] = useState(false);
   const [isPurpleBlinking, setIsPurpleBlinking] = useState(false);
@@ -492,7 +502,11 @@ export function AnimatedLoginPage({
             <p className="text-slate-500 dark:text-slate-400 text-xs">Silakan masukkan detail Anda</p>
           </div>
 
-          <form onSubmit={onSubmit} className="space-y-3">
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            if (!termsAccepted) return;
+            onSubmit(e);
+          }} className="space-y-3">
             <div className="space-y-1.5">
               <Label htmlFor="email" className="text-xs font-medium text-slate-700 dark:text-slate-300">Email</Label>
               <Input
@@ -537,9 +551,13 @@ export function AnimatedLoginPage({
 
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
-                <Checkbox id="remember" />
-                <Label htmlFor="remember" className="text-xs font-normal cursor-pointer text-slate-600 dark:text-slate-400">
-                  Ingat saya
+                <Checkbox 
+                  id="terms" 
+                  checked={termsAccepted}
+                  onCheckedChange={(checked) => setTermsAccepted(checked === true)}
+                />
+                <Label htmlFor="terms" className="text-xs font-normal cursor-pointer text-slate-600 dark:text-slate-400">
+                  <a href="/terms" className="text-sky-500 hover:underline">Syarat & Ketentuan</a>
                 </Label>
               </div>
               <a href="/forgot-password" className="text-xs text-sky-500 hover:underline font-bold dark:text-sky-400">
@@ -556,7 +574,7 @@ export function AnimatedLoginPage({
             <Button
               type="submit"
               className="w-full h-10 text-sm font-bold bg-sky-500 hover:bg-sky-600 text-white disabled:opacity-50"
-              disabled={isLoading}
+              disabled={isLoading || !termsAccepted}
             >
               {isLoading ? "Memproses..." : "Masuk"}
             </Button>
@@ -569,7 +587,7 @@ export function AnimatedLoginPage({
                 className="w-full h-10 text-sm bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800"
                 type="button"
                 onClick={onGoogleLogin}
-                disabled={googleLoading || isLoading}
+                disabled={googleLoading || isLoading || !termsAccepted}
               >
                 <svg className="mr-2 size-4" viewBox="0 0 24 24" aria-hidden>
                   <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
