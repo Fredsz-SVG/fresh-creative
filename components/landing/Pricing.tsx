@@ -547,8 +547,12 @@ export function Pricing() {
         <>
         {!showFisikEstimator ? (
           <div className="mx-auto max-w-3xl rounded-[1.5rem] sm:rounded-[2.5rem] border-2 border-slate-900 dark:border-[#5cecff]/25 bg-white dark:bg-[#0d1148]/90 shadow-[4px_4px_0_0_#334155] dark:shadow-neo-glow p-5 sm:p-8 md:p-12">
-            <h3 className="font-sans text-lg sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white mb-2 sm:mb-3 flex items-center gap-3">
-              <span className="h-6 sm:h-8 w-2 bg-lime-500" /> Data Awal Phygital (Buku Fisik & Digital)
+            <h3 className="font-sans text-lg sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white mb-2 sm:mb-3 flex items-stretch gap-3">
+              <span className="w-2 bg-lime-500 shrink-0 rounded-sm" />
+              <div className="flex flex-col py-0.5">
+                <span>Data Awal Phygital</span>
+                <span className="text-[13px] sm:text-base text-slate-500 dark:text-slate-400 font-bold mt-0.5">(Buku Fisik &amp; Digital)</span>
+              </div>
             </h3>
             <p className="text-xs sm:text-sm text-slate-600 dark:text-white/70 mb-6 sm:mb-8">
               Lengkapi data berikut terlebih dulu untuk melanjutkan ke perhitungan estimasi.
