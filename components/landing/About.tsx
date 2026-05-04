@@ -362,7 +362,7 @@ export function About() {
             <div className="group relative p-8 sm:p-10 rounded-tr-[40px] rounded-bl-[40px] rounded-tl-xl rounded-br-xl bg-gradient-to-bl from-sky-300 to-sky-100 dark:from-[#1a0d4a] dark:to-[#0d1148] border-2 border-slate-900 dark:border-[#5cecff]/25 shadow-[3px_3px_0_0_#334155] dark:shadow-neo-glow transition-all duration-300 hover:-translate-x-0.5 hover:-translate-y-0.5 isolation z-10 hover:z-20">
               <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl bg-sky-400 dark:bg-[#5cecff]/15 border-2 border-sky-500 dark:border-[#5cecff]/40 shadow-md flex items-center justify-center mb-6 sm:mb-8 overflow-hidden shrink-0">
                 <DotLottieReact
-                  src="/lottie/sparkle.json"
+                  src="/lottie/photovideo.json"
                   loop
                   autoplay
                   className="w-full h-full p-2 sm:p-3 dark:bg-white/25 dark:rounded-lg"
