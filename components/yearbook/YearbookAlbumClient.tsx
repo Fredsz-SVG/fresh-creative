@@ -1563,8 +1563,13 @@ export default function YearbookAlbumClient({
         {/* Sticky Header - BackLink + judul section sejajar (mobile + desktop) */}
         {showBackLink && (
           <div className="flex sticky top-0 z-50 bg-amber-300 dark:bg-slate-900 border-b-2 border-slate-900 dark:border-slate-700 px-3 lg:px-4 h-14 items-center gap-3 lg:gap-4 shadow-[0_2.5px_0_0_#0f172a] dark:shadow-[0_2.5px_0_0_#334155]">
-            {/* Mobile: compact back arrow */}
-            <Link href={isAiLabsToolActive ? aiLabsBackHref : effectiveBackHref} className="lg:hidden inline-flex items-center justify-center w-9 h-9 bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all">
+            <Link 
+              href={isAiLabsToolActive ? aiLabsBackHref : effectiveBackHref} 
+              prefetch={true}
+              scroll={false}
+              onTouchStart={() => { try { router.prefetch(isAiLabsToolActive ? aiLabsBackHref : effectiveBackHref) } catch {} }}
+              className="lg:hidden inline-flex items-center justify-center w-9 h-9 bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all"
+            >
               <ChevronLeft className="w-5 h-5" />
             </Link>
             {/* Desktop: full BackLink (tetap di kiri, tanpa margin bawah agar sejajar vertikal) */}
