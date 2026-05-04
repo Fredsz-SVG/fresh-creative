@@ -19,13 +19,13 @@ export function About() {
       // Ganti path di bawah ke gambar asli saat sudah ada di `public/`.
       ootd: {
         title: "AI Fashion & OOTD",
-        beforeSrc: "/img/tryon-1.jpg.webp",
-        afterSrc: "/img/tryon-2.jpg.webp",
+        beforeSrc: "/img/tryon-1.webp",
+        afterSrc: "/img/tryon-2.webp",
       },
       thematic: {
         title: "Thematic Transformation",
-        beforeSrc: "/img/thema-1.jpg.webp",
-        afterSrc: "/img/thema-2.jpg.webp",
+        beforeSrc: "/img/thema-1.webp",
+        afterSrc: "/img/thema-2.webp",
       },
     }),
     []
