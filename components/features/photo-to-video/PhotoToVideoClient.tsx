@@ -11,7 +11,7 @@ const DEFAULT_MOTION_PROMPT =
 const PTV_MIN = 2;
 const PTV_MAX = 12;
 
-export default function PhotoToVideo() {
+export default function PhotoToVideo({ creditCost }: { creditCost?: number }) {
   const [photo, setPhoto] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [prompt, setPrompt] = useState("");
@@ -26,7 +26,7 @@ export default function PhotoToVideo() {
   const [downloading, setDownloading] = useState(false);
   const [durationCredits, setDurationCredits] = useState<Record<number, number>>({});
   const [allowedDurations, setAllowedDurations] = useState<number[]>([5, 10]);
-  const [fallbackCredits, setFallbackCredits] = useState(0);
+  const [fallbackCredits, setFallbackCredits] = useState(creditCost ?? 0);
 
   useEffect(() => {
     let cancelled = false;

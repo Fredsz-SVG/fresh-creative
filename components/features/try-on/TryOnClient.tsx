@@ -15,7 +15,7 @@ interface ProductItem {
   id: number
 }
 
-export default function TryOn() {
+export default function TryOn({ creditCost }: { creditCost?: number }) {
   const [personImage, setPersonImage] = useState<File | null>(null)
   const [products, setProducts] = useState<ProductItem[]>([])
   const [personPreview, setPersonPreview] = useState<string | null>(null)
@@ -23,7 +23,7 @@ export default function TryOn() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [downloadingIndex, setDownloadingIndex] = useState<number | null>(null)
-  const [creditsPerGenerate, setCreditsPerGenerate] = useState<number | null>(null)
+  const [creditsPerGenerate, setCreditsPerGenerate] = useState<number | null>(creditCost ?? null)
 
   useEffect(() => {
     let cancelled = false

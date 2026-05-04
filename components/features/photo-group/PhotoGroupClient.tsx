@@ -13,7 +13,7 @@ interface Subject {
 
 const MAX_SUBJECTS = 10;
 
-export default function PhotoGroup() {
+export default function PhotoGroup({ creditCost }: { creditCost?: number }) {
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [result, setResult] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -22,7 +22,7 @@ export default function PhotoGroup() {
   /** Instruksi tambahan: nomor foto (urutan upload) untuk ubah baju/latar per orang, dll. */
   const [notes, setNotes] = useState<string>('');
   const [downloading, setDownloading] = useState(false);
-  const [creditsPerGenerate, setCreditsPerGenerate] = useState<number | null>(null);
+  const [creditsPerGenerate, setCreditsPerGenerate] = useState<number | null>(creditCost ?? null);
 
   useEffect(() => {
     let cancelled = false;

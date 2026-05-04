@@ -5,7 +5,7 @@ import { downloadImageWithWatermark } from '@/lib/download-image';
 import { fetchWithAuth } from '@/lib/api-client'
 import { asObject, asString } from '@/components/yearbook/utils/response-narrowing'
 
-export default function Pose() {
+export default function Pose({ creditCost }: { creditCost?: number }) {
   const [subject, setSubject] = useState<File | null>(null);
   const [subjectPreview, setSubjectPreview] = useState<string | null>(null);
   const [results, setResults] = useState<string[]>([]);
@@ -13,7 +13,7 @@ export default function Pose() {
   const [error, setError] = useState<string | null>(null);
   const [prompt, setPrompt] = useState<string>('');
   const [downloadingIndex, setDownloadingIndex] = useState<number | null>(null);
-  const [creditsPerGenerate, setCreditsPerGenerate] = useState<number | null>(null);
+  const [creditsPerGenerate, setCreditsPerGenerate] = useState<number | null>(creditCost ?? null);
 
   useEffect(() => {
     let cancelled = false;

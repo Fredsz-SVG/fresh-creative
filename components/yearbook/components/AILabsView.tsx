@@ -184,15 +184,15 @@ export default function AILabsView({ album, aiLabsTool, aiLabsFeaturesByPackage 
             )
         }
 
-        const renderTool = (Tool: React.ComponentType) => (
+        const renderTool = (Tool: React.ComponentType<any>) => (
             <div className="max-w-5xl mx-auto px-3 py-3 sm:p-4">
-                <Tool />
+                <Tool creditCost={getFeatureCreditCost(aiLabsTool)} />
             </div>
         )
 
         if (aiLabsTool === 'tryon') return renderTool(TryOn)
         if (aiLabsTool === 'pose') return renderTool(Pose)
-        if (aiLabsTool === 'image-editor') return <ImageEditor />
+        if (aiLabsTool === 'image-editor') return <ImageEditor creditCost={getFeatureCreditCost(aiLabsTool)} />
         if (aiLabsTool === 'photogroup') return renderTool(PhotoGroup)
         if (aiLabsTool === 'phototovideo') return renderTool(PhotoToVideo)
     }
