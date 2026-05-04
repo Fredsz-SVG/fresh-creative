@@ -212,17 +212,6 @@ overview.put('/', async (c) => {
   return c.json(row)
 })
 
-overview.delete('/', async (c) => {
-  const ctx = await verifyAdmin(c)
-  if (ctx instanceof Response) return ctx
-  const { db } = ctx
-  const body = await c.req.json().catch(() => ({}))
-  const id = typeof body?.id === 'string' ? body.id : ''
-  if (!id) return c.json({ error: 'Invalid payload' }, 400)
-  // NOTE: Auth user deletion is not handled here (Firebase Admin SDK isn't available on Workers).
-  // This deletes the app profile row only.
-  await db.prepare(`DELETE FROM users WHERE id = ?`).bind(id).run()
-  return c.json({ success: true })
-})
+
 
 export default overview

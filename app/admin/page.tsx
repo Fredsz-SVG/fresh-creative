@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { Pencil, X, Sparkles, Trash2, ShieldCheck, UserCheck, LayoutDashboard, RefreshCw } from 'lucide-react'
+import { Pencil, X, Sparkles, Trash2, ShieldCheck, UserCheck, LayoutDashboard, RefreshCw, Ban } from 'lucide-react'
 import { apiUrl } from '../../lib/api-url'
 import { fetchWithAuth } from '../../lib/api-client'
 import { onAuthChange } from '@/lib/auth-client'
@@ -32,7 +32,6 @@ export default function AdminPage() {
   const [editUserId, setEditUserId] = useState<string | null>(null)
   const [editCredits, setEditCredits] = useState('')
   const [savingId, setSavingId] = useState<string | null>(null)
-  const [deletingId, setDeletingId] = useState<string | null>(null)
   const [currentAdminId, setCurrentAdminId] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [roleFilter, setRoleFilter] = useState<'admin' | null>(null)
@@ -283,61 +282,6 @@ export default function AdminPage() {
     })
   }
 
-  const handleDeleteUser = async (userId: string) => {
-    openConfirm({
-      title: 'Hapus Akun User',
-      description: 'Tindakan ini tidak dapat dibatalkan.',
-      confirmText: 'Hapus',
-      variant: 'danger',
-      onConfirm: async () => {
-        setDeletingId(userId)
-        try {
-          const res = await fetchWithAuth('/api/admin/users/overview', {
-            method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id: userId }),
-          })
-          const data = (await res.json().catch(() => null)) as unknown
-          if (!res.ok) {
-            const err = (data && typeof data === 'object' && !Array.isArray(data) ? (data as any).error : undefined) as
-              | string
-              | undefined
-            alert(err || 'Gagal menghapus user')
-            return
-          }
-          setStats((prev) => {
-            if (!prev) return prev
-            const users = prev.latestUsers.filter((u) => u.id !== userId)
-            const totalUsers = users.length
-            const totalAdmins = users.filter((u) => u.role === 'admin').length
-            const totalCredits = users.reduce(
-              (sum, u) => sum + (typeof u.credits === 'number' ? u.credits : 0),
-              0
-            )
-            const now = new Date()
-            const since = new Date(now)
-            since.setDate(now.getDate() - 7)
-            const newUsers7d = users.filter((u) => {
-              if (!u.created_at) return false
-              const created = new Date(u.created_at)
-              return created >= since
-            }).length
-            return {
-              ...prev,
-              latestUsers: users,
-              totalUsers,
-              totalAdmins,
-              totalCredits,
-              newUsers7d,
-            }
-          })
-        } finally {
-          setDeletingId(null)
-        }
-      },
-    })
-  }
-
   const handleChangeRole = async (userId: string, nextRole: 'user' | 'admin') => {
     openConfirm({
       title: nextRole === 'admin' ? 'Jadikan Admin' : 'Jadikan User',
@@ -569,16 +513,9 @@ export default function AdminPage() {
                     <button
                       onClick={() => handleSuspendUser(u.id, !!u.is_suspended)}
                       disabled={savingId === u.id}
-                      className={`px-3 py-2 border-2 border-slate-900 dark:border-slate-700 rounded-xl text-[10px] font-black uppercase transition-colors disabled:opacity-50 ${u.is_suspended ? 'bg-emerald-300 dark:bg-emerald-700 text-slate-900 dark:text-white' : 'bg-amber-300 dark:bg-amber-700 text-slate-900 dark:text-white'}`}
+                      className={`col-span-2 px-3 py-2 border-2 border-slate-900 dark:border-slate-700 rounded-xl text-[10px] font-black uppercase transition-colors disabled:opacity-50 ${u.is_suspended ? 'bg-emerald-300 dark:bg-emerald-700 text-slate-900 dark:text-white' : 'bg-amber-300 dark:bg-amber-700 text-slate-900 dark:text-white'}`}
                     >
                       {u.is_suspended ? 'Unsuspend' : 'Suspend'}
-                    </button>
-                    <button
-                      onClick={() => handleDeleteUser(u.id)}
-                      disabled={deletingId === u.id}
-                      className="col-span-2 px-3 py-2 bg-red-400 border-2 border-slate-900 dark:border-slate-700 text-white rounded-xl text-[10px] font-black uppercase hover:bg-red-500 transition-all disabled:opacity-50"
-                    >
-                      {deletingId === u.id ? 'Deleting...' : 'Delete User'}
                     </button>
                   </>
                 )}
@@ -696,14 +633,7 @@ export default function AdminPage() {
                             className={`p-2 rounded-xl border-2 border-slate-900 shadow-[2px_2px_0_0_#0f172a] hover:shadow-none transition-all ${u.is_suspended ? 'bg-emerald-300 text-slate-900' : 'bg-amber-300 text-slate-900'}`}
                             title={u.is_suspended ? 'Unsuspend User' : 'Suspend User'}
                           >
-                            {u.is_suspended ? <Sparkles size={16} strokeWidth={3} /> : <X size={16} strokeWidth={3} />}
-                          </button>
-                          <button
-                            onClick={() => handleDeleteUser(u.id)}
-                            className="p-2 bg-red-400 text-white rounded-xl border-2 border-slate-900 shadow-[2px_2px_0_0_#0f172a] hover:shadow-none transition-all"
-                            title="Delete Account"
-                          >
-                            <Trash2 size={16} strokeWidth={3} />
+                            {u.is_suspended ? <UserCheck size={16} strokeWidth={3} /> : <Ban size={16} strokeWidth={3} />}
                           </button>
                         </>
                       )}
