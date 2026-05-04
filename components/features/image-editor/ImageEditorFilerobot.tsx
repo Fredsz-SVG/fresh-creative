@@ -696,13 +696,13 @@ const ImageEditor: React.FC<EditorProps> = ({
 
 // ============== Main Default Component ==============
 
-export default function ImageEditorFilerobot() {
+export default function ImageEditorFilerobot({ creditCost }: { creditCost?: number }) {
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
   const [editedImage, setEditedImage] = useState<string | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const [creditsPerRemoveBg, setCreditsPerRemoveBg] = useState<number | null>(null)
+  const [creditsPerRemoveBg, setCreditsPerRemoveBg] = useState<number | null>(creditCost ?? null)
   const [currentCredits, setCurrentCredits] = useState<number | null>(null)
   const [removeBgState, setRemoveBgState] = useState<'idle' | 'removing' | 'error'>('idle')
   /** Setelah Remove BG sukses — tampilkan opsi upload / warna solid. */

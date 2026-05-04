@@ -20,7 +20,7 @@ const ImageEditorFilerobot = dynamic(() => import('./ImageEditorFilerobot'), {
   ),
 })
 
-export default function ImageEditorClient() {
-  return <ImageEditorFilerobot />
+export default function ImageEditorClient({ creditCost }: { creditCost?: number }) {
+  return <ImageEditorFilerobot creditCost={creditCost} />
 }
 
