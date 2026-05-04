@@ -156,7 +156,7 @@ export default function AILabsView({ album, aiLabsTool, aiLabsFeaturesByPackage 
                             <div className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-[32px] p-6 sm:p-8 max-w-sm w-full shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] text-center">
                                 <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight mb-2">Buka Fitur AI</h3>
                                 <p className="text-sm font-bold text-slate-500 dark:text-slate-400 mb-6">
-                                    Yakin tidak? Unlock fitur ini akan menggunakan {getFeatureCreditCost(aiLabsTool)} credit.
+                                    Yakin tidak? Unlock fitur ini akan menggunakan {getFeatureCreditCost(confirmUnlockToolSlug ?? '') ?? 0} credit.
                                 </p>
                                 <div className="flex gap-3">
                                     <button
@@ -186,13 +186,13 @@ export default function AILabsView({ album, aiLabsTool, aiLabsFeaturesByPackage 
 
         const renderTool = (Tool: React.ComponentType<any>) => (
             <div className="max-w-5xl mx-auto px-3 py-3 sm:p-4">
-                <Tool creditCost={getFeatureCreditCost(aiLabsTool)} />
+                <Tool creditCost={getFeatureCreditCost(aiLabsTool) ?? 0} />
             </div>
         )
 
         if (aiLabsTool === 'tryon') return renderTool(TryOn)
         if (aiLabsTool === 'pose') return renderTool(Pose)
-        if (aiLabsTool === 'image-editor') return <ImageEditor creditCost={getFeatureCreditCost(aiLabsTool)} />
+        if (aiLabsTool === 'image-editor') return <ImageEditor creditCost={getFeatureCreditCost(aiLabsTool) ?? 0} />
         if (aiLabsTool === 'photogroup') return renderTool(PhotoGroup)
         if (aiLabsTool === 'phototovideo') return renderTool(PhotoToVideo)
     }

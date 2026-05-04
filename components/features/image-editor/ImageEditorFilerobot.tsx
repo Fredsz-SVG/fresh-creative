@@ -702,7 +702,7 @@ export default function ImageEditorFilerobot({ creditCost }: { creditCost?: numb
   const [isProcessing, setIsProcessing] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const [creditsPerRemoveBg, setCreditsPerRemoveBg] = useState<number | null>(creditCost ?? null)
+  const creditsPerRemoveBg = creditCost ?? 0
   const [currentCredits, setCurrentCredits] = useState<number | null>(null)
   const [removeBgState, setRemoveBgState] = useState<'idle' | 'removing' | 'error'>('idle')
   /** Setelah Remove BG sukses — tampilkan opsi upload / warna solid. */
@@ -716,28 +716,6 @@ export default function ImageEditorFilerobot({ creditCost }: { creditCost?: numb
   const [editorSessionKey, setEditorSessionKey] = useState(0)
   /** Potongan PNG transparan hasil Remove BG — dipakai untuk ganti BG solid/upload & kembali transparan. */
   const [transparentCutoutUrl, setTransparentCutoutUrl] = useState<string | null>(null)
-
-  // Fetch Pricing for "Remove BG"
-  useEffect(() => {
-    let cancelled = false
-    const loadPricing = async () => {
-      try {
-        const res = await fetchWithAuth('/api/admin/ai-edit')
-        if (!res.ok) return
-        const data = await res.json()
-        if (!Array.isArray(data)) return
-        const item = data.find((p: any) => p.feature_slug === 'image_remove_bg')
-        if (!item || cancelled) return
-        if (typeof item.credits_per_use === 'number') {
-          setCreditsPerRemoveBg(item.credits_per_use)
-        }
-      } catch {
-        // ignore
-      }
-    }
-    loadPricing()
-    return () => { cancelled = true }
-  }, [])
 
   // Fetch current user credits (refresh when editor opens, and on credits-updated event)
   const refreshCurrentCredits = useCallback(async () => {

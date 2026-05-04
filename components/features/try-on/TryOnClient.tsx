@@ -23,31 +23,7 @@ export default function TryOn({ creditCost }: { creditCost?: number }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [downloadingIndex, setDownloadingIndex] = useState<number | null>(null)
-  const [creditsPerGenerate, setCreditsPerGenerate] = useState<number | null>(creditCost ?? null)
-
-  useEffect(() => {
-    let cancelled = false
-    const loadPricing = async () => {
-      try {
-        const res = await fetchWithAuth('/api/admin/ai-edit')
-        if (!res.ok) return
-        const data = await res.json()
-        if (!Array.isArray(data)) return
-        const item = data.find((p: any) => p.feature_slug === 'tryon')
-        if (!item) return
-        if (cancelled) return
-        if (typeof item.credits_per_use === 'number') {
-          setCreditsPerGenerate(item.credits_per_use)
-        }
-      } catch {
-        // ignore
-      }
-    }
-    loadPricing()
-    return () => {
-      cancelled = true
-    }
-  }, [])
+  const creditsPerGenerate = creditCost ?? 0
 
   const handlePersonUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]

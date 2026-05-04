@@ -22,30 +22,7 @@ export default function PhotoGroup({ creditCost }: { creditCost?: number }) {
   /** Instruksi tambahan: nomor foto (urutan upload) untuk ubah baju/latar per orang, dll. */
   const [notes, setNotes] = useState<string>('');
   const [downloading, setDownloading] = useState(false);
-  const [creditsPerGenerate, setCreditsPerGenerate] = useState<number | null>(creditCost ?? null);
-
-  useEffect(() => {
-    let cancelled = false;
-    const loadPricing = async () => {
-      try {
-        const res = await fetchWithAuth('/api/admin/ai-edit');
-        if (!res.ok) return;
-        const data = await res.json();
-        if (!Array.isArray(data)) return;
-        const item = data.find((p: any) => p.feature_slug === 'photogroup');
-        if (!item || cancelled) return;
-        if (typeof item.credits_per_use === 'number') {
-          setCreditsPerGenerate(item.credits_per_use);
-        }
-      } catch {
-        // ignore
-      }
-    };
-    loadPricing();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const creditsPerGenerate = creditCost ?? 0;
 
   const handleSubjectUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
