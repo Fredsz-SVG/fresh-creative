@@ -1,6 +1,6 @@
 "use client";
-import { useEffect, useState } from "react";
-import { Upload, X, Loader2, Download, Video, Mic } from "lucide-react";
+import { useEffect, useState, useRef } from "react";
+import { Upload, X, Loader2, Download, Video, Mic, StopCircle, Trash2 } from "lucide-react";
 import { downloadFileToDevice } from "@/lib/download-file";
 import { fetchWithAuth } from '@/lib/api-client'
 import { asObject, asString } from '@/components/yearbook/utils/response-narrowing'
@@ -17,6 +17,9 @@ export default function PhotoToVideo() {
   const [prompt, setPrompt] = useState("");
   const [durationSec, setDurationSec] = useState(5);
   const [audioFile, setAudioFile] = useState<File | null>(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const [audioPreviewUrl, setAudioPreviewUrl] = useState<string | null>(null);
   const [videoResult, setVideoResult] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -166,8 +169,51 @@ export default function PhotoToVideo() {
         return;
       }
       setAudioFile(file);
+      setAudioPreviewUrl(URL.createObjectURL(file));
       setError(null);
     }
+  };
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      const chunks: BlobPart[] = [];
+      
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunks.push(e.data);
+      };
+      
+      recorder.onstop = () => {
+        const blob = new Blob(chunks, { type: 'audio/webm' });
+        const file = new File([blob], `rekaman-${Date.now()}.webm`, { type: 'audio/webm' });
+        setAudioFile(file);
+        setAudioPreviewUrl(URL.createObjectURL(file));
+        stream.getTracks().forEach(track => track.stop());
+      };
+      
+      recorder.start();
+      mediaRecorderRef.current = recorder;
+      setIsRecording(true);
+      setError(null);
+    } catch (err) {
+      setError("Akses mikrofon ditolak atau tidak tersedia.");
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+    }
+  };
+
+  const removeAudio = () => {
+    setAudioFile(null);
+    if (audioPreviewUrl) URL.revokeObjectURL(audioPreviewUrl);
+    setAudioPreviewUrl(null);
+    const audioInput = document.getElementById("audio-upload") as HTMLInputElement;
+    if (audioInput) audioInput.value = "";
   };
 
   const handleGenerateVideo = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -322,20 +368,64 @@ export default function PhotoToVideo() {
                 4. Suara asli (opsional) — lip-sync
               </label>
               <p className="text-[10px] text-slate-500 dark:text-slate-400 mb-2 uppercase tracking-widest">
-                Unggah rekaman suara (mp3, wav, atau m4a; maks. 5 MB). Jika ada audio, bibir diselaraskan dengan rekaman tersebut. Jika tidak mengunggah audio, video dihasilkan tanpa suara.
+                Unggah rekaman suara (mp3, wav, atau m4a; maks. 5 MB) atau rekam langsung. Jika ada audio, bibir diselaraskan.
               </p>
               <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                <input
-                  id="audio-upload"
-                  type="file"
-                  accept="audio/mpeg,audio/mp3,audio/wav,audio/x-m4a,audio/mp4,audio/aac,.mp3,.wav,.m4a,.aac"
-                  onChange={handleAudioUpload}
-                  className="text-[10px] sm:text-xs file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-2 file:border-slate-200 dark:file:border-slate-600 file:bg-white dark:file:bg-slate-800 file:font-black file:uppercase"
-                />
-                {audioFile && (
-                  <span className="text-[10px] font-bold text-slate-600 dark:text-slate-300 truncate">
-                    {audioFile.name}
-                  </span>
+                {!audioFile ? (
+                  <>
+                    <input
+                      id="audio-upload"
+                      type="file"
+                      accept="audio/mpeg,audio/mp3,audio/wav,audio/x-m4a,audio/mp4,audio/aac,.mp3,.wav,.m4a,.aac"
+                      onChange={handleAudioUpload}
+                      className="text-[10px] sm:text-xs file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-2 file:border-slate-200 dark:file:border-slate-600 file:bg-white dark:file:bg-slate-800 file:font-black file:uppercase"
+                    />
+                    <div className="flex items-center gap-2 mt-2 sm:mt-0">
+                      <span className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase">ATAU</span>
+                      <button
+                        type="button"
+                        onClick={isRecording ? stopRecording : startRecording}
+                        className={`inline-flex items-center justify-center gap-2 px-3 py-1.5 rounded-lg border-2 font-black text-[10px] sm:text-xs uppercase tracking-widest transition-colors ${
+                          isRecording
+                            ? "border-red-500 bg-red-50 text-red-600 dark:bg-red-950/30 dark:border-red-400 dark:text-red-300 animate-pulse"
+                            : "border-slate-300 dark:border-slate-600 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-400"
+                        }`}
+                      >
+                        {isRecording ? (
+                          <>
+                            <StopCircle className="w-3.5 h-3.5" />
+                            Stop Rekaman
+                          </>
+                        ) : (
+                          <>
+                            <Mic className="w-3.5 h-3.5" />
+                            Mulai Rekam
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex flex-col gap-2 w-full max-w-sm mt-2 sm:mt-0">
+                    <div className="flex flex-col gap-2 border-2 border-slate-200 dark:border-slate-600 p-2 sm:p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-[10px] font-bold text-slate-600 dark:text-slate-300 truncate">
+                          {audioFile.name}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={removeAudio}
+                          className="p-1.5 rounded-md text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors shrink-0"
+                          title="Hapus Suara"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                      {audioPreviewUrl && (
+                        <audio controls src={audioPreviewUrl} className="w-full h-8" />
+                      )}
+                    </div>
+                  </div>
                 )}
               </div>
             </div>
