@@ -141,6 +141,7 @@ export default function YearbookClassesViewUI(props: any) {
     featureUnlocksLoaded = false,
     aiLabsFeaturesByPackage = [] as string[],
     featureCreditCosts = {} as Record<string, number>,
+    featureUseCosts = {} as Record<string, number>,
     onFeatureUnlocked,
     teacherSearchQuery = '',
     classMemberSearchQuery = '',
