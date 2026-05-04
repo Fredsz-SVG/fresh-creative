@@ -118,6 +118,7 @@ export type YearbookClassesViewProps = {
   featureUnlocksLoaded?: boolean
   aiLabsFeaturesByPackage?: string[]
   featureCreditCosts?: Record<string, number>
+  featureUseCosts?: Record<string, number>
   onFeatureUnlocked?: () => void
   effectiveBackHref?: string
   teacherSearchQuery?: string

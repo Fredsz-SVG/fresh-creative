@@ -7,6 +7,7 @@ export function useYearbookFeatures(id: string | undefined) {
   const [flipbookEnabledByPackage, setFlipbookEnabledByPackage] = useState(false)
   const [aiLabsFeaturesByPackage, setAiLabsFeaturesByPackage] = useState<string[]>([])
   const [featureCreditCosts, setFeatureCreditCosts] = useState<Record<string, number>>({})
+  const [featureUseCosts, setFeatureUseCosts] = useState<Record<string, number>>({})
   const [featureUnlocksLoaded, setFeatureUnlocksLoaded] = useState(false)
 
   const fetchFeatureUnlocks = useCallback(async () => {
@@ -22,6 +23,7 @@ export function useYearbookFeatures(id: string | undefined) {
         setFlipbookEnabledByPackage(data.flipbook_enabled_by_package === true || data.flipbook_unlocked_on_album === true)
         setAiLabsFeaturesByPackage(asStringArray(data.ai_labs_features_by_package))
         setFeatureCreditCosts(asNumberRecord(data.credit_costs))
+        setFeatureUseCosts(asNumberRecord(data.use_costs))
       }
     } catch (e) {
       console.error('Error fetching feature unlocks:', e)
@@ -39,6 +41,8 @@ export function useYearbookFeatures(id: string | undefined) {
     setAiLabsFeaturesByPackage,
     featureCreditCosts,
     setFeatureCreditCosts,
+    featureUseCosts,
+    setFeatureUseCosts,
     featureUnlocksLoaded,
     setFeatureUnlocksLoaded,
     fetchFeatureUnlocks

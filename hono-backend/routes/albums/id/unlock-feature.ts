@@ -36,8 +36,8 @@ albumsIdUnlockFeature.get('/', async (c) => {
         package_snapshot: string | null
       }>(),
     db
-      .prepare(`SELECT feature_slug, credits_per_unlock FROM ai_feature_pricing`)
-      .all<{ feature_slug: string; credits_per_unlock: number }>(),
+      .prepare(`SELECT feature_slug, credits_per_unlock, credits_per_use FROM ai_feature_pricing`)
+      .all<{ feature_slug: string; credits_per_unlock: number; credits_per_use: number }>(),
   ])
 
   const raw = unlockBlock.results ?? []
@@ -72,8 +72,10 @@ albumsIdUnlockFeature.get('/', async (c) => {
   }
 
   const creditCosts: Record<string, number> = {}
+  const useCosts: Record<string, number> = {}
   for (const fp of fpRowsResult.results ?? []) {
     creditCosts[fp.feature_slug] = fp.credits_per_unlock
+    useCosts[fp.feature_slug] = fp.credits_per_use
   }
 
   return c.json({
@@ -84,6 +86,7 @@ albumsIdUnlockFeature.get('/', async (c) => {
     ai_labs_features_by_package: aiLabsFeaturesByPackage,
     is_owner: album?.user_id === user.id,
     credit_costs: creditCosts,
+    use_costs: useCosts,
   })
 })
 

@@ -1424,6 +1424,7 @@ export default function YearbookClassesViewUI(props: any) {
                   aiLabsFeaturesByPackage={aiLabsFeaturesByPackage}
                   featureUnlocks={featureUnlocks}
                   featureCreditCosts={featureCreditCosts}
+                  featureUseCosts={featureUseCosts}
                   onFeatureUnlocked={onFeatureUnlocked}
                   featureUnlocksLoaded={featureUnlocksLoaded}
                 />

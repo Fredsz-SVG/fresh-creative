@@ -58,7 +58,7 @@ export default function YearbookAlbumClient({
   const { view, setView, classIndex, setClassIndex, sidebarMode, setSidebarMode, classViewMode, setClassViewMode, personalIndex, setPersonalIndex, flipbookPreviewMode, setFlipbookPreviewMode, mobileMenuOpen, setMobileMenuOpen, lastEditorSection, setLastEditorSection } = useYearbookUIState(id)
 
   // Features: feature unlocks, flipbook/ai-labs features by package
-  const { featureUnlocks, setFeatureUnlocks, flipbookEnabledByPackage, setFlipbookEnabledByPackage, aiLabsFeaturesByPackage, setAiLabsFeaturesByPackage, featureCreditCosts, setFeatureCreditCosts, featureUnlocksLoaded, setFeatureUnlocksLoaded, fetchFeatureUnlocks } = useYearbookFeatures(id)
+  const { featureUnlocks, setFeatureUnlocks, flipbookEnabledByPackage, setFlipbookEnabledByPackage, aiLabsFeaturesByPackage, setAiLabsFeaturesByPackage, featureCreditCosts, setFeatureCreditCosts, featureUseCosts, setFeatureUseCosts, featureUnlocksLoaded, setFeatureUnlocksLoaded, fetchFeatureUnlocks } = useYearbookFeatures(id)
 
   // Access: my access/request state and admin requests
   const {
@@ -1861,6 +1861,7 @@ export default function YearbookAlbumClient({
             featureUnlocksLoaded={featureUnlocksLoaded}
             aiLabsFeaturesByPackage={aiLabsFeaturesByPackage}
             featureCreditCosts={featureCreditCosts}
+            featureUseCosts={featureUseCosts}
             onFeatureUnlocked={fetchFeatureUnlocks}
             effectiveBackHref={effectiveBackHref}
             teacherSearchQuery={teacherSearchQuery}

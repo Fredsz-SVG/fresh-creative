@@ -26,6 +26,7 @@ interface AILabsViewProps {
     aiLabsFeaturesByPackage?: string[]
     featureUnlocks?: string[]
     featureCreditCosts?: Record<string, number>
+    featureUseCosts?: Record<string, number>
     onFeatureUnlocked?: () => void
     featureUnlocksLoaded?: boolean
 }
@@ -62,7 +63,7 @@ const preloadTool: Record<string, () => void> = {
     phototovideo: () => { void import('@/components/fitur/PhotoToVideo') },
 }
 
-export default function AILabsView({ album, aiLabsTool, aiLabsFeaturesByPackage = [], featureUnlocks = [], featureCreditCosts = {}, onFeatureUnlocked, featureUnlocksLoaded = false }: AILabsViewProps) {
+export default function AILabsView({ album, aiLabsTool, aiLabsFeaturesByPackage = [], featureUnlocks = [], featureCreditCosts = {}, featureUseCosts = {}, onFeatureUnlocked, featureUnlocksLoaded = false }: AILabsViewProps) {
     const pathname = usePathname()
     const isAdmin = pathname?.startsWith('/admin')
     const FEATURE_ICONS = [Shirt, UserCircle, ImageIcon, Images, Video] as const
@@ -78,9 +79,18 @@ export default function AILabsView({ album, aiLabsTool, aiLabsFeaturesByPackage 
         return featureUnlocks.includes(featureType)
     }
 
-    const getFeatureCreditCost = (toolSlug: string) => {
+    const getFeatureUnlockCost = (toolSlug: string) => {
         const featureType = FEATURE_SLUG_MAP[toolSlug] || toolSlug
         return featureCreditCosts[featureType] ?? 0
+    }
+
+    const getFeatureUseCost = (toolSlug: string) => {
+        const featureType = FEATURE_SLUG_MAP[toolSlug] || toolSlug
+        return featureUseCosts[featureType] ?? 0
+    }
+
+    const isPayPerUse = (toolSlug: string) => {
+        return getFeatureUseCost(toolSlug) > 0
     }
 
     const handleUnlockFeature = async (toolSlug: string) => {
@@ -117,7 +127,7 @@ export default function AILabsView({ album, aiLabsTool, aiLabsFeaturesByPackage 
         if (!featureUnlocksLoaded) return <ToolLoading label="AI Labs" />
         // Check if tool is unlocked before rendering
         if (!isFeatureUnlocked(aiLabsTool)) {
-            const creditCost = getFeatureCreditCost(aiLabsTool)
+            const unlockCost = getFeatureUnlockCost(aiLabsTool)
             return (
                 <div className="flex flex-col items-center justify-center min-h-[40vh] p-4 text-center">
                     <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-[24px] sm:rounded-[28px] bg-amber-400 dark:bg-amber-600 flex items-center justify-center mb-6 border-2 border-slate-900 dark:border-slate-700 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]">
@@ -130,7 +140,7 @@ export default function AILabsView({ album, aiLabsTool, aiLabsFeaturesByPackage 
                     <div className="flex flex-col items-center gap-4">
                         <div className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]">
                             <Zap className="w-4 h-4 text-amber-500 dark:text-amber-400" strokeWidth={3} />
-                            <span className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-widest">{creditCost} CREDIT</span>
+                            <span className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-widest">{unlockCost} CREDIT UNLOCK</span>
                         </div>
                         <button
                             type="button"
@@ -156,7 +166,7 @@ export default function AILabsView({ album, aiLabsTool, aiLabsFeaturesByPackage 
                             <div className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-[32px] p-6 sm:p-8 max-w-sm w-full shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] text-center">
                                 <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight mb-2">Buka Fitur AI</h3>
                                 <p className="text-sm font-bold text-slate-500 dark:text-slate-400 mb-6">
-                                    Yakin tidak? Unlock fitur ini akan menggunakan {getFeatureCreditCost(confirmUnlockToolSlug ?? '') ?? 0} credit.
+                                    Yakin tidak? Unlock fitur ini akan menggunakan {getFeatureUnlockCost(confirmUnlockToolSlug ?? '') ?? 0} credit.
                                 </p>
                                 <div className="flex gap-3">
                                     <button
@@ -186,13 +196,13 @@ export default function AILabsView({ album, aiLabsTool, aiLabsFeaturesByPackage 
 
         const renderTool = (Tool: React.ComponentType<any>) => (
             <div className="max-w-5xl mx-auto px-3 py-3 sm:p-4">
-                <Tool creditCost={getFeatureCreditCost(aiLabsTool) ?? 0} />
+                <Tool creditCost={getFeatureUseCost(aiLabsTool) ?? 0} />
             </div>
         )
 
         if (aiLabsTool === 'tryon') return renderTool(TryOn)
         if (aiLabsTool === 'pose') return renderTool(Pose)
-        if (aiLabsTool === 'image-editor') return <ImageEditor creditCost={getFeatureCreditCost(aiLabsTool) ?? 0} />
+        if (aiLabsTool === 'image-editor') return <ImageEditor creditCost={getFeatureUseCost(aiLabsTool) ?? 0} />
         if (aiLabsTool === 'photogroup') return renderTool(PhotoGroup)
         if (aiLabsTool === 'phototovideo') return renderTool(PhotoToVideo)
     }
@@ -213,7 +223,8 @@ export default function AILabsView({ album, aiLabsTool, aiLabsFeaturesByPackage 
                     const toolSlug = feature.href.replace(/\/$/, '').split('/').pop() ?? ''
                     const href = albumBase ? `${albumBase}?section=ai-labs&tool=${encodeURIComponent(toolSlug)}` : feature.href
                     const unlocked = isFeatureUnlocked(toolSlug)
-                    const creditCost = getFeatureCreditCost(toolSlug)
+                    const unlockCost = getFeatureUnlockCost(toolSlug)
+                    const useCost = getFeatureUseCost(toolSlug)
                     const iconBg = FEATURE_COLORS[index % FEATURE_COLORS.length]
 
                     return (
@@ -248,7 +259,7 @@ export default function AILabsView({ album, aiLabsTool, aiLabsFeaturesByPackage 
                                             ) : (
                                                 <>
                                                     <Zap className="w-3.5 h-3.5" />
-                                                    {creditCost}
+                                                    {unlockCost}
                                                 </>
                                             )}
                                         </button>
@@ -261,7 +272,15 @@ export default function AILabsView({ album, aiLabsTool, aiLabsFeaturesByPackage 
                                             onMouseEnter={() => preloadTool[toolSlug]?.()}
                                             onMouseDown={() => preloadTool[toolSlug]?.()}
                                         >
-                                            <span className="truncate">BUKA</span>
+                                            <div className="flex items-center gap-1.5 min-w-0">
+                                                {useCost > 0 && (
+                                                    <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-amber-400 text-slate-900 scale-90">
+                                                        <Zap className="w-2.5 h-2.5" fill="currentColor" />
+                                                        <span className="text-[8px] font-black">{useCost}</span>
+                                                    </div>
+                                                )}
+                                                <span className="truncate">BUKA</span>
+                                            </div>
                                             <ChevronRight className="w-3.5 h-3.5 shrink-0" strokeWidth={3} />
                                         </NextLink>
                                     )}
@@ -277,7 +296,7 @@ export default function AILabsView({ album, aiLabsTool, aiLabsFeaturesByPackage 
                     <div className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-[32px] p-6 sm:p-8 max-w-sm w-full shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] text-center">
                         <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight mb-2">Buka Fitur AI</h3>
                         <p className="text-sm font-bold text-slate-500 dark:text-slate-400 mb-6">
-                            Yakin tidak? Unlock fitur ini akan menggunakan {getFeatureCreditCost(confirmUnlockToolSlug)} credit.
+                            Yakin tidak? Unlock fitur ini akan menggunakan {getFeatureUnlockCost(confirmUnlockToolSlug)} credit.
                         </p>
                         <div className="flex gap-3">
                             <button
