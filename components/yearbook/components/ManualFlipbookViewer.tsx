@@ -398,12 +398,17 @@ export default function ManualFlipbookViewer({ pages, onPlayVideo, className = '
     if (pageNum === 0 || pageNum === 1) {
       const flip = book.current?.pageFlip()
       if (flip) {
-        const doUpdate = () => flip.update()
+        const doUpdate = () => {
+          // Jangan update dimensi jika tab disembunyikan (mencegah loop/stuck render)
+          if (typeof document !== 'undefined' && document.hidden) return
+          flip.update()
+        }
         requestAnimationFrame(() => requestAnimationFrame(doUpdate))
         flipUpdateTimeoutRef.current = setTimeout(doUpdate, FLIP_UPDATE_DELAY_MS)
       }
     }
-    if (soundEnabledRef.current) {
+    // Jangan bunyikan suara jika tab tidak aktif (minimized/background)
+    if (soundEnabledRef.current && typeof document !== 'undefined' && !document.hidden) {
       try {
         if (!flipSoundRef.current) flipSoundRef.current = new Audio('/sounds/page-flip.mp3')
         if (flipSoundRef.current) {
