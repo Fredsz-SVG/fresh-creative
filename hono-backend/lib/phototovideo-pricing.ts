@@ -78,3 +78,9 @@ export function normalizePhotoToVideoDuration(
   }
   return { ok: true, seconds: n }
 }
+
+
+
+
+
+

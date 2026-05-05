@@ -19,7 +19,7 @@ export function AnimatedCarouselMockup({
                     style={{ animation: 'carousel-swipe 6s cubic-bezier(0.25, 1, 0.5, 1) infinite' }}
                 >
                     {/* Card Mockup (Matches PreviewView.tsx) */}
-                    <div className="relative w-full h-full rounded-2xl sm:rounded-3xl overflow-hidden border-2 border-slate-200 dark:border-white shadow-[4px_4px_0_0_#334155] dark:shadow-[6px_6px_0_0_#a3e635] select-none bg-white dark:bg-slate-900">
+                    <div className="relative w-full h-full rounded-2xl sm:rounded-3xl overflow-hidden border-2 border-slate-200 dark:border-white shadow-[2px_2px_0_0_#334155] dark:shadow-[6px_6px_0_0_#a3e635] select-none bg-white dark:bg-slate-900">
 
                         {/* Background Image */}
                         <div className="absolute inset-0 bg-slate-100">
@@ -53,7 +53,7 @@ export function AnimatedCarouselMockup({
                                 {/* Bottom Buttons Container */}
                                 <div className="flex gap-2">
                                     <div className="flex-1 h-6 sm:h-8 bg-slate-900 dark:bg-slate-800 rounded-lg shadow-[2px_2px_0_0_#334155]" />
-                                    <div className="flex-1 h-6 sm:h-8 bg-orange-300 border-2 border-slate-200 dark:border-white rounded-lg shadow-[4px_4px_0_0_#334155] dark:shadow-[2px_2px_0_0_#a3e635]" />
+                                    <div className="flex-1 h-6 sm:h-8 bg-orange-300 border-2 border-slate-200 dark:border-white rounded-lg shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#a3e635]" />
                                 </div>
                             </div>
                         </div>
@@ -83,7 +83,7 @@ export function AnimatedCarouselMockup({
 
 export function AnimatedFlipbookMockup() {
     return (
-        <div className="relative w-full h-full max-w-[220px] sm:max-w-[340px] aspect-[4/3] mx-auto rounded-xl bg-orange-200 dark:bg-orange-950/40 border-2 border-slate-200 dark:border-white shadow-[4px_4px_0_0_#334155] sm:shadow-[4px_4px_0_0_#334155] dark:shadow-[5px_5px_0_0_#a3e635] sm:dark:shadow-[8px_8px_0_0_#a3e635] overflow-visible flex items-center justify-center p-2 sm:p-3 [perspective:1000px]">
+        <div className="relative w-full h-full max-w-[220px] sm:max-w-[340px] aspect-[4/3] mx-auto rounded-xl bg-orange-200 dark:bg-orange-950/40 border-2 border-slate-200 dark:border-white shadow-[2px_2px_0_0_#334155] sm:shadow-[2px_2px_0_0_#334155] dark:shadow-[5px_5px_0_0_#a3e635] sm:dark:shadow-[8px_8px_0_0_#a3e635] overflow-visible flex items-center justify-center p-2 sm:p-3 [perspective:1000px]">
 
             {/* Book Container */}
             <div className="relative w-full h-full bg-white border-2 border-slate-200 rounded-md flex [transform-style:preserve-3d]">
@@ -98,7 +98,7 @@ export function AnimatedFlipbookMockup() {
 
                 {/* Right Page (Static Underneath) */}
                 <div className="w-1/2 h-full p-3 flex flex-col gap-2 relative shadow-[inset_10px_0_20px_-10px_rgba(0,0,0,0.1)] bg-white dark:bg-slate-900">
-                    <div className="w-full flex-1 bg-emerald-400 border-2 border-slate-200 dark:border-white shadow-[4px_4px_0_0_#334155] dark:shadow-[2px_2px_0_0_#a3e635] rounded-md"></div>
+                    <div className="w-full flex-1 bg-emerald-400 border-2 border-slate-200 dark:border-white shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#a3e635] rounded-md"></div>
                     <div className="w-1/2 h-2 bg-slate-800 dark:bg-slate-300 rounded-full mx-auto"></div>
                 </div>
 
@@ -109,7 +109,7 @@ export function AnimatedFlipbookMockup() {
                         animation: 'flipbook-turn 4s ease-in-out infinite'
                     }}
                 >
-                    <div className="w-full flex-1 bg-indigo-400 border-2 border-slate-200 dark:border-white shadow-[4px_4px_0_0_#334155] dark:shadow-[2px_2px_0_0_#a3e635] rounded-md"></div>
+                    <div className="w-full flex-1 bg-indigo-400 border-2 border-slate-200 dark:border-white shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#a3e635] rounded-md"></div>
                     <div className="w-full h-3 bg-slate-900 dark:bg-slate-300 rounded-full mt-auto"></div>
                 </div>
 
@@ -126,3 +126,10 @@ export function AnimatedFlipbookMockup() {
         </div>
     )
 }
+
+
+
+
+
+
+

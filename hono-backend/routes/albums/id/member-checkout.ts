@@ -214,3 +214,8 @@ memberCheckoutRoute.post('/', async (c) => {
 })
 
 export default memberCheckoutRoute
+
+
+
+
+

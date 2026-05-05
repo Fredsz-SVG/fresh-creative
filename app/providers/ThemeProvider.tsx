@@ -57,3 +57,9 @@ function applyTheme(isDark: boolean) {
     root.setAttribute('data-theme', 'light')
   }
 }
+
+
+
+
+
+

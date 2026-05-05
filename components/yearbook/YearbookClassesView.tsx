@@ -139,3 +139,14 @@ export default function YearbookClassesView(props: YearbookClassesViewProps) {
 
   return React.createElement(YearbookClassesViewUI, uiProps)
 }
+
+
+
+
+
+
+
+
+
+
+

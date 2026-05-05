@@ -151,7 +151,7 @@ function AlbumCard({
         if (!isClickable) return
         try { router.prefetch(destinationUrl) } catch { }
       }}
-      className={`relative border-2 border-slate-900 dark:border-slate-700 rounded-3xl p-4 sm:p-5 flex flex-col h-full transition-all duration-200 min-h-[120px] shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] bg-white dark:bg-slate-900 ${isClickable ? 'cursor-pointer hover:shadow-none hover:translate-x-1 hover:translate-y-1' : 'cursor-default opacity-80'
+      className={`relative border-2 border-black dark:border-slate-700 rounded-3xl p-4 sm:p-5 flex flex-col h-full transition-all duration-200 min-h-[120px] shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] bg-white dark:bg-slate-900 ${isClickable ? 'cursor-pointer hover:translate-x-1 hover:translate-y-1' : 'cursor-default opacity-80'
         }`}>
       {/* Album Cover - Main Primary Visual */}
       <div className="aspect-[4/3] w-full bg-slate-100 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 rounded-2xl mb-4 overflow-hidden relative shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155]">
@@ -1539,3 +1539,9 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
     </div >
   )
 }
+
+
+
+
+
+

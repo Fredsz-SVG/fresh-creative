@@ -106,3 +106,8 @@ teacherIdPhotos.post('/', async (c) => {
 })
 
 export default teacherIdPhotos
+
+
+
+
+

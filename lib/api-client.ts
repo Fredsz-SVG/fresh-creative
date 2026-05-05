@@ -150,6 +150,11 @@ export async function fetchWithAuth(
           console.error('Global WebP conversion failed for', value.name, e)
           newFormData.append(key, value)
         }
+      } else if (value instanceof File && value.type.startsWith('video/')) {
+        // Skip client-side video conversion: it's error-prone and can result in blank/corrupted videos.
+        // Upload the original file instead.
+        newFormData.append(key, value)
+        hasChanged = true
       } else {
         newFormData.append(key, value)
       }
@@ -192,3 +197,9 @@ export async function fetchWithAuth(
     }
   }
 }
+
+
+
+
+
+

@@ -131,3 +131,9 @@ albumCoverVideoRoute.delete('/', async (c) => {
 })
 
 export default albumCoverVideoRoute
+
+
+
+
+
+

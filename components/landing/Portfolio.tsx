@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronLeft, ChevronRight, X, Maximize2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, X, Maximize2, Play } from "lucide-react";
 import { apiUrl } from "@/lib/api-url";
 
 interface PortfolioItem {
@@ -12,12 +12,13 @@ interface PortfolioItem {
   title: string;
   subtitle: string;
   desc: string;
+  video_url?: string;
 }
 
 export function Portfolio() {
   const [items, setItems] = useState<PortfolioItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedImg, setSelectedImg] = useState<string | null>(null);
+  const [selectedItem, setSelectedItem] = useState<PortfolioItem | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
 
   const sliderRef = useRef<HTMLDivElement>(null);
@@ -199,6 +200,7 @@ export function Portfolio() {
               
               <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-0 pointer-events-none" />
 
+
               <div className="absolute top-4 left-4 z-10 transition-transform duration-300 group-hover:-translate-y-1">
                 <div className="bg-lime-400 text-slate-950 text-[10px] sm:text-xs font-black uppercase tracking-widest px-3 py-1.5 shadow-[2px_2px_0px_#000] border-2 border-slate-900 -rotate-2 group-hover:rotate-0 transition-transform duration-300">
                   {item.subtitle}
@@ -217,11 +219,15 @@ export function Portfolio() {
                 <button
                   onMouseDown={(e) => e.stopPropagation()}
                   onTouchStart={(e) => e.stopPropagation()}
-                  onClick={(e) => { e.stopPropagation(); setSelectedImg(item.img); }}
-                  className="flex items-center justify-center gap-2 w-full py-3 bg-white dark:bg-[#0d1148] hover:bg-lime-400 dark:hover:bg-[#5cecff]/20 text-slate-900 dark:text-[#5cecff] dark:hover:text-white font-bold text-xs uppercase tracking-widest border-2 border-slate-900 dark:border-[#5cecff]/25 dark:hover:border-[#5cecff]/60 shadow-[4px_4px_0_0_#0f172a] hover:shadow-[6px_6px_0_0_#0f172a] dark:hover:shadow-[0_0_12px_rgba(92,236,255,0.4)] hover:-translate-y-0.5 active:translate-y-0 transition-all outline-none"
+                  onClick={(e) => { e.stopPropagation(); setSelectedItem(item); }}
+                  className="flex items-center justify-center gap-2 w-full py-3 bg-white dark:bg-[#0d1148] hover:bg-lime-400 dark:hover:bg-[#5cecff]/20 text-slate-900 dark:text-[#5cecff] dark:hover:text-white font-bold text-xs uppercase tracking-widest border-2 border-slate-900 dark:border-[#5cecff]/25 dark:hover:border-[#5cecff]/60 shadow-[2px_2px_0_0_#0f172a] hover:shadow-[6px_6px_0_0_#0f172a] dark:hover:shadow-[0_0_12px_rgba(92,236,255,0.4)] hover:-translate-y-0.5 active:translate-y-0 transition-all outline-none"
                 >
-                  <Maximize2 size={16} strokeWidth={3} className="shrink-0" />
-                  Full View
+                  {item.video_url ? (
+                    <Play size={15} strokeWidth={0} fill="currentColor" className="shrink-0" />
+                  ) : (
+                    <Maximize2 size={16} strokeWidth={3} className="shrink-0" />
+                  )}
+                  {item.video_url ? 'Play Video' : 'Full View'}
                 </button>
               </div>
             </div>
@@ -267,18 +273,18 @@ export function Portfolio() {
 
       {/* Lightbox Modal */}
       <AnimatePresence>
-        {selectedImg && (
+        {selectedItem && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            onClick={() => setSelectedImg(null)}
+            onClick={() => setSelectedItem(null)}
             className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/90 backdrop-blur-sm p-4 sm:p-8"
           >
             <button 
-              onClick={() => setSelectedImg(null)}
-              className="absolute top-6 right-6 sm:top-10 sm:right-10 z-[101] w-12 h-12 flex items-center justify-center bg-white text-slate-950 border-2 border-slate-900 shadow-[4px_4px_0_0_#0f172a] hover:bg-lime-400 hover:-translate-y-1 transition-all rounded-full outline-none"
+              onClick={() => setSelectedItem(null)}
+              className="absolute top-6 right-6 sm:top-10 sm:right-10 z-[101] w-12 h-12 flex items-center justify-center bg-white text-slate-950 border-2 border-slate-900 shadow-[2px_2px_0_0_#0f172a] hover:bg-lime-400 hover:-translate-y-1 transition-all rounded-full outline-none"
               aria-label="Close modal"
             >
               <X size={24} strokeWidth={3} />
@@ -289,16 +295,28 @@ export function Portfolio() {
               exit={{ scale: 0.95, opacity: 0 }}
               transition={{ duration: 0.3, type: "spring" }}
               onClick={(e) => e.stopPropagation()}
-              className="relative w-full max-w-7xl h-full max-h-[90vh] outline-none"
+              className="relative w-full max-w-7xl h-full max-h-[90vh] outline-none flex items-center justify-center"
             >
-              <Image
-                src={selectedImg}
-                alt="Enlarged Portfolio View"
-                fill
-                quality={100}
-                className="object-contain drop-shadow-2xl"
-                sizes="100vw"
-              />
+              {selectedItem.video_url ? (
+                <video
+                  src={selectedItem.video_url}
+                  autoPlay
+                  loop
+                  playsInline
+                  muted
+                  className="max-w-full max-h-[85vh] rounded-2xl shadow-2xl object-contain"
+                  style={{ background: '#000' }}
+                />
+              ) : (
+                <Image
+                  src={selectedItem.img}
+                  alt="Enlarged Portfolio View"
+                  fill
+                  quality={100}
+                  className="object-contain drop-shadow-2xl"
+                  sizes="100vw"
+                />
+              )}
             </motion.div>
           </motion.div>
         )}
@@ -312,3 +330,10 @@ export function Portfolio() {
     </section>
   );
 }
+
+
+
+
+
+
+

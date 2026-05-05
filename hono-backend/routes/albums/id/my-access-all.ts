@@ -57,3 +57,9 @@ albumsIdMyAccessAll.get('/', async (c) => {
 })
 
 export default albumsIdMyAccessAll
+
+
+
+
+
+

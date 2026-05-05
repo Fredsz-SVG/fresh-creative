@@ -230,3 +230,8 @@ joinRequestsRequestId.delete('/', async (c) => {
 })
 
 export default joinRequestsRequestId
+
+
+
+
+

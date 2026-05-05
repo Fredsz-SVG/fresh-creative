@@ -62,3 +62,9 @@ export const AI_LABS_FEATURES_ADMIN = [
   { href: '/admin/photogroup', label: 'Photo Group', description: 'Gabungkan beberapa foto jadi satu' },
   { href: '/admin/phototovideo', label: 'Photo to Video', description: 'Ubah foto jadi video singkat' },
 ] as const
+
+
+
+
+
+

@@ -97,3 +97,9 @@ export default function PrivacyPolicyPage() {
     </main>
   );
 }
+
+
+
+
+
+

@@ -34,3 +34,9 @@ export async function saveFonnteConfigToD1(
     .bind(FONNTE_CONFIG_KEY, JSON.stringify(payload))
     .run()
 }
+
+
+
+
+
+

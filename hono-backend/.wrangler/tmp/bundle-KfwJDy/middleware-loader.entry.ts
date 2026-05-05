@@ -122,3 +122,8 @@ if (typeof ENTRY === 'object') {
   WRAPPED_ENTRY = wrapWorkerEntrypoint(ENTRY)
 }
 export default WRAPPED_ENTRY
+
+
+
+
+

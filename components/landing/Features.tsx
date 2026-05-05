@@ -5,7 +5,7 @@ import { Images, X, ChevronRight, ChevronLeft } from "lucide-react";
 
 function BentoCardWrap({ children, className = "" }: PropsWithChildren<{ className?: string }>) {
   return (
-    <div className={`group relative transition-all duration-300 border border-slate-900 dark:border-[#5cecff]/20 shadow-[4px_4px_0_0_#334155] md:shadow-[4px_4px_0_0_#334155] dark:shadow-neo-glow hover:-translate-x-1 hover:-translate-y-1 hover:shadow-[4px_4px_0_0_#334155] dark:hover-shadow-neo-glow overflow-hidden rounded-[1.5rem] md:rounded-[2rem] bg-white dark:bg-[#131a68]/70 ${className}`}>
+    <div className={`group relative transition-all duration-300 border border-slate-900 dark:border-[#5cecff]/20 shadow-[2px_2px_0_0_#334155] md:shadow-[2px_2px_0_0_#334155] dark:shadow-neo-glow hover:-translate-x-1 hover:-translate-y-1 hover:shadow-[2px_2px_0_0_#334155] dark:hover-shadow-neo-glow overflow-hidden rounded-[1.5rem] md:rounded-[2rem] bg-white dark:bg-[#131a68]/70 ${className}`}>
       {children}
     </div>
   );
@@ -17,9 +17,20 @@ interface BentoCardProps {
   title: React.ReactNode;
   description?: string;
   action?: React.ReactNode;
+  fit?: "cover" | "contain";
+  overlay?: "strong" | "soft";
 }
 
-function BentoCard({ media, src, title, description, action }: BentoCardProps) {
+function BentoCard({ media, src, title, description, action, fit = "cover", overlay = "strong" }: BentoCardProps) {
+  const mediaClassName =
+    fit === "contain"
+      ? "absolute inset-0 size-full object-contain object-center transition-transform duration-700 group-hover:scale-[1.02]"
+      : "absolute inset-0 size-full object-cover object-center transition-transform duration-700 group-hover:scale-105"
+
+  const overlayBg =
+    overlay === "soft"
+      ? "linear-gradient(to top, rgba(5,4,15,0.55) 0%, rgba(5,4,15,0.22) 45%, rgba(5,4,15,0.02) 100%)"
+      : "linear-gradient(to top, rgba(5,4,15,0.92) 0%, rgba(5,4,15,0.45) 45%, rgba(5,4,15,0.05) 100%)"
   return (
     <article className="relative size-full group">
       {/* Media layer */}
@@ -31,14 +42,14 @@ function BentoCard({ media, src, title, description, action }: BentoCardProps) {
           muted
           autoPlay
           playsInline
-          className="absolute inset-0 size-full object-cover object-center transition-transform duration-700 group-hover:scale-105"
+          className={mediaClassName}
         />
       ) : (
         <div className="absolute inset-0 size-full overflow-hidden">
           <img
             src={src}
             alt=""
-            className="size-full object-cover object-center transition-transform duration-700 group-hover:scale-105"
+            className={mediaClassName}
             loading="lazy"
             decoding="async"
             onError={(e) => {
@@ -61,7 +72,7 @@ function BentoCard({ media, src, title, description, action }: BentoCardProps) {
         className="absolute inset-0 z-10"
         style={{
           background:
-            "linear-gradient(to top, rgba(5,4,15,0.92) 0%, rgba(5,4,15,0.45) 45%, rgba(5,4,15,0.05) 100%)",
+            overlayBg,
         }}
       />
 
@@ -105,13 +116,13 @@ export function Features() {
   
   // Nanti array ini bisa ditambah dengan URL foto-foto lainnya
   const galleryImages = [
-    "/img/yearbooks.png",
-    "/img/yearbook-1.png",
-    "/img/yearbook-2.png",
-    "/img/yearbook-3.png",
-    "/img/sesifoto.webp",
-    "/img/organizer.webp",
-    "/img/about.webp",
+    "/img/yearbook2.webp",
+    "/img/yearbook3.webp",
+    "/img/yearbook4.webp",
+    "/img/yearbook5.webp",
+    "/img/yearbook6.webp",
+    "/img/yearbook7.webp",
+    "/img/yearbook8.webp",
   ];
   
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -156,19 +167,23 @@ export function Features() {
         <BentoCardWrap className="relative mb-5 md:mb-7 h-80 md:h-[65vh] w-full">
           <BentoCard
             media="image"
-            src="/img/yearbooks.png"
+            src="/img/yearbook1.webp"
+            fit="cover"
+            overlay="soft"
             title={<>YEARBOOK</>}
-            description="What can we do?"
+            description="Design your yearbook."
             action={
               <button 
                 onClick={(e) => {
                   e.preventDefault();
+                  setCurrentIndex(0);
                   setShowGallery(true);
                 }}
-                className="flex items-center gap-2 bg-black/60 hover:bg-black/90 backdrop-blur-md text-white px-5 py-3 rounded-full font-bold transition-all duration-300 border border-white/20 hover:scale-105 shadow-xl"
+                className="absolute bottom-4 right-4 sm:static flex items-center gap-2 bg-black/60 hover:bg-black/90 backdrop-blur-md text-white px-3 py-2 sm:px-5 sm:py-3 rounded-full font-bold text-xs sm:text-sm transition-all duration-300 border border-white/20 hover:scale-105 shadow-xl"
               >
-                <Images size={20} />
-                Lihat Gallery
+                <Images className="w-4 h-4 sm:w-5 sm:h-5" />
+                <span className="hidden sm:inline">View More</span>
+                <span className="sm:hidden">More</span>
               </button>
             }
           />
@@ -235,14 +250,21 @@ export function Features() {
               </button>
             )}
             
-            {galleryImages.length > 1 && (
-              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/80 backdrop-blur-md px-5 py-2 rounded-full text-white text-sm font-bold tracking-widest border border-white/10">
-                {currentIndex + 1} / {galleryImages.length}
-              </div>
-            )}
           </div>
+
+          {galleryImages.length > 1 && (
+            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-black/80 backdrop-blur-md px-5 py-2 rounded-full text-white text-sm font-bold tracking-widest border border-white/10 z-[60]">
+              {currentIndex + 1} / {galleryImages.length}
+            </div>
+          )}
         </div>
       )}
     </section>
   );
 }
+
+
+
+
+
+

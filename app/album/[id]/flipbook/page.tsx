@@ -100,7 +100,7 @@ export default function PublicFlipbookPage() {
           <button
             type="button"
             onClick={handleGoBack}
-            className="inline-block px-6 py-3 bg-indigo-400 text-white font-black text-sm uppercase rounded-xl border-4 border-slate-900 shadow-[4px_4px_0_0_#0f172a] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all"
+            className="inline-block px-6 py-3 bg-indigo-400 text-white font-black text-sm uppercase rounded-xl border-4 border-slate-900 shadow-[2px_2px_0_0_#0f172a] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all"
           >
             Kembali
           </button>
@@ -128,7 +128,7 @@ export default function PublicFlipbookPage() {
           <button
             type="button"
             onClick={handleGoBack}
-            className="inline-block px-6 py-3 bg-indigo-400 text-white font-black text-sm uppercase rounded-xl border-4 border-slate-900 shadow-[4px_4px_0_0_#0f172a] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all"
+            className="inline-block px-6 py-3 bg-indigo-400 text-white font-black text-sm uppercase rounded-xl border-4 border-slate-900 shadow-[2px_2px_0_0_#0f172a] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all"
           >
             Kembali
           </button>

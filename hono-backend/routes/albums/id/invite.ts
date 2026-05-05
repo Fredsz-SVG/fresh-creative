@@ -69,3 +69,9 @@ albumInviteRoute.post('/', async (c) => {
 })
 
 export default albumInviteRoute
+
+
+
+
+
+

@@ -99,12 +99,12 @@ function InlineClassEditor(p: any) {
             type="text"
             value={name}
             onChange={handleNameChange}
-            className="flex-1 px-2 py-1 rounded-lg bg-gray-100 border border-gray-200 text-app text-sm"
+            className="flex-1 px-2 py-1 rounded-lg bg-gray-100 border-2 border-slate-900 text-app text-sm"
           />
           <button onClick={handleSaveName} className="w-7 h-7 flex items-center justify-center rounded-md bg-violet-500 text-white hover:bg-violet-500 flex-shrink-0">
             <Check className="w-4 h-4" />
           </button>
-          <button onClick={handleCancel} className="w-7 h-7 flex items-center justify-center rounded-md border border-gray-200 text-gray-400 hover:text-gray-800 flex-shrink-0">
+          <button onClick={handleCancel} className="w-7 h-7 flex items-center justify-center rounded-md border-2 border-slate-900 text-gray-400 hover:text-gray-800 flex-shrink-0">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -163,10 +163,10 @@ export default function GroupPanel({
   setView,
 }: GroupPanelProps) {
   return (
-    <div className="hidden lg:fixed lg:left-16 lg:top-20 lg:w-64 lg:h-[calc(100vh-80px)] lg:flex flex-col lg:z-35 lg:bg-white/90 lg:backdrop-blur-sm lg:border-r lg:border-gray-200">
+    <div className="hidden lg:fixed lg:left-16 lg:top-20 lg:w-64 lg:h-[calc(100vh-80px)] lg:flex flex-col lg:z-35 lg:bg-white/90 lg:backdrop-blur-sm lg:border-r-2 lg:border-gray-200">
       {/* Header Fixed - Group Name + Edit */}
       {currentClass && (
-        <div className="flex-shrink-0 px-3 py-3 border-b border-gray-200">
+        <div className="flex-shrink-0 px-3 py-3 border-b-2 border-gray-200">
           <InlineClassEditor 
             classObj={currentClass} 
             isOwner={canManage} 
@@ -180,7 +180,7 @@ export default function GroupPanel({
 
       {/* Form Fixed - Daftarkan Nama */}
       {currentClass && (
-        <div className="flex-shrink-0 px-3 py-3 border-b border-gray-200">
+        <div className="flex-shrink-0 px-3 py-3 border-b-2 border-gray-200">
           {(() => {
             const access = myAccessByClass[currentClass.id]
             const request = myRequestByClass[currentClass.id] as ClassRequest | null | undefined
@@ -206,8 +206,8 @@ export default function GroupPanel({
                     Daftarkan nama Anda di group ini agar bisa upload foto.
                   </p>
                   <div className="flex flex-col gap-1.5">
-                    <input type="text" value={requestForm.student_name} onChange={(e) => setRequestForm({ ...requestForm, student_name: e.target.value })} placeholder="Nama Anda" className="px-2 py-1.5 rounded-lg bg-gray-100 border border-gray-200 text-app text-xs" />
-                    <input type="email" value={requestForm.email} onChange={(e) => setRequestForm({ ...requestForm, email: e.target.value })} placeholder="Email" className="px-2 py-1.5 rounded-lg bg-gray-100 border border-gray-200 text-app text-xs" />
+                    <input type="text" value={requestForm.student_name} onChange={(e) => setRequestForm({ ...requestForm, student_name: e.target.value })} placeholder="Nama Anda" className="px-2 py-1.5 rounded-lg bg-gray-100 border-2 border-slate-900 text-app text-xs" />
+                    <input type="email" value={requestForm.email} onChange={(e) => setRequestForm({ ...requestForm, email: e.target.value })} placeholder="Email" className="px-2 py-1.5 rounded-lg bg-gray-100 border-2 border-slate-900 text-app text-xs" />
                     <button type="button" onClick={() => handleRequestAccess(currentClass.id)} disabled={!requestForm.student_name.trim()} className="px-2 py-1.5 rounded-lg bg-violet-500 text-white text-xs font-medium hover:bg-violet-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors touch-manipulation">
                       {requestForm.student_name.trim() ? 'Daftarkan nama' : 'Isi nama terlebih dahulu'}
                     </button>
@@ -231,8 +231,8 @@ export default function GroupPanel({
                   <p className="text-xs text-muted mb-1">Status Pendaftaran:</p>
                   <p className="text-red-400 text-xs mb-2">Akses ditolak. Anda dapat ajukan ulang.</p>
                   <div className="flex flex-col gap-1.5">
-                    <input type="text" value={requestForm.student_name} onChange={(e) => setRequestForm({ ...requestForm, student_name: e.target.value })} placeholder="Nama lengkap" className="px-2 py-1.5 rounded-lg bg-gray-100 border border-gray-200 text-app text-xs" />
-                    <input type="email" value={requestForm.email} onChange={(e) => setRequestForm({ ...requestForm, email: e.target.value })} placeholder="Email" className="px-2 py-1.5 rounded-lg bg-gray-100 border border-gray-200 text-app text-xs" />
+                    <input type="text" value={requestForm.student_name} onChange={(e) => setRequestForm({ ...requestForm, student_name: e.target.value })} placeholder="Nama lengkap" className="px-2 py-1.5 rounded-lg bg-gray-100 border-2 border-slate-900 text-app text-xs" />
+                    <input type="email" value={requestForm.email} onChange={(e) => setRequestForm({ ...requestForm, email: e.target.value })} placeholder="Email" className="px-2 py-1.5 rounded-lg bg-gray-100 border-2 border-slate-900 text-app text-xs" />
                     <button type="button" onClick={() => handleRequestAccess(currentClass.id)} disabled={!requestForm.student_name.trim()} className="px-2 py-1.5 rounded-lg bg-violet-500 text-white text-xs font-medium hover:bg-violet-500 disabled:opacity-50 transition-colors">
                       Ajukan ulang
                     </button>
@@ -248,8 +248,8 @@ export default function GroupPanel({
                     Untuk upload foto, isi nama dan email lalu ajukan akses.
                   </p>
                   <div className="flex flex-col gap-1.5">
-                    <input type="text" value={requestForm.student_name} onChange={(e) => setRequestForm({ ...requestForm, student_name: e.target.value })} placeholder="Nama lengkap" className="px-2 py-1.5 rounded-lg bg-gray-100 border border-gray-200 text-app text-xs" />
-                    <input type="email" value={requestForm.email} onChange={(e) => setRequestForm({ ...requestForm, email: e.target.value })} placeholder="Email" className="px-2 py-1.5 rounded-lg bg-gray-100 border border-gray-200 text-app text-xs" />
+                    <input type="text" value={requestForm.student_name} onChange={(e) => setRequestForm({ ...requestForm, student_name: e.target.value })} placeholder="Nama lengkap" className="px-2 py-1.5 rounded-lg bg-gray-100 border-2 border-slate-900 text-app text-xs" />
+                    <input type="email" value={requestForm.email} onChange={(e) => setRequestForm({ ...requestForm, email: e.target.value })} placeholder="Email" className="px-2 py-1.5 rounded-lg bg-gray-100 border-2 border-slate-900 text-app text-xs" />
                     <button type="button" onClick={() => handleRequestAccess(currentClass.id)} disabled={!requestForm.student_name.trim()} className="px-2 py-1.5 rounded-lg bg-violet-500 text-white text-xs font-medium hover:bg-violet-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors touch-manipulation">
                       Ajukan akses
                     </button>
@@ -287,7 +287,7 @@ export default function GroupPanel({
               }}
               className={`p-2 rounded-lg text-left text-sm transition-colors touch-manipulation ${idx === classIndex && !isCoverView
                 ? 'bg-violet-500/20 border border-violet-500/50 text-violet-500'
-                : 'border border-gray-200 text-gray-400 hover:text-gray-800 hover:bg-gray-100 active:bg-gray-100'
+                : 'border-2 border-slate-900 text-gray-400 hover:text-gray-800 hover:bg-gray-100 active:bg-gray-100'
                 }`}
             >
               <p className="font-medium truncate">{c.name}</p>
@@ -302,19 +302,19 @@ export default function GroupPanel({
       </div>
 
       {/* Add Group Button - Fixed at Bottom */}
-      <div className="flex-shrink-0 px-3 py-2 border-t border-gray-200">
+      <div className="flex-shrink-0 px-3 py-2 border-t-2 border-gray-200">
         {canManage && (
           <div className="flex gap-2">
             {!addingClass ? (
-              <button type="button" onClick={() => setAddingClass(true)} className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm text-gray-400 hover:text-gray-800 hover:bg-gray-100 active:bg-gray-100 transition-colors touch-manipulation">
+              <button type="button" onClick={() => setAddingClass(true)} className="w-full px-3 py-2 rounded-lg border-2 border-slate-900 text-sm text-gray-400 hover:text-gray-800 hover:bg-gray-100 active:bg-gray-100 transition-colors touch-manipulation">
                 <Plus className="w-4 h-4 inline mr-1" /> Group
               </button>
             ) : (
               <div className="flex flex-col gap-2 w-full">
-                <input type="text" value={newClassName} onChange={(e) => setNewClassName(e.target.value)} placeholder="Nama group" className="px-2 py-1.5 rounded-lg bg-gray-100 border border-gray-200 text-sm text-app placeholder:text-gray-600" autoFocus />
+                <input type="text" value={newClassName} onChange={(e) => setNewClassName(e.target.value)} placeholder="Nama group" className="px-2 py-1.5 rounded-lg bg-gray-100 border-2 border-slate-900 text-sm text-app placeholder:text-gray-600" autoFocus />
                 <div className="flex gap-2">
                   <button type="button" onClick={handleAddClass} className="flex-1 px-2 py-1.5 rounded-lg bg-violet-500 text-white text-sm font-medium hover:bg-violet-500 transition-colors touch-manipulation">Tambah</button>
-                  <button type="button" onClick={() => { setAddingClass(false); setNewClassName('') }} className="flex-1 px-2 py-1.5 rounded-lg border border-gray-200 text-sm text-gray-400 hover:text-gray-800 hover:bg-gray-100 transition-colors touch-manipulation">Batal</button>
+                  <button type="button" onClick={() => { setAddingClass(false); setNewClassName('') }} className="flex-1 px-2 py-1.5 rounded-lg border-2 border-slate-900 text-sm text-gray-400 hover:text-gray-800 hover:bg-gray-100 transition-colors touch-manipulation">Batal</button>
                 </div>
               </div>
             )}
@@ -324,3 +324,14 @@ export default function GroupPanel({
     </div>
   )
 }
+
+
+
+
+
+
+
+
+
+
+

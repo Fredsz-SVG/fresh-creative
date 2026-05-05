@@ -40,3 +40,9 @@ export function getRoleFromSession(session: { user?: AuthUserLike } | null): 'ad
   const role = (u.user_metadata?.role as string) || (u.app_metadata?.role as string)
   return role === 'admin' ? 'admin' : 'user'
 }
+
+
+
+
+
+

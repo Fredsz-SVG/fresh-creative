@@ -49,3 +49,9 @@ export interface Album {
 
 // A combined type for data that can be either an Album or a Lead
 export type AlbumOrLead = (Album & { is_lead: false }) | (Lead & { is_lead: true });
+
+
+
+
+
+

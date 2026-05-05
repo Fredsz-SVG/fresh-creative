@@ -69,3 +69,9 @@ export async function deleteAlbumObject(bucket: R2Bucket, relativePathInsideAlbu
     ts: new Date().toISOString(),
   })
 }
+
+
+
+
+
+

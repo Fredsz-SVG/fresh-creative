@@ -104,3 +104,9 @@ export async function isUserSuspendedD1(db: D1Database, userId: string): Promise
   const row = await getUserRow(db, userId)
   return (row?.is_suspended ?? 0) === 1
 }
+
+
+
+
+
+

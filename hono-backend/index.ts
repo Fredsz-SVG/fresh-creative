@@ -59,6 +59,7 @@ import albumsIdClassesClassIdRequests from './routes/albums/id/classes/requests/
 import albumsIdClassesClassIdRequestsRequestId from './routes/albums/id/classes/requests/requestId'
 import albumsIdClassesClassIdStudents from './routes/albums/id/classes/classId-students'
 import albumsIdClassesClassIdVideo from './routes/albums/id/classes/classId-video'
+import albumsIdClassesClassIdBatchVideo from './routes/albums/id/classes/classId-batch-video'
 
 // ── Albums/:id/teachers ──
 import albumsIdTeachers from './routes/albums/id/teachers/index'
@@ -235,6 +236,7 @@ app.route(
 app.route('/api/albums/:id/classes/:classId/requests', albumsIdClassesClassIdRequests)
 app.route('/api/albums/:id/classes/:classId/students', albumsIdClassesClassIdStudents)
 app.route('/api/albums/:id/classes/:classId/video', albumsIdClassesClassIdVideo)
+app.route('/api/albums/:id/classes/:classId/batch-video', albumsIdClassesClassIdBatchVideo)
 app.route('/api/albums/:id/classes/:classId', albumsIdClassesClassId)
 app.route('/api/albums/:id/classes', albumsIdClasses)
 
@@ -355,3 +357,9 @@ export class RealtimeHubDurableObject {
 }
 
 export default app
+
+
+
+
+
+

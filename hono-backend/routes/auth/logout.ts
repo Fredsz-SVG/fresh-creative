@@ -9,3 +9,9 @@ authLogout.get('/', (c) => {
 })
 
 export default authLogout
+
+
+
+
+
+

@@ -91,3 +91,9 @@ albumsIdPhotosPhotoId.delete('/', async (c) => {
 })
 
 export default albumsIdPhotosPhotoId
+
+
+
+
+
+

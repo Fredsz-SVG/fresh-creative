@@ -86,7 +86,7 @@ export default function Pose({ creditCost }: { creditCost?: number }) {
     <section id="pose" className="py-4 md:py-6">
       <div className="max-w-3xl mx-auto">
         <form onSubmit={handleGeneratePose}>
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border-2 border-slate-200 dark:border-slate-700 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] p-4 sm:p-6 space-y-4 sm:space-y-5">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border-2 border-slate-200 dark:border-slate-700 shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b] p-4 sm:p-6 space-y-4 sm:space-y-5">
             <p className="text-[10px] sm:text-xs font-black text-slate-500 dark:text-slate-400 text-center uppercase tracking-widest">
               Upload foto karakter dan deskripsikan pose yang diinginkan.
             </p>
@@ -124,7 +124,7 @@ export default function Pose({ creditCost }: { creditCost?: number }) {
               {/* Subject Preview */}
               {subjectPreview && (
                 <div className="mt-3 sm:mt-4">
-                  <div className="relative max-w-[200px] sm:max-w-[250px] md:max-w-[300px] mx-auto h-48 sm:h-56 md:h-64 bg-slate-100 dark:bg-slate-800 rounded-xl border-2 border-slate-200 dark:border-slate-600 flex items-center justify-center overflow-hidden shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]">
+                  <div className="relative max-w-[200px] sm:max-w-[250px] md:max-w-[300px] mx-auto h-48 sm:h-56 md:h-64 bg-slate-100 dark:bg-slate-800 rounded-xl border-2 border-slate-200 dark:border-slate-600 flex items-center justify-center overflow-hidden shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b]">
                     <img
                       src={subjectPreview}
                       alt="Subject preview"
@@ -136,7 +136,7 @@ export default function Pose({ creditCost }: { creditCost?: number }) {
                         setSubject(null);
                         setSubjectPreview(null);
                       }}
-                      className="absolute top-1.5 sm:top-2 right-1.5 sm:right-2 z-10 inline-flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 bg-red-500 text-white rounded-full border-2 border-slate-200 dark:border-slate-600 hover:bg-red-600 transition-colors shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] active:shadow-none active:translate-x-0.5 active:translate-y-0.5"
+                      className="absolute top-1.5 sm:top-2 right-1.5 sm:right-2 z-10 inline-flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 bg-red-500 text-white rounded-full border-2 border-slate-200 dark:border-slate-600 hover:bg-red-600 transition-colors shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b] active:shadow-none active:translate-x-0.5 active:translate-y-0.5"
                     >
                       <X className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     </button>
@@ -176,7 +176,7 @@ export default function Pose({ creditCost }: { creditCost?: number }) {
             <button
               type="submit"
               disabled={loading || !subject}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-indigo-500 text-white rounded-xl border-2 border-slate-200 dark:border-slate-600 font-black text-xs uppercase tracking-widest shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-indigo-500 text-white rounded-xl border-2 border-slate-200 dark:border-slate-600 font-black text-xs uppercase tracking-widest shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? (
                 <>
@@ -203,7 +203,7 @@ export default function Pose({ creditCost }: { creditCost?: number }) {
               {results.map((result, index) => (
                 <div
                   key={index}
-                  className="bg-white dark:bg-slate-900 rounded-2xl border-2 border-slate-200 dark:border-slate-700 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] p-3 sm:p-4"
+                  className="bg-white dark:bg-slate-900 rounded-2xl border-2 border-slate-200 dark:border-slate-700 shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b] p-3 sm:p-4"
                 >
                   <div className="relative">
                     <img
@@ -227,7 +227,7 @@ export default function Pose({ creditCost }: { creditCost?: number }) {
                         }
                       }}
                       disabled={downloadingIndex !== null}
-                      className="absolute top-1.5 sm:top-2 right-1.5 sm:right-2 inline-flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 bg-emerald-500 text-white rounded-full border-2 border-slate-200 dark:border-slate-600 hover:bg-emerald-600 transition-colors shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 disabled:opacity-70"
+                      className="absolute top-1.5 sm:top-2 right-1.5 sm:right-2 inline-flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 bg-emerald-500 text-white rounded-full border-2 border-slate-200 dark:border-slate-600 hover:bg-emerald-600 transition-colors shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 disabled:opacity-70"
                       title="Download (langsung ke device)"
                     >
                       {downloadingIndex === index ? (
@@ -246,3 +246,10 @@ export default function Pose({ creditCost }: { creditCost?: number }) {
     </section>
   );
 }
+
+
+
+
+
+
+

@@ -75,3 +75,9 @@ userJoinRequests.get('/', async (c) => {
 })
 
 export default userJoinRequests
+
+
+
+
+
+

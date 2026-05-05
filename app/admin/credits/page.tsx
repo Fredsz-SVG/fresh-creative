@@ -86,7 +86,7 @@ const PackageForm = ({ pkg, onSave, onCancel }: { pkg: Partial<CreditPackage> | 
 
     return (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-[100]">
-            <div className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-2xl shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] p-5 md:p-6 w-full max-w-md">
+            <div className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-2xl shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b] p-5 md:p-6 w-full max-w-md">
                 <div className="flex justify-between items-center mb-5">
                     <h2 className="text-lg font-bold text-slate-900 dark:text-white">{pkg?.id ? 'Edit Package' : 'New Package'}</h2>
                     <button onClick={onCancel} className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
@@ -139,7 +139,7 @@ const PackageForm = ({ pkg, onSave, onCancel }: { pkg: Partial<CreditPackage> | 
                         </div>
                     </div>
                     <div className="flex gap-3 pt-2">
-                        <button type="button" onClick={onCancel} className="flex-1 inline-flex items-center justify-center min-h-[44px] px-4 py-2.5 border-2 border-slate-900 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200 font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-[4px_4px_0_0_#334155] hover:shadow-none whitespace-nowrap">
+                        <button type="button" onClick={onCancel} className="flex-1 inline-flex items-center justify-center min-h-[44px] px-4 py-2.5 border-2 border-slate-900 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200 font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-[2px_2px_0_0_#334155] hover:shadow-none whitespace-nowrap">
                             Cancel
                         </button>
                         <button type="submit" className="flex-1 inline-flex items-center justify-center min-h-[44px] px-4 py-2.5 bg-emerald-400 text-emerald-900 rounded-xl font-bold hover:bg-emerald-300 transition-all shadow-[2px_2px_0_0_#059669] hover:shadow-none whitespace-nowrap">
@@ -564,7 +564,7 @@ export default function AdminCreditSettingsPage() {
             )}
 
             {statusBanner && (
-                <div className={`fixed bottom-4 md:bottom-6 left-1/2 -translate-x-1/2 z-[200] max-w-[90%] md:max-w-sm w-full px-4 py-3 rounded-xl border-2 shadow-[4px_4px_0_0_#334155] transform transition-all animate-bounce-subtle ${statusBanner.startsWith('error:') ? 'bg-rose-100 border-rose-300 text-rose-700' : statusBanner.includes('success') ? 'bg-emerald-100 border-emerald-300 text-emerald-700' : 'bg-amber-100 border-amber-300 text-amber-700'}`}>
+                <div className={`fixed bottom-4 md:bottom-6 left-1/2 -translate-x-1/2 z-[200] max-w-[90%] md:max-w-sm w-full px-4 py-3 rounded-xl border-2 shadow-[2px_2px_0_0_#334155] transform transition-all animate-bounce-subtle ${statusBanner.startsWith('error:') ? 'bg-rose-100 border-rose-300 text-rose-700' : statusBanner.includes('success') ? 'bg-emerald-100 border-emerald-300 text-emerald-700' : 'bg-amber-100 border-amber-300 text-amber-700'}`}>
                     <div className="flex items-center gap-2 font-bold text-xs md:text-sm">
                         {statusBanner === 'saving-package' || statusBanner === 'creating-redeem' || statusBanner === 'updating-redeem-status' || statusBanner === 'creating-discount' || statusBanner === 'updating-discount-status' || statusBanner === 'deleting-item'
                             ? <Loader2 className="animate-spin w-4 h-4" />
@@ -595,7 +595,7 @@ export default function AdminCreditSettingsPage() {
             {/* Create Redeem Code Modal */}
             {showCreateRedeem && (
                 <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-[100]">
-                    <div className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-2xl shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] p-5 md:p-6 w-full max-w-md">
+                    <div className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-2xl shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b] p-5 md:p-6 w-full max-w-md">
                         <div className="flex justify-between items-center mb-5">
                             <h2 className="text-lg font-bold text-slate-900 dark:text-white">Buat Kode Redeem</h2>
                             <button onClick={() => setShowCreateRedeem(false)} className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
@@ -663,7 +663,7 @@ export default function AdminCreditSettingsPage() {
                             <button
                                 type="button"
                                 onClick={() => setShowCreateRedeem(false)}
-                                className="flex-1 inline-flex items-center justify-center min-h-[44px] px-4 py-2.5 border-2 border-slate-900 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200 font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-[4px_4px_0_0_#334155] hover:shadow-none whitespace-nowrap"
+                                className="flex-1 inline-flex items-center justify-center min-h-[44px] px-4 py-2.5 border-2 border-slate-900 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200 font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-[2px_2px_0_0_#334155] hover:shadow-none whitespace-nowrap"
                             >
                                 Batal
                             </button>
@@ -683,7 +683,7 @@ export default function AdminCreditSettingsPage() {
             {/* Create Discount Voucher Modal */}
             {showCreateDiscount && (
                 <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-[120]">
-                    <div className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-2xl shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] p-5 md:p-6 w-full max-w-md">
+                    <div className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-2xl shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b] p-5 md:p-6 w-full max-w-md">
                         <div className="flex justify-between items-center mb-5">
                             <h2 className="text-lg font-bold text-slate-900 dark:text-white">Buat Voucher Diskon</h2>
                             <button onClick={() => setShowCreateDiscount(false)} className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
@@ -752,7 +752,7 @@ export default function AdminCreditSettingsPage() {
                             <button
                                 type="button"
                                 onClick={() => setShowCreateDiscount(false)}
-                                className="flex-1 inline-flex items-center justify-center min-h-[44px] px-4 py-2.5 border-2 border-slate-900 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200 font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-[4px_4px_0_0_#334155] hover:shadow-none whitespace-nowrap"
+                                className="flex-1 inline-flex items-center justify-center min-h-[44px] px-4 py-2.5 border-2 border-slate-900 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200 font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-[2px_2px_0_0_#334155] hover:shadow-none whitespace-nowrap"
                             >
                                 Batal
                             </button>
@@ -772,7 +772,7 @@ export default function AdminCreditSettingsPage() {
             {/* Delete Confirmation Modal */}
             {deletePrompt && (
                 <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-[200]">
-                    <div className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-2xl shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] p-5 md:p-6 w-full max-w-sm" onClick={e => e.stopPropagation()}>
+                    <div className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-2xl shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b] p-5 md:p-6 w-full max-w-sm" onClick={e => e.stopPropagation()}>
                         <h3 className="text-base md:text-lg font-bold text-slate-900 dark:text-white">
                             Hapus{' '}
                             {deletePrompt.type === 'package'
@@ -796,7 +796,7 @@ export default function AdminCreditSettingsPage() {
                                 type="button"
                                 onClick={() => setDeletePrompt(null)}
                                 disabled={isDeleting}
-                                className="flex-1 inline-flex items-center justify-center min-h-[44px] px-4 py-2.5 border-2 border-slate-900 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200 font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:shadow-none disabled:opacity-60 whitespace-nowrap"
+                                className="flex-1 inline-flex items-center justify-center min-h-[44px] px-4 py-2.5 border-2 border-slate-900 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200 font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b] hover:shadow-none disabled:opacity-60 whitespace-nowrap"
                             >
                                 Batal
                             </button>
@@ -847,7 +847,7 @@ export default function AdminCreditSettingsPage() {
 
             {/* Tabs */}
             <div className="mb-8">
-              <div className="relative flex w-full md:w-fit items-center gap-1 p-1 bg-white dark:bg-slate-800 rounded-2xl border-2 border-slate-900 dark:border-slate-700 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]">
+              <div className="relative flex w-full md:w-fit items-center gap-1 p-1 bg-white dark:bg-slate-800 rounded-2xl border-2 border-slate-900 dark:border-slate-700 shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b]">
                 <div
                   className="absolute top-1 bottom-1 rounded-xl bg-violet-400 transition-all duration-300 ease-out"
                   style={{
@@ -913,7 +913,7 @@ export default function AdminCreditSettingsPage() {
                     {loading ? (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 min-h-[320px] sm:min-h-[360px]">
                             {[1, 2, 3, 4].map((i) => (
-                                <div key={i} className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-2xl p-5 md:p-6 animate-pulse shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]">
+                                <div key={i} className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-2xl p-5 md:p-6 animate-pulse shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b]">
                                     <div className="space-y-3">
                                         <div className="h-7 bg-slate-100 dark:bg-slate-800 rounded-xl w-14" />
                                         <div className="h-2.5 bg-slate-50 dark:bg-slate-800 rounded-lg w-10" />
@@ -923,7 +923,7 @@ export default function AdminCreditSettingsPage() {
                             ))}
                         </div>
                     ) : packages.length === 0 ? (
-                          <div className="flex flex-col items-center justify-center min-h-[320px] sm:min-h-[360px] py-16 px-4 md:px-8 text-center bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-3xl border-dashed shadow-[4px_4px_0_0_#94a3b8] dark:shadow-[4px_4px_0_0_#1e293b]">
+                          <div className="flex flex-col items-center justify-center min-h-[320px] sm:min-h-[360px] py-16 px-4 md:px-8 text-center bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-3xl border-dashed shadow-[2px_2px_0_0_#94a3b8] dark:shadow-[2px_2px_0_0_#1e293b]">
                               <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-2xl flex items-center justify-center mb-4 transform -rotate-3 border-2 border-slate-900 dark:border-slate-700">
                                   <Layout size={32} className="text-slate-400 dark:text-slate-500" strokeWidth={1.5} />
                               </div>
@@ -933,7 +933,7 @@ export default function AdminCreditSettingsPage() {
                               </p>
                               <button
                                   onClick={() => setEditingPackage({ credits: 0, price: 0, popular: false })}
-                                  className="inline-flex items-center justify-center gap-2 min-h-[44px] px-5 py-2.5 bg-emerald-400 hover:bg-emerald-300 text-emerald-900 rounded-xl font-bold text-sm shadow-[3px_3px_0_0_#059669] hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all whitespace-nowrap"
+                                  className="inline-flex items-center justify-center gap-2 min-h-[44px] px-5 py-2.5 bg-emerald-400 hover:bg-emerald-300 text-emerald-900 rounded-xl font-bold text-sm shadow-[2px_2px_0_0_#059669] hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all whitespace-nowrap"
                               >
                                   <Plus size={18} strokeWidth={2.5} />
                                   Buat Paket Credit
@@ -942,7 +942,7 @@ export default function AdminCreditSettingsPage() {
                     ) : (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 pb-12">
                             {packages.map((pkg) => (
-                                <div key={pkg.id} className="group relative bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-2xl p-5 md:p-6 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:shadow-none hover:-translate-x-0.5 hover:-translate-y-0.5 transition-all overflow-hidden">
+                                <div key={pkg.id} className="group relative bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-2xl p-5 md:p-6 shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b] hover:shadow-none hover:-translate-x-0.5 hover:-translate-y-0.5 transition-all overflow-hidden">
                                     <div className="flex justify-between items-start mb-3 md:mb-4">
                                         <div>
                                             <p className="text-2xl md:text-4xl font-black text-slate-900 dark:text-white tracking-tight leading-none mb-0.5">{pkg.credits}</p>
@@ -977,7 +977,7 @@ export default function AdminCreditSettingsPage() {
                     {loadingRedeem ? (
                         <div className="space-y-6 min-h-[320px] sm:min-h-[360px]">
                             {[1, 2, 3].map((i) => (
-                                <div key={i} className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-[24px] md:rounded-[32px] p-5 md:p-8 animate-pulse shadow-[#64748b] dark:shadow-[4px_4px_0_0_#1e293b] md:shadow-[#64748b] dark:md:shadow-[6px_6px_0_0_#334155]">
+                                <div key={i} className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-[24px] md:rounded-[32px] p-5 md:p-8 animate-pulse shadow-[#64748b] dark:shadow-[2px_2px_0_0_#1e293b] md:shadow-[#64748b] dark:md:shadow-[6px_6px_0_0_#334155]">
                                     <div className="flex justify-between items-center">
                                         <div className="space-y-3">
                                             <div className="h-5 md:h-6 bg-slate-100 dark:bg-slate-800 rounded-lg w-32 md:w-40" />
@@ -989,7 +989,7 @@ export default function AdminCreditSettingsPage() {
                             ))}
                         </div>
                     ) : redeemCodes.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center min-h-[320px] sm:min-h-[360px] py-16 px-4 md:px-8 text-center bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-3xl border-dashed shadow-[4px_4px_0_0_#94a3b8] dark:shadow-[4px_4px_0_0_#1e293b]">
+                        <div className="flex flex-col items-center justify-center min-h-[320px] sm:min-h-[360px] py-16 px-4 md:px-8 text-center bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-3xl border-dashed shadow-[2px_2px_0_0_#94a3b8] dark:shadow-[2px_2px_0_0_#1e293b]">
                             <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-2xl flex items-center justify-center mb-4 transform -rotate-3 border-2 border-slate-900 dark:border-slate-700">
                                 <Gift size={32} className="text-slate-400 dark:text-slate-500" strokeWidth={1.5} />
                             </div>
@@ -999,7 +999,7 @@ export default function AdminCreditSettingsPage() {
                             </p>
                             <button
                                 onClick={() => setShowCreateRedeem(true)}
-                                className="inline-flex items-center justify-center gap-2 min-h-[44px] px-5 py-2.5 bg-pink-400 hover:bg-pink-300 text-pink-900 rounded-xl font-bold text-sm shadow-[3px_3px_0_0_#db2777] hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all whitespace-nowrap"
+                                className="inline-flex items-center justify-center gap-2 min-h-[44px] px-5 py-2.5 bg-pink-400 hover:bg-pink-300 text-pink-900 rounded-xl font-bold text-sm shadow-[2px_2px_0_0_#db2777] hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all whitespace-nowrap"
                             >
                                 <Gift size={18} strokeWidth={2.5} />
                                 Buat Kode Redeem
@@ -1026,7 +1026,7 @@ export default function AdminCreditSettingsPage() {
                                 return (
                                     <div
                                         key={item.id}
-                                        className={`group relative bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-2xl p-4 md:p-5 transition-all shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:shadow-none hover:-translate-x-0.5 hover:-translate-y-0.5 ${!item.is_active || isExpired || isFull ? 'opacity-60 grayscale-[0.3]' : ''
+                                        className={`group relative bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-2xl p-4 md:p-5 transition-all shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b] hover:shadow-none hover:-translate-x-0.5 hover:-translate-y-0.5 ${!item.is_active || isExpired || isFull ? 'opacity-60 grayscale-[0.3]' : ''
                                             }`}
                                     >
                                         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 md:gap-4">
@@ -1075,7 +1075,7 @@ export default function AdminCreditSettingsPage() {
 
                                                     {item.expires_at && (
                                                         <div className="flex items-center gap-2 md:gap-3 col-span-2 md:col-span-1">
-                                                            <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl bg-blue-100 dark:bg-blue-900/50 border-2 border-slate-900 dark:border-slate-700 flex items-center justify-center shadow-[#64748b] dark:shadow-[4px_4px_0_0_#1e293b]">
+                                                            <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl bg-blue-100 dark:bg-blue-900/50 border-2 border-slate-900 dark:border-slate-700 flex items-center justify-center shadow-[#64748b] dark:shadow-[2px_2px_0_0_#1e293b]">
                                                                 <Clock className="w-4 h-4 md:w-5 md:h-5 text-blue-600 dark:text-blue-400" strokeWidth={2.5} />
                                                             </div>
                                                             <div>
@@ -1092,7 +1092,7 @@ export default function AdminCreditSettingsPage() {
                                             <div className="flex lg:flex-col items-center justify-end gap-2 lg:pl-4 lg:border-l-2 lg:border-slate-100 dark:lg:border-slate-700 shrink-0 mt-2 lg:mt-0">
                                                 <button
                                                     onClick={() => handleToggleRedeem(item)}
-                                                    className={`flex items-center justify-center w-9 h-9 md:w-10 md:h-10 rounded-xl border-2 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:shadow-none hover:-translate-x-0.5 hover:-translate-y-0.5 transition-all ${item.is_active ? 'bg-emerald-100 dark:bg-emerald-900/50 border-emerald-300 dark:border-emerald-700 text-emerald-600 dark:text-emerald-400' : 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-slate-400 dark:text-slate-500'
+                                                    className={`flex items-center justify-center w-9 h-9 md:w-10 md:h-10 rounded-xl border-2 shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b] hover:shadow-none hover:-translate-x-0.5 hover:-translate-y-0.5 transition-all ${item.is_active ? 'bg-emerald-100 dark:bg-emerald-900/50 border-emerald-300 dark:border-emerald-700 text-emerald-600 dark:text-emerald-400' : 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-slate-400 dark:text-slate-500'
                                                         }`}
                                                     title={item.is_active ? 'Nonaktifkan' : 'Aktifkan'}
                                                 >
@@ -1118,7 +1118,7 @@ export default function AdminCreditSettingsPage() {
                     {loadingDiscount ? (
                         <div className="space-y-6 min-h-[320px] sm:min-h-[360px]">
                             {[1, 2, 3].map((i) => (
-                                <div key={i} className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-[24px] md:rounded-[32px] p-5 md:p-8 animate-pulse shadow-[#64748b] dark:shadow-[4px_4px_0_0_#1e293b] md:shadow-[#64748b] dark:md:shadow-[6px_6px_0_0_#334155]">
+                                <div key={i} className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-[24px] md:rounded-[32px] p-5 md:p-8 animate-pulse shadow-[#64748b] dark:shadow-[2px_2px_0_0_#1e293b] md:shadow-[#64748b] dark:md:shadow-[6px_6px_0_0_#334155]">
                                     <div className="flex justify-between items-center">
                                         <div className="space-y-3">
                                             <div className="h-5 md:h-6 bg-slate-100 dark:bg-slate-800 rounded-lg w-32 md:w-40" />
@@ -1130,7 +1130,7 @@ export default function AdminCreditSettingsPage() {
                             ))}
                         </div>
                     ) : discountVouchers.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center min-h-[320px] sm:min-h-[360px] py-16 px-4 md:px-8 text-center bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-3xl border-dashed shadow-[4px_4px_0_0_#94a3b8] dark:shadow-[4px_4px_0_0_#1e293b]">
+                        <div className="flex flex-col items-center justify-center min-h-[320px] sm:min-h-[360px] py-16 px-4 md:px-8 text-center bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-3xl border-dashed shadow-[2px_2px_0_0_#94a3b8] dark:shadow-[2px_2px_0_0_#1e293b]">
                             <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-2xl flex items-center justify-center mb-4 transform -rotate-3 border-2 border-slate-900 dark:border-slate-700">
                                 <Percent size={32} className="text-slate-400 dark:text-slate-500" strokeWidth={1.5} />
                             </div>
@@ -1140,7 +1140,7 @@ export default function AdminCreditSettingsPage() {
                             </p>
                             <button
                                 onClick={() => setShowCreateDiscount(true)}
-                                className="inline-flex items-center justify-center gap-2 min-h-[44px] px-5 py-2.5 bg-sky-400 hover:bg-sky-300 text-sky-900 rounded-xl font-bold text-sm shadow-[3px_3px_0_0_#0284c7] hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all whitespace-nowrap"
+                                className="inline-flex items-center justify-center gap-2 min-h-[44px] px-5 py-2.5 bg-sky-400 hover:bg-sky-300 text-sky-900 rounded-xl font-bold text-sm shadow-[2px_2px_0_0_#0284c7] hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all whitespace-nowrap"
                             >
                                 <Plus size={18} strokeWidth={2.5} />
                                 Buat Voucher Diskon
@@ -1167,7 +1167,7 @@ export default function AdminCreditSettingsPage() {
                                 return (
                                     <div
                                         key={item.id}
-                                        className={`group relative bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-2xl p-4 md:p-5 transition-all shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:shadow-none hover:-translate-x-0.5 hover:-translate-y-0.5 ${!item.is_active || isExpired || isFull ? 'opacity-60 grayscale-[0.3]' : ''
+                                        className={`group relative bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-2xl p-4 md:p-5 transition-all shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b] hover:shadow-none hover:-translate-x-0.5 hover:-translate-y-0.5 ${!item.is_active || isExpired || isFull ? 'opacity-60 grayscale-[0.3]' : ''
                                             }`}
                                     >
                                         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 md:gap-4">
@@ -1216,7 +1216,7 @@ export default function AdminCreditSettingsPage() {
 
                                                     {item.expires_at && (
                                                         <div className="flex items-center gap-2 md:gap-3 col-span-2 md:col-span-1">
-                                                            <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl bg-blue-100 dark:bg-blue-900/50 border-2 border-slate-900 dark:border-slate-700 flex items-center justify-center shadow-[#64748b] dark:shadow-[4px_4px_0_0_#1e293b]">
+                                                            <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl bg-blue-100 dark:bg-blue-900/50 border-2 border-slate-900 dark:border-slate-700 flex items-center justify-center shadow-[#64748b] dark:shadow-[2px_2px_0_0_#1e293b]">
                                                                 <Clock className="w-4 h-4 md:w-5 md:h-5 text-blue-600 dark:text-blue-400" strokeWidth={2.5} />
                                                             </div>
                                                             <div>
@@ -1233,7 +1233,7 @@ export default function AdminCreditSettingsPage() {
                                             <div className="flex lg:flex-col items-center justify-end gap-2 lg:pl-4 lg:border-l-2 lg:border-slate-100 dark:lg:border-slate-700 shrink-0 mt-2 lg:mt-0">
                                                 <button
                                                     onClick={() => handleToggleDiscount(item)}
-                                                    className={`flex items-center justify-center w-9 h-9 md:w-10 md:h-10 rounded-xl border-2 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:shadow-none hover:-translate-x-0.5 hover:-translate-y-0.5 transition-all ${item.is_active ? 'bg-emerald-100 dark:bg-emerald-900/50 border-emerald-300 dark:border-emerald-700 text-emerald-600 dark:text-emerald-400' : 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-slate-400 dark:text-slate-500'
+                                                    className={`flex items-center justify-center w-9 h-9 md:w-10 md:h-10 rounded-xl border-2 shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b] hover:shadow-none hover:-translate-x-0.5 hover:-translate-y-0.5 transition-all ${item.is_active ? 'bg-emerald-100 dark:bg-emerald-900/50 border-emerald-300 dark:border-emerald-700 text-emerald-600 dark:text-emerald-400' : 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-slate-400 dark:text-slate-500'
                                                         }`}
                                                     title={item.is_active ? 'Nonaktifkan' : 'Aktifkan'}
                                                 >
@@ -1258,3 +1258,10 @@ export default function AdminCreditSettingsPage() {
         </div>
     )
 }
+
+
+
+
+
+
+

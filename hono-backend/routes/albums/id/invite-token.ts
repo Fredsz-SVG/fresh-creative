@@ -103,3 +103,9 @@ albumInviteTokenRoute.post('/', async (c) => {
 })
 
 export default albumInviteTokenRoute
+
+
+
+
+
+

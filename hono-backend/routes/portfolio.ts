@@ -9,7 +9,7 @@ portfolio.get('/', async (c) => {
   
   try {
     const { results } = await db.prepare(
-      'SELECT id, title, subtitle, description as desc, image_url as img FROM portfolio_items ORDER BY display_order ASC'
+      'SELECT id, title, subtitle, description as desc, image_url as img, video_url FROM portfolio_items ORDER BY display_order ASC'
     ).all()
     return c.json(results)
   } catch (e) {
@@ -19,3 +19,9 @@ portfolio.get('/', async (c) => {
 })
 
 export default portfolio
+
+
+
+
+
+

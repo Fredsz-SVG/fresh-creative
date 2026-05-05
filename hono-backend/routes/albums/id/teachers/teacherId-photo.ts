@@ -173,3 +173,8 @@ teacherIdPhoto.delete('/', async (c) => {
 })
 
 export default teacherIdPhoto
+
+
+
+
+

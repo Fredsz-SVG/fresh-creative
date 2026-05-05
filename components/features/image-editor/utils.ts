@@ -54,3 +54,9 @@ export const getEmojiForType = (type: string): string => {
       return '⭐'
   }
 }
+
+
+
+
+
+

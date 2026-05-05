@@ -103,3 +103,9 @@ albumsIdTeachers.post('/', async (c) => {
 })
 
 export default albumsIdTeachers
+
+
+
+
+
+

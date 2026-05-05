@@ -107,45 +107,9 @@ export default function AdminRiwayatPage() {
     fetchTransactions(viewMode)
   }, [viewMode, fetchTransactions])
 
-  useEffect(() => {
-    if (typeof window === 'undefined') return
-    const params = new URLSearchParams(window.location.search)
-    const statusParam = params.get('status')
-    if (statusParam === 'success' || statusParam === 'failed') {
-      const run = async () => {
-        if (statusParam === 'success') {
-          let synced = 0
-          const syncWithRetry = async (retries = 2) => {
-            for (let i = 0; i <= retries; i++) {
-              try {
-                const res = await fetchWithAuth('/api/credits/sync-invoice', { method: 'POST' })
-                const data = (await res.json().catch(() => ({}))) as { synced?: number }
-                synced = data?.synced ?? 0
-                if (synced > 0) break
-                if (i < retries) await new Promise((r) => setTimeout(r, 2500))
-              } catch {
-                if (i < retries) await new Promise((r) => setTimeout(r, 2500))
-              }
-            }
-            return synced
-          }
-          const n = await syncWithRetry()
-          if (n > 0) window.dispatchEvent(new CustomEvent('credits-updated'))
-        }
-        await fetchTransactions(viewMode)
-        window.history.replaceState({}, '', '/admin/riwayat')
-      }
-      run()
-    }
-  }, [viewMode, fetchTransactions])
+  const lastRealtimeFetchRef = useRef(0)
 
   useEffect(() => {
-    const onVisible = () => fetchTransactions(viewMode, true)
-    window.addEventListener('focus', onVisible)
-    document.addEventListener('visibilitychange', onVisible)
-
-    // Realtime: refresh saat ada transaksi baru / status berubah di device/user lain
-    const lastFetchRef = { ts: 0 }
     const onRealtime = (event: Event) => {
       const detail = (event as CustomEvent<{ type?: string; channel?: string; payload?: Record<string, unknown> }>).detail
       if (!detail?.type || detail.channel !== 'global') return
@@ -154,20 +118,28 @@ export default function AdminRiwayatPage() {
         path.startsWith('/api/credits/') ||
         path.startsWith('/api/admin/transactions') ||
         path.startsWith('/api/webhooks/xendit') ||
-        path.startsWith('/api/albums') && path.includes('/checkout')
+        (path.startsWith('/api/albums') && path.includes('/checkout'))
       if (!isTransactionEvent) return
       const now = Date.now()
-      if (now - lastFetchRef.ts < 3000) return // throttle 3s
-      lastFetchRef.ts = now
+      if (now - lastRealtimeFetchRef.current < 3000) return // throttle 3s
+      lastRealtimeFetchRef.current = now
       fetchTransactions('mine', true)
       fetchTransactions('all', true)
     }
     window.addEventListener('fresh:realtime', onRealtime)
 
     return () => {
-      window.removeEventListener('focus', onVisible)
-      document.removeEventListener('visibilitychange', onVisible)
       window.removeEventListener('fresh:realtime', onRealtime)
+    }
+  }, [fetchTransactions])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const params = new URLSearchParams(window.location.search)
+    const statusParam = params.get('status')
+    if (statusParam === 'success' || statusParam === 'failed') {
+      fetchTransactions(viewMode)
+      window.history.replaceState({}, '', '/admin/riwayat')
     }
   }, [viewMode, fetchTransactions])
 
@@ -238,7 +210,7 @@ export default function AdminRiwayatPage() {
       </div>
 
       <div className="flex justify-center mb-4 sm:mb-6">
-        <div className="relative inline-flex items-center gap-1 p-1 bg-white dark:bg-slate-800 rounded-2xl border-2 border-slate-900 dark:border-slate-700 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]">
+        <div className="relative inline-flex items-center gap-1 p-1 bg-white dark:bg-slate-800 rounded-2xl border-2 border-slate-900 dark:border-slate-700 shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b]">
           <div
             className={`absolute top-1 bottom-1 rounded-xl bg-violet-400 transition-all duration-300 ease-out`}
             style={{
@@ -284,7 +256,7 @@ export default function AdminRiwayatPage() {
       {currentLoading ? (
         <div className="space-y-4 md:space-y-5 lg:space-y-6">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="rounded-xl md:rounded-2xl border-2 border-slate-900 bg-white dark:bg-slate-900 p-4 sm:p-5 md:p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-5 animate-pulse shadow-[3px_3px_0_0_#334155] md:shadow-[4px_4px_0_0_#334155] dark:shadow-[3px_3px_0_0_#1e293b] dark:md:shadow-[4px_4px_0_0_#1e293b]">
+            <div key={i} className="rounded-xl md:rounded-2xl border-2 border-slate-900 bg-white dark:bg-slate-900 p-4 sm:p-5 md:p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-5 animate-pulse shadow-[2px_2px_0_0_#334155] md:shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b] dark:md:shadow-[2px_2px_0_0_#1e293b]">
               <div className="flex items-center gap-4 sm:gap-5">
                 <div className="w-12 h-12 md:w-14 md:h-14 rounded-xl md:rounded-2xl bg-slate-100 dark:bg-slate-800 shrink-0 border-2 border-slate-900 dark:border-slate-700" />
                 <div className="space-y-2 md:space-y-3">
@@ -300,7 +272,7 @@ export default function AdminRiwayatPage() {
           ))}
         </div>
       ) : transactions.length === 0 ? (
-        <div className="rounded-[40px] border-2 border-slate-900 bg-white dark:bg-slate-900 p-12 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]">
+        <div className="rounded-[40px] border-2 border-slate-900 bg-white dark:bg-slate-900 p-12 shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b]">
           <div className="flex flex-col items-center justify-center text-center">
             <div className="w-24 h-24 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 flex items-center justify-center mb-6 text-slate-300">
               <History className="w-12 h-12" strokeWidth={1.5} />
@@ -312,7 +284,7 @@ export default function AdminRiwayatPage() {
           </div>
         </div>
       ) : filteredTransactions.length === 0 && viewMode === 'all' && searchQuery ? (
-        <div className="rounded-[40px] border-2 border-slate-900 bg-white p-12 shadow-[4px_4px_0_0_#334155]">
+        <div className="rounded-[40px] border-2 border-slate-900 bg-white p-12 shadow-[2px_2px_0_0_#334155]">
           <div className="flex flex-col items-center justify-center text-center">
             <div className="w-24 h-24 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center mb-6 text-slate-300">
               <Search className="w-12 h-12" strokeWidth={1.5} />
@@ -328,11 +300,11 @@ export default function AdminRiwayatPage() {
           {paginatedTransactions.map((tx) => (
             <div
               key={tx.id}
-              className="rounded-xl md:rounded-2xl border-2 border-slate-900 bg-white dark:bg-slate-900 p-4 sm:p-5 md:p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-5 shadow-[3px_3px_0_0_#334155] md:shadow-[4px_4px_0_0_#334155] dark:shadow-[3px_3px_0_0_#1e293b] dark:md:shadow-[4px_4px_0_0_#1e293b] hover:shadow-[3px_3px_0_0_#334155] hover:md:shadow-[5px_5px_0_0_#334155] hover:-translate-x-1 hover:-translate-y-1 transition-all"
+              className="rounded-xl md:rounded-2xl border-2 border-black bg-white dark:bg-slate-900 p-4 sm:p-5 md:p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-5 shadow-[2px_2px_0_0_#334155] md:shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b] dark:md:shadow-[2px_2px_0_0_#1e293b] hover:translate-x-1 hover:translate-y-1 transition-all"
             >
               <div className="flex items-start sm:items-center gap-4 sm:gap-5">
                 <div
-                  className={`w-12 h-12 md:w-14 md:h-14 rounded-xl md:rounded-2xl border-2 border-slate-900 flex items-center justify-center shrink-0 shadow-[3px_3px_0_0_#334155] md:shadow-[4px_4px_0_0_#334155] ${tx.status === 'PAID' || tx.status === 'SETTLED'
+                  className={`w-12 h-12 md:w-14 md:h-14 rounded-xl md:rounded-2xl border-2 border-black flex items-center justify-center shrink-0 shadow-[2px_2px_0_0_#334155] md:shadow-[2px_2px_0_0_#334155] ${tx.status === 'PAID' || tx.status === 'SETTLED'
                     ? 'bg-emerald-300'
                     : tx.status === 'PENDING'
                       ? 'bg-orange-300'
@@ -405,7 +377,7 @@ export default function AdminRiwayatPage() {
                   <button
                     type="button"
                     onClick={() => tx.invoice_url && setInvoicePopupUrl(tx.invoice_url)}
-                    className="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs md:text-sm font-bold bg-orange-400 text-slate-900 px-3 sm:px-4 md:px-5 py-2 md:py-2.5 rounded-xl md:rounded-2xl border-2 border-slate-900 hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none shadow-[2px_2px_0_0_#64748b] md:shadow-[3px_3px_0_0_#64748b] transition-all shrink-0 w-fit"
+                    className="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs md:text-sm font-bold bg-orange-400 text-slate-900 px-3 sm:px-4 md:px-5 py-2 md:py-2.5 rounded-xl md:rounded-2xl border-2 border-slate-900 hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none shadow-[2px_2px_0_0_#64748b] md:shadow-[2px_2px_0_0_#64748b] transition-all shrink-0 w-fit"
                   >
                     Lanjutkan Bayar
                     <ExternalLink className="w-3.5 h-3.5 sm:w-4 sm:h-4" strokeWidth={3} />
@@ -416,7 +388,7 @@ export default function AdminRiwayatPage() {
                   <button
                     type="button"
                     onClick={() => generateAndPrintInvoice(tx)}
-                    className="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs md:text-sm font-bold bg-emerald-200 text-slate-900 px-3 sm:px-4 md:px-5 py-2 md:py-2.5 rounded-xl md:rounded-2xl border-2 border-slate-900 hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none shadow-[2px_2px_0_0_#64748b] md:shadow-[3px_3px_0_0_#64748b] transition-all shrink-0 w-fit"
+                    className="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs md:text-sm font-bold bg-emerald-200 text-slate-900 px-3 sm:px-4 md:px-5 py-2 md:py-2.5 rounded-xl md:rounded-2xl border-2 border-slate-900 hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none shadow-[2px_2px_0_0_#64748b] md:shadow-[2px_2px_0_0_#64748b] transition-all shrink-0 w-fit"
                   >
                     Download Invoice
                     <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4" strokeWidth={3} />
@@ -460,3 +432,10 @@ export default function AdminRiwayatPage() {
     </>
   )
 }
+
+
+
+
+
+
+

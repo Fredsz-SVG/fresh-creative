@@ -69,7 +69,7 @@ export default function Error({
         <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
           <button
             onClick={() => reset()}
-            className="group inline-flex items-center justify-center gap-2 w-full sm:w-auto px-8 py-3.5 bg-white text-slate-900 font-black text-sm uppercase tracking-wide rounded-full border border-slate-700 shadow-[3px_3px_0_0_#000] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[4px_4px_0_0_#000] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all duration-200"
+            className="group inline-flex items-center justify-center gap-2 w-full sm:w-auto px-8 py-3.5 bg-white text-slate-900 font-black text-sm uppercase tracking-wide rounded-full border border-slate-700 shadow-[2px_2px_0_0_#000] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[2px_2px_0_0_#000] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all duration-200"
           >
             <RefreshCcw className="w-4 h-4 group-hover:rotate-180 transition-transform duration-500" />
             Coba Lagi
@@ -97,3 +97,10 @@ export default function Error({
     </div>
   );
 }
+
+
+
+
+
+
+

@@ -109,3 +109,9 @@ sendLoginOtp.post('/', async (c) => {
 })
 
 export default sendLoginOtp
+
+
+
+
+
+

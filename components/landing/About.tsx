@@ -71,7 +71,7 @@ export function About() {
           transition={{ duration: 0.6 }}
           className="text-center mb-16 sm:mb-20 md:mb-24 px-4"
         >
-          <div className="inline-grid grid-cols-[auto_1fr] items-center mb-10 sm:mb-14 border-2 border-slate-950 dark:border-[#5cecff]/30 rounded-xl overflow-hidden bg-white dark:bg-[#0d1148] shadow-[3px_3px_0_0_#334155] dark:shadow-neo-glow transition-all duration-300 hover:-translate-x-0.5 hover:-translate-y-0.5">
+          <div className="inline-grid grid-cols-[auto_1fr] items-center mb-10 sm:mb-14 border-2 border-slate-950 dark:border-[#5cecff]/30 rounded-xl overflow-hidden bg-white dark:bg-[#0d1148] shadow-[2px_2px_0_0_#334155] dark:shadow-neo-glow transition-all duration-300 hover:-translate-x-0.5 hover:-translate-y-0.5">
             <div className="bg-slate-950 dark:bg-[#131a68] p-2.5 sm:p-3 border-r-2 border-slate-950 dark:border-[#5cecff]/30 text-lime-400">
               <Award size={18} />
             </div>
@@ -97,7 +97,7 @@ export function About() {
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            className="relative p-8 sm:p-10 rounded-tl-[40px] rounded-br-[40px] rounded-tr-xl rounded-bl-xl bg-gradient-to-br from-sky-300 to-sky-100 dark:from-[#131a68] dark:to-[#0d1148] border-2 border-slate-900 dark:border-[#5cecff]/25 shadow-[4px_4px_0_0_#334155] dark:shadow-neo-glow transition-all duration-300 hover:-translate-x-0.5 hover:-translate-y-0.5 overflow-hidden"
+            className="relative p-8 sm:p-10 rounded-tl-[40px] rounded-br-[40px] rounded-tr-xl rounded-bl-xl bg-gradient-to-br from-sky-300 to-sky-100 dark:from-[#131a68] dark:to-[#0d1148] border-2 border-slate-900 dark:border-[#5cecff]/25 shadow-[2px_2px_0_0_#334155] dark:shadow-neo-glow transition-all duration-300 hover:-translate-x-0.5 hover:-translate-y-0.5 overflow-hidden"
           >
             <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl bg-sky-400 dark:bg-[#5cecff]/15 border-2 border-sky-500 dark:border-[#5cecff]/40 shadow-md flex items-center justify-center mb-6 sm:mb-8 overflow-hidden shrink-0">
               <DotLottieReact
@@ -120,7 +120,7 @@ export function About() {
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="relative p-8 sm:p-10 rounded-tl-[40px] rounded-br-[40px] rounded-tr-xl rounded-bl-xl bg-gradient-to-br from-emerald-300 to-emerald-100 dark:from-[#131a68] dark:to-[#0d1148] border-2 border-slate-900 dark:border-[#ff61c6]/25 shadow-[4px_4px_0_0_#334155] dark:shadow-neo-glow transition-all duration-300 hover:-translate-x-0.5 hover:-translate-y-0.5 overflow-hidden"
+            className="relative p-8 sm:p-10 rounded-tl-[40px] rounded-br-[40px] rounded-tr-xl rounded-bl-xl bg-gradient-to-br from-emerald-300 to-emerald-100 dark:from-[#131a68] dark:to-[#0d1148] border-2 border-slate-900 dark:border-[#ff61c6]/25 shadow-[2px_2px_0_0_#334155] dark:shadow-neo-glow transition-all duration-300 hover:-translate-x-0.5 hover:-translate-y-0.5 overflow-hidden"
           >
             <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl bg-emerald-400 dark:bg-[#f4ff61]/10 border-2 border-emerald-500 dark:border-[#f4ff61]/35 shadow-md flex items-center justify-center mb-6 sm:mb-8 overflow-hidden shrink-0">
               <DotLottieReact
@@ -184,7 +184,7 @@ export function About() {
                 setBeforeAfterPct(52);
                 setActiveBeforeAfter("ootd");
               }}
-              className="group relative p-8 sm:p-10 text-left rounded-tr-[40px] rounded-bl-[40px] rounded-tl-xl rounded-br-xl bg-gradient-to-bl from-pink-300 to-pink-100 dark:from-[#1a0d4a] dark:to-[#0d1148] border-2 border-slate-900 dark:border-[#ff61c6]/30 shadow-[3px_3px_0_0_#334155] dark:shadow-neo-glow transition-all duration-300 hover:-translate-x-0.5 hover:-translate-y-0.5 isolation z-10 hover:z-20 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink-400/70 focus-visible:ring-offset-4 focus-visible:ring-offset-slate-100 dark:focus-visible:ring-offset-[#0a0c37]"
+              className="group relative p-8 sm:p-10 text-left rounded-tr-[40px] rounded-bl-[40px] rounded-tl-xl rounded-br-xl bg-gradient-to-bl from-pink-300 to-pink-100 dark:from-[#1a0d4a] dark:to-[#0d1148] border-2 border-slate-900 dark:border-[#ff61c6]/30 shadow-[2px_2px_0_0_#334155] dark:shadow-neo-glow transition-all duration-300 hover:-translate-x-0.5 hover:-translate-y-0.5 isolation z-10 hover:z-20 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink-400/70 focus-visible:ring-offset-4 focus-visible:ring-offset-slate-100 dark:focus-visible:ring-offset-[#0a0c37]"
               aria-label="Buka demo before-after AI Fashion & OOTD"
             >
               <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl bg-pink-400 dark:bg-[#ff61c6]/15 border-2 border-pink-500 dark:border-[#ff61c6]/45 shadow-md flex items-center justify-center mb-6 sm:mb-8 overflow-hidden shrink-0">
@@ -207,7 +207,7 @@ export function About() {
                 setBeforeAfterPct(52);
                 setActiveBeforeAfter("thematic");
               }}
-              className="group relative p-8 sm:p-10 text-left rounded-tr-[40px] rounded-bl-[40px] rounded-tl-xl rounded-br-xl bg-gradient-to-bl from-fuchsia-300 to-fuchsia-100 dark:from-[#1a0d4a] dark:to-[#0d1148] border-2 border-slate-900 dark:border-[#ff61c6]/25 shadow-[3px_3px_0_0_#334155] dark:shadow-neo-glow transition-all duration-300 hover:-translate-x-0.5 hover:-translate-y-0.5 isolation z-10 hover:z-20 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400/70 focus-visible:ring-offset-4 focus-visible:ring-offset-slate-100 dark:focus-visible:ring-offset-[#0a0c37]"
+              className="group relative p-8 sm:p-10 text-left rounded-tr-[40px] rounded-bl-[40px] rounded-tl-xl rounded-br-xl bg-gradient-to-bl from-fuchsia-300 to-fuchsia-100 dark:from-[#1a0d4a] dark:to-[#0d1148] border-2 border-slate-900 dark:border-[#ff61c6]/25 shadow-[2px_2px_0_0_#334155] dark:shadow-neo-glow transition-all duration-300 hover:-translate-x-0.5 hover:-translate-y-0.5 isolation z-10 hover:z-20 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400/70 focus-visible:ring-offset-4 focus-visible:ring-offset-slate-100 dark:focus-visible:ring-offset-[#0a0c37]"
               aria-label="Buka demo before-after Thematic Transformation"
             >
               <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl bg-fuchsia-400 dark:bg-[#ff61c6]/15 border-2 border-fuchsia-500 dark:border-[#ff61c6]/40 shadow-md flex items-center justify-center mb-6 sm:mb-8 overflow-hidden shrink-0">
@@ -279,7 +279,7 @@ export function About() {
 
                     <div className="absolute inset-y-0" style={{ left: `${beforeAfterPct}%` }} aria-hidden="true">
                       <div className="absolute inset-y-0 -translate-x-1/2 w-[3px] bg-white/90 shadow-[0_0_0_2px_rgba(15,23,42,0.9)]" />
-                      <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 h-10 w-10 rounded-full bg-white border-2 border-slate-900 shadow-[3px_3px_0_0_#0f172a] flex items-center justify-center">
+                      <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 h-10 w-10 rounded-full bg-white border-2 border-slate-900 shadow-[2px_2px_0_0_#0f172a] flex items-center justify-center">
                         <div className="flex items-center gap-1">
                           <span className="block w-0 h-0 border-y-[6px] border-y-transparent border-r-[8px] border-r-slate-900" />
                           <span className="block w-0 h-0 border-y-[6px] border-y-transparent border-l-[8px] border-l-slate-900" />
@@ -344,7 +344,7 @@ export function About() {
           </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 sm:gap-10">
-            <div className="group relative p-8 sm:p-10 rounded-tr-[40px] rounded-bl-[40px] rounded-tl-xl rounded-br-xl bg-gradient-to-bl from-violet-300 to-violet-100 dark:from-[#1a0d4a] dark:to-[#0d1148] border-2 border-slate-900 dark:border-[#5cecff]/25 shadow-[3px_3px_0_0_#334155] dark:shadow-neo-glow transition-all duration-300 hover:-translate-x-0.5 hover:-translate-y-0.5 isolation z-10 hover:z-20">
+            <div className="group relative p-8 sm:p-10 rounded-tr-[40px] rounded-bl-[40px] rounded-tl-xl rounded-br-xl bg-gradient-to-bl from-violet-300 to-violet-100 dark:from-[#1a0d4a] dark:to-[#0d1148] border-2 border-slate-900 dark:border-[#5cecff]/25 shadow-[2px_2px_0_0_#334155] dark:shadow-neo-glow transition-all duration-300 hover:-translate-x-0.5 hover:-translate-y-0.5 isolation z-10 hover:z-20">
               <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl bg-violet-400 dark:bg-[#5cecff]/15 border-2 border-violet-500 dark:border-[#5cecff]/40 shadow-md flex items-center justify-center mb-6 sm:mb-8 overflow-hidden shrink-0">
                 <DotLottieReact
                   src="/lottie/image.json"
@@ -359,7 +359,7 @@ export function About() {
               </p>
             </div>
 
-            <div className="group relative p-8 sm:p-10 rounded-tr-[40px] rounded-bl-[40px] rounded-tl-xl rounded-br-xl bg-gradient-to-bl from-sky-300 to-sky-100 dark:from-[#1a0d4a] dark:to-[#0d1148] border-2 border-slate-900 dark:border-[#5cecff]/25 shadow-[3px_3px_0_0_#334155] dark:shadow-neo-glow transition-all duration-300 hover:-translate-x-0.5 hover:-translate-y-0.5 isolation z-10 hover:z-20">
+            <div className="group relative p-8 sm:p-10 rounded-tr-[40px] rounded-bl-[40px] rounded-tl-xl rounded-br-xl bg-gradient-to-bl from-sky-300 to-sky-100 dark:from-[#1a0d4a] dark:to-[#0d1148] border-2 border-slate-900 dark:border-[#5cecff]/25 shadow-[2px_2px_0_0_#334155] dark:shadow-neo-glow transition-all duration-300 hover:-translate-x-0.5 hover:-translate-y-0.5 isolation z-10 hover:z-20">
               <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl bg-sky-400 dark:bg-[#5cecff]/15 border-2 border-sky-500 dark:border-[#5cecff]/40 shadow-md flex items-center justify-center mb-6 sm:mb-8 overflow-hidden shrink-0">
                 <DotLottieReact
                   src="/lottie/photovideo.json"
@@ -423,7 +423,7 @@ export function About() {
           </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-7">
-            <div className="group relative p-6 sm:p-7 rounded-tr-[34px] rounded-bl-[34px] rounded-tl-xl rounded-br-xl bg-gradient-to-bl from-lime-300 to-lime-100 dark:from-[#131a68] dark:to-[#0d1148] border-2 border-slate-900 dark:border-[#f4ff61]/25 shadow-[3px_3px_0_0_#334155] dark:shadow-neo-glow transition-all duration-300 hover:-translate-x-0.5 hover:-translate-y-0.5 isolation z-10 hover:z-20">
+            <div className="group relative p-6 sm:p-7 rounded-tr-[34px] rounded-bl-[34px] rounded-tl-xl rounded-br-xl bg-gradient-to-bl from-lime-300 to-lime-100 dark:from-[#131a68] dark:to-[#0d1148] border-2 border-slate-900 dark:border-[#f4ff61]/25 shadow-[2px_2px_0_0_#334155] dark:shadow-neo-glow transition-all duration-300 hover:-translate-x-0.5 hover:-translate-y-0.5 isolation z-10 hover:z-20">
               <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl bg-lime-400 dark:bg-[#f4ff61]/10 border-2 border-lime-500 dark:border-[#f4ff61]/35 shadow-md flex items-center justify-center mb-5 sm:mb-6 overflow-hidden shrink-0">
                 <DotLottieReact
                   src="/lottie/success.json"
@@ -438,7 +438,7 @@ export function About() {
               </p>
             </div>
 
-            <div className="group relative p-6 sm:p-7 rounded-tr-[34px] rounded-bl-[34px] rounded-tl-xl rounded-br-xl bg-gradient-to-bl from-amber-300 to-amber-100 dark:from-[#131a68] dark:to-[#0d1148] border-2 border-slate-900 dark:border-[#ff9900]/30 shadow-[3px_3px_0_0_#334155] dark:shadow-neo-glow transition-all duration-300 hover:-translate-x-0.5 hover:-translate-y-0.5 isolation z-10 hover:z-20">
+            <div className="group relative p-6 sm:p-7 rounded-tr-[34px] rounded-bl-[34px] rounded-tl-xl rounded-br-xl bg-gradient-to-bl from-amber-300 to-amber-100 dark:from-[#131a68] dark:to-[#0d1148] border-2 border-slate-900 dark:border-[#ff9900]/30 shadow-[2px_2px_0_0_#334155] dark:shadow-neo-glow transition-all duration-300 hover:-translate-x-0.5 hover:-translate-y-0.5 isolation z-10 hover:z-20">
               <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl bg-amber-400 dark:bg-[#ff9900]/15 border-2 border-amber-500 dark:border-[#ff9900]/40 shadow-md flex items-center justify-center mb-5 sm:mb-6 overflow-hidden shrink-0">
                 <DotLottieReact
                   src="/lottie/ai.json"
@@ -453,7 +453,7 @@ export function About() {
               </p>
             </div>
 
-            <div className="group relative p-6 sm:p-7 rounded-tr-[34px] rounded-bl-[34px] rounded-tl-xl rounded-br-xl bg-gradient-to-bl from-sky-300 to-sky-100 dark:from-[#131a68] dark:to-[#0d1148] border-2 border-slate-900 dark:border-[#5cecff]/25 shadow-[3px_3px_0_0_#334155] dark:shadow-neo-glow transition-all duration-300 hover:-translate-x-0.5 hover:-translate-y-0.5 isolation z-10 hover:z-20">
+            <div className="group relative p-6 sm:p-7 rounded-tr-[34px] rounded-bl-[34px] rounded-tl-xl rounded-br-xl bg-gradient-to-bl from-sky-300 to-sky-100 dark:from-[#131a68] dark:to-[#0d1148] border-2 border-slate-900 dark:border-[#5cecff]/25 shadow-[2px_2px_0_0_#334155] dark:shadow-neo-glow transition-all duration-300 hover:-translate-x-0.5 hover:-translate-y-0.5 isolation z-10 hover:z-20">
               <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl bg-sky-400 dark:bg-[#5cecff]/15 border-2 border-sky-500 dark:border-[#5cecff]/40 shadow-md flex items-center justify-center mb-5 sm:mb-6 overflow-hidden shrink-0">
                 <DotLottieReact
                   src="/lottie/security.json"
@@ -469,7 +469,7 @@ export function About() {
               </p>
             </div>
 
-            <div className="group relative p-6 sm:p-7 rounded-tr-[34px] rounded-bl-[34px] rounded-tl-xl rounded-br-xl bg-gradient-to-bl from-rose-300 to-rose-100 dark:from-[#1a0d4a] dark:to-[#0d1148] border-2 border-slate-900 dark:border-[#ff61c6]/25 shadow-[3px_3px_0_0_#334155] dark:shadow-neo-glow transition-all duration-300 hover:-translate-x-0.5 hover:-translate-y-0.5 isolation z-10 hover:z-20">
+            <div className="group relative p-6 sm:p-7 rounded-tr-[34px] rounded-bl-[34px] rounded-tl-xl rounded-br-xl bg-gradient-to-bl from-rose-300 to-rose-100 dark:from-[#1a0d4a] dark:to-[#0d1148] border-2 border-slate-900 dark:border-[#ff61c6]/25 shadow-[2px_2px_0_0_#334155] dark:shadow-neo-glow transition-all duration-300 hover:-translate-x-0.5 hover:-translate-y-0.5 isolation z-10 hover:z-20">
               <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl bg-rose-400 dark:bg-[#ff61c6]/15 border-2 border-rose-500 dark:border-[#ff61c6]/40 shadow-md flex items-center justify-center mb-5 sm:mb-6 overflow-hidden shrink-0">
                 <DotLottieReact
                   src="/lottie/emoji.json"
@@ -489,4 +489,11 @@ export function About() {
     </section>
   );
 }
+
+
+
+
+
+
+
 

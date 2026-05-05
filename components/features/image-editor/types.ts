@@ -39,3 +39,9 @@ export interface HistoryEntry {
   selectedGradientColor: string
   customBackgroundImage: string | null
 }
+
+
+
+
+
+

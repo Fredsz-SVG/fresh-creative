@@ -30,3 +30,9 @@ const wsHandler = async (c: Context<{ Bindings: RealtimeEnv }>) => {
 realtime.get('/ws', wsHandler)
 
 export default realtime
+
+
+
+
+
+

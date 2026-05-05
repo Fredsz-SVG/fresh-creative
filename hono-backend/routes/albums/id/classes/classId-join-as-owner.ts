@@ -107,3 +107,8 @@ joinAsOwnerRoute.post('/', async (c) => {
 })
 
 export default joinAsOwnerRoute
+
+
+
+
+

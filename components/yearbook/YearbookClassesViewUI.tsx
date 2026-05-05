@@ -20,7 +20,7 @@ import FlipbookView from './components/FlipbookView'
 import FlipbookLockedView from './components/FlipbookLockedView'
 import ClassesEmptyView from './components/ClassesEmptyView'
 import YearbookMobileNav from './components/YearbookMobileNav'
-import YearbookSkeleton from './components/YearbookSkeleton'
+import YearbookLoader from './components/YearbookLoader'
 import { apiUrl } from '../../lib/api-url'
 import { fetchWithAuth } from '../../lib/api-client'
 import type { AlbumClass, ClassAccess, ClassMember, ClassRequest, Photo, Teacher, TeacherPhoto } from './types'
@@ -149,6 +149,15 @@ export default function YearbookClassesViewUI(props: any) {
     realtimeCounter = 0,
   } = props
 
+  const mainContentRef = useRef<HTMLElement>(null)
+
+  // Reset scroll position when switching views or classes
+  useEffect(() => {
+    if (mainContentRef.current) {
+      mainContentRef.current.scrollTop = 0
+    }
+  }, [sidebarMode, isCoverView, currentClass?.id])
+
   const router = useRouter()
   const pathname = usePathname()
   const effectiveAlbumId = albumIdProp || album?.id || ''
@@ -175,6 +184,9 @@ export default function YearbookClassesViewUI(props: any) {
   const batchPhotoInputRef = useRef<HTMLInputElement>(null)
   const [uploadingBatchPhotoClassId, setUploadingBatchPhotoClassId] = useState<string | null>(null)
   const [viewingBatchPhotoClass, setViewingBatchPhotoClass] = useState<AlbumClass | null>(null)
+  const [viewingBatchMediaMode, setViewingBatchMediaMode] = useState<'photo' | 'video'>('photo')
+  const batchVideoInputRef = useRef<HTMLInputElement>(null)
+  const [uploadingBatchVideoClassId, setUploadingBatchVideoClassId] = useState<string | null>(null)
 
 
   // Join requests state: cache per tab, only refetch on realtime (no refetch on tab switch)
@@ -191,6 +203,11 @@ export default function YearbookClassesViewUI(props: any) {
   const [generatingInvite, setGeneratingInvite] = useState(false)
   const [deleteClassConfirm, setDeleteClassConfirm] = useState<{ classId: string; className: string } | null>(null)
   const [deleteMemberConfirm, setDeleteMemberConfirm] = useState<{ classId: string; userId?: string; memberName: string } | null>(null)
+  const [deleteBatchMediaConfirm, setDeleteBatchMediaConfirm] = useState<{
+    classId: string
+    className: string
+    type: 'photo' | 'video'
+  } | null>(null)
   const [joinConfirmClassId, setJoinConfirmClassId] = useState<string | null>(null)
 
   // Manual Flipbook Pages state
@@ -783,8 +800,68 @@ export default function YearbookClassesViewUI(props: any) {
     }
   }
 
+  const handleUploadBatchVideo = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file || !uploadingBatchVideoClassId || !album?.id) return
+    if (file.size > MAX_VIDEO_BYTES) {
+      toast.error('Video maksimal 20MB')
+      e.target.value = ''
+      return
+    }
+
+    const classId = uploadingBatchVideoClassId
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+
+      const res = await fetchWithAuth(`/api/albums/${album.id}/classes/${classId}/batch-video`, {
+        method: 'POST',
+        body: formData,
+      })
+
+      const data = asApiObject(await res.json().catch(() => ({})))
+
+      if (res.ok && typeof data.batch_video_url === 'string') {
+        toast.success('Video angkatan berhasil diupload')
+        // Optimistic update via parent
+        if (handleUpdateClass) {
+          await handleUpdateClass(classId, { batch_video_url: data.batch_video_url as string })
+        }
+      } else {
+        toast.error(getApiErrorMessage(data, 'Gagal upload video'))
+      }
+    } catch (error) {
+      console.error('Error uploading batch video:', error)
+      toast.error('Terjadi kesalahan')
+    } finally {
+      if (batchVideoInputRef.current) batchVideoInputRef.current.value = ''
+      setUploadingBatchVideoClassId(null)
+    }
+  }
+
+  const handleDeleteBatchVideo = async (classId: string) => {
+    if (!album?.id) return
+
+    try {
+      const res = await fetchWithAuth(`/api/albums/${album.id}/classes/${classId}/batch-video`, {
+        method: 'DELETE',
+      })
+      if (res.ok) {
+        toast.success('Video angkatan dihapus')
+        if (handleUpdateClass) {
+          handleUpdateClass(classId, { batch_video_url: '' })
+        }
+      } else {
+        const data = await res.json().catch(() => ({} as unknown))
+        toast.error(getApiErrorMessage(data, 'Gagal menghapus video'))
+      }
+    } catch {
+      toast.error('Gagal menghapus video')
+    }
+  }
+
   const handleDeleteBatchPhoto = async (classId: string) => {
-    if (!album?.id || !confirm('Hapus foto angkatan ini?')) return
+    if (!album?.id) return
 
     // Optimistic update: clear immediately in local state
     if (handleUpdateClass) {
@@ -817,7 +894,7 @@ export default function YearbookClassesViewUI(props: any) {
 
   if (!accessDataLoaded) {
     const skeletonSection = isCoverView ? 'cover' : sidebarMode
-    return <YearbookSkeleton section={skeletonSection as any} />
+    return <YearbookLoader section={skeletonSection as any} />
   }
 
   return (
@@ -876,29 +953,29 @@ export default function YearbookClassesViewUI(props: any) {
 
           {/* Secondary Sidebar Panel - Hanya untuk Edit (Cover, Sambutan, Kelas); Flipbook ada di sidebar utama */}
           {((['classes', 'sambutan'].includes(sidebarMode) || isCoverView)) && (
-            <div className="hidden lg:fixed lg:left-16 lg:top-14 lg:w-64 lg:h-[calc(100vh-3.5rem)] lg:flex flex-col lg:z-35 lg:bg-white lg:dark:bg-slate-900 lg:border-r-2 lg:border-slate-900 lg:dark:border-slate-700 shadow-[4px_0_10px_0_rgba(0,0,0,0.05)] dark:shadow-[4px_0_10px_0_rgba(0,0,0,0.2)]">
+            <div className="hidden lg:fixed lg:left-16 lg:top-14 lg:w-64 lg:h-[calc(100vh-3.5rem)] lg:flex flex-col lg:z-35 lg:bg-white lg:dark:bg-slate-900 lg:border-r-2 lg:border-black lg:dark:border-slate-700 shadow-[4px_0_10px_0_rgba(0,0,0,0.05)] dark:shadow-[4px_0_10px_0_rgba(0,0,0,0.2)]">
               {/* Main "Edit" Switcher - Cover, Sambutan, Kelas saja */}
               {canManage && (
-                <div className="p-3 bg-slate-50 dark:bg-slate-800/50 border-b-2 border-slate-100 dark:border-slate-700 flex flex-col gap-1.5 shrink-0 animate-in fade-in duration-300">
-                  <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] px-1">Menu Edit</p>
+                <div className="p-3 bg-slate-50 dark:bg-slate-800/50 border-b-2 border-black dark:border-slate-700 flex flex-col gap-1.5 shrink-0 animate-in fade-in duration-300">
+                  <p className="text-[9px] font-black text-slate-900 dark:text-white uppercase tracking-[0.2em] px-1">Menu Edit</p>
                   <div className="grid grid-cols-2 gap-1.5">
                     <button
                       onClick={() => onSectionChange?.('cover')}
-                      className={`flex items-center gap-2 p-2 rounded-xl border-2 transition-all ${isCoverView ? 'bg-amber-400 dark:bg-amber-600 border-slate-900 dark:border-slate-700 text-slate-900 dark:text-white shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] -translate-y-0.5' : 'bg-transparent border-transparent text-slate-400 dark:text-slate-500 hover:bg-white dark:hover:bg-slate-800 hover:border-slate-900 dark:hover:border-slate-700 hover:text-slate-900 dark:hover:text-white'}`}
+                      className={`flex items-center gap-2 p-2 rounded-xl border transition-all ${isCoverView ? 'bg-amber-400 dark:bg-amber-600 border-black dark:border-slate-700 text-slate-900 dark:text-white' : 'bg-white dark:bg-slate-800 border-black dark:border-slate-700 text-slate-400 dark:text-slate-500 hover:border-black dark:hover:border-slate-700 hover:text-slate-900 dark:hover:text-white shadow-sm hover:shadow-md'}`}
                     >
                       <Book className={`w-3.5 h-3.5 ${isCoverView ? 'text-indigo-500 dark:text-indigo-400' : 'text-slate-400 dark:text-slate-500'}`} />
                       <span className="text-[9px] font-black uppercase tracking-tight">Cover</span>
                     </button>
                     <button
                       onClick={() => onSectionChange?.('sambutan')}
-                      className={`flex items-center gap-2 p-2 rounded-xl border-2 transition-all ${sidebarMode === 'sambutan' ? 'bg-amber-400 dark:bg-amber-600 border-slate-900 dark:border-slate-700 text-slate-900 dark:text-white shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] -translate-y-0.5' : 'bg-transparent border-transparent text-slate-400 dark:text-slate-500 hover:bg-white dark:hover:bg-slate-800 hover:border-slate-900 dark:hover:border-slate-700 hover:text-slate-900 dark:hover:text-white'}`}
+                      className={`flex items-center gap-2 p-2 rounded-xl border transition-all ${sidebarMode === 'sambutan' ? 'bg-amber-400 dark:bg-amber-600 border-black dark:border-slate-700 text-slate-900 dark:text-white' : 'bg-white dark:bg-slate-800 border-black dark:border-slate-700 text-slate-400 dark:text-slate-500 hover:border-black dark:hover:border-slate-700 hover:text-slate-900 dark:hover:text-white shadow-sm hover:shadow-md'}`}
                     >
                       <MessageSquare className={`w-3.5 h-3.5 ${sidebarMode === 'sambutan' ? 'text-violet-500 dark:text-violet-400' : 'text-slate-400 dark:text-slate-500'}`} />
                       <span className="text-[9px] font-black uppercase tracking-tight">Sambutan</span>
                     </button>
                     <button
                       onClick={() => onSectionChange?.('classes')}
-                      className={`flex items-center gap-2 p-2 rounded-xl border-2 transition-all col-span-2 ${sidebarMode === 'classes' && !isCoverView ? 'bg-amber-400 dark:bg-amber-600 border-slate-900 dark:border-slate-700 text-slate-900 dark:text-white shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] -translate-y-0.5' : 'bg-transparent border-transparent text-slate-400 dark:text-slate-500 hover:bg-white dark:hover:bg-slate-800 hover:border-slate-900 dark:hover:border-slate-700 hover:text-slate-900 dark:hover:text-white'}`}
+                      className={`flex items-center gap-2 p-2 rounded-xl border transition-all col-span-2 ${sidebarMode === 'classes' && !isCoverView ? 'bg-amber-400 dark:bg-amber-600 border-black dark:border-slate-700 text-slate-900 dark:text-white' : 'bg-white dark:bg-slate-800 border-black dark:border-slate-700 text-slate-400 dark:text-slate-500 hover:border-black dark:hover:border-slate-700 hover:text-slate-900 dark:hover:text-white shadow-sm hover:shadow-md'}`}
                     >
                       <Users className={`w-3.5 h-3.5 ${sidebarMode === 'classes' && !isCoverView ? 'text-emerald-500 dark:text-emerald-400' : 'text-slate-400 dark:text-slate-500'}`} />
                       <span className="text-[9px] font-black uppercase tracking-tight">Kelas</span>
@@ -909,7 +986,7 @@ export default function YearbookClassesViewUI(props: any) {
 
               {/* Header Sidebar Generik */}
               {(sidebarMode === 'classes' || sidebarMode === 'sambutan') && !isCoverView && (
-                <div className="px-6 py-5 border-b-2 border-slate-100 dark:border-slate-700 shrink-0">
+                <div className="px-6 py-5 shrink-0">
                   <div className="flex items-center gap-2 mb-1">
                     {sidebarMode === 'classes' && <LayoutGrid className="w-4 h-4 text-indigo-500 dark:text-indigo-400" />}
                     {sidebarMode === 'sambutan' && <MessageSquare className="w-4 h-4 text-violet-500 dark:text-violet-400" />}
@@ -960,8 +1037,8 @@ export default function YearbookClassesViewUI(props: any) {
 
                           if (isLoadingThisClass) {
                             return (
-                              <div className="flex items-center gap-2 p-2 bg-slate-50 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 rounded-xl">
-                                <div className="animate-spin rounded-full h-3 w-3 border-2 border-indigo-500 dark:border-indigo-400 border-t-transparent" />
+                              <div className="flex items-center gap-2 p-2 bg-slate-50 dark:bg-slate-800 border-2 border-black dark:border-slate-700 rounded-xl">
+                                <div className="animate-spin rounded-full h-3 w-3 border border-indigo-500 dark:border-indigo-400 border-t-transparent" />
                                 <span className="text-[9px] font-black text-slate-400 dark:text-slate-500">Loading...</span>
                               </div>
                             )
@@ -969,7 +1046,7 @@ export default function YearbookClassesViewUI(props: any) {
 
                           if (access?.status === 'approved') {
                             return (
-                              <div className="flex items-center gap-2 p-2 bg-indigo-50 dark:bg-indigo-950/50 border-2 border-indigo-200 dark:border-indigo-800 rounded-xl">
+                              <div className="flex items-center gap-2 p-2 bg-indigo-50 dark:bg-indigo-950/50 border-2 border-black dark:border-indigo-800 rounded-xl">
                                 <Check className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" strokeWidth={3} />
                                 <span className="text-[10px] font-black text-indigo-700 dark:text-indigo-300 uppercase truncate">{access.student_name}</span>
                               </div>
@@ -978,7 +1055,7 @@ export default function YearbookClassesViewUI(props: any) {
 
                           if (isPendingRequest) {
                             return (
-                              <div className="p-2 bg-amber-50 dark:bg-amber-950/40 border-2 border-amber-200 dark:border-amber-700 rounded-xl text-center">
+                              <div className="p-2 bg-amber-50 dark:bg-amber-950/40 border-2 border-black dark:border-amber-700 rounded-xl text-center">
                                 <p className="text-[9px] font-black text-amber-600 dark:text-amber-400 uppercase">Menunggu Persetujuan</p>
                               </div>
                             )
@@ -995,7 +1072,7 @@ export default function YearbookClassesViewUI(props: any) {
                               )
                               const otherClassName = otherEntry ? classes.find((c) => c.id === otherEntry[0])?.name ?? '' : ''
                               return (
-                                <div className="p-2 bg-amber-50 dark:bg-amber-950/40 border-2 border-amber-200 dark:border-amber-700 rounded-xl text-center">
+                                <div className="p-2 bg-amber-50 dark:bg-amber-950/40 border-2 border-black dark:border-amber-700 rounded-xl text-center">
                                   <p className="text-[9px] font-black text-amber-700 dark:text-amber-400 uppercase tracking-tight">
                                     Anda sudah terdaftar di kelas lain{otherClassName ? `: ${otherClassName}` : ''}. Hanya bisa daftar di 1 kelas.
                                   </p>
@@ -1009,7 +1086,7 @@ export default function YearbookClassesViewUI(props: any) {
                                 </p>
                                 <button
                                   onClick={() => setJoinConfirmClassId(currentClass.id)}
-                                  className="w-full py-1.5 sm:py-2 bg-indigo-500 text-white border-2 border-slate-900 dark:border-slate-700 rounded-lg sm:rounded-xl text-[9px] sm:text-[10px] font-black uppercase shadow-[2.5px_2.5px_0_0_#0f172a] dark:shadow-[2.5px_2.5px_0_0_#334155] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 active:shadow-none transition-all"
+                                  className="w-full py-1.5 sm:py-2 bg-indigo-500 text-white border-2 border-black dark:border-slate-700 rounded-lg sm:rounded-xl text-[9px] sm:text-[10px] font-black uppercase shadow-[1.5px_1.5px_0_0_#0f172a] dark:shadow-[1.5px_1.5px_0_0_#334155] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 active:shadow-none transition-all"
                                 >
                                   Daftar di Kelas
                                 </button>
@@ -1045,15 +1122,15 @@ export default function YearbookClassesViewUI(props: any) {
                                 nativePushState.call(window.history, null, '', url)
                               }
                             }}
-                            className={`flex items-center justify-between w-full px-4 py-3.5 rounded-2xl border-2 transition-all duration-300 font-black uppercase text-[10px] tracking-widest ${isActive
-                              ? 'bg-amber-400 dark:bg-amber-600 border-slate-900 dark:border-slate-700 text-slate-900 dark:text-white shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] -translate-x-1 -translate-y-1'
-                              : 'bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700 text-slate-400 dark:text-slate-500 hover:border-indigo-400 dark:hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 hover:text-indigo-600 dark:hover:text-indigo-400'
+                            className={`flex items-center justify-between w-full px-4 py-3.5 rounded-2xl border transition-all duration-300 font-black uppercase text-[10px] tracking-widest ${isActive
+                              ? 'bg-amber-400 dark:bg-amber-600 border-black dark:border-slate-700 text-slate-900 dark:text-white shadow-[1.5px_1.5px_0_0_#334155] dark:shadow-[1.5px_1.5px_0_0_#1e293b] -translate-x-1 -translate-y-1'
+                              : 'bg-white dark:bg-slate-800 border-black dark:border-slate-700 text-slate-400 dark:text-slate-500 hover:border-indigo-400 dark:hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 hover:text-indigo-600 dark:hover:text-indigo-400'
                               }`}
                           >
                             <span className="truncate">{c.name}</span>
                             <div className="flex items-center gap-1.5 shrink-0">
                               {c.batch_photo_url && (
-                                <div className="w-2 h-2 bg-emerald-400 dark:bg-emerald-500 rounded-full border border-slate-900 dark:border-slate-700" />
+                                <div className="w-2 h-2 bg-emerald-400 dark:bg-emerald-500 rounded-full border-2 border-black dark:border-slate-700" />
                               )}
                               {isActive && <Check className="w-3.5 h-3.5 text-slate-900 dark:text-white" strokeWidth={3} />}
                             </div>
@@ -1067,19 +1144,19 @@ export default function YearbookClassesViewUI(props: any) {
                           <button
                             type="button"
                             onClick={() => setAddingClass(true)}
-                            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border-2 border-dashed border-slate-900 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-indigo-500 dark:hover:border-indigo-500 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 transition-all font-black text-[10px] uppercase tracking-widest"
+                            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-dashed border-black dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-indigo-500 dark:hover:border-indigo-500 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 transition-all font-black text-[10px] uppercase tracking-widest"
                           >
                             <Plus className="w-4 h-4" /> Tambah Kelas
                           </button>
                         ) : (
-                          <div className="p-3 bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 rounded-xl shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]">
+                          <div className="p-3 bg-white dark:bg-slate-800 border-2 border-black dark:border-slate-700 rounded-xl shadow-[1.5px_1.5px_0_0_#334155] dark:shadow-[1.5px_1.5px_0_0_#1e293b]">
                             <input
                               type="text"
                               autoFocus
                               value={newClassName}
                               onChange={(e) => setNewClassName(e.target.value)}
                               placeholder="Nama Kelas..."
-                              className="w-full px-3 py-2 text-xs font-bold rounded-lg border-2 border-slate-900 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white mb-2 focus:outline-none dark:placeholder:text-slate-500"
+                              className="w-full px-3 py-2 text-xs font-bold rounded-lg border-2 border-black dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white mb-2 focus:outline-none dark:placeholder:text-slate-500"
                               onKeyDown={(e) => {
                                 if (e.key === 'Enter') handleAddClass()
                                 if (e.key === 'Escape') setAddingClass(false)
@@ -1088,13 +1165,13 @@ export default function YearbookClassesViewUI(props: any) {
                             <div className="flex gap-2">
                               <button
                                 onClick={handleAddClass}
-                                className="flex-1 py-1.5 bg-indigo-500 text-white text-[9px] font-black uppercase rounded-lg border-2 border-slate-900 dark:border-slate-700 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]"
+                                className="flex-1 py-1.5 bg-indigo-500 text-white text-[9px] font-black uppercase rounded-lg border-2 border-black dark:border-slate-700 shadow-[1.5px_1.5px_0_0_#334155] dark:shadow-[1.5px_1.5px_0_0_#1e293b]"
                               >
                                 Simpan
                               </button>
                               <button
                                 onClick={() => setAddingClass(false)}
-                                className="flex-1 py-1.5 bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 text-[9px] font-black uppercase rounded-lg border-2 border-slate-900 dark:border-slate-700"
+                                className="flex-1 py-1.5 bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 text-[9px] font-black uppercase rounded-lg border-2 border-black dark:border-slate-700"
                               >
                                 Batal
                               </button>
@@ -1124,6 +1201,7 @@ export default function YearbookClassesViewUI(props: any) {
 
             {/* Main content - scrollable container */}
             <main
+              ref={mainContentRef}
               className={`flex-1 ${(sidebarMode === 'flipbook' || isAiLabsToolActive) ? 'overflow-hidden pb-0' : 'overflow-y-auto pb-40 lg:pb-0'} rounded-t-none relative
               ${(['classes', 'sambutan'].includes(sidebarMode) || isCoverView) ? 'lg:ml-[20rem]' : (sidebarMode === 'flipbook' || isAiLabsToolActive) ? (flipbookPreviewMode || !canManage || isAiLabsToolActive ? 'lg:ml-0' : 'lg:ml-16') : 'lg:ml-0'}
               bg-white dark:bg-slate-950
@@ -1139,7 +1217,7 @@ export default function YearbookClassesViewUI(props: any) {
                     <div className="flex flex-col lg:flex-row items-center lg:items-stretch gap-8 lg:gap-10 w-full relative">
                       {/* Left: Preview Container */}
                       <div className="w-full max-w-[240px] sm:max-w-xs shrink-0">
-                        <div className="relative aspect-[3/4] bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-[32px] overflow-hidden shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] lg:shadow-[4px_4px_0_0_#334155] lg:dark:shadow-[4px_4px_0_0_#1e293b] group rotate-1">
+                        <div className="relative aspect-[3/4] bg-white dark:bg-slate-900 border-2 border-black dark:border-slate-700 rounded-[32px] overflow-hidden shadow-[1.5px_1.5px_0_0_#334155] dark:shadow-[1.5px_1.5px_0_0_#1e293b] lg:shadow-[1.5px_1.5px_0_0_#334155] lg:dark:shadow-[1.5px_1.5px_0_0_#1e293b] group rotate-1">
                           {album?.cover_image_url ? (
                             <img
                               src={(() => {
@@ -1153,7 +1231,7 @@ export default function YearbookClassesViewUI(props: any) {
                             />
                           ) : (
                             <div className="flex flex-col items-center justify-center w-full h-full bg-slate-50 dark:bg-slate-800 gap-4">
-                              <div className="w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center border-2 border-dashed border-slate-900 dark:border-slate-700">
+                              <div className="w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center border border-dashed border-black dark:border-slate-700">
                                 <ImageIcon className="w-8 h-8 text-slate-300 dark:text-slate-500" />
                               </div>
                               <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Belum ada cover</span>
@@ -1165,7 +1243,7 @@ export default function YearbookClassesViewUI(props: any) {
                             <button
                               type="button"
                               onClick={() => onPlayVideo && onPlayVideo(album.cover_video_url!)}
-                              className="absolute bottom-3 right-3 z-10 w-10 h-10 lg:w-12 lg:h-12 rounded-2xl bg-amber-400 dark:bg-amber-600 border-2 border-slate-900 dark:border-slate-700 flex items-center justify-center shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all active:scale-95"
+                              className="absolute bottom-3 right-3 z-10 w-10 h-10 lg:w-12 lg:h-12 rounded-2xl bg-amber-400 dark:bg-amber-600 border-2 border-black dark:border-slate-700 flex items-center justify-center shadow-[1.5px_1.5px_0_0_#334155] dark:shadow-[1.5px_1.5px_0_0_#1e293b] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all active:scale-95"
                             >
                               <Play className="w-5 h-5 lg:w-6 lg:h-6 text-slate-900 dark:text-white ml-0.5 lg:ml-1" fill="currentColor" />
                             </button>
@@ -1181,7 +1259,7 @@ export default function YearbookClassesViewUI(props: any) {
                                     type="button"
                                     onClick={() => coverUploadInputRef.current?.click()}
                                     disabled={uploadingCover}
-                                    className="h-9 lg:h-10 px-3 lg:px-4 rounded-xl bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] text-slate-900 dark:text-white font-black text-[9px] lg:text-[10px] uppercase tracking-widest flex items-center gap-2 active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all"
+                                    className="h-9 lg:h-10 px-3 lg:px-4 rounded-xl bg-white dark:bg-slate-800 border-2 border-black dark:border-slate-700 shadow-[1.5px_1.5px_0_0_#334155] dark:shadow-[1.5px_1.5px_0_0_#1e293b] text-slate-900 dark:text-white font-black text-[9px] lg:text-[10px] uppercase tracking-widest flex items-center gap-2 active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all"
                                   >
                                     <ImagePlus className="w-3.5 h-3.5 lg:w-4 lg:h-4" />
                                     Upload Cover
@@ -1191,7 +1269,7 @@ export default function YearbookClassesViewUI(props: any) {
                                     <button
                                       type="button"
                                       onClick={handleDeleteCover}
-                                      className="w-9 h-9 lg:w-10 lg:h-10 rounded-xl bg-red-500 border-2 border-slate-900 dark:border-slate-700 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] text-white flex items-center justify-center active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all"
+                                      className="w-9 h-9 lg:w-10 lg:h-10 rounded-xl bg-red-500 border-2 border-black dark:border-slate-700 shadow-[1.5px_1.5px_0_0_#334155] dark:shadow-[1.5px_1.5px_0_0_#1e293b] text-white flex items-center justify-center active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all"
                                     >
                                       <Trash2 className="w-4 h-4" strokeWidth={3} />
                                     </button>
@@ -1210,7 +1288,7 @@ export default function YearbookClassesViewUI(props: any) {
                                       type="button"
                                       onClick={() => coverVideoInputRef.current?.click()}
                                       disabled={uploadingCoverVideo}
-                                      className="h-9 lg:h-10 px-3 lg:px-4 rounded-xl bg-slate-900 dark:bg-slate-700 border-2 border-slate-900 dark:border-slate-700 text-white font-black text-[9px] lg:text-[10px] uppercase tracking-widest flex items-center gap-2 active:translate-x-0.5 active:translate-y-0.5 transition-all"
+                                      className="h-9 lg:h-10 px-3 lg:px-4 rounded-xl bg-slate-900 dark:bg-slate-700 border-2 border-black dark:border-slate-700 text-white font-black text-[9px] lg:text-[10px] uppercase tracking-widest flex items-center gap-2 active:translate-x-0.5 active:translate-y-0.5 transition-all"
                                     >
                                       <Video className="w-3.5 h-3.5 lg:w-4 lg:h-4" />
                                       Video
@@ -1220,7 +1298,7 @@ export default function YearbookClassesViewUI(props: any) {
                                       <button
                                         type="button"
                                         onClick={handleDeleteCoverVideo}
-                                        className="w-9 h-9 lg:w-10 lg:h-10 rounded-xl bg-red-500 border-2 border-slate-900 dark:border-slate-700 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] text-white flex items-center justify-center active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all"
+                                        className="w-9 h-9 lg:w-10 lg:h-10 rounded-xl bg-red-500 border-2 border-black dark:border-slate-700 shadow-[1.5px_1.5px_0_0_#334155] dark:shadow-[1.5px_1.5px_0_0_#1e293b] text-white flex items-center justify-center active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all"
                                       >
                                         <Trash2 className="w-4 h-4" strokeWidth={3} />
                                       </button>
@@ -1266,7 +1344,7 @@ export default function YearbookClassesViewUI(props: any) {
                                       setSavingCoverShortDescription(false)
                                     }
                                   }}
-                                  className="px-3 py-1.5 rounded-xl bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 text-slate-900 dark:text-white text-[10px] font-black uppercase tracking-widest shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all disabled:opacity-60"
+                                  className="px-3 py-1.5 rounded-xl bg-white dark:bg-slate-800 border-2 border-black dark:border-slate-700 text-slate-900 dark:text-white text-[10px] font-black uppercase tracking-widest shadow-[1.5px_1.5px_0_0_#334155] dark:shadow-[1.5px_1.5px_0_0_#1e293b] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all disabled:opacity-60"
                                 >
                                   {savingCoverShortDescription ? 'Menyimpan…' : 'Simpan'}
                                 </button>
@@ -1279,7 +1357,7 @@ export default function YearbookClassesViewUI(props: any) {
                                 }}
                                 rows={3}
                                 placeholder="Contoh: Angkatan 2026 — kenangan terbaik kita."
-                                className="w-full rounded-2xl bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 px-4 py-3 text-sm font-bold text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] focus:outline-none focus:ring-0"
+                                className="w-full rounded-2xl bg-white dark:bg-slate-900 border-2 border-black dark:border-slate-700 px-4 py-3 text-sm font-bold text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600 shadow-[1.5px_1.5px_0_0_#334155] dark:shadow-[1.5px_1.5px_0_0_#1e293b] focus:outline-none focus:ring-0"
                               />
                             </div>
                           )}
@@ -1296,7 +1374,7 @@ export default function YearbookClassesViewUI(props: any) {
                                 navigator.clipboard.writeText(url);
                                 toast.success('Link public berhasil disalin');
                               }}
-                              className="px-8 py-4 rounded-2xl bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 text-slate-900 dark:text-white font-black text-sm uppercase tracking-widest shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all active:scale-95 flex items-center justify-center gap-3"
+                              className="px-8 py-4 rounded-2xl bg-white dark:bg-slate-800 border-2 border-black dark:border-slate-700 text-slate-900 dark:text-white font-black text-sm uppercase tracking-widest shadow-[1.5px_1.5px_0_0_#334155] dark:shadow-[1.5px_1.5px_0_0_#1e293b] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all active:scale-95 flex items-center justify-center gap-3"
                             >
                               <LinkIcon className="w-5 h-5" strokeWidth={3} />
                               Salin Link
@@ -1358,7 +1436,7 @@ export default function YearbookClassesViewUI(props: any) {
 
                           <div
                             ref={coverPreviewContainerRef}
-                            className="w-full aspect-[3/4] bg-white dark:bg-slate-900 border-8 border-slate-900 dark:border-slate-700 rounded-[40px] overflow-hidden shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] relative touch-none select-none cursor-move group"
+                            className="w-full aspect-[3/4] bg-white dark:bg-slate-900 border-2 border-black dark:border-slate-700 rounded-[40px] overflow-hidden shadow-[1.5px_1.5px_0_0_#334155] dark:shadow-[1.5px_1.5px_0_0_#1e293b] relative touch-none select-none cursor-move group"
                             onPointerDown={(e) => {
                               if (e.button !== 0) return
                               coverDragRef.current = {
@@ -1394,7 +1472,7 @@ export default function YearbookClassesViewUI(props: any) {
                               className="absolute inset-0 w-full h-full object-cover pointer-events-none transition-transform duration-75"
                               style={{ objectPosition: `${coverPosition.x}% ${coverPosition.y}%` }}
                             />
-                            <div className="absolute inset-0 border-[16px] border-slate-900/10 pointer-events-none" />
+                            <div className="absolute inset-0 border-[16px] border-black/10 pointer-events-none" />
                           </div>
 
                           <div className="flex gap-4 w-full">
@@ -1404,7 +1482,7 @@ export default function YearbookClassesViewUI(props: any) {
                                 if (coverPreview?.dataUrl) URL.revokeObjectURL(coverPreview.dataUrl)
                                 setCoverPreview && setCoverPreview(null)
                               }}
-                              className="flex-1 py-4 rounded-2xl bg-slate-800 dark:bg-slate-700 text-slate-400 dark:text-slate-300 font-black text-xs uppercase tracking-widest border-2 border-slate-700 dark:border-slate-700 hover:bg-slate-700 dark:hover:bg-slate-600 transition-all"
+                              className="flex-1 py-4 rounded-2xl bg-slate-800 dark:bg-slate-700 text-slate-400 dark:text-slate-300 font-black text-xs uppercase tracking-widest border border-slate-700 dark:border-slate-700 hover:bg-slate-700 dark:hover:bg-slate-600 transition-all"
                             >
                               Batal
                             </button>
@@ -1412,7 +1490,7 @@ export default function YearbookClassesViewUI(props: any) {
                               type="button"
                               disabled={uploadingCover}
                               onClick={() => handleUploadCover && handleUploadCover(coverPreview.file, coverPosition, coverPreview.dataUrl)}
-                              className="flex-[2] py-4 rounded-2xl bg-emerald-400 dark:bg-emerald-600 border-2 border-slate-900 dark:border-slate-700 text-slate-900 dark:text-white font-black text-xs uppercase tracking-widest shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all disabled:opacity-50"
+                              className="flex-[2] py-4 rounded-2xl bg-emerald-400 dark:bg-emerald-600 border-2 border-black dark:border-slate-700 text-slate-900 dark:text-white font-black text-xs uppercase tracking-widest shadow-[1.5px_1.5px_0_0_#334155] dark:shadow-[1.5px_1.5px_0_0_#1e293b] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all disabled:opacity-50"
                             >
                               {uploadingCover ? 'Mengunggah...' : 'Simpan & Terapkan'}
                             </button>
@@ -1575,7 +1653,7 @@ export default function YearbookClassesViewUI(props: any) {
                                   navigator.clipboard.writeText(url);
                                   toast.success('Link public berhasil disalin');
                                 }}
-                                className="pointer-events-auto flex items-center justify-center h-9 sm:h-10 px-3 sm:px-4 bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 rounded-xl text-[10px] sm:text-[11px] font-black uppercase text-slate-900 dark:text-white shadow-[2.5px_2.5px_0_0_#0f172a] dark:shadow-[2.5px_2.5px_0_0_#334155] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all text-nowrap"
+                                className="pointer-events-auto flex items-center justify-center h-9 sm:h-10 px-3 sm:px-4 bg-white dark:bg-slate-800 border-2 border-black dark:border-slate-700 rounded-xl text-[10px] sm:text-[11px] font-black uppercase text-slate-900 dark:text-white shadow-[1.5px_1.5px_0_0_#0f172a] dark:shadow-[1.5px_1.5px_0_0_#334155] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all text-nowrap"
                                 title="Salin Link Public Album"
                               >
                                 <LinkIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5" strokeWidth={3} /> Salin Link
@@ -1588,7 +1666,7 @@ export default function YearbookClassesViewUI(props: any) {
                                     router.push(getYearbookSectionQueryUrl(album.id, 'preview', pathname), { scroll: false });
                                   }
                                 }}
-                                className="pointer-events-auto flex items-center justify-center h-9 sm:h-10 px-3 sm:px-4 bg-emerald-400 dark:bg-emerald-600 border-2 border-slate-900 dark:border-slate-700 rounded-xl text-[10px] sm:text-[11px] font-black uppercase text-slate-900 dark:text-white shadow-[2.5px_2.5px_0_0_#0f172a] dark:shadow-[2.5px_2.5px_0_0_#334155] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all text-nowrap"
+                                className="pointer-events-auto flex items-center justify-center h-9 sm:h-10 px-3 sm:px-4 bg-emerald-400 dark:bg-emerald-600 border-2 border-black dark:border-slate-700 rounded-xl text-[10px] sm:text-[11px] font-black uppercase text-slate-900 dark:text-white shadow-[1.5px_1.5px_0_0_#0f172a] dark:shadow-[1.5px_1.5px_0_0_#334155] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all text-nowrap"
                                 title="Preview Album"
                               >
                                 <Eye className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5" strokeWidth={3} /> Preview
@@ -1600,7 +1678,7 @@ export default function YearbookClassesViewUI(props: any) {
                             <button
                               type="button"
                               onClick={() => setAddingClass(true)}
-                              className="fixed bottom-24 right-6 lg:bottom-10 lg:right-10 z-[60] flex items-center justify-center w-14 h-14 lg:w-16 lg:h-16 rounded-full bg-amber-400 dark:bg-amber-600 border-2 border-slate-900 dark:border-slate-700 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] active:scale-90 transition-all group"
+                              className="fixed bottom-24 right-6 lg:bottom-10 lg:right-10 z-[60] flex items-center justify-center w-14 h-14 lg:w-16 lg:h-16 rounded-full bg-amber-400 dark:bg-amber-600 border-2 border-black dark:border-slate-700 shadow-[1.5px_1.5px_0_0_#334155] dark:shadow-[1.5px_1.5px_0_0_#1e293b] active:scale-90 transition-all group"
                               title="Tambah Kelas"
                             >
                               <Plus className="w-8 h-8 text-slate-900 dark:text-white transition-transform group-hover:rotate-90" strokeWidth={2.5} />
@@ -1614,7 +1692,7 @@ export default function YearbookClassesViewUI(props: any) {
                                 className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
                                 onClick={() => { setAddingClass(false); setNewClassName('') }}
                               />
-                              <div className="relative w-full max-w-md bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-[32px] shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] overflow-hidden animate-in zoom-in-95 duration-200">
+                              <div className="relative w-full max-w-md bg-white dark:bg-slate-900 border-2 border-black dark:border-slate-700 rounded-[32px] shadow-[1.5px_1.5px_0_0_#334155] dark:shadow-[1.5px_1.5px_0_0_#1e293b] overflow-hidden animate-in zoom-in-95 duration-200">
                                 <div className="p-6">
                                   <div className="flex items-center justify-between mb-6">
                                     <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Tambah Kelas Baru</h3>
@@ -1634,7 +1712,7 @@ export default function YearbookClassesViewUI(props: any) {
                                         value={newClassName}
                                         onChange={(e) => setNewClassName(e.target.value)}
                                         placeholder="Contoh: XII IPA 1"
-                                        className="w-full px-5 py-4 rounded-xl bg-slate-50 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 text-base font-black text-slate-900 dark:text-white placeholder:text-slate-300 dark:placeholder:text-slate-500 focus:outline-none focus:bg-white dark:focus:bg-slate-800 transition-all shadow-[4px_4px_0_0_#f1f5f9] dark:shadow-[4px_4px_0_0_#1e293b]"
+                                        className="w-full px-5 py-4 rounded-xl bg-slate-50 dark:bg-slate-800 border-2 border-black dark:border-slate-700 text-base font-black text-slate-900 dark:text-white placeholder:text-slate-300 dark:placeholder:text-slate-500 focus:outline-none focus:bg-white dark:focus:bg-slate-800 transition-all shadow-[2px_2px_0_0_#f1f5f9] dark:shadow-[1.5px_1.5px_0_0_#1e293b]"
                                         autoFocus
                                         onKeyDown={(e) => {
                                           if (e.key === 'Enter') handleAddClass()
@@ -1647,7 +1725,7 @@ export default function YearbookClassesViewUI(props: any) {
                                       <button
                                         type="button"
                                         onClick={() => { setAddingClass(false); setNewClassName('') }}
-                                        className="flex-1 py-4 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-xs font-black uppercase tracking-widest border-2 border-slate-900 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all shadow-[2px_2px_0_0_#e2e8f0] dark:shadow-[4px_4px_0_0_#1e293b]"
+                                        className="flex-1 py-4 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-xs font-black uppercase tracking-widest border-2 border-black dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all shadow-[2px_2px_0_0_#e2e8f0] dark:shadow-[1.5px_1.5px_0_0_#1e293b]"
                                       >
                                         Batal
                                       </button>
@@ -1655,7 +1733,7 @@ export default function YearbookClassesViewUI(props: any) {
                                         type="button"
                                         onClick={handleAddClass}
                                         disabled={!newClassName.trim()}
-                                        className="flex-[2] py-4 rounded-2xl bg-emerald-400 dark:bg-emerald-600 text-slate-900 dark:text-white text-xs font-black uppercase tracking-widest border-2 border-slate-900 dark:border-slate-700 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all disabled:opacity-50"
+                                        className="flex-[2] py-4 rounded-2xl bg-emerald-400 dark:bg-emerald-600 text-slate-900 dark:text-white text-xs font-black uppercase tracking-widest border-2 border-black dark:border-slate-700 shadow-[1.5px_1.5px_0_0_#334155] dark:shadow-[1.5px_1.5px_0_0_#1e293b] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all disabled:opacity-50"
                                       >
                                         Simpan Kelas
                                       </button>
@@ -1672,91 +1750,165 @@ export default function YearbookClassesViewUI(props: any) {
                             <div className="mb-14">
                               <div className="flex items-center justify-between mb-6 gap-3">
                                 <div className="flex items-center gap-3">
-                                  <div className="w-2 h-8 bg-indigo-500 dark:bg-indigo-600 rounded-full border-2 border-slate-900 dark:border-slate-700 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]"></div>
-                                  <h3 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-[0.2em]">Foto Angkatan</h3>
+                                  <div className="w-2 h-8 bg-indigo-500 dark:bg-indigo-600 rounded-full border-2 border-black dark:border-slate-700 shadow-[1.5px_1.5px_0_0_#334155] dark:shadow-[1.5px_1.5px_0_0_#1e293b]"></div>
+                                  <h3 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-[0.2em]">Foto &amp; Video Angkatan</h3>
                                 </div>
                               </div>
                               <div className="relative">
-                                {currentClass.batch_photo_url ? (
-                                  <div
-                                    className="relative group aspect-[3/4] lg:max-w-md lg:mx-auto rounded-[40px] border-2 border-slate-900 dark:border-slate-700 overflow-hidden bg-slate-100 dark:bg-slate-800 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all duration-500"
-                                    onClick={() => setViewingBatchPhotoClass(currentClass)}
-                                  >
-                                    <img
-                                      src={currentClass.batch_photo_url}
-                                      alt={`Foto Angkatan ${currentClass.name}`}
-                                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                                    />
-                                    <div className="absolute inset-0 bg-slate-900/40 dark:bg-slate-950/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                      <div className="px-8 py-4 bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 rounded-2xl shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] flex items-center gap-3 active:scale-95 transition-all">
-                                        <Eye className="w-6 h-6 text-slate-900 dark:text-white" strokeWidth={3} />
-                                        <span className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-widest">Lihat Layar Penuh</span>
-                                      </div>
-                                    </div>
-                                    {canManage && (
-                                      <div className="absolute top-6 right-6 flex gap-3 opacity-100 lg:opacity-0 group-hover:opacity-100 transition-opacity">
+                                {(() => {
+                                  const hasPhoto = !!currentClass.batch_photo_url
+                                  const hasVideo = !!currentClass.batch_video_url
+                                  // "Layar penuh" hanya untuk foto (request: jangan buka video kalau foto belum ada)
+                                  const canOpenPhotoViewer = hasPhoto
+
+                                  const handlePrimaryClick = () => {
+                                    if (canOpenPhotoViewer) {
+                                      setViewingBatchMediaMode('photo')
+                                      setViewingBatchPhotoClass(currentClass)
+                                    }
+                                    else if (canManage) {
+                                      setUploadingBatchPhotoClassId(currentClass.id)
+                                      batchPhotoInputRef.current?.click()
+                                    }
+                                  }
+
+                                  return (
+                                    <div className="w-full">
+                                      <div
+                                        className={`relative group aspect-[3/4] lg:max-w-md lg:mx-auto rounded-[40px] border-2 border-black dark:border-slate-700 overflow-hidden shadow-[1.5px_1.5px_0_0_#334155] dark:shadow-[1.5px_1.5px_0_0_#1e293b] transition-all duration-500 ${
+                                          (canOpenPhotoViewer || canManage) ? 'hover:shadow-none hover:translate-x-1 hover:translate-y-1 cursor-pointer' : ''
+                                        } ${hasPhoto ? 'bg-slate-100 dark:bg-slate-800' : 'bg-slate-50/50 dark:bg-slate-900/10 border-dashed'}`}
+                                        onClick={handlePrimaryClick}
+                                      >
+                                      {hasPhoto ? (
+                                        <img
+                                          src={currentClass.batch_photo_url!}
+                                          alt={`Foto Angkatan ${currentClass.name}`}
+                                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                                        />
+                                      ) : (
+                                        <div className="w-full h-full flex flex-col items-center justify-center px-10 text-center">
+                                          <div className="relative mb-6">
+                                            <div className="absolute inset-0 bg-indigo-500/10 blur-2xl rounded-full scale-110 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                                            <div className="relative w-20 h-20 rounded-[28px] bg-white dark:bg-slate-800 border-2 border-black dark:border-slate-700 shadow-[1.5px_1.5px_0_0_#334155] dark:shadow-[1.5px_1.5px_0_0_#1e293b] flex items-center justify-center transform group-hover:-rotate-6 transition-transform duration-500">
+                                              <ImageIcon className="w-10 h-10 text-slate-300 dark:text-slate-600 group-hover:text-indigo-400 transition-colors" strokeWidth={1.5} />
+                                            </div>
+                                          </div>
+                                          <span className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight leading-tight">
+                                            {canManage ? 'Upload Foto Angkatan' : 'Media Angkatan Belum Tersedia'}
+                                          </span>
+                                          {!canManage && (
+                                            <p className="text-[10px] font-black text-slate-400 dark:text-slate-600 mt-4 uppercase tracking-widest leading-relaxed">
+                                              Admin akan mengunggah foto/video angkatan segera
+                                            </p>
+                                          )}
+                                          {!canManage && hasVideo && (
+                                            <p className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 mt-3 uppercase tracking-widest leading-relaxed">
+                                              Video sudah tersedia (foto belum)
+                                            </p>
+                                          )}
+                                        </div>
+                                      )}
+
+                                      {/* Video play button (separate, no autoplay in card) */}
+                                      {hasVideo && (
                                         <button
+                                          type="button"
                                           onClick={(e) => {
                                             e.stopPropagation()
-                                            handleDeleteBatchPhoto(currentClass.id)
+                                            setViewingBatchMediaMode('video')
+                                            setViewingBatchPhotoClass(currentClass)
                                           }}
-                                          className="w-14 h-14 flex items-center justify-center bg-red-500 rounded-2xl text-white hover:bg-red-600 transition-all border-2 border-slate-900 dark:border-slate-700 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] active:shadow-none active:translate-x-0.5 active:translate-y-0.5"
-                                          title="Hapus Foto"
+                                          className="absolute bottom-6 left-6 w-14 h-14 flex items-center justify-center bg-emerald-400 text-slate-900 rounded-2xl border-2 border-black dark:border-slate-700 shadow-[1.5px_1.5px_0_0_#334155] dark:shadow-[1.5px_1.5px_0_0_#1e293b] hover:bg-emerald-300 active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all"
+                                          title="Putar Video Angkatan"
                                         >
-                                          <Trash2 className="w-7 h-7" strokeWidth={2.5} />
+                                          <Play className="w-6 h-6 fill-current" strokeWidth={3} />
                                         </button>
+                                      )}
                                       </div>
-                                    )}
-                                  </div>
-                                ) : (
-                                  canManage ? (
-                                    <button
-                                      onClick={() => {
-                                        setUploadingBatchPhotoClassId(currentClass.id)
-                                        batchPhotoInputRef.current?.click()
-                                      }}
-                                      className="w-full aspect-[3/4] lg:max-w-md lg:mx-auto flex flex-col items-center justify-center rounded-[48px] border-2 border-dashed border-slate-900 dark:border-slate-900 bg-slate-50/50 dark:bg-slate-900/10 hover:border-indigo-400 dark:hover:border-indigo-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-300 group/batch-add"
-                                    >
-                                      <div className="relative mb-8">
-                                        <div className="absolute inset-0 bg-indigo-500/15 blur-2xl rounded-full scale-150 opacity-0 group-hover/batch-add:opacity-100 transition-opacity duration-500" />
-                                        <div className="relative w-24 h-24 rounded-[32px] bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] flex items-center justify-center transform group-hover/batch-add:-rotate-6 transition-transform duration-500">
-                                          <ImageIcon className="w-12 h-12 text-indigo-500 dark:text-indigo-400" strokeWidth={2.5} />
-                                          <div className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-emerald-400 dark:bg-emerald-600 border-2 border-slate-900 dark:border-slate-700 flex items-center justify-center shadow-[4px_4px_0_0_#334155] group-hover/batch-add:scale-110 transition-transform">
-                                            <Plus className="w-5 h-5 text-slate-900 dark:text-white" strokeWidth={3} />
-                                          </div>
+
+                                      {/* Controls moved below card (clean UI) */}
+                                      {canManage && (
+                                        <div className="mt-4 lg:max-w-md lg:mx-auto grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                          {hasPhoto ? (
+                                            <button
+                                              type="button"
+                                              onClick={() => {
+                                                setDeleteBatchMediaConfirm({
+                                                  classId: currentClass.id,
+                                                  className: currentClass.name,
+                                                  type: 'photo',
+                                                })
+                                              }}
+                                              className="flex items-center justify-center gap-2 px-4 py-3 rounded-2xl border-2 border-black dark:border-slate-700 font-black text-xs uppercase tracking-widest shadow-[1.5px_1.5px_0_0_#334155] dark:shadow-[1.5px_1.5px_0_0_#1e293b] transition-all bg-red-500 text-white hover:bg-red-600 active:shadow-none active:translate-x-0.5 active:translate-y-0.5"
+                                              title="Hapus Foto Angkatan"
+                                            >
+                                              <Trash2 className="w-4 h-4" strokeWidth={3} />
+                                              <span>Hapus Foto</span>
+                                            </button>
+                                          ) : (
+                                            <button
+                                              type="button"
+                                              onClick={() => {
+                                                setUploadingBatchPhotoClassId(currentClass.id)
+                                                batchPhotoInputRef.current?.click()
+                                              }}
+                                              className="flex items-center justify-center gap-2 px-4 py-3 rounded-2xl border-2 border-black dark:border-slate-700 font-black text-xs uppercase tracking-widest shadow-[1.5px_1.5px_0_0_#334155] dark:shadow-[1.5px_1.5px_0_0_#1e293b] transition-all bg-indigo-500 text-white hover:bg-indigo-600 active:shadow-none active:translate-x-0.5 active:translate-y-0.5"
+                                              title="Upload Foto Angkatan"
+                                            >
+                                              <span>Upload Foto</span>
+                                            </button>
+                                          )}
+
+                                          {hasVideo ? (
+                                            <button
+                                              type="button"
+                                              onClick={() => {
+                                                setDeleteBatchMediaConfirm({
+                                                  classId: currentClass.id,
+                                                  className: currentClass.name,
+                                                  type: 'video',
+                                                })
+                                              }}
+                                              className="flex items-center justify-center gap-2 px-4 py-3 rounded-2xl border-2 border-black dark:border-slate-700 font-black text-xs uppercase tracking-widest shadow-[1.5px_1.5px_0_0_#334155] dark:shadow-[1.5px_1.5px_0_0_#1e293b] transition-all bg-slate-900 text-white hover:bg-black active:shadow-none active:translate-x-0.5 active:translate-y-0.5"
+                                              title="Hapus Video Angkatan"
+                                            >
+                                              <Trash2 className="w-4 h-4" strokeWidth={3} />
+                                              <span>Hapus Video</span>
+                                            </button>
+                                          ) : (
+                                            <button
+                                              type="button"
+                                              onClick={() => {
+                                                setUploadingBatchVideoClassId(currentClass.id)
+                                                batchVideoInputRef.current?.click()
+                                              }}
+                                              className="flex items-center justify-center gap-2 px-4 py-3 rounded-2xl border-2 border-black dark:border-slate-700 font-black text-xs uppercase tracking-widest shadow-[1.5px_1.5px_0_0_#334155] dark:shadow-[1.5px_1.5px_0_0_#1e293b] transition-all bg-blue-500 text-white hover:bg-blue-600 active:shadow-none active:translate-x-0.5 active:translate-y-0.5"
+                                              title="Upload Video Angkatan"
+                                            >
+                                              <span>Upload Video</span>
+                                            </button>
+                                          )}
                                         </div>
-                                      </div>
-                                      <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight text-center px-8 leading-tight">Upload Foto Angkatan</h3>
-                                      <p className="text-[10px] font-black text-slate-400 dark:text-slate-600 mt-4 uppercase tracking-widest text-center px-10 leading-relaxed">Pilih file gambar grup atau kelas (Maks. 10MB)</p>
-                                    </button>
-                                  ) : (
-                                    <div className="w-full aspect-[3/4] lg:max-w-md lg:mx-auto flex flex-col items-center justify-center rounded-[48px] border-2 border-dashed border-slate-900 dark:border-slate-900 bg-slate-50/50 dark:bg-slate-900/10 transition-all duration-300 group/batch-empty">
-                                      <div className="relative mb-8">
-                                        <div className="absolute inset-0 bg-indigo-500/10 blur-2xl rounded-full scale-110 opacity-0 group-hover/batch-empty:opacity-100 transition-opacity duration-500" />
-                                        <div className="relative w-20 h-20 rounded-[28px] bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] flex items-center justify-center transform group-hover/batch-empty:-rotate-6 transition-transform duration-500">
-                                          <ImageIcon className="w-10 h-10 text-slate-300 dark:text-slate-600 group-hover/batch-empty:text-indigo-400 transition-colors" strokeWidth={1.5} />
-                                        </div>
-                                      </div>
-                                      <span className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight text-center px-8 leading-tight">Foto Angkatan Belum Tersedia</span>
-                                      <p className="text-[10px] font-black text-slate-400 dark:text-slate-600 mt-4 uppercase tracking-widest text-center px-10 leading-relaxed">Admin akan mengunggah foto grup kelas segera</p>
+                                      )}
                                     </div>
                                   )
-                                )}
+                                })()}
                               </div>
                             </div>
 
                             {/* Members Grid/List */}
                             {/* Members Grid/List */}
                             <div className="flex items-center gap-3 mb-8">
-                              <div className="w-2 h-8 bg-amber-400 dark:bg-amber-600 rounded-full border-2 border-slate-900 dark:border-slate-700 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]"></div>
+                              <div className="w-2 h-8 bg-amber-400 dark:bg-amber-600 rounded-full border-2 border-black dark:border-slate-700 shadow-[1.5px_1.5px_0_0_#334155] dark:shadow-[1.5px_1.5px_0_0_#1e293b]"></div>
                               <h3 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-[0.2em]">{canManage ? 'Daftar Anggota' : 'Profil Anda'}</h3>
                             </div>
 
                             {classMembers.length === 0 ? (
-                              <div className="flex flex-col items-center justify-center py-16 sm:py-24 min-h-[45vh] w-full bg-slate-50/50 dark:bg-slate-900/10 rounded-[48px] border-2 border-dashed border-slate-900 dark:border-slate-900 transition-all duration-300 group/empty">
+                              <div className="flex flex-col items-center justify-center py-16 sm:py-24 min-h-[45vh] w-full bg-slate-50/50 dark:bg-slate-900/10 rounded-[48px] border border-dashed border-black dark:border-black transition-all duration-300 group/empty">
                                 <div className="relative mb-8">
                                   <div className="absolute inset-0 bg-indigo-500/20 dark:bg-indigo-500/10 blur-2xl rounded-full scale-150 opacity-0 group-hover/empty:opacity-100 transition-opacity duration-500" />
-                                  <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-[28px] sm:rounded-[32px] bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] flex items-center justify-center transform group-hover/empty:-rotate-6 transition-transform duration-500">
+                                  <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-[28px] sm:rounded-[32px] bg-white dark:bg-slate-800 border-2 border-black dark:border-slate-700 shadow-[1.5px_1.5px_0_0_#334155] dark:shadow-[1.5px_1.5px_0_0_#1e293b] flex items-center justify-center transform group-hover/empty:-rotate-6 transition-transform duration-500">
                                     <Users className="w-10 h-10 sm:w-12 sm:h-12 text-slate-300 dark:text-slate-600 group-hover/empty:text-indigo-400 dark:group-hover/empty:text-indigo-500 transition-colors" strokeWidth={1.5} />
                                   </div>
                                 </div>
@@ -1768,7 +1920,7 @@ export default function YearbookClassesViewUI(props: any) {
                             ) : classViewMode === 'list' ? (
                               <div className="space-y-4">
                                 {classMembers.map((m, idx) => (
-                                  <div key={idx} className="flex items-center justify-between p-5 rounded-[24px] border-2 border-slate-900 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all">
+                                  <div key={idx} className="flex items-center justify-between p-5 rounded-[24px] border-2 border-black dark:border-slate-700 bg-white dark:bg-slate-900 shadow-[1.5px_1.5px_0_0_#334155] dark:shadow-[1.5px_1.5px_0_0_#1e293b] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all">
                                     <div className="flex-1 min-w-0">
                                       <p className="text-base font-black text-slate-900 dark:text-white uppercase tracking-tight truncate">{m.student_name}{m.is_me ? ' (Anda)' : ''}</p>
                                       {m.email && <p className="text-[11px] font-bold text-slate-400 dark:text-slate-500 truncate lowercase">{m.email}</p>}
@@ -1777,7 +1929,7 @@ export default function YearbookClassesViewUI(props: any) {
                                       <button
                                         type="button"
                                         onClick={() => openGallery(currentClass.id, m.student_name, currentClass.name)}
-                                        className="px-5 py-2.5 text-[11px] font-black uppercase tracking-widest rounded-xl border-2 border-slate-900 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-700 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all"
+                                        className="px-5 py-2.5 text-[11px] font-black uppercase tracking-widest rounded-xl border-2 border-black dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-700 shadow-[1.5px_1.5px_0_0_#334155] dark:shadow-[1.5px_1.5px_0_0_#1e293b] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all"
                                       >
                                         Lihat
                                       </button>
@@ -1799,7 +1951,7 @@ export default function YearbookClassesViewUI(props: any) {
                                               }
                                             }
                                           }}
-                                          className="px-5 py-2.5 text-[11px] font-black uppercase tracking-widest rounded-xl border-2 border-slate-900 dark:border-slate-700 bg-indigo-100 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-700 hover:text-white shadow-[3px_3px_0_0_#4338ca] dark:shadow-[4px_4px_0_0_#1e293b] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all flex items-center gap-2"
+                                          className="px-5 py-2.5 text-[11px] font-black uppercase tracking-widest rounded-xl border-2 border-black dark:border-slate-700 bg-indigo-100 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-700 hover:text-white shadow-[2px_2px_0_0_#4338ca] dark:shadow-[1.5px_1.5px_0_0_#1e293b] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all flex items-center gap-2"
                                         >
                                           <Edit3 className="w-4 h-4" strokeWidth={3} />
                                           <span>Edit</span>
@@ -1809,7 +1961,7 @@ export default function YearbookClassesViewUI(props: any) {
                                         <button
                                           type="button"
                                           onClick={() => setDeleteMemberConfirm({ classId: currentClass.id, userId: m.is_me ? undefined : m.user_id, memberName: m.student_name })}
-                                          className="w-12 h-12 flex items-center justify-center rounded-xl bg-red-100 dark:bg-red-950/50 text-red-600 dark:text-red-400 border-2 border-red-600 dark:border-red-700 hover:bg-red-600 hover:text-white transition-all shadow-[3px_3px_0_0_#dc2626] dark:shadow-[4px_4px_0_0_#1e293b] active:shadow-none active:translate-x-0.5 active:translate-y-0.5"
+                                          className="w-12 h-12 flex items-center justify-center rounded-xl bg-red-100 dark:bg-red-950/50 text-red-600 dark:text-red-400 border border-red-600 dark:border-red-700 hover:bg-red-600 hover:text-white transition-all shadow-[2px_2px_0_0_#dc2626] dark:shadow-[1.5px_1.5px_0_0_#1e293b] active:shadow-none active:translate-x-0.5 active:translate-y-0.5"
                                         >
                                           <Trash2 className="w-5 h-5" strokeWidth={2.5} />
                                         </button>
@@ -1910,7 +2062,7 @@ export default function YearbookClassesViewUI(props: any) {
               {
                 deleteClassConfirm && (
                   <div className="fixed inset-0 bg-slate-900/40 dark:bg-black/50 backdrop-blur-md flex items-center justify-center z-[200] p-4">
-                    <div className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-[32px] p-6 lg:p-8 max-w-sm w-full shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] text-center">
+                    <div className="bg-white dark:bg-slate-900 border-2 border-black dark:border-slate-700 rounded-[32px] p-6 lg:p-8 max-w-sm w-full shadow-[1.5px_1.5px_0_0_#334155] dark:shadow-[1.5px_1.5px_0_0_#1e293b] text-center">
                       <h3 className="text-xl lg:text-2xl font-black text-slate-900 dark:text-white mb-2 uppercase tracking-tight">Hapus Kelas</h3>
                       <p className="text-sm font-bold text-slate-500 dark:text-slate-400 mb-8 lowercase first-letter:uppercase">
                         Yakin ingin menghapus kelas "{deleteClassConfirm.className}"? Semua data member di dalamnya akan hilang selamanya.
@@ -1918,7 +2070,7 @@ export default function YearbookClassesViewUI(props: any) {
                       <div className="flex gap-3">
                         <button
                           onClick={() => setDeleteClassConfirm(null)}
-                          className="flex-1 py-3.5 rounded-xl bg-slate-100 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 text-slate-900 dark:text-white text-xs font-black uppercase tracking-widest shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
+                          className="flex-1 py-3.5 rounded-xl bg-slate-100 dark:bg-slate-800 border-2 border-black dark:border-slate-700 text-slate-900 dark:text-white text-xs font-black uppercase tracking-widest shadow-[1.5px_1.5px_0_0_#334155] dark:shadow-[1.5px_1.5px_0_0_#1e293b] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
                         >
                           Batal
                         </button>
@@ -1927,7 +2079,7 @@ export default function YearbookClassesViewUI(props: any) {
                             handleDeleteClass(deleteClassConfirm.classId)
                             setDeleteClassConfirm(null)
                           }}
-                          className="flex-1 py-3.5 rounded-xl bg-red-500 border-2 border-slate-900 dark:border-slate-700 text-white text-xs font-black uppercase tracking-widest shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
+                          className="flex-1 py-3.5 rounded-xl bg-red-500 border-2 border-black dark:border-slate-700 text-white text-xs font-black uppercase tracking-widest shadow-[1.5px_1.5px_0_0_#334155] dark:shadow-[1.5px_1.5px_0_0_#1e293b] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
                         >
                           Ya, Hapus
                         </button>
@@ -1940,7 +2092,7 @@ export default function YearbookClassesViewUI(props: any) {
               {
                 joinConfirmClassId && (
                   <div className="fixed inset-0 bg-slate-900/40 dark:bg-black/50 backdrop-blur-md flex items-center justify-center z-[200] p-4">
-                    <div className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-[32px] p-6 lg:p-8 max-w-sm w-full shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] text-center">
+                    <div className="bg-white dark:bg-slate-900 border-2 border-black dark:border-slate-700 rounded-[32px] p-6 lg:p-8 max-w-sm w-full shadow-[1.5px_1.5px_0_0_#334155] dark:shadow-[1.5px_1.5px_0_0_#1e293b] text-center">
                       <h3 className="text-xl lg:text-2xl font-black text-slate-900 dark:text-white mb-2 uppercase tracking-tight">Daftar di Kelas</h3>
                       <p className="text-sm font-bold text-slate-500 dark:text-slate-400 mb-8">
                         Yakin daftar di kelas ini? Anda hanya bisa terdaftar di 1 kelas.
@@ -1948,7 +2100,7 @@ export default function YearbookClassesViewUI(props: any) {
                       <div className="flex gap-3">
                         <button
                           onClick={() => setJoinConfirmClassId(null)}
-                          className="flex-1 py-3.5 rounded-xl bg-slate-100 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 text-slate-900 dark:text-white text-xs font-black uppercase tracking-widest shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
+                          className="flex-1 py-3.5 rounded-xl bg-slate-100 dark:bg-slate-800 border-2 border-black dark:border-slate-700 text-slate-900 dark:text-white text-xs font-black uppercase tracking-widest shadow-[1.5px_1.5px_0_0_#334155] dark:shadow-[1.5px_1.5px_0_0_#1e293b] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
                         >
                           Batal
                         </button>
@@ -1957,7 +2109,7 @@ export default function YearbookClassesViewUI(props: any) {
                             if (handleJoinAsOwner) handleJoinAsOwner(joinConfirmClassId)
                             setJoinConfirmClassId(null)
                           }}
-                          className="flex-1 py-3.5 rounded-xl bg-indigo-500 border-2 border-slate-900 dark:border-slate-700 text-white text-xs font-black uppercase tracking-widest shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
+                          className="flex-1 py-3.5 rounded-xl bg-indigo-500 border-2 border-black dark:border-slate-700 text-white text-xs font-black uppercase tracking-widest shadow-[1.5px_1.5px_0_0_#334155] dark:shadow-[1.5px_1.5px_0_0_#1e293b] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
                         >
                           Ya, Daftar
                         </button>
@@ -1970,7 +2122,7 @@ export default function YearbookClassesViewUI(props: any) {
               {
                 deleteMemberConfirm && (
                   <div className="fixed inset-0 bg-slate-900/40 dark:bg-black/50 backdrop-blur-md flex items-center justify-center z-[200] p-4">
-                    <div className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-[32px] p-6 lg:p-8 max-w-sm w-full shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] text-center">
+                    <div className="bg-white dark:bg-slate-900 border-2 border-black dark:border-slate-700 rounded-[32px] p-6 lg:p-8 max-w-sm w-full shadow-[1.5px_1.5px_0_0_#334155] dark:shadow-[1.5px_1.5px_0_0_#1e293b] text-center">
                       <h3 className="text-xl lg:text-2xl font-black text-slate-900 dark:text-white mb-2 uppercase tracking-tight">Hapus Anggota</h3>
                       <p className="text-sm font-bold text-slate-500 dark:text-slate-400 mb-8">
                         Hapus "{deleteMemberConfirm.memberName}" dari daftar kelas?
@@ -1978,7 +2130,7 @@ export default function YearbookClassesViewUI(props: any) {
                       <div className="flex gap-3">
                         <button
                           onClick={() => setDeleteMemberConfirm(null)}
-                          className="flex-1 py-3.5 rounded-xl bg-slate-100 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 text-slate-900 dark:text-white text-xs font-black uppercase tracking-widest shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
+                          className="flex-1 py-3.5 rounded-xl bg-slate-100 dark:bg-slate-800 border-2 border-black dark:border-slate-700 text-slate-900 dark:text-white text-xs font-black uppercase tracking-widest shadow-[1.5px_1.5px_0_0_#334155] dark:shadow-[1.5px_1.5px_0_0_#1e293b] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
                         >
                           Batal
                         </button>
@@ -1991,7 +2143,45 @@ export default function YearbookClassesViewUI(props: any) {
                             setDeleteMemberConfirm(null)
                             void handleDeleteClassMember(confirmData.classId, targetUserId)
                           }}
-                          className="flex-1 py-3.5 rounded-xl bg-red-500 border-2 border-slate-900 dark:border-slate-700 text-white text-xs font-black uppercase tracking-widest shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
+                          className="flex-1 py-3.5 rounded-xl bg-red-500 border-2 border-black dark:border-slate-700 text-white text-xs font-black uppercase tracking-widest shadow-[1.5px_1.5px_0_0_#334155] dark:shadow-[1.5px_1.5px_0_0_#1e293b] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
+                        >
+                          Ya, Hapus
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )
+              }
+
+              {
+                deleteBatchMediaConfirm && (
+                  <div className="fixed inset-0 bg-slate-900/40 dark:bg-black/50 backdrop-blur-md flex items-center justify-center z-[200] p-4">
+                    <div className="bg-white dark:bg-slate-900 border-2 border-black dark:border-slate-700 rounded-[32px] p-6 lg:p-8 max-w-sm w-full shadow-[1.5px_1.5px_0_0_#334155] dark:shadow-[1.5px_1.5px_0_0_#1e293b] text-center">
+                      <h3 className="text-xl lg:text-2xl font-black text-slate-900 dark:text-white mb-2 uppercase tracking-tight">
+                        {deleteBatchMediaConfirm.type === 'photo' ? 'Hapus Foto Angkatan' : 'Hapus Video Angkatan'}
+                      </h3>
+                      <p className="text-sm font-bold text-slate-500 dark:text-slate-400 mb-8 lowercase first-letter:uppercase">
+                        Yakin ingin menghapus {deleteBatchMediaConfirm.type === 'photo' ? 'foto' : 'video'} angkatan untuk kelas "{deleteBatchMediaConfirm.className}"?
+                      </p>
+                      <div className="flex gap-3">
+                        <button
+                          onClick={() => setDeleteBatchMediaConfirm(null)}
+                          className="flex-1 py-3.5 rounded-xl bg-slate-100 dark:bg-slate-800 border-2 border-black dark:border-slate-700 text-slate-900 dark:text-white text-xs font-black uppercase tracking-widest shadow-[1.5px_1.5px_0_0_#334155] dark:shadow-[1.5px_1.5px_0_0_#1e293b] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
+                        >
+                          Batal
+                        </button>
+                        <button
+                          onClick={async () => {
+                            const confirmData = deleteBatchMediaConfirm
+                            if (!confirmData) return
+                            setDeleteBatchMediaConfirm(null)
+                            if (confirmData.type === 'photo') await handleDeleteBatchPhoto(confirmData.classId)
+                            else await handleDeleteBatchVideo(confirmData.classId)
+                            // Close fullscreen viewer after deletion (like previous behavior)
+                            setViewingBatchMediaMode('photo')
+                            setViewingBatchPhotoClass(null)
+                          }}
+                          className="flex-1 py-3.5 rounded-xl bg-red-500 border-2 border-black dark:border-slate-700 text-white text-xs font-black uppercase tracking-widest shadow-[1.5px_1.5px_0_0_#334155] dark:shadow-[1.5px_1.5px_0_0_#1e293b] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
                         >
                           Ya, Hapus
                         </button>
@@ -2011,45 +2201,54 @@ export default function YearbookClassesViewUI(props: any) {
                 accept="image/*"
                 onChange={handleUploadBatchPhoto}
               />
+              <input
+                type="file"
+                ref={batchVideoInputRef}
+                className="hidden"
+                accept="video/*"
+                onChange={handleUploadBatchVideo}
+              />
 
-              {/* Batch Photo Viewer */}
+              {/* Batch Media Viewer */}
               {
-                viewingBatchPhotoClass && viewingBatchPhotoClass.batch_photo_url && (
+                viewingBatchPhotoClass && (viewingBatchPhotoClass.batch_photo_url || viewingBatchPhotoClass.batch_video_url) && (
                   <div className="fixed inset-0 z-[200] bg-slate-900/95 dark:bg-black/95 backdrop-blur-md flex flex-col animate-in fade-in duration-300 p-4 lg:p-10">
                     <div className="flex items-center justify-between mb-6 lg:mb-10 w-full max-w-6xl mx-auto">
-                      <div className="bg-amber-300 dark:bg-amber-600 border-2 border-slate-900 dark:border-slate-700 px-6 py-3 rounded-2xl shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]">
-                        <h3 className="text-slate-900 dark:text-white font-black text-sm lg:text-xl uppercase tracking-widest">Foto Angkatan — {viewingBatchPhotoClass.name}</h3>
+                      <div className="bg-amber-300 dark:bg-amber-600 border-2 border-black dark:border-slate-700 px-6 py-3 rounded-2xl shadow-[1.5px_1.5px_0_0_#334155] dark:shadow-[1.5px_1.5px_0_0_#1e293b]">
+                        <h3 className="text-slate-900 dark:text-white font-black text-sm lg:text-xl uppercase tracking-widest">Media Angkatan — {viewingBatchPhotoClass.name}</h3>
                       </div>
                       <div className="flex items-center gap-3">
-                        {canManage && (
-                          <button
-                            onClick={() => {
-                              if (confirm('Hapus foto angkatan ini?')) {
-                                handleDeleteBatchPhoto(viewingBatchPhotoClass.id)
-                                setViewingBatchPhotoClass(null)
-                              }
-                            }}
-                            className="w-12 h-12 flex items-center justify-center bg-red-500 rounded-2xl border-2 border-slate-900 dark:border-slate-700 text-white shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] active:shadow-none active:translate-x-1 active:translate-y-1 transition-all"
-                            title="Hapus Foto"
-                          >
-                            <Trash2 className="w-6 h-6" strokeWidth={3} />
-                          </button>
-                        )}
                         <button
-                          onClick={() => setViewingBatchPhotoClass(null)}
-                          className="w-12 h-12 flex items-center justify-center bg-white dark:bg-slate-800 rounded-2xl border-2 border-slate-900 dark:border-slate-700 text-slate-900 dark:text-white shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] active:shadow-none active:translate-x-1 active:translate-y-1 transition-all"
+                          onClick={() => { setViewingBatchMediaMode('photo'); setViewingBatchPhotoClass(null) }}
+                          className="w-12 h-12 flex items-center justify-center bg-white dark:bg-slate-800 rounded-2xl border-2 border-black dark:border-slate-700 text-slate-900 dark:text-white shadow-[1.5px_1.5px_0_0_#334155] dark:shadow-[1.5px_1.5px_0_0_#1e293b] active:shadow-none active:translate-x-1 active:translate-y-1 transition-all"
                         >
                           <X className="w-7 h-7" strokeWidth={4} />
                         </button>
                       </div>
                     </div>
                     <div className="flex-1 flex items-center justify-center overflow-hidden w-full max-w-7xl mx-auto">
-                      <div className="relative p-2 bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-[32px] shadow-[20px_20px_0_0_rgba(0,0,0,0.3)] dark:shadow-[4px_4px_0_0_#1e293b] max-h-full">
-                        <img
-                          src={viewingBatchPhotoClass.batch_photo_url}
-                          alt={`Foto Angkatan ${viewingBatchPhotoClass.name}`}
-                          className="max-w-full max-h-[70vh] object-contain rounded-[24px]"
-                        />
+                      <div className="relative p-2 bg-white dark:bg-slate-900 border-2 border-black dark:border-slate-700 rounded-[32px] shadow-[20px_20px_0_0_rgba(0,0,0,0.3)] dark:shadow-[1.5px_1.5px_0_0_#1e293b] max-h-full">
+                        {viewingBatchMediaMode === 'video' && viewingBatchPhotoClass.batch_video_url ? (
+                          <video
+                            src={viewingBatchPhotoClass.batch_video_url || ''}
+                            className="max-w-full max-h-[70vh] object-contain rounded-[24px]"
+                            controls
+                            autoPlay
+                          />
+                        ) : viewingBatchPhotoClass.batch_photo_url ? (
+                          <img
+                            src={viewingBatchPhotoClass.batch_photo_url || ''}
+                            alt={`Foto Angkatan ${viewingBatchPhotoClass.name}`}
+                            className="max-w-full max-h-[70vh] object-contain rounded-[24px]"
+                          />
+                        ) : (
+                          <video
+                            src={viewingBatchPhotoClass.batch_video_url || ''}
+                            className="max-w-full max-h-[70vh] object-contain rounded-[24px]"
+                            controls
+                            autoPlay
+                          />
+                        )}
                       </div>
                     </div>
                     <div className="mt-8 text-center">
@@ -2065,3 +2264,33 @@ export default function YearbookClassesViewUI(props: any) {
     </div >
   )
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -182,7 +182,7 @@ const PackageForm = ({ pkg, onSave, onCancel }: { pkg: Partial<PricingPackage> |
 
   return (
     <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-[100]">
-      <div className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-2xl shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] p-5 md:p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+      <div className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-2xl shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b] p-5 md:p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         <div className="flex justify-between items-center mb-5">
           <h2 className="text-lg font-bold text-slate-900 dark:text-white">{pkg?.id ? 'Edit Package' : 'New Package'}</h2>
           <button onClick={onCancel} className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
@@ -303,7 +303,7 @@ const PackageForm = ({ pkg, onSave, onCancel }: { pkg: Partial<PricingPackage> |
           </div>
 
           <div className="flex gap-3 pt-2">
-            <button type="button" onClick={onCancel} className="flex-1 px-4 py-2.5 border-2 border-slate-900 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200 font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-[4px_4px_0_0_#334155] hover:shadow-none">
+            <button type="button" onClick={onCancel} className="flex-1 px-4 py-2.5 border-2 border-slate-900 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200 font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-[2px_2px_0_0_#334155] hover:shadow-none">
               Cancel
             </button>
             <button type="submit" className="flex-1 px-4 py-2.5 bg-emerald-400 text-emerald-900 rounded-xl font-bold hover:bg-emerald-300 transition-all shadow-[2px_2px_0_0_#059669] hover:shadow-none">
@@ -574,7 +574,7 @@ export default function PricingEditPage() {
       )}
       {deleteTargetId && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-[200]">
-          <div className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-2xl shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] p-5 md:p-6 w-full max-w-sm">
+          <div className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-2xl shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b] p-5 md:p-6 w-full max-w-sm">
             <h3 className="text-base md:text-lg font-bold text-slate-900 dark:text-white">Hapus Package?</h3>
             <p className="mt-2 text-xs md:text-sm text-slate-500 dark:text-slate-400">
               Aksi ini tidak bisa dibatalkan. Data package yang dipilih akan dihapus permanen.
@@ -584,7 +584,7 @@ export default function PricingEditPage() {
                 type="button"
                 disabled={deleting}
                 onClick={() => setDeleteTargetId(null)}
-                className="flex-1 px-4 py-2.5 border-2 border-slate-900 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200 font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:shadow-none disabled:opacity-60"
+                className="flex-1 px-4 py-2.5 border-2 border-slate-900 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200 font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b] hover:shadow-none disabled:opacity-60"
               >
                 Batal
               </button>
@@ -601,7 +601,7 @@ export default function PricingEditPage() {
         </div>
       )}
       {saveStatus && (
-        <div className={`fixed bottom-4 md:bottom-6 left-1/2 -translate-x-1/2 z-[200] max-w-[90%] md:max-w-sm w-full px-4 py-3 rounded-xl border-2 shadow-[4px_4px_0_0_#334155] transform transition-all animate-bounce-subtle ${saveStatus === 'saving' ? 'bg-amber-100 border-amber-300 text-amber-700' :
+        <div className={`fixed bottom-4 md:bottom-6 left-1/2 -translate-x-1/2 z-[200] max-w-[90%] md:max-w-sm w-full px-4 py-3 rounded-xl border-2 shadow-[2px_2px_0_0_#334155] transform transition-all animate-bounce-subtle ${saveStatus === 'saving' ? 'bg-amber-100 border-amber-300 text-amber-700' :
           saveStatus === 'create-success' || saveStatus === 'update-success' || saveStatus === 'delete-success' || saveStatus === 'ai-update-success' ? 'bg-emerald-100 border-emerald-300 text-emerald-700' :
           saveStatus === 'deleting' ? 'bg-amber-100 border-amber-300 text-amber-700' :
             'bg-rose-100 border-rose-300 text-rose-700'
@@ -621,7 +621,7 @@ export default function PricingEditPage() {
       )}
       {editingAi && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-[100]">
-          <div className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-2xl shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] p-5 md:p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+          <div className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-2xl shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b] p-5 md:p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <h2 className="text-lg md:text-xl font-bold text-slate-900 dark:text-white mb-4">
               Pricing: {AI_FEATURE_LABELS[editingAi.feature_slug] ?? editingAi.feature_slug}
             </h2>
@@ -770,7 +770,7 @@ export default function PricingEditPage() {
                 <button
                   type="button"
                   onClick={() => setEditingAi(null)}
-                  className="flex-1 px-4 py-2.5 border-2 border-slate-900 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200 font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-[4px_4px_0_0_#334155] hover:shadow-none"
+                  className="flex-1 px-4 py-2.5 border-2 border-slate-900 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200 font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-[2px_2px_0_0_#334155] hover:shadow-none"
                 >
                   Cancel
                 </button>
@@ -804,7 +804,7 @@ export default function PricingEditPage() {
 
       {/* Tabs */}
       <div className="mb-8 px-4 md:px-0">
-        <div className="relative flex w-full md:w-fit items-center gap-1 p-1 bg-white dark:bg-slate-800 rounded-2xl border-2 border-slate-900 dark:border-slate-700 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]">
+        <div className="relative flex w-full md:w-fit items-center gap-1 p-1 bg-white dark:bg-slate-800 rounded-2xl border-2 border-slate-900 dark:border-slate-700 shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b]">
           <div
             className="absolute top-1 bottom-1 rounded-xl bg-violet-400 transition-all duration-300 ease-out"
             style={{
@@ -860,7 +860,7 @@ export default function PricingEditPage() {
             {[1, 2, 3, 4].map((i) => (
               <div
                 key={i}
-                className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-2xl p-5 md:p-6 animate-pulse shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]"
+                className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-2xl p-5 md:p-6 animate-pulse shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b]"
               >
                 <div className="space-y-3">
                   <div className="h-5 md:h-6 bg-slate-100 dark:bg-slate-800 rounded-xl w-28 md:w-40" />
@@ -871,7 +871,7 @@ export default function PricingEditPage() {
             ))}
           </div>
         ) : packages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 px-4 md:px-8 text-center bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-3xl border-dashed shadow-[4px_4px_0_0_#94a3b8] dark:shadow-[4px_4px_0_0_#1e293b] mx-4 md:mx-0">
+          <div className="flex flex-col items-center justify-center py-16 px-4 md:px-8 text-center bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-3xl border-dashed shadow-[2px_2px_0_0_#94a3b8] dark:shadow-[2px_2px_0_0_#1e293b] mx-4 md:mx-0">
             <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-2xl flex items-center justify-center mb-4 transform -rotate-3 border-2 border-slate-900 dark:border-slate-700">
               <Layout size={32} className="text-slate-400 dark:text-slate-500" strokeWidth={1.5} />
             </div>
@@ -881,7 +881,7 @@ export default function PricingEditPage() {
             </p>
             <button
               onClick={() => setEditingPackage({})}
-              className="flex items-center gap-2 bg-emerald-400 hover:bg-emerald-300 text-emerald-900 px-5 py-2.5 rounded-xl font-bold text-sm shadow-[3px_3px_0_0_#059669] hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all"
+              className="flex items-center gap-2 bg-emerald-400 hover:bg-emerald-300 text-emerald-900 px-5 py-2.5 rounded-xl font-bold text-sm shadow-[2px_2px_0_0_#059669] hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all"
             >
               <Plus size={18} strokeWidth={2.5} />
               Buat Paket Pertama
@@ -902,7 +902,7 @@ export default function PricingEditPage() {
               return (
                 <div
                   key={pkg.id}
-                  className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-2xl p-5 md:p-6 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:shadow-none hover:-translate-x-0.5 hover:-translate-y-0.5 transition-all group relative overflow-hidden"
+                  className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-2xl p-5 md:p-6 shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b] hover:shadow-none hover:-translate-x-0.5 hover:-translate-y-0.5 transition-all group relative overflow-hidden"
                 >
                   <div className="absolute top-3 right-3 md:top-4 md:right-4 flex gap-1.5">
                     <button
@@ -982,7 +982,7 @@ export default function PricingEditPage() {
           {[1, 2, 3].map((i) => (
             <div
               key={i}
-              className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-2xl p-5 animate-pulse shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]"
+              className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-2xl p-5 animate-pulse shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b]"
             >
               <div className="flex justify-between items-center">
                 <div className="space-y-2">
@@ -995,7 +995,7 @@ export default function PricingEditPage() {
           ))}
         </div>
       ) : aiPricing.length === 0 ? (
-        <div className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-2xl p-10 text-center shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] mx-4 md:mx-0">
+        <div className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-2xl p-10 text-center shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b] mx-4 md:mx-0">
           <Zap className="w-12 h-12 mx-auto mb-3 text-sky-300" />
           <h3 className="text-base font-bold text-slate-900 dark:text-white mb-1">No AI Data</h3>
           <p className="text-xs text-slate-400 dark:text-slate-400 font-medium">Jalankan migration SQL terlebih dahulu untuk mengisi data pricing AI.</p>
@@ -1009,7 +1009,7 @@ export default function PricingEditPage() {
               return (
                 <div
                   key={item.id}
-                  className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-2xl p-4 md:p-5 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:shadow-none hover:-translate-x-0.5 hover:-translate-y-0.5 transition-all group flex justify-between items-center"
+                  className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-2xl p-4 md:p-5 shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b] hover:shadow-none hover:-translate-x-0.5 hover:-translate-y-0.5 transition-all group flex justify-between items-center"
                 >
                   <div>
                     <h3 className="text-base md:text-lg font-bold text-slate-900 dark:text-white mb-2">
@@ -1052,3 +1052,10 @@ export default function PricingEditPage() {
     </div>
   )
 }
+
+
+
+
+
+
+

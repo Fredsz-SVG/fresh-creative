@@ -79,6 +79,23 @@ classIdVideo.post('/', async (c) => {
   const safeName = studentName.replace(/\s+/g, '-').replace(/[^a-zA-Z0-9\-_.]/g, '')
   const relPath = `${albumId}/${classId}/videos/${safeName}-${Date.now()}.${safeExt}`
 
+  // Cleanup old video if exists
+  const oldAccess = await db
+    .prepare(`SELECT video_url FROM album_class_access WHERE ${isOwner ? 'class_id = ? AND student_name = ? AND album_id = ?' : 'id = ?'}`)
+    .bind(...(isOwner ? [classId, studentName, albumId] : [accessId]))
+    .first<{ video_url: string | null }>()
+
+  if (oldAccess?.video_url) {
+    const urlParts = oldAccess.video_url.split('/')
+    const oldFileName = urlParts[urlParts.length - 1]
+    const oldPath = `${albumId}/${classId}/videos/${oldFileName}`
+    try {
+      await bucket.delete(oldPath)
+    } catch {
+      /* ignore cleanup error */
+    }
+  }
+
   try {
     await putAlbumPhoto(bucket, relPath, fileData, { contentType: mimetype })
   } catch (e: unknown) {
@@ -101,3 +118,8 @@ classIdVideo.post('/', async (c) => {
 })
 
 export default classIdVideo
+
+
+
+
+

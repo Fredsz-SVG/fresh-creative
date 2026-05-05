@@ -66,3 +66,8 @@ albumsIdTeachersTeacherIdPhotosPhotoId.delete('/', async (c) => {
 })
 
 export default albumsIdTeachersTeacherIdPhotosPhotoId
+
+
+
+
+

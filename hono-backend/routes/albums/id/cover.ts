@@ -148,3 +148,9 @@ albumCoverRoute.delete('/', async (c) => {
 })
 
 export default albumCoverRoute
+
+
+
+
+
+

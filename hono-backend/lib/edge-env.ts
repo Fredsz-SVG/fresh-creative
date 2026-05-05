@@ -10,3 +10,9 @@ export function getD1(c: Context): D1Database | undefined {
 export function getAssets(c: Context): R2Bucket | undefined {
   return (c.env as { ASSETS?: R2Bucket }).ASSETS
 }
+
+
+
+
+
+

@@ -7,7 +7,7 @@ import BackLink from '@/components/dashboard/BackLink'
 import { ChevronLeft, ChevronRight, BookOpen, ImagePlus, Video, Play, Users, Layout, Eye, Menu, MessageSquare, Book, Lock, Link as LinkIcon, Search, SearchX, X } from 'lucide-react'
 import { toast } from '@/lib/toast'
 import YearbookClassesView from './YearbookClassesView'
-import YearbookSkeleton, { isValidYearbookSection } from './components/YearbookSkeleton'
+import YearbookLoader, { isValidYearbookSection } from './components/YearbookLoader'
 import { getSectionModeFromUrl, getYearbookSectionQueryUrl } from './lib/yearbook-paths'
 import CreditBadgeTop from './components/CreditBadgeTop'
 import { apiUrl } from '../../lib/api-url'
@@ -1506,7 +1506,7 @@ export default function YearbookAlbumClient({
     const skeletonSection = isValidYearbookSection(sectionParam)
       ? sectionParam
       : sectionMode
-    return <YearbookSkeleton section={skeletonSection} />
+    return <YearbookLoader section={skeletonSection} />
   }
 
   if (error || !album) {
@@ -1562,13 +1562,13 @@ export default function YearbookAlbumClient({
       <div className={mobileFirstWrapper}>
         {/* Sticky Header - BackLink + judul section sejajar (mobile + desktop) */}
         {showBackLink && (
-          <div className="flex sticky top-0 z-50 bg-amber-300 dark:bg-slate-900 border-b-2 border-slate-900 dark:border-slate-700 px-3 lg:px-4 h-14 items-center gap-3 lg:gap-4 shadow-[0_2.5px_0_0_#0f172a] dark:shadow-[0_2.5px_0_0_#334155]">
+          <div className="flex sticky top-0 z-50 bg-amber-300 dark:bg-slate-900 border-b-2 border-black dark:border-slate-700 px-3 lg:px-4 h-14 items-center gap-3 lg:gap-4">
             <Link 
               href={isAiLabsToolActive ? aiLabsBackHref : effectiveBackHref} 
               prefetch={true}
               scroll={false}
               onTouchStart={() => { try { router.prefetch(isAiLabsToolActive ? aiLabsBackHref : effectiveBackHref) } catch {} }}
-              className="lg:hidden inline-flex items-center justify-center w-9 h-9 bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all"
+              className="lg:hidden inline-flex items-center justify-center w-9 h-9 bg-white dark:bg-slate-800 border-2 border-black dark:border-slate-700 rounded-xl text-slate-900 dark:text-white active:translate-x-0.5 active:translate-y-0.5 transition-all"
             >
               <ChevronLeft className="w-5 h-5" />
             </Link>
@@ -1591,7 +1591,7 @@ export default function YearbookAlbumClient({
                   <div className="flex items-center justify-center gap-3">
                     <h1 className="text-xl font-black text-slate-900 dark:text-white truncate uppercase tracking-tight">{sectionTitle}</h1>
                     {headerCount !== null && headerCount !== undefined && (
-                      <span className="px-3 py-0.5 rounded-lg bg-slate-900 dark:bg-slate-700 text-white text-xs font-black shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]">
+                      <span className="px-3 py-0.5 rounded-lg bg-slate-900 dark:bg-slate-700 text-white text-xs font-black">
                         {headerCount}
                       </span>
                     )}
@@ -1609,9 +1609,9 @@ export default function YearbookAlbumClient({
               </div>
               {/* Flipbook Controls (Mobile & Desktop) */}
               {uiSection === 'flipbook' && (isOwner || isAlbumAdmin) && (featureUnlocksLoaded ? (flipbookEnabledByPackage || featureUnlocks.includes('flipbook')) : true) && (
-                <div className="relative flex p-1 bg-white dark:bg-slate-800 rounded-lg sm:rounded-xl border-2 border-slate-900 dark:border-slate-700 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]">
+                <div className="relative flex p-1 bg-white dark:bg-slate-800 rounded-lg sm:rounded-xl border-2 border-black dark:border-slate-700 shadow-[1.5px_1.5px_0_0_#334155] dark:shadow-[1.5px_1.5px_0_0_#1e293b]">
                   <div
-                    className="absolute top-1 bottom-1 rounded-md sm:rounded-lg bg-indigo-400 border-2 border-slate-900 dark:border-slate-700 transition-all duration-300 ease-out z-0"
+                    className="absolute top-1 bottom-1 rounded-md sm:rounded-lg bg-indigo-400 border-2 border-black dark:border-slate-700 transition-all duration-300 ease-out z-0"
                     style={{
                       left: '4px',
                       transform: flipbookPreviewMode ? 'translateX(100%)' : 'translateX(0)',
@@ -1639,7 +1639,7 @@ export default function YearbookAlbumClient({
               {uiSection === 'flipbook' && !canManage && (
                 <button
                   onClick={() => handleSectionChange('classes')}
-                  className="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg sm:rounded-xl bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 text-[10px] sm:text-xs font-black uppercase text-slate-900 dark:text-white shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all"
+                  className="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg sm:rounded-xl bg-white dark:bg-slate-800 border-2 border-black dark:border-slate-700 text-[10px] sm:text-xs font-black uppercase text-slate-900 dark:text-white active:translate-x-0.5 active:translate-y-0.5 transition-all"
                 >
                   <X className="w-3 h-3 sm:w-4 sm:h-4" /> <span>Preview</span>
                 </button>
@@ -1648,7 +1648,7 @@ export default function YearbookAlbumClient({
               {(uiSection === 'sambutan' || (uiSection === 'classes' && activeSection !== 'cover')) && (
                 <>
                   {isSearchOpen(uiSection === 'sambutan' ? 'sambutan' : 'classes') ? (
-                    <div className={`absolute left-[52px] ${uiSection === 'classes' ? 'right-[52px]' : 'right-2'} top-2 bottom-2 bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 rounded-xl px-3 flex items-center shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] lg:static lg:w-auto lg:h-9 lg:px-2 lg:py-1 animate-in slide-in-from-right-2 duration-200 z-[60]`}>
+                    <div className={`absolute left-[52px] ${uiSection === 'classes' ? 'right-[52px]' : 'right-2'} top-2 bottom-2 bg-white dark:bg-slate-800 border-2 border-black dark:border-slate-700 rounded-xl px-3 flex items-center lg:static lg:w-auto lg:h-9 lg:px-2 lg:py-1 animate-in slide-in-from-right-2 duration-200 z-[60]`}>
                       <Search className="w-4 h-4 text-slate-400 dark:text-slate-500 mr-2 flex-shrink-0" />
                       <input
                         type="text"
@@ -1668,7 +1668,7 @@ export default function YearbookAlbumClient({
                   ) : (
                     <button
                       onClick={() => openSearch(uiSection === 'sambutan' ? 'sambutan' : 'classes')}
-                      className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 rounded-lg sm:rounded-xl text-slate-900 dark:text-white shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all"
+                      className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center bg-white dark:bg-slate-800 border-2 border-black dark:border-slate-700 rounded-lg sm:rounded-xl text-slate-900 dark:text-white active:translate-x-0.5 active:translate-y-0.5 transition-all"
                     >
                       <Search className="w-3.5 h-3.5 sm:w-4 sm:h-4" strokeWidth={3} />
                     </button>
@@ -1683,7 +1683,7 @@ export default function YearbookAlbumClient({
                     e.stopPropagation()
                     setMobileMenuOpen(true)
                   }}
-                  className="lg:hidden flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 rounded-lg sm:rounded-xl text-slate-900 dark:text-white shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all flex-shrink-0"
+                  className="lg:hidden flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 bg-white dark:bg-slate-800 border-2 border-black dark:border-slate-700 rounded-lg sm:rounded-xl text-slate-900 dark:text-white active:translate-x-0.5 active:translate-y-0.5 transition-all flex-shrink-0"
                 >
                   <Menu className="w-4 h-4 sm:w-5 sm:h-5" />
                 </button>
@@ -1701,7 +1701,7 @@ export default function YearbookAlbumClient({
                     navigator.clipboard.writeText(url);
                     toast.success('Link public berhasil disalin');
                   }}
-                  className="flex items-center justify-center w-8 h-8 bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all"
+                  className="flex items-center justify-center w-8 h-8 bg-white dark:bg-slate-800 border-2 border-black dark:border-slate-700 rounded-lg text-slate-900 dark:text-white shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all"
                   title="Salin Link"
                 >
                   <LinkIcon className="w-3.5 h-3.5" strokeWidth={3} />
@@ -1709,7 +1709,7 @@ export default function YearbookAlbumClient({
                 <Link
                   href={`/album/${album?.id}/view`}
                   target="_blank"
-                  className="flex items-center justify-center w-8 h-8 bg-emerald-400 dark:bg-emerald-600 border-2 border-slate-900 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all"
+                  className="flex items-center justify-center w-8 h-8 bg-emerald-400 dark:bg-emerald-600 border-2 border-black dark:border-slate-700 rounded-lg text-slate-900 dark:text-white shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all"
                   title="Preview"
                 >
                   <Eye className="w-3.5 h-3.5" strokeWidth={3} />
@@ -1725,21 +1725,21 @@ export default function YearbookAlbumClient({
             <div className="flex gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar py-1.5 sm:py-2">
               <button
                 onClick={() => handleSectionChange('cover')}
-                className={`flex-shrink-0 flex items-center gap-1.5 sm:gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg sm:rounded-xl border-2 transition-all ${activeSection === 'cover' ? 'bg-slate-900 dark:bg-slate-700 border-slate-900 dark:border-slate-700 text-white shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]' : 'bg-white dark:bg-slate-800 border-slate-900 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-slate-900 dark:hover:border-slate-500 hover:text-slate-900 dark:hover:text-white'}`}
+                className={`flex-shrink-0 flex items-center gap-1.5 sm:gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg sm:rounded-xl border transition-all ${activeSection === 'cover' ? 'bg-slate-900 dark:bg-slate-700 border-black dark:border-slate-700 text-white' : 'bg-white dark:bg-slate-800 border-black dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-black dark:hover:border-slate-500 hover:text-slate-900 dark:hover:text-white shadow-sm'}`}
               >
                 <Book className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${activeSection === 'cover' ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`} />
                 <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest whitespace-nowrap">Cover</span>
               </button>
               <button
                 onClick={() => handleSectionChange('sambutan')}
-                className={`flex-shrink-0 flex items-center gap-1.5 sm:gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg sm:rounded-xl border-2 transition-all ${uiSection === 'sambutan' ? 'bg-slate-900 dark:bg-slate-700 border-slate-900 dark:border-slate-700 text-white shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]' : 'bg-white dark:bg-slate-800 border-slate-900 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-slate-900 dark:hover:border-slate-500 hover:text-slate-900 dark:hover:text-white'}`}
+                className={`flex-shrink-0 flex items-center gap-1.5 sm:gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg sm:rounded-xl border transition-all ${uiSection === 'sambutan' ? 'bg-slate-900 dark:bg-slate-700 border-black dark:border-slate-700 text-white' : 'bg-white dark:bg-slate-800 border-black dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-black dark:hover:border-slate-500 hover:text-slate-900 dark:hover:text-white shadow-sm'}`}
               >
                 <MessageSquare className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${uiSection === 'sambutan' ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`} />
                 <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest whitespace-nowrap">Sambutan</span>
               </button>
               <button
                 onClick={() => handleSectionChange('classes')}
-                className={`flex-shrink-0 flex items-center gap-1.5 sm:gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg sm:rounded-xl border-2 transition-all ${uiSection === 'classes' && activeSection !== 'cover' ? 'bg-slate-900 dark:bg-slate-700 border-slate-900 dark:border-slate-700 text-white shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]' : 'bg-white dark:bg-slate-800 border-slate-900 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-slate-900 dark:hover:border-slate-500 hover:text-slate-900 dark:hover:text-white'}`}
+                className={`flex-shrink-0 flex items-center gap-1.5 sm:gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg sm:rounded-xl border transition-all ${uiSection === 'classes' && activeSection !== 'cover' ? 'bg-slate-900 dark:bg-slate-700 border-black dark:border-slate-700 text-white' : 'bg-white dark:bg-slate-800 border-black dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-black dark:hover:border-slate-500 hover:text-slate-900 dark:hover:text-white shadow-sm'}`}
               >
                 <Users className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${uiSection === 'classes' && activeSection !== 'cover' ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`} />
                 <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest whitespace-nowrap">Kelas</span>
@@ -1870,7 +1870,7 @@ export default function YearbookAlbumClient({
         </div>
         {deleteCoverConfirm && (
           <div className="fixed inset-0 bg-slate-900/40 dark:bg-black/50 backdrop-blur-md flex items-center justify-center z-[200] p-4">
-            <div className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-[32px] p-6 lg:p-8 max-w-sm w-full shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] text-center">
+            <div className="bg-white dark:bg-slate-900 border-2 border-black dark:border-slate-700 rounded-[32px] p-6 lg:p-8 max-w-sm w-full shadow-[1.5px_1.5px_0_0_#334155] dark:shadow-[1.5px_1.5px_0_0_#1e293b] text-center">
               <h3 className="text-xl lg:text-2xl font-black text-slate-900 dark:text-white mb-2 uppercase tracking-tight">
                 {deleteCoverConfirm === 'image' ? 'Hapus Foto Cover' : 'Hapus Video Cover'}
               </h3>
@@ -1880,7 +1880,7 @@ export default function YearbookAlbumClient({
               <div className="flex gap-3">
                 <button
                   onClick={() => setDeleteCoverConfirm(null)}
-                  className="flex-1 py-3.5 rounded-xl bg-slate-100 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 text-slate-900 dark:text-white text-xs font-black uppercase tracking-widest shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
+                  className="flex-1 py-3.5 rounded-xl bg-slate-100 dark:bg-slate-800 border-2 border-black dark:border-slate-700 text-slate-900 dark:text-white text-xs font-black uppercase tracking-widest shadow-[1.5px_1.5px_0_0_#334155] dark:shadow-[1.5px_1.5px_0_0_#1e293b] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
                 >
                   Batal
                 </button>
@@ -1890,7 +1890,7 @@ export default function YearbookAlbumClient({
                     else await performDeleteCoverVideo()
                     setDeleteCoverConfirm(null)
                   }}
-                  className="flex-1 py-3.5 rounded-xl bg-red-500 border-2 border-slate-900 dark:border-slate-700 text-white text-xs font-black uppercase tracking-widest shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
+                  className="flex-1 py-3.5 rounded-xl bg-red-500 border-2 border-black dark:border-slate-700 text-white text-xs font-black uppercase tracking-widest shadow-[1.5px_1.5px_0_0_#334155] dark:shadow-[1.5px_1.5px_0_0_#1e293b] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
                 >
                   Ya, Hapus
                 </button>
@@ -1902,7 +1902,7 @@ export default function YearbookAlbumClient({
           <div className="fixed inset-0 z-[100] bg-slate-900/80 dark:bg-black/80 backdrop-blur-sm flex flex-col items-center justify-center p-4 animate-in fade-in duration-200" onClick={() => { setVideoPopupUrl(null); setVideoPopupError(null) }}>
             <button
               onClick={(e) => { e.stopPropagation(); setVideoPopupUrl(null); setVideoPopupError(null) }}
-              className="absolute top-4 right-4 z-10 w-10 h-10 bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 rounded-xl flex items-center justify-center shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all text-slate-900 dark:text-white"
+              className="absolute top-4 right-4 z-10 w-10 h-10 bg-white dark:bg-slate-800 border-2 border-black dark:border-slate-700 rounded-xl flex items-center justify-center shadow-[1.5px_1.5px_0_0_#334155] dark:shadow-[1.5px_1.5px_0_0_#1e293b] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all text-slate-900 dark:text-white"
             >
               <X className="w-6 h-6" strokeWidth={3} />
             </button>
@@ -1925,7 +1925,7 @@ export default function YearbookAlbumClient({
                   <button
                     type="button"
                     onClick={() => { setVideoPopupUrl(null); setVideoPopupError(null) }}
-                    className="px-6 py-3 bg-red-500 text-white border-2 border-slate-900 dark:border-slate-700 rounded-2xl font-black text-xs uppercase tracking-widest shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all"
+                    className="px-6 py-3 bg-red-500 text-white border-2 border-black dark:border-slate-700 rounded-2xl font-black text-xs uppercase tracking-widest shadow-[1.5px_1.5px_0_0_#334155] dark:shadow-[1.5px_1.5px_0_0_#1e293b] hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all"
                   >
                     Tutup
                   </button>
@@ -1936,9 +1936,9 @@ export default function YearbookAlbumClient({
         )}
         {coverPreview && (
           <div className="fixed inset-0 z-[100] bg-slate-900/80 dark:bg-black/80 backdrop-blur-sm flex flex-col items-center justify-center p-4 animate-in zoom-in-95 duration-200">
-            <div className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-[32px] p-4 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] max-w-md w-full">
+            <div className="bg-white dark:bg-slate-900 border-2 border-black dark:border-slate-700 rounded-[32px] p-4 shadow-[1.5px_1.5px_0_0_#334155] dark:shadow-[1.5px_1.5px_0_0_#1e293b] max-w-md w-full">
               <div className="flex items-center justify-between mb-4">
-                <p className="text-[10px] font-black text-slate-900 dark:text-white uppercase tracking-widest bg-amber-400 dark:bg-amber-600 px-3 py-1 border-2 border-slate-900 dark:border-slate-700 rounded-lg shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]">PENYESUAIAN COVER</p>
+                <p className="text-[10px] font-black text-slate-900 dark:text-white uppercase tracking-widest bg-amber-400 dark:bg-amber-600 px-3 py-1 border-2 border-black dark:border-slate-700 rounded-lg shadow-[1.5px_1.5px_0_0_#334155] dark:shadow-[1.5px_1.5px_0_0_#1e293b]">PENYESUAIAN COVER</p>
                 <button
                   onClick={() => { URL.revokeObjectURL(coverPreview.dataUrl); setCoverPreview(null) }}
                   className="text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors"
@@ -1951,7 +1951,7 @@ export default function YearbookAlbumClient({
 
               <div
                 ref={coverPreviewContainerRef}
-                className="w-full aspect-[3/4] rounded-2xl overflow-hidden bg-slate-100 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 relative touch-none select-none shadow-[8px_8px_0_0_#f1f5f9] dark:shadow-[4px_4px_0_0_#1e293b]"
+                className="w-full aspect-[3/4] rounded-2xl overflow-hidden bg-slate-100 dark:bg-slate-800 border-2 border-black dark:border-slate-700 relative touch-none select-none shadow-[8px_8px_0_0_#f1f5f9] dark:shadow-[1.5px_1.5px_0_0_#1e293b]"
                 onPointerDown={(e) => {
                   if (e.button !== 0) return
                   coverDragRef.current = {
@@ -2000,7 +2000,7 @@ export default function YearbookAlbumClient({
                     URL.revokeObjectURL(coverPreview.dataUrl)
                     setCoverPreview(null)
                   }}
-                  className="flex-1 px-5 py-3.5 rounded-xl border-2 border-slate-900 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-black text-xs uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-slate-700 active:translate-x-1 active:translate-y-1 transition-all"
+                  className="flex-1 px-5 py-3.5 rounded-xl border-2 border-black dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-black text-xs uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-slate-700 active:translate-x-1 active:translate-y-1 transition-all"
                 >
                   Batal
                 </button>
@@ -2008,7 +2008,7 @@ export default function YearbookAlbumClient({
                   type="button"
                   disabled={uploadingCover}
                   onClick={() => handleUploadCover(coverPreview.file, coverPosition, coverPreview.dataUrl)}
-                  className="flex-3 px-8 py-3.5 rounded-xl bg-violet-500 text-white border-2 border-slate-900 dark:border-slate-700 font-black text-sm uppercase tracking-widest shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:shadow-none hover:translate-x-1 hover:translate-y-1 active:translate-x-1.5 active:translate-y-1.5 transition-all disabled:opacity-50"
+                  className="flex-3 px-8 py-3.5 rounded-xl bg-violet-500 text-white border-2 border-black dark:border-slate-700 font-black text-sm uppercase tracking-widest shadow-[1.5px_1.5px_0_0_#334155] dark:shadow-[1.5px_1.5px_0_0_#1e293b] hover:shadow-none hover:translate-x-1 hover:translate-y-1 active:translate-x-1.5 active:translate-y-1.5 transition-all disabled:opacity-50"
                 >
                   {uploadingCover ? 'Mengunggah…' : 'Terapkan'}
                 </button>
@@ -2045,7 +2045,7 @@ export default function YearbookAlbumClient({
             }}
           />
         )}
-        <div className="flex shrink-0 items-center gap-3 border-b border-slate-900 bg-zinc-900/85 px-3 py-2.5 backdrop-blur-md">
+        <div className="flex shrink-0 items-center gap-3 border-b-2 border-black bg-zinc-900/85 px-3 py-2.5 backdrop-blur-md">
           <button
             type="button"
             onClick={() => {
@@ -2126,7 +2126,7 @@ export default function YearbookAlbumClient({
           </div>
 
           {hasPhotos && photos.length > 1 && (
-            <div className="shrink-0 border-t border-slate-900 bg-black/50 px-3 py-3 backdrop-blur-md">
+            <div className="shrink-0 border-t-2 border-black bg-black/50 px-3 py-3 backdrop-blur-md">
               <div className="mx-auto flex max-w-5xl gap-2 overflow-x-auto pb-1 [scrollbar-width:thin]">
                 {photos.map((p, i) => (
                   <button
@@ -2150,3 +2150,30 @@ export default function YearbookAlbumClient({
 
   return null
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

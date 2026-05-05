@@ -22,3 +22,9 @@ fonnteLanding.get('/config', async (c) => {
 })
 
 export default fonnteLanding
+
+
+
+
+
+

@@ -51,3 +51,9 @@ authOtpStatus.get('/', async (c) => {
 })
 
 export default authOtpStatus
+
+
+
+
+
+

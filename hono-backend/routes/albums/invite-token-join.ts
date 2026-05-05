@@ -47,3 +47,9 @@ inviteTokenJoin.post('/:token/join', async (c) => {
 })
 
 export default inviteTokenJoin
+
+
+
+
+
+

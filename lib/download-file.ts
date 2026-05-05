@@ -31,3 +31,9 @@ export function downloadFileToDevice(url: string, filename: string): Promise<voi
       URL.revokeObjectURL(objectUrl);
     });
 }
+
+
+
+
+
+

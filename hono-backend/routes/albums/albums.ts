@@ -1,5 +1,7 @@
 import { Hono } from 'hono'
-import { getD1 } from '../../lib/edge-env'
+import { getD1, getAssets } from '../../lib/edge-env'
+import { getR2KeyFromPublicUrl } from '../../lib/public-file-url'
+import { albumPathFromR2Key } from '../../lib/storage-layout'
 import { requireAuthJwt } from '../../middleware'
 import { invalidateUserResponseCaches } from '../../lib/user-response-cache'
 
@@ -325,14 +327,35 @@ albumsRoute.delete('/:id', requireAuthJwt, async (c) => {
     const albumId = c.req.param('id')
     const isAdmin = user.role === 'admin'
 
-    let stmt
-    if (isAdmin) {
-      stmt = db.prepare(`DELETE FROM albums WHERE id = ?`).bind(albumId)
-    } else {
-      stmt = db.prepare(`DELETE FROM albums WHERE id = ? AND user_id = ?`).bind(albumId, user.id)
+    // Get album info first to cleanup R2 assets
+    const album = await db
+      .prepare(`SELECT user_id, cover_image_url, cover_video_url FROM albums WHERE id = ?`)
+      .bind(albumId)
+      .first<{ user_id: string; cover_image_url: string | null; cover_video_url: string | null }>()
+
+    if (!album) return c.json({ error: 'Album not found' }, 404)
+    if (!isAdmin && album.user_id !== user.id) return c.json({ error: 'Forbidden' }, 403)
+
+    // Cleanup R2 assets
+    const bucket = getAssets(c)
+    if (bucket) {
+      // Cleanup cover image
+      if (album.cover_image_url) {
+        const key = getR2KeyFromPublicUrl(c, album.cover_image_url)
+        if (key) {
+          try { await bucket.delete(albumPathFromR2Key(key)) } catch {}
+        }
+      }
+      // Cleanup cover video
+      if (album.cover_video_url) {
+        const key = getR2KeyFromPublicUrl(c, album.cover_video_url)
+        if (key) {
+          try { await bucket.delete(albumPathFromR2Key(key)) } catch {}
+        }
+      }
     }
 
-    const result = await stmt.run()
+    const result = await db.prepare(`DELETE FROM albums WHERE id = ?`).bind(albumId).run()
     if (!result.success) return c.json({ error: 'Failed to delete album or unauthorized' }, 400)
 
     return c.json({ success: true }, 200)
@@ -394,5 +417,11 @@ albumsRoute.put('/:id', requireAuthJwt, async (c) => {
 })
 
 export default albumsRoute
+
+
+
+
+
+
 
 

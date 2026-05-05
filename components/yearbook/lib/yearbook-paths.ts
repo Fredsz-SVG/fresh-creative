@@ -93,3 +93,9 @@ export function toSkeletonSection(value: string | null): SectionMode | null {
   const modes: SectionMode[] = ['cover', 'classes', 'approval', 'team', 'sambutan', 'ai-labs', 'flipbook', 'preview']
   return modes.includes(value as SectionMode) ? (value as SectionMode) : null
 }
+
+
+
+
+
+

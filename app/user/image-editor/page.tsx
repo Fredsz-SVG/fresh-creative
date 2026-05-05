@@ -4,3 +4,9 @@ import { redirect } from 'next/navigation'
 export default function UserImageEditorPage() {
   redirect('/user')
 }
+
+
+
+
+
+

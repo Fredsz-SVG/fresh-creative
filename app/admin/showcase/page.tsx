@@ -3,7 +3,7 @@
 import React, { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { fetchWithAuth } from '../../../lib/api-client'
-import { Loader2, Eye, BookOpen, Save, MessageCircle, Plus, Trash2, Edit2, Upload, ImageIcon } from 'lucide-react'
+import { Loader2, Eye, BookOpen, Save, MessageCircle, Plus, Trash2, Edit2, Upload, ImageIcon, Film, X as XIcon } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
 
@@ -13,7 +13,10 @@ interface PortfolioItem {
   subtitle: string
   description: string
   image_url: string
+  video_url?: string
   display_order: number
+  /** client-only flag: true means admin explicitly cleared the video */
+  _removeVideo?: boolean
 }
 
 type ActiveTab = 'ebook' | 'phygital' | 'portfolio'
@@ -90,7 +93,7 @@ const PortfolioCard = memo(function PortfolioCard({
   onDelete: (id: string) => void
 }) {
   return (
-    <div className="group relative rounded-3xl border-2 border-slate-900 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-hidden shadow-[3px_3px_0_0_#334155] md:shadow-[6px_6px_0_0_#334155] dark:shadow-[3px_3px_0_0_#1e293b] dark:md:shadow-[6px_6px_0_0_#1e293b] md:hover:translate-x-[-2px] md:hover:translate-y-[-2px] md:hover:shadow-[8px_8px_0_0_#334155] transition-transform [content-visibility:auto] [contain-intrinsic-size:280px_360px]">
+    <div className="group relative rounded-3xl border-2 border-slate-900 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-hidden shadow-[2px_2px_0_0_#334155] md:shadow-[6px_6px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b] dark:md:shadow-[6px_6px_0_0_#1e293b] md:hover:translate-x-[-2px] md:hover:translate-y-[-2px] md:hover:shadow-[8px_8px_0_0_#334155] transition-transform [content-visibility:auto] [contain-intrinsic-size:280px_360px]">
       <div className="aspect-[4/5] relative bg-slate-100 dark:bg-slate-800">
         <PortfolioCardImage src={item.image_url} alt={item.title} eager={eager} />
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/30 to-transparent opacity-90 pointer-events-none" />
@@ -144,6 +147,7 @@ export default function AdminShowcasePage() {
   const [editingItem, setEditingItem] = useState<Partial<PortfolioItem> | null>(null)
   const [isSavingPortfolio, setIsSavingPortfolio] = useState(false)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
+  const videoFileInputRef = useRef<HTMLInputElement | null>(null)
 
   // Portfolio Pagination
   const [currentPage, setCurrentPage] = useState(1)
@@ -385,11 +389,22 @@ export default function AdminShowcasePage() {
       formData.append('description', editingItem.description || '')
       formData.append('displayOrder', String(editingItem.display_order || 0))
       formData.append('imageUrl', editingItem.image_url || '')
+      formData.append('videoUrl', editingItem.video_url || '')
 
-      const file = fileInputRef.current?.files?.[0]
-      if (file) {
+      const imageFile = fileInputRef.current?.files?.[0]
+      if (imageFile) {
         // fetchWithAuth mengonversi gambar di FormData ke WebP + resize long edge (lib/api-client + image-conversion).
-        formData.append('image', file)
+        formData.append('image', imageFile)
+      }
+
+      // Handle video
+      const videoFile = videoFileInputRef.current?.files?.[0]
+      if (videoFile) {
+        formData.append('video', videoFile)
+      }
+      // If video_url was explicitly cleared (removeVideo)
+      if (editingItem._removeVideo) {
+        formData.append('removeVideo', 'true')
       }
 
       const url = editingItem.id ? `/api/admin/portfolio/${editingItem.id}` : '/api/admin/portfolio'
@@ -397,11 +412,11 @@ export default function AdminShowcasePage() {
 
       const res = await fetchWithAuth(url, {
         method,
-        body: formData, // fetchWithAuth will handle multipart if body is FormData
+        body: formData,
       })
 
       if (res.ok) {
-        setStatusBanner(editingItem.id ? 'Portfolio updated' : 'Portfolio created')
+        setStatusBanner(editingItem.id ? 'Portfolio updated-success' : 'Portfolio created-success')
         setEditingItem(null)
         await fetchPortfolio()
         setTimeout(() => setStatusBanner(null), 3000)
@@ -417,7 +432,7 @@ export default function AdminShowcasePage() {
   }
 
   const openAddPortfolio = () => {
-    setEditingItem({ id: '', title: '', subtitle: '', description: '', display_order: portfolio.length, image_url: '' })
+    setEditingItem({ id: '', title: '', subtitle: '', description: '', display_order: portfolio.length, image_url: '', video_url: '' })
   }
 
   const confirmDelete = async () => {
@@ -442,7 +457,7 @@ export default function AdminShowcasePage() {
   return (
     <div className="max-w-6xl pb-12">
       {statusBanner && (
-        <div className={`fixed bottom-4 md:bottom-8 left-1/2 -translate-x-1/2 z-[200] max-w-[90%] md:max-w-md w-full px-4 py-3 md:px-6 md:py-4 rounded-2xl md:rounded-2xl border-2 border-slate-900 dark:border-slate-700 shadow-[#64748b] dark:shadow-[4px_4px_0_0_#1e293b] md:shadow-[4px_4px_0_0_#334155] dark:md:shadow-[4px_4px_0_0_#334155] transform transition-all animate-bounce-subtle ${statusBanner.startsWith('error:') ? 'bg-red-400 dark:bg-red-600 text-white' : statusBanner.endsWith('-success') ? 'bg-emerald-400 dark:bg-emerald-600 text-slate-900 dark:text-white' : 'bg-amber-300 dark:bg-amber-600 text-slate-900 dark:text-white'}`}>
+        <div className={`fixed bottom-4 md:bottom-8 left-1/2 -translate-x-1/2 z-[200] max-w-[90%] md:max-w-md w-full px-4 py-3 md:px-6 md:py-4 rounded-2xl md:rounded-2xl border-2 border-slate-900 dark:border-slate-700 shadow-[#64748b] dark:shadow-[2px_2px_0_0_#1e293b] md:shadow-[2px_2px_0_0_#334155] dark:md:shadow-[2px_2px_0_0_#334155] transform transition-all animate-bounce-subtle ${statusBanner.startsWith('error:') ? 'bg-red-400 dark:bg-red-600 text-white' : statusBanner.endsWith('-success') ? 'bg-emerald-400 dark:bg-emerald-600 text-slate-900 dark:text-white' : 'bg-amber-300 dark:bg-amber-600 text-slate-900 dark:text-white'}`}>
           <div className="flex items-center gap-2 md:gap-3 font-bold text-xs md:text-sm">
             {statusBanner.startsWith('saving-') ? <Loader2 className="animate-spin w-4 h-4 md:w-5 md:h-5" /> : null}
             {statusBanner === 'saving-flipbook' ? 'Menyimpan View flipbook...' :
@@ -471,7 +486,7 @@ export default function AdminShowcasePage() {
             <button
               type="button"
               onClick={openAddPortfolio}
-              className="flex items-center gap-2 px-5 py-3 bg-violet-500 text-white rounded-2xl text-sm font-bold hover:bg-violet-600 transition-all shadow-[4px_4px_0_0_#2e1065] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none animate-in fade-in zoom-in-95 whitespace-nowrap"
+              className="flex items-center gap-2 px-5 py-3 bg-violet-500 text-white rounded-2xl text-sm font-bold hover:bg-violet-600 transition-all shadow-[2px_2px_0_0_#2e1065] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none animate-in fade-in zoom-in-95 whitespace-nowrap"
             >
               <Plus className="w-4 h-4 shrink-0" />
               Tambah Portfolio
@@ -484,7 +499,7 @@ export default function AdminShowcasePage() {
       <div className="mb-8">
         <div className="flex w-full md:w-fit max-w-full flex-nowrap gap-1 p-1 bg-slate-100 dark:bg-slate-900/50 rounded-2xl border-2 border-slate-900 dark:border-slate-800 relative min-w-0">
           <div
-            className="absolute top-1 bottom-1 rounded-xl bg-white dark:bg-slate-800 shadow-[3px_3px_0_0_#0f172a] border border-slate-900 transition-transform duration-200 ease-out"
+            className="absolute top-1 bottom-1 rounded-xl bg-white dark:bg-slate-800 shadow-[2px_2px_0_0_#0f172a] border border-slate-900 transition-transform duration-200 ease-out"
             style={{
               width: 'calc(33.333333% - 6px)',
               transform:
@@ -521,7 +536,7 @@ export default function AdminShowcasePage() {
             <button
               type="button"
               onClick={openAddPortfolio}
-              className="flex w-full items-center justify-center gap-2 px-5 py-3 bg-violet-500 text-white rounded-2xl text-sm font-bold hover:bg-violet-600 transition-all shadow-[4px_4px_0_0_#2e1065] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none animate-in fade-in zoom-in-95"
+              className="flex w-full items-center justify-center gap-2 px-5 py-3 bg-violet-500 text-white rounded-2xl text-sm font-bold hover:bg-violet-600 transition-all shadow-[2px_2px_0_0_#2e1065] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none animate-in fade-in zoom-in-95"
             >
               <Plus className="w-4 h-4 shrink-0" />
               Tambah Portfolio
@@ -534,7 +549,7 @@ export default function AdminShowcasePage() {
         <div className="animate-pulse space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
             {[1, 2].map(i => (
-              <div key={i} className="rounded-2xl border-2 border-slate-900 dark:border-slate-700 bg-white dark:bg-slate-900 p-6 md:p-8 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]">
+              <div key={i} className="rounded-2xl border-2 border-slate-900 dark:border-slate-700 bg-white dark:bg-slate-900 p-6 md:p-8 shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b]">
                 <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-32 mb-4" />
                 <div className="h-4 bg-slate-100 dark:bg-slate-800 rounded w-full mb-2" />
                 <div className="h-4 bg-slate-100 dark:bg-slate-800 rounded w-full mb-4 max-w-[85%]" />
@@ -550,7 +565,7 @@ export default function AdminShowcasePage() {
             inert={activeTab !== 'ebook' ? true : undefined}
           >
           {/* Flipbook View */}
-          <div className="rounded-2xl border-2 border-slate-900 dark:border-slate-700 bg-white dark:bg-slate-900 p-6 md:p-8 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] relative overflow-hidden group">
+          <div className="rounded-2xl border-2 border-slate-900 dark:border-slate-700 bg-white dark:bg-slate-900 p-6 md:p-8 shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b] relative overflow-hidden group">
             <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
               <BookOpen className="w-16 h-16 text-emerald-300 dark:text-emerald-900" />
             </div>
@@ -570,14 +585,14 @@ export default function AdminShowcasePage() {
                   value={flipbookPreviewUrl}
                   onChange={(e) => setFlipbookPreviewUrl(e.target.value)}
                   placeholder="/album/uuid/flipbook"
-                  className="w-full px-5 py-4 text-sm font-bold rounded-2xl bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-4 focus:ring-emerald-200 dark:focus:ring-emerald-900 transition-all shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] focus:shadow-none"
+                  className="w-full px-5 py-4 text-sm font-bold rounded-2xl bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-4 focus:ring-emerald-200 dark:focus:ring-emerald-900 transition-all shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b] focus:shadow-none"
                 />
               </div>
               <button
                 type="button"
                 onClick={() => handleSaveSection('flipbook')}
                 disabled={savingSection !== null}
-                className="mt-4 w-full flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-emerald-400 dark:bg-emerald-700 text-slate-900 dark:text-white border-2 border-slate-900 dark:border-slate-700 text-sm font-bold hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] transition-all disabled:opacity-50"
+                className="mt-4 w-full flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-emerald-400 dark:bg-emerald-700 text-slate-900 dark:text-white border-2 border-slate-900 dark:border-slate-700 text-sm font-bold hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b] transition-all disabled:opacity-50"
               >
                 {savingSection === 'flipbook' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                 Simpan Flipbook
@@ -586,7 +601,7 @@ export default function AdminShowcasePage() {
           </div>
 
           {/* Album Carousel View */}
-          <div className="rounded-2xl border-2 border-slate-900 dark:border-slate-700 bg-white dark:bg-slate-900 p-6 md:p-8 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] relative overflow-hidden group">
+          <div className="rounded-2xl border-2 border-slate-900 dark:border-slate-700 bg-white dark:bg-slate-900 p-6 md:p-8 shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b] relative overflow-hidden group">
             <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
               <Eye className="w-16 h-16 text-sky-300 dark:text-sky-900" />
             </div>
@@ -606,14 +621,14 @@ export default function AdminShowcasePage() {
                   value={albumCarouselLink}
                   onChange={(e) => setAlbumCarouselLink(e.target.value)}
                   placeholder="/album/uuid/view"
-                  className="w-full px-5 py-4 text-sm font-bold rounded-2xl bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-4 focus:ring-sky-200 dark:focus:ring-sky-900 transition-all shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] focus:shadow-none"
+                  className="w-full px-5 py-4 text-sm font-bold rounded-2xl bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-4 focus:ring-sky-200 dark:focus:ring-sky-900 transition-all shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b] focus:shadow-none"
                 />
               </div>
               <button
                 type="button"
                 onClick={() => handleSaveSection('album')}
                 disabled={savingSection !== null}
-                className="mt-4 w-full flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-sky-400 dark:bg-sky-700 text-slate-900 dark:text-white border-2 border-slate-900 dark:border-slate-700 text-sm font-bold hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] transition-all disabled:opacity-50"
+                className="mt-4 w-full flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-sky-400 dark:bg-sky-700 text-slate-900 dark:text-white border-2 border-slate-900 dark:border-slate-700 text-sm font-bold hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b] transition-all disabled:opacity-50"
               >
                 {savingSection === 'album' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                 Simpan Album
@@ -628,7 +643,7 @@ export default function AdminShowcasePage() {
           >
             <div>
               {/* Contact URL */}
-              <div className="rounded-2xl border-2 border-slate-900 dark:border-slate-700 bg-amber-50 dark:bg-slate-800 p-6 md:p-8 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] relative overflow-hidden group max-w-2xl mb-8">
+              <div className="rounded-2xl border-2 border-slate-900 dark:border-slate-700 bg-amber-50 dark:bg-slate-800 p-6 md:p-8 shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b] relative overflow-hidden group max-w-2xl mb-8">
                 <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                   <MessageCircle className="w-16 h-16 text-amber-300 dark:text-amber-900" />
                 </div>
@@ -650,14 +665,14 @@ export default function AdminShowcasePage() {
                       value={contactUrl}
                       onChange={(e) => setContactUrl(e.target.value)}
                       placeholder="https://wa.me/628xxxxxxxxxx"
-                      className="w-full px-5 py-4 text-sm font-bold rounded-2xl bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-4 focus:ring-amber-200 dark:focus:ring-amber-900 transition-all shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] focus:shadow-none"
+                      className="w-full px-5 py-4 text-sm font-bold rounded-2xl bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-4 focus:ring-amber-200 dark:focus:ring-amber-900 transition-all shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b] focus:shadow-none"
                     />
                   </div>
                   <button
                     type="button"
                     onClick={() => handleSaveSection('contact')}
                     disabled={savingSection !== null}
-                    className="mt-4 w-full flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-amber-400 dark:bg-amber-700 text-slate-900 dark:text-white border-2 border-slate-900 dark:border-slate-700 text-sm font-bold hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] transition-all disabled:opacity-50"
+                    className="mt-4 w-full flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-amber-400 dark:bg-amber-700 text-slate-900 dark:text-white border-2 border-slate-900 dark:border-slate-700 text-sm font-bold hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b] transition-all disabled:opacity-50"
                   >
                     {savingSection === 'contact' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                     Simpan Contact URL
@@ -666,7 +681,7 @@ export default function AdminShowcasePage() {
               </div>
 
               {/* Fonnte WhatsApp Target */}
-              <div className="rounded-2xl border-2 border-slate-900 dark:border-slate-700 bg-green-50 dark:bg-slate-800 p-6 md:p-8 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] relative overflow-hidden group max-w-2xl">
+              <div className="rounded-2xl border-2 border-slate-900 dark:border-slate-700 bg-green-50 dark:bg-slate-800 p-6 md:p-8 shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b] relative overflow-hidden group max-w-2xl">
                 <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                   <MessageCircle className="w-16 h-16 text-green-300 dark:text-green-900" />
                 </div>
@@ -686,14 +701,14 @@ export default function AdminShowcasePage() {
                       value={fonnteTarget}
                       onChange={(e) => setFonnteTarget(e.target.value)}
                       placeholder="6285865913347"
-                      className="w-full px-5 py-4 text-sm font-bold rounded-2xl bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-4 focus:ring-green-200 dark:focus:ring-green-900 transition-all shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] focus:shadow-none"
+                      className="w-full px-5 py-4 text-sm font-bold rounded-2xl bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-4 focus:ring-green-200 dark:focus:ring-green-900 transition-all shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b] focus:shadow-none"
                     />
                   </div>
                   <button
                     type="button"
                     onClick={() => handleSaveSection('fonnte')}
                     disabled={savingSection !== null}
-                    className="mt-4 w-full flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-green-400 dark:bg-green-700 text-slate-900 dark:text-white border-2 border-slate-900 dark:border-slate-700 text-sm font-bold hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] transition-all disabled:opacity-50"
+                    className="mt-4 w-full flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-green-400 dark:bg-green-700 text-slate-900 dark:text-white border-2 border-slate-900 dark:border-slate-700 text-sm font-bold hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b] transition-all disabled:opacity-50"
                   >
                     {savingSection === 'fonnte' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                     Simpan Target
@@ -877,6 +892,109 @@ export default function AdminShowcasePage() {
                       </div>
                     </div>
 
+                    {/* Video Upload (Opsional) */}
+                    <div>
+                      <label className="mb-2 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                        <Film className="w-3 h-3" />
+                        Video
+                        <span className="ml-1 rounded-full bg-slate-100 dark:bg-slate-700 px-2 py-0.5 text-[9px] font-bold text-slate-400 dark:text-slate-500 normal-case tracking-normal">
+                          Opsional · Tampil saat Full View · Maks 20MB
+                        </span>
+                      </label>
+
+                      {(() => {
+                        const isNewBlob = !!editingItem.video_url?.startsWith('blob:')
+                        const isExisting = !!editingItem.video_url && !isNewBlob && !editingItem._removeVideo
+
+                        if (isNewBlob) {
+                          // Video baru dipilih — tampilkan preview blob saja
+                          return (
+                            <div className="relative w-full rounded-2xl overflow-hidden border-2 border-violet-300 dark:border-violet-700 bg-slate-900">
+                              <video
+                                src={editingItem.video_url}
+                                controls
+                                className="w-full max-h-40 object-contain"
+                              />
+                              <div className="absolute top-2 left-2 rounded-lg bg-violet-500 px-2 py-0.5 text-[9px] font-black text-white uppercase tracking-widest">
+                                Baru
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (videoFileInputRef.current) videoFileInputRef.current.value = ''
+                                  setEditingItem({ ...editingItem, video_url: '' })
+                                }}
+                                className="absolute top-2 right-2 p-1.5 rounded-xl bg-rose-500 text-white hover:bg-rose-600 transition-colors shadow-md"
+                                title="Batalkan pilihan video"
+                              >
+                                <XIcon className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          )
+                        }
+
+                        if (isExisting) {
+                          // Video lama dari server — tampilkan preview + tombol hapus
+                          return (
+                            <div className="relative w-full rounded-2xl overflow-hidden border-2 border-slate-200 dark:border-slate-700 bg-slate-900">
+                              <video
+                                src={editingItem.video_url}
+                                controls
+                                className="w-full max-h-40 object-contain"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => setEditingItem({ ...editingItem, _removeVideo: true, video_url: '' })}
+                                className="absolute top-2 right-2 p-1.5 rounded-xl bg-rose-500 text-white hover:bg-rose-600 transition-colors shadow-md"
+                                title="Hapus video"
+                              >
+                                <XIcon className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          )
+                        }
+
+                        // Tidak ada video — tampilkan dropzone upload
+                        return (
+                          <div
+                            role="button"
+                            tabIndex={0}
+                            onClick={() => videoFileInputRef.current?.click()}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault()
+                                videoFileInputRef.current?.click()
+                              }
+                            }}
+                            className="group relative flex h-24 w-full cursor-pointer flex-col items-center justify-center gap-2 overflow-hidden rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 transition-all hover:border-violet-400 dark:border-slate-700 dark:bg-slate-800"
+                          >
+                            <Film className="h-7 w-7 text-slate-400 group-hover:text-violet-400 transition-colors" />
+                            <p className="text-xs font-bold text-slate-400 group-hover:text-violet-400 transition-colors">
+                              {editingItem._removeVideo ? 'Video dihapus — upload video baru (opsional)' : 'Klik untuk upload video'}
+                            </p>
+                            <input
+                              ref={videoFileInputRef}
+                              type="file"
+                              accept="video/*"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0]
+                                if (file) {
+                                  if (file.size > 20 * 1024 * 1024) {
+                                    alert('Video maksimal 20MB')
+                                    e.target.value = ''
+                                    return
+                                  }
+                                  const url = URL.createObjectURL(file)
+                                  setEditingItem({ ...editingItem, video_url: url, _removeVideo: false })
+                                }
+                              }}
+                              className="hidden"
+                            />
+                          </div>
+                        )
+                      })()}
+                    </div>
+
                     <div className="flex gap-3 pt-4">
                       <button
                         type="button"
@@ -888,7 +1006,7 @@ export default function AdminShowcasePage() {
                       <button
                         type="submit"
                         disabled={isSavingPortfolio}
-                        className="flex flex-1 items-center justify-center gap-2 rounded-2xl border-2 border-slate-900 bg-violet-500 px-5 py-3.5 font-bold text-white shadow-[4px_4px_0_0_#2e1065] transition-all hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none disabled:opacity-50 dark:border-slate-700"
+                        className="flex flex-1 items-center justify-center gap-2 rounded-2xl border-2 border-slate-900 bg-violet-500 px-5 py-3.5 font-bold text-white shadow-[2px_2px_0_0_#2e1065] transition-all hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none disabled:opacity-50 dark:border-slate-700"
                       >
                         {isSavingPortfolio ? (
                           <div className="flex items-center gap-2">
@@ -926,7 +1044,7 @@ export default function AdminShowcasePage() {
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="relative w-full max-w-sm bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-2xl p-5 md:p-6 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]"
+              className="relative w-full max-w-sm bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-2xl p-5 md:p-6 shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b]"
             >
               <h3 className="text-base md:text-lg font-bold text-slate-900 dark:text-white">Hapus Portfolio?</h3>
               <p className="mt-2 text-xs md:text-sm text-slate-500 dark:text-slate-400 font-medium">
@@ -937,7 +1055,7 @@ export default function AdminShowcasePage() {
                 <button
                   onClick={() => setItemToDelete(null)}
                   disabled={isDeleting}
-                  className="flex-1 px-4 py-2.5 border-2 border-slate-900 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200 font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:shadow-none disabled:opacity-60"
+                  className="flex-1 px-4 py-2.5 border-2 border-slate-900 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200 font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b] hover:shadow-none disabled:opacity-60"
                 >
                   Batal
                 </button>
@@ -956,4 +1074,11 @@ export default function AdminShowcasePage() {
     </div>
   )
 }
+
+
+
+
+
+
+
 

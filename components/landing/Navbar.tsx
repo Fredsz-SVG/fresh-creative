@@ -219,7 +219,7 @@ export function Navbar() {
                 {!user ? (
                   <Link
                     href="/login"
-                    className="hidden lg:inline-flex items-center justify-center gap-2 w-[150px] py-2 bg-yellow-300 text-black font-black text-[13px] uppercase tracking-wide border-2 border-black rounded-full shadow-[2px_2px_0_0_#000] dark:shadow-[2px_2px_0_0_#5cecff] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[3px_3px_0_0_#000] dark:hover:shadow-[3px_3px_0_0_#ff61c6] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all duration-200"
+                    className="hidden lg:inline-flex items-center justify-center gap-2 w-[150px] py-2 bg-yellow-300 text-black font-black text-[13px] uppercase tracking-wide border-2 border-black rounded-full shadow-[2px_2px_0_0_#000] dark:shadow-[2px_2px_0_0_#5cecff] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[2px_2px_0_0_#000] dark:hover:shadow-[2px_2px_0_0_#ff61c6] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all duration-200"
                   >
                     <LogIn size={14} />
                     <span className="font-general text-[13px] uppercase">Login</span>
@@ -229,7 +229,7 @@ export function Navbar() {
                     type="button"
                     onClick={handleDashboardClick}
                     disabled={isResolvingDashboard}
-                    className="hidden lg:inline-flex items-center justify-center gap-2 w-[150px] py-2 bg-yellow-300 text-black font-black text-[13px] uppercase tracking-wide border-2 border-black rounded-full shadow-[2px_2px_0_0_#000] dark:shadow-[2px_2px_0_0_#5cecff] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[3px_3px_0_0_#000] dark:hover:shadow-[3px_3px_0_0_#ff61c6] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all duration-200 disabled:opacity-70 disabled:pointer-events-none"
+                    className="hidden lg:inline-flex items-center justify-center gap-2 w-[150px] py-2 bg-yellow-300 text-black font-black text-[13px] uppercase tracking-wide border-2 border-black rounded-full shadow-[2px_2px_0_0_#000] dark:shadow-[2px_2px_0_0_#5cecff] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[2px_2px_0_0_#000] dark:hover:shadow-[2px_2px_0_0_#ff61c6] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all duration-200 disabled:opacity-70 disabled:pointer-events-none"
                   >
                     <LayoutDashboard size={14} />
                     <span className="font-general text-[13px] uppercase">Dashboard</span>
@@ -394,7 +394,7 @@ export function Navbar() {
               {!user ? (
                 <Link
                   href="/login"
-                  className="flex items-center justify-center gap-2 px-7 py-4 bg-yellow-300 text-black font-black text-sm uppercase tracking-wide border-2 border-black rounded-full shadow-[3px_3px_0_0_#000] dark:shadow-[3px_3px_0_0_#5cecff] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all duration-200 w-full"
+                  className="flex items-center justify-center gap-2 px-7 py-4 bg-yellow-300 text-black font-black text-sm uppercase tracking-wide border-2 border-black rounded-full shadow-[2px_2px_0_0_#000] dark:shadow-[2px_2px_0_0_#5cecff] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all duration-200 w-full"
                   onClick={() => setIsMenuOpen(false)}
                 >
                   <LogIn size={18} />
@@ -408,7 +408,7 @@ export function Navbar() {
                     await handleDashboardClick();
                   }}
                   disabled={isResolvingDashboard}
-                  className="flex items-center justify-center gap-3 px-7 py-4 bg-yellow-300 text-black font-black text-sm uppercase tracking-wide border-2 border-black rounded-full shadow-[3px_3px_0_0_#000] dark:shadow-[3px_3px_0_0_#5cecff] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all duration-200 w-full disabled:opacity-70 disabled:pointer-events-none"
+                  className="flex items-center justify-center gap-3 px-7 py-4 bg-yellow-300 text-black font-black text-sm uppercase tracking-wide border-2 border-black rounded-full shadow-[2px_2px_0_0_#000] dark:shadow-[2px_2px_0_0_#5cecff] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all duration-200 w-full disabled:opacity-70 disabled:pointer-events-none"
                 >
                   <LayoutDashboard size={18} />
                   Dashboard
@@ -421,3 +421,10 @@ export function Navbar() {
     </>
   );
 }
+
+
+
+
+
+
+

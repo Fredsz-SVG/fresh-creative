@@ -24,3 +24,9 @@ export function proxy(req: NextRequest) {
 export const config = {
   matcher: ['/pricing/:path*'],
 }
+
+
+
+
+
+

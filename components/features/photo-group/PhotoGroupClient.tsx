@@ -125,7 +125,7 @@ export default function PhotoGroup({ creditCost }: { creditCost?: number }) {
     <section id="photogroup" className="py-4 md:py-6">
       <div className="max-w-3xl mx-auto">
         <form onSubmit={handleGenerateGroup}>
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border-2 border-slate-200 dark:border-slate-700 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] p-4 sm:p-6 space-y-4 sm:space-y-5">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border-2 border-slate-200 dark:border-slate-700 shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b] p-4 sm:p-6 space-y-4 sm:space-y-5">
             <p className="text-[10px] sm:text-xs font-black text-slate-500 dark:text-slate-400 text-center uppercase tracking-widest">
               Upload 2–10 gambar untuk digabung menjadi satu foto grup.
             </p>
@@ -166,7 +166,7 @@ export default function PhotoGroup({ creditCost }: { creditCost?: number }) {
                     {subjects.map((subject, idx) => (
                       <div
                         key={subject.id}
-                        className="relative border-2 border-slate-200 dark:border-slate-600 rounded-xl p-1.5 sm:p-2 bg-slate-100 dark:bg-slate-800 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]"
+                        className="relative border-2 border-slate-200 dark:border-slate-600 rounded-xl p-1.5 sm:p-2 bg-slate-100 dark:bg-slate-800 shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b]"
                       >
                         <img
                           src={subject.preview}
@@ -179,7 +179,7 @@ export default function PhotoGroup({ creditCost }: { creditCost?: number }) {
                         <button
                           type="button"
                           onClick={() => removeSubject(subject.id)}
-                          className="absolute top-1 right-1 inline-flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 bg-red-500 text-white rounded-full border-2 border-slate-200 hover:bg-red-600 transition-colors shadow-[4px_4px_0_0_#334155] active:shadow-none active:translate-x-0.5 active:translate-y-0.5"
+                          className="absolute top-1 right-1 inline-flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 bg-red-500 text-white rounded-full border-2 border-slate-200 hover:bg-red-600 transition-colors shadow-[2px_2px_0_0_#334155] active:shadow-none active:translate-x-0.5 active:translate-y-0.5"
                         >
                           <X className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
                         </button>
@@ -242,7 +242,7 @@ export default function PhotoGroup({ creditCost }: { creditCost?: number }) {
             <button
               type="submit"
               disabled={loading || subjects.length < 2 || subjects.length > MAX_SUBJECTS || !prompt.trim()}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-indigo-500 text-white rounded-xl border-2 border-slate-200 dark:border-slate-600 font-black text-xs uppercase tracking-widest shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-indigo-500 text-white rounded-xl border-2 border-slate-200 dark:border-slate-600 font-black text-xs uppercase tracking-widest shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? (
                 <>
@@ -265,7 +265,7 @@ export default function PhotoGroup({ creditCost }: { creditCost?: number }) {
             <h3 className="text-base sm:text-xl font-black mb-4 text-slate-900 dark:text-white text-center uppercase tracking-tight">
               Hasil Photo Group
             </h3>
-            <div className="bg-white dark:bg-slate-900 rounded-2xl border-2 border-slate-200 dark:border-slate-700 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] p-3 sm:p-4">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl border-2 border-slate-200 dark:border-slate-700 shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b] p-3 sm:p-4">
               <div className="relative max-w-xs sm:max-w-sm md:max-w-md mx-auto">
                 <img
                   src={result}
@@ -288,7 +288,7 @@ export default function PhotoGroup({ creditCost }: { creditCost?: number }) {
                     }
                   }}
                   disabled={downloading}
-                  className="absolute top-1.5 sm:top-2 right-1.5 sm:right-2 inline-flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 bg-emerald-500 text-white rounded-full border-2 border-slate-200 dark:border-slate-600 hover:bg-emerald-600 transition-colors shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 disabled:opacity-70"
+                  className="absolute top-1.5 sm:top-2 right-1.5 sm:right-2 inline-flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 bg-emerald-500 text-white rounded-full border-2 border-slate-200 dark:border-slate-600 hover:bg-emerald-600 transition-colors shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 disabled:opacity-70"
                   title="Download (langsung ke device)"
                 >
                   {downloading ? (
@@ -305,3 +305,9 @@ export default function PhotoGroup({ creditCost }: { creditCost?: number }) {
     </section>
   );
 }
+
+
+
+
+
+

@@ -26,10 +26,10 @@ albumClasses.get('/', async (c) => {
 
   const classesRes = await db
     .prepare(
-      `SELECT id, name, sort_order, batch_photo_url FROM album_classes WHERE album_id = ? ORDER BY sort_order ASC`
+      `SELECT id, name, sort_order, batch_photo_url, batch_video_url FROM album_classes WHERE album_id = ? ORDER BY sort_order ASC`
     )
     .bind(albumId)
-    .all<{ id: string; name: string; sort_order: number; batch_photo_url: string | null }>()
+    .all<{ id: string; name: string; sort_order: number; batch_photo_url: string | null; batch_video_url: string | null }>()
 
   const classList = classesRes.results ?? []
   const accessRes = await db
@@ -50,6 +50,7 @@ albumClasses.get('/', async (c) => {
     name: cl.name,
     sort_order: cl.sort_order,
     batch_photo_url: cl.batch_photo_url,
+    batch_video_url: cl.batch_video_url,
     student_count: studentCounts[cl.id] ?? 0,
   }))
   return c.json(withCount)
@@ -116,3 +117,9 @@ albumClasses.post('/', async (c) => {
 })
 
 export default albumClasses
+
+
+
+
+
+

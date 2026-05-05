@@ -44,3 +44,8 @@ export async function compositeForegroundOnImageBg(foregroundDataUrl: string, ba
   ctx.drawImage(fg, 0, 0)
   return canvas.toDataURL('image/png')
 }
+
+
+
+
+

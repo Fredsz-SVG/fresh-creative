@@ -154,13 +154,13 @@ export default function TopUpModal({ isOpen, onClose, currentCredit = 0, onCredi
 
             <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 dark:bg-black/60 backdrop-blur-sm" onClick={checkoutInvoiceUrl ? undefined : handleCloseModal}>
                 <div
-                    className="relative w-full max-w-md bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-[32px] shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] overflow-hidden animate-in fade-in zoom-in-95 duration-200"
+                    className="relative w-full max-w-md bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-[32px] shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b] overflow-hidden animate-in fade-in zoom-in-95 duration-200"
                     onClick={(e) => e.stopPropagation()}
                 >
                     {/* Header */}
                     <div className="flex items-center justify-between p-6 border-b-4 border-slate-200 dark:border-slate-700 bg-indigo-50 dark:bg-indigo-950/50">
                         <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 rounded-2xl bg-amber-400 dark:bg-amber-500 border-2 border-slate-200 dark:border-slate-600 flex items-center justify-center text-slate-900 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]">
+                            <div className="w-12 h-12 rounded-2xl bg-amber-400 dark:bg-amber-500 border-2 border-slate-200 dark:border-slate-600 flex items-center justify-center text-slate-900 shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b]">
                                 <Wallet className="w-6 h-6" strokeWidth={3} />
                             </div>
                             <div>
@@ -173,7 +173,7 @@ export default function TopUpModal({ isOpen, onClose, currentCredit = 0, onCredi
                         </div>
                         <button
                             onClick={handleCloseModal}
-                            className="w-10 h-10 flex items-center justify-center rounded-xl border-2 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-700 transition-all shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] active:shadow-none active:translate-x-1 active:translate-y-1"
+                            className="w-10 h-10 flex items-center justify-center rounded-xl border-2 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-700 transition-all shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b] active:shadow-none active:translate-x-1 active:translate-y-1"
                         >
                             <X className="w-6 h-6" strokeWidth={3} />
                         </button>
@@ -199,12 +199,12 @@ export default function TopUpModal({ isOpen, onClose, currentCredit = 0, onCredi
                                                 className={`
                                                     relative flex flex-col items-center justify-center p-3.5 rounded-[20px] border-4 transition-all duration-200
                                                     ${selectedPkg === pkg.id
-                                                        ? 'border-slate-200 dark:border-slate-600 bg-indigo-400 dark:bg-indigo-600 text-slate-900 dark:text-white shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]'
-                                                        : 'border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-400 dark:text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5'}
+                                                        ? 'border-slate-200 dark:border-slate-600 bg-indigo-400 dark:bg-indigo-600 text-slate-900 dark:text-white shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b]'
+                                                        : 'border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-400 dark:text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700 shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5'}
                                                 `}
                                             >
                                                 {pkg.popular && (
-                                                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-amber-400 dark:bg-amber-500 text-slate-900 text-[10px] font-black px-2.5 py-0.5 rounded-full border-2 border-slate-200 dark:border-slate-600 uppercase tracking-wider z-10 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]">
+                                                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-amber-400 dark:bg-amber-500 text-slate-900 text-[10px] font-black px-2.5 py-0.5 rounded-full border-2 border-slate-200 dark:border-slate-600 uppercase tracking-wider z-10 shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b]">
                                                         Popular
                                                     </span>
                                                 )}
@@ -234,7 +234,7 @@ export default function TopUpModal({ isOpen, onClose, currentCredit = 0, onCredi
                         <button
                             onClick={handleCheckout}
                             disabled={!selectedPkg || loadingCheckout}
-                            className="w-full py-3.5 px-6 bg-emerald-400 dark:bg-emerald-600 text-slate-900 dark:text-white border-2 border-slate-200 dark:border-slate-600 disabled:opacity-50 disabled:cursor-not-allowed font-black text-xs uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-3 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:shadow-none hover:translate-x-1 hover:translate-y-1 active:shadow-none active:translate-x-1.5 active:translate-y-1.5"
+                            className="w-full py-3.5 px-6 bg-emerald-400 dark:bg-emerald-600 text-slate-900 dark:text-white border-2 border-slate-200 dark:border-slate-600 disabled:opacity-50 disabled:cursor-not-allowed font-black text-xs uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-3 shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b] hover:shadow-none hover:translate-x-1 hover:translate-y-1 active:shadow-none active:translate-x-1.5 active:translate-y-1.5"
                         >
                             {loadingCheckout ? <Loader2 className="w-4 h-4 animate-spin" strokeWidth={3} /> : <CreditCard className="w-4 h-4" strokeWidth={3} />}
                             {loadingCheckout ? 'Memproses...' : 'Beli Sekarang'}
@@ -257,7 +257,7 @@ export default function TopUpModal({ isOpen, onClose, currentCredit = 0, onCredi
                                         <button
                                             type="button"
                                             onClick={() => setShowRedeem(false)}
-                                            className="w-10 h-10 flex items-center justify-center shrink-0 rounded-lg border-2 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-400 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-slate-50 dark:hover:bg-slate-700 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] active:shadow-none active:translate-x-1 active:translate-y-1"
+                                            className="w-10 h-10 flex items-center justify-center shrink-0 rounded-lg border-2 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-400 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-slate-50 dark:hover:bg-slate-700 shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b] active:shadow-none active:translate-x-1 active:translate-y-1"
                                             title="Batal"
                                         >
                                             <X className="w-4 h-4" strokeWidth={3} />
@@ -274,7 +274,7 @@ export default function TopUpModal({ isOpen, onClose, currentCredit = 0, onCredi
                                         <button
                                             onClick={handleRedeem}
                                             disabled={!redeemCode.trim() || redeemLoading}
-                                            className="h-10 px-4 bg-indigo-500 dark:bg-indigo-600 text-white border-2 border-slate-200 dark:border-slate-600 disabled:opacity-50 disabled:cursor-not-allowed font-black rounded-lg flex items-center justify-center gap-2 text-[9px] uppercase tracking-widest shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:shadow-none hover:translate-x-1 hover:translate-y-1 shrink-0"
+                                            className="h-10 px-4 bg-indigo-500 dark:bg-indigo-600 text-white border-2 border-slate-200 dark:border-slate-600 disabled:opacity-50 disabled:cursor-not-allowed font-black rounded-lg flex items-center justify-center gap-2 text-[9px] uppercase tracking-widest shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b] hover:shadow-none hover:translate-x-1 hover:translate-y-1 shrink-0"
                                         >
                                             {redeemLoading ? <Loader2 className="w-3 h-3 animate-spin" strokeWidth={3} /> : <Gift className="w-3 h-3" strokeWidth={3} />}
                                             Redeem
@@ -293,3 +293,10 @@ export default function TopUpModal({ isOpen, onClose, currentCredit = 0, onCredi
         </>
     )
 }
+
+
+
+
+
+
+

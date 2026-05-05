@@ -60,3 +60,9 @@ export function getSingleReplicateUrl(output: unknown): string {
   const urls = normalizeReplicateOutputToUrls(output)
   return urls[0] ?? ''
 }
+
+
+
+
+
+

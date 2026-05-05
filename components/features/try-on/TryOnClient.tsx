@@ -137,7 +137,7 @@ export default function TryOn({ creditCost }: { creditCost?: number }) {
     <section id="tryon" className="py-4 md:py-6" aria-label="Virtual try-on">
       <div className="max-w-3xl mx-auto">
         <form onSubmit={handleGenerate}>
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border-2 border-slate-200 dark:border-slate-700 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] p-4 sm:p-6 space-y-4 sm:space-y-5">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border-2 border-slate-200 dark:border-slate-700 shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b] p-4 sm:p-6 space-y-4 sm:space-y-5">
             <div className="flex flex-col items-center gap-1 text-center">
               <p className="inline-flex items-center gap-1.5 text-[10px] sm:text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest">
                 <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
@@ -173,7 +173,7 @@ export default function TryOn({ creditCost }: { creditCost?: number }) {
                 </div>
               ) : (
                 <div className="relative max-w-[200px] sm:max-w-[250px] md:max-w-[300px]">
-                  <div className="relative w-full h-48 sm:h-56 md:h-64 bg-slate-100 dark:bg-slate-800 rounded-xl border-2 border-slate-200 dark:border-slate-600 flex items-center justify-center overflow-hidden shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]">
+                  <div className="relative w-full h-48 sm:h-56 md:h-64 bg-slate-100 dark:bg-slate-800 rounded-xl border-2 border-slate-200 dark:border-slate-600 flex items-center justify-center overflow-hidden shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b]">
                     <img
                       src={personPreview}
                       alt="Person preview"
@@ -185,7 +185,7 @@ export default function TryOn({ creditCost }: { creditCost?: number }) {
                         setPersonImage(null)
                         setPersonPreview(null)
                       }}
-                      className="absolute top-1.5 right-1.5 z-10 inline-flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 bg-red-500 text-white rounded-full border-2 border-slate-200 dark:border-slate-600 hover:bg-red-600 transition-colors shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] active:shadow-none active:translate-x-0.5 active:translate-y-0.5"
+                      className="absolute top-1.5 right-1.5 z-10 inline-flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 bg-red-500 text-white rounded-full border-2 border-slate-200 dark:border-slate-600 hover:bg-red-600 transition-colors shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b] active:shadow-none active:translate-x-0.5 active:translate-y-0.5"
                     >
                       <X className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     </button>
@@ -230,7 +230,7 @@ export default function TryOn({ creditCost }: { creditCost?: number }) {
                   {products.map((p, index) => (
                     <div
                       key={p.id}
-                      className="relative bg-slate-100 dark:bg-slate-800 rounded-xl border-2 border-slate-200 dark:border-slate-600 overflow-hidden shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]"
+                      className="relative bg-slate-100 dark:bg-slate-800 rounded-xl border-2 border-slate-200 dark:border-slate-600 overflow-hidden shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b]"
                     >
                       <img
                         src={p.preview}
@@ -245,7 +245,7 @@ export default function TryOn({ creditCost }: { creditCost?: number }) {
                           type="button"
                           onClick={() => moveProduct(index, 'up')}
                           disabled={index === 0}
-                          className="inline-flex items-center justify-center w-8 h-8 bg-slate-900 text-white rounded-full border-2 border-slate-200 hover:bg-slate-800 shadow-[4px_4px_0_0_#334155] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 disabled:opacity-40 disabled:cursor-not-allowed"
+                          className="inline-flex items-center justify-center w-8 h-8 bg-slate-900 text-white rounded-full border-2 border-slate-200 hover:bg-slate-800 shadow-[2px_2px_0_0_#334155] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 disabled:opacity-40 disabled:cursor-not-allowed"
                           title="Pindah ke atas"
                         >
                           <ChevronUp className="w-4 h-4" />
@@ -254,7 +254,7 @@ export default function TryOn({ creditCost }: { creditCost?: number }) {
                           type="button"
                           onClick={() => moveProduct(index, 'down')}
                           disabled={index === products.length - 1}
-                          className="inline-flex items-center justify-center w-8 h-8 bg-slate-900 text-white rounded-full border-2 border-slate-200 hover:bg-slate-800 shadow-[4px_4px_0_0_#334155] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 disabled:opacity-40 disabled:cursor-not-allowed"
+                          className="inline-flex items-center justify-center w-8 h-8 bg-slate-900 text-white rounded-full border-2 border-slate-200 hover:bg-slate-800 shadow-[2px_2px_0_0_#334155] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 disabled:opacity-40 disabled:cursor-not-allowed"
                           title="Pindah ke bawah"
                         >
                           <ChevronDown className="w-4 h-4" />
@@ -262,7 +262,7 @@ export default function TryOn({ creditCost }: { creditCost?: number }) {
                         <button
                           type="button"
                           onClick={() => removeProduct(p.id)}
-                          className="inline-flex items-center justify-center w-8 h-8 bg-red-500 text-white rounded-full border-2 border-slate-200 hover:bg-red-600 shadow-[4px_4px_0_0_#334155] active:shadow-none active:translate-x-0.5 active:translate-y-0.5"
+                          className="inline-flex items-center justify-center w-8 h-8 bg-red-500 text-white rounded-full border-2 border-slate-200 hover:bg-red-600 shadow-[2px_2px_0_0_#334155] active:shadow-none active:translate-x-0.5 active:translate-y-0.5"
                           title="Hapus"
                         >
                           <X className="w-4 h-4" />
@@ -292,7 +292,7 @@ export default function TryOn({ creditCost }: { creditCost?: number }) {
             <button
               type="submit"
               disabled={loading || !personImage || products.length === 0}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-indigo-500 text-white rounded-xl border-2 border-slate-200 dark:border-slate-600 font-black text-xs uppercase tracking-widest shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-indigo-500 text-white rounded-xl border-2 border-slate-200 dark:border-slate-600 font-black text-xs uppercase tracking-widest shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? (
                 <>
@@ -322,13 +322,13 @@ export default function TryOn({ creditCost }: { creditCost?: number }) {
               {results.map((url, index) => (
                 <div
                   key={index}
-                  className="bg-white dark:bg-slate-900 rounded-2xl border-2 border-slate-200 dark:border-slate-700 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] p-3 sm:p-4"
+                  className="bg-white dark:bg-slate-900 rounded-2xl border-2 border-slate-200 dark:border-slate-700 shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b] p-3 sm:p-4"
                 >
                   <div className="relative">
                     <img
                       src={url}
                       alt={`Try-on result ${index + 1}`}
-                      className="w-full h-auto object-contain rounded-xl border-2 border-slate-200 dark:border-slate-600 bg-slate-100 dark:bg-slate-800 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]"
+                      className="w-full h-auto object-contain rounded-xl border-2 border-slate-200 dark:border-slate-600 bg-slate-100 dark:bg-slate-800 shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b]"
                     />
                     <button
                       type="button"
@@ -346,7 +346,7 @@ export default function TryOn({ creditCost }: { creditCost?: number }) {
                         }
                       }}
                       disabled={downloadingIndex === index}
-                      className="absolute top-1.5 right-1.5 inline-flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 bg-emerald-500 text-white rounded-full border-2 border-slate-200 dark:border-slate-600 hover:bg-emerald-600 transition-colors shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 disabled:opacity-70"
+                      className="absolute top-1.5 right-1.5 inline-flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 bg-emerald-500 text-white rounded-full border-2 border-slate-200 dark:border-slate-600 hover:bg-emerald-600 transition-colors shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 disabled:opacity-70"
                       title="Download"
                     >
                       {downloadingIndex === index ? (
@@ -365,3 +365,10 @@ export default function TryOn({ creditCost }: { creditCost?: number }) {
     </section>
   )
 }
+
+
+
+
+
+
+

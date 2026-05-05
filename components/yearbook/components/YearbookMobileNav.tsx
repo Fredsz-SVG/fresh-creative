@@ -146,7 +146,7 @@ export default function YearbookMobileNav({
     <>
       {/* Mobile Bottom Navigation - Preview & Approval langsung di bar, tidak dibungkus Menu Lainnya */}
       {!hideBottomNav && (
-        <div className={`fixed bottom-0 left-0 right-0 z-[60] bg-white dark:bg-slate-900 border-t-4 border-slate-900 dark:border-slate-700 flex lg:hidden items-center justify-around min-h-[3.5rem] sm:min-h-16 pb-safe safe-area-bottom shadow-[0_-4px_10px_0_rgba(0,0,0,0.1)] dark:shadow-[0_-4px_10px_0_rgba(0,0,0,0.3)] transform transition-transform duration-300 ease-out ${bottomNavVisible ? 'translate-y-0' : 'translate-y-32'}`}>
+        <div className={`fixed bottom-0 left-0 right-0 z-[60] bg-white dark:bg-slate-900 border-t-2 border-slate-900 dark:border-slate-700 flex lg:hidden items-center justify-around min-h-[3.5rem] sm:min-h-16 pb-safe safe-area-bottom transform transition-transform duration-300 ease-out ${bottomNavVisible ? 'translate-y-0' : 'translate-y-32'}`}>
           {canManage && (
             <button
               onClick={() => handleNavClick('preview')}
@@ -168,7 +168,7 @@ export default function YearbookMobileNav({
           <div className="flex-1 flex items-center justify-center relative min-w-0 py-1.5">
             <button
               onClick={() => handleNavClick('ai-labs')}
-              className={`absolute -top-5 sm:-top-7 w-11 h-11 sm:w-14 sm:h-14 rounded-full flex items-center justify-center shadow-[0_4px_0_0_#0f172a] sm:shadow-[0_6px_0_0_#0f172a] dark:shadow-[0_4px_0_0_#334155] sm:dark:shadow-[0_6px_0_0_#334155] active:shadow-none active:translate-y-0.5 sm:active:translate-y-1 transition-all border-2 border-slate-900 dark:border-slate-700 ${sidebarMode === 'ai-labs'
+              className={`absolute -top-5 sm:-top-7 w-11 h-11 sm:w-14 sm:h-14 rounded-full flex items-center justify-center shadow-[0_1.5px_0_0_#0f172a] sm:shadow-[0_6px_0_0_#0f172a] dark:shadow-[0_1.5px_0_0_#334155] sm:dark:shadow-[0_6px_0_0_#334155] active:shadow-none active:translate-y-0.5 sm:active:translate-y-1 transition-all border-2 border-slate-900 dark:border-slate-700 ${sidebarMode === 'ai-labs'
                 ? 'bg-amber-300 dark:bg-amber-600 text-slate-900 dark:text-white'
                 : 'bg-indigo-500 text-white'
                 }`}
@@ -176,7 +176,7 @@ export default function YearbookMobileNav({
               <div className="relative">
                 <Sparkles className="w-5 h-5 sm:w-7 sm:h-7" strokeWidth={2.5} />
                 {!aiLabsAccessible && (
-                  <Lock className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 absolute -top-0.5 -right-0.5 sm:-top-1 sm:-right-1 text-slate-900" fill="#fbbf24" strokeWidth={3} />
+                  <Lock className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 absolute -top-0.5 -right-0.5 sm:-top-1 sm:-right-1 text-slate-900 dark:text-white" strokeWidth={3} />
                 )}
               </div>
             </button>
@@ -192,7 +192,7 @@ export default function YearbookMobileNav({
             <div className="relative">
               <Book className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" strokeWidth={2.5} />
               {!flipbookAccessible && (
-                <Lock className="w-2 h-2 sm:w-2.5 sm:h-2.5 absolute -top-0.5 -right-0.5 text-slate-900" fill="#fbbf24" strokeWidth={3} />
+                <Lock className="w-2 h-2 sm:w-2.5 sm:h-2.5 absolute -top-0.5 -right-0.5 text-slate-900 dark:text-white" strokeWidth={3} />
               )}
             </div>
             <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest text-center truncate w-full px-0.5">Flipbook</span>
@@ -244,7 +244,7 @@ export default function YearbookMobileNav({
 
                 if (isEditing) {
                   return (
-                    <div key={c.id} className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border-2 border-slate-900 dark:border-slate-700 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] flex flex-col gap-3 animate-in zoom-in-95 duration-200">
+                    <div key={c.id} className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border-2 border-slate-900 dark:border-slate-700 shadow-[1.5px_1.5px_0_0_#334155] dark:shadow-[1.5px_1.5px_0_0_#1e293b] flex flex-col gap-3 animate-in zoom-in-95 duration-200">
                       <div className="flex flex-col gap-1.5 w-full">
                         <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest pl-1">Edit Nama Kelas</label>
                         <input
@@ -259,7 +259,7 @@ export default function YearbookMobileNav({
                       {handleUpdateClass && (
                         <div className="flex flex-col gap-1.5 w-full">
                           <label className="text-[10px] text-slate-400 font-black uppercase tracking-widest pl-1">Urutan Kelas</label>
-                          <div className="flex items-center gap-1.5 bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 rounded-xl p-1 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] w-fit">
+                          <div className="flex items-center gap-1.5 bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 rounded-xl p-1 shadow-[1.5px_1.5px_0_0_#334155] dark:shadow-[1.5px_1.5px_0_0_#1e293b] w-fit">
                             <button
                               type="button"
                               onClick={(e) => {
@@ -301,7 +301,7 @@ export default function YearbookMobileNav({
                             handleUpdateClass(c.id, { name: mobileEditNameVal })
                             setMobileEditingClassId(null)
                           }}
-                          className="flex-1 bg-indigo-500 text-white text-[10px] font-black uppercase tracking-widest py-3 rounded-xl border-2 border-slate-900 shadow-[4px_4px_0_0_#334155] active:shadow-none active:translate-x-0.5 active:translate-y-0.5"
+                          className="flex-1 bg-indigo-500 text-white text-[10px] font-black uppercase tracking-widest py-3 rounded-xl border-2 border-slate-900 shadow-[1.5px_1.5px_0_0_#334155] active:shadow-none active:translate-x-0.5 active:translate-y-0.5"
                         >
                           Simpan
                         </button>
@@ -319,7 +319,7 @@ export default function YearbookMobileNav({
                 return (
                   <div
                     key={c.id}
-                    className={`relative flex items-center gap-2 p-1.5 rounded-2xl border-2 transition-all ${isActive ? 'bg-amber-300 dark:bg-amber-700 border-slate-900 dark:border-slate-700 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] -translate-y-0.5' : 'hover:bg-slate-50 dark:hover:bg-slate-800 border-slate-100 dark:border-slate-700'}`}
+                    className={`relative flex items-center gap-2 p-1.5 rounded-2xl border-2 transition-all ${isActive ? 'bg-amber-300 dark:bg-amber-700 border-slate-900 dark:border-slate-700 shadow-[1.5px_1.5px_0_0_#334155] dark:shadow-[1.5px_1.5px_0_0_#1e293b] -translate-y-0.5' : 'hover:bg-slate-50 dark:hover:bg-slate-800 border-slate-100 dark:border-slate-700'}`}
                   >
                     <button
                       onClick={() => {
@@ -400,7 +400,7 @@ export default function YearbookMobileNav({
 
               {/* Owner Join Button */}
               {isOwner && currentClass && !myAccessByClass[currentClass.id] && (
-                <div className="p-4 bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 rounded-2xl shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] space-y-3">
+                <div className="p-4 bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 rounded-2xl shadow-[1.5px_1.5px_0_0_#334155] dark:shadow-[1.5px_1.5px_0_0_#1e293b] space-y-3">
                   {(() => {
                     const hasAccessInOtherClass = Object.entries(myAccessByClass).some(
                       ([classId, classAccess]) =>
@@ -445,7 +445,7 @@ export default function YearbookMobileNav({
                         <button
                           type="button"
                           onClick={() => setJoinConfirmOpen(true)}
-                          className="w-full py-2.5 sm:py-3 rounded-lg sm:rounded-xl bg-indigo-500 text-white text-[9px] sm:text-[10px] font-black uppercase tracking-widest hover:shadow-[4px_4px_0_0_#334155] dark:hover:shadow-[4px_4px_0_0_#334155] active:translate-y-0.5 transition-all border-2 border-slate-900 dark:border-slate-700"
+                          className="w-full py-2.5 sm:py-3 rounded-lg sm:rounded-xl bg-indigo-500 text-white text-[9px] sm:text-[10px] font-black uppercase tracking-widest hover:shadow-[1.5px_1.5px_0_0_#334155] dark:hover:shadow-[1.5px_1.5px_0_0_#334155] active:translate-y-0.5 transition-all border-2 border-slate-900 dark:border-slate-700"
                         >
                           Daftar di Kelas
                         </button>
@@ -467,7 +467,7 @@ export default function YearbookMobileNav({
                       Nama kelas
                     </button>
                   ) : (
-                    <div className="p-4 bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 rounded-2xl shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] animate-in slide-in-from-bottom-2 duration-200">
+                    <div className="p-4 bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 rounded-2xl shadow-[1.5px_1.5px_0_0_#334155] dark:shadow-[1.5px_1.5px_0_0_#1e293b] animate-in slide-in-from-bottom-2 duration-200">
                       <label className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2 block">Tambah Kelas Baru</label>
                       <input
                         type="text"
@@ -493,7 +493,7 @@ export default function YearbookMobileNav({
                             }
                           }}
                           disabled={!newClassName.trim()}
-                          className="flex-1 py-3 rounded-xl bg-emerald-400 dark:bg-emerald-600 text-slate-900 dark:text-white text-[10px] font-black uppercase tracking-widest border-2 border-slate-900 dark:border-slate-700 disabled:opacity-50 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] active:shadow-none"
+                          className="flex-1 py-3 rounded-xl bg-emerald-400 dark:bg-emerald-600 text-slate-900 dark:text-white text-[10px] font-black uppercase tracking-widest border-2 border-slate-900 dark:border-slate-700 disabled:opacity-50 shadow-[1.5px_1.5px_0_0_#334155] dark:shadow-[1.5px_1.5px_0_0_#1e293b] active:shadow-none"
                         >
                           Simpan
                         </button>
@@ -520,7 +520,7 @@ export default function YearbookMobileNav({
       {/* Konfirmasi daftar kelas (owner) */}
       {joinConfirmOpen && currentClass && (
         <div className="fixed inset-0 bg-slate-900/40 dark:bg-black/50 backdrop-blur-md flex items-center justify-center z-[300] p-4">
-          <div className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-[32px] p-6 sm:p-8 max-w-sm w-full shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] text-center">
+          <div className="bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-[32px] p-6 sm:p-8 max-w-sm w-full shadow-[1.5px_1.5px_0_0_#334155] dark:shadow-[1.5px_1.5px_0_0_#1e293b] text-center">
             <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight mb-2">Daftar di Kelas</h3>
             <p className="text-sm font-bold text-slate-500 dark:text-slate-400 mb-6">
               Yakin daftar di kelas ini? Anda hanya bisa terdaftar di 1 kelas.
@@ -529,7 +529,7 @@ export default function YearbookMobileNav({
               <button
                 type="button"
                 onClick={() => setJoinConfirmOpen(false)}
-                className="flex-1 py-3.5 rounded-xl bg-slate-100 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 text-slate-900 dark:text-white text-xs font-black uppercase tracking-widest shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
+                className="flex-1 py-3.5 rounded-xl bg-slate-100 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 text-slate-900 dark:text-white text-xs font-black uppercase tracking-widest shadow-[1.5px_1.5px_0_0_#334155] dark:shadow-[1.5px_1.5px_0_0_#1e293b] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
               >
                 Batal
               </button>
@@ -540,7 +540,7 @@ export default function YearbookMobileNav({
                   setJoinConfirmOpen(false)
                   setMobileMenuOpen(false)
                 }}
-                className="flex-1 py-3.5 rounded-xl bg-indigo-500 text-white border-2 border-slate-900 dark:border-slate-700 text-xs font-black uppercase tracking-widest shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
+                className="flex-1 py-3.5 rounded-xl bg-indigo-500 text-white border-2 border-slate-900 dark:border-slate-700 text-xs font-black uppercase tracking-widest shadow-[1.5px_1.5px_0_0_#334155] dark:shadow-[1.5px_1.5px_0_0_#1e293b] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
               >
                 Ya, Daftar
               </button>
@@ -552,3 +552,13 @@ export default function YearbookMobileNav({
     </>
   )
 }
+
+
+
+
+
+
+
+
+
+

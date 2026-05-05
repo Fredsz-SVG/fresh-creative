@@ -157,3 +157,8 @@ classIdPhoto.delete('/', async (c) => {
 })
 
 export default classIdPhoto
+
+
+
+
+

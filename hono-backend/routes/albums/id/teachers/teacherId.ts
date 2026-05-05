@@ -121,3 +121,8 @@ albumsIdTeachersTeacherId.delete('/', async (c) => {
 })
 
 export default albumsIdTeachersTeacherId
+
+
+
+
+

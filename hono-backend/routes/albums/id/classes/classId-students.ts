@@ -44,3 +44,8 @@ classStudentsRoute.get('/', async (c) => {
 })
 
 export default classStudentsRoute
+
+
+
+
+

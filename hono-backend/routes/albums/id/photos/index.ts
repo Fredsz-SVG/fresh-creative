@@ -273,3 +273,9 @@ albumsIdPhotos.post('/', async (c) => {
 })
 
 export default albumsIdPhotos
+
+
+
+
+
+

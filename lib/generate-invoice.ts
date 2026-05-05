@@ -285,3 +285,9 @@ export async function generateAndPrintInvoice(tx: InvoiceTransaction) {
     }, 1000);
   }, 1000);
 }
+
+
+
+
+
+

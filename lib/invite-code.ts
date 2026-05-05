@@ -22,3 +22,9 @@ export function looksLikeShortCode(input: string): boolean {
   const trimmed = input.trim()
   return /^[a-zA-Z0-9]{6,12}$/.test(trimmed)
 }
+
+
+
+
+
+

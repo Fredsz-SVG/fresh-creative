@@ -301,10 +301,10 @@ export default function ShowroomForm({ backHref, pricingPath, draftKey, source }
               onChange={(e) => setSchoolName(e.target.value)}
               placeholder="Contoh: SMAN 1 Salatiga"
               className={`w-full px-4 py-3 bg-white dark:bg-slate-900 border-2 rounded-xl text-slate-900 dark:text-white font-bold placeholder:font-normal placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-4 focus:ring-indigo-300 dark:focus:ring-indigo-900 transition-all ${school_name.trim() && !schoolNameValid
-                ? 'border-red-500 dark:border-red-600 shadow-[4px_4px_0_0_#ef4444] dark:shadow-[4px_4px_0_0_#dc2626]'
+                ? 'border-red-500 dark:border-red-600 shadow-[2px_2px_0_0_#ef4444] dark:shadow-[2px_2px_0_0_#dc2626]'
                 : dupCheck?.exists
-                  ? 'border-orange-500 dark:border-orange-600 shadow-[4px_4px_0_0_#f97316] dark:shadow-[4px_4px_0_0_#ea580c]'
-                  : 'border-slate-200 dark:border-slate-700 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]'
+                  ? 'border-orange-500 dark:border-orange-600 shadow-[2px_2px_0_0_#f97316] dark:shadow-[2px_2px_0_0_#ea580c]'
+                  : 'border-slate-200 dark:border-slate-700 shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b]'
                 }`}
               autoComplete="organization"
             />
@@ -315,7 +315,7 @@ export default function ShowroomForm({ backHref, pricingPath, draftKey, source }
               </p>
             )}
             {dupCheck?.exists && (
-              <div className="mt-3 flex items-start gap-3 bg-orange-100 dark:bg-orange-900/30 border-2 border-orange-500 dark:border-orange-600 rounded-xl p-4 shadow-[4px_4px_0_0_#f97316] dark:shadow-[4px_4px_0_0_#ea580c]">
+              <div className="mt-3 flex items-start gap-3 bg-orange-100 dark:bg-orange-900/30 border-2 border-orange-500 dark:border-orange-600 rounded-xl p-4 shadow-[2px_2px_0_0_#f97316] dark:shadow-[2px_2px_0_0_#ea580c]">
                 <AlertTriangle className="w-5 h-5 text-orange-600 dark:text-orange-400 mt-0.5 flex-shrink-0" />
                 <p className="text-[13px] font-bold text-orange-900 dark:text-orange-200 leading-relaxed">
                   Nama sekolah mirip dengan <strong>&quot;{dupCheck.matched_name || school_name.trim()}&quot;</strong> yang sudah terdaftar.
@@ -344,11 +344,11 @@ export default function ShowroomForm({ backHref, pricingPath, draftKey, source }
               onFocus={() => setShowProvDrop(true)}
               disabled={loadingProv}
               placeholder={loadingProv ? "Memuat..." : "Ketik nama provinsi, lalu pilih"}
-              className="w-full px-4 py-3 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-bold placeholder:font-normal placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-4 focus:ring-indigo-300 dark:focus:ring-indigo-900 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] disabled:opacity-60 transition-all"
+              className="w-full px-4 py-3 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-bold placeholder:font-normal placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-4 focus:ring-indigo-300 dark:focus:ring-indigo-900 shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b] disabled:opacity-60 transition-all"
               autoComplete="off"
             />
             {showProvDrop && provinceSuggestions.length > 0 ? (
-              <ul className="absolute z-20 mt-2 w-full max-h-56 overflow-auto bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-xl shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]">
+              <ul className="absolute z-20 mt-2 w-full max-h-56 overflow-auto bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-xl shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b]">
                 {provinceSuggestions.map((p) => (
                   <li key={p.id}>
                     <button
@@ -377,11 +377,11 @@ export default function ShowroomForm({ backHref, pricingPath, draftKey, source }
               placeholder={
                 !provinceId ? "Pilih provinsi dulu" : loadingCity ? "Memuat..." : "Ketik nama kota/kabupaten, lalu pilih"
               }
-              className="w-full px-4 py-3 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-bold placeholder:font-normal placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-4 focus:ring-indigo-300 dark:focus:ring-indigo-900 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] disabled:opacity-60 transition-all"
+              className="w-full px-4 py-3 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-bold placeholder:font-normal placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-4 focus:ring-indigo-300 dark:focus:ring-indigo-900 shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b] disabled:opacity-60 transition-all"
               autoComplete="off"
             />
             {showCityDrop && provinceId && citySuggestions.length > 0 ? (
-              <ul className="absolute z-20 mt-2 w-full max-h-56 overflow-auto bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-xl shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]">
+              <ul className="absolute z-20 mt-2 w-full max-h-56 overflow-auto bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-xl shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b]">
                 {citySuggestions.map((c) => (
                   <li key={c.id}>
                     <button
@@ -406,7 +406,7 @@ export default function ShowroomForm({ backHref, pricingPath, draftKey, source }
               value={pic_name}
               onChange={(e) => setPicName(e.target.value)}
               placeholder="Contoh: Rachel"
-              className="w-full px-4 py-3 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-bold placeholder:font-normal placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-4 focus:ring-indigo-300 dark:focus:ring-indigo-900 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] transition-all"
+              className="w-full px-4 py-3 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-bold placeholder:font-normal placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-4 focus:ring-indigo-300 dark:focus:ring-indigo-900 shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b] transition-all"
               autoComplete="name"
             />
           </div>
@@ -419,7 +419,7 @@ export default function ShowroomForm({ backHref, pricingPath, draftKey, source }
                 name="wa_cc"
                 value={countryCode}
                 onChange={(e) => setCountryCode(e.target.value)}
-                className="w-24 px-4 py-3 bg-slate-100 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-bold focus:outline-none focus:bg-white dark:focus:bg-slate-900 focus:ring-4 focus:ring-indigo-300 dark:focus:ring-indigo-900 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] transition-all"
+                className="w-24 px-4 py-3 bg-slate-100 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-bold focus:outline-none focus:bg-white dark:focus:bg-slate-900 focus:ring-4 focus:ring-indigo-300 dark:focus:ring-indigo-900 shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b] transition-all"
                 inputMode="text"
               />
               <input
@@ -428,7 +428,7 @@ export default function ShowroomForm({ backHref, pricingPath, draftKey, source }
                 value={waLocal}
                 onChange={(e) => setWaLocal(e.target.value.replace(/\D/g, ""))}
                 placeholder="812xxxxxxx"
-                className="flex-1 px-4 py-3 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-bold placeholder:font-normal placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-4 focus:ring-indigo-300 dark:focus:ring-indigo-900 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] transition-all"
+                className="flex-1 px-4 py-3 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-bold placeholder:font-normal placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-4 focus:ring-indigo-300 dark:focus:ring-indigo-900 shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b] transition-all"
                 inputMode="numeric"
                 autoComplete="tel"
               />
@@ -446,7 +446,7 @@ export default function ShowroomForm({ backHref, pricingPath, draftKey, source }
               value={studentsCountText}
               onChange={(e) => setStudentsCountText(e.target.value.replace(/[^\d]/g, ""))}
               placeholder="Contoh: 350"
-              className="w-full px-4 py-3 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-bold placeholder:font-normal placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-4 focus:ring-indigo-300 dark:focus:ring-indigo-900 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] transition-all"
+              className="w-full px-4 py-3 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-bold placeholder:font-normal placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-4 focus:ring-indigo-300 dark:focus:ring-indigo-900 shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b] transition-all"
               inputMode="numeric"
             />
           </div>
@@ -465,7 +465,7 @@ export default function ShowroomForm({ backHref, pricingPath, draftKey, source }
           </div>
 
           {error && (
-            <div className="bg-red-100 dark:bg-red-900/30 border-2 border-red-500 dark:border-red-600 rounded-xl p-4 shadow-[4px_4px_0_0_#ef4444] dark:shadow-[4px_4px_0_0_#dc2626]">
+            <div className="bg-red-100 dark:bg-red-900/30 border-2 border-red-500 dark:border-red-600 rounded-xl p-4 shadow-[2px_2px_0_0_#ef4444] dark:shadow-[2px_2px_0_0_#dc2626]">
               <p className="font-bold text-red-900 dark:text-red-200 text-sm sm:text-base">{error}</p>
             </div>
           )}
@@ -473,7 +473,7 @@ export default function ShowroomForm({ backHref, pricingPath, draftKey, source }
           <button
             type="submit"
             disabled={submitted}
-            className="flex items-center justify-center gap-2 w-full mt-4 px-6 py-4 text-lg font-black rounded-2xl bg-indigo-300 dark:bg-indigo-600 border-2 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all disabled:opacity-50 disabled:hover:translate-x-0 disabled:hover:translate-y-0 disabled:hover:shadow-[4px_4px_0_0_#334155] dark:disabled:hover:shadow-[4px_4px_0_0_#1e293b]"
+            className="flex items-center justify-center gap-2 w-full mt-4 px-6 py-4 text-lg font-black rounded-2xl bg-indigo-300 dark:bg-indigo-600 border-2 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all disabled:opacity-50 disabled:hover:translate-x-0 disabled:hover:translate-y-0 disabled:hover:shadow-[2px_2px_0_0_#334155] dark:disabled:hover:shadow-[2px_2px_0_0_#1e293b]"
           >
             {submitted ? (
               <>
@@ -489,3 +489,10 @@ export default function ShowroomForm({ backHref, pricingPath, draftKey, source }
     </div>
   );
 }
+
+
+
+
+
+
+

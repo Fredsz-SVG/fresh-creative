@@ -54,3 +54,9 @@ export async function deductCreditsFromD1(opts: {
   const creditsAfter = await getCreditsFromD1(db, userId)
   return { ok: true, creditsAfter }
 }
+
+
+
+
+
+

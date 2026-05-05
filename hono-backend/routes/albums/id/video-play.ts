@@ -130,3 +130,9 @@ albumsIdVideoPlay.get('/', async (c) => {
 })
 
 export default albumsIdVideoPlay
+
+
+
+
+
+

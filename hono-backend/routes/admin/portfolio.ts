@@ -58,7 +58,9 @@ adminPortfolio.post('/', async (c) => {
     const description = formData.description as string
     const displayOrder = parseInt(formData.displayOrder as string) || 0
     const imageFile = formData.image as File
+    const videoFile = formData.video as File
     let imageUrl = formData.imageUrl as string || ''
+    let videoUrl = formData.videoUrl as string || ''
 
     if (imageFile && typeof imageFile !== 'string') {
       const fileName = `${id}-${Date.now()}-${imageFile.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`
@@ -67,10 +69,17 @@ adminPortfolio.post('/', async (c) => {
       imageUrl = `/api/files/${key}`
     }
 
+    if (videoFile && typeof videoFile !== 'string' && videoFile.size > 0) {
+      const fileName = `${id}-${Date.now()}-${videoFile.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`
+      const r2Key = `landing/portfolio/videos/${fileName}`
+      const { key } = await putAlbumPhoto(assets, r2Key, videoFile, { contentType: videoFile.type })
+      videoUrl = `/api/files/${key}`
+    }
+
     await db.prepare(
-      `INSERT INTO portfolio_items (id, title, subtitle, description, image_url, display_order)
-       VALUES (?, ?, ?, ?, ?, ?)`
-    ).bind(id, title, subtitle, description, imageUrl, displayOrder).run()
+      `INSERT INTO portfolio_items (id, title, subtitle, description, image_url, video_url, display_order)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`
+    ).bind(id, title, subtitle, description, imageUrl, videoUrl || null, displayOrder).run()
 
     return c.json({ success: true, id })
   } catch (e) {
@@ -98,35 +107,70 @@ adminPortfolio.put('/:id', async (c) => {
     const description = formData.description as string
     const displayOrder = parseInt(formData.displayOrder as string) || 0
     const imageFile = formData.image as File
+    const videoFile = formData.video as File
+    const removeVideo = formData.removeVideo === 'true'
     let imageUrl = formData.imageUrl as string
+    let videoUrl = formData.videoUrl as string
 
-    // 0. Fetch existing item to know the old image_url
-    const oldItem = await db.prepare('SELECT image_url FROM portfolio_items WHERE id = ?').bind(id).first() as { image_url?: string } | null
+    // Fetch existing item
+    const oldItem = await db.prepare('SELECT image_url, video_url FROM portfolio_items WHERE id = ?')
+      .bind(id).first() as { image_url?: string; video_url?: string } | null
     const oldImageUrl = oldItem?.image_url
+    const oldVideoUrl = oldItem?.video_url
 
+    // Handle image replacement
     if (imageFile && typeof imageFile !== 'string') {
-      // 1. Delete old image from R2 if it exists and is an internal file
       const oldKey = getR2KeyFromPublicUrl(c, oldImageUrl || '')
       if (oldKey) {
         const relativePath = albumPathFromR2Key(oldKey)
-        try {
-          await deleteAlbumObject(assets, relativePath)
-        } catch (e) {
+        try { await deleteAlbumObject(assets, relativePath) } catch (e) {
           console.error('Failed to delete old portfolio image from R2:', e)
         }
       }
-
       const fileName = `${id}-${Date.now()}-${imageFile.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`
       const r2Key = `landing/portfolio/${fileName}`
       const { key } = await putAlbumPhoto(assets, r2Key, imageFile, { contentType: imageFile.type })
       imageUrl = `/api/files/${key}`
     }
 
+    // Handle video: replace or remove
+    if (removeVideo) {
+      // Admin explicitly removed the video
+      if (oldVideoUrl) {
+        const oldKey = getR2KeyFromPublicUrl(c, oldVideoUrl)
+        if (oldKey) {
+          const relativePath = albumPathFromR2Key(oldKey)
+          try { await deleteAlbumObject(assets, relativePath) } catch (e) {
+            console.error('Failed to delete old portfolio video from R2:', e)
+          }
+        }
+      }
+      videoUrl = ''
+    } else if (videoFile && typeof videoFile !== 'string' && videoFile.size > 0) {
+      // New video uploaded — delete old one first
+      if (oldVideoUrl) {
+        const oldKey = getR2KeyFromPublicUrl(c, oldVideoUrl)
+        if (oldKey) {
+          const relativePath = albumPathFromR2Key(oldKey)
+          try { await deleteAlbumObject(assets, relativePath) } catch (e) {
+            console.error('Failed to delete old portfolio video from R2:', e)
+          }
+        }
+      }
+      const fileName = `${id}-${Date.now()}-${videoFile.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`
+      const r2Key = `landing/portfolio/videos/${fileName}`
+      const { key } = await putAlbumPhoto(assets, r2Key, videoFile, { contentType: videoFile.type })
+      videoUrl = `/api/files/${key}`
+    } else {
+      // Keep existing video_url (passed from frontend) or fallback to what's in DB
+      videoUrl = videoUrl ?? oldVideoUrl ?? ''
+    }
+
     await db.prepare(
       `UPDATE portfolio_items 
-       SET title = ?, subtitle = ?, description = ?, image_url = ?, display_order = ?, updated_at = (datetime('now'))
+       SET title = ?, subtitle = ?, description = ?, image_url = ?, video_url = ?, display_order = ?, updated_at = (datetime('now'))
        WHERE id = ?`
-    ).bind(title, subtitle, description, imageUrl, displayOrder, id).run()
+    ).bind(title, subtitle, description, imageUrl, videoUrl || null, displayOrder, id).run()
 
     return c.json({ success: true })
   } catch (e) {
@@ -148,18 +192,27 @@ adminPortfolio.delete('/:id', async (c) => {
 
   try {
     const assets = requireAssets(c)
-    // 0. Fetch existing item to know the image_url
-    const oldItem = await db.prepare('SELECT image_url FROM portfolio_items WHERE id = ?').bind(id).first() as { image_url?: string } | null
+    const oldItem = await db.prepare('SELECT image_url, video_url FROM portfolio_items WHERE id = ?')
+      .bind(id).first() as { image_url?: string; video_url?: string } | null
     const oldImageUrl = oldItem?.image_url
+    const oldVideoUrl = oldItem?.video_url
 
-    // 1. Delete from R2 if it exists and we have bucket access
-    const oldKey = getR2KeyFromPublicUrl(c, oldImageUrl || '')
-    if (assets && oldKey) {
-      const relativePath = albumPathFromR2Key(oldKey)
-      try {
-        await deleteAlbumObject(assets, relativePath)
-      } catch (e) {
-        console.error('Failed to delete portfolio image from R2 on delete:', e)
+    if (assets) {
+      // Delete image
+      const oldImageKey = getR2KeyFromPublicUrl(c, oldImageUrl || '')
+      if (oldImageKey) {
+        const relativePath = albumPathFromR2Key(oldImageKey)
+        try { await deleteAlbumObject(assets, relativePath) } catch (e) {
+          console.error('Failed to delete portfolio image from R2 on delete:', e)
+        }
+      }
+      // Delete video
+      const oldVideoKey = getR2KeyFromPublicUrl(c, oldVideoUrl || '')
+      if (oldVideoKey) {
+        const relativePath = albumPathFromR2Key(oldVideoKey)
+        try { await deleteAlbumObject(assets, relativePath) } catch (e) {
+          console.error('Failed to delete portfolio video from R2 on delete:', e)
+        }
       }
     }
 
@@ -171,3 +224,9 @@ adminPortfolio.delete('/:id', async (c) => {
 })
 
 export default adminPortfolio
+
+
+
+
+
+

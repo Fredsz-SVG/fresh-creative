@@ -42,7 +42,7 @@ export default function AdminAlbumsPage() {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex justify-center mb-4 sm:mb-6">
-        <div className="relative inline-flex items-center gap-1 p-1 bg-white dark:bg-slate-800 rounded-2xl border-2 border-slate-900 dark:border-slate-700 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]">
+        <div className="relative inline-flex items-center gap-1 p-1 bg-white dark:bg-slate-800 rounded-2xl border-2 border-slate-900 dark:border-slate-700 shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b]">
           <div
             className={`absolute top-1 bottom-1 rounded-xl bg-violet-400 transition-all duration-300 ease-out ${
               activeTab === 'mine' ? 'left-1 w-[calc(50%-6px)]' : 'left-1 w-[calc(50%-6px)]'
@@ -88,3 +88,9 @@ export default function AdminAlbumsPage() {
     </div>
   )
 }
+
+
+
+
+
+

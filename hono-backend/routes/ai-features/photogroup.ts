@@ -97,3 +97,9 @@ photogroup.post('/', async (c) => {
 })
 
 export default photogroup
+
+
+
+
+
+

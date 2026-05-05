@@ -13,3 +13,9 @@ export function jsonError(message: string, status = 400, extra?: Record<string, 
 export function jsonOk(data: any = { ok: true }) {
   return NextResponse.json(data)
 }
+
+
+
+
+
+

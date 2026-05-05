@@ -203,3 +203,9 @@ albumJoinRequestsRoute.post('/', async (c) => {
 })
 
 export default albumJoinRequestsRoute
+
+
+
+
+
+

@@ -44,7 +44,7 @@ export default function YearbookHeader({
     setMobileMenuOpen,
 }: YearbookHeaderProps) {
     return (
-        <div className="flex sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-gray-100 px-3 lg:px-4 h-14 items-center gap-3 lg:gap-4 shadow-sm">
+        <div className="flex sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b-2 border-gray-100 px-3 lg:px-4 h-14 items-center gap-3 lg:gap-4 shadow-sm">
             {/* Mobile: compact back arrow */}
             <Link href={isAiLabsToolActive ? aiLabsBackHref : effectiveBackHref} className="lg:hidden inline-flex items-center justify-center p-1.5 -ml-1 rounded-lg text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition-colors touch-manipulation">
                 <ChevronLeft className="w-5 h-5" />
@@ -87,7 +87,7 @@ export default function YearbookHeader({
 
             {/* Flipbook Controls (Mobile & Desktop) */}
             {sidebarModeFromPath === 'flipbook' && (isOwner || isAlbumAdmin) && (flipbookEnabledByPackage || featureUnlocks.includes('flipbook')) && (
-                <div className="ml-auto flex bg-gray-100 p-1 rounded-xl border border-gray-200 gap-1 items-center scale-90 lg:scale-100 origin-right">
+                <div className="ml-auto flex bg-gray-100 p-1 rounded-xl border-2 border-slate-900 gap-1 items-center scale-90 lg:scale-100 origin-right">
                     <button
                         onClick={() => setFlipbookPreviewMode(false)}
                         className={`flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${!flipbookPreviewMode ? 'bg-violet-500 text-white shadow-sm' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200'}`}
@@ -111,7 +111,7 @@ export default function YearbookHeader({
                         e.stopPropagation()
                         setMobileMenuOpen(true)
                     }}
-                    className="lg:hidden ml-auto flex items-center justify-center w-10 h-10 bg-gray-100 border border-gray-200 rounded-xl text-gray-500 hover:bg-gray-200 hover:text-gray-800 transition-all active:scale-95 flex-shrink-0 shadow-sm"
+                    className="lg:hidden ml-auto flex items-center justify-center w-10 h-10 bg-gray-100 border-2 border-slate-900 rounded-xl text-gray-500 hover:bg-gray-200 hover:text-gray-800 transition-all active:scale-95 flex-shrink-0 shadow-sm"
                 >
                     <Menu className="w-5 h-5" />
                 </button>
@@ -119,3 +119,13 @@ export default function YearbookHeader({
         </div>
     )
 }
+
+
+
+
+
+
+
+
+
+

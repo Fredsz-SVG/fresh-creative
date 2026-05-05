@@ -40,3 +40,9 @@ inviteToken.get('/:token', async (c) => {
 })
 
 export default inviteToken
+
+
+
+
+
+

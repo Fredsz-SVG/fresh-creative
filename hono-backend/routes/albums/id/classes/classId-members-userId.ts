@@ -50,10 +50,43 @@ classMemberUserRoute.delete('/', async (c) => {
     if (!cls) return c.json({ error: 'Class not found' }, 404)
 
     const access = await db
-      .prepare(`SELECT id FROM album_class_access WHERE class_id = ? AND user_id = ?`)
+      .prepare(`SELECT id, photos, video_url FROM album_class_access WHERE class_id = ? AND user_id = ?`)
       .bind(classId, userId)
-      .first<{ id: string }>()
+      .first<{ id: string; photos: string; video_url: string | null }>()
     if (!access) return c.json({ error: 'Member not found' }, 404)
+
+    // Cleanup R2 assets before deleting DB record
+    const bucket = getAssets(c)
+    if (bucket) {
+      // Cleanup photos
+      try {
+        const photos = JSON.parse(access.photos || '[]') as string[]
+        for (const url of photos) {
+          const pathPart = url.split('/api/files/')[1]
+          if (pathPart) {
+            const decoded = decodeURIComponent(pathPart.replace(/\/+/g, '/'))
+            const rel = decoded.replace(/^album-photos\//, '')
+            await bucket.delete(rel)
+          }
+        }
+      } catch (e) {
+        console.error('Failed to cleanup member photos:', e)
+      }
+
+      // Cleanup video
+      if (access.video_url) {
+        try {
+          const pathPart = access.video_url.split('/api/files/')[1]
+          if (pathPart) {
+            const decoded = decodeURIComponent(pathPart.replace(/\/+/g, '/'))
+            const rel = decoded.replace(/^album-photos\//, '')
+            await bucket.delete(rel)
+          }
+        } catch (e) {
+          console.error('Failed to cleanup member video:', e)
+        }
+      }
+    }
 
     const del = await db
       .prepare(`DELETE FROM album_class_access WHERE id = ?`)
@@ -223,3 +256,8 @@ classMemberUserRoute.patch('/', async (c) => {
 })
 
 export default classMemberUserRoute
+
+
+
+
+

@@ -1,6 +1,8 @@
 import { Hono } from 'hono'
 import { getRole } from '../../../../lib/auth'
-import { getD1 } from '../../../../lib/edge-env'
+import { getD1, getAssets } from '../../../../lib/edge-env'
+import { getR2KeyFromPublicUrl } from '../../../../lib/public-file-url'
+import { albumPathFromR2Key } from '../../../../lib/storage-layout'
 import { AppEnv, requireAuthJwt } from '../../../../middleware'
 import { getAuthUserFromContext } from '../../../../lib/auth-user'
 
@@ -29,11 +31,31 @@ classIdRoute.delete('/', async (c) => {
   }
 
   const cls = await db
-    .prepare(`SELECT id FROM album_classes WHERE id = ? AND album_id = ?`)
+    .prepare(`SELECT id, batch_photo_url, batch_video_url FROM album_classes WHERE id = ? AND album_id = ?`)
     .bind(classId, albumId)
-    .first<{ id: string }>()
+    .first<{ id: string; batch_photo_url: string | null; batch_video_url: string | null }>()
 
   if (!cls) return c.json({ error: 'Class not found' }, 404)
+
+  if (cls.batch_photo_url || cls.batch_video_url) {
+    const bucket = getAssets(c)
+    if (bucket) {
+      // Cleanup batch photo
+      if (cls.batch_photo_url) {
+        const oldKey = getR2KeyFromPublicUrl(c, cls.batch_photo_url)
+        if (oldKey) {
+          try { await bucket.delete(albumPathFromR2Key(oldKey)) } catch {}
+        }
+      }
+      // Cleanup batch video
+      if (cls.batch_video_url) {
+        const oldKey = getR2KeyFromPublicUrl(c, cls.batch_video_url)
+        if (oldKey) {
+          try { await bucket.delete(albumPathFromR2Key(oldKey)) } catch {}
+        }
+      }
+    }
+  }
 
   const del = await db.prepare(`DELETE FROM album_classes WHERE id = ?`).bind(classId).run()
   if (!del.success) return c.json({ error: 'Delete failed' }, 500)
@@ -73,6 +95,8 @@ classIdRoute.patch('/', async (c) => {
   const sort_order = body?.sort_order !== undefined ? Number(body.sort_order) : undefined
   const batch_photo_url =
     typeof body?.batch_photo_url === 'string' ? body.batch_photo_url : undefined
+  const batch_video_url =
+    typeof body?.batch_video_url === 'string' ? body.batch_video_url : undefined
 
   const updates: string[] = []
   const vals: unknown[] = []
@@ -94,10 +118,14 @@ classIdRoute.patch('/', async (c) => {
     updates.push('batch_photo_url = ?')
     vals.push(batch_photo_url)
   }
+  if (batch_video_url !== undefined) {
+    updates.push('batch_video_url = ?')
+    vals.push(batch_video_url)
+  }
 
   if (updates.length === 0) {
     const current = await db
-      .prepare(`SELECT id, name, sort_order, batch_photo_url FROM album_classes WHERE id = ?`)
+      .prepare(`SELECT id, name, sort_order, batch_photo_url, batch_video_url FROM album_classes WHERE id = ?`)
       .bind(classId)
       .first()
     return c.json(current ?? {}, 200)
@@ -112,10 +140,15 @@ classIdRoute.patch('/', async (c) => {
   if (!r.success) return c.json({ error: 'Update failed' }, 500)
 
   const updated = await db
-    .prepare(`SELECT id, name, sort_order, batch_photo_url FROM album_classes WHERE id = ?`)
+    .prepare(`SELECT id, name, sort_order, batch_photo_url, batch_video_url FROM album_classes WHERE id = ?`)
     .bind(classId)
     .first()
   return c.json(updated)
 })
 
 export default classIdRoute
+
+
+
+
+

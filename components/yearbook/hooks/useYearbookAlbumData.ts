@@ -109,3 +109,8 @@ export function useYearbookAlbumData(id: string | undefined, initialAlbum: Album
 
   return { album, setAlbum, loading, error, fetchAlbum, handleUpdateAlbum, albumRef }
 }
+
+
+
+
+

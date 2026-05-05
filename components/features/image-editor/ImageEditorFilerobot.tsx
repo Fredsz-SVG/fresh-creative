@@ -102,7 +102,7 @@ const Button: React.FC<ButtonProps> = ({ variant = 'primary', children, classNam
     <button
       className={clsx(
         'inline-flex items-center justify-center px-5 py-2.5 rounded-xl font-black text-[13px] uppercase tracking-widest border-2 transition-all touch-manipulation',
-        'shadow-[4px_4px_0_0_#334155] dark:shadow-[3px_3px_0_0_rgba(255,255,255,0.15)]',
+        'shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_rgba(255,255,255,0.15)]',
         'hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none active:translate-x-0.5 active:translate-y-0.5 active:shadow-none',
         {
           'bg-indigo-500 dark:bg-indigo-500 border-slate-200 dark:border-white/30 text-white hover:bg-indigo-400 dark:hover:bg-indigo-400': variant === 'primary',
@@ -918,7 +918,7 @@ export default function ImageEditorFilerobot({ creditCost }: { creditCost?: numb
             className="w-20 h-20 rounded-2xl flex items-center justify-center
               bg-indigo-100 dark:bg-indigo-500/20
               border-2 border-slate-200 dark:border-white/20
-              shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_rgba(255,255,255,0.1)]"
+              shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_rgba(255,255,255,0.1)]"
           >
             <svg
               className="w-10 h-10 text-indigo-600 dark:text-indigo-400"
@@ -1018,3 +1018,9 @@ export default function ImageEditorFilerobot({ creditCost }: { creditCost?: numb
     </div>
   )
 }
+
+
+
+
+
+

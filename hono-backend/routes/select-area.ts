@@ -94,3 +94,9 @@ selectArea.get('/', async (c) => {
 })
 
 export default selectArea
+
+
+
+
+
+

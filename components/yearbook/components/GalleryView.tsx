@@ -33,7 +33,7 @@ export default function GalleryView({
 
     return (
         <div className="fixed inset-0 z-50 bg-black flex flex-col">
-            <div className="flex items-center justify-between gap-2 p-3 border-b border-gray-200 bg-white/95 backdrop-blur-sm flex-wrap shadow-sm">
+            <div className="flex items-center justify-between gap-2 p-3 border-b-2 border-gray-200 bg-white/95 backdrop-blur-sm flex-wrap shadow-sm">
                 <button
                     type="button"
                     onClick={onClose}
@@ -107,3 +107,14 @@ export default function GalleryView({
         </div>
     )
 }
+
+
+
+
+
+
+
+
+
+
+

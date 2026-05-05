@@ -77,3 +77,9 @@ pose.post('/', async (c) => {
 })
 
 export default pose
+
+
+
+
+
+

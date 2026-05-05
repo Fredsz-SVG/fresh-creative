@@ -196,3 +196,8 @@ teacherVideo.delete('/', async (c) => {
 })
 
 export default teacherVideo
+
+
+
+
+

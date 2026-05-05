@@ -4,6 +4,7 @@ export type AlbumClass = {
   sort_order?: number
   student_count?: number
   batch_photo_url?: string | null
+  batch_video_url?: string | null
 }
 
 export type PackageSnapshot = {
@@ -91,3 +92,9 @@ export type Teacher = {
   sort_order?: number
   photos?: TeacherPhoto[]
 }
+
+
+
+
+
+

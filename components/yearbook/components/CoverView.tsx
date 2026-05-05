@@ -35,7 +35,7 @@ export default function CoverView({
   return (
     <div className="flex-1 flex flex-col items-center justify-center p-4 relative min-h-full">
       <div className="w-full max-w-xs mx-auto flex flex-col items-center">
-        <div className="relative w-full aspect-[3/4] bg-gray-100 dark:bg-slate-800 rounded-xl overflow-hidden shadow-xl border border-gray-200 dark:border-slate-700 group">
+        <div className="relative w-full aspect-[3/4] bg-gray-100 dark:bg-slate-800 rounded-xl overflow-hidden shadow-xl border-2 border-slate-900 dark:border-slate-700 group">
           {album?.cover_image_url ? (
             <FastImage
               src={(() => {
@@ -60,7 +60,7 @@ export default function CoverView({
             <button
               type="button"
               onClick={() => onPlayVideo && onPlayVideo(album.cover_video_url!)}
-              className="absolute bottom-3 right-3 w-10 h-10 rounded-full bg-black/70 hover:bg-black/90 flex items-center justify-center group/play transition-all hover:scale-110 backdrop-blur-sm border border-gray-200 dark:border-slate-700"
+              className="absolute bottom-3 right-3 w-10 h-10 rounded-full bg-black/70 hover:bg-black/90 flex items-center justify-center group/play transition-all hover:scale-110 backdrop-blur-sm border-2 border-slate-900 dark:border-slate-700"
               title="Play Video Cover"
             >
               <Play className="w-4 h-4 text-gray-800 dark:text-white ml-0.5" fill="currentColor" />
@@ -74,7 +74,7 @@ export default function CoverView({
         </div>
 
         {isOwner && (
-          <div className="mt-6 p-3 w-full rounded-xl bg-gray-100 dark:bg-slate-800/50 border border-gray-200 dark:border-slate-700">
+          <div className="mt-6 p-3 w-full rounded-xl bg-gray-100 dark:bg-slate-800/50 border-2 border-slate-900 dark:border-slate-700">
             <div className="mb-3 text-center">
               <p className="text-xs font-semibold text-app dark:text-white">Pengaturan Cover</p>
             </div>
@@ -167,3 +167,14 @@ export default function CoverView({
     </div>
   )
 }
+
+
+
+
+
+
+
+
+
+
+

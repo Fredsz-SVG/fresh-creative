@@ -483,12 +483,12 @@ export default function PricingView({
                     }
                   }}
                   className={`text-left cursor-pointer relative w-[85vw] sm:w-full shrink-0 snap-center rounded-3xl border-4 p-6 transition-all duration-200 flex flex-col ${isSelected
-                    ? "border-slate-200 dark:border-slate-600 bg-emerald-200 dark:bg-emerald-900/40 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] scale-100 sm:scale-[1.02] translate-x-1 translate-y-1 sm:translate-x-0 sm:translate-y-0"
-                    : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:translate-x-1 hover:translate-y-1 hover:shadow-none"
+                    ? "border-slate-200 dark:border-slate-600 bg-emerald-200 dark:bg-emerald-900/40 shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b] scale-100 sm:scale-[1.02] translate-x-1 translate-y-1 sm:translate-x-0 sm:translate-y-0"
+                    : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b] hover:translate-x-1 hover:translate-y-1 hover:shadow-none"
                     }`}
                 >
                   {pkg.is_popular && !isSelected && (
-                    <span className="absolute -top-3.5 right-6 px-3 py-1 rounded-full bg-orange-400 dark:bg-orange-500 border-2 border-slate-200 dark:border-slate-600 text-[11px] font-black text-slate-900 dark:text-slate-900 uppercase tracking-widest shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] rotate-2 flex items-center gap-1.5">
+                    <span className="absolute -top-3.5 right-6 px-3 py-1 rounded-full bg-orange-400 dark:bg-orange-500 border-2 border-slate-200 dark:border-slate-600 text-[11px] font-black text-slate-900 dark:text-slate-900 uppercase tracking-widest shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b] rotate-2 flex items-center gap-1.5">
                       Popular <Star className="w-3 h-3 fill-slate-900" />
                     </span>
                   )}
@@ -544,14 +544,14 @@ export default function PricingView({
                       <p className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-3">Termasuk</p>
                       <div className="flex flex-wrap gap-2">
                         {pkg.flipbook_enabled && !pkg.ai_labs_features.includes('flipbook_unlock') && (
-                          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-300 dark:bg-amber-400 text-amber-950 text-[12px] font-black uppercase tracking-wider border-2 border-amber-700 dark:border-amber-300 shadow-[4px_4px_0_0_#334155] dark:shadow-amber-300/80">
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-300 dark:bg-amber-400 text-amber-950 text-[12px] font-black uppercase tracking-wider border-2 border-amber-700 dark:border-amber-300 shadow-[2px_2px_0_0_#334155] dark:shadow-amber-300/80">
                             <Book className="w-3.5 h-3.5" /> Flipbook
                           </span>
                         )}
                         {pkg.ai_labs_features.map((slug) => (
                           <span
                             key={slug}
-                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[12px] font-black uppercase tracking-wider border-2 shadow-[4px_4px_0_0_#334155] ${slug === 'flipbook_unlock' ? 'border-amber-700 dark:border-amber-300 bg-amber-300 dark:bg-amber-400 text-amber-950 dark:shadow-amber-300/80' : 'border-slate-200 dark:border-slate-600 bg-indigo-300 dark:bg-indigo-900/50 text-slate-900 dark:text-slate-100 dark:shadow-[4px_4px_0_0_#1e293b]'
+                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[12px] font-black uppercase tracking-wider border-2 shadow-[2px_2px_0_0_#334155] ${slug === 'flipbook_unlock' ? 'border-amber-700 dark:border-amber-300 bg-amber-300 dark:bg-amber-400 text-amber-950 dark:shadow-amber-300/80' : 'border-slate-200 dark:border-slate-600 bg-indigo-300 dark:bg-indigo-900/50 text-slate-900 dark:text-slate-100 dark:shadow-[2px_2px_0_0_#1e293b]'
                               }`}
                           >
                             {slug === 'flipbook_unlock' ? <Book className="w-3.5 h-3.5" /> : <Sparkles className="w-3.5 h-3.5" />}
@@ -569,7 +569,7 @@ export default function PricingView({
                         <div className="flex items-center justify-between mb-3">
                           <p className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Addon</p>
                           {chosenAddons.length > 0 && (
-                            <span className="bg-emerald-400 dark:bg-emerald-500 text-slate-900 text-[10px] px-2 py-0.5 rounded-full font-black border-2 border-slate-200 dark:border-slate-700 shadow-[4px_4px_0_0_#334155]">
+                            <span className="bg-emerald-400 dark:bg-emerald-500 text-slate-900 text-[10px] px-2 py-0.5 rounded-full font-black border-2 border-slate-200 dark:border-slate-700 shadow-[2px_2px_0_0_#334155]">
                               {chosenAddons.length} Dipilih
                             </span>
                           )}
@@ -583,7 +583,7 @@ export default function PricingView({
                           className={`w-full py-2.5 px-4 rounded-xl border-2 transition-all font-black uppercase text-[11px] tracking-wider ${
                             isSelected
                               ? "bg-white dark:bg-emerald-900/30 border-slate-200 dark:border-slate-600 text-slate-900 dark:text-emerald-300"
-                              : "bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:border-slate-200 dark:hover:border-slate-500 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]"
+                              : "bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:border-slate-200 dark:hover:border-slate-500 shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b]"
                           } active:translate-x-0 active:translate-y-0 active:shadow-none`}
                         >
                           {chosenAddons.length > 0 ? "Ubah Add-on" : "Pilih Add-on"}
@@ -633,7 +633,7 @@ export default function PricingView({
             {saveError ? <p className="text-[14px] font-bold text-red-500 dark:text-red-400 mb-4">{saveError}</p> : null}
             
             {selectedPkg ? (
-              <div className="mb-6 flex flex-col items-center justify-center p-3 sm:p-4 rounded-xl border-2 border-slate-900 dark:border-white bg-lime-300 dark:bg-slate-800 text-center shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] transition-all animate-in zoom-in-95 duration-300 -rotate-1 hover:rotate-0">
+              <div className="mb-6 flex flex-col items-center justify-center p-3 sm:p-4 rounded-xl border-2 border-slate-900 dark:border-white bg-lime-300 dark:bg-slate-800 text-center shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b] transition-all animate-in zoom-in-95 duration-300 -rotate-1 hover:rotate-0">
                 <p className="text-[10px] sm:text-[11px] font-black text-slate-800 dark:text-slate-400 uppercase tracking-widest mb-0.5">
                   Paket Smart Digital
                 </p>
@@ -650,7 +650,7 @@ export default function PricingView({
             )}
 
             {selectedPkg && pricePerStudentBreakdown && (
-              <div className="mb-6 rounded-2xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]">
+              <div className="mb-6 rounded-2xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b]">
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <p className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">
@@ -716,7 +716,7 @@ export default function PricingView({
               </div>
             )}
 
-            <div className="mb-6 rounded-2xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]">
+            <div className="mb-6 rounded-2xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b]">
               <p className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-3">
                 Voucher diskon (opsional)
               </p>
@@ -736,7 +736,7 @@ export default function PricingView({
                     type="button"
                     onClick={handleApplyVoucher}
                     disabled={voucherApplying || !voucherCode.trim()}
-                    className="flex-1 sm:flex-none px-4 py-3 rounded-xl bg-emerald-400 text-emerald-950 font-black uppercase tracking-widest border-2 border-slate-200 dark:border-slate-700 shadow-[4px_4px_0_0_#334155] hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all disabled:opacity-60 disabled:hover:translate-x-0 disabled:hover:translate-y-0 disabled:hover:shadow-[4px_4px_0_0_#334155] flex items-center justify-center gap-2"
+                    className="flex-1 sm:flex-none px-4 py-3 rounded-xl bg-emerald-400 text-emerald-950 font-black uppercase tracking-widest border-2 border-slate-200 dark:border-slate-700 shadow-[2px_2px_0_0_#334155] hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all disabled:opacity-60 disabled:hover:translate-x-0 disabled:hover:translate-y-0 disabled:hover:shadow-[2px_2px_0_0_#334155] flex items-center justify-center gap-2"
                   >
                     {voucherApplying ? <Loader2 className="w-4 h-4 animate-spin" strokeWidth={3} /> : null}
                     Terapkan
@@ -765,7 +765,7 @@ export default function PricingView({
               type="button"
               onClick={handleSaveToDb}
               disabled={saving || !selectedPackageId}
-              className="group flex items-center justify-center gap-3 w-full px-6 py-3 sm:py-4 bg-indigo-400 dark:bg-indigo-600 text-slate-900 dark:text-white border-2 border-slate-200 dark:border-slate-700 rounded-xl sm:rounded-2xl text-[14px] sm:text-[18px] font-black uppercase tracking-widest shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b] hover:translate-x-1 hover:translate-y-1 hover:shadow-none disabled:opacity-50 disabled:hover:translate-x-0 disabled:hover:translate-y-0 disabled:hover:shadow-[4px_4px_0_0_#334155] transition-all"
+              className="group flex items-center justify-center gap-3 w-full px-6 py-3 sm:py-4 bg-indigo-400 dark:bg-indigo-600 text-slate-900 dark:text-white border-2 border-slate-200 dark:border-slate-700 rounded-xl sm:rounded-2xl text-[14px] sm:text-[18px] font-black uppercase tracking-widest shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b] hover:translate-x-1 hover:translate-y-1 hover:shadow-none disabled:opacity-50 disabled:hover:translate-x-0 disabled:hover:translate-y-0 disabled:hover:shadow-[2px_2px_0_0_#334155] transition-all"
             >
               {saving ? (
                 <>
@@ -803,7 +803,7 @@ export default function PricingView({
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="relative w-full max-w-md bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 p-6 sm:p-8 rounded-[2.5rem] shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]"
+              className="relative w-full max-w-md bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 p-6 sm:p-8 rounded-[2.5rem] shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b]"
             >
               <div className="flex items-center justify-between mb-6">
                 <h3 className="font-sans text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">
@@ -840,7 +840,7 @@ export default function PricingView({
                         className={`flex items-center gap-4 p-4 rounded-2xl border-2 transition-all cursor-pointer ${
                           checked
                             ? "border-slate-200 dark:border-slate-500 bg-emerald-50 dark:bg-emerald-900/20 shadow-none translate-x-[2px] translate-y-[2px]"
-                            : "border-slate-200 dark:border-slate-200 bg-slate-50 dark:bg-slate-800/30 hover:border-slate-400 shadow-[4px_4px_0_0_#334155] dark:shadow-[4px_4px_0_0_#1e293b]"
+                            : "border-slate-200 dark:border-slate-200 bg-slate-50 dark:bg-slate-800/30 hover:border-slate-400 shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b]"
                         }`}
                       >
                         <div className="relative flex items-center">
@@ -868,7 +868,7 @@ export default function PricingView({
 
               <button
                 onClick={() => setOpenAddonPkgId(null)}
-                className="mt-8 w-full py-4 rounded-2xl border-2 border-slate-200 bg-indigo-400 dark:bg-indigo-600 text-white font-black uppercase tracking-widest shadow-[4px_4px_0_0_#334155] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all"
+                className="mt-8 w-full py-4 rounded-2xl border-2 border-slate-200 bg-indigo-400 dark:bg-indigo-600 text-white font-black uppercase tracking-widest shadow-[2px_2px_0_0_#334155] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all"
               >
                 Selesai
               </button>
@@ -879,3 +879,10 @@ export default function PricingView({
     </div>
   );
 }
+
+
+
+
+
+
+

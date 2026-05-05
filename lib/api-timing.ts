@@ -8,3 +8,9 @@ export function logApiTiming(method: string, path: string, start: number): void 
     console.log(`[API] ${method} ${path} ${ms}ms`)
   }
 }
+
+
+
+
+
+

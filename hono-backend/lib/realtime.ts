@@ -57,3 +57,9 @@ export async function publishRealtimeEventFromGlobal(event: RealtimeEvent): Prom
   const runtimeGlobal = globalThis as GlobalWithEnv
   await publishRealtimeEvent(runtimeGlobal.env, event)
 }
+
+
+
+
+
+

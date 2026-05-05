@@ -35,3 +35,9 @@ albumsIdPublic.get('/', async (c) => {
 })
 
 export default albumsIdPublic
+
+
+
+
+
+

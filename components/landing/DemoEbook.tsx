@@ -83,9 +83,9 @@ export function DemoEbook() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
           {/* Card Swipe Demo */}
-          <div className="group rounded-[1.5rem] sm:rounded-[2rem] border-2 border-slate-900 dark:border-[#5cecff]/25 bg-white dark:bg-[#0d1148] shadow-[4px_4px_0_0_#334155] dark:shadow-neo-glow overflow-hidden transition-all duration-300 hover:-translate-x-1 hover:-translate-y-1 flex flex-col">
+          <div className="group rounded-[1.5rem] sm:rounded-[2rem] border-2 border-slate-900 dark:border-[#5cecff]/25 bg-white dark:bg-[#0d1148] shadow-[2px_2px_0_0_#334155] dark:shadow-neo-glow overflow-hidden transition-all duration-300 hover:-translate-x-1 hover:-translate-y-1 flex flex-col">
             <div className="p-6 sm:p-8 flex flex-col items-center justify-center bg-white dark:bg-[#0d1148] relative z-10 w-full text-center">
-              <div className="shrink-0 w-14 h-14 sm:w-16 sm:h-16 mb-4 sm:mb-5 rounded-2xl bg-orange-400 border-2 border-slate-900 dark:border-[#ff9900]/50 shadow-[4px_4px_0_0_#334155] dark:shadow-neo-glow-sm flex items-center justify-center transition-transform group-hover:scale-105 group-hover:-rotate-3">
+              <div className="shrink-0 w-14 h-14 sm:w-16 sm:h-16 mb-4 sm:mb-5 rounded-2xl bg-orange-400 border-2 border-slate-900 dark:border-[#ff9900]/50 shadow-[2px_2px_0_0_#334155] dark:shadow-neo-glow-sm flex items-center justify-center transition-transform group-hover:scale-105 group-hover:-rotate-3">
                 <GalleryHorizontal className="w-7 h-7 sm:w-8 sm:h-8 text-slate-900" strokeWidth={2.5} />
               </div>
               <h3 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight uppercase">Interactive Swipe</h3>
@@ -121,7 +121,7 @@ export function DemoEbook() {
                   )}
                   {/* Mobile Help Badge — hanya jika ada data */}
                   {albumPreviews.length > 0 && (
-                    <div className="md:hidden absolute bottom-4 left-1/2 -translate-x-1/2 px-4 py-2 bg-yellow-300 border-2 border-slate-900 shadow-[4px_4px_0_0_#334155] rounded-xl text-black text-[10px] font-black uppercase tracking-widest flex items-center gap-2 animate-bounce">
+                    <div className="md:hidden absolute bottom-4 left-1/2 -translate-x-1/2 px-4 py-2 bg-yellow-300 border-2 border-slate-900 shadow-[2px_2px_0_0_#334155] rounded-xl text-black text-[10px] font-black uppercase tracking-widest flex items-center gap-2 animate-bounce">
                       <TiLocationArrow className="w-4 h-4 rotate-45" />
                       <span>Klik untuk demo</span>
                     </div>
@@ -164,9 +164,9 @@ export function DemoEbook() {
           )}
 
           {/* Flipbook Demo */}
-          <div className="group rounded-[1.5rem] sm:rounded-[2rem] border-2 border-slate-900 bg-white dark:bg-[#0d1148] dark:border-[#ff61c6]/25 shadow-[4px_4px_0_0_#334155] dark:shadow-neo-glow overflow-hidden hover:-translate-x-1 hover:-translate-y-1 hover:shadow-[4px_4px_0_0_#334155] dark:hover:shadow-neo-glow transition-all duration-300 flex flex-col">
+          <div className="group rounded-[1.5rem] sm:rounded-[2rem] border-2 border-slate-900 bg-white dark:bg-[#0d1148] dark:border-[#ff61c6]/25 shadow-[2px_2px_0_0_#334155] dark:shadow-neo-glow overflow-hidden hover:-translate-x-1 hover:-translate-y-1 hover:shadow-[2px_2px_0_0_#334155] dark:hover:shadow-neo-glow transition-all duration-300 flex flex-col">
             <div className="p-6 sm:p-8 flex flex-col items-center justify-center bg-white dark:bg-[#0d1148] relative z-10 w-full text-center">
-              <div className="shrink-0 w-14 h-14 sm:w-16 sm:h-16 mb-4 sm:mb-5 rounded-2xl bg-emerald-400 border-2 border-slate-900 shadow-[4px_4px_0_0_#334155] dark:shadow-neo-glow-sm flex items-center justify-center transition-transform group-hover:scale-105 group-hover:rotate-3">
+              <div className="shrink-0 w-14 h-14 sm:w-16 sm:h-16 mb-4 sm:mb-5 rounded-2xl bg-emerald-400 border-2 border-slate-900 shadow-[2px_2px_0_0_#334155] dark:shadow-neo-glow-sm flex items-center justify-center transition-transform group-hover:scale-105 group-hover:rotate-3">
                 <BookMarked className="w-7 h-7 sm:w-8 sm:h-8 text-slate-900" strokeWidth={2.5} />
               </div>
               <h3 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight uppercase">3D Virtual Flipbook</h3>
@@ -204,7 +204,7 @@ export function DemoEbook() {
 
                   {/* Klik untuk demo help badge (Mobile Only) — hanya jika ada URL */}
                   {flipbookPreviewUrl && (
-                    <div className="md:hidden absolute bottom-4 left-1/2 -translate-x-1/2 px-4 py-2 bg-yellow-300 border-2 border-slate-900 shadow-[4px_4px_0_0_#334155] rounded-xl text-black text-[10px] font-black uppercase tracking-widest flex items-center gap-2 animate-bounce">
+                    <div className="md:hidden absolute bottom-4 left-1/2 -translate-x-1/2 px-4 py-2 bg-yellow-300 border-2 border-slate-900 shadow-[2px_2px_0_0_#334155] rounded-xl text-black text-[10px] font-black uppercase tracking-widest flex items-center gap-2 animate-bounce">
                       <TiLocationArrow className="w-4 h-4 rotate-45" />
                       <span>Klik untuk demo</span>
                     </div>
@@ -218,3 +218,10 @@ export function DemoEbook() {
     </section>
   );
 }
+
+
+
+
+
+
+
