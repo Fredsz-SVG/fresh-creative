@@ -343,14 +343,14 @@ albumsRoute.delete('/:id', requireAuthJwt, async (c) => {
       if (album.cover_image_url) {
         const key = getR2KeyFromPublicUrl(c, album.cover_image_url)
         if (key) {
-          try { await bucket.delete(albumPathFromR2Key(key)) } catch {}
+          try { await bucket.delete(albumPathFromR2Key(key)) } catch { /* noop */ }
         }
       }
       // Cleanup cover video
       if (album.cover_video_url) {
         const key = getR2KeyFromPublicUrl(c, album.cover_video_url)
         if (key) {
-          try { await bucket.delete(albumPathFromR2Key(key)) } catch {}
+          try { await bucket.delete(albumPathFromR2Key(key)) } catch { /* noop */ }
         }
       }
     }

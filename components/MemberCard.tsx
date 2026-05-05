@@ -10,12 +10,46 @@ function stripQuotes(s: string): string {
   return s.replace(/^["""\u201C\u201D]+/, '').replace(/["""\u201C\u201D]+$/, '').trim()
 }
 
+const TiktokIcon = ({ className }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+    <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z" />
+  </svg>
+)
+
+function normalizeHandle(value: string): string {
+  return value.trim().replace(/^@+/, '').trim()
+}
+
+function toInstagramUrl(value: string): string | null {
+  const s = value.trim()
+  if (!s) return null
+  if (/^https?:\/\//i.test(s)) return s
+  const h = normalizeHandle(s)
+  return h ? `https://instagram.com/${encodeURIComponent(h)}` : null
+}
+
+function toTiktokUrl(value: string): string | null {
+  const s = value.trim()
+  if (!s) return null
+  if (/^https?:\/\//i.test(s)) return s
+  const h = normalizeHandle(s)
+  return h ? `https://www.tiktok.com/@${encodeURIComponent(h)}` : null
+}
+
+function toMailto(email: string): string | null {
+  const s = email.trim()
+  if (!s) return null
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s)) return null
+  return `mailto:${s}`
+}
+
 type Member = {
   user_id: string
   student_name: string
   email?: string | null
   date_of_birth?: string | null
   instagram?: string | null
+  tiktok?: string | null
   message?: string | null
   video_url?: string | null
   photos?: string[]
@@ -97,7 +131,7 @@ export default function MemberCard({
   const [editTtl, setEditTtl] = useState(member.date_of_birth || '')
   const [editInstagram, setEditInstagram] = useState(member.instagram || '')
   const [editEmail, setEditEmail] = useState(member.email || '')
-  const [editTiktok, setEditTiktok] = useState('')
+  const [editTiktok, setEditTiktok] = useState(member.tiktok || '')
   const [editMessage, setEditMessage] = useState(member.message || '')
   const [editVideoUrl, setEditVideoUrl] = useState(member.video_url || '')
   const [showSocialFields, setShowSocialFields] = useState(false)
@@ -115,6 +149,8 @@ export default function MemberCard({
     setEditName(member.student_name || '')
     setEditTtl(member.date_of_birth || '')
     setEditInstagram(member.instagram || '')
+    setEditEmail(member.email || '')
+    setEditTiktok(member.tiktok || '')
     setEditMessage(member.message || '')
     setEditVideoUrl(member.video_url || '')
   }, [
@@ -122,6 +158,8 @@ export default function MemberCard({
     member.student_name,
     member.date_of_birth,
     member.instagram,
+    member.email,
+    member.tiktok,
     member.message,
     member.video_url,
   ])
@@ -335,25 +373,63 @@ export default function MemberCard({
               </div>
 
               {/* Profile Details List */}
-              <div className="flex flex-col gap-1.5 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+              <div className="flex flex-col gap-1.5 text-[10px] font-black text-slate-600 dark:text-slate-300 tracking-tight">
                 {member.date_of_birth && (
                   <div className="flex items-center gap-2">
-                    <Calendar className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 flex-shrink-0" strokeWidth={2.5} />
+                    <Calendar className="w-3.5 h-3.5 text-slate-400 dark:text-slate-200 flex-shrink-0" strokeWidth={2.5} />
                     <span className="line-clamp-1">{member.date_of_birth}</span>
                   </div>
                 )}
-                {member.instagram && (
-                  <a
-                    href={member.instagram.startsWith('http') ? member.instagram : `https://instagram.com/${member.instagram.replace('@', '')}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="flex items-center gap-2 text-pink-500 dark:text-pink-400 hover:text-pink-600 dark:hover:text-pink-300 transition-colors"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <Instagram className="w-3.5 h-3.5 text-pink-500 flex-shrink-0" strokeWidth={2.5} />
-                    <span className="line-clamp-1 font-black">{member.instagram.startsWith('@') ? member.instagram : '@' + member.instagram}</span>
-                  </a>
-                )}
+                {(() => {
+                  const igUrl = member.instagram ? toInstagramUrl(member.instagram) : null
+                  if (!igUrl) return null
+                  const label = normalizeHandle(member.instagram || '')
+                  return (
+                    <a
+                      href={igUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex items-center gap-2 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <Instagram className="w-3.5 h-3.5 text-slate-400 dark:text-slate-200 flex-shrink-0" strokeWidth={2.5} />
+                      <span className="line-clamp-1">@{label}</span>
+                    </a>
+                  )
+                })()}
+
+                {(() => {
+                  const mailto = member.email ? toMailto(member.email) : null
+                  if (!mailto) return null
+                  return (
+                    <a
+                      href={mailto}
+                      className="flex items-center gap-2 min-w-0 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <Mail className="w-3.5 h-3.5 text-slate-400 dark:text-slate-200 flex-shrink-0" strokeWidth={2.5} />
+                      <span className="min-w-0 flex-1 truncate normal-case tracking-normal">{member.email}</span>
+                    </a>
+                  )
+                })()}
+
+                {(() => {
+                  const tiktokUrl = member.tiktok ? toTiktokUrl(member.tiktok) : null
+                  if (!tiktokUrl) return null
+                  const label = normalizeHandle(member.tiktok || '')
+                  return (
+                    <a
+                      href={tiktokUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex items-center gap-2 min-w-0 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <TiktokIcon className="w-3.5 h-3.5 text-slate-400 dark:text-slate-200 flex-shrink-0" />
+                      <span className="min-w-0 flex-1 truncate normal-case tracking-normal">@{label}</span>
+                    </a>
+                  )
+                })()}
               </div>
 
               {/* Message Block */}

@@ -9,7 +9,7 @@ import {
     AnimatePresence,
     PanInfo,
 } from 'framer-motion'
-import { Book, BookOpen, MessageSquare, Users, Play, X, Instagram, Cake } from 'lucide-react'
+import { Book, BookOpen, MessageSquare, Users, Play, X, Instagram, Cake, Mail } from 'lucide-react'
 
 const TiktokIcon = ({ className }: { className?: string }) => (
   <svg className={className} viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
@@ -28,6 +28,34 @@ function sortNameAsc<T extends { name: string }>(arr: T[]): T[] {
 
 function sortStudentNameAsc<T extends { student_name: string }>(arr: T[]): T[] {
     return [...arr].sort((a, b) => a.student_name.localeCompare(b.student_name, 'id', { sensitivity: 'base' }))
+}
+
+function normalizeSocialHandle(value: string): string {
+    return value.trim().replace(/^@+/, '').trim()
+}
+
+function toInstagramUrl(value: string): string | null {
+    const s = value.trim()
+    if (!s) return null
+    if (/^https?:\/\//i.test(s)) return s
+    const h = normalizeSocialHandle(s)
+    return h ? `https://instagram.com/${encodeURIComponent(h)}` : null
+}
+
+function toTiktokUrl(value: string): string | null {
+    const s = value.trim()
+    if (!s) return null
+    if (/^https?:\/\//i.test(s)) return s
+    const h = normalizeSocialHandle(s)
+    return h ? `https://www.tiktok.com/@${encodeURIComponent(h)}` : null
+}
+
+function toMailto(email: string): string | null {
+    const s = email.trim()
+    if (!s) return null
+    // Basic sanity check; keep permissive to avoid blocking valid emails
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s)) return null
+    return `mailto:${s}`
 }
 
 type Teacher = {
@@ -59,6 +87,7 @@ type AlbumClass = {
     sort_order?: number
     student_count?: number
     batch_photo_url?: string | null
+    batch_video_url?: string | null
 }
 
 interface PreviewViewProps {
@@ -327,6 +356,7 @@ export default function PreviewView({
                 imageUrl: classObj?.batch_photo_url || null,
                 title: classObj?.name || 'Kelas',
                 subtitle: `${members.length} Anggota`,
+                videoUrl: classObj?.batch_video_url || null,
             }
             const memberCards: CardItem[] = members.map(m => {
                 const fromMember = (m.photos || []).filter(Boolean).slice(0, 4) as string[]
@@ -345,9 +375,19 @@ export default function PreviewView({
                     videoUrl: m.video_url,
                     description: m.message ? stripQuotes(m.message) : undefined,
                     meta: [
+                        ...(m.email ? (() => {
+                            const url = toMailto(m.email)
+                            return url ? [{ icon: <Mail className="w-3.5 h-3.5" />, text: url }] : []
+                        })() : []),
                         ...(m.date_of_birth ? [{ icon: <Cake className="w-3.5 h-3.5" />, text: m.date_of_birth }] : []),
-                        ...(m.instagram ? [{ icon: <Instagram className="w-3.5 h-3.5" />, text: m.instagram }] : []),
-                        ...((m as any).tiktok ? [{ icon: <TiktokIcon className="w-3.5 h-3.5" />, text: (m as any).tiktok }] : []),
+                        ...(m.instagram ? (() => {
+                            const url = toInstagramUrl(m.instagram)
+                            return url ? [{ icon: <Instagram className="w-3.5 h-3.5" />, text: url }] : []
+                        })() : []),
+                        ...((m as any).tiktok ? (() => {
+                            const url = toTiktokUrl(String((m as any).tiktok))
+                            return url ? [{ icon: <TiktokIcon className="w-3.5 h-3.5" />, text: url }] : []
+                        })() : []),
                     ],
                 }
             })
@@ -602,22 +642,27 @@ export default function PreviewView({
                         <div className="flex flex-wrap justify-center gap-2 mt-1">
                             {card.meta.map((m, i) => {
                                 const text = typeof m.text === 'string' ? m.text : ''
-                                const isClickableUrl = /^https?:\/\//.test(text)
+                                const isClickableUrl = /^(https?:\/\/|mailto:)/.test(text)
                                 const Wrapper = isClickableUrl ? 'a' : 'div'
                                 const wrapperProps = isClickableUrl ? {
                                     href: text,
-                                    target: '_blank',
-                                    rel: 'noopener noreferrer',
+                                    target: text.startsWith('http') ? '_blank' : undefined,
+                                    rel: text.startsWith('http') ? 'noopener noreferrer' : undefined,
                                     onClick: (e: React.MouseEvent) => e.stopPropagation(),
                                     className: 'pointer-events-auto flex items-center justify-center w-8 h-8 rounded-full bg-slate-900/10 dark:bg-white/15 backdrop-blur-sm text-slate-900 dark:text-white ring-1 ring-slate-900 dark:ring-white/80 transition-all hover:bg-slate-900/20 dark:hover:bg-white/25 active:scale-95 cursor-pointer',
                                 } : {
-                                    className: 'flex items-center justify-center w-8 h-8 rounded-full bg-slate-900/10 dark:bg-white/15 backdrop-blur-sm text-slate-700 dark:text-white/80 ring-1 ring-slate-900 dark:ring-white/80',
+                                    className: 'flex items-center gap-2 px-3 h-8 rounded-full bg-slate-900/10 dark:bg-white/15 backdrop-blur-sm text-slate-700 dark:text-white/80 ring-1 ring-slate-900 dark:ring-white/80',
                                 }
                                 return (
                                     <Wrapper key={i} {...wrapperProps}>
                                         <span className="flex-shrink-0 text-slate-400 dark:text-white/60">
                                             {React.cloneElement(m.icon as React.ReactElement<{ size?: number }>, { size: 14 })}
                                         </span>
+                                        {!isClickableUrl && text ? (
+                                            <span className="text-[11px] font-bold tracking-wide text-slate-700 dark:text-white/85">
+                                                {text}
+                                            </span>
+                                        ) : null}
                                     </Wrapper>
                                 )
                             })}

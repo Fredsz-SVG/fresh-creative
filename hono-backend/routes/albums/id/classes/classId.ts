@@ -44,14 +44,14 @@ classIdRoute.delete('/', async (c) => {
       if (cls.batch_photo_url) {
         const oldKey = getR2KeyFromPublicUrl(c, cls.batch_photo_url)
         if (oldKey) {
-          try { await bucket.delete(albumPathFromR2Key(oldKey)) } catch {}
+          try { await bucket.delete(albumPathFromR2Key(oldKey)) } catch { /* noop */ }
         }
       }
       // Cleanup batch video
       if (cls.batch_video_url) {
         const oldKey = getR2KeyFromPublicUrl(c, cls.batch_video_url)
         if (oldKey) {
-          try { await bucket.delete(albumPathFromR2Key(oldKey)) } catch {}
+          try { await bucket.delete(albumPathFromR2Key(oldKey)) } catch { /* noop */ }
         }
       }
     }
