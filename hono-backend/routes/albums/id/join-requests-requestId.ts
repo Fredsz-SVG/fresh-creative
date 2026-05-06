@@ -222,6 +222,18 @@ joinRequestsRequestId.delete('/', async (c) => {
       .run()
     if (!r.success) throw new Error('delete failed')
 
+    void publishRealtimeEventFromContext(c, {
+      type: 'album.joinRequest.updated',
+      channel: 'global',
+      payload: {
+        path: `/api/albums/${albumId}/join-requests`,
+        action: 'delete',
+        albumId,
+        requestId,
+      },
+      ts: new Date().toISOString(),
+    })
+
     return c.json({ success: true })
   } catch (error) {
     console.error('Error deleting join request:', error)

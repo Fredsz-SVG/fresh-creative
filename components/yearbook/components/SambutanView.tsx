@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from 'react'
 import { Plus, Users, X, ChevronLeft, ChevronRight } from 'lucide-react'
-import TeacherCard from '@/components/TeacherCard'
+import TeacherCard from '@/components/yearbook/components/TeacherCard'
 import FastImage from '@/components/ui/FastImage'
 
 export type Teacher = {
@@ -151,7 +151,7 @@ export default function SambutanView({
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-3 pt-0 pb-4 sm:px-3 sm:py-4">
+    <div className="w-full max-w-7xl mx-auto px-3 pt-0 pb-4 sm:px-4 sm:py-4 lg:px-6">
       {canManage && (
         <>
           {/* Add Teacher Modal/Overlay */}
@@ -244,7 +244,7 @@ export default function SambutanView({
         <div className="flex flex-col items-center justify-center py-20 min-h-[45vh] w-full bg-slate-50/50 dark:bg-slate-900/20 rounded-[48px] border-2 border-dashed border-slate-900 dark:border-slate-900 transition-all duration-300 group/empty">
           <div className="relative mb-8">
             <div className="absolute inset-0 bg-indigo-500/20 dark:bg-indigo-500/10 blur-2xl rounded-full scale-150 opacity-0 group-hover/empty:opacity-100 transition-opacity duration-500" />
-            <div className="relative w-24 h-24 rounded-[32px] bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 shadow-[1.5px_1.5px_0_0_#334155] dark:shadow-[1.5px_1.5px_0_0_#1e293b] flex items-center justify-center transform group-hover/empty:-rotate-6 transition-transform duration-500">
+            <div className="relative w-24 h-24 rounded-[32px] bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 shadow-[1.5px_1.5px_0_0_#334155] dark:shadow-[1.5px_1.5px_0_0_#1e293b] flex items-center justify-center transition-transform duration-500">
               <Users className="w-12 h-12 text-slate-300 dark:text-slate-600 group-hover/empty:text-indigo-400 dark:group-hover/empty:text-indigo-500 transition-colors" strokeWidth={1.5} />
             </div>
           </div>
@@ -254,7 +254,7 @@ export default function SambutanView({
           </p>
         </div>
       ) : (
-        <div className="grid gap-2 sm:grid-cols-2 lg:gap-3 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+        <div className="grid gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 items-start">
           {teachersSorted.map((teacher) => (
             <TeacherCard
               key={teacher.id}

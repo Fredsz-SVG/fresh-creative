@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { toast } from '@/lib/toast'
 import { fetchWithAuth } from '../../lib/api-client'
 import { asObject } from '@/components/yearbook/utils/response-narrowing'
-import { AnimatedLoginPage } from '@/components/animated-characters-login-page'
+import { AnimatedLoginPage } from '@/components/auth/AnimatedAuthPages'
 import { onAuthChange, signInWithGoogle, signInWithPassword, signOut } from '@/lib/auth-client'
 
 function LoginContent() {

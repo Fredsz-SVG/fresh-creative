@@ -1,5 +1,5 @@
 import BackLink from '@/components/dashboard/BackLink'
-import PhotoToVideo from '@/components/fitur/PhotoToVideo'
+import PhotoToVideo from '@/components/features/PhotoToVideo'
 
 export default function AdminPhotoToVideoPage() {
   return (

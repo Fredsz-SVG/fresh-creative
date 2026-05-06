@@ -1,13 +1,13 @@
 'use client'
 
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { ChevronLeft, ChevronRight, Plus, Trash2, Check, X, Edit3, ImagePlus, Video, Play, Minus, Instagram, Users, ClipboardList, Menu, Cake, Copy, Link, Clock, BookOpen, MessageSquare, Search, Shirt, UserCircle, ImageIcon, Images, Link as LinkIcon, Sparkles, Book, Layout, Eye, UserCog, LayoutGrid, Zap, ShieldCheck, Lock } from 'lucide-react'
 import { toast } from '@/lib/toast'
 import NextLink from 'next/link'
 import { useSearchParams, useRouter, usePathname } from 'next/navigation'
 import { getYearbookSectionQueryUrl } from './lib/yearbook-paths'
-import TeacherCard from '@/components/TeacherCard'
-import MemberCard from '@/components/MemberCard'
+import TeacherCard from '@/components/yearbook/components/TeacherCard'
+import MemberCard from '@/components/yearbook/components/MemberCard'
 import { TryOn, Pose, ImageEditor, PhotoGroup, PhotoToVideo } from '@/components/features'
 import { AI_LABS_FEATURES_USER } from '@/lib/dashboard-nav'
 import IconSidebar from './components/IconSidebar'
@@ -242,7 +242,7 @@ export default function YearbookClassesViewUI(props: any) {
 
   const canManage = isOwner || isAlbumAdmin || isGlobalAdmin
 
-  const fetchMembers = async () => {
+  const fetchMembers = useCallback(async () => {
     if (!album?.id) return
     const res = await fetchWithAuth(`/api/albums/${album.id}/members`, { credentials: 'include' })
     const data = await res.json().catch(() => [])
@@ -250,7 +250,7 @@ export default function YearbookClassesViewUI(props: any) {
       setMembers(data)
       props.onTeamMemberCountChange?.(data.length)
     }
-  }
+  }, [album?.id, props.onTeamMemberCountChange])
 
   // Wrap handlers to refresh members after success
   const handleUpdateRoleWrapper = async (userId: string, role: 'admin' | 'member') => {
@@ -279,7 +279,7 @@ export default function YearbookClassesViewUI(props: any) {
 
 
   // Fetch teachers
-  const fetchTeachers = async () => {
+  const fetchTeachers = useCallback(async () => {
     if (!album?.id) return
     try {
       const res = await fetchWithAuth(`/api/albums/${album.id}/teachers`, { credentials: 'include' })
@@ -291,7 +291,7 @@ export default function YearbookClassesViewUI(props: any) {
     } catch (error) {
       console.error('Error fetching teachers:', error)
     }
-  }
+  }, [album?.id, props.onTeacherCountChange])
 
   useEffect(() => {
     if ((sidebarMode === 'sambutan' || sidebarMode === 'flipbook' || sidebarMode === 'preview') && album?.id) {
@@ -300,7 +300,7 @@ export default function YearbookClassesViewUI(props: any) {
   }, [sidebarMode, album?.id])
 
   // Fetch Manual Pages
-  const fetchManualPages = async () => {
+  const fetchManualPages = useCallback(async () => {
     if (!album?.id) return
     try {
       const res = await fetchWithAuth(`/api/albums/${album.id}/flipbook`, {
@@ -318,7 +318,7 @@ export default function YearbookClassesViewUI(props: any) {
     } catch (error) {
       console.error('Error fetching manual pages:', error)
     }
-  }
+  }, [album?.id])
 
   useEffect(() => {
     if (sidebarMode === 'flipbook' && album?.id) {
@@ -371,7 +371,7 @@ export default function YearbookClassesViewUI(props: any) {
   }
 
   // Fetch join requests for one status only (backend: pending from album_join_requests, approved from album_class_access)
-  const fetchJoinRequests = async (status: 'pending' | 'approved') => {
+  const fetchJoinRequests = useCallback(async (status: 'pending' | 'approved') => {
     if (!album?.id || !canManage) return
     try {
       const res = await fetchWithAuth(`/api/albums/${album.id}/join-requests?status=${status}`, { credentials: 'include', cache: 'no-store' })
@@ -385,9 +385,9 @@ export default function YearbookClassesViewUI(props: any) {
       if (status === 'pending') setPendingList([])
       else setApprovedList([])
     }
-  }
+  }, [album?.id, canManage])
 
-  const fetchJoinStats = async () => {
+  const fetchJoinStats = useCallback(async () => {
     if (!album?.id) return
     try {
       const res = await fetchWithAuth(`/api/albums/${album.id}/join-stats`, { credentials: 'include', cache: 'no-store' })
@@ -398,7 +398,7 @@ export default function YearbookClassesViewUI(props: any) {
     } catch (error) {
       console.error('Error fetching join stats:', error)
     }
-  }
+  }, [album?.id])
 
   // Prefetch join-stats + token undangan begitu album & hak kelola diketahui (jangan tunggu buka tab Approval/Cover selesai navigasi)
   useEffect(() => {
@@ -472,7 +472,7 @@ export default function YearbookClassesViewUI(props: any) {
 
     window.addEventListener('fresh:realtime', onRealtime)
     return () => window.removeEventListener('fresh:realtime', onRealtime)
-  }, [album?.id, canManage])
+  }, [album?.id, canManage, fetchJoinStats, fetchTeachers, fetchManualPages, fetchJoinRequests, fetchMembers])
 
   // Reset loaded flags when leaving approval section so next time we fetch fresh
   useEffect(() => {
@@ -1543,6 +1543,7 @@ export default function YearbookClassesViewUI(props: any) {
                   onRefresh={async () => {
                     if (canManage) {
                       await Promise.all([
+                        fetchJoinRequests('pending'),
                         fetchJoinRequests('approved'),
                         fetchMembers(),
                         fetchJoinStats(),

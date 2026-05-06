@@ -1,8 +1,9 @@
 import { Hono } from 'hono'
 import { getRole } from '../../../../lib/auth'
-import { getD1 } from '../../../../lib/edge-env'
+import { getAssets, getD1 } from '../../../../lib/edge-env'
 import { AppEnv, requireAuthJwt } from '../../../../middleware'
 import { getAuthUserFromContext } from '../../../../lib/auth-user'
+import { publishRealtimeEventFromContext } from '../../../../lib/realtime'
 
 const classMemberUserRoute = new Hono<AppEnv>()
 classMemberUserRoute.use('*', requireAuthJwt)
@@ -109,6 +110,20 @@ classMemberUserRoute.delete('/', async (c) => {
         .bind(albumId, userId)
         .run()
     }
+
+    // Broadcast realtime supaya UI (admin/user) langsung refetch access & members
+    void publishRealtimeEventFromContext(c, {
+      type: 'album.classAccess.updated',
+      channel: 'global',
+      payload: {
+        albumId,
+        classId,
+        userId,
+        action: 'deleted',
+        path: `/api/albums/${albumId}/classes/${classId}/members/${userId}`,
+      },
+      ts: new Date().toISOString(),
+    })
 
     return c.json({ success: true }, 200)
   } catch (err: unknown) {

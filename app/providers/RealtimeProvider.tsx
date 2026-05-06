@@ -47,6 +47,20 @@ export default function RealtimeProvider({ children }: { children: ReactNode }) 
           return
         }
 
+        // Dev-only: help debugging realtime delivery.
+        if (process.env.NODE_ENV !== 'production') {
+          // Only log high-signal events to avoid noisy console.
+          const t = parsed.type || ''
+          if (
+            t.startsWith('album.joinRequest.') ||
+            t === 'album.classAccess.updated' ||
+            t === 'api.mutated'
+          ) {
+            // eslint-disable-next-line no-console
+            console.debug('[realtime]', parsed)
+          }
+        }
+
         window.dispatchEvent(new CustomEvent('fresh:realtime', { detail: parsed }))
       }
 

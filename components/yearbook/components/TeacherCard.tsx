@@ -209,8 +209,8 @@ export default function TeacherCard({
         document.body
       )}
 
-      {/* Tighter card container - Height adapts to content to prevent truncation */}
-      <div className="relative h-full w-full group" style={{ perspective: '1200px' }}>
+      {/* Match MemberCard proportions so grid feels consistent */}
+      <div className="relative w-full aspect-[1/2] min-h-0 group" style={{ perspective: '1200px' }}>
         <div
           style={{
             transformStyle: 'preserve-3d',

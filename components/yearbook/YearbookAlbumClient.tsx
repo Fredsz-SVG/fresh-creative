@@ -6,6 +6,7 @@ import Link from 'next/link'
 import BackLink from '@/components/dashboard/BackLink'
 import { ChevronLeft, ChevronRight, BookOpen, ImagePlus, Video, Play, Users, Layout, Eye, Menu, MessageSquare, Book, Lock, Link as LinkIcon, Search, SearchX, X } from 'lucide-react'
 import { toast } from '@/lib/toast'
+import NotFound from '@/app/not-found'
 import YearbookClassesView from './YearbookClassesView'
 import YearbookLoader, { isValidYearbookSection } from './components/YearbookLoader'
 import { getSectionModeFromUrl, getYearbookSectionQueryUrl } from './lib/yearbook-paths'
@@ -72,6 +73,7 @@ export default function YearbookAlbumClient({
     setRequestsByClass,
     selectedRequestId,
     setSelectedRequestId,
+    accessForbidden,
     fetchAllAccess: fetchAllAccessBase,
   } = useYearbookAccess(id, initialAccess)
 
@@ -186,6 +188,11 @@ export default function YearbookAlbumClient({
   const isAlbumAdmin = album?.isAlbumAdmin === true
   const isGlobalAdminUser = album?.isGlobalAdmin === true
   const canManage = isOwner || isAlbumAdmin || isGlobalAdminUser
+
+  // NOTE: Jangan early-return sebelum semua hooks jalan.
+  // Kalau akses dicabut (403 dari my-access-all), kita render NotFound di bawah (conditional)
+  // supaya tidak memicu "Rendered fewer hooks than expected".
+  const shouldShowNotFound = accessForbidden
 
   // Section dari URL: path segment atau query ?section=
   const rawSectionMode = getSectionModeFromUrl(pathname, searchParams.get('section'), id ?? '')
@@ -1750,10 +1757,13 @@ export default function YearbookAlbumClient({
 
         {/* Main Content */}
         <div className={`${contentWrapper} flex-1 min-h-0 flex flex-col`}>
-          <YearbookClassesView
-            album={album}
-            classIndex={classIndex}
-            setClassIndex={setClassIndex}
+          {shouldShowNotFound ? (
+            <NotFound />
+          ) : (
+            <YearbookClassesView
+              album={album}
+              classIndex={classIndex}
+              setClassIndex={setClassIndex}
 
             setView={setView}
             isOwner={isOwner}
@@ -1864,9 +1874,10 @@ export default function YearbookAlbumClient({
             featureUseCosts={featureUseCosts}
             onFeatureUnlocked={fetchFeatureUnlocks}
             effectiveBackHref={effectiveBackHref}
-            teacherSearchQuery={teacherSearchQuery}
-            classMemberSearchQuery={classMemberSearchQuery}
-          />
+              teacherSearchQuery={teacherSearchQuery}
+              classMemberSearchQuery={classMemberSearchQuery}
+            />
+          )}
         </div>
         {deleteCoverConfirm && (
           <div className="fixed inset-0 bg-slate-900/40 dark:bg-black/50 backdrop-blur-md flex items-center justify-center z-[200] p-4">

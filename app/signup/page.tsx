@@ -3,7 +3,7 @@
 import { Suspense, useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from '@/lib/toast'
-import { AnimatedSignupPage } from '@/components/animated-characters-login-page'
+import { AnimatedSignupPage } from '@/components/auth/AnimatedAuthPages'
 import { onAuthChange, signUpWithPassword } from '@/lib/auth-client'
 import { fetchWithAuth } from '@/lib/api-client'
 

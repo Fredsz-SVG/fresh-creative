@@ -109,6 +109,17 @@ memberCheckoutRoute.post('/', async (c) => {
         )
         .bind(access_id)
         .run()
+      void publishRealtimeEventFromContext(c, {
+        type: 'album.classAccess.updated',
+        channel: 'global',
+        payload: {
+          path: `/api/albums/${albumId}/join-requests`,
+          albumId,
+          accessId: access_id,
+          paymentStatus: 'paid',
+        },
+        ts: new Date().toISOString(),
+      })
       return c.json({ free: true, message: 'Free access granted' })
     }
 

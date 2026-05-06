@@ -12,6 +12,7 @@ type JoinRequest = {
   id: string
   student_name: string
   email?: string | null
+  account_email?: string | null
   phone?: string | null
   status: string
   has_paid?: number
@@ -580,7 +581,7 @@ export default function ApprovalView({
                   type="button"
                   onClick={handleRefresh}
                   disabled={refreshLoading}
-                  className="shrink-0 p-2.5 rounded-xl bg-slate-900 dark:bg-slate-700 text-white hover:bg-slate-800 dark:hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-[1.5px_1.5px_0_0_#334155] dark:shadow-[1.5px_1.5px_0_0_#1e293b] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 active:shadow-none active:translate-x-0.5 active:translate-y-0.5"
+                  className="shrink-0 w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-slate-900 dark:bg-slate-700 text-white hover:bg-slate-800 dark:hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-[1.5px_1.5px_0_0_#334155] dark:shadow-[1.5px_1.5px_0_0_#1e293b] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 active:shadow-none active:translate-x-0.5 active:translate-y-0.5 flex items-center justify-center"
                   title="Refresh data payment"
                 >
                   {refreshLoading ? (
@@ -629,6 +630,12 @@ export default function ApprovalView({
                 if (request.student_name && m?.name && String(m.name).toLowerCase() === String(request.student_name).toLowerCase()) return true
                 return false
               })
+              // Untuk pemilik album: status pembayaran harus mengikuti tabel `albums` (paymentStatus prop),
+              // bukan dari joinRequest (yang bisa stale/beda saat baru join).
+              const effectivePaymentStatus =
+                matchedMember?.role === 'owner'
+                  ? (paymentStatus || request.payment_status)
+                  : request.payment_status
               return (
                 <div
                   key={request.id}
@@ -652,23 +659,58 @@ export default function ApprovalView({
                             {matchedMember?.role === 'member' && <span className="w-fit text-[10px] px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-black uppercase tracking-widest border-2 border-slate-900 dark:border-slate-700 shrink-0">Anggota</span>}
                             {matchedMember?.role === 'no-account' && <span className="w-fit text-[10px] px-2 py-0.5 rounded-md bg-rose-100 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 font-black uppercase tracking-widest border-2 border-slate-900 dark:border-slate-700 shrink-0">Belum Login</span>}
                             {currentUserId && matchedMember?.user_id === currentUserId && <span className="w-fit text-[10px] px-2 py-0.5 rounded-md bg-indigo-500 dark:bg-indigo-600 text-white font-black uppercase tracking-widest border-2 border-slate-900 dark:border-slate-700 shrink-0">Anda</span>}
-                            {request.payment_status === 'unpaid' && (
+                            {effectivePaymentStatus === 'unpaid' && (
                               <span className="w-fit text-[10px] px-2 py-0.5 rounded-md bg-red-100 dark:bg-red-950/50 text-red-600 dark:text-red-400 font-black uppercase tracking-widest border-2 border-slate-900 dark:border-slate-700 shrink-0">Belum Bayar</span>
                             )}
-                            {request.payment_status === 'pending' && (
+                            {effectivePaymentStatus === 'pending' && (
                               <span className="w-fit text-[10px] px-2 py-0.5 rounded-md bg-amber-100 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 font-black uppercase tracking-widest border-2 border-slate-900 dark:border-slate-700 shrink-0">Menunggu Bayar</span>
                             )}
-                            {request.payment_status === 'paid' && (
+                            {effectivePaymentStatus === 'paid' && (
                               <span className="w-fit text-[10px] px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 font-black uppercase tracking-widest border-2 border-slate-900 dark:border-slate-700 shrink-0">Lunas</span>
                             )}
                           </div>
                         )}
-                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                          {request.email && (
-                            <p className="text-xs font-bold text-slate-500 dark:text-slate-400">{request.email}</p>
+                        <div className="flex flex-col gap-1.5">
+                          {/* Email comparison: form vs account */}
+                          {(request.email || request.account_email) && (
+                            <div className="flex flex-col gap-1">
+                              {request.email && approvalTab === 'pending' && (
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <span className="inline-flex items-center justify-center min-w-12 px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[9px] font-black uppercase tracking-widest border border-slate-200 dark:border-slate-700">
+                                    Form
+                                  </span>
+                                  <p className="text-xs font-bold text-slate-600 dark:text-slate-300 break-all">
+                                    {request.email}
+                                  </p>
+                                </div>
+                              )}
+                              {request.email && approvalTab === 'approved' && !request.account_email && (
+                                <p className="text-xs font-bold text-slate-600 dark:text-slate-300 break-all">
+                                  {request.email}
+                                </p>
+                              )}
+                              {request.account_email && (
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <span className="inline-flex items-center justify-center min-w-12 px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[9px] font-black uppercase tracking-widest border border-slate-200 dark:border-slate-700">
+                                    Akun
+                                  </span>
+                                  <p className="text-xs font-bold text-slate-600 dark:text-slate-300 break-all">
+                                    {request.account_email}
+                                  </p>
+                                </div>
+                              )}
+                            </div>
                           )}
+
                           {request.phone && (
-                            <p className="text-xs font-bold text-slate-500 dark:text-slate-400">• {request.phone}</p>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="inline-flex items-center justify-center min-w-12 px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[9px] font-black uppercase tracking-widest border border-slate-200 dark:border-slate-700">
+                                WA
+                              </span>
+                              <p className="text-xs font-bold text-slate-600 dark:text-slate-300 break-all">
+                                {request.phone}
+                              </p>
+                            </div>
                           )}
                         </div>
                       </div>

@@ -13,13 +13,29 @@ albumsIdMyAccessAll.get('/', async (c) => {
     const user = getAuthUserFromContext(c)
 
     if (!user) {
-      return c.json({ access: {}, requests: {} })
+      return c.json({ error: 'Unauthorized' }, 401)
     }
 
     const albumId = c.req.param('id')
     if (!albumId) {
       return c.json({ error: 'Album ID required' }, 400)
     }
+
+    // Jika user bukan owner/admin album, maka ketika akses & request kosong,
+    // berarti aksesnya sudah dicabut dan UI harus "terpental" (403).
+    const album = await db
+      .prepare(`SELECT id, user_id FROM albums WHERE id = ?`)
+      .bind(albumId)
+      .first<{ id: string; user_id: string }>()
+    if (!album) return c.json({ error: 'Album not found' }, 404)
+
+    const isOwner = album.user_id === user.id
+    const memberRow = await db
+      .prepare(`SELECT role FROM album_members WHERE album_id = ? AND user_id = ? LIMIT 1`)
+      .bind(albumId, user.id)
+      .first<{ role: string }>()
+    const isAlbumAdmin = memberRow?.role === 'admin'
+    const isAlbumMember = !!memberRow
 
     const { results: accessRows } = await db
       .prepare(
@@ -36,6 +52,13 @@ albumsIdMyAccessAll.get('/', async (c) => {
       )
       .bind(albumId, user.id)
       .all<Record<string, unknown>>()
+
+    const hasAnyAccess = Array.isArray(accessRows) && accessRows.length > 0
+    const hasAnyRequest = Array.isArray(requestRows) && requestRows.length > 0
+    const canStillSeeAlbum = isOwner || isAlbumAdmin || isAlbumMember || hasAnyAccess || hasAnyRequest
+    if (!canStillSeeAlbum) {
+      return c.json({ error: 'Tidak punya akses ke album ini' }, 403)
+    }
 
     const accessByClass: Record<string, unknown> = {}
     accessRows?.forEach((item) => {

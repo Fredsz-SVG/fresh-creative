@@ -1,5 +1,5 @@
 import BackLink from '@/components/dashboard/BackLink'
-import PhotoGroup from '@/components/fitur/PhotoGroup'
+import PhotoGroup from '@/components/features/PhotoGroup'
 
 export default function AdminPhotoGroupPage() {
   return (

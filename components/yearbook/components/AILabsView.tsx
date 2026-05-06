@@ -48,19 +48,19 @@ function ToolLoading({ label }: { label: string }) {
 }
 
 // Lazy-load heavy tools so opening a tool doesn't block the UI.
-const TryOn = dynamic(() => import('@/components/fitur/TryOn'), { ssr: false, loading: () => <ToolLoading label="Virtual Try On" /> })
-const Pose = dynamic(() => import('@/components/fitur/Pose'), { ssr: false, loading: () => <ToolLoading label="Pose" /> })
-const ImageEditor = dynamic(() => import('@/components/fitur/ImageEditor'), { ssr: false, loading: () => <ToolLoading label="Image Editor" /> })
-const PhotoGroup = dynamic(() => import('@/components/fitur/PhotoGroup'), { ssr: false, loading: () => <ToolLoading label="Photo Group" /> })
-const PhotoToVideo = dynamic(() => import('@/components/fitur/PhotoToVideo'), { ssr: false, loading: () => <ToolLoading label="Photo to Video" /> })
+const TryOn = dynamic(() => import('@/components/features/TryOn'), { ssr: false, loading: () => <ToolLoading label="Virtual Try On" /> })
+const Pose = dynamic(() => import('@/components/features/Pose'), { ssr: false, loading: () => <ToolLoading label="Pose" /> })
+const ImageEditor = dynamic(() => import('@/components/features/ImageEditor'), { ssr: false, loading: () => <ToolLoading label="Image Editor" /> })
+const PhotoGroup = dynamic(() => import('@/components/features/PhotoGroup'), { ssr: false, loading: () => <ToolLoading label="Photo Group" /> })
+const PhotoToVideo = dynamic(() => import('@/components/features/PhotoToVideo'), { ssr: false, loading: () => <ToolLoading label="Photo to Video" /> })
 
 // Preload helpers to make navigation feel instant.
 const preloadTool: Record<string, () => void> = {
-    tryon: () => { void import('@/components/fitur/TryOn') },
-    pose: () => { void import('@/components/fitur/Pose') },
-    'image-editor': () => { void import('@/components/fitur/ImageEditor') },
-    photogroup: () => { void import('@/components/fitur/PhotoGroup') },
-    phototovideo: () => { void import('@/components/fitur/PhotoToVideo') },
+    tryon: () => { void import('@/components/features/TryOn') },
+    pose: () => { void import('@/components/features/Pose') },
+    'image-editor': () => { void import('@/components/features/ImageEditor') },
+    photogroup: () => { void import('@/components/features/PhotoGroup') },
+    phototovideo: () => { void import('@/components/features/PhotoToVideo') },
 }
 
 export default function AILabsView({ album, aiLabsTool, aiLabsFeaturesByPackage = [], featureUnlocks = [], featureCreditCosts = {}, featureUseCosts = {}, onFeatureUnlocked, featureUnlocksLoaded = false }: AILabsViewProps) {

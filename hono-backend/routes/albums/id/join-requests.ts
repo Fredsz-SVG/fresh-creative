@@ -44,14 +44,17 @@ albumJoinRequestsRoute.get('/', async (c) => {
       }))
       return c.json(transformed)
     }
-    let sql = `SELECT id, album_id, user_id, student_name, email, phone, class_name, status, assigned_class_id, requested_at
-      FROM album_join_requests WHERE album_id = ?`
+    let sql = `SELECT r.id, r.album_id, r.user_id, r.student_name, r.email, r.phone, r.class_name, r.status, r.assigned_class_id, r.requested_at,
+        u.email as account_email
+      FROM album_join_requests r
+      LEFT JOIN users u ON u.id = r.user_id
+      WHERE r.album_id = ?`
     const binds: string[] = [albumId]
     if (status && status !== 'all') {
-      sql += ` AND status = ?`
+      sql += ` AND r.status = ?`
       binds.push(status)
     }
-    sql += ` ORDER BY requested_at DESC`
+    sql += ` ORDER BY r.requested_at DESC`
     const { results: data } = await db
       .prepare(sql)
       .bind(...binds)

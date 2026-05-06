@@ -18,6 +18,7 @@ export function useYearbookAccess(
   )
   const [requestsByClass, setRequestsByClass] = useState<Record<string, ClassRequest[]>>({})
   const [selectedRequestId, setSelectedRequestId] = useState<string | null>(null)
+  const [accessForbidden, setAccessForbidden] = useState(false)
 
   const isFetchingAccessRef = useRef(false)
 
@@ -35,7 +36,12 @@ export function useYearbookAccess(
       })
       const myAccessData = asObject(await myAccessRes.json().catch(() => ({})))
 
-      if (myAccessRes.ok) {
+      if (myAccessRes.status === 403) {
+        setAccessForbidden(true)
+        setMyAccessByClass({})
+        setMyRequestByClass({})
+      } else if (myAccessRes.ok) {
+        setAccessForbidden(false)
         setMyAccessByClass((myAccessData.access as Record<string, ClassAccess | null>) || {})
         setMyRequestByClass((myAccessData.requests as Record<string, ClassRequest | null>) || {})
       }
@@ -80,6 +86,7 @@ export function useYearbookAccess(
     setRequestsByClass,
     selectedRequestId,
     setSelectedRequestId,
+    accessForbidden,
     fetchAllAccess
   }
 }

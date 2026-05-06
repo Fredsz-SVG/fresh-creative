@@ -1,5 +1,5 @@
 import BackLink from '@/components/dashboard/BackLink'
-import ImageEditor from '@/components/fitur/ImageEditor'
+import ImageEditor from '@/components/features/ImageEditor'
 
 export default function AdminImageEditorPage() {
   return (

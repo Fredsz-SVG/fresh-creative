@@ -1,5 +1,5 @@
 import BackLink from '@/components/dashboard/BackLink'
-import TryOn from '@/components/fitur/TryOn'
+import TryOn from '@/components/features/TryOn'
 
 export default function AdminTryOnPage() {
   return (

@@ -189,6 +189,18 @@ webhooksXendit.post('/', async (c) => {
           .bind(txRow.album_id)
           .run()
       }
+
+      // Realtime: refresh editor/public UI without manual reload.
+      void publishRealtimeEventFromContext(c, {
+        type: 'api.mutated',
+        channel: 'global',
+        payload: {
+          path: `/api/albums/${txRow.album_id}`,
+          albumId: txRow.album_id,
+          paymentStatus: 'paid',
+        },
+        ts: new Date().toISOString(),
+      })
     }
 
     if (txRow?.album_id && txRow?.access_id && isMember) {

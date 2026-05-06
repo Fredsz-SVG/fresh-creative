@@ -36,12 +36,15 @@ albumIdRoute.get('/', async (c) => {
     const isAdmin = role === 'admin'
     const isOwner = isActualOwner || isAdmin
     let isAlbumAdmin = false
+    let isAlbumMember = false
+    let hasApprovedAccess = false
     if (user && !isOwner && !isAdmin) {
       const member = await db
         .prepare(`SELECT role FROM album_members WHERE album_id = ? AND user_id = ?`)
         .bind(id, user.id)
         .first<{ role: string }>()
       if (member) {
+        isAlbumMember = true
         if (member.role === 'admin') isAlbumAdmin = true
       } else {
         const approved = await db
@@ -50,11 +53,7 @@ albumIdRoute.get('/', async (c) => {
           )
           .bind(id, user.id)
           .first<{ id: string }>()
-        if (!approved) {
-          // If not approved and not owner, we can still show basic info for showcase
-          // unless it's strictly private. For now, let's allow it for basic info.
-          // return c.json({ error: 'Album not found' }, 404)
-        }
+        hasApprovedAccess = !!approved
       }
     }
 
@@ -71,6 +70,12 @@ albumIdRoute.get('/', async (c) => {
         isOwner,
         classes: [],
       })
+    }
+
+    // Yearbook is private for logged-in users without access.
+    // Public view uses a different route (`/app/album/[id]/view`) which fetches without cookies.
+    if (user && !isOwner && !isAlbumAdmin && !isAlbumMember && !hasApprovedAccess) {
+      return c.json({ error: 'Tidak punya akses ke album ini' }, 403)
     }
 
     const classesRes = await db
