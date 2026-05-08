@@ -123,6 +123,8 @@ export default function YearbookAlbumClient({
     setEditProfilePesan,
     editProfileVideoUrl,
     setEditProfileVideoUrl,
+    editProfilePhone,
+    setEditProfilePhone,
     savingProfile,
     setSavingProfile,
     lastUploadedVideoName,
@@ -1056,6 +1058,7 @@ export default function YearbookAlbumClient({
     setEditProfileInstagram('')
     setEditProfilePesan('')
     setEditProfileVideoUrl('')
+    setEditProfilePhone('')
 
     // Jangan refetch di sini: API bisa belum mengembalikan row baru, sehingga list menimpa optimistic update dan card hilang. Realtime / navigasi akan sync nanti.
     toast.success('Berhasil! Silakan isi profil Anda.')
@@ -1116,6 +1119,7 @@ export default function YearbookAlbumClient({
       date_of_birth: overrideData.date_of_birth,
       instagram: overrideData.instagram,
       tiktok: overrideData.tiktok,
+      phone: overrideData.phone,
       message: overrideData.message,
       video_url: overrideData.video_url
     } : {
@@ -1124,6 +1128,7 @@ export default function YearbookAlbumClient({
       date_of_birth: editProfileTtl,
       instagram: editProfileInstagram,
       tiktok: editProfileTiktok,
+      phone: editProfilePhone,
       message: editProfilePesan,
       video_url: editProfileVideoUrl
     }
@@ -1145,6 +1150,7 @@ export default function YearbookAlbumClient({
           date_of_birth: dataToSave.date_of_birth?.trim() || null,
           instagram: dataToSave.instagram?.trim() || null,
           tiktok: dataToSave.tiktok?.trim() || null,
+          phone: dataToSave.phone?.trim() || null,
           message: dataToSave.message?.trim() || null,
           video_url: dataToSave.video_url?.trim() || null,
         }),
@@ -1165,6 +1171,7 @@ export default function YearbookAlbumClient({
             date_of_birth: d.date_of_birth ?? null,
             instagram: d.instagram ?? null,
             tiktok: (d as any).tiktok ?? null,
+            phone: (d as any).phone ?? null,
             message: d.message ?? null,
             video_url: d.video_url ?? null
           } : null,
@@ -1184,6 +1191,7 @@ export default function YearbookAlbumClient({
               date_of_birth: d.date_of_birth ?? null,
               instagram: d.instagram ?? null,
               tiktok: (d as any).tiktok ?? null,
+              phone: (d as any).phone ?? null,
               message: d.message ?? null,
               video_url: d.video_url ?? m.video_url,
             } : m
@@ -1213,6 +1221,7 @@ export default function YearbookAlbumClient({
     setEditProfileTtl(member.date_of_birth || '')
     setEditProfileInstagram(member.instagram || '')
     setEditProfileTiktok((member as any).tiktok || '')
+    setEditProfilePhone((member as any).phone || '')
     setEditProfilePesan(member.message || '')
     setEditProfileVideoUrl(member.video_url || '')
 
@@ -1231,6 +1240,7 @@ export default function YearbookAlbumClient({
       setEditProfileTtl(access.date_of_birth || '')
       setEditProfileInstagram(access.instagram || '')
       setEditProfileTiktok((access as any).tiktok || '')
+      setEditProfilePhone((access as any).phone || '')
       setEditProfilePesan(access.message || '')
       setEditProfileVideoUrl(access.video_url || '')
     }
@@ -1873,6 +1883,8 @@ export default function YearbookAlbumClient({
             setEditProfilePesan={setEditProfilePesan}
             editProfileVideoUrl={editProfileVideoUrl}
             setEditProfileVideoUrl={setEditProfileVideoUrl}
+            editProfilePhone={editProfilePhone}
+            setEditProfilePhone={setEditProfilePhone}
             handleSaveProfile={handleSaveProfile}
             savingProfile={savingProfile}
             membersByClass={membersByClass}

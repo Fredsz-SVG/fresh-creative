@@ -18,7 +18,7 @@ myAccessRoute.get('/', async (c) => {
 
   const access = await db
     .prepare(
-      `SELECT id, student_name, email, status, created_at, date_of_birth, instagram, message, video_url
+      `SELECT id, student_name, email, status, created_at, date_of_birth, instagram, tiktok, phone, message, video_url
        FROM album_class_access WHERE album_id = ? AND class_id = ? AND user_id = ?`
     )
     .bind(albumId, classId, user.id)
@@ -87,6 +87,12 @@ myAccessRoute.patch('/', async (c) => {
         ? body.video_url.trim() || null
         : null
       : undefined
+  const phone =
+    body?.phone !== undefined
+      ? typeof body.phone === 'string'
+        ? body.phone.trim() || null
+        : null
+      : undefined
 
   if (
     student_name === undefined &&
@@ -94,6 +100,7 @@ myAccessRoute.patch('/', async (c) => {
     date_of_birth === undefined &&
     instagram === undefined &&
     tiktok === undefined &&
+    phone === undefined &&
     message === undefined &&
     video_url === undefined
   ) {
@@ -134,6 +141,10 @@ myAccessRoute.patch('/', async (c) => {
   if (video_url !== undefined) {
     sets.push('video_url = ?')
     vals.push(video_url)
+  }
+  if (phone !== undefined) {
+    sets.push('phone = ?')
+    vals.push(phone)
   }
   sets.push(`updated_at = datetime('now')`)
   vals.push(access.id)

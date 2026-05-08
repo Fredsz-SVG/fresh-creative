@@ -54,7 +54,7 @@ classMembersRoute.get('/', async (c) => {
 
     const { results: list } = await db
       .prepare(
-        `SELECT user_id, student_name, email, date_of_birth, instagram, message, video_url, photos, status
+        `SELECT user_id, student_name, email, date_of_birth, instagram, tiktok, phone, message, video_url, photos, status
          FROM album_class_access WHERE class_id = ? AND status IN ('approved', 'pending') ORDER BY student_name ASC`
       )
       .bind(classId)
@@ -68,6 +68,8 @@ classMembersRoute.get('/', async (c) => {
         email: r.email ?? null,
         date_of_birth: r.date_of_birth ?? null,
         instagram: r.instagram ?? null,
+        tiktok: r.tiktok ?? null,
+        phone: r.phone ?? null,
         message: r.message ?? null,
         video_url: r.video_url ?? null,
         photos: parseJsonArray(r.photos as string),

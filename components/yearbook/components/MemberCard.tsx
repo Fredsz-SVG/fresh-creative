@@ -15,6 +15,11 @@ const TiktokIcon = ({ className }: { className?: string }) => (
     <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z" />
   </svg>
 )
+const WhatsAppIcon = ({ className }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.414 0 .004 5.412 0 12.048c0 2.123.554 4.197 1.608 6.05L0 24l6.082-1.595a11.793 11.793 0 005.96 1.595h.005c6.632 0 12.042-5.412 12.046-12.048a11.811 11.811 0 00-3.541-8.514z" />
+  </svg>
+)
 
 function normalizeHandle(value: string): string {
   return value.trim().replace(/^@+/, '').trim()
@@ -43,6 +48,13 @@ function toMailto(email: string): string | null {
   return `mailto:${s}`
 }
 
+function toWhatsappUrl(value: string): string | null {
+  const s = value.trim().replace(/[^\d+]/g, '')
+  if (!s) return null
+  const formatted = s.startsWith('0') ? '62' + s.slice(1) : s.replace('+', '')
+  return `https://wa.me/${formatted}`
+}
+
 type Member = {
   user_id: string
   student_name: string
@@ -50,6 +62,7 @@ type Member = {
   date_of_birth?: string | null
   instagram?: string | null
   tiktok?: string | null
+  phone?: string | null
   message?: string | null
   video_url?: string | null
   photos?: string[]
@@ -73,6 +86,7 @@ type MemberCardProps = {
     date_of_birth: string
     instagram: string
     tiktok: string
+    phone: string
     message: string
     video_url: string
     pendingPhotos?: File[]
@@ -139,7 +153,8 @@ export default function MemberCard({
   const [editTiktok, setEditTiktok] = useState(member.tiktok || '')
   const [editMessage, setEditMessage] = useState(member.message || '')
   const [editVideoUrl, setEditVideoUrl] = useState(member.video_url || '')
-  const [showSocialFields, setShowSocialFields] = useState(false)
+  const [editPhone, setEditPhone] = useState(member.phone || '')
+  const [showSocialFields, setShowSocialFields] = useState(!!(member.instagram || member.tiktok || member.phone || member.email))
 
   // Pending (staged) files - not uploaded until Save
   const [pendingPhotos, setPendingPhotos] = useState<{ file: File; previewUrl: string }[]>([])
@@ -158,6 +173,7 @@ export default function MemberCard({
     setEditTiktok(member.tiktok || '')
     setEditMessage(member.message || '')
     setEditVideoUrl(member.video_url || '')
+    setEditPhone(member.phone || '')
   }, [
     member.user_id,
     member.student_name,
@@ -165,6 +181,7 @@ export default function MemberCard({
     member.instagram,
     member.email,
     member.tiktok,
+    member.phone,
     member.message,
     member.video_url,
   ])
@@ -196,6 +213,7 @@ export default function MemberCard({
       date_of_birth: editTtl,
       instagram: editInstagram,
       tiktok: editTiktok,
+      phone: editPhone,
       message: editMessage,
       video_url: editVideoUrl,
       pendingPhotos: pendingPhotos.map(p => p.file),
@@ -401,56 +419,73 @@ export default function MemberCard({
                     <span className="line-clamp-1">{member.date_of_birth}</span>
                   </div>
                 )}
-                {(() => {
-                  const igUrl = member.instagram ? toInstagramUrl(member.instagram) : null
-                  if (!igUrl) return null
-                  const label = normalizeHandle(member.instagram || '')
-                  return (
-                    <a
-                      href={igUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="flex items-center gap-2 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <Instagram className="w-3.5 h-3.5 text-slate-400 dark:text-slate-200 flex-shrink-0" strokeWidth={2.5} />
-                      <span className="line-clamp-1">@{label}</span>
-                    </a>
-                  )
-                })()}
+                <div className="flex items-center gap-3 mt-1">
+                  {(() => {
+                    const igUrl = member.instagram ? toInstagramUrl(member.instagram) : null
+                    if (!igUrl) return null
+                    return (
+                      <a
+                        href={igUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-slate-400 dark:text-slate-300 hover:text-pink-500 dark:hover:text-pink-400 transition-colors"
+                        onClick={(e) => e.stopPropagation()}
+                        title={`Instagram: ${member.instagram}`}
+                      >
+                        <Instagram className="w-4 h-4" strokeWidth={2.5} />
+                      </a>
+                    )
+                  })()}
 
-                {(() => {
-                  const mailto = member.email ? toMailto(member.email) : null
-                  if (!mailto) return null
-                  return (
-                    <a
-                      href={mailto}
-                      className="flex items-center gap-2 min-w-0 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <Mail className="w-3.5 h-3.5 text-slate-400 dark:text-slate-200 flex-shrink-0" strokeWidth={2.5} />
-                      <span className="min-w-0 flex-1 truncate normal-case tracking-normal">{member.email}</span>
-                    </a>
-                  )
-                })()}
+                  {(() => {
+                    const mailto = member.email ? toMailto(member.email) : null
+                    if (!mailto) return null
+                    return (
+                      <a
+                        href={mailto}
+                        className="text-slate-400 dark:text-slate-300 hover:text-blue-500 dark:hover:text-blue-400 transition-colors"
+                        onClick={(e) => e.stopPropagation()}
+                        title={`Email: ${member.email}`}
+                      >
+                        <Mail className="w-4 h-4" strokeWidth={2.5} />
+                      </a>
+                    )
+                  })()}
 
-                {(() => {
-                  const tiktokUrl = member.tiktok ? toTiktokUrl(member.tiktok) : null
-                  if (!tiktokUrl) return null
-                  const label = normalizeHandle(member.tiktok || '')
-                  return (
-                    <a
-                      href={tiktokUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="flex items-center gap-2 min-w-0 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <TiktokIcon className="w-3.5 h-3.5 text-slate-400 dark:text-slate-200 flex-shrink-0" />
-                      <span className="min-w-0 flex-1 truncate normal-case tracking-normal">@{label}</span>
-                    </a>
-                  )
-                })()}
+                  {(() => {
+                    const tiktokUrl = member.tiktok ? toTiktokUrl(member.tiktok) : null
+                    if (!tiktokUrl) return null
+                    return (
+                      <a
+                        href={tiktokUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-slate-400 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors"
+                        onClick={(e) => e.stopPropagation()}
+                        title={`TikTok: ${member.tiktok}`}
+                      >
+                        <TiktokIcon className="w-4 h-4" />
+                      </a>
+                    )
+                  })()}
+
+                  {(() => {
+                    const waUrl = member.phone ? toWhatsappUrl(member.phone) : null
+                    if (!waUrl) return null
+                    return (
+                      <a
+                        href={waUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-slate-400 dark:text-slate-300 hover:text-emerald-500 dark:hover:text-emerald-400 transition-colors"
+                        onClick={(e) => e.stopPropagation()}
+                        title={`WhatsApp: ${member.phone}`}
+                      >
+                        <WhatsAppIcon className="w-4 h-4" />
+                      </a>
+                    )
+                  })()}
+                </div>
               </div>
 
               {/* Message Block */}
@@ -530,9 +565,9 @@ export default function MemberCard({
                     <button
                       type="button"
                       onClick={() => setShowSocialFields(true)}
-                      className="w-full px-3 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 text-slate-400 dark:text-slate-500 font-bold flex items-center justify-center gap-2 hover:border-indigo-500 hover:text-indigo-500 transition-all"
+                      className="w-full px-3 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 text-slate-500 dark:text-slate-400 font-bold flex items-center justify-center gap-2 hover:border-indigo-500 hover:text-indigo-500 transition-all"
                     >
-                      <Plus className="w-4 h-4" /> Add Social Links
+                      <Plus className="w-4 h-4" /> Edit / Isi Sosmed
                     </button>
                   ) : (
                     <div className="space-y-2">
@@ -557,12 +592,22 @@ export default function MemberCard({
                         />
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="w-5 h-5 flex-shrink-0 flex items-center justify-center text-[10px] font-black text-black dark:text-white">TikTok</span>
+                        <TiktokIcon className="w-4 h-4 text-slate-900 dark:text-white flex-shrink-0" />
                         <input
                           type="text"
                           value={editTiktok || ''}
                           onChange={(e) => setEditTiktok(e.target.value)}
-                          placeholder="@username"
+                          placeholder="TikTok @username"
+                          className="flex-1 px-3 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-bold placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                        />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <WhatsAppIcon className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                        <input
+                          type="text"
+                          value={editPhone || ''}
+                          onChange={(e) => setEditPhone(e.target.value)}
+                          placeholder="WhatsApp (0812...)"
                           className="flex-1 px-3 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-bold placeholder:text-slate-400 dark:placeholder:text-slate-500"
                         />
                       </div>
@@ -608,9 +653,9 @@ export default function MemberCard({
                               setLocalConfirm({ title: 'Hapus Foto', message: `Hapus foto ini?`, onConfirm: () => onDeletePhoto?.(photo.id, classId, member.student_name) })
                             }
                           }}
-                          className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center shadow-[1px_1px_0_0_rgba(15,23,42,0.13)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.36)] hover:bg-red-600 transition-all z-20 border-2 border-slate-900 dark:border-slate-600 active:shadow-none active:translate-x-0.5 active:translate-y-0.5"
+                          className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center shadow-[1px_1px_0_0_rgba(15,23,42,0.13)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.36)] hover:bg-red-600 transition-all z-20 border-2 border-slate-900 dark:border-slate-600 active:shadow-none active:translate-x-0.5 active:translate-y-0.5"
                         >
-                          <X className="w-3.5 h-3.5" />
+                          <X className="w-3 h-3" strokeWidth={3} />
                         </button>
                       </div>
                     ))}
@@ -728,9 +773,9 @@ export default function MemberCard({
                     <button
                       type="button"
                       onClick={() => setShowSocialFields(true)}
-                      className="w-full px-3 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 text-slate-400 dark:text-slate-500 font-bold flex items-center justify-center gap-2 hover:border-indigo-500 hover:text-indigo-500 transition-all"
+                      className="w-full px-3 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 text-slate-500 dark:text-slate-400 font-bold flex items-center justify-center gap-2 hover:border-indigo-500 hover:text-indigo-500 transition-all"
                     >
-                      <Plus className="w-4 h-4" /> Add Social Links
+                      <Plus className="w-4 h-4" /> Edit / Isi Sosmed
                     </button>
                   ) : (
                     <div className="space-y-2">
@@ -755,12 +800,22 @@ export default function MemberCard({
                         />
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="w-5 h-5 flex-shrink-0 flex items-center justify-center text-[10px] font-black text-black dark:text-white">TikTok</span>
+                        <TiktokIcon className="w-4 h-4 text-slate-900 dark:text-white flex-shrink-0" />
                         <input
                           type="text"
                           value={editTiktok || ''}
                           onChange={(e) => setEditTiktok(e.target.value)}
-                          placeholder="@username"
+                          placeholder="TikTok @username"
+                          className="flex-1 px-3 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-bold placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                        />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <WhatsAppIcon className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                        <input
+                          type="text"
+                          value={editPhone || ''}
+                          onChange={(e) => setEditPhone(e.target.value)}
+                          placeholder="WhatsApp (0812...)"
                           className="flex-1 px-3 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-600 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-bold placeholder:text-slate-400 dark:placeholder:text-slate-500"
                         />
                       </div>
@@ -780,7 +835,7 @@ export default function MemberCard({
                       <div key={photo.id} className="relative w-14 h-14 bg-slate-100 dark:bg-slate-800 rounded-xl flex-shrink-0 border-2 border-slate-900 dark:border-slate-600 shadow-[1px_1px_0_0_rgba(15,23,42,0.13)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.36)]">
                         {photo.isPending && <div className="absolute -top-2 -left-2 bg-emerald-400 dark:bg-emerald-600 text-slate-900 dark:text-white text-[8px] font-black px-1.5 py-0.5 rounded-lg border-2 border-slate-900 dark:border-slate-600 z-10 shadow-[1px_1px_0_0_rgba(15,23,42,0.13)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.36)] uppercase">BARU</div>}
                         <FastImage src={photo.file_url} alt={`preview-${idx}`} className="w-full h-full object-cover rounded-lg cursor-pointer hover:opacity-80 transition-opacity" onClick={() => { if (onOpenGallery) onOpenGallery(classId, member.student_name) }} />
-                        <button type="button" onClick={(e) => { e.stopPropagation(); if (photo.isPending) removePendingPhoto(idx - basePhotos.length); else setLocalConfirm({ title: 'Hapus Foto', message: 'Hapus foto ini?', onConfirm: () => onDeletePhoto?.(photo.id, classId, member.student_name) }) }} className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center shadow-[1px_1px_0_0_rgba(15,23,42,0.13)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.36)] hover:bg-red-600 transition-all z-20 border-2 border-slate-900 dark:border-slate-600 active:shadow-none active:translate-x-0.5 active:translate-y-0.5"><X className="w-3.5 h-3.5" /></button>
+                        <button type="button" onClick={(e) => { e.stopPropagation(); if (photo.isPending) removePendingPhoto(idx - basePhotos.length); else setLocalConfirm({ title: 'Hapus Foto', message: 'Hapus foto ini?', onConfirm: () => onDeletePhoto?.(photo.id, classId, member.student_name) }) }} className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center shadow-[1px_1px_0_0_rgba(15,23,42,0.13)] dark:shadow-[1px_1px_0_0_rgba(51,65,85,0.36)] hover:bg-red-600 transition-all z-20 border-2 border-slate-900 dark:border-slate-600 active:shadow-none active:translate-x-0.5 active:translate-y-0.5"><X className="w-3 h-3" strokeWidth={3} /></button>
                       </div>
                     ))}
                   </div>

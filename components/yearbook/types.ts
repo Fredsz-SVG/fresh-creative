@@ -46,6 +46,7 @@ export type ClassAccess = {
   instagram?: string | null
   message?: string | null
   video_url?: string | null
+  phone?: string | null
 }
 
 export type ClassRequest = {
@@ -64,6 +65,7 @@ export type ClassMember = {
   tiktok?: string | null
   message: string | null
   video_url: string | null
+  phone?: string | null
   photos?: string[]
   is_me?: boolean
   status?: string

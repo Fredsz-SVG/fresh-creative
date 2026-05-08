@@ -45,7 +45,7 @@ albumsIdMembers.get('/', async (c) => {
 
     const { results: allStudents } = await db
       .prepare(
-        `SELECT user_id, student_name, email, status FROM album_class_access WHERE album_id = ? AND status = 'approved'`
+        `SELECT user_id, student_name, email, tiktok, phone, status FROM album_class_access WHERE album_id = ? AND status = 'approved'`
       )
       .bind(albumId)
       .all<{ user_id: string; student_name: string; email: string | null; status: string }>()
@@ -95,6 +95,8 @@ albumsIdMembers.get('/', async (c) => {
         const owner = userMap.get(s.user_id)
         if (owner) {
           owner.name = s.student_name
+          owner.tiktok = (s as any).tiktok
+          owner.phone = (s as any).phone
           if (!owner.email || owner.email === 'Unknown') owner.email = s.email
         }
         return
@@ -110,6 +112,8 @@ albumsIdMembers.get('/', async (c) => {
           email: s.email || 'Belum ada email',
           role: s.user_id ? 'student' : 'no-account',
           name: s.student_name,
+          tiktok: (s as any).tiktok,
+          phone: (s as any).phone,
           has_account: !!s.user_id,
         })
       }

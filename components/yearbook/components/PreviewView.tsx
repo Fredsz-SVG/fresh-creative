@@ -16,6 +16,12 @@ const TiktokIcon = ({ className }: { className?: string }) => (
     <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/>
   </svg>
 )
+
+const WhatsAppIcon = ({ className }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.414 0 .018 5.396.015 12.03c0 2.12.553 4.189 1.605 6.04L0 24l6.117-1.605a11.837 11.837 0 005.925 1.586h.005c6.637 0 12.032-5.396 12.036-12.031a11.817 11.817 0 00-3.673-8.507z"/>
+  </svg>
+)
 import FastImage from '@/components/ui/FastImage'
 
 function stripQuotes(s: string): string {
@@ -58,6 +64,18 @@ function toMailto(email: string): string | null {
     return `mailto:${s}`
 }
 
+function toWhatsappUrl(value: string): string | null {
+  const s = value.trim()
+  if (!s) return null
+  if (s.startsWith('http')) return s
+  // Remove non-digits
+  const digits = s.replace(/\D/g, '')
+  if (!digits) return null
+  // If starts with 0, replace with 62
+  const formatted = digits.startsWith('0') ? '62' + digits.slice(1) : digits
+  return `https://wa.me/${formatted}`
+}
+
 type Teacher = {
     id: string
     name: string
@@ -75,6 +93,8 @@ type ClassMember = {
     email: string | null
     date_of_birth: string | null
     instagram: string | null
+    tiktok: string | null
+    phone: string | null
     message: string | null
     video_url: string | null
     photos?: string[]
@@ -445,9 +465,13 @@ export default function PreviewView({
                             const url = toInstagramUrl(m.instagram)
                             return url ? [{ icon: <Instagram className="w-3.5 h-3.5" />, text: url }] : []
                         })() : []),
-                        ...((m as any).tiktok ? (() => {
-                            const url = toTiktokUrl(String((m as any).tiktok))
+                        ...(m.tiktok ? (() => {
+                            const url = toTiktokUrl(m.tiktok)
                             return url ? [{ icon: <TiktokIcon className="w-3.5 h-3.5" />, text: url }] : []
+                        })() : []),
+                        ...(m.phone ? (() => {
+                          const url = toWhatsappUrl(m.phone)
+                          return url ? [{ icon: <WhatsAppIcon className="w-3.5 h-3.5 text-emerald-500" />, text: url }] : []
                         })() : []),
                     ],
                 }
@@ -707,36 +731,52 @@ export default function PreviewView({
                         </div>
                     )}
 
-                    {/* Meta: birthday, instagram - icon only, clickable if full URL */}
+                    {/* Meta: balanced layout - 2 socials left, TTL middle, 2 socials right */}
                     {card.meta && card.meta.length > 0 && (
-                        <div className={`flex flex-wrap justify-center ${ml ? 'gap-1 mt-0.5' : 'gap-2 mt-1'}`}>
-                            {card.meta.map((m, i) => {
-                                const text = typeof m.text === 'string' ? m.text : ''
-                                const isClickableUrl = /^(https?:\/\/|mailto:)/.test(text)
-                                const metaIconSize = ml ? 9 : 14
-                                const Wrapper = isClickableUrl ? 'a' : 'div'
-                                const wrapperProps = isClickableUrl ? {
-                                    href: text,
-                                    target: text.startsWith('http') ? '_blank' : undefined,
-                                    rel: text.startsWith('http') ? 'noopener noreferrer' : undefined,
-                                    onClick: (e: React.MouseEvent) => e.stopPropagation(),
-                                    className: `pointer-events-auto flex items-center justify-center rounded-full bg-slate-900/10 dark:bg-white/15 backdrop-blur-sm text-slate-900 dark:text-white ring-1 ring-slate-900 dark:ring-white/80 transition-all hover:bg-slate-900/20 dark:hover:bg-white/25 active:scale-95 cursor-pointer ${ml ? 'h-5 w-5' : 'w-8 h-8'}`,
-                                } : {
-                                    className: `flex items-center rounded-full bg-slate-900/10 dark:bg-white/15 backdrop-blur-sm text-slate-700 dark:text-white/80 ring-1 ring-slate-900 dark:ring-white/80 ${ml ? 'h-5 gap-0.5 px-1.5' : 'gap-2 px-3 h-8'}`,
-                                }
-                                return (
-                                    <Wrapper key={i} {...wrapperProps}>
-                                        <span className="flex-shrink-0 text-slate-400 dark:text-white/60">
-                                            {React.cloneElement(m.icon as React.ReactElement<{ size?: number }>, { size: metaIconSize })}
-                                        </span>
-                                        {!isClickableUrl && text ? (
-                                            <span className={`font-bold tracking-wide text-slate-700 dark:text-white/85 ${ml ? 'text-[8px] leading-tight' : 'text-[11px]'}`}>
-                                                {text}
+                        <div className={`flex items-center justify-center w-full ${ml ? 'gap-1 mt-0.5' : 'gap-2.5 mt-1.5'}`}>
+                            {(() => {
+                                const socials = card.meta.filter(m => /^(https?:\/\/|mailto:)/.test(String(m.text || '')))
+                                const info = card.meta.filter(m => !/^(https?:\/\/|mailto:)/.test(String(m.text || '')))
+                                
+                                const leftSocials = socials.slice(0, 2)
+                                const rightSocials = socials.slice(2, 4)
+                                const centerInfo = info.slice(0, 1)
+
+                                const renderItem = (m: any, isSocial: boolean) => {
+                                    const text = typeof m.text === 'string' ? m.text : ''
+                                    const metaIconSize = ml ? (isSocial ? 9 : 8) : (isSocial ? 14 : 12)
+                                    const Wrapper = isSocial ? 'a' : 'div'
+                                    const wrapperProps = isSocial ? {
+                                        href: text,
+                                        target: text.startsWith('http') ? '_blank' : undefined,
+                                        rel: text.startsWith('http') ? 'noopener noreferrer' : undefined,
+                                        onClick: (e: React.MouseEvent) => e.stopPropagation(),
+                                        className: `pointer-events-auto flex items-center justify-center rounded-full bg-slate-900/10 dark:bg-white/15 backdrop-blur-sm text-slate-900 dark:text-white ring-1 ring-slate-900/8 dark:ring-white/40 transition-all hover:bg-slate-900/20 dark:hover:bg-white/25 active:scale-90 cursor-pointer ${ml ? 'h-5 w-5' : 'w-8 h-8'}`,
+                                    } : {
+                                        className: `flex items-center rounded-full bg-slate-900/10 dark:bg-white/15 backdrop-blur-sm text-slate-700 dark:text-white/80 ring-1 ring-slate-900/8 dark:ring-white/40 ${ml ? 'h-5 px-1.5' : 'px-3 h-8'}`,
+                                    }
+                                    return (
+                                        <Wrapper key={text} {...wrapperProps}>
+                                            <span className="flex-shrink-0 text-slate-400 dark:text-white/60">
+                                                {React.cloneElement(m.icon as React.ReactElement<{ size?: number }>, { size: metaIconSize })}
                                             </span>
-                                        ) : null}
-                                    </Wrapper>
+                                            {!isSocial && text ? (
+                                                <span className={`font-bold tracking-wide text-slate-700 dark:text-white/85 ml-1.5 ${ml ? 'text-[8px] leading-tight' : 'text-[11px]'}`}>
+                                                    {text}
+                                                </span>
+                                            ) : null}
+                                        </Wrapper>
+                                    )
+                                }
+
+                                return (
+                                    <>
+                                        {leftSocials.map(m => renderItem(m, true))}
+                                        {centerInfo.map(m => renderItem(m, false))}
+                                        {rightSocials.map(m => renderItem(m, true))}
+                                    </>
                                 )
-                            })}
+                            })()}
                         </div>
                     )}
 

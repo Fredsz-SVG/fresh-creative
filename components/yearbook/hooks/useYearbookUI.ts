@@ -37,6 +37,7 @@ export function useYearbookProfileEditState() {
   const [editProfileTiktok, setEditProfileTiktok] = useState('')
   const [editProfilePesan, setEditProfilePesan] = useState('')
   const [editProfileVideoUrl, setEditProfileVideoUrl] = useState('')
+  const [editProfilePhone, setEditProfilePhone] = useState('')
   const [savingProfile, setSavingProfile] = useState(false)
   const [lastUploadedVideoName, setLastUploadedVideoName] = useState<string | null>(null)
 
@@ -59,6 +60,8 @@ export function useYearbookProfileEditState() {
     setEditProfilePesan,
     editProfileVideoUrl,
     setEditProfileVideoUrl,
+    editProfilePhone,
+    setEditProfilePhone,
     savingProfile,
     setSavingProfile,
     lastUploadedVideoName,

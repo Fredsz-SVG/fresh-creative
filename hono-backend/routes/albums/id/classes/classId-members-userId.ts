@@ -151,18 +151,13 @@ classMemberUserRoute.patch('/', async (c) => {
     .first<{ id: string; user_id: string }>()
   if (!album) return c.json({ error: 'Album not found' }, 404)
 
-  const isOwner = album.user_id === user.id
-  const memberRow = await db
-    .prepare(`SELECT role FROM album_members WHERE album_id = ? AND user_id = ?`)
-    .bind(albumId, user.id)
-    .first<{ role: string }>()
-  const isAlbumAdmin = memberRow?.role === 'admin'
-  const canManage = isOwner || isAlbumAdmin
+  const role = await getRole(c, user)
+  const isGlobalAdmin = role === 'admin'
   const isEditingSelf = user.id === userId
 
-  if (!isEditingSelf && !canManage)
+  if (!isEditingSelf && !isGlobalAdmin)
     return c.json(
-      { error: 'Hanya owner atau admin album yang bisa menyunting profil orang lain' },
+      { error: 'Hanya admin global yang bisa menyunting profil orang lain' },
       403
     )
 
@@ -210,6 +205,12 @@ classMemberUserRoute.patch('/', async (c) => {
         ? body.video_url.trim() || null
         : null
       : undefined
+  const phone =
+    body?.phone !== undefined
+      ? typeof body.phone === 'string'
+        ? body.phone.trim() || null
+        : null
+      : undefined
 
   if (
     student_name === undefined &&
@@ -217,6 +218,7 @@ classMemberUserRoute.patch('/', async (c) => {
     date_of_birth === undefined &&
     instagram === undefined &&
     tiktok === undefined &&
+    phone === undefined &&
     message === undefined &&
     video_url === undefined
   ) {
@@ -252,6 +254,10 @@ classMemberUserRoute.patch('/', async (c) => {
   if (video_url !== undefined) {
     sets.push('video_url = ?')
     vals.push(video_url)
+  }
+  if (phone !== undefined) {
+    sets.push('phone = ?')
+    vals.push(phone)
   }
   sets.push(`updated_at = datetime('now')`)
   vals.push(access.id)

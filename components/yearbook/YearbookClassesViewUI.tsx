@@ -94,6 +94,8 @@ export default function YearbookClassesViewUI(props: any) {
     setEditProfilePesan,
     editProfileVideoUrl = '',
     setEditProfileVideoUrl,
+    editProfilePhone = '',
+    setEditProfilePhone,
     handleSaveProfile,
     savingProfile = false,
     membersByClass = {},
@@ -1951,6 +1953,7 @@ export default function YearbookClassesViewUI(props: any) {
                                           setEditProfileInstagram(member.instagram || '')
                                           setEditProfilePesan(member.message || '')
                                           setEditProfileVideoUrl(member.video_url || '')
+                                          setEditProfilePhone(member.phone || '')
                                           if (fetchStudentPhotosForCard) {
                                             fetchStudentPhotosForCard(currentClass.id, member.student_name)
                                           }
