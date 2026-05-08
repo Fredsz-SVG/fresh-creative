@@ -645,7 +645,17 @@ export default function DashboardShell({
                                 </span>
                               )}
                               <div className="text-[12px] font-bold text-slate-600 dark:text-slate-400 leading-snug space-y-0.5">
-                                {msgLines.map((line, i) => (
+                                {msgLines.filter((line, i) => {
+                                  if (i === 0 && statusBadge) {
+                                    const cleanLine = line.trim().toLowerCase();
+                                    const cleanBadge = statusBadge.label.trim().toLowerCase();
+                                    // Handle cases where status might have reason in parenthesis like "Ditolak (Reason)"
+                                    if (cleanLine === cleanBadge || cleanLine.startsWith(cleanBadge)) {
+                                      return false;
+                                    }
+                                  }
+                                  return true;
+                                }).map((line, i) => (
                                   <p key={i}>{line}</p>
                                 ))}
                               </div>

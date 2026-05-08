@@ -3,6 +3,7 @@ import { getD1 } from '../../../../lib/edge-env'
 import { publishRealtimeEventFromContext } from '../../../../lib/realtime'
 import { AppEnv, requireAuthJwt } from '../../../../middleware'
 import { getAuthUserFromContext } from '../../../../lib/auth-user'
+import { createNotification } from '../../../../lib/notifications'
 
 const classRequestRoute = new Hono<AppEnv>()
 classRequestRoute.use('*', requireAuthJwt)
@@ -117,20 +118,13 @@ classRequestRoute.post('/', async (c) => {
       .prepare(`SELECT name FROM album_classes WHERE id = ?`)
       .bind(classId)
       .first<{ name: string }>()
-    const notifId = crypto.randomUUID()
-    await db
-      .prepare(
-        `INSERT INTO notifications (id, user_id, title, message, type, metadata, created_at)
-         VALUES (?, ?, ?, ?, 'info', ?, datetime('now'))`
-      )
-      .bind(
-        notifId,
-        user.id,
-        'Status Pendaftaran Album',
-        `${albumData?.name || 'Album'}\n${student_name}${clsData?.name ? ` - ${clsData.name}` : ''}\n${email || ''}`,
-        JSON.stringify({ status: 'Menunggu' })
-      )
-      .run()
+    await createNotification(db, c.env, {
+      userId: user.id,
+      title: 'Status Pendaftaran Album',
+      message: `${albumData?.name || 'Album'}\n${student_name}${clsData?.name ? ` - ${clsData.name}` : ''}\n${email || ''}`,
+      type: 'info',
+      metadata: { status: 'Menunggu' }
+    })
   } catch {
     /* non-fatal */
   }

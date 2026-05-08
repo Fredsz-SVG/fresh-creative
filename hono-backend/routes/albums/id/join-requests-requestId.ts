@@ -4,6 +4,7 @@ import { publishRealtimeEventFromContext } from '../../../lib/realtime'
 import { AppEnv, requireAuthJwt } from '../../../middleware'
 import { getAuthUserFromContext } from '../../../lib/auth-user'
 import { getRole } from '../../../lib/auth'
+import { createNotification } from '../../../lib/notifications'
 
 const joinRequestsRequestId = new Hono<AppEnv>()
 joinRequestsRequestId.use('*', requireAuthJwt)
@@ -127,20 +128,13 @@ joinRequestsRequestId.patch('/', async (c) => {
           .bind(albumId)
           .first<{ name: string }>()
 
-        const notifId = crypto.randomUUID()
-        await db
-          .prepare(
-            `INSERT INTO notifications (id, user_id, title, message, type, metadata, created_at)
-             VALUES (?, ?, ?, ?, 'success', ?, datetime('now'))`
-          )
-          .bind(
-            notifId,
-            joinRequest.user_id as string,
-            'Status Pendaftaran Album',
-            `${albumData?.name || 'Album'}\n${joinRequest.student_name}${joinRequest.class_name ? ` - ${joinRequest.class_name}` : ''}\n${joinRequest.email}`,
-            JSON.stringify({ status: 'Disetujui' })
-          )
-          .run()
+        await createNotification(db, c.env, {
+          userId: joinRequest.user_id as string,
+          title: 'Status Bergabung Album',
+          message: `Disetujui\n${albumData?.name || 'Album'}\n${joinRequest.student_name}${joinRequest.class_name ? ` - ${joinRequest.class_name}` : ''}\n${joinRequest.email}`,
+          type: 'success',
+          metadata: { status: 'Disetujui' }
+        })
 
         // Broadcast approve ke semua device
         void publishRealtimeEventFromContext(c, {
@@ -177,20 +171,13 @@ joinRequestsRequestId.patch('/', async (c) => {
         .prepare(`SELECT name FROM albums WHERE id = ?`)
         .bind(albumId)
         .first<{ name: string }>()
-      const notifId = crypto.randomUUID()
-      await db
-        .prepare(
-          `INSERT INTO notifications (id, user_id, title, message, type, metadata, created_at)
-           VALUES (?, ?, ?, ?, 'error', ?, datetime('now'))`
-        )
-        .bind(
-          notifId,
-          joinRequest.user_id as string,
-          'Status Pendaftaran Album',
-          `${albumData?.name || 'Album'}\n${joinRequest.student_name}${joinRequest.class_name ? ` - ${joinRequest.class_name}` : ''}\n${joinRequest.email}`,
-          JSON.stringify({ status: 'Ditolak', reason: rejected_reason })
-        )
-        .run()
+      await createNotification(db, c.env, {
+        userId: joinRequest.user_id as string,
+        title: 'Status Bergabung Album',
+        message: `Ditolak${rejected_reason ? ` (${rejected_reason})` : ''}\n${albumData?.name || 'Album'}\n${joinRequest.student_name}${joinRequest.class_name ? ` - ${joinRequest.class_name}` : ''}\n${joinRequest.email}`,
+        type: 'error',
+        metadata: { status: 'Ditolak', reason: rejected_reason }
+      })
     }
 
     // Broadcast reject ke semua device

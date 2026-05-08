@@ -772,17 +772,15 @@ export default function PricingView({
                   <Loader2 className="w-5 h-5 animate-spin" strokeWidth={3} />
                   <span>Memproses...</span>
                 </>
-              ) : afterSaveRedirect ? (
-                "Ajukan Pendaftaran"
               ) : (
-                "Simpan dan Lihat Album"
+                "Ajukan Pendaftaran"
               )}
             </button>
           </div>
         )}
 
-        {leadId && !draft && (
-          <p className="mt-8 text-[13px] font-bold text-slate-500 dark:text-slate-400 text-center">
+        {source === 'admin' && leadId && !draft && (
+          <p className="mt-8 text-[13px] font-bold text-slate-500 dark:text-slate-400 text-center uppercase tracking-widest">
             Lead ID: <span className="text-slate-900 dark:text-white font-mono px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded border-2 border-slate-300 dark:border-slate-600">{leadId}</span>
           </p>
         )}

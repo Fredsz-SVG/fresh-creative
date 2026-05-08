@@ -1716,24 +1716,11 @@ export default function YearbookAlbumClient({
                   <X className="w-3 h-3 sm:w-4 sm:h-4" /> <span>Preview</span>
                 </button>
               )}
-              {uiSection === 'classes' && activeSection !== 'cover' && (
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    setMobileMenuOpen(true)
-                  }}
-                  className="lg:hidden flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 bg-white dark:bg-slate-800 border-2 border-black dark:border-slate-700 rounded-lg sm:rounded-xl text-slate-900 dark:text-white active:translate-x-0.5 active:translate-y-0.5 transition-all flex-shrink-0"
-                >
-                  <Menu className="w-4 h-4 sm:w-5 sm:h-5" />
-                </button>
-              )}
-
               {/* Sambutan & Classes: Search Toggle */}
               {(uiSection === 'sambutan' || (uiSection === 'classes' && activeSection !== 'cover')) && (
                 <>
                   {isSearchOpen(uiSection === 'sambutan' ? 'sambutan' : 'classes') ? (
-                    <div className={`absolute left-[52px] ${uiSection === 'classes' ? 'right-[52px]' : 'right-2'} top-2 bottom-2 bg-amber-50 dark:bg-slate-800 border-2 border-black dark:border-slate-700 rounded-xl px-3 flex items-center lg:static lg:w-auto lg:h-9 lg:px-2 lg:py-1 animate-in slide-in-from-right-2 duration-200 z-[60]`}>
+                    <div className={`absolute left-[64px] ${uiSection === 'classes' ? 'right-[68px]' : 'right-[12px]'} top-[5px] bottom-[5px] bg-amber-50 dark:bg-slate-800 border-2 border-black dark:border-slate-700 rounded-xl pl-3 pr-8 flex items-center lg:static lg:w-auto lg:h-9 lg:px-2 lg:py-1 animate-in slide-in-from-right-2 duration-200 z-[60]`}>
                       <Search className="w-4 h-4 text-slate-400 dark:text-slate-500 mr-2 flex-shrink-0" />
                       <input
                         type="text"
@@ -1745,7 +1732,7 @@ export default function YearbookAlbumClient({
                       />
                       <button
                         onClick={() => closeSearch(uiSection === 'sambutan' ? 'sambutan' : 'classes')}
-                        className="ml-1 p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors flex-shrink-0"
+                        className="absolute right-0 top-1/2 -translate-y-1/2 lg:static lg:translate-y-0 lg:ml-1 w-8 h-8 flex items-center justify-center rounded-lg flex-shrink-0"
                       >
                         <SearchX className="w-4 h-4 text-slate-500 dark:text-slate-400" strokeWidth={3} />
                       </button>
@@ -1753,12 +1740,25 @@ export default function YearbookAlbumClient({
                   ) : (
                     <button
                       onClick={() => openSearch(uiSection === 'sambutan' ? 'sambutan' : 'classes')}
-                      className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center bg-amber-400 dark:bg-amber-600 border-2 border-black dark:border-slate-700 rounded-lg sm:rounded-xl text-slate-900 dark:text-white active:translate-x-0.5 active:translate-y-0.5 transition-all shadow-[1.5px_1.5px_0_0_#334155] dark:shadow-[1.5px_1.5px_0_0_#1e293b] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5"
+                      className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center bg-amber-400 dark:bg-amber-600 border-2 border-black dark:border-slate-700 rounded-lg sm:rounded-xl text-slate-900 dark:text-white active:translate-x-0.5 active:translate-y-0.5 transition-all hover:translate-x-0.5 hover:translate-y-0.5"
                     >
                       <Search className="w-3.5 h-3.5 sm:w-4 sm:h-4" strokeWidth={3} />
                     </button>
                   )}
                 </>
+              )}
+
+              {uiSection === 'classes' && activeSection !== 'cover' && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setMobileMenuOpen(true)
+                  }}
+                  className="lg:hidden flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 bg-white dark:bg-slate-800 border-2 border-black dark:border-slate-700 rounded-lg sm:rounded-xl text-slate-900 dark:text-white active:translate-x-0.5 active:translate-y-0.5 transition-all flex-shrink-0"
+                >
+                  <Menu className="w-4 h-4 sm:w-5 sm:h-5" />
+                </button>
               )}
             </div>
 
@@ -1773,19 +1773,11 @@ export default function YearbookAlbumClient({
                     navigator.clipboard.writeText(url);
                     toast.success('Link public berhasil disalin');
                   }}
-                  className="flex items-center justify-center w-8 h-8 bg-white dark:bg-slate-800 border-2 border-black dark:border-slate-700 rounded-lg text-slate-900 dark:text-white shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all"
-                  title="Salin Link"
+                  className="flex items-center justify-center w-8 h-8 bg-white dark:bg-slate-800 border-2 border-black dark:border-slate-700 rounded-lg text-slate-900 dark:text-white active:translate-x-0.5 active:translate-y-0.5 transition-all"
+                  title="Salin link public"
                 >
                   <LinkIcon className="w-3.5 h-3.5" strokeWidth={3} />
                 </button>
-                <Link
-                  href={`/album/${album?.id}/view`}
-                  target="_blank"
-                  className="flex items-center justify-center w-8 h-8 bg-emerald-400 dark:bg-emerald-600 border-2 border-black dark:border-slate-700 rounded-lg text-slate-900 dark:text-white shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all"
-                  title="Preview"
-                >
-                  <Eye className="w-3.5 h-3.5" strokeWidth={3} />
-                </Link>
               </div>
             )}
           </div>

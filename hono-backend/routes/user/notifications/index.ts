@@ -6,6 +6,7 @@ import {
   setUserNotificationsCache,
   invalidateUserResponseCaches,
 } from '../../../lib/user-response-cache'
+import { createNotification } from '../../../lib/notifications'
 
 const userNotifications = new Hono()
 userNotifications.use('*', requireAuthJwt)
@@ -42,18 +43,16 @@ userNotifications.post('/', async (c) => {
   if (!userId) return c.json({ error: 'Unauthorized' }, 401)
   const body = await c.req.json()
   const { title, message, type, action_url, metadata } = body || {}
-  const id = crypto.randomUUID()
-  const metaStr = metadata !== undefined && metadata !== null ? JSON.stringify(metadata) : null
-  const ins = await db
-    .prepare(
-      `INSERT INTO notifications (id, user_id, title, message, type, action_url, metadata, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))`
-    )
-    .bind(id, userId, title, message, type || 'info', action_url ?? null, metaStr)
-    .run()
-  if (!ins.success) return c.json({ error: 'Insert failed' }, 500)
-  invalidateUserResponseCaches(userId)
-  const row = await db.prepare(`SELECT * FROM notifications WHERE id = ?`).bind(id).first()
+
+  const row = await createNotification(db, c.env, {
+    userId,
+    title,
+    message,
+    type,
+    actionUrl: action_url,
+    metadata
+  })
+
   return c.json(row)
 })
 

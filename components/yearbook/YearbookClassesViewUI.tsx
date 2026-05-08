@@ -1399,7 +1399,7 @@ export default function YearbookClassesViewUI(props: any) {
                               className="px-8 py-4 rounded-2xl bg-white dark:bg-slate-800 border-2 border-black dark:border-slate-700 text-slate-900 dark:text-white font-black text-sm uppercase tracking-widest shadow-[1.5px_1.5px_0_0_#334155] dark:shadow-[1.5px_1.5px_0_0_#1e293b] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all active:scale-95 flex items-center justify-center gap-3"
                             >
                               <LinkIcon className="w-5 h-5" strokeWidth={3} />
-                              Salin Link
+                              Salin link public
                             </button>
                             {/* Preview Album button removed as requested */}
                           </div>
@@ -1606,7 +1606,7 @@ export default function YearbookClassesViewUI(props: any) {
                                 className="pointer-events-auto flex items-center justify-center h-9 sm:h-10 px-3 sm:px-4 bg-white dark:bg-slate-800 border-2 border-black dark:border-slate-700 rounded-xl text-[10px] sm:text-[11px] font-black uppercase text-slate-900 dark:text-white shadow-[1.5px_1.5px_0_0_#0f172a] dark:shadow-[1.5px_1.5px_0_0_#334155] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all text-nowrap"
                                 title="Salin Link Public Album"
                               >
-                                <LinkIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5" strokeWidth={3} /> Salin Link
+                                <LinkIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5" strokeWidth={3} /> Salin link public
                               </button>
                               <button
                                 onClick={() => {

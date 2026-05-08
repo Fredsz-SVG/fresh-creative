@@ -178,7 +178,7 @@ export default function AlbumRegisterForm({ albumId: albumIdProp, token, loginRe
   if (inviteError) {
     return (
       <div className="fixed inset-0 h-[100dvh] bg-slate-100 dark:bg-slate-950 flex items-center justify-center p-4 overflow-hidden transition-colors duration-500">
-        <div className="text-center p-8 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-white rounded-[2rem] shadow-[8px_8px_0_0_#000] dark:shadow-[#a3e635] max-w-sm w-full">
+        <div className="text-center p-8 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-white rounded-[2rem] shadow-[3px_3px_0_0_#000] dark:shadow-[3px_3px_0_0_#a3e635] max-w-sm w-full">
           <p className="font-general text-red-600 dark:text-red-400 font-black mb-6 uppercase tracking-tight">
             {inviteError === 'Invite expired'
               ? 'Link undangan sudah kadaluarsa.'
@@ -209,7 +209,7 @@ export default function AlbumRegisterForm({ albumId: albumIdProp, token, loginRe
   if (success) {
     return (
       <div className="fixed inset-0 h-[100dvh] bg-slate-100 dark:bg-slate-950 flex items-center justify-center p-4 overflow-hidden transition-colors duration-500">
-        <div className="bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-white rounded-[2rem] p-8 max-w-md w-full text-center shadow-[10px_10px_0_0_#000] dark:shadow-[#a3e635]">
+        <div className="bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-white rounded-[2rem] p-8 max-w-md w-full text-center shadow-[4px_4px_0_0_#000] dark:shadow-[4px_4px_0_0_#a3e635]">
           <div className="w-20 h-20 bg-lime-400 border-2 border-slate-200 dark:border-white rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-[2px_2px_0_0_#000] -rotate-3 transition-transform hover:rotate-0">
             <Check className="w-10 h-10 text-slate-900" strokeWidth={4} />
           </div>
@@ -217,9 +217,9 @@ export default function AlbumRegisterForm({ albumId: albumIdProp, token, loginRe
           <p className="text-slate-600 dark:text-slate-400 font-bold mb-8 leading-relaxed">
             Pendaftaran Anda telah diterima. Tunggu konfirmasi dari admin untuk bergabung ke album.
           </p>
-          <button
+            <button
             onClick={() => router.push('/')}
-            className="w-full px-6 py-4 rounded-2xl bg-lime-400 text-slate-900 border-2 border-slate-200 font-black uppercase tracking-widest shadow-[6px_6px_0_0_#000] hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all"
+            className="w-full px-6 py-4 rounded-2xl bg-lime-400 text-slate-900 border-2 border-slate-200 font-black uppercase tracking-widest shadow-[3px_3px_0_0_#000] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all"
           >
             Beranda
           </button>
@@ -231,7 +231,7 @@ export default function AlbumRegisterForm({ albumId: albumIdProp, token, loginRe
   return (
     <div className="fixed inset-0 h-[100dvh] bg-slate-100 dark:bg-slate-950 overflow-hidden flex flex-col transition-colors duration-500">
       <div className="flex-1 min-h-0 overflow-y-auto overscroll-none flex items-center justify-center p-3 sm:p-4">
-        <div className="bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-white rounded-[1.5rem] sm:rounded-[2rem] p-5 sm:p-8 max-w-md w-full relative my-auto shadow-[10px_10px_0_0_#000] dark:shadow-[10px_10px_0_0_#a3e635]">
+        <div className="bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-white rounded-[1.5rem] sm:rounded-[2rem] p-5 sm:p-8 max-w-md w-full relative my-auto shadow-[4px_4px_0_0_#000] dark:shadow-[4px_4px_0_0_#a3e635]">
           {onClose && (
             <button
               type="button"
@@ -375,15 +375,12 @@ export default function AlbumRegisterForm({ albumId: albumIdProp, token, loginRe
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full h-12 sm:h-14 mt-2 rounded-xl bg-lime-400 text-slate-900 border-2 border-slate-200 dark:border-white font-black uppercase text-sm sm:text-base tracking-widest shadow-[5px_5px_0_0_#000] dark:shadow-[5px_5px_0_0_#a3e635] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all flex items-center justify-center gap-2 group disabled:opacity-50 disabled:translate-x-0 disabled:translate-y-0 active:scale-95"
+                className="w-full h-12 sm:h-14 mt-2 rounded-xl bg-lime-400 text-slate-900 border-2 border-slate-200 dark:border-white font-black uppercase text-sm sm:text-base tracking-widest shadow-[3px_3px_0_0_#000] dark:shadow-[3px_3px_0_0_#a3e635] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all flex items-center justify-center gap-2 group disabled:opacity-50 disabled:translate-x-0 disabled:translate-y-0 active:scale-95"
               >
                 {submitting ? (
                   <Loader2 className="w-6 h-6 animate-spin" />
                 ) : (
-                  <>
-                    Daftar Sekarang
-                    <Check className="w-5 h-5 transition-transform group-hover:scale-125" strokeWidth={4} />
-                  </>
+                  "Daftar Sekarang"
                 )}
               </button>
             </form>

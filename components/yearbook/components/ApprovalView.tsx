@@ -420,7 +420,7 @@ export default function ApprovalView({
         <div className="mt-3 sm:mt-4 p-4 sm:p-6 rounded-2xl sm:rounded-[32px] bg-indigo-50 dark:bg-indigo-950/40 border-2 sm:border-2 border-slate-900 dark:border-slate-700 shadow-[1.5px_1.5px_0_0_#334155] dark:shadow-[1.5px_1.5px_0_0_#1e293b]">
           <div className="flex flex-wrap items-center gap-2 mb-3 sm:mb-4">
             <LinkIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-900 dark:text-white" strokeWidth={3} />
-            <span className="text-[10px] sm:text-xs font-black text-slate-900 dark:text-white uppercase tracking-widest">Akses Registrasi Siswa</span>
+            <span className="text-[10px] sm:text-xs font-black text-slate-900 dark:text-white uppercase tracking-widest">Kode link undangan</span>
             {!inviteTokenLoaded ? (
               <div className="ml-auto flex flex-col items-end gap-1">
                 <span className="inline-block h-3 w-12 rounded bg-slate-200 dark:bg-slate-700 animate-pulse" />

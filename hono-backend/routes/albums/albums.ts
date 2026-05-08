@@ -4,6 +4,7 @@ import { getR2KeyFromPublicUrl } from '../../lib/public-file-url'
 import { albumPathFromR2Key } from '../../lib/storage-layout'
 import { requireAuthJwt } from '../../middleware'
 import { invalidateUserResponseCaches } from '../../lib/user-response-cache'
+import { createNotification } from '../../lib/notifications'
 
 const albumColsUser = `a.id, a.user_id, a.name, a.type, a.status, a.created_at, a.description, a.cover_image_url, a.cover_image_position, a.pricing_package_id, a.payment_status, a.payment_url, a.total_estimated_price, a.pic_name, a.individual_payments_enabled, a.package_snapshot, (SELECT SUM(amount) FROM transactions WHERE album_id = a.id AND status IN ('PAID', 'SETTLED')) as collected_amount`
 
@@ -263,10 +264,13 @@ albumsRoute.post('/', requireAuthJwt, async (c) => {
         .bind(histId, voucherId, user.id, newId, appliedDiscountPercent)
         .run()
 
-      const notifId = crypto.randomUUID()
-      await db.prepare('INSERT INTO notifications (id, user_id, title, message, type, action_url) VALUES (?, ?, ?, ?, ?, ?)')
-        .bind(notifId, user.id, 'Menunggu Persetujuan', `Album "${name}" telah berhasil diajukan dan sedang menunggu persetujuan admin.`, 'info', '/user/riwayat')
-        .run()
+      await createNotification(db, c.env, {
+        userId: user.id,
+        title: 'Menunggu Persetujuan',
+        message: `Album "${name}" telah berhasil diajukan dan sedang menunggu persetujuan admin.`,
+        type: 'info',
+        actionUrl: '/user/riwayat'
+      })
       invalidateUserResponseCaches(user.id)
       return c.json({ id: (result as any)?.id }, 201)
     }
@@ -304,10 +308,13 @@ albumsRoute.post('/', requireAuthJwt, async (c) => {
       )
       .first()
 
-    const notifId = crypto.randomUUID()
-    await db.prepare('INSERT INTO notifications (id, user_id, title, message, type, action_url) VALUES (?, ?, ?, ?, ?, ?)')
-      .bind(notifId, user.id, 'Menunggu Persetujuan', `Album "${name}" telah berhasil diajukan dan sedang menunggu persetujuan admin.`, 'info', '/user/riwayat')
-      .run()
+    await createNotification(db, c.env, {
+      userId: user.id,
+      title: 'Menunggu Persetujuan',
+      message: `Album "${name}" telah berhasil diajukan dan sedang menunggu persetujuan admin.`,
+      type: 'info',
+      actionUrl: '/user/riwayat'
+    })
     invalidateUserResponseCaches(user.id)
     return c.json({ id: result?.id }, 201)
   } catch (error) {
@@ -386,7 +393,6 @@ albumsRoute.put('/:id', requireAuthJwt, async (c) => {
     if (!result.success) return c.json({ error: 'Failed to update album' }, 400)
 
     if (albumInfo && albumInfo.user_id) {
-      const notifId = crypto.randomUUID()
       let notifTitle = ''
       let notifMessage = ''
       let notifType = 'info'
@@ -402,10 +408,13 @@ albumsRoute.put('/:id', requireAuthJwt, async (c) => {
       }
 
       if (notifTitle) {
-        await db.prepare('INSERT INTO notifications (id, user_id, title, message, type, action_url) VALUES (?, ?, ?, ?, ?, ?)')
-          .bind(notifId, albumInfo.user_id, notifTitle, notifMessage, notifType, '/user/riwayat')
-          .run()
-        invalidateUserResponseCaches(albumInfo.user_id as string)
+        await createNotification(db, c.env, {
+          userId: albumInfo.user_id as string,
+          title: notifTitle,
+          message: notifMessage,
+          type: notifType,
+          actionUrl: '/user/riwayat'
+        })
       }
     }
 

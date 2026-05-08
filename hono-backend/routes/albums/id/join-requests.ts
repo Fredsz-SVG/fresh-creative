@@ -4,6 +4,7 @@ import { publishRealtimeEventFromContext } from '../../../lib/realtime'
 import { AppEnv, requireAuthJwt } from '../../../middleware'
 import { getAuthUserFromContext } from '../../../lib/auth-user'
 import { getRole } from '../../../lib/auth'
+import { createNotification } from '../../../lib/notifications'
 
 const albumJoinRequestsRoute = new Hono<AppEnv>()
 albumJoinRequestsRoute.use('*', requireAuthJwt)
@@ -136,20 +137,13 @@ albumJoinRequestsRoute.post('/', async (c) => {
       .first<{ id: string; status: string; email: string }>()
 
     const insertNotif = async () => {
-      const nid = crypto.randomUUID()
-      await db
-        .prepare(
-          `INSERT INTO notifications (id, user_id, title, message, type, metadata, created_at)
-           VALUES (?, ?, ?, ?, 'info', ?, datetime('now'))`
-        )
-        .bind(
-          nid,
-          user.id,
-          'Status Pendaftaran Album',
-          `${album.name}\n${student_name}${class_name ? ` - ${class_name}` : ''}\n${email}`,
-          JSON.stringify({ status: 'Menunggu Persetujuan' })
-        )
-        .run()
+      await createNotification(db, c.env, {
+        userId: user.id,
+        title: 'Status Bergabung Album',
+        message: `Menunggu Persetujuan\n${album.name}\n${student_name}${class_name ? ` - ${class_name}` : ''}\n${email}`,
+        type: 'info',
+        metadata: { status: 'Menunggu Persetujuan' }
+      })
     }
 
     if (existing) {
