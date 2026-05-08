@@ -143,7 +143,8 @@ function TinderCard({ children, onSwipe, onCardLeftScreen, onDragStart, onDrag, 
     const isAnimating = useRef(false)
     const isFront = index === 0
 
-    const rotate = useTransform(x, [-200, 200], [-25, 25])
+    // Dead-zone kecil di sekitar 0 agar tidak jitter di low-end device, lalu linear ke ujung.
+    const rotate = useTransform(x, [-200, -8, 0, 8, 200], [-25, 0, 0, 0, 25])
     const opacity = useTransform(x, [-200, -170, 0, 170, 200], [0, 1, 1, 1, 0])
 
     const prevIndexRef = useRef(index)
@@ -199,8 +200,12 @@ function TinderCard({ children, onSwipe, onCardLeftScreen, onDragStart, onDrag, 
                 targetY = y.get() + (velocityY * 2)
             }
 
+            const isHorizontal = direction === 'left' || direction === 'right'
             await controls.start({
-                x: targetX, y: targetY, rotate: targetRotate, opacity: 0,
+                x: targetX,
+                y: targetY,
+                // Only animate rotate/opacity explicitly if they aren't driven by x (i.e. vertical swipe)
+                ...(isHorizontal ? {} : { rotate: targetRotate, opacity: 0 }),
                 transition: { duration: 0.25, ease: 'easeOut' },
             })
 
@@ -209,7 +214,7 @@ function TinderCard({ children, onSwipe, onCardLeftScreen, onDragStart, onDrag, 
         } else {
             controls.start({
                 x: 0, y: 0, rotate: 0,
-                transition: { type: 'spring', stiffness: 300, damping: 25 },
+                transition: { type: 'spring', stiffness: 200, damping: 25 },
             })
         }
     }
@@ -223,9 +228,10 @@ function TinderCard({ children, onSwipe, onCardLeftScreen, onDragStart, onDrag, 
                 className={`absolute w-full h-full rounded-3xl ${isFront ? 'cursor-grab active:cursor-grabbing pointer-events-auto' : ''}`}
                 style={{ x, y, rotate, opacity }}
                 animate={controls}
-                drag={isFront}
+                drag={isFront && !isAnimating.current}
                 dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
-                dragElastic={0.7}
+                dragElastic={0.6}
+                dragTransition={{ bounceStiffness: 200, bounceDamping: 25 }}
                 onDragStart={isFront ? () => onDragStart?.() : undefined}
                 onDrag={isFront ? (_: unknown, info: PanInfo) => onDrag?.({ x: info.offset.x, y: info.offset.y }) : undefined}
                 onDragEnd={isFront ? (e: unknown, info: PanInfo) => { handleDragEnd(e, info); onDragEnd?.() } : undefined}
@@ -233,9 +239,9 @@ function TinderCard({ children, onSwipe, onCardLeftScreen, onDragStart, onDrag, 
             >
                 <motion.div
                     className="w-full h-full rounded-3xl"
-                    initial={{ scale: 0.85, opacity: 0 }}
-                    animate={{ scale: isFront ? 1 : 0.95, opacity: 1 }}
-                    transition={{ type: 'spring', stiffness: 350, damping: 28 }}
+                    initial={{ scale: 0.9, opacity: 0 }}
+                    animate={{ scale: isFront ? 1 : 0.96, opacity: 1 }}
+                    transition={{ type: 'spring', stiffness: 250, damping: 30 }}
                 >
                     {children}
                 </motion.div>
@@ -834,9 +840,9 @@ export default function PreviewView({
                         animate="center"
                         exit="exit"
                         transition={{
-                            x: { type: 'spring', stiffness: 300, damping: 30 },
-                            opacity: { duration: 0.15 },
-                            scale: { duration: 0.15 },
+                            x: { type: 'tween', duration: 0.3, ease: 'easeOut' },
+                            opacity: { duration: 0.2 },
+                            scale: { duration: 0.2 },
                         }}
                         className="absolute inset-0 min-h-0 w-full select-none"
                     >
@@ -865,11 +871,11 @@ export default function PreviewView({
                                     initial={{ opacity: isFrontCard ? 1 : 0, y: 0, scale: 1 }}
                                     animate={{ opacity: deckOpacity, y: behindY, scale: behindScale }}
                                     transition={{
-                                        opacity: { duration: shouldAnimateDeckOpacity ? 0.16 : 0 },
-                                        y: { type: 'spring', stiffness: 260, damping: 26 },
-                                        scale: { type: 'spring', stiffness: 260, damping: 26 },
+                                        opacity: { duration: shouldAnimateDeckOpacity ? 0.2 : 0.1 },
+                                        y: { type: 'spring', stiffness: 200, damping: 25 },
+                                        scale: { type: 'spring', stiffness: 200, damping: 25 },
                                     }}
-                                    style={{ zIndex: isExiting ? 0 : 3 - cardIndex }}
+                                    style={{ zIndex: isExiting ? 10 : 3 - cardIndex }}
                                 >
                                     <TinderCard
                                         index={cardIndex}
@@ -955,7 +961,7 @@ export default function PreviewView({
                                         <motion.span
                                             layoutId="nav-pill"
                                             className="absolute inset-0 rounded-xl bg-slate-900 dark:bg-white shadow-md shadow-slate-900/20 dark:shadow-white/10"
-                                            transition={{ type: 'spring', stiffness: 420, damping: 38, mass: 0.9 }}
+                                            transition={{ type: 'tween', duration: 0.25, ease: 'easeOut' }}
                                         />
                                     )}
                                     <span className={`relative z-10 flex items-center transition-colors duration-150 ${isActive ? 'text-white dark:text-zinc-900' : 'text-slate-400 dark:text-zinc-500 hover:text-slate-700 dark:hover:text-zinc-200'} ${isMobileLandscape ? 'gap-1' : 'gap-1.5'}`}>
