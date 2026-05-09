@@ -19,7 +19,7 @@ export function AnimatedCarouselMockup({
                     style={{ animation: 'carousel-swipe 6s cubic-bezier(0.25, 1, 0.5, 1) infinite' }}
                 >
                     {/* Card Mockup (Matches PreviewView.tsx) */}
-                    <div className="relative w-full h-full rounded-2xl sm:rounded-3xl overflow-hidden border-2 border-slate-200 dark:border-white shadow-[2px_2px_0_0_#334155] dark:shadow-[6px_6px_0_0_#a3e635] select-none bg-white dark:bg-slate-900">
+                    <div className="relative w-full h-full rounded-2xl sm:rounded-3xl overflow-hidden border-2 border-slate-200 dark:border-white shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#a3e635] select-none bg-white dark:bg-slate-900">
 
                         {/* Background Image */}
                         <div className="absolute inset-0 bg-slate-100">
@@ -83,7 +83,7 @@ export function AnimatedCarouselMockup({
 
 export function AnimatedFlipbookMockup() {
     return (
-        <div className="relative w-full h-full max-w-[220px] sm:max-w-[340px] aspect-[4/3] mx-auto rounded-xl bg-orange-200 dark:bg-orange-950/40 border-2 border-slate-200 dark:border-white shadow-[2px_2px_0_0_#334155] sm:shadow-[2px_2px_0_0_#334155] dark:shadow-[5px_5px_0_0_#a3e635] sm:dark:shadow-[8px_8px_0_0_#a3e635] overflow-visible flex items-center justify-center p-2 sm:p-3 [perspective:1000px]">
+        <div className="relative w-full h-full max-w-[220px] sm:max-w-[340px] aspect-[4/3] mx-auto rounded-xl bg-orange-200 dark:bg-orange-950/40 border-2 border-slate-200 dark:border-white shadow-[2px_2px_0_0_#334155] sm:shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#a3e635] sm:dark:shadow-[2px_2px_0_0_#a3e635] overflow-visible flex items-center justify-center p-2 sm:p-3 [perspective:1000px]">
 
             {/* Book Container */}
             <div className="relative w-full h-full bg-white border-2 border-slate-200 rounded-md flex [transform-style:preserve-3d]">

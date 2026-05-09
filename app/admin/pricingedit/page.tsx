@@ -795,9 +795,12 @@ export default function PricingEditPage() {
             </p>
           </div>
           {activeTab === 'yearbook' && (
-            <button onClick={() => setEditingPackage({})} className="hidden sm:flex items-center justify-center gap-2 px-5 py-2.5 md:px-6 md:py-3 bg-emerald-400 text-emerald-900 rounded-xl font-bold hover:bg-emerald-300 transition-all shadow-[2px_2px_0_0_#059669] hover:shadow-none hover:-translate-x-0.5 hover:-translate-y-0.5 text-sm">
+            <button
+              onClick={() => setEditingPackage({})}
+              className="hidden sm:inline-flex items-center justify-center gap-2 min-h-[44px] md:min-h-[48px] px-5 py-2.5 md:px-6 md:py-3 bg-emerald-400 text-emerald-900 rounded-xl font-bold hover:bg-emerald-300 transition-all shadow-[2px_2px_0_0_#059669] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 text-sm md:text-base whitespace-nowrap"
+            >
               <Plus size={18} className="md:w-5 md:h-5" strokeWidth={2.5} />
-                Buat Paket
+              Buat Paket
             </button>
           )}
         </div>
@@ -815,30 +818,30 @@ export default function PricingEditPage() {
           <button
             type="button"
             onClick={() => switchTab('yearbook')}
-            className={`relative z-10 flex flex-1 md:flex-none min-w-0 items-center justify-center gap-1.5 md:gap-2 px-3 py-2 md:px-5 md:py-2.5 rounded-xl text-[10px] md:text-sm font-bold transition-all duration-200 ${
+            className={`relative z-10 flex flex-1 md:flex-none min-w-0 items-center justify-center gap-1.5 md:gap-2 px-3 py-1.5 md:px-5 md:py-2 rounded-xl text-[10px] md:text-sm font-bold transition-all duration-200 ${
               activeTab === 'yearbook'
                 ? 'text-slate-900'
                 : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
             }`}
           >
-            <Layout className="w-3.5 h-3.5 md:w-5 md:h-5" strokeWidth={2.5} />
-            <span>Yearbook</span>
-            <span className="px-1.5 py-0.5 bg-slate-900 dark:bg-slate-700 text-white text-[9px] md:text-xs rounded-lg border-2 border-slate-900 dark:border-slate-600 ml-0.5">
+            <Layout className="w-3.5 h-3.5 md:w-5 md:h-5 shrink-0" strokeWidth={2.5} />
+            <span className="truncate">Yearbook</span>
+            <span className="flex items-center justify-center h-4 md:h-5 px-1 md:px-1.5 bg-slate-900 dark:bg-slate-700 text-white text-[9px] md:text-xs rounded-md md:rounded-lg border-2 border-slate-900 dark:border-slate-600 ml-1">
               {packages.length}
             </span>
           </button>
           <button
             type="button"
             onClick={() => switchTab('ai')}
-            className={`relative z-10 flex flex-1 md:flex-none min-w-0 items-center justify-center gap-1.5 md:gap-2 px-3 py-2 md:px-5 md:py-2.5 rounded-xl text-[10px] md:text-sm font-bold transition-all duration-200 ${
+            className={`relative z-10 flex flex-1 md:flex-none min-w-0 items-center justify-center gap-1.5 md:gap-2 px-3 py-1.5 md:px-5 md:py-2 rounded-xl text-[10px] md:text-sm font-bold transition-all duration-200 ${
               activeTab === 'ai'
                 ? 'text-slate-900'
                 : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
             }`}
           >
-            <Zap className="w-3.5 h-3.5 md:w-5 md:h-5" strokeWidth={2.5} />
-            <span>Unlock & Gen</span>
-            <span className="px-1.5 py-0.5 bg-slate-900 dark:bg-slate-700 text-white text-[9px] md:text-xs rounded-lg border-2 border-slate-900 dark:border-slate-600 ml-0.5">
+            <Zap className="w-3.5 h-3.5 md:w-5 md:h-5 shrink-0" strokeWidth={2.5} />
+            <span className="truncate">Unlock & Gen</span>
+            <span className="flex items-center justify-center h-4 md:h-5 px-1 md:px-1.5 bg-slate-900 dark:bg-slate-700 text-white text-[9px] md:text-xs rounded-md md:rounded-lg border-2 border-slate-900 dark:border-slate-600 ml-1">
               {aiPricing.length}
             </span>
           </button>

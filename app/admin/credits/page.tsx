@@ -558,7 +558,7 @@ export default function AdminCreditSettingsPage() {
     }
 
     return (
-        <div className="p-0 sm:p-0 md:p-0">
+        <div className="max-w-6xl pb-12">
             {editingPackage && (
                 <PackageForm pkg={editingPackage} onSave={handleSave} onCancel={() => setEditingPackage(null)} />
             )}
@@ -813,9 +813,9 @@ export default function AdminCreditSettingsPage() {
                 </div>
             )}
 
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 mb-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 mb-6 px-4 md:px-0">
                 <div className="space-y-1">
-                    <h1 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Credit Settings</h1>
+                    <h1 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white tracking-tight leading-none">Credit Settings</h1>
                     <p className="text-xs md:text-sm font-medium text-slate-500 dark:text-slate-400">Atur harga paket top up & management voucher code promo.</p>
                 </div>
                 {activeTab === 'packages' ? (
@@ -846,7 +846,7 @@ export default function AdminCreditSettingsPage() {
             </div>
 
             {/* Tabs */}
-            <div className="mb-8">
+            <div className="mb-8 px-4 md:px-0">
               <div className="relative flex w-full md:w-fit items-center gap-1 p-1 bg-white dark:bg-slate-800 rounded-2xl border-2 border-slate-900 dark:border-slate-700 shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b]">
                 <div
                   className="absolute top-1 bottom-1 rounded-xl bg-violet-400 transition-all duration-300 ease-out"
@@ -863,45 +863,45 @@ export default function AdminCreditSettingsPage() {
                 <button
                   type="button"
                   onClick={() => switchTab('packages')}
-                  className={`relative z-10 flex flex-1 md:flex-none min-w-0 items-center justify-center gap-1.5 md:gap-2 px-3 py-2 md:px-5 md:py-2.5 rounded-xl text-[10px] md:text-sm font-bold transition-all duration-200 ${
+                  className={`relative z-10 flex flex-1 md:flex-none min-w-0 items-center justify-center gap-1.5 md:gap-2 px-3 py-1.5 md:px-5 md:py-2 rounded-xl text-[10px] md:text-sm font-bold transition-all duration-200 ${
                     activeTab === 'packages'
                       ? 'text-slate-900'
                       : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
                   }`}
                 >
-                  <Layout className="w-3.5 h-3.5 md:w-5 md:h-5" strokeWidth={2.5} />
-                  <span>Packages</span>
-                  <span className="px-1.5 py-0.5 bg-slate-900 dark:bg-slate-700 text-white text-[9px] md:text-xs rounded-lg border-2 border-slate-900 dark:border-slate-600 ml-0.5">
+                  <Layout className="w-3.5 h-3.5 md:w-5 md:h-5 shrink-0" strokeWidth={2.5} />
+                  <span className="truncate">Packages</span>
+                  <span className="flex items-center justify-center h-4 md:h-5 px-1 md:px-1.5 bg-slate-900 dark:bg-slate-700 text-white text-[9px] md:text-xs rounded-md md:rounded-lg border-2 border-slate-900 dark:border-slate-600 ml-1">
                     {packages.length}
                   </span>
                 </button>
                 <button
                   type="button"
                   onClick={() => switchTab('redeem')}
-                  className={`relative z-10 flex flex-1 md:flex-none min-w-0 items-center justify-center gap-1.5 md:gap-2 px-3 py-2 md:px-5 md:py-2.5 rounded-xl text-[10px] md:text-sm font-bold transition-all duration-200 ${
+                  className={`relative z-10 flex flex-1 md:flex-none min-w-0 items-center justify-center gap-1.5 md:gap-2 px-3 py-1.5 md:px-5 md:py-2 rounded-xl text-[10px] md:text-sm font-bold transition-all duration-200 ${
                     activeTab === 'redeem'
                       ? 'text-slate-900'
                       : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
                   }`}
                 >
-                  <Hash className="w-3.5 h-3.5 md:w-5 md:h-5" strokeWidth={2.5} />
+                  <Hash className="w-3.5 h-3.5 md:w-5 md:h-5 shrink-0" strokeWidth={2.5} />
                   <span className="truncate">Redeems</span>
-                  <span className="px-1.5 py-0.5 bg-slate-900 dark:bg-slate-700 text-white text-[9px] md:text-xs rounded-lg border-2 border-slate-900 dark:border-slate-600 ml-0.5">
+                  <span className="flex items-center justify-center h-4 md:h-5 px-1 md:px-1.5 bg-slate-900 dark:bg-slate-700 text-white text-[9px] md:text-xs rounded-md md:rounded-lg border-2 border-slate-900 dark:border-slate-600 ml-1">
                     {redeemCodes.length}
                   </span>
                 </button>
                 <button
                   type="button"
                   onClick={() => switchTab('discount')}
-                  className={`relative z-10 flex flex-1 md:flex-none min-w-0 items-center justify-center gap-1.5 md:gap-2 px-3 py-2 md:px-5 md:py-2.5 rounded-xl text-[10px] md:text-sm font-bold transition-all duration-200 ${
+                  className={`relative z-10 flex flex-1 md:flex-none min-w-0 items-center justify-center gap-1.5 md:gap-2 px-3 py-1.5 md:px-5 md:py-2 rounded-xl text-[10px] md:text-sm font-bold transition-all duration-200 ${
                     activeTab === 'discount'
                       ? 'text-slate-900'
                       : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
                   }`}
                 >
-                  <Percent className="w-3.5 h-3.5 md:w-5 md:h-5" strokeWidth={2.5} />
+                  <Percent className="w-3.5 h-3.5 md:w-5 md:h-5 shrink-0" strokeWidth={2.5} />
                   <span className="truncate">Discount</span>
-                  <span className="px-1.5 py-0.5 bg-slate-900 dark:bg-slate-700 text-white text-[9px] md:text-xs rounded-lg border-2 border-slate-900 dark:border-slate-600 ml-0.5">
+                  <span className="flex items-center justify-center h-4 md:h-5 px-1 md:px-1.5 bg-slate-900 dark:bg-slate-700 text-white text-[9px] md:text-xs rounded-md md:rounded-lg border-2 border-slate-900 dark:border-slate-600 ml-1">
                     {discountVouchers.length}
                   </span>
                 </button>

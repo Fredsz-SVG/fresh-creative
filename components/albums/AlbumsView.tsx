@@ -71,6 +71,8 @@ export type AlbumsViewProps = {
   linkContext?: 'user' | 'admin'
   active?: boolean
   hideHeader?: boolean
+  leftElement?: React.ReactNode
+  createButton?: React.ReactNode
 }
 
 function AlbumCard({
@@ -397,7 +399,7 @@ function AlbumCard({
   return <CardContent />
 }
 
-export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albums', linkContext, active = true, hideHeader = false }: AlbumsViewProps) {
+export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albums', linkContext, active = true, hideHeader = false, leftElement, createButton }: AlbumsViewProps) {
   const [loadingId, setLoadingId] = useState<string | null>(null)
   const [navigatingAlbumId, setNavigatingAlbumId] = useState<string | null>(null)
   const [inviteLoading, setInviteLoading] = useState<string | null>(null)
@@ -925,13 +927,14 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
       {/* 1. Search Bar - Paling Atas */}
       {/* 1. Header: Title & Action Buttons Row */}
       {!hideHeader && (
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-          <div className="flex flex-col gap-2">
-            <h1 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white tracking-tight">{title}</h1>
-            <p className="text-slate-600 dark:text-slate-300 font-medium text-xs md:text-sm">{subtitle}</p>
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+          <div className="flex flex-col gap-1">
+            <h1 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white tracking-tight leading-none">{title}</h1>
+            <p className="text-slate-600 dark:text-slate-300 font-medium text-xs md:text-sm mt-1">{subtitle}</p>
           </div>
 
           <div className="flex flex-nowrap items-center gap-2 w-full md:w-auto min-w-0">
+            {createButton}
             {/* View Toggle Button - flex-1 di mobile agar lebar sama dengan card */}
             <button
               type="button"
@@ -978,53 +981,59 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
       )}
 
       {hideHeader && (
-        <div className="flex flex-nowrap items-center justify-end gap-2 w-full min-w-0 mb-8">
-          {/* View Toggle Button - flex-1 di mobile agar lebar sama dengan card */}
-          <button
-            type="button"
-            onClick={() => {
-              setShowPreviewForm(!showPreviewForm)
-              if (showSearch) setShowSearch(false)
-              if (showJoinForm) setShowJoinForm(false)
-            }}
-            className={`flex-1 min-w-0 md:flex-initial inline-flex items-center justify-center gap-1 sm:gap-2 px-2 py-2 sm:px-4 sm:py-2 text-[10px] sm:text-sm font-black rounded-lg sm:rounded-xl border-2 border-slate-900 dark:border-slate-700 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] transition-all active:scale-95 ${showPreviewForm ? 'bg-slate-200 text-slate-600 dark:bg-slate-800' : 'bg-emerald-400 text-slate-900 dark:bg-emerald-900/40 dark:text-emerald-200 hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none'}`}
-          >
-            <Eye className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-            <span className="whitespace-nowrap truncate">{showPreviewForm ? 'Tutup' : 'View'}</span>
-          </button>
+        <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-6 px-4 md:px-0">
+          <div className="w-full md:w-auto flex justify-center md:justify-start">
+            {leftElement}
+          </div>
+          <div className="flex flex-wrap items-center justify-center md:justify-end gap-2 w-full md:w-auto min-w-0">
+            {createButton}
+            {/* View Toggle Button - flex-1 di mobile agar lebar sama dengan card */}
+            <button
+              type="button"
+              onClick={() => {
+                setShowPreviewForm(!showPreviewForm)
+                if (showSearch) setShowSearch(false)
+                if (showJoinForm) setShowJoinForm(false)
+              }}
+              className={`flex-1 min-w-0 md:flex-initial inline-flex items-center justify-center gap-1 sm:gap-2 px-2 py-2 sm:px-4 sm:py-2 text-[10px] sm:text-sm font-black rounded-lg sm:rounded-xl border-2 border-slate-900 dark:border-slate-700 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] transition-all active:scale-95 ${showPreviewForm ? 'bg-slate-200 text-slate-600 dark:bg-slate-800' : 'bg-emerald-400 text-slate-900 dark:bg-emerald-900/40 dark:text-emerald-200 hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none'}`}
+            >
+              <Eye className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+              <span className="whitespace-nowrap truncate">{showPreviewForm ? 'Tutup' : 'View'}</span>
+            </button>
 
-          {/* Join Project Button */}
-          <button
-            type="button"
-            onClick={() => {
-              setShowJoinForm(!showJoinForm)
-              if (showSearch) setShowSearch(false)
-              if (showPreviewForm) setShowPreviewForm(false)
-            }}
-            className={`flex-1 min-w-0 md:flex-initial inline-flex items-center justify-center gap-1 sm:gap-2 px-2 py-2 sm:px-4 sm:py-2 text-[10px] sm:text-sm font-black rounded-lg sm:rounded-xl border-2 border-slate-900 dark:border-slate-700 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] transition-all active:scale-95 ${showJoinForm ? 'bg-slate-200 text-slate-600 dark:bg-slate-800' : 'bg-orange-400 text-slate-900 dark:bg-orange-900/40 dark:text-orange-200 hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none'}`}
-          >
-            <UserPlus className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-            <span className="whitespace-nowrap truncate">{showJoinForm ? 'Tutup' : 'Join'}</span>
-          </button>
+            {/* Join Project Button */}
+            <button
+              type="button"
+              onClick={() => {
+                setShowJoinForm(!showJoinForm)
+                if (showSearch) setShowSearch(false)
+                if (showPreviewForm) setShowPreviewForm(false)
+              }}
+              className={`flex-1 min-w-0 md:flex-initial inline-flex items-center justify-center gap-1 sm:gap-2 px-2 py-2 sm:px-4 sm:py-2 text-[10px] sm:text-sm font-black rounded-lg sm:rounded-xl border-2 border-slate-900 dark:border-slate-700 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] transition-all active:scale-95 ${showJoinForm ? 'bg-slate-200 text-slate-600 dark:bg-slate-800' : 'bg-orange-400 text-slate-900 dark:bg-orange-900/40 dark:text-orange-200 hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none'}`}
+            >
+              <UserPlus className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+              <span className="whitespace-nowrap truncate">{showJoinForm ? 'Tutup' : 'Join'}</span>
+            </button>
 
-          {/* Search Toggle Button */}
-          <button
-            type="button"
-            onClick={() => {
-              setShowSearch(!showSearch)
-              if (showJoinForm) setShowJoinForm(false)
-              if (showPreviewForm) setShowPreviewForm(false)
-            }}
-            className={`flex-1 min-w-0 md:flex-initial inline-flex items-center justify-center gap-1 sm:gap-2 px-2 py-2 sm:px-4 sm:py-2 text-[10px] sm:text-sm font-black rounded-lg sm:rounded-xl border-2 border-slate-900 dark:border-slate-700 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] transition-all active:scale-95 ${showSearch ? 'bg-slate-200 text-slate-600 dark:bg-slate-800' : 'bg-sky-400 text-slate-900 dark:bg-sky-900/40 dark:text-sky-200 hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none'}`}
-          >
-            <Search className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-            <span className="whitespace-nowrap truncate">{showSearch ? 'Tutup' : 'Search'}</span>
-          </button>
+            {/* Search Toggle Button */}
+            <button
+              type="button"
+              onClick={() => {
+                setShowSearch(!showSearch)
+                if (showJoinForm) setShowJoinForm(false)
+                if (showPreviewForm) setShowPreviewForm(false)
+              }}
+              className={`flex-1 min-w-0 md:flex-initial inline-flex items-center justify-center gap-1 sm:gap-2 px-2 py-2 sm:px-4 sm:py-2 text-[10px] sm:text-sm font-black rounded-lg sm:rounded-xl border-2 border-slate-900 dark:border-slate-700 shadow-[2px_2px_0_0_#0f172a] dark:shadow-[2px_2px_0_0_#334155] transition-all active:scale-95 ${showSearch ? 'bg-slate-200 text-slate-600 dark:bg-slate-800' : 'bg-sky-400 text-slate-900 dark:bg-sky-900/40 dark:text-sky-200 hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none'}`}
+            >
+              <Search className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+              <span className="whitespace-nowrap truncate">{showSearch ? 'Tutup' : 'Search'}</span>
+            </button>
+          </div>
         </div>
       )}
 
       {/* 2. Revealable Forms (View, Search or Join) */}
-      <div className="mb-8">
+      <div className="mb-6">
         {/* View Form */}
         {showPreviewForm && (
           <div className="flex flex-col sm:flex-row gap-3 p-4 bg-emerald-50 dark:bg-emerald-900/20 border-2 border-slate-900 dark:border-slate-700 rounded-2xl animate-in slide-in-from-top-2 duration-200 shadow-inner max-w-2xl mx-auto w-full">

@@ -476,7 +476,7 @@ export default function AdminShowcasePage() {
         </div>
       )}
 
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 mb-6 px-4 md:px-0">
         <div className="space-y-1">
           <h1 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
             View Settings
@@ -501,10 +501,10 @@ export default function AdminShowcasePage() {
       </div>
 
       {/* Tab Switcher — mobile: satu baris penuh; tombol portfolio di bawah (mobile) supaya tab tidak naik-turun */}
-      <div className="mb-8">
-        <div className="flex w-full md:w-fit max-w-full flex-nowrap gap-1 p-1 bg-slate-100 dark:bg-slate-900/50 rounded-2xl border-2 border-slate-900 dark:border-slate-800 relative min-w-0">
+      <div className="mb-8 px-4 md:px-0">
+        <div className="relative flex w-full md:w-fit items-center gap-1 p-1 bg-white dark:bg-slate-800 rounded-2xl border-2 border-slate-900 dark:border-slate-700 shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b]">
           <div
-            className="absolute top-1 bottom-1 rounded-xl bg-white dark:bg-slate-800 shadow-[2px_2px_0_0_#0f172a] border border-slate-900 transition-transform duration-200 ease-out"
+            className="absolute top-1 bottom-1 rounded-xl bg-violet-400 transition-all duration-300 ease-out"
             style={{
               width: 'calc(33.333333% - 6px)',
               transform:
@@ -513,6 +513,7 @@ export default function AdminShowcasePage() {
                   : activeTab === 'phygital'
                     ? 'translateX(100%)'
                     : 'translateX(200%)',
+              left: '4px',
             }}
           />
           {(['ebook', 'phygital', 'portfolio'] as const).map((tab) => (
@@ -520,18 +521,16 @@ export default function AdminShowcasePage() {
               key={tab}
               type="button"
               onClick={() => handleTabClick(tab)}
-              className={`relative z-10 flex flex-1 md:flex-none min-w-0 items-center justify-center gap-1.5 md:gap-2 px-3 py-2 md:px-5 md:py-2.5 rounded-xl text-[10px] md:text-sm font-bold uppercase tracking-wider ${
+              className={`relative z-10 flex flex-1 md:flex-none min-w-0 items-center justify-center gap-1.5 md:gap-2 px-3 py-1.5 md:px-5 md:py-2 rounded-xl text-[10px] md:text-sm font-bold transition-all duration-200 ${
                 activeTab === tab
-                  ? 'text-slate-900 dark:text-white'
-                  : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                  ? 'text-slate-900'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
               }`}
             >
-              <span className="relative z-20 flex min-w-0 items-center justify-center gap-1.5 md:gap-2">
-                {tab === 'ebook' && <BookOpen className="w-3.5 h-3.5 md:w-5 md:h-5 shrink-0" />}
-                {tab === 'phygital' && <MessageCircle className="w-3.5 h-3.5 md:w-5 md:h-5 shrink-0" />}
-                {tab === 'portfolio' && <ImageIcon className="w-3.5 h-3.5 md:w-5 md:h-5 shrink-0" />}
-                <span className="truncate">{tab === 'ebook' ? 'Ebook' : tab === 'phygital' ? 'Contact' : 'Portfolio'}</span>
-              </span>
+              {tab === 'ebook' && <BookOpen className={cn("w-3.5 h-3.5 md:w-5 md:h-5 shrink-0", activeTab === tab ? "text-slate-900" : "")} strokeWidth={2.5} />}
+              {tab === 'phygital' && <MessageCircle className={cn("w-3.5 h-3.5 md:w-5 md:h-5 shrink-0", activeTab === tab ? "text-slate-900" : "")} strokeWidth={2.5} />}
+              {tab === 'portfolio' && <ImageIcon className={cn("w-3.5 h-3.5 md:w-5 md:h-5 shrink-0", activeTab === tab ? "text-slate-900" : "")} strokeWidth={2.5} />}
+              <span className="truncate">{tab === 'ebook' ? 'Ebook' : tab === 'phygital' ? 'Contact' : 'Portfolio'}</span>
             </button>
           ))}
         </div>

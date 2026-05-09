@@ -334,14 +334,16 @@ export default function AdminPage() {
   ]
 
   return (
-    <div className="w-full">
-      <div className="flex flex-col gap-2 mb-8 px-4 md:px-0">
-        <h1 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
-          Admin Dashboard
-        </h1>
-        <p className="text-slate-600 dark:text-slate-300 font-medium text-xs md:text-sm max-w-2xl">
-          Overview data pengguna, kredit, dan aktivitas registrasi
-        </p>
+    <div className="max-w-6xl pb-12">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 mb-6 px-4 md:px-0">
+        <div className="space-y-1">
+          <h1 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white tracking-tight leading-none">
+            Admin Dashboard
+          </h1>
+          <p className="text-xs md:text-sm font-medium text-slate-500 dark:text-slate-400 max-w-2xl">
+            Overview data pengguna, kredit, dan aktivitas registrasi
+          </p>
+        </div>
       </div>
 
       {error && (

@@ -200,17 +200,20 @@ export default function AdminRiwayatPage() {
         </div>
       )}
 
-      <div className="flex flex-col gap-2 mb-8">
-        <h1 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
-          Riwayat Transaksi
-        </h1>
-        <p className="text-slate-600 dark:text-slate-300 font-medium text-xs md:text-sm">
-          {viewMode === 'mine' ? 'Daftar riwayat transaksi Top Up Anda.' : 'Monitor semua transaksi dari pengguna.'}
-        </p>
+    <div className="max-w-6xl pb-12">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 mb-6 px-4 md:px-0">
+        <div className="space-y-1">
+          <h1 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white tracking-tight leading-none">
+            Riwayat Transaksi
+          </h1>
+          <p className="text-xs md:text-sm font-medium text-slate-500 dark:text-slate-400">
+            {viewMode === 'mine' ? 'Daftar riwayat transaksi Top Up Anda.' : 'Monitor semua transaksi dari pengguna.'}
+          </p>
+        </div>
       </div>
 
-      <div className="flex justify-center mb-4 sm:mb-6">
-        <div className="relative inline-flex items-center gap-1 p-1 bg-white dark:bg-slate-800 rounded-2xl border-2 border-slate-900 dark:border-slate-700 shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b]">
+      <div className="flex justify-center md:justify-start mb-4 sm:mb-6 px-4 md:px-0">
+        <div className="relative flex w-full md:w-fit items-center gap-1 p-1 bg-white dark:bg-slate-800 rounded-2xl border-2 border-slate-900 dark:border-slate-700 shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b]">
           <div
             className={`absolute top-1 bottom-1 rounded-xl bg-violet-400 transition-all duration-300 ease-out`}
             style={{
@@ -222,18 +225,18 @@ export default function AdminRiwayatPage() {
           <button
             type="button"
             onClick={() => { setViewMode('mine'); setCurrentPage(1); }}
-            className={`relative z-10 flex min-w-0 items-center justify-center gap-1.5 sm:gap-2 px-4 py-2 sm:px-6 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all duration-200 whitespace-nowrap ${viewMode === 'mine' ? 'text-white' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
+            className={`relative z-10 flex-1 md:flex-none min-w-0 flex items-center justify-center gap-1.5 md:gap-2 px-3 py-1.5 md:px-5 md:py-2 rounded-xl text-[10px] md:text-sm font-bold transition-all duration-200 ${viewMode === 'mine' ? 'text-slate-900' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
           >
-            <User className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" strokeWidth={viewMode === 'mine' ? 3 : 2.5} />
-            <span className="truncate"><span className="sm:hidden">Saya</span><span className="hidden sm:inline">Riwayat Saya</span></span>
+            <User className="w-3.5 h-3.5 md:w-5 md:h-5 shrink-0" strokeWidth={2.5} />
+            <span className="truncate">Riwayat Saya</span>
           </button>
           <button
             type="button"
             onClick={() => { setViewMode('all'); setCurrentPage(1); }}
-            className={`relative z-10 flex min-w-0 items-center justify-center gap-1.5 sm:gap-2 px-4 py-2 sm:px-6 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all duration-200 whitespace-nowrap ${viewMode === 'all' ? 'text-white' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
+            className={`relative z-10 flex-1 md:flex-none min-w-0 flex items-center justify-center gap-1.5 md:gap-2 px-3 py-1.5 md:px-5 md:py-2 rounded-xl text-[10px] md:text-sm font-bold transition-all duration-200 ${viewMode === 'all' ? 'text-slate-900' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
           >
-            <Users className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" strokeWidth={viewMode === 'all' ? 3 : 2.5} />
-            <span className="truncate"><span className="sm:hidden">Semua</span><span className="hidden sm:inline">Riwayat Semua</span></span>
+            <Users className="w-3.5 h-3.5 md:w-5 md:h-5 shrink-0" strokeWidth={2.5} />
+            <span className="truncate">Riwayat Semua</span>
           </button>
         </div>
       </div>
@@ -429,6 +432,7 @@ export default function AdminRiwayatPage() {
           </div>
         </div>
       )}
+    </div>
     </>
   )
 }
