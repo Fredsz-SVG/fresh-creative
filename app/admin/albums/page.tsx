@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
-import { Plus, User, Users, Search } from 'lucide-react'
+import { Plus, User, Users, Search, Settings } from 'lucide-react'
 import AlbumsView from '@/components/albums/AlbumsView'
 
 export default function AdminAlbumsPage() {
@@ -71,7 +71,7 @@ export default function AdminAlbumsPage() {
             : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
         }`}
       >
-        <Search className="hidden md:inline-block w-3.5 h-3.5 md:w-5 md:h-5 shrink-0" strokeWidth={2.5} />
+        <Settings className="hidden md:inline-block w-3.5 h-3.5 md:w-5 md:h-5 shrink-0" strokeWidth={2.5} />
         <span className="truncate">Manajemen</span>
       </button>
     </div>
