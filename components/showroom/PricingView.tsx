@@ -90,7 +90,6 @@ export default function PricingView({
   const [voucherApplying, setVoucherApplying] = useState(false)
   const [voucherPercentOff, setVoucherPercentOff] = useState<number | null>(null)
   const [voucherError, setVoucherError] = useState<string>('')
-  const voucherStorageKey = `pricing_voucher_v1:${source}`
 
   const toggleAddon = (pkgId: string, addonIndex: number) => {
     setSelectedAddonIndices((prev) => {
@@ -112,71 +111,6 @@ export default function PricingView({
   useEffect(() => {
     setMounted(true);
   }, []);
-
-  useEffect(() => {
-    if (!mounted || typeof window === 'undefined') return
-    try {
-      const raw = window.sessionStorage.getItem(voucherStorageKey)
-      if (raw) {
-        const parsed = JSON.parse(raw) as { code?: string; percent_off?: number }
-        if (typeof parsed?.code === 'string') setVoucherCode(parsed.code)
-        if (typeof parsed?.percent_off === 'number') setVoucherPercentOff(parsed.percent_off)
-      }
-    } catch {
-      // ignore
-    }
-  }, [mounted, voucherStorageKey])
-
-  // Re-validate persisted voucher on refresh so expired vouchers don't "stick".
-  useEffect(() => {
-    if (!mounted || typeof window === 'undefined') return
-    const code = voucherCode.trim()
-    const pct = voucherPercentOff ?? 0
-    if (!code || pct <= 0) return
-
-    let cancelled = false
-    ;(async () => {
-      try {
-        const res = await fetchWithAuth('/api/discount-vouchers/validate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ code }),
-          skipAuth: true,
-        })
-        const data = (await res.json().catch(() => ({}))) as any
-        if (cancelled) return
-        if (!res.ok) {
-          setVoucherPercentOff(null)
-          setVoucherError(String(data?.error || 'Voucher tidak valid.'))
-          try {
-            window.sessionStorage.removeItem(voucherStorageKey)
-          } catch {
-            // ignore
-          }
-          return
-        }
-        const nextPct = Number(data?.percent_off)
-        if (Number.isFinite(nextPct) && nextPct > 0) {
-          setVoucherPercentOff(nextPct)
-          setVoucherCode(String(data?.code || code).toUpperCase())
-          try {
-            window.sessionStorage.setItem(
-              voucherStorageKey,
-              JSON.stringify({ code: String(data?.code || code).toUpperCase(), percent_off: nextPct })
-            )
-          } catch {
-            // ignore
-          }
-        }
-      } catch {
-        // Ignore network issues on refresh; we'll validate again on submit.
-      }
-    })()
-
-    return () => {
-      cancelled = true
-    }
-  }, [mounted, voucherCode, voucherPercentOff, voucherStorageKey])
 
   useEffect(() => {
     if (!mounted || typeof window === "undefined") return;
@@ -321,11 +255,6 @@ export default function PricingView({
       }
       setVoucherPercentOff(pct)
       setVoucherCode(String(data?.code || clean).toUpperCase())
-      try {
-        window.sessionStorage.setItem(voucherStorageKey, JSON.stringify({ code: String(data?.code || clean).toUpperCase(), percent_off: pct }))
-      } catch {
-        // ignore
-      }
     } catch {
       setVoucherPercentOff(null)
       setVoucherError('Gagal memvalidasi voucher.')
@@ -338,11 +267,6 @@ export default function PricingView({
     setVoucherPercentOff(null)
     setVoucherError('')
     setVoucherCode('')
-    try {
-      window.sessionStorage.removeItem(voucherStorageKey)
-    } catch {
-      // ignore
-    }
   }
 
   const handleSaveToDb = async () => {
@@ -368,6 +292,7 @@ export default function PricingView({
       if (selectedPackageId && totalPrice != null) {
         body.pricing_package_id = selectedPackageId;
         body.total_estimated_price = totalPrice;
+        body.selected_addon_indices = selectedAddonIndices[selectedPackageId] ?? [];
       }
       if ((voucherPercentOff ?? 0) > 0 && voucherCode.trim()) {
         body.discount_voucher_code = voucherCode.trim()

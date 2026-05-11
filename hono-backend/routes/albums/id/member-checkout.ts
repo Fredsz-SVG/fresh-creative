@@ -36,21 +36,38 @@ memberCheckoutRoute.post('/', async (c) => {
     const album = await db
       .prepare(
         `
-        SELECT a.name, a.individual_payments_enabled, a.package_snapshot, a.discount_percent_off
+        SELECT a.name, a.individual_payments_enabled, a.package_snapshot, a.discount_percent_off, a.total_estimated_price, a.students_count
         FROM albums a
         WHERE a.id = ?
       `
       )
       .bind(albumId)
-      .first<{ name: string; individual_payments_enabled?: number; package_snapshot?: string; discount_percent_off?: number }>()
+      .first<{
+        name: string
+        individual_payments_enabled?: number
+        package_snapshot?: string
+        discount_percent_off?: number
+        total_estimated_price?: number
+        students_count?: number
+      }>()
 
     if (!album) return c.json({ error: 'Album not found' }, 404)
     if (album.individual_payments_enabled === 0) {
       return c.json({ error: 'Album does not require individual payments' }, 400)
     }
 
+    const discountPercent = Number(album.discount_percent_off ?? 0)
+    const hasDiscount = Number.isFinite(discountPercent) && discountPercent > 0 && discountPercent < 100
+    const storedTotal = Number(album.total_estimated_price ?? 0)
+    const storedStudentsCount = Number(album.students_count ?? 0)
+    const storedAmountPerStudent =
+      Number.isFinite(storedTotal) && storedTotal > 0 && Number.isFinite(storedStudentsCount) && storedStudentsCount > 0
+        ? Math.round(storedTotal / storedStudentsCount)
+        : 0
+
     let amount = 0
     const lineItems: Array<{ name: string; quantity: number; price: number }> = []
+    let calculatedSubtotal = 0
 
     if (album.package_snapshot) {
       try {
@@ -62,7 +79,7 @@ memberCheckoutRoute.post('/', async (c) => {
             quantity: 1,
             price: baseP,
           })
-          amount += baseP
+          calculatedSubtotal += baseP
         }
 
         if (pkg.features && Array.isArray(pkg.features)) {
@@ -76,7 +93,7 @@ memberCheckoutRoute.post('/', async (c) => {
                   quantity: 1,
                   price: addonP,
                 })
-                amount += addonP
+                calculatedSubtotal += addonP
               }
             } catch {
               /* ignore individual addon parse error */
@@ -88,17 +105,21 @@ memberCheckoutRoute.post('/', async (c) => {
       }
     }
 
-    if (amount <= 0) {
-      // Fallback if price calculation failed but we have a snapshot price field (unexpected but safe)
-      const snapshot = JSON.parse(album.package_snapshot || '{}') as { price_per_student: number }
-      amount = snapshot.price_per_student || 0
-      if (lineItems.length === 0) {
-        lineItems.push({
-          name: `${album.name} Access Payment`,
-          quantity: 1,
-          price: amount,
-        })
-      }
+    const calculatedAmount = hasDiscount
+      ? Math.max(0, Math.round(calculatedSubtotal * (1 - discountPercent / 100)))
+      : calculatedSubtotal
+    amount = storedAmountPerStudent > 0 ? storedAmountPerStudent : calculatedAmount
+
+    const subtotalBeforeDiscount = hasDiscount && amount > 0
+      ? Math.round(amount / (1 - discountPercent / 100))
+      : amount
+
+    if (lineItems.length === 0 || Math.abs(calculatedSubtotal - subtotalBeforeDiscount) > 1) {
+      lineItems.splice(0, lineItems.length, {
+        name: `${album.name} Access Payment`,
+        quantity: 1,
+        price: subtotalBeforeDiscount || amount,
+      })
     }
 
     if (amount <= 0) {
@@ -125,11 +146,6 @@ memberCheckoutRoute.post('/', async (c) => {
 
     const externalId = `member_${access_id}_user_${user.id}_ts_${Date.now()}`
     const txId = crypto.randomUUID()
-    const discountPercent = Number(album.discount_percent_off ?? 0)
-    const hasDiscount = Number.isFinite(discountPercent) && discountPercent > 0 && discountPercent < 100
-    const subtotalBeforeDiscount = hasDiscount
-      ? Math.round(amount / (1 - discountPercent / 100))
-      : amount
     const discountAmount = hasDiscount ? Math.max(0, subtotalBeforeDiscount - amount) : 0
     const descBase = `Pembayaran Akses Anggota Album: ${album.name}`
     const desc = descBase

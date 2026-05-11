@@ -97,12 +97,12 @@ export default function AlbumRegisterForm({ albumId: albumIdProp, token, loginRe
           if (checkData.hasRequest) {
             if (checkData.status === 'pending') {
               toast.error('Anda sudah mendaftar dan menunggu persetujuan')
-              setTimeout(() => router.push('/user'), 2000)
+              setTimeout(() => navigateToDashboard(), 2000)
               return
             }
             if (checkData.status === 'approved') {
               toast.error('Anda sudah terdaftar dan disetujui')
-              setTimeout(() => router.push('/user'), 2000)
+              setTimeout(() => navigateToDashboard(), 2000)
               return
             }
           }
@@ -135,6 +135,23 @@ export default function AlbumRegisterForm({ albumId: albumIdProp, token, loginRe
     checkAuthAndFetchData()
   }, [resolvedAlbumId, loginReturnPath, defaultReturnPath, router])
 
+  const navigateToDashboard = async () => {
+    try {
+      const res = await fetchWithAuth('/api/user/bootstrap')
+      if (res.ok) {
+        const bootData = asObject(await res.json().catch(() => ({})))
+        const role = (bootData.me as any)?.role
+        if (role === 'admin' || role === 'global_admin') {
+          router.push('/admin')
+          return
+        }
+      }
+    } catch (e) {
+      console.error('Error fetching bootstrap for redirect:', e)
+    }
+    router.push('/user')
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!formData.student_name || !formData.email) {
@@ -166,7 +183,7 @@ export default function AlbumRegisterForm({ albumId: albumIdProp, token, loginRe
 
       toast.success(asString(data.message) || 'Pendaftaran berhasil!')
       setSuccess(true)
-      setTimeout(() => router.push('/user'), 2000)
+      setTimeout(() => navigateToDashboard(), 2000)
     } catch (error) {
       console.error(error)
       toast.error('Terjadi kesalahan')
@@ -218,10 +235,10 @@ export default function AlbumRegisterForm({ albumId: albumIdProp, token, loginRe
             Pendaftaran Anda telah diterima. Tunggu konfirmasi dari admin untuk bergabung ke album.
           </p>
             <button
-            onClick={() => router.push('/')}
+            onClick={() => navigateToDashboard()}
             className="w-full px-6 py-4 rounded-2xl bg-lime-400 text-slate-900 border-2 border-slate-200 font-black uppercase tracking-widest shadow-[3px_3px_0_0_#000] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all"
           >
-            Beranda
+            Dashboard
           </button>
         </div>
       </div>

@@ -14,7 +14,7 @@ export default async function AdminYearbookAlbumPage({ params }: { params: Promi
       initialMembers={{}}
       initialAccess={{ access: {}, requests: {} } as any}
       backHref="/admin/albums"
-      backLabel="Ke Manajemen Album"
+      backLabel="Ke Album"
     />
   )
 }

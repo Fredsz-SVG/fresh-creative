@@ -183,8 +183,8 @@ export interface AnimatedLoginProps {
 }
 
 export function AnimatedLoginPage({
-  email,
-  password,
+  email = "",
+  password = "",
   showPassword,
   isLoading = false,
   error = "",
@@ -623,6 +623,8 @@ export interface AnimatedSignupProps {
   showPassword: boolean;
   isLoading?: boolean;
   error?: string;
+  fullName: string;
+  onFullNameChange: (fullName: string) => void;
   onEmailChange: (email: string) => void;
   onPasswordChange: (password: string) => void;
   onConfirmPasswordChange?: (confirmPassword: string) => void;
@@ -631,12 +633,14 @@ export interface AnimatedSignupProps {
 }
 
 export function AnimatedSignupPage({
-  email,
-  password,
+  email = "",
+  password = "",
   confirmPassword = "",
   showPassword,
   isLoading = false,
   error = "",
+  fullName = "",
+  onFullNameChange,
   onEmailChange,
   onPasswordChange,
   onConfirmPasswordChange,
@@ -947,6 +951,8 @@ export function AnimatedSignupPage({
                 id="fullName"
                 type="text"
                 placeholder="Masukkan nama lengkap"
+                value={fullName}
+                onChange={(e) => onFullNameChange(e.target.value)}
                 required
                 className="h-10 text-sm bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 focus:border-indigo-500"
               />

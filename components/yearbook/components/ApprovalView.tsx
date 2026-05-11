@@ -420,7 +420,7 @@ export default function ApprovalView({
         <div className="mt-3 sm:mt-4 p-4 sm:p-6 rounded-2xl sm:rounded-[32px] bg-indigo-50 dark:bg-indigo-950/40 border-2 sm:border-2 border-slate-900 dark:border-slate-700 shadow-[1.5px_1.5px_0_0_#334155] dark:shadow-[1.5px_1.5px_0_0_#1e293b]">
           <div className="flex flex-wrap items-center gap-2 mb-3 sm:mb-4">
             <LinkIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-900 dark:text-white" strokeWidth={3} />
-            <span className="text-[10px] sm:text-xs font-black text-slate-900 dark:text-white uppercase tracking-widest">Kode link undangan</span>
+            <span className="text-[10px] sm:text-xs font-black text-slate-900 dark:text-white uppercase tracking-widest">Link undangan project</span>
             {!inviteTokenLoaded ? (
               <div className="ml-auto flex flex-col items-end gap-1">
                 <span className="inline-block h-3 w-12 rounded bg-slate-200 dark:bg-slate-700 animate-pulse" />
@@ -450,14 +450,15 @@ export default function ApprovalView({
           ) : inviteToken ? (
             <div className="flex flex-col gap-4 animate-in fade-in slide-in-from-top-4 duration-500">
               <div className="flex items-center gap-2 sm:gap-3">
-                <div className="flex-1 min-w-0 font-mono font-black text-slate-900 dark:text-white text-xs sm:text-lg px-3 py-2 sm:px-4 sm:py-3 rounded-lg sm:rounded-xl bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 truncate sm:truncate-none">
-                  {inviteToken}
+                <div className="flex-1 min-w-0 font-mono font-black text-slate-900 dark:text-white text-[10px] sm:text-sm px-3 py-2 sm:px-4 sm:py-3 rounded-lg sm:rounded-xl bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 truncate">
+                  {typeof window !== 'undefined' ? `${window.location.origin}/invite/${inviteToken}` : inviteToken}
                 </div>
                 <button
                   type="button"
                   onClick={() => {
-                    navigator.clipboard.writeText(inviteToken)
-                    toast.success('Kode disalin!')
+                    const fullUrl = `${window.location.origin}/invite/${inviteToken}`
+                    navigator.clipboard.writeText(fullUrl)
+                    toast.success('Link disalin!')
                   }}
                   className="shrink-0 px-4 py-2.5 sm:px-6 sm:py-4 rounded-lg sm:rounded-xl bg-slate-900 dark:bg-slate-700 text-white hover:bg-slate-800 dark:hover:bg-slate-600 transition-all text-[10px] sm:text-xs font-black uppercase shadow-[2px_2px_0_0_#4f46e5] dark:shadow-[1.5px_1.5px_0_0_#1e293b] active:shadow-none translate-y-[-2px] active:translate-y-0 flex items-center gap-1.5"
                 >
@@ -486,7 +487,7 @@ export default function ApprovalView({
               ) : (
                 <LinkIcon className="w-4 h-4 sm:w-5 sm:h-5" strokeWidth={3} />
               )}
-              {generatingInvite ? 'Membuat...' : 'Buat Link Undangan'}
+              {generatingInvite ? 'Membuat...' : 'Buat Link Undangan Project'}
             </button>
           )}
         </div>

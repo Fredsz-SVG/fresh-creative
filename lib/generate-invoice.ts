@@ -13,6 +13,7 @@ export type InvoiceTransaction = {
   user_full_name?: string
   user_email?: string
   package_snapshot?: string | null
+  discount_percent_off?: number | null
   new_students_count?: number | null
 }
 
@@ -67,6 +68,16 @@ export async function generateAndPrintInvoice(tx: InvoiceTransaction) {
 
   const formatMoney = (value: number) => `Rp ${value.toLocaleString('id-ID')}`
   const lineItems: Array<{ name: string; quantity: number; total: number }> = []
+  const parseFeatures = (features: unknown): unknown[] => {
+    if (Array.isArray(features)) return features
+    if (typeof features !== 'string') return []
+    try {
+      const parsed = JSON.parse(features)
+      return Array.isArray(parsed) ? parsed : []
+    } catch {
+      return []
+    }
+  }
 
   try {
     if (tx.package_snapshot) {
@@ -84,8 +95,9 @@ export async function generateAndPrintInvoice(tx: InvoiceTransaction) {
         }
       }
 
-      if (Array.isArray(pkg?.features)) {
-        for (const feature of pkg.features) {
+      const features = parseFeatures(pkg?.features)
+      if (features.length > 0) {
+        for (const feature of features) {
           try {
             const addon = typeof feature === 'string' ? JSON.parse(feature) : feature
             const addonPrice = Number(addon?.price)
@@ -106,6 +118,28 @@ export async function generateAndPrintInvoice(tx: InvoiceTransaction) {
     // ignore snapshot parse error and fall back to a single row below
   }
 
+  let subtotalBeforeDiscount = lineItems.length
+    ? lineItems.reduce((sum, item) => sum + item.total, 0)
+    : parsedAmount
+  const explicitDiscountPercent = Number(tx.discount_percent_off ?? 0)
+  const hasExplicitDiscount =
+    Number.isFinite(explicitDiscountPercent) && explicitDiscountPercent > 0 && explicitDiscountPercent < 100
+  const expectedSubtotal = hasExplicitDiscount
+    ? Math.round(parsedAmount / (1 - explicitDiscountPercent / 100))
+    : parsedAmount
+  if (lineItems.length > 0 && Math.abs(subtotalBeforeDiscount - expectedSubtotal) > 1) {
+    lineItems.splice(0, lineItems.length, {
+      name: desc,
+      quantity: 1,
+      total: expectedSubtotal,
+    })
+    subtotalBeforeDiscount = expectedSubtotal
+  }
+  const inferredDiscountAmount =
+    hasExplicitDiscount && subtotalBeforeDiscount > parsedAmount ? subtotalBeforeDiscount - parsedAmount : 0
+  const hasDiscount = inferredDiscountAmount > 0
+  const discountPercent = hasDiscount ? Math.round(explicitDiscountPercent) : 0
+
   const renderedLineItems = lineItems.length
     ? lineItems.map((item) => `
           <tr>
@@ -118,17 +152,6 @@ export async function generateAndPrintInvoice(tx: InvoiceTransaction) {
           <td class="text-right">1</td>
           <td class="text-right" style="white-space: nowrap;">${formatMoney(parsedAmount)}</td>
         </tr>`
-
-  const subtotalBeforeDiscount = lineItems.length
-    ? lineItems.reduce((sum, item) => sum + item.total, 0)
-    : parsedAmount
-  const inferredDiscountAmount =
-    subtotalBeforeDiscount > parsedAmount ? subtotalBeforeDiscount - parsedAmount : 0
-  const hasDiscount = inferredDiscountAmount > 0
-  const discountPercent =
-    hasDiscount && subtotalBeforeDiscount > 0
-      ? Math.round((inferredDiscountAmount / subtotalBeforeDiscount) * 100)
-      : 0
 
   const html = `
 <!DOCTYPE html>

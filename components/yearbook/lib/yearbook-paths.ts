@@ -2,10 +2,10 @@
  * Path per section sidebar yearbook. Setiap sidebar punya path sendiri agar navigasi instant.
  */
 
-export const SECTION_SLUGS = ['cover', 'kelas', 'view', 'sambutan', 'flipbook', 'akses', 'tim', 'ai-labs'] as const
+export const SECTION_SLUGS = ['cover', 'kelas', 'view', 'sambutan', 'flipbook', 'akses', 'tim', 'ai-labs', 'manajemen'] as const
 export type SectionSlug = typeof SECTION_SLUGS[number]
 
-export type SectionMode = 'cover' | 'classes' | 'approval' | 'team' | 'sambutan' | 'ai-labs' | 'flipbook' | 'preview'
+export type SectionMode = 'cover' | 'classes' | 'approval' | 'team' | 'sambutan' | 'ai-labs' | 'flipbook' | 'preview' | 'management'
 
 const SLUG_TO_MODE: Record<SectionSlug, SectionMode> = {
   cover: 'cover',
@@ -16,6 +16,7 @@ const SLUG_TO_MODE: Record<SectionSlug, SectionMode> = {
   akses: 'approval',
   tim: 'team',
   'ai-labs': 'ai-labs',
+  manajemen: 'management',
 }
 
 const MODE_TO_SLUG: Record<SectionMode, SectionSlug | null> = {
@@ -27,6 +28,7 @@ const MODE_TO_SLUG: Record<SectionMode, SectionSlug | null> = {
   approval: 'akses',
   team: 'tim',
   'ai-labs': 'ai-labs',
+  management: 'manajemen',
 }
 
 const BASE_USER = '/user/album/yearbook'
@@ -90,7 +92,7 @@ export function toSkeletonSection(value: string | null): SectionMode | null {
   if (!value) return null
   const asSlug = value as SectionSlug
   if (SECTION_SLUGS.includes(asSlug)) return SLUG_TO_MODE[asSlug]
-  const modes: SectionMode[] = ['cover', 'classes', 'approval', 'team', 'sambutan', 'ai-labs', 'flipbook', 'preview']
+  const modes: SectionMode[] = ['cover', 'classes', 'approval', 'team', 'sambutan', 'ai-labs', 'flipbook', 'preview', 'management']
   return modes.includes(value as SectionMode) ? (value as SectionMode) : null
 }
 

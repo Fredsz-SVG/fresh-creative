@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback, useRef } from 'react'
 import { useParams, useSearchParams, useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import BackLink from '@/components/dashboard/BackLink'
-import { ChevronLeft, ChevronRight, BookOpen, ImagePlus, Video, Play, Users, Layout, Eye, Menu, MessageSquare, Book, Lock, Link as LinkIcon, Search, SearchX, X, Loader2 } from 'lucide-react'
+import { ChevronLeft, ChevronRight, BookOpen, ImagePlus, Video, Play, Users, Layout, Eye, Menu, MessageSquare, Book, Lock, Link as LinkIcon, Search, SearchX, X, Loader2, UserCircle } from 'lucide-react'
 import { toast } from '@/lib/toast'
 import NotFound from '@/app/not-found'
 import YearbookClassesView from './YearbookClassesView'
@@ -38,7 +38,7 @@ const AI_LABS_TOOLS = ['tryon', 'pose', 'image-editor', 'photogroup', 'phototovi
 
 export default function YearbookAlbumClient({
   backHref = '/user/albums',
-  backLabel = 'Ke Album Saya',
+  backLabel = 'Ke Album',
   initialAlbum = null,
   initialMembers = {},
   initialAccess = { access: {}, requests: {} }
@@ -55,7 +55,7 @@ export default function YearbookAlbumClient({
   const { album, setAlbum, loading, error, fetchAlbum, handleUpdateAlbum, albumRef } = useYearbookAlbumData(id, initialAlbum)
   
   // UI State: view, classIndex, sidebarMode, classViewMode, personalIndex, etc. with localStorage persistence
-  const { view, setView, classIndex, setClassIndex, sidebarMode, setSidebarMode, classViewMode, setClassViewMode, personalIndex, setPersonalIndex, flipbookPreviewMode, setFlipbookPreviewMode, mobileMenuOpen, setMobileMenuOpen, lastEditorSection, setLastEditorSection } = useYearbookUIState(id)
+  const { view, setView, classIndex, setClassIndex, sidebarMode, setSidebarMode, classViewMode, setClassViewMode, personalIndex, setPersonalIndex, flipbookPreviewMode, setFlipbookPreviewMode, mobileMenuOpen, setMobileMenuOpen, mobileMenuMode, setMobileMenuMode, lastEditorSection, setLastEditorSection } = useYearbookUIState(id)
 
   // Features: feature unlocks, flipbook/ai-labs features by package
   const { featureUnlocks, setFeatureUnlocks, flipbookEnabledByPackage, setFlipbookEnabledByPackage, aiLabsFeaturesByPackage, setAiLabsFeaturesByPackage, featureCreditCosts, setFeatureCreditCosts, featureUseCosts, setFeatureUseCosts, featureUnlocksLoaded, setFeatureUnlocksLoaded, fetchFeatureUnlocks } = useYearbookFeatures(id)
@@ -202,8 +202,8 @@ export default function YearbookAlbumClient({
 
   // Section dari URL: path segment atau query ?section=
   const rawSectionMode = getSectionModeFromUrl(pathname, searchParams.get('section'), id ?? '')
-  // Regular users should not see Cover, Sambutan, or Approval - redirect them to classes
-  const sectionMode = (!canManage && ['cover', 'sambutan', 'approval'].includes(rawSectionMode)) ? 'classes' : rawSectionMode
+  // Regular users should not see Cover, Sambutan, Approval, or Management - redirect them to classes
+  const sectionMode = (!canManage && ['cover', 'sambutan', 'approval', 'management'].includes(rawSectionMode)) ? 'classes' : rawSectionMode
   
   const isCoverView = sectionMode === 'cover'
   const sidebarModeFromPath = sectionMode === 'cover' ? 'classes' : sectionMode
@@ -212,7 +212,9 @@ export default function YearbookAlbumClient({
   const [activeSection, setActiveSection] = useState<typeof sectionMode>(sectionMode)
 
   const uiSection = activeSection === 'cover' ? 'classes' : activeSection
+  const isFlipbookMode = uiSection === 'flipbook'
   const isFlipbookPreview = uiSection === 'flipbook' && (flipbookPreviewMode || !canManage)
+  const isAiLabsToolActiveTop = uiSection === 'ai-labs' && !!aiLabsTool
   const latestClickedSectionRef = useRef<string | null>(null)
 
   useEffect(() => {
@@ -229,13 +231,6 @@ export default function YearbookAlbumClient({
     setActiveSection(sectionMode)
   }, [sectionMode])
 
-  useEffect(() => {
-    setView(activeSection === 'cover' ? 'cover' : 'classes')
-    setSidebarMode(activeSection === 'cover' ? 'classes' : activeSection)
-    if (activeSection !== 'preview' && activeSection !== 'ai-labs') {
-      setLastEditorSection(activeSection)
-    }
-  }, [activeSection])
 
   const handleSectionChange = useCallback(
     (section: typeof sectionMode) => {
@@ -254,9 +249,27 @@ export default function YearbookAlbumClient({
     [id, pathname]
   )
 
-  // Lock body scroll when in flipbook preview mode (to prevent the whole page from scrolling)
   useEffect(() => {
-    if (isFlipbookPreview) {
+    setView(activeSection === 'cover' ? 'cover' : 'classes')
+    setSidebarMode(activeSection === 'cover' ? 'classes' : activeSection)
+    if (activeSection !== 'preview' && activeSection !== 'ai-labs') {
+      setLastEditorSection(activeSection)
+    }
+
+    // Auto-exit management overview on desktop resize
+    const handleResize = () => {
+      if (window.innerWidth >= 1024 && activeSection === 'management') {
+        handleSectionChange('cover')
+      }
+    }
+    window.addEventListener('resize', handleResize)
+    handleResize() // Check immediately
+    return () => window.removeEventListener('resize', handleResize)
+  }, [activeSection, handleSectionChange])
+
+  // Lock body scroll when in flipbook or AI labs tool mode (to prevent the whole page from scrolling)
+  useEffect(() => {
+    if (isFlipbookMode || isAiLabsToolActiveTop) {
       document.body.style.overflow = 'hidden'
       document.body.style.overscrollBehavior = 'none'
       document.documentElement.style.overflow = 'hidden'
@@ -279,7 +292,7 @@ export default function YearbookAlbumClient({
       document.documentElement.style.height = ''
       document.body.style.height = ''
     }
-  }, [isFlipbookPreview])
+  }, [isFlipbookMode, isAiLabsToolActiveTop])
 
   // Popup video: endpoint video-play wajib Authorization Bearer — muat dengan fetchWithAuth lalu blob URL.
   useEffect(() => {
@@ -719,24 +732,42 @@ export default function YearbookAlbumClient({
     // Mark that we just did a local update
     lastLocalUpdateRef.current = Date.now()
 
+    let affectedClasses: Array<{ id: string, sort_order: number }> = []
+
     // Optimistic update - update UI immediately without waiting for server
     const optimisticUpdate = { id: classId, name: '', sort_order: 0, batch_photo_url: null as string | null }
     setAlbum((prev) => {
       if (!prev?.classes) return prev
-      const currentClass = prev.classes.find(c => c.id === classId)
-      if (!currentClass) return prev
+      const currentClassIndex = prev.classes.findIndex(c => c.id === classId)
+      if (currentClassIndex === -1) return prev
+      const currentClass = prev.classes[currentClassIndex]
 
       optimisticUpdate.name = updates.name !== undefined ? updates.name : currentClass.name
-      optimisticUpdate.sort_order = updates.sort_order !== undefined ? updates.sort_order : (currentClass.sort_order ?? 0)
       // @ts-ignore
       optimisticUpdate.batch_photo_url = updates.batch_photo_url !== undefined ? updates.batch_photo_url : (currentClass.batch_photo_url ?? null)
 
-      const newClasses = prev.classes
-        // @ts-ignore
-        .map((c) => (c.id === classId ? { ...c, ...updates } : c))
-        .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+      let newClasses = [...prev.classes]
 
-      // Jika ada perubahan sort_order, update classIndex ke posisi baru
+      // Jika ada perubahan sort_order
+      if (updates.sort_order !== undefined && updates.sort_order !== currentClass.sort_order) {
+        const newOrder = updates.sort_order
+        // hapus item dari index lama
+        const [movedItem] = newClasses.splice(currentClassIndex, 1)
+        // masukkan di index baru
+        newClasses.splice(newOrder, 0, { ...movedItem, ...updates })
+
+        // Perbaiki sort_order untuk semua item sesuai index
+        newClasses = newClasses.map((c, idx) => ({ ...c, sort_order: idx }))
+
+        // Lacak kelas mana saja yang berubah urutannya untuk diupdate ke backend
+        affectedClasses = newClasses.map(c => ({ id: c.id, sort_order: c.sort_order! }))
+        optimisticUpdate.sort_order = newOrder
+      } else {
+        optimisticUpdate.sort_order = currentClass.sort_order ?? 0
+        newClasses[currentClassIndex] = { ...currentClass, ...updates }
+      }
+
+      // Jika ada perubahan sort_order, update classIndex ke posisi baru agar tetap menampilkan kelas yang sama
       if (updates.sort_order !== undefined) {
         const newIndex = newClasses.findIndex((c) => c.id === classId)
         if (newIndex !== -1 && newIndex !== classIndex) {
@@ -747,24 +778,48 @@ export default function YearbookAlbumClient({
       return { ...prev, classes: newClasses }
     })
 
-    // Background API call - fire and forget
-    return fetchWithAuth(`/api/albums/${id}/classes/${classId}`, {
-      method: 'PATCH',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(updates),
-    }).then(res => {
-      if (!res.ok) {
-        // Revert on error
+    try {
+      const promises = []
+
+      // 1. Update utama
+      promises.push(
+        fetchWithAuth(`/api/albums/${id}/classes/${classId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updates),
+        })
+      )
+
+      // 2. Jika ada pergeseran urutan, update kelas lainnya
+      if (updates.sort_order !== undefined && affectedClasses.length > 0) {
+        for (const c of affectedClasses) {
+          if (c.id === classId) continue // Sudah diupdate di atas
+          promises.push(
+            fetchWithAuth(`/api/albums/${id}/classes/${c.id}`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ sort_order: c.sort_order }),
+            })
+          )
+        }
+      }
+
+      const results = await Promise.all(promises)
+      const hasError = results.some(res => !res.ok)
+
+      if (hasError) {
         fetchAlbum(true)
+        toast.error('Gagal menyimpan perubahan kelas')
         return null
       }
+
+      toast.success('Kelas berhasil diperbarui')
       return optimisticUpdate
-    }).catch(() => {
-      // Revert on error
+    } catch (err) {
       fetchAlbum(true)
+      toast.error('Terjadi kesalahan saat menyimpan')
       return null
-    })
+    }
   }
 
   const handleAddClass = async () => {
@@ -1161,7 +1216,10 @@ export default function YearbookAlbumClient({
         return
       }
       const d = data as ClassAccess
-      if (!isEditingOther) {
+      const targetUid = isEditingOther ? targetUserId : currentUserId
+      const isMe = targetUid === currentUserId
+
+      if (isMe) {
         setMyAccessByClass((prev) => ({
           ...prev,
           [classId]: prev[classId] ? {
@@ -1174,11 +1232,16 @@ export default function YearbookAlbumClient({
             phone: (d as any).phone ?? null,
             message: d.message ?? null,
             video_url: d.video_url ?? null
-          } : null,
+          } : {
+            id: d.id ?? '',
+            student_name: d.student_name,
+            email: d.email ?? null,
+            status: d.status ?? 'approved'
+          },
         }))
       }
+      
       // Optimistic update: immediately reflect text changes in membersByClass
-      const targetUid = isEditingOther ? targetUserId : currentUserId
       if (targetUid) {
         setMembersByClass(prev => {
           const list = prev[classId]
@@ -1558,13 +1621,13 @@ export default function YearbookAlbumClient({
     }
   }
 
-  const mobileFirstWrapper = `w-full mx-auto bg-white dark:bg-slate-950 lg:max-w-full flex flex-col ${isFlipbookPreview ? 'fixed inset-0 overflow-hidden' : 'min-h-screen'}`
-  const contentWrapper = 'max-w-[420px] md:max-w-full w-full mx-auto'
+  const mobileFirstWrapperDefault = `w-full mx-auto bg-white dark:bg-slate-950 lg:max-w-full flex flex-col min-h-0`
+  const contentWrapperDefault = 'max-w-[420px] md:max-w-full w-full mx-auto'
 
   if (!id) {
     return (
-      <div className={mobileFirstWrapper}>
-        <div className={`${contentWrapper} p-4`}>
+      <div className={mobileFirstWrapperDefault}>
+        <div className={`${contentWrapperDefault} p-4`}>
           <p className="text-red-400 dark:text-red-300">ID album tidak valid.</p>
           <BackLink href={effectiveBackHref} />
         </div>
@@ -1583,8 +1646,8 @@ export default function YearbookAlbumClient({
 
   if (error || !album) {
     return (
-      <div className={mobileFirstWrapper}>
-        <div className={`${contentWrapper} p-4 pb-6`}>
+      <div className={mobileFirstWrapperDefault}>
+        <div className={`${contentWrapperDefault} p-4 pb-6`}>
           <BackLink href={effectiveBackHref} />
           <p className="text-red-400 dark:text-red-300 mt-4">{error ?? 'Album tidak ditemukan.'}</p>
           <p className="text-muted dark:text-slate-400 text-sm mt-2">Pastikan album sudah disetujui (approved) dan Anda memiliki akses.</p>
@@ -1599,27 +1662,33 @@ export default function YearbookAlbumClient({
     const uiSection = activeSection === 'cover' ? 'classes' : activeSection
     const showBackLink = true
     const currentClass = album?.classes?.[classIndex]
-    const aiLabsToolLabel: Record<string, string> = { tryon: 'Virtual Try On', pose: 'Pose', 'image-editor': 'Image Editor', photogroup: 'Photo Group', phototovideo: 'Photo to Video' }
+    const aiLabsToolLabel: Record<string, string> = { tryon: 'V-Tryon', pose: 'Pose', 'image-editor': 'Image Editor', photogroup: 'Photo Group', phototovideo: 'Photo to Video' }
     const isAiLabsToolActive = uiSection === 'ai-labs' && !!aiLabsTool
+    const isManagementSubSection = (['classes', 'sambutan'].includes(uiSection) || isCoverView) && canManage
+    const mobileFirstWrapper = `w-full mx-auto bg-white dark:bg-slate-950 lg:max-w-full flex flex-col ${(isFlipbookMode || isAiLabsToolActive) ? 'fixed inset-0 overflow-hidden' : 'min-h-0'}`
+    const contentWrapper = 'max-w-[420px] md:max-w-full w-full mx-auto'
+
     const aiLabsBackHref = album?.id ? (useAdminBack ? `/admin/album/yearbook/${album.id}?section=ai-labs` : `/user/album/yearbook/${album.id}?section=ai-labs`) : effectiveBackHref
     const sectionTitle =
       isCoverView ? 'Cover'
         : uiSection === 'ai-labs' ? (aiLabsTool ? (aiLabsToolLabel[aiLabsTool] ?? 'AI Labs') : 'AI Labs')
-          : uiSection === 'sambutan' ? 'Sambutan'
-            : uiSection === 'classes' ? (currentClass?.name ?? 'Kelas')
-              : uiSection === 'approval' ? 'Approval'
-                : uiSection === 'flipbook' ? 'Flipbook'
-                  : uiSection === 'preview' ? 'Preview'
-                    : ''
+          : uiSection === 'management' ? 'Manajemen Album'
+            : uiSection === 'sambutan' ? 'Sambutan'
+              : uiSection === 'classes' ? (currentClass?.name ?? 'Kelas')
+                : uiSection === 'approval' ? 'Approval'
+                  : uiSection === 'flipbook' ? 'Flipbook'
+                    : uiSection === 'preview' ? 'Preview'
+                      : ''
     const sectionSubtitle =
       isCoverView ? 'Tampilan cover dan pengaturan cover album.'
         : uiSection === 'ai-labs' ? (aiLabsTool ? '' : 'Pilih fitur yang ingin digunakan. Semua fitur AI tersedia di sini.')
-          : uiSection === 'sambutan' ? 'Kartu sambutan dan profil.'
-            : uiSection === 'classes' ? (currentClass ? 'Profil dan foto anggota kelas.' : 'Daftar kelas dan anggota.')
-              : uiSection === 'approval' ? 'Persetujuan siswa & manajemen tim album.'
-                : uiSection === 'flipbook' ? 'Editor dan preview flipbook.'
-                  : uiSection === 'preview' ? 'Preview tampilan album yearbook.'
-                    : ''
+          : uiSection === 'management' ? ''
+            : uiSection === 'sambutan' ? 'Kartu sambutan dan profil.'
+              : uiSection === 'classes' ? (currentClass ? 'Profil dan foto anggota kelas.' : 'Daftar kelas dan anggota.')
+                : uiSection === 'approval' ? 'Persetujuan siswa & manajemen tim album.'
+                  : uiSection === 'flipbook' ? 'Editor dan preview flipbook.'
+                    : uiSection === 'preview' ? 'Preview tampilan album yearbook.'
+                      : ''
 
     const headerCount =
       uiSection === 'classes' && !isCoverView && currentClass
@@ -1635,28 +1704,60 @@ export default function YearbookAlbumClient({
         {/* Sticky Header - BackLink + judul section sejajar (mobile + desktop) */}
         {showBackLink && (
           <div className="flex sticky top-0 z-50 bg-amber-300 dark:bg-slate-900 border-b-2 border-black dark:border-slate-700 px-3 lg:px-4 h-14 items-center gap-3 lg:gap-4">
+            {/* Back button for Mobile */}
+            {canManage && ['cover', 'sambutan', 'classes'].includes(uiSection) && (
+              <div className="lg:hidden flex items-center">
+                <button
+                  onClick={() => handleSectionChange('management')}
+                  className="inline-flex items-center justify-center w-8 h-8 bg-white dark:bg-slate-800 border-2 border-black dark:border-slate-700 rounded-lg text-slate-900 dark:text-white active:translate-x-0.5 active:translate-y-0.5 transition-all"
+                  title="Kembali ke Menu"
+                >
+                  <ChevronLeft className="w-4 h-4" strokeWidth={3} />
+                </button>
+              </div>
+            )}
+            
+            {/* Menu icon for non-admins on the left (replaces absent back button) */}
+            {!canManage && uiSection === 'classes' && !isCoverView && (
+              <button
+                onClick={() => {
+                  setMobileMenuMode('navigation')
+                  setMobileMenuOpen(true)
+                }}
+                className="lg:hidden inline-flex items-center justify-center w-8 h-8 bg-amber-400 dark:bg-amber-600 border-2 border-black dark:border-slate-700 rounded-lg text-slate-900 dark:text-white active:translate-x-0.5 active:translate-y-0.5 transition-all"
+                title="Daftar Kelas"
+              >
+                <Menu className="w-4 h-4" strokeWidth={3} />
+              </button>
+            )}
+
             <Link 
               href={isAiLabsToolActive ? aiLabsBackHref : effectiveBackHref} 
               prefetch={true}
               scroll={false}
               onTouchStart={() => { try { router.prefetch(isAiLabsToolActive ? aiLabsBackHref : effectiveBackHref) } catch {} }}
-              className="lg:hidden inline-flex items-center justify-center w-9 h-9 bg-white dark:bg-slate-800 border-2 border-black dark:border-slate-700 rounded-xl text-slate-900 dark:text-white active:translate-x-0.5 active:translate-y-0.5 transition-all"
+              className={`${isAiLabsToolActive ? 'inline-flex' : 'hidden'} items-center justify-center w-9 h-9 lg:w-10 lg:h-10 bg-white dark:bg-slate-800 border-2 border-black dark:border-slate-700 rounded-xl text-slate-900 dark:text-white active:translate-x-0.5 active:translate-y-0.5 transition-all`}
             >
-              <ChevronLeft className="w-5 h-5" />
+              <ChevronLeft className="w-5 h-5 lg:w-6 lg:h-6" strokeWidth={3} />
             </Link>
-            {/* Desktop: full BackLink (tetap di kiri, tanpa margin bawah agar sejajar vertikal) */}
-            <div className="hidden lg:flex items-center">
-              {isAiLabsToolActive ? (
-                <BackLink href={aiLabsBackHref} label="Ke Daftar Fitur" className="!mb-0" />
-              ) : (
-                <BackLink href={effectiveBackHref} label={effectiveBackLabel} className="!mb-0" />
-              )}
-            </div>
+
+            {/* Back button for Flipbook Preview (Mobile + Desktop) */}
+            {uiSection === 'flipbook' && !canManage && (
+              <button
+                onClick={() => handleSectionChange('classes')}
+                className="inline-flex items-center justify-center w-9 h-9 lg:w-10 lg:h-10 bg-white dark:bg-slate-800 border-2 border-black dark:border-slate-700 rounded-xl text-slate-900 dark:text-white active:translate-x-0.5 active:translate-y-0.5 transition-all"
+                title="Keluar Preview"
+              >
+                <ChevronLeft className="w-5 h-5 lg:w-6 lg:h-6" strokeWidth={3} />
+              </button>
+            )}
+
+            {/* Desktop BackLink removed - moved to IconSidebar */}
             {sectionTitle && (
               <>
                 {/* Mobile: title left-aligned */}
-                <div className="lg:hidden flex-1 min-w-0">
-                  <h1 className="text-base font-black text-slate-900 dark:text-white truncate max-w-full text-left uppercase tracking-tight leading-none">{sectionTitle}</h1>
+                <div className="lg:hidden flex-1 min-w-0 flex items-center gap-2">
+                  <h1 className="text-[13px] font-black text-slate-900 dark:text-white truncate max-w-[160px] text-left uppercase tracking-tight leading-none">{sectionTitle}</h1>
                 </div>
                 {/* Desktop: title centered */}
                 <div className="hidden lg:block absolute left-1/2 -translate-x-1/2 text-center min-w-0 max-w-[50%]">
@@ -1676,48 +1777,40 @@ export default function YearbookAlbumClient({
             {/* Header Actions (Right) */}
             <div className="ml-auto flex items-center gap-2 pr-1 lg:pr-2">
               {/* Credits badge: keep mounted to avoid resetting to 0 on tab switch */}
-              <div className={(uiSection === 'ai-labs' || (uiSection === 'flipbook' && featureUnlocksLoaded && !(flipbookEnabledByPackage || featureUnlocks.includes('flipbook')))) ? '' : 'invisible pointer-events-none'}>
+              <div className={(uiSection === 'ai-labs' || (uiSection === 'flipbook' && featureUnlocksLoaded && !(flipbookEnabledByPackage || featureUnlocks.includes('flipbook')))) ? '' : 'hidden'}>
                 <CreditBadgeTop />
               </div>
               {/* Flipbook Controls (Mobile & Desktop) */}
               {uiSection === 'flipbook' && (isOwner || isAlbumAdmin) && (featureUnlocksLoaded ? (flipbookEnabledByPackage || featureUnlocks.includes('flipbook')) : true) && (
-                <div className="relative flex p-1 bg-white dark:bg-slate-800 rounded-lg sm:rounded-xl border-2 border-black dark:border-slate-700 shadow-[1.5px_1.5px_0_0_#334155] dark:shadow-[1.5px_1.5px_0_0_#1e293b]">
+                <div className="relative flex p-[1.5px] sm:p-1 bg-white dark:bg-slate-800 rounded-lg sm:rounded-xl border-2 border-black dark:border-slate-700 shadow-[1px_1px_0_0_#334155] dark:shadow-[1.5px_1.5px_0_0_#1e293b] w-24 sm:w-44">
                   <div
-                    className="absolute top-1 bottom-1 rounded-md sm:rounded-lg bg-indigo-400 border-2 border-black dark:border-slate-700 transition-all duration-300 ease-out z-0"
+                    className="absolute top-[1.5px] bottom-[1.5px] sm:top-1 sm:bottom-1 rounded-md sm:rounded-lg bg-indigo-400 border-[1.5px] sm:border-2 border-black dark:border-slate-700 transition-all duration-300 ease-out z-0"
                     style={{
-                      left: '4px',
+                      left: '1.5px',
                       transform: flipbookPreviewMode ? 'translateX(100%)' : 'translateX(0)',
-                      width: 'calc(50% - 4px)',
+                      width: 'calc(50% - 1.5px)',
                     }}
                   />
                   <div className="relative z-10 grid grid-cols-2 w-full">
                     <button
                       onClick={() => setFlipbookPreviewMode(false)}
-                      className={`flex items-center justify-center gap-1 sm:gap-1.5 px-2 py-1.5 sm:px-4 sm:py-1.5 rounded-md sm:rounded-lg text-[10px] sm:text-xs font-black uppercase transition-colors duration-200 ${!flipbookPreviewMode ? 'text-white' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}
+                      className={`flex items-center justify-center gap-1 sm:gap-1.5 px-1 py-0 sm:py-1.5 rounded-md sm:rounded-lg text-[9px] sm:text-xs font-black uppercase transition-colors duration-200 ${!flipbookPreviewMode ? 'text-white' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}
                     >
-                      <Layout className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> <span className="hidden sm:inline">Editor</span>
+                      <Layout className="w-3 h-3 sm:w-4 sm:h-4" /> <span className="hidden sm:inline">Editor</span>
                     </button>
                     <button
                       onClick={() => setFlipbookPreviewMode(true)}
-                      className={`flex items-center justify-center gap-1 sm:gap-1.5 px-2 py-1.5 sm:px-4 sm:py-1.5 rounded-md sm:rounded-lg text-[10px] sm:text-xs font-black uppercase transition-colors duration-200 ${flipbookPreviewMode ? 'text-white' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}
+                      className={`flex items-center justify-center gap-1 sm:gap-1.5 px-1 py-0 sm:py-1.5 rounded-md sm:rounded-lg text-[9px] sm:text-xs font-black uppercase transition-colors duration-200 ${flipbookPreviewMode ? 'text-white' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}
                     >
-                      <Eye className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> <span className="hidden sm:inline">Preview</span>
+                      <Eye className="w-3 h-3 sm:w-4 sm:h-4" /> <span className="hidden sm:inline">Preview</span>
                     </button>
                   </div>
                 </div>
               )}
 
-              {/* Flipbook Controls for Regular User (Exit button instead of Editor/Preview toggle) */}
-              {uiSection === 'flipbook' && !canManage && (
-                <button
-                  onClick={() => handleSectionChange('classes')}
-                  className="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg sm:rounded-xl bg-white dark:bg-slate-800 border-2 border-black dark:border-slate-700 text-[10px] sm:text-xs font-black uppercase text-slate-900 dark:text-white active:translate-x-0.5 active:translate-y-0.5 transition-all"
-                >
-                  <X className="w-3 h-3 sm:w-4 sm:h-4" /> <span>Preview</span>
-                </button>
-              )}
+
               {/* Sambutan & Classes: Search Toggle */}
-              {(uiSection === 'sambutan' || (uiSection === 'classes' && activeSection !== 'cover')) && (
+              {(uiSection === 'sambutan' || (uiSection === 'classes' && !isCoverView)) && (
                 <>
                   {isSearchOpen(uiSection === 'sambutan' ? 'sambutan' : 'classes') ? (
                     <div className={`absolute left-[64px] ${uiSection === 'classes' ? 'right-[68px]' : 'right-[12px]'} top-[5px] bottom-[5px] bg-amber-50 dark:bg-slate-800 border-2 border-black dark:border-slate-700 rounded-xl pl-3 pr-8 flex items-center lg:static lg:w-auto lg:h-9 lg:px-2 lg:py-1 animate-in slide-in-from-right-2 duration-200 z-[60]`}>
@@ -1748,69 +1841,39 @@ export default function YearbookAlbumClient({
                 </>
               )}
 
-              {uiSection === 'classes' && activeSection !== 'cover' && (
+              {/* Hamburger Strip 3 (Daftar Kelas) - Only on Right for Admins */}
+              {canManage && uiSection === 'classes' && !isCoverView && (
+                <button
+                  onClick={() => {
+                    setMobileMenuMode('navigation')
+                    setMobileMenuOpen(true)
+                  }}
+                  className="lg:hidden flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 bg-amber-400 dark:bg-amber-600 border-2 border-black dark:border-slate-700 rounded-lg sm:rounded-xl text-slate-900 dark:text-white active:translate-x-0.5 active:translate-y-0.5 transition-all flex-shrink-0"
+                  title="Daftar Kelas"
+                >
+                  <Menu className="w-4 h-4 sm:w-5 sm:h-5" strokeWidth={3} />
+                </button>
+              )}
+
+              {/* Mobile Menu Trigger (Hamburger Profil/Luar) - Visible on main sections */}
+              {(['management', 'approval', 'ai-labs', 'flipbook', 'preview'].includes(uiSection) || (uiSection === 'classes' && !canManage)) && !isCoverView && (
                 <button
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation()
+                    setMobileMenuMode('profile')
                     setMobileMenuOpen(true)
                   }}
-                  className="lg:hidden flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 bg-white dark:bg-slate-800 border-2 border-black dark:border-slate-700 rounded-lg sm:rounded-xl text-slate-900 dark:text-white active:translate-x-0.5 active:translate-y-0.5 transition-all flex-shrink-0"
+                  className="lg:hidden flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 text-slate-900 dark:text-white active:scale-95 transition-all flex-shrink-0"
                 >
-                  <Menu className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <UserCircle className="w-9 h-9 sm:w-11 sm:h-11" strokeWidth={1} />
                 </button>
               )}
             </div>
 
-            {/* Mobile: Cover View Actions - Icon Only */}
-            {activeSection === 'cover' && (isOwner || isAlbumAdmin || isGlobalAdminUser) && (
-              <div className="lg:hidden ml-auto flex items-center gap-1 sm:gap-1.5">
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    const url = `${window.location.origin}/album/${album?.id}/view`;
-                    navigator.clipboard.writeText(url);
-                    toast.success('Link public berhasil disalin');
-                  }}
-                  className="flex items-center justify-center w-8 h-8 bg-white dark:bg-slate-800 border-2 border-black dark:border-slate-700 rounded-lg text-slate-900 dark:text-white active:translate-x-0.5 active:translate-y-0.5 transition-all"
-                  title="Salin link public"
-                >
-                  <LinkIcon className="w-3.5 h-3.5" strokeWidth={3} />
-                </button>
-              </div>
-            )}
           </div>
         )}
 
-        {/* Mobile Persistent Edit Navigation - Cover, Sambutan, Kelas saja; Flipbook ada di bottom nav */}
-        {((['classes', 'sambutan'].includes(uiSection) || activeSection === 'cover')) && !isAiLabsToolActive && canManage && (
-          <div className="lg:hidden sticky top-14 z-40 bg-transparent px-3 sm:px-4 pt-0 pb-0">
-            <div className="flex gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar py-1.5 sm:py-2">
-              <button
-                onClick={() => handleSectionChange('cover')}
-                className={`flex-shrink-0 flex items-center gap-1.5 sm:gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg sm:rounded-xl border transition-all ${activeSection === 'cover' ? 'bg-slate-900 dark:bg-slate-700 border-black dark:border-slate-700 text-white' : 'bg-white dark:bg-slate-800 border-black dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-black dark:hover:border-slate-500 hover:text-slate-900 dark:hover:text-white shadow-sm'}`}
-              >
-                <Book className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${activeSection === 'cover' ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`} />
-                <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest whitespace-nowrap">Cover</span>
-              </button>
-              <button
-                onClick={() => handleSectionChange('sambutan')}
-                className={`flex-shrink-0 flex items-center gap-1.5 sm:gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg sm:rounded-xl border transition-all ${uiSection === 'sambutan' ? 'bg-slate-900 dark:bg-slate-700 border-black dark:border-slate-700 text-white' : 'bg-white dark:bg-slate-800 border-black dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-black dark:hover:border-slate-500 hover:text-slate-900 dark:hover:text-white shadow-sm'}`}
-              >
-                <MessageSquare className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${uiSection === 'sambutan' ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`} />
-                <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest whitespace-nowrap">Sambutan</span>
-              </button>
-              <button
-                onClick={() => handleSectionChange('classes')}
-                className={`flex-shrink-0 flex items-center gap-1.5 sm:gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg sm:rounded-xl border transition-all ${uiSection === 'classes' && activeSection !== 'cover' ? 'bg-slate-900 dark:bg-slate-700 border-black dark:border-slate-700 text-white' : 'bg-white dark:bg-slate-800 border-black dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-black dark:hover:border-slate-500 hover:text-slate-900 dark:hover:text-white shadow-sm'}`}
-              >
-                <Users className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${uiSection === 'classes' && activeSection !== 'cover' ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`} />
-                <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest whitespace-nowrap">Kelas</span>
-              </button>
-            </div>
-          </div>
-        )}
 
         {/* Main Content */}
         <div className={`${contentWrapper} flex-1 min-h-0 flex flex-col`}>
@@ -1849,6 +1912,7 @@ export default function YearbookAlbumClient({
             setFlipbookPreviewMode={setFlipbookPreviewMode}
             mobileMenuOpen={mobileMenuOpen}
             setMobileMenuOpen={setMobileMenuOpen}
+            drawerMode={mobileMenuMode}
             aiLabsTool={aiLabsTool}
             requestForm={requestForm}
             setRequestForm={setRequestForm}
@@ -1933,8 +1997,9 @@ export default function YearbookAlbumClient({
             featureUseCosts={featureUseCosts}
             onFeatureUnlocked={fetchFeatureUnlocks}
             effectiveBackHref={effectiveBackHref}
-              teacherSearchQuery={teacherSearchQuery}
-              classMemberSearchQuery={classMemberSearchQuery}
+            backLabel={backLabel}
+            teacherSearchQuery={teacherSearchQuery}
+            classMemberSearchQuery={classMemberSearchQuery}
             />
           )}
         </div>

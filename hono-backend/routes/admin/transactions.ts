@@ -8,7 +8,7 @@ import { getAuthUserFromContext } from '../../lib/auth-user'
 const transactions = new Hono<AppEnv>()
 transactions.use('*', requireAuthJwt)
 
-const txSelect = `t.id, t.user_id, t.external_id, t.amount, t.status, t.payment_method, t.invoice_url, t.created_at, t.album_id, t.description, a.package_snapshot, t.new_students_count, a.students_count as total_students,
+const txSelect = `t.id, t.user_id, t.external_id, t.amount, t.status, t.payment_method, t.invoice_url, t.created_at, t.album_id, t.description, a.package_snapshot, a.discount_percent_off, t.new_students_count, a.students_count as total_students,
   cp.credits as pkg_credits, a.name as album_name`
 
 transactions.get('/', async (c) => {
@@ -24,7 +24,7 @@ transactions.get('/', async (c) => {
   if (scope !== 'all') {
     const { results } = await db
       .prepare(
-        `SELECT t.id, t.external_id, t.amount, t.status, t.payment_method, t.invoice_url, t.created_at, t.album_id, t.description, a.package_snapshot, t.new_students_count, a.students_count as total_students,
+        `SELECT t.id, t.external_id, t.amount, t.status, t.payment_method, t.invoice_url, t.created_at, t.album_id, t.description, a.package_snapshot, a.discount_percent_off, t.new_students_count, a.students_count as total_students,
           cp.credits as pkg_credits, a.name as album_name
          FROM transactions t
          LEFT JOIN credit_packages cp ON t.package_id = cp.id
@@ -41,6 +41,7 @@ transactions.get('/', async (c) => {
         credits: pkg_credits ?? null, 
         album_name: album_name ?? null, 
         package_snapshot: rest.package_snapshot ?? null, 
+        discount_percent_off: rest.discount_percent_off ?? null,
         new_students_count: rest.new_students_count ?? null, 
         total_students: rest.total_students ?? null 
       }
@@ -74,12 +75,13 @@ transactions.get('/', async (c) => {
   return c.json(
     list.map((tx) => {
       const u = userMap.get(tx.user_id as string) || { full_name: '-', email: '-' }
-      const { pkg_credits, album_name, package_snapshot, new_students_count, total_students, ...rest } = tx
+      const { pkg_credits, album_name, package_snapshot, discount_percent_off, new_students_count, total_students, ...rest } = tx
         return {
           ...rest,
           credits: pkg_credits ?? null,
           album_name: album_name ?? null,
           package_snapshot: package_snapshot ?? null,
+          discount_percent_off: discount_percent_off ?? null,
           new_students_count: new_students_count ?? null,
           total_students: total_students ?? null,
           user_full_name: u.full_name,

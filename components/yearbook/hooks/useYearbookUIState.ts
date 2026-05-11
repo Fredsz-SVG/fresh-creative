@@ -20,7 +20,7 @@ export function useYearbookUIState(id: string | undefined) {
     return 0
   })
 
-  const [sidebarMode, setSidebarMode] = useState<'classes' | 'approval' | 'team' | 'sambutan' | 'ai-labs' | 'flipbook' | 'preview'>('classes')
+  const [sidebarMode, setSidebarMode] = useState<'classes' | 'approval' | 'team' | 'sambutan' | 'ai-labs' | 'flipbook' | 'preview' | 'management'>('classes')
   const [classViewMode, setClassViewMode] = useState<'list' | 'personal'>(() => {
     if (typeof window !== 'undefined' && id) {
       const saved = localStorage.getItem(`yearbook-classViewMode-${id}`)
@@ -45,6 +45,7 @@ export function useYearbookUIState(id: string | undefined) {
     return false
   })
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [mobileMenuMode, setMobileMenuMode] = useState<'navigation' | 'profile'>('navigation')
   const [lastEditorSection, setLastEditorSection] = useState<string | null>(null)
 
   // Persist view to localStorage
@@ -112,6 +113,8 @@ export function useYearbookUIState(id: string | undefined) {
     setFlipbookPreviewMode,
     mobileMenuOpen,
     setMobileMenuOpen,
+    mobileMenuMode,
+    setMobileMenuMode,
     lastEditorSection,
     setLastEditorSection
   }

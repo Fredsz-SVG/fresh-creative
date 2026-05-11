@@ -48,18 +48,18 @@ export const FILES_SECTION_ADMIN: NavSection = {
 
 /** Daftar fitur AI Labs untuk halaman hub (grid kartu seperti Gojek). */
 export const AI_LABS_FEATURES_USER = [
-  { href: '/user/tryon', label: 'Try On', description: 'Virtual try-on (Replicate · Gemini)' },
-  { href: '/user/pose', label: 'Pose', description: 'Transfer pose dari referensi' },
+  { href: '/user/tryon', label: 'V-Tryon', description: 'Ubah Outfit' },
+  { href: '/user/pose', label: 'Pose', description: 'Ubah pose foto' },
   { href: '/user/image-editor', label: 'Image Editor', description: 'Edit & Remove Background' },
-  { href: '/user/photogroup', label: 'Photo Group', description: 'Gabungkan beberapa foto jadi satu' },
+  { href: '/user/photogroup', label: 'Photo Group', description: 'Gabungkan foto' },
   { href: '/user/phototovideo', label: 'Photo to Video', description: 'Ubah foto jadi video singkat' },
 ] as const
 
 export const AI_LABS_FEATURES_ADMIN = [
-  { href: '/admin/tryon', label: 'Try On', description: 'Virtual try-on (Replicate · Gemini)' },
-  { href: '/admin/pose', label: 'Pose', description: 'Transfer pose dari referensi' },
+  { href: '/admin/tryon', label: 'V-Tryon', description: 'Ubah Outfit' },
+  { href: '/admin/pose', label: 'Pose', description: 'Ubah pose foto' },
   { href: '/admin/image-editor', label: 'Image Editor', description: 'Edit & Remove Background' },
-  { href: '/admin/photogroup', label: 'Photo Group', description: 'Gabungkan beberapa foto jadi satu' },
+  { href: '/admin/photogroup', label: 'Photo Group', description: 'Gabungkan foto' },
   { href: '/admin/phototovideo', label: 'Photo to Video', description: 'Ubah foto jadi video singkat' },
 ] as const
 

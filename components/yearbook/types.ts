@@ -11,7 +11,8 @@ export type PackageSnapshot = {
   name: string
   price_per_student: number
   min_students: number
-  features: string
+  features: string[]
+  selected_addon_indices?: number[]
   flipbook_enabled: boolean
   ai_labs_features: string[]
 }

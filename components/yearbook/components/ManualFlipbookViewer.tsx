@@ -687,9 +687,9 @@ export default function ManualFlipbookViewer({ pages, onPlayVideo, className = '
 
   if (!pages || pages.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center p-12 bg-white dark:bg-slate-900 rounded-[32px] border-2 border-slate-900 dark:border-slate-700 border-dashed text-slate-400 dark:text-slate-500 h-full w-full">
-        <Play className="w-16 h-16 mb-4 opacity-20" strokeWidth={3} />
-        <p className="text-xs font-black uppercase tracking-[0.2em]">Belum ada halaman yang diunggah.</p>
+      <div className={`flex flex-col items-center justify-center p-8 sm:p-12 bg-white dark:bg-slate-900 rounded-[32px] border-2 border-slate-900 dark:border-slate-700 border-dashed text-slate-400 dark:text-slate-500 h-full w-full min-h-[300px] ${className}`}>
+        <Play className="w-12 h-12 sm:w-16 sm:h-16 mb-4 opacity-20" strokeWidth={3} />
+        <p className="text-[10px] sm:text-xs font-black uppercase tracking-[0.2em] text-center px-4">Belum ada halaman yang diunggah.</p>
       </div>
     )
   }

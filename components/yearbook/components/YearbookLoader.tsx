@@ -1,6 +1,6 @@
 'use client'
 
-const SECTIONS = ['preview', 'flipbook', 'approval', 'team', 'sambutan', 'classes', 'ai-labs', 'cover'] as const
+const SECTIONS = ['preview', 'flipbook', 'approval', 'team', 'sambutan', 'classes', 'ai-labs', 'cover', 'management'] as const
 export type YearbookLoaderSection = typeof SECTIONS[number]
 
 export function isValidYearbookSection(s: string | null): s is YearbookLoaderSection {

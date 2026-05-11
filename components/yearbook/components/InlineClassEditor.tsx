@@ -65,7 +65,6 @@ export default function InlineClassEditor(p: InlineClassEditorProps) {
       e.stopPropagation()
     }
     setOrder(newOrder)
-    saveChanges(name, newOrder)
   }
 
   const handleSaveName = (e?: React.MouseEvent) => {
@@ -78,7 +77,9 @@ export default function InlineClassEditor(p: InlineClassEditorProps) {
       alert('Nama kelas tidak boleh kosong')
       return
     }
-    saveChanges(name, order)
+    if (name.trim() !== classObj.name || order !== classIndex) {
+      saveChanges(name, order)
+    }
     setEditing(false)
   }
 
@@ -143,30 +144,30 @@ export default function InlineClassEditor(p: InlineClassEditorProps) {
                   else if (e.key === 'Escape') handleCancel()
                 }}
                 placeholder="Nama kelas..."
-                className="w-full px-4 py-2 rounded-xl text-sm bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 text-slate-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500/10 transition-all placeholder:text-slate-300 dark:placeholder:text-slate-500"
+                className="w-full px-4 py-3 rounded-xl text-sm bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 text-slate-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500/10 transition-all placeholder:text-slate-300 dark:placeholder:text-slate-500"
               />
             </div>
 
             <div className="flex flex-col gap-1.5 w-full">
               <label className="text-[10px] text-slate-400 dark:text-slate-500 font-black uppercase tracking-widest pl-1">Urutan Kelas</label>
-              <div className="flex items-center gap-1.5 bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 rounded-xl p-1 shadow-[1.5px_1.5px_0_0_#334155] dark:shadow-[1.5px_1.5px_0_0_#1e293b] w-fit">
+              <div className="flex items-center justify-between gap-1.5 bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 rounded-xl p-1 shadow-[1.5px_1.5px_0_0_#334155] dark:shadow-[1.5px_1.5px_0_0_#1e293b] w-full">
                 <button
                   type="button"
                   onClick={(e) => handleOrderChange(Math.max(0, (order ?? 0) - 1), e)}
                   disabled={order === 0}
-                  className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-900 dark:text-white disabled:opacity-20"
+                  className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-900 dark:text-white disabled:opacity-20"
                 >
                   <Minus className="w-4 h-4" strokeWidth={3} />
                 </button>
-                <div className="px-2 text-center min-w-[40px]">
+                <div className="px-2 text-center flex-1">
                   <span className="text-sm font-black text-indigo-600 dark:text-indigo-400">{(order ?? 0) + 1}</span>
-                  <span className="text-[10px] text-slate-300 dark:text-slate-500 font-black tracking-tighter">/{classesCount}</span>
+                  <span className="text-[10px] text-slate-300 dark:text-slate-500 font-black tracking-tighter ml-1">/ {classesCount}</span>
                 </div>
                 <button
                   type="button"
                   onClick={(e) => handleOrderChange(Math.min((classesCount || 1) - 1, (order ?? 0) + 1), e)}
                   disabled={order >= (classesCount || 1) - 1}
-                  className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-900 dark:text-white disabled:opacity-20"
+                  className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-900 dark:text-white disabled:opacity-20"
                 >
                   <Plus className="w-4 h-4" strokeWidth={3} />
                 </button>
@@ -190,7 +191,6 @@ export default function InlineClassEditor(p: InlineClassEditorProps) {
               Batal
             </button>
           </div>
-          <p className="text-[8px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-tight text-center">Tekan Enter untuk simpan</p>
         </div>
       )}
     </div>

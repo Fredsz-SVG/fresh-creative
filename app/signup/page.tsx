@@ -97,6 +97,8 @@ function SignUpContent() {
       showPassword={showPassword}
       isLoading={loading}
       error={error}
+      fullName={fullName}
+      onFullNameChange={setFullName}
       onEmailChange={setEmail}
       onPasswordChange={setPassword}
       onConfirmPasswordChange={setConfirmPassword}

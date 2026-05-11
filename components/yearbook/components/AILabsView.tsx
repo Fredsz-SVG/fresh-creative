@@ -48,7 +48,7 @@ function ToolLoading({ label }: { label: string }) {
 }
 
 // Lazy-load heavy tools so opening a tool doesn't block the UI.
-const TryOn = dynamic(() => import('@/components/features/TryOn'), { ssr: false, loading: () => <ToolLoading label="Virtual Try On" /> })
+const TryOn = dynamic(() => import('@/components/features/TryOn'), { ssr: false, loading: () => <ToolLoading label="V-Tryon" /> })
 const Pose = dynamic(() => import('@/components/features/Pose'), { ssr: false, loading: () => <ToolLoading label="Pose" /> })
 const ImageEditor = dynamic(() => import('@/components/features/ImageEditor'), { ssr: false, loading: () => <ToolLoading label="Image Editor" /> })
 const PhotoGroup = dynamic(() => import('@/components/features/PhotoGroup'), { ssr: false, loading: () => <ToolLoading label="Photo Group" /> })
@@ -258,8 +258,10 @@ export default function AILabsView({ album, aiLabsTool, aiLabsFeaturesByPackage 
                                                 </>
                                             ) : (
                                                 <>
-                                                    <Zap className="w-3.5 h-3.5" />
-                                                    {unlockCost}
+                                                    <div className="flex items-center gap-1.5 min-w-0">
+                                                        <span className="truncate">BUKA</span>
+                                                    </div>
+                                                    <ChevronRight className="w-3.5 h-3.5 shrink-0" strokeWidth={3} />
                                                 </>
                                             )}
                                         </button>
@@ -273,12 +275,6 @@ export default function AILabsView({ album, aiLabsTool, aiLabsFeaturesByPackage 
                                             onMouseDown={() => preloadTool[toolSlug]?.()}
                                         >
                                             <div className="flex items-center gap-1.5 min-w-0">
-                                                {useCost > 0 && (
-                                                    <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-amber-400 text-slate-900 scale-90">
-                                                        <Zap className="w-2.5 h-2.5" fill="currentColor" />
-                                                        <span className="text-[8px] font-black">{useCost}</span>
-                                                    </div>
-                                                )}
                                                 <span className="truncate">BUKA</span>
                                             </div>
                                             <ChevronRight className="w-3.5 h-3.5 shrink-0" strokeWidth={3} />

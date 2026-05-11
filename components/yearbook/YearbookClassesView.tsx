@@ -36,9 +36,9 @@ export type YearbookClassesViewProps = {
   accessDataLoaded?: boolean
   selectedRequestId: string | null
   setSelectedRequestId: (v: string | null) => void
-  sidebarMode: 'classes' | 'approval' | 'team' | 'sambutan' | 'ai-labs' | 'flipbook' | 'preview'
-  setSidebarMode: (v: 'classes' | 'approval' | 'team' | 'sambutan' | 'ai-labs' | 'flipbook' | 'preview') => void
-  onSectionChange?: (section: 'cover' | 'classes' | 'approval' | 'team' | 'sambutan' | 'ai-labs' | 'flipbook' | 'preview') => void
+  sidebarMode: 'classes' | 'approval' | 'team' | 'sambutan' | 'ai-labs' | 'flipbook' | 'preview' | 'management'
+  setSidebarMode: (v: 'classes' | 'approval' | 'team' | 'sambutan' | 'ai-labs' | 'flipbook' | 'preview' | 'management') => void
+  onSectionChange?: (section: 'cover' | 'classes' | 'approval' | 'team' | 'sambutan' | 'ai-labs' | 'flipbook' | 'preview' | 'management') => void
   aiLabsTool?: string | null
   requestForm: { student_name: string; email: string }
   setRequestForm: React.Dispatch<React.SetStateAction<{ student_name: string; email: string }>>
@@ -115,6 +115,7 @@ export type YearbookClassesViewProps = {
   setFlipbookPreviewMode: (v: boolean) => void
   mobileMenuOpen: boolean
   setMobileMenuOpen: (v: boolean) => void
+  drawerMode?: 'navigation' | 'profile'
   featureUnlocks?: string[]
   flipbookEnabledByPackage?: boolean
   featureUnlocksLoaded?: boolean
@@ -123,6 +124,7 @@ export type YearbookClassesViewProps = {
   featureUseCosts?: Record<string, number>
   onFeatureUnlocked?: () => void
   effectiveBackHref?: string
+  backLabel?: string
   teacherSearchQuery?: string
   classMemberSearchQuery?: string
 }

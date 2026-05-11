@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useCallback, useEffect, useRef, useState } from 'react'
-import { ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Plus, Trash2, Check, X, Edit3, ImagePlus, Video, Play, Minus, Instagram, Users, ClipboardList, Menu, Cake, Copy, Link, Clock, BookOpen, MessageSquare, Search, Shirt, UserCircle, ImageIcon, Images, Link as LinkIcon, Sparkles, Book, Layout, Eye, UserCog, LayoutGrid, Zap, ShieldCheck, Lock } from 'lucide-react'
+import { ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Plus, Trash2, Check, X, Edit3, ImagePlus, Video, Play, Minus, Instagram, Users, ClipboardList, Menu, Cake, Copy, Link, Clock, BookOpen, MessageSquare, Search, Shirt, UserCircle, ImageIcon, Images, Link as LinkIcon, Sparkles, Book, Layout, Eye, UserCog, LayoutGrid, Zap, ShieldCheck, Lock, GraduationCap } from 'lucide-react'
 import { toast } from '@/lib/toast'
 import NextLink from 'next/link'
 import { useSearchParams, useRouter, usePathname } from 'next/navigation'
@@ -66,7 +66,7 @@ export default function YearbookClassesViewUI(props: any) {
     accessDataLoaded = false,
     selectedRequestId = null,
     setSelectedRequestId,
-    sidebarMode = 'classes' as 'classes' | 'approval' | 'team' | 'sambutan' | 'ai-labs' | 'flipbook' | 'preview',
+    sidebarMode = 'classes' as 'classes' | 'approval' | 'team' | 'sambutan' | 'ai-labs' | 'flipbook' | 'preview' | 'management',
     setSidebarMode,
     onSectionChange,
     requestForm = { student_name: '', email: '' },
@@ -110,6 +110,7 @@ export default function YearbookClassesViewUI(props: any) {
     onDeletePhoto,
     personalCardExpanded = false,
     setPersonalCardExpanded,
+    drawerMode,
     firstPhotoByStudent = {},
     studentPhotosInCard = [],
     studentNameForPhotosInCard = null,
@@ -219,6 +220,9 @@ export default function YearbookClassesViewUI(props: any) {
     type: 'photo' | 'video'
   } | null>(null)
   const [joinConfirmClassId, setJoinConfirmClassId] = useState<string | null>(null)
+  const [desktopEditingClassId, setDesktopEditingClassId] = useState<string | null>(null)
+  const [desktopEditNameVal, setDesktopEditNameVal] = useState('')
+  const [desktopEditOrderVal, setDesktopEditOrderVal] = useState(0)
 
   // Manual Flipbook Pages state
   const [manualPages, setManualPages] = useState<any[]>([])
@@ -911,8 +915,10 @@ export default function YearbookClassesViewUI(props: any) {
     return <YearbookLoader section={skeletonSection as any} />
   }
 
+  const isManagementSubSection = (['classes', 'sambutan'].includes(sidebarMode) || isCoverView) && canManage
+
   return (
-    <div className={`flex flex-col w-full lg:max-w-full ${((sidebarMode === 'flipbook' && flipbookPreviewMode) || isAiLabsToolActive) ? 'h-full overflow-hidden' : 'min-h-screen'}`}>
+    <div className={`flex flex-col w-full lg:max-w-full ${(sidebarMode === 'flipbook' || isAiLabsToolActive) ? 'flex-1 min-h-0 overflow-hidden lg:h-auto lg:overflow-visible' : 'min-h-0'}`}>
       <YearbookMobileNav
         pathname={pathname}
         effectiveAlbumId={effectiveAlbumId ?? ''}
@@ -921,6 +927,7 @@ export default function YearbookClassesViewUI(props: any) {
         canManage={canManage}
         mobileMenuOpen={mobileMenuOpen}
         setMobileMenuOpen={setMobileMenuOpen}
+        drawerMode={drawerMode}
         joinStats={joinStats}
         classes={classes}
         classIndex={classIndex}
@@ -934,6 +941,8 @@ export default function YearbookClassesViewUI(props: any) {
         handleUpdateClass={handleUpdateClass}
         setDeleteClassConfirm={setDeleteClassConfirm}
         isOwner={isOwner}
+        isAlbumAdmin={isAlbumAdmin}
+        isGlobalAdmin={isGlobalAdmin}
         handleJoinAsOwner={handleJoinAsOwner}
         newClassName={newClassName}
         setNewClassName={setNewClassName}
@@ -942,13 +951,15 @@ export default function YearbookClassesViewUI(props: any) {
         aiLabsAccessible={aiLabsAccessible}
         flipbookPreviewMode={flipbookPreviewMode}
         onSectionChange={props.onSectionChange}
+        backHref={props.effectiveBackHref}
+        backLabel={props.backLabel}
       />
       {/* Main Content - Header already sticky in parent (page.tsx) */}
-      <div className={`flex-1 flex flex-col ${((sidebarMode === 'flipbook' && (flipbookPreviewMode || !canManage)) || isAiLabsToolActive) ? 'p-0 overflow-hidden' : 'p-4 pb-8'}`}>
+      <div className={`flex-1 flex flex-col ${((sidebarMode === 'flipbook') || isAiLabsToolActive) ? 'p-0 overflow-hidden' : isManagementSubSection ? 'p-0 sm:p-4' : 'p-4 pb-8'}`}>
 
 
 
-        <div className={`flex flex-col lg:flex-row gap-0 flex-1 ${((sidebarMode === 'flipbook' && (flipbookPreviewMode || !canManage)) || isAiLabsToolActive) ? 'lg:pl-0' : 'lg:pl-16'} lg:px-0 lg:py-0`}>
+        <div className={`flex flex-col lg:flex-row gap-0 flex-1 ${((sidebarMode === 'flipbook' && (flipbookPreviewMode || !canManage)) || isAiLabsToolActive) ? 'lg:pl-0' : 'lg:pl-48'} lg:px-0 lg:py-0`}>
           {/* Icon Sidebar untuk desktop - Fixed di kiri (disembunyikan saat fitur AI Labs aktif atau flipbook preview aktif) */}
           {!isAiLabsToolActive && !(sidebarMode === 'flipbook' && (flipbookPreviewMode || !canManage)) && (
             <IconSidebar
@@ -962,12 +973,14 @@ export default function YearbookClassesViewUI(props: any) {
               flipbookAccessible={flipbookAccessible}
               aiLabsAccessible={aiLabsAccessible}
               loading={!accessDataLoaded}
+              backHref={props.effectiveBackHref}
+              backLabel={props.backLabel}
             />
           )}
 
           {/* Secondary Sidebar Panel - Hanya untuk Edit (Cover, Sambutan, Kelas); Flipbook ada di sidebar utama */}
           {((['classes', 'sambutan'].includes(sidebarMode) || isCoverView)) && (
-            <div className="hidden lg:fixed lg:left-16 lg:top-14 lg:w-64 lg:h-[calc(100vh-3.5rem)] lg:flex flex-col lg:z-35 lg:bg-white lg:dark:bg-slate-900 lg:border-r-2 lg:border-black lg:dark:border-slate-700 shadow-[4px_0_10px_0_rgba(0,0,0,0.05)] dark:shadow-[4px_0_10px_0_rgba(0,0,0,0.2)]">
+            <div className="hidden lg:fixed lg:left-48 lg:top-14 lg:w-64 lg:h-[calc(100vh-3.5rem)] lg:flex flex-col lg:z-35 lg:bg-white lg:dark:bg-slate-900 lg:border-r-2 lg:border-black lg:dark:border-slate-700 shadow-[4px_0_10px_0_rgba(0,0,0,0.05)] dark:shadow-[4px_0_10px_0_rgba(0,0,0,0.2)]">
               {/* Main "Edit" Switcher - Cover, Sambutan, Kelas saja */}
               {canManage && (
                 <div className="p-3 bg-slate-50 dark:bg-slate-800/50 border-b-2 border-black dark:border-slate-700 flex flex-col gap-1.5 shrink-0 animate-in fade-in duration-300">
@@ -1026,91 +1039,78 @@ export default function YearbookClassesViewUI(props: any) {
               <div className="flex-1 overflow-y-auto p-4 no-scrollbar">
                 {sidebarMode === 'classes' && !isCoverView && (
                   <div className="space-y-6">
-                    {/* Inline Editor for Current Class */}
-                    {currentClass && (
-                      <div className="mb-4">
-                        <InlineClassEditor
-                          classObj={currentClass}
-                          isOwner={canManage}
-                          onDelete={(classId, className) => setDeleteClassConfirm({ classId, className: className ?? currentClass?.name ?? '' })}
-                          onUpdate={handleUpdateClass}
-                          classIndex={classIndex}
-                          classesCount={classes.length}
-                        />
-                      </div>
-                    )}
+                    {/* Removed separated active class editor */}
 
                     {/* Registration Status for User */}
-                    {currentClass && (
-                      <div className="px-1 mb-4">
-                        {(() => {
-                          const access = myAccessByClass[currentClass.id]
-                          const request = myRequestByClass[currentClass.id] as ClassRequest | null | undefined
-                          const isPendingRequest = request?.status === 'pending'
-                          const isLoadingThisClass = !accessDataLoaded && !access && !request
+                    {currentClass && (() => {
+                      const access = myAccessByClass[currentClass.id]
+                      const request = myRequestByClass[currentClass.id] as ClassRequest | null | undefined
+                      const isPendingRequest = request?.status === 'pending'
+                      const isLoadingThisClass = !accessDataLoaded && !access && !request
 
-                          if (isLoadingThisClass) {
-                            return (
-                              <div className="flex items-center gap-2 p-2 bg-slate-50 dark:bg-slate-800 border-2 border-black dark:border-slate-700 rounded-xl">
-                                <div className="animate-spin rounded-full h-3 w-3 border border-indigo-500 dark:border-indigo-400 border-t-transparent" />
-                                <span className="text-[9px] font-black text-slate-400 dark:text-slate-500">Loading...</span>
-                              </div>
-                            )
-                          }
+                      if (isLoadingThisClass) {
+                        return (
+                          <div className="px-1">
+                            <div className="flex items-center gap-2 p-2 bg-slate-50 dark:bg-slate-800 border-2 border-black dark:border-slate-700 rounded-xl">
+                              <div className="animate-spin rounded-full h-3 w-3 border border-indigo-500 dark:border-indigo-400 border-t-transparent" />
+                              <span className="text-[9px] font-black text-slate-400 dark:text-slate-500">Loading...</span>
+                            </div>
+                          </div>
+                        )
+                      }
 
-                          if (access?.status === 'approved') {
-                            return (
-                              <div className="flex items-center gap-2 p-2 bg-indigo-50 dark:bg-indigo-950/50 border-2 border-black dark:border-indigo-800 rounded-xl">
-                                <Check className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" strokeWidth={3} />
-                                <span className="text-[10px] font-black text-indigo-700 dark:text-indigo-300 uppercase truncate">{access.student_name}</span>
-                              </div>
-                            )
-                          }
+                      if (access?.status === 'approved') {
+                        return null
+                      }
 
-                          if (isPendingRequest) {
-                            return (
+                      if (isPendingRequest) {
+                        return (
+                          <div className="px-1">
+                            <div className="p-2 bg-amber-50 dark:bg-amber-950/40 border-2 border-black dark:border-amber-700 rounded-xl text-center">
+                              <p className="text-[9px] font-black text-amber-600 dark:text-amber-400 uppercase">Menunggu Persetujuan</p>
+                            </div>
+                          </div>
+                        )
+                      }
+
+                      if (isOwner && !access) {
+                        const accessEntries = Object.entries(myAccessByClass) as [string, ClassAccess | null][]
+                        const hasAccessInOtherClass = accessEntries.some(
+                          ([classId, a]) => classId !== currentClass.id && a?.status === 'approved'
+                        )
+                        if (hasAccessInOtherClass) {
+                          const otherEntry = accessEntries.find(
+                            ([classId, a]) => classId !== currentClass.id && a?.status === 'approved'
+                          )
+                          const otherClassName = otherEntry ? classes.find((c) => c.id === otherEntry[0])?.name ?? '' : ''
+                          return (
+                            <div className="px-1">
                               <div className="p-2 bg-amber-50 dark:bg-amber-950/40 border-2 border-black dark:border-amber-700 rounded-xl text-center">
-                                <p className="text-[9px] font-black text-amber-600 dark:text-amber-400 uppercase">Menunggu Persetujuan</p>
-                              </div>
-                            )
-                          }
-
-                          if (isOwner && !access) {
-                            const accessEntries = Object.entries(myAccessByClass) as [string, ClassAccess | null][]
-                            const hasAccessInOtherClass = accessEntries.some(
-                              ([classId, a]) => classId !== currentClass.id && a?.status === 'approved'
-                            )
-                            if (hasAccessInOtherClass) {
-                              const otherEntry = accessEntries.find(
-                                ([classId, a]) => classId !== currentClass.id && a?.status === 'approved'
-                              )
-                              const otherClassName = otherEntry ? classes.find((c) => c.id === otherEntry[0])?.name ?? '' : ''
-                              return (
-                                <div className="p-2 bg-amber-50 dark:bg-amber-950/40 border-2 border-black dark:border-amber-700 rounded-xl text-center">
-                                  <p className="text-[9px] font-black text-amber-700 dark:text-amber-400 uppercase tracking-tight">
-                                    Anda sudah terdaftar di kelas lain{otherClassName ? `: ${otherClassName}` : ''}. Hanya bisa daftar di 1 kelas.
-                                  </p>
-                                </div>
-                              )
-                            }
-                            return (
-                              <div className="space-y-2">
-                                <p className="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-tight text-center">
-                                  Anda owner album. Daftar di kelas ini.
+                                <p className="text-[9px] font-black text-amber-700 dark:text-amber-400 uppercase tracking-tight">
+                                  Anda sudah terdaftar di kelas lain{otherClassName ? `: ${otherClassName}` : ''}. Hanya bisa daftar di 1 kelas.
                                 </p>
-                                <button
-                                  onClick={() => setJoinConfirmClassId(currentClass.id)}
-                                  className="w-full py-1.5 sm:py-2 bg-indigo-500 text-white border-2 border-black dark:border-slate-700 rounded-lg sm:rounded-xl text-[9px] sm:text-[10px] font-black uppercase shadow-[1.5px_1.5px_0_0_#0f172a] dark:shadow-[1.5px_1.5px_0_0_#334155] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 active:shadow-none transition-all"
-                                >
-                                  Daftar di Kelas
-                                </button>
                               </div>
-                            )
-                          }
-                          return null
-                        })()}
-                      </div>
-                    )}
+                            </div>
+                          )
+                        }
+                        return (
+                          <div className="px-1">
+                            <div className="space-y-2">
+                              <p className="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-tight text-center">
+                                Anda owner album. Daftar di kelas {currentClass.name}?
+                              </p>
+                              <button
+                                onClick={() => setJoinConfirmClassId(currentClass.id)}
+                                className="w-full py-1.5 sm:py-2 bg-indigo-500 text-white border-2 border-black dark:border-slate-700 rounded-lg sm:rounded-xl text-[9px] sm:text-[10px] font-black uppercase shadow-[1.5px_1.5px_0_0_#0f172a] dark:shadow-[1.5px_1.5px_0_0_#334155] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 active:shadow-none transition-all"
+                              >
+                                Daftar
+                              </button>
+                            </div>
+                          </div>
+                        )
+                      }
+                      return null
+                    })()}
 
                     {/* Compact Class List */}
                     <div className="flex flex-col gap-2">
@@ -1125,79 +1125,166 @@ export default function YearbookClassesViewUI(props: any) {
                           : null
                         const ownerRegisteredClassName =
                           ownerRegisteredIn != null ? classes.find((x) => x.id === ownerRegisteredIn)?.name ?? '' : ''
-                        return (
-                          <button
-                            key={c.id}
-                            onClick={() => {
-                              setClassIndex(idx)
-                              const url = getYearbookSectionQueryUrl(effectiveAlbumId!, 'classes', pathname)
-                              if (typeof window !== 'undefined') {
-                                const nativePushState = window.history.constructor.prototype.pushState
-                                nativePushState.call(window.history, null, '', url)
-                              }
-                            }}
-                            className={`flex items-center justify-between w-full px-4 py-3.5 rounded-2xl border transition-all duration-300 font-black uppercase text-[10px] tracking-widest ${isActive
-                              ? 'bg-amber-400 dark:bg-amber-600 border-black dark:border-slate-700 text-slate-900 dark:text-white shadow-[1.5px_1.5px_0_0_#334155] dark:shadow-[1.5px_1.5px_0_0_#1e293b] -translate-x-1 -translate-y-1'
-                              : 'bg-white dark:bg-slate-800 border-black dark:border-slate-700 text-slate-400 dark:text-slate-500 hover:border-indigo-400 dark:hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 hover:text-indigo-600 dark:hover:text-indigo-400'
-                              }`}
-                          >
-                            <span className="truncate">{c.name}</span>
-                            <div className="flex items-center gap-1.5 shrink-0">
-                              {c.batch_photo_url && (
-                                <div className="w-2 h-2 bg-emerald-400 dark:bg-emerald-500 rounded-full border-2 border-black dark:border-slate-700" />
-                              )}
-                              {isActive && <Check className="w-3.5 h-3.5 text-slate-900 dark:text-white" strokeWidth={3} />}
+                        if (desktopEditingClassId === c.id) {
+                          return (
+                            <div key={c.id} className="flex flex-col gap-4 w-full bg-amber-50 dark:bg-amber-950/30 p-4 rounded-[24px] border-2 border-slate-900 dark:border-slate-700 shadow-[1.5px_1.5px_0_0_#334155] dark:shadow-[1.5px_1.5px_0_0_#1e293b] animate-in zoom-in-95 duration-200">
+                              <div className="flex flex-col gap-4">
+                                <div className="flex flex-col gap-1.5 w-full">
+                                  <label className="text-[10px] text-slate-400 dark:text-slate-500 font-black uppercase tracking-widest pl-1">Nama Kelas</label>
+                                  <input
+                                    type="text"
+                                    value={desktopEditNameVal}
+                                    onChange={(e) => setDesktopEditNameVal(e.target.value)}
+                                    placeholder="Nama kelas..."
+                                    className="w-full px-4 py-3 rounded-xl text-sm bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 text-slate-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500/10 transition-all placeholder:text-slate-300 dark:placeholder:text-slate-500"
+                                  />
+                                </div>
+                                <div className="flex flex-col gap-1.5 w-full">
+                                  <label className="text-[10px] text-slate-400 dark:text-slate-500 font-black uppercase tracking-widest pl-1">Urutan Kelas</label>
+                                  <div className="flex items-center justify-between gap-1.5 bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 rounded-xl p-0.5 w-full">
+                                    <button
+                                      type="button"
+                                      onClick={() => setDesktopEditOrderVal(Math.max(0, desktopEditOrderVal - 1))}
+                                      disabled={desktopEditOrderVal === 0}
+                                      className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-900 dark:text-white disabled:opacity-20"
+                                    >
+                                      <Minus className="w-3.5 h-3.5" strokeWidth={3} />
+                                    </button>
+                                    <div className="px-2 text-center flex-1">
+                                      <span className="text-sm font-black text-indigo-600 dark:text-indigo-400">{desktopEditOrderVal + 1}</span>
+                                      <span className="text-[10px] text-slate-300 dark:text-slate-500 font-black tracking-tighter ml-1">/ {classes.length}</span>
+                                    </div>
+                                    <button
+                                      type="button"
+                                      onClick={() => setDesktopEditOrderVal(Math.min(classes.length - 1, desktopEditOrderVal + 1))}
+                                      disabled={desktopEditOrderVal >= classes.length - 1}
+                                      className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-900 dark:text-white disabled:opacity-20"
+                                    >
+                                      <Plus className="w-3.5 h-3.5" strokeWidth={3} />
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="flex gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (handleUpdateClass && desktopEditNameVal.trim()) {
+                                      handleUpdateClass(c.id, { name: desktopEditNameVal.trim(), sort_order: desktopEditOrderVal })
+                                      setDesktopEditingClassId(null)
+                                    }
+                                  }}
+                                  className="flex-1 py-2.5 rounded-xl bg-indigo-500 text-white border-2 border-slate-900 dark:border-slate-700 font-black text-[10px] uppercase tracking-widest shadow-[1.5px_1.5px_0_0_#334155] dark:shadow-[1.5px_1.5px_0_0_#1e293b] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all"
+                                >
+                                  Simpan
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setDesktopEditingClassId(null)}
+                                  className="flex-1 py-2.5 rounded-xl bg-white dark:bg-slate-800 text-slate-400 dark:text-slate-500 border-2 border-slate-900 dark:border-slate-700 font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-[1.5px_1.5px_0_0_#334155] dark:shadow-[1.5px_1.5px_0_0_#1e293b] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none"
+                                >
+                                  Batal
+                                </button>
+                              </div>
                             </div>
-                          </button>
+                          )
+                        }
+
+                        return (
+                          <div key={c.id} className="flex items-center gap-2">
+                            <button
+                              onClick={() => {
+                                setClassIndex(idx)
+                                const url = getYearbookSectionQueryUrl(effectiveAlbumId!, 'classes', pathname)
+                                if (typeof window !== 'undefined') {
+                                  const nativePushState = window.history.constructor.prototype.pushState
+                                  nativePushState.call(window.history, null, '', url)
+                                }
+                              }}
+                              className={`flex-1 flex items-center justify-between px-4 py-3.5 rounded-2xl border transition-all duration-300 font-black uppercase text-[10px] tracking-widest ${isActive
+                                ? 'bg-amber-400 dark:bg-amber-600 border-black dark:border-slate-700 text-slate-900 dark:text-white shadow-[1.5px_1.5px_0_0_#334155] dark:shadow-[1.5px_1.5px_0_0_#1e293b] -translate-x-1 -translate-y-1'
+                                : 'bg-white dark:bg-slate-800 border-black dark:border-slate-700 text-slate-400 dark:text-slate-500 hover:border-indigo-400 dark:hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 hover:text-indigo-600 dark:hover:text-indigo-400'
+                                }`}
+                            >
+                              <span className="truncate">{c.name}</span>
+                            </button>
+                            
+                            {canManage && (
+                              <div className="flex items-center gap-1 shrink-0">
+                                <button
+                                  onClick={() => {
+                                    setDesktopEditingClassId(c.id)
+                                    setDesktopEditNameVal(c.name)
+                                    setDesktopEditOrderVal(idx)
+                                  }}
+                                  className="w-8 h-8 flex items-center justify-center rounded-lg bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 text-slate-900 dark:text-white active:scale-95 transition-all"
+                                >
+                                  <Edit3 className="w-3.5 h-3.5" strokeWidth={3} />
+                                </button>
+                                <button
+                                  onClick={() => setDeleteClassConfirm && setDeleteClassConfirm({ classId: c.id, className: c.name })}
+                                  className="w-8 h-8 flex items-center justify-center rounded-lg bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 text-red-500 active:scale-95 transition-all"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" strokeWidth={3} />
+                                </button>
+                              </div>
+                            )}
+                          </div>
                         )
                       })}
                     </div>
                     {canManage && (
                       <div className="pt-2">
-                        {!addingClass ? (
-                          <button
-                            type="button"
-                            onClick={() => setAddingClass(true)}
-                            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-dashed border-black dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-indigo-500 dark:hover:border-indigo-500 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 transition-all font-black text-[10px] uppercase tracking-widest"
-                          >
-                            <Plus className="w-4 h-4" /> Tambah Kelas
-                          </button>
-                        ) : (
-                          <div className="p-3 bg-white dark:bg-slate-800 border-2 border-black dark:border-slate-700 rounded-xl shadow-[1.5px_1.5px_0_0_#334155] dark:shadow-[1.5px_1.5px_0_0_#1e293b]">
-                            <input
-                              type="text"
-                              autoFocus
-                              value={newClassName}
-                              onChange={(e) => setNewClassName(e.target.value)}
-                              placeholder="Nama Kelas..."
-                              className="w-full px-3 py-2 text-xs font-bold rounded-lg border-2 border-black dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white mb-2 focus:outline-none dark:placeholder:text-slate-500"
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') handleAddClass()
-                                if (e.key === 'Escape') setAddingClass(false)
-                              }}
-                            />
-                            <div className="flex gap-2">
-                              <button
-                                onClick={handleAddClass}
-                                className="flex-1 py-1.5 bg-indigo-500 text-white text-[9px] font-black uppercase rounded-lg border-2 border-black dark:border-slate-700 shadow-[1.5px_1.5px_0_0_#334155] dark:shadow-[1.5px_1.5px_0_0_#1e293b]"
-                              >
-                                Simpan
-                              </button>
-                              <button
-                                onClick={() => setAddingClass(false)}
-                                className="flex-1 py-1.5 bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 text-[9px] font-black uppercase rounded-lg border-2 border-black dark:border-slate-700"
-                              >
-                                Batal
-                              </button>
-                            </div>
-                          </div>
-                        )}
+                        <button
+                          type="button"
+                          onClick={() => setAddingClass(true)}
+                          className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-dashed border-black dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-indigo-500 dark:hover:border-indigo-500 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 transition-all font-black text-[10px] uppercase tracking-widest"
+                        >
+                          <Plus className="w-4 h-4" /> Tambah Kelas
+                        </button>
                       </div>
                     )}
                   </div>
                 )}
 
               </div>
+
+              {sidebarMode === 'classes' && !isCoverView && (() => {
+                const approvedEntry = (Object.entries(myAccessByClass) as [string, any][]).find(([_, a]) => a?.status === 'approved')
+                const approvedClassId = approvedEntry?.[0]
+                const approvedAccess = approvedEntry?.[1]
+                const className = classes.find(c => c.id === approvedClassId)?.name
+                
+                if (!approvedAccess) {
+                  if (canManage) {
+                    return (
+                      <div className="mt-auto p-4 border-t-4 border-slate-900 dark:border-slate-800 bg-slate-50 dark:bg-slate-900">
+                        <div className="p-3 bg-red-50 dark:bg-red-950/30 border-2 border-red-200 dark:border-red-900/50 rounded-2xl flex flex-col gap-1.5 text-center">
+                          <p className="text-[10px] font-black text-red-500 dark:text-red-400 uppercase tracking-tight">
+                            Kamu belum terdaftar di kelas manapun.
+                          </p>
+                        </div>
+                      </div>
+                    )
+                  }
+                  return null
+                }
+
+                return (
+                  <div className="mt-auto p-4 border-t-4 border-slate-900 dark:border-slate-800 bg-slate-50 dark:bg-slate-900">
+                    <div className="p-3 bg-indigo-50 dark:bg-indigo-950/50 border-2 border-indigo-200 dark:border-indigo-800 rounded-2xl flex flex-col gap-1.5">
+                      <p className="text-[9px] font-black text-indigo-400 dark:text-indigo-500 uppercase tracking-widest leading-none">Status Anda:</p>
+                      <div className="flex flex-col gap-0.5">
+                        <div className="flex items-center gap-2">
+                          <Check className="w-3 h-3 text-indigo-600 dark:text-indigo-400" strokeWidth={4} />
+                          <span className="text-xs font-black text-indigo-700 dark:text-indigo-300 uppercase truncate leading-none pt-0.5">{approvedAccess.student_name}</span>
+                        </div>
+                        <span className="text-[9px] font-black text-indigo-400 dark:text-indigo-500 pl-5 leading-none">Kelas {className}</span>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })()}
             </div>
           )}
 
@@ -1216,8 +1303,8 @@ export default function YearbookClassesViewUI(props: any) {
             {/* Main content - scrollable container */}
             <main
               ref={mainContentRef}
-              className={`flex-1 ${(sidebarMode === 'flipbook' || isAiLabsToolActive) ? 'overflow-hidden pb-0' : 'overflow-y-auto pb-40 lg:pb-0'} rounded-t-none relative
-              ${(['classes', 'sambutan'].includes(sidebarMode) || isCoverView) ? 'lg:ml-[20rem]' : (sidebarMode === 'flipbook' || isAiLabsToolActive) ? (flipbookPreviewMode || !canManage || isAiLabsToolActive ? 'lg:ml-0' : 'lg:ml-16') : 'lg:ml-0'}
+              className={`flex-1 ${(sidebarMode === 'flipbook' || isAiLabsToolActive) ? 'overflow-hidden pb-0' : 'overflow-y-auto pb-6 lg:pb-0'} px-4 sm:px-6 lg:px-12 rounded-t-none relative
+              ${(['classes', 'sambutan'].includes(sidebarMode) || isCoverView) ? 'lg:ml-64' : 'lg:ml-0'}
               bg-white dark:bg-slate-950
             `}
             >
@@ -1450,6 +1537,58 @@ export default function YearbookClassesViewUI(props: any) {
                 </div>
               </div>
 
+              <div className={sidebarMode === 'management' ? 'block w-full h-full lg:hidden bg-slate-50 dark:bg-slate-950' : 'hidden'}>
+                <div className="p-6 flex flex-col gap-4 min-h-[80vh] justify-center animate-in fade-in slide-in-from-bottom-8 duration-700">
+                  {/* Action Panel: Kelas */}
+                  <button
+                    onClick={() => onSectionChange?.('classes')}
+                    className="relative flex-1 group overflow-hidden bg-indigo-600 dark:bg-indigo-950 rounded-[40px] p-8 text-left transition-all duration-500 active:scale-[0.98] border border-black shadow-[3px_3px_0_0_#000] dark:shadow-[3px_3px_0_0_#334155]"
+                  >
+                    <div className="absolute right-[-10%] top-1/2 -translate-y-1/2 opacity-20 group-hover:scale-110 transition-transform duration-700">
+                      <GraduationCap className="w-32 h-32 text-white" strokeWidth={1} />
+                    </div>
+                    <div className="relative z-10 flex items-center gap-5">
+                      <div className="w-12 h-12 rounded-2xl bg-white/20 dark:bg-indigo-500/20 backdrop-blur-md flex items-center justify-center border border-white/30 dark:border-indigo-400/30 flex-shrink-0">
+                        <GraduationCap className="w-6 h-6 text-white" />
+                      </div>
+                      <h3 className="text-3xl font-black italic tracking-tighter text-white uppercase leading-none">Kelas</h3>
+                    </div>
+                  </button>
+
+                  {/* Action Panel: Cover */}
+                  <button
+                    onClick={() => onSectionChange?.('cover')}
+                    className="relative flex-1 group overflow-hidden bg-amber-400 dark:bg-[#451a03] rounded-[40px] p-8 text-left transition-all duration-500 active:scale-[0.98] border border-black shadow-[3px_3px_0_0_#000] dark:shadow-[3px_3px_0_0_#334155]"
+                  >
+                    <div className="absolute right-[-10%] top-1/2 -translate-y-1/2 opacity-20 group-hover:scale-110 transition-transform duration-700">
+                      <ImageIcon className="w-32 h-32 text-slate-900 dark:text-amber-500/50" strokeWidth={1} />
+                    </div>
+                    <div className="relative z-10 flex items-center gap-5">
+                      <div className="w-12 h-12 rounded-2xl bg-black/10 dark:bg-amber-500/20 backdrop-blur-md flex items-center justify-center border border-black/10 dark:border-amber-400/30 flex-shrink-0">
+                        <ImageIcon className="w-6 h-6 text-slate-900 dark:text-amber-400" />
+                      </div>
+                      <h3 className="text-3xl font-black italic tracking-tighter text-slate-900 dark:text-amber-400 uppercase leading-none">Cover</h3>
+                    </div>
+                  </button>
+
+                  {/* Action Panel: Sambutan */}
+                  <button
+                    onClick={() => onSectionChange?.('sambutan')}
+                    className="relative flex-1 group overflow-hidden bg-emerald-500 dark:bg-[#064e3b] rounded-[40px] p-8 text-left transition-all duration-500 active:scale-[0.98] border border-black shadow-[3px_3px_0_0_#000] dark:shadow-[3px_3px_0_0_#334155]"
+                  >
+                    <div className="absolute right-[-10%] top-1/2 -translate-y-1/2 opacity-20 group-hover:scale-110 transition-transform duration-700">
+                      <MessageSquare className="w-32 h-32 text-white" strokeWidth={1} />
+                    </div>
+                    <div className="relative z-10 flex items-center gap-5">
+                      <div className="w-12 h-12 rounded-2xl bg-white/20 dark:bg-emerald-500/20 backdrop-blur-md flex items-center justify-center border border-white/30 dark:border-emerald-400/30 flex-shrink-0">
+                        <MessageSquare className="w-6 h-6 text-white" />
+                      </div>
+                      <h3 className="text-3xl font-black italic tracking-tighter text-white uppercase leading-none">Sambutan</h3>
+                    </div>
+                  </button>
+                </div>
+              </div>
+
               <div className={!isCoverView && sidebarMode === 'ai-labs' ? 'block w-full h-full' : 'hidden'}>
                 {/* AI Labs - Fitur (Try On, Pose, dll.) tetap di album, URL ?tool=... */}
                 <AILabsView
@@ -1628,7 +1767,7 @@ export default function YearbookClassesViewUI(props: any) {
                             <button
                               type="button"
                               onClick={() => setAddingClass(true)}
-                              className="fixed bottom-24 right-6 lg:bottom-10 lg:right-10 z-[60] flex items-center justify-center w-14 h-14 lg:w-16 lg:h-16 rounded-full bg-amber-400 dark:bg-amber-600 border-2 border-black dark:border-slate-700 shadow-[1.5px_1.5px_0_0_#334155] dark:shadow-[1.5px_1.5px_0_0_#1e293b] active:scale-90 transition-all group"
+                              className="fixed bottom-6 right-6 lg:bottom-10 lg:right-10 z-[60] flex items-center justify-center w-14 h-14 lg:w-16 lg:h-16 rounded-full bg-amber-400 dark:bg-amber-600 border-2 border-black dark:border-slate-700 shadow-[1.5px_1.5px_0_0_#334155] dark:shadow-[1.5px_1.5px_0_0_#1e293b] active:scale-90 transition-all group"
                               title="Tambah Kelas"
                             >
                               <Plus className="w-8 h-8 text-slate-900 dark:text-white transition-transform group-hover:rotate-90" strokeWidth={2.5} />

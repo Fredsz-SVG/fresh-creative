@@ -5,21 +5,13 @@ import { albumPathFromR2Key } from '../../lib/storage-layout'
 import { requireAuthJwt } from '../../middleware'
 import { invalidateUserResponseCaches } from '../../lib/user-response-cache'
 import { createNotification } from '../../lib/notifications'
+import { buildPackageSnapshotJson, type PricingPackageSnapshotSource } from '../../lib/pricing-package-snapshot'
 
 const albumColsUser = `a.id, a.user_id, a.name, a.type, a.status, a.created_at, a.description, a.cover_image_url, a.cover_image_position, a.pricing_package_id, a.payment_status, a.payment_url, a.total_estimated_price, a.pic_name, a.individual_payments_enabled, a.package_snapshot, (SELECT SUM(amount) FROM transactions WHERE album_id = a.id AND status IN ('PAID', 'SETTLED')) as collected_amount`
 
 interface HonoUser {
   id: string
   role: string
-}
-
-interface PackageData {
-  name: string
-  price_per_student: number
-  min_students: number
-  features: string
-  flipbook_enabled: number | boolean
-  ai_labs_features: string
 }
 
 function mapAlbumRow(r: Record<string, unknown>) {
@@ -134,6 +126,7 @@ albumsRoute.post('/', requireAuthJwt, async (c) => {
       students_count,
       source,
       total_estimated_price,
+      selected_addon_indices,
     } = body
 
     if (!name || !type) return c.json({ error: 'Missing required fields' }, 400)
@@ -150,17 +143,10 @@ albumsRoute.post('/', requireAuthJwt, async (c) => {
           'SELECT name, price_per_student, min_students, features, flipbook_enabled, ai_labs_features FROM pricing_packages WHERE id = ?'
         )
         .bind(pricing_package_id)
-        .first<PackageData>()
+        .first<PricingPackageSnapshotSource>()
 
       if (pkgData) {
-        packageSnapshotJson = JSON.stringify({
-          name: pkgData.name,
-          price_per_student: pkgData.price_per_student,
-          min_students: pkgData.min_students,
-          features: JSON.parse((pkgData.features as string) || '[]'),
-          flipbook_enabled: Boolean(pkgData.flipbook_enabled),
-          ai_labs_features: JSON.parse((pkgData.ai_labs_features as string) || '[]'),
-        })
+        packageSnapshotJson = buildPackageSnapshotJson(pkgData, selected_addon_indices)
       }
     }
 

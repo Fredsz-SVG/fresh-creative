@@ -122,7 +122,7 @@ function AlbumCard({
     : `/album/${album.album_id ?? album.id}/view`
 
   const editorUrl = album.type === 'yearbook'
-    ? getYearbookSectionQueryUrl(album.album_id ?? album.id, 'cover', pathname || null)
+    ? getYearbookSectionQueryUrl(album.album_id ?? album.id, 'management' as any, pathname || null)
     : null
 
   const created = album.created_at ? new Date(album.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : null
@@ -660,7 +660,7 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
       }
       const origin = typeof window !== 'undefined' ? window.location.origin : ''
       const code = asString(data.token) ?? ''
-      const link = asString(data.inviteLink) ?? `${origin}/join/${code}`
+      const link = asString(data.inviteLink) ?? `${origin}/invite/${code}`
       setInviteModal({ link, code, albumName: album.name })
       toast.success(`Link undangan untuk ${album.name} berhasil dibuat`)
     } catch {
@@ -728,7 +728,7 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
   const handleRowClick = (album: AlbumRow) => {
     const destinationUrl = album.type === 'public'
       ? `${linkBasePath}/album/public/${album.id}`
-      : `${linkBasePath}/album/yearbook/${album.album_id ?? album.id}`
+      : `${linkBasePath}/album/yearbook/${album.album_id ?? album.id}${isAdmin ? '?section=manajemen' : ''}`
     router.push(destinationUrl)
   }
 
@@ -1172,7 +1172,7 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
               const isProcessing = loadingId === album.id
               const destUrl = album.type === 'public'
                 ? `/admin/album/public/${album.id}`
-                : `/admin/album/yearbook/${album.album_id ?? album.id}`
+                : `/admin/album/yearbook/${album.album_id ?? album.id}?section=manajemen`
               const addonTotal = (album.package_snapshot?.features || []).reduce((sum, f) => {
                 try {
                   const parsed = typeof f === 'string' ? JSON.parse(f) : f
@@ -1182,7 +1182,7 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
                 }
               }, 0)
               const pricePerStudent = (album.package_snapshot?.price_per_student || 0) + addonTotal
-              const totalEstimasi = album.students_count && pricePerStudent ? album.students_count * pricePerStudent : (album.total_estimated_price || 0)
+              const totalEstimasi = album.total_estimated_price || (album.students_count && pricePerStudent ? album.students_count * pricePerStudent : 0)
               const estimasiTotal = totalEstimasi > 0
                 ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(totalEstimasi)
                 : '-'
@@ -1288,7 +1288,7 @@ export default function AlbumsView({ variant, initialData, fetchUrl = '/api/albu
                       }
                     }, 0)
                     const pricePerStudent = (album.package_snapshot?.price_per_student || 0) + addonTotal
-                    const totalEstimasi = album.students_count && pricePerStudent ? album.students_count * pricePerStudent : (album.total_estimated_price || 0)
+                    const totalEstimasi = album.total_estimated_price || (album.students_count && pricePerStudent ? album.students_count * pricePerStudent : 0)
                     const estimasiTotal = totalEstimasi > 0
                       ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(totalEstimasi)
                       : '-'

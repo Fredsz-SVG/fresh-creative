@@ -4,6 +4,7 @@ import { getD1 } from '../../../lib/edge-env'
 import { parseJsonArray } from '../../../lib/d1-json'
 import { tryGetAuthUser } from '../../../lib/auth-user'
 import type { AppEnv } from '../../../middleware'
+import { buildPackageSnapshotJson, type PricingPackageSnapshotSource } from '../../../lib/pricing-package-snapshot'
 
 const albumIdRoute = new Hono<AppEnv>()
 
@@ -173,6 +174,7 @@ albumIdRoute.patch('/', async (c) => {
     flipbook_mode,
     total_estimated_price,
     pricing_package_id,
+    selected_addon_indices,
   } = body as Record<string, unknown>
 
   const sets: string[] = []
@@ -206,23 +208,9 @@ albumIdRoute.patch('/', async (c) => {
           `SELECT name, price_per_student, min_students, features, flipbook_enabled, ai_labs_features FROM pricing_packages WHERE id = ?`
         )
         .bind(pricing_package_id)
-        .first<{
-          name: string
-          price_per_student: number
-          min_students: number
-          features: string
-          flipbook_enabled: number
-          ai_labs_features: string
-        }>()
+        .first<PricingPackageSnapshotSource>()
       if (pkg) {
-        const snapshot = JSON.stringify({
-          name: pkg.name,
-          price_per_student: pkg.price_per_student,
-          min_students: pkg.min_students,
-          features: pkg.features,
-          flipbook_enabled: pkg.flipbook_enabled === 1,
-          ai_labs_features: JSON.parse(pkg.ai_labs_features || '[]'),
-        })
+        const snapshot = buildPackageSnapshotJson(pkg, selected_addon_indices)
         sets.push('package_snapshot = ?')
         vals.push(snapshot)
       }

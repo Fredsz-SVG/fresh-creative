@@ -18,6 +18,7 @@ type Transaction = {
   album_name?: string | null
   description?: string | null
   package_snapshot?: string | null
+  discount_percent_off?: number | null
   new_students_count?: number | null
 }
 

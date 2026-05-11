@@ -141,7 +141,7 @@ checkoutRoute.post('/', async (c) => {
               ? `Pembayaran Album: ${album.name} (diskon ${discountPercent}% sudah diterapkan)`
               : `Pembayaran Album: ${album.name}`,
           quantity: 1,
-          price: amount,
+          price: amountForCompare,
         },
       ];
     }
