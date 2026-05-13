@@ -1,7 +1,7 @@
 import { Hono } from 'hono'
 import { getRole } from '../../lib/auth'
 import { getD1 } from '../../lib/edge-env'
-import { getCreditsFromD1, setCreditsInD1 } from '../../lib/credits'
+import { incrementCreditsInD1 } from '../../lib/credits'
 import { publishRealtimeEventFromContext } from '../../lib/realtime'
 import { AppEnv, requireAuthJwt } from '../../middleware'
 
@@ -123,47 +123,58 @@ creditsSyncInvoice.post('/', async (c) => {
         const isAlbum = externalId.startsWith('album_')
 
         if (isPackage) {
-          const match = externalId.match(/^pkg_(.+?)_user_(.+?)_ts_/)
-          if (!match) continue
-          const packageId = match[1]
-          const userId = match[2]
+          const txMeta = await db
+            .prepare(`SELECT user_id, package_id FROM transactions WHERE external_id = ?`)
+            .bind(externalId)
+            .first<{ user_id: string; package_id: string | null }>()
+          if (!txMeta?.user_id || !txMeta.package_id) continue
 
           const pkg = await db
             .prepare(`SELECT credits FROM credit_packages WHERE id = ?`)
-            .bind(packageId)
+            .bind(txMeta.package_id)
             .first<{ credits: number }>()
 
-          if (!pkg) continue
+          if (!pkg?.credits) continue
 
           const paidAt = new Date().toISOString()
-          await db
+          const paidTransition = await db
             .prepare(
-              `UPDATE transactions SET status = ?, payment_method = ?, paid_at = ?, updated_at = datetime('now') WHERE external_id = ?`
+              `UPDATE transactions SET status = ?, payment_method = ?, paid_at = ?, updated_at = datetime('now')
+               WHERE external_id = ?
+                 AND UPPER(TRIM(COALESCE(status, ''))) = 'PENDING'`
             )
             .bind(invStatus, paymentMethod, paidAt, externalId)
             .run()
 
-          const currentCredits = await getCreditsFromD1(db, userId)
-          const newCredits = currentCredits + (pkg.credits ?? 0)
-          await setCreditsInD1(db, userId, newCredits)
+          if ((paidTransition.meta?.changes ?? 0) === 0) {
+            continue
+          }
+
+          await incrementCreditsInD1(db, txMeta.user_id, pkg.credits)
           synced++
         } else if (isAlbum) {
           const match = externalId.match(/^album_(.+?)_user_(.+?)_ts_/)
           if (!match) continue
           const albumId = match[1]
 
-          const paidAt = new Date().toISOString()
-          await db
-            .prepare(
-              `UPDATE transactions SET status = ?, payment_method = ?, paid_at = ?, updated_at = datetime('now') WHERE external_id = ?`
-            )
-            .bind(invStatus, paymentMethod, paidAt, externalId)
-            .run()
-
           const txRow = await db
             .prepare(`SELECT new_students_count, amount FROM transactions WHERE external_id = ?`)
             .bind(externalId)
             .first<{ new_students_count: number | null; amount: number }>()
+
+          const paidAt = new Date().toISOString()
+          const paidTransition = await db
+            .prepare(
+              `UPDATE transactions SET status = ?, payment_method = ?, paid_at = ?, updated_at = datetime('now')
+               WHERE external_id = ?
+                 AND UPPER(TRIM(COALESCE(status, ''))) = 'PENDING'`
+            )
+            .bind(invStatus, paymentMethod, paidAt, externalId)
+            .run()
+
+          if ((paidTransition.meta?.changes ?? 0) === 0) {
+            continue
+          }
 
           if (txRow?.new_students_count) {
             await db

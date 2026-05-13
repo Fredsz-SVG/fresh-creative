@@ -19,6 +19,18 @@ export async function setCreditsInD1(db: D1Database, userId: string, credits: nu
     .run()
 }
 
+/** Tambah kredit secara atomik — aman untuk beberapa pembayaran paralel (tanpa lost update). */
+export async function incrementCreditsInD1(db: D1Database, userId: string, delta: number): Promise<void> {
+  if (delta <= 0) return
+  await ensureUserStubInD1(db, userId)
+  await db
+    .prepare(
+      `UPDATE users SET credits = COALESCE(credits, 0) + ?, updated_at = datetime('now') WHERE id = ?`
+    )
+    .bind(delta, userId)
+    .run()
+}
+
 /**
  * Deduct credits from D1.
  * Best-effort atomicity: single UPDATE with guard `credits >= amount`.

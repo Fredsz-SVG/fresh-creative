@@ -1,6 +1,6 @@
 import { Hono } from 'hono'
 import { getD1 } from '../../lib/edge-env'
-import { getCreditsFromD1, setCreditsInD1 } from '../../lib/credits'
+import { incrementCreditsInD1 } from '../../lib/credits'
 import { publishRealtimeEventFromContext } from '../../lib/realtime'
 
 const webhooksXendit = new Hono()
@@ -134,15 +134,6 @@ webhooksXendit.post('/', async (c) => {
 
   // Update for terminal statuses
   if (status === 'PAID' || status === 'SETTLED') {
-    await db
-      .prepare(
-        `UPDATE transactions
-         SET status = ?, payment_method = ?, paid_at = datetime('now'), updated_at = datetime('now')
-         WHERE external_id = ?`
-      )
-      .bind(status, paymentMethod, externalId)
-      .run()
-
     let txRow: {
       package_id: string | null
       album_id: string | null
@@ -184,6 +175,32 @@ webhooksXendit.post('/', async (c) => {
         : null
     }
 
+    /** Hanya izinkan satu kali: PENDING → PAID/SETTLED. Cegah double credit (webhook ganda / race dengan sync). */
+    const paidTransition = await db
+      .prepare(
+        `UPDATE transactions
+         SET status = ?, payment_method = ?, paid_at = datetime('now'), updated_at = datetime('now')
+         WHERE external_id = ?
+           AND UPPER(TRIM(COALESCE(status, ''))) = 'PENDING'`
+      )
+      .bind(status, paymentMethod, externalId)
+      .run()
+
+    const transitioned = (paidTransition.meta?.changes ?? 0) > 0
+
+    if (!txRow) {
+      return c.json({ message: 'No transaction row for external_id', externalId, transitioned: false }, 200)
+    }
+
+    if (!transitioned) {
+      return c.json({
+        message: 'Idempotent: payment already recorded or not pending',
+        externalId,
+        status,
+        duplicate: true,
+      }, 200)
+    }
+
     if (txRow?.package_id && isPackage) {
       const pkg = await db
         .prepare(`SELECT credits FROM credit_packages WHERE id = ?`)
@@ -197,9 +214,7 @@ webhooksXendit.post('/', async (c) => {
           .first<{ user_id: string }>()
 
         if (userId?.user_id) {
-          const currentCredits = await getCreditsFromD1(db, userId.user_id)
-          const nextCredits = currentCredits + pkg.credits
-          await setCreditsInD1(db, userId.user_id, nextCredits)
+          await incrementCreditsInD1(db, userId.user_id, pkg.credits)
         }
       }
 

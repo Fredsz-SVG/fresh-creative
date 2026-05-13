@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useEffect, useRef, useContext } from 'react'
+import { useState, useMemo, useEffect, useRef, useContext, useCallback } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
@@ -18,6 +18,7 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import TopUpModal from './TopUpModal'
+import { TopUpCreditsContext } from './top-up-credits-context'
 import { fetchWithAuth } from '../../lib/api-client'
 import { ThemeContext } from '@/app/providers/ThemeProvider'
 import { asObject } from '@/components/yearbook/utils/response-narrowing'
@@ -68,7 +69,7 @@ export default function DashboardShell({
   const lastForegroundRefreshRef = useRef(0)
   const FOREGROUND_REFRESH_COOLDOWN_MS = 30000
 
-  const refreshCredits = () => {
+  const refreshCredits = useCallback(() => {
     fetchWithAuth('/api/user/me')
       .then((res) => res.json())
       .then((data) => {
@@ -76,7 +77,16 @@ export default function DashboardShell({
         if (typeof parsed.credits === 'number') setCredits(parsed.credits)
       })
       .catch(() => { })
-  }
+  }, [])
+
+  const openTopUp = useCallback(() => {
+    setShowTopUp(true)
+  }, [])
+
+  const topUpCreditsValue = useMemo(
+    () => ({ openTopUp, credits }),
+    [openTopUp, credits],
+  )
 
   const fetchNotifications = async () => {
     if (typeof window !== 'undefined' && !navigator.onLine) return
@@ -169,7 +179,7 @@ export default function DashboardShell({
       window.removeEventListener('credits-updated', onCreditsUpdated)
       window.removeEventListener('fresh:realtime', onRealtime)
     }
-  }, [])
+  }, [refreshCredits])
 
   const handleMarkRead = async (id: string) => {
     const prev = notifications.find(n => n.id === id)
@@ -407,13 +417,17 @@ export default function DashboardShell({
 
   if (isYearbookAlbumPage) {
     return (
-      <div className="dashboard-shell min-h-[100dvh] bg-white dark:bg-slate-950 text-gray-900 dark:text-white transition-colors duration-300">
-        {children}
-      </div>
+      <TopUpCreditsContext.Provider value={topUpCreditsValue}>
+        <div className="dashboard-shell min-h-[100dvh] bg-white dark:bg-slate-950 text-gray-900 dark:text-white transition-colors duration-300">
+          {children}
+        </div>
+        <TopUpModal isOpen={showTopUp} onClose={() => setShowTopUp(false)} currentCredit={credits} onCreditChange={refreshCredits} />
+      </TopUpCreditsContext.Provider>
     )
   }
 
   return (
+    <TopUpCreditsContext.Provider value={topUpCreditsValue}>
     <div className={`dashboard-shell bg-white dark:bg-slate-950 text-gray-800 dark:text-white flex flex-col transition-colors duration-300 ${isAiLabsFeaturePage ? 'h-[100dvh] overflow-hidden' : 'min-h-[100dvh]'}`}>
       {logoutConfirmOpen && (
         <div
@@ -511,7 +525,7 @@ export default function DashboardShell({
           {/* Credit Display - tanpa kotak di mobile */}
           <button
             type="button"
-            onClick={() => setShowTopUp(true)}
+            onClick={openTopUp}
             className="flex flex-col items-end mr-2 sm:mr-4 group cursor-pointer py-0.5"
           >
             <p className="text-[8px] sm:text-[10px] uppercase tracking-wider text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors font-black leading-tight">Credit</p>
@@ -792,9 +806,10 @@ export default function DashboardShell({
           </nav>
         )
       }
-      {/* TopUp Modal */}
+      {/* TopUp Modal — satu instance untuk header dashboard & CreditBadgeTop (yearbook) */}
       <TopUpModal isOpen={showTopUp} onClose={() => setShowTopUp(false)} currentCredit={credits} onCreditChange={refreshCredits} />
     </div >
+    </TopUpCreditsContext.Provider>
   )
 }
 

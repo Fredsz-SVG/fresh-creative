@@ -11,13 +11,25 @@ type RealtimeEvent = {
 }
 
 function getRealtimeWsUrl(): string {
-  // Keep base origin consistent with fetchWithAuth/apiUrl().
+  // Samakan dengan fetchWithAuth: NEXT_PUBLIC_API_URL → langsung ke Worker/Hono.
   const httpUrl = apiUrl('/api/realtime/ws')
   if (httpUrl.startsWith('https://')) return httpUrl.replace(/^https:\/\//, 'wss://')
   if (httpUrl.startsWith('http://')) return httpUrl.replace(/^http:\/\//, 'ws://')
-  // Relative fallback (same-origin).
-  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-  return `${protocol}//${window.location.host}/api/realtime/ws`
+
+  // Path relatif `/api/...` (tanpa NEXT_PUBLIC_API_URL): fetch tetap jalan lewat rewrite Next.js,
+  // tetapi upgrade WebSocket ke host Next **tidak** diproxy andal ke Hono — realtime tidak jalan.
+  // Dev: hubungkan langsung ke Hono (default sama next.config.js: 127.0.0.1:8787).
+  if (typeof window !== 'undefined') {
+    if (process.env.NODE_ENV === 'development') {
+      const host = process.env.NEXT_PUBLIC_HONO_DEV_HOST?.trim() || '127.0.0.1'
+      const port = process.env.NEXT_PUBLIC_HONO_DEV_PORT?.trim() || '8787'
+      return `ws://${host}:${port}/api/realtime/ws`
+    }
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+    return `${protocol}//${window.location.host}/api/realtime/ws`
+  }
+
+  return 'ws://127.0.0.1:8787/api/realtime/ws'
 }
 
 export default function RealtimeProvider({ children }: { children: ReactNode }) {

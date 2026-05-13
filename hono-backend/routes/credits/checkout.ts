@@ -87,6 +87,10 @@ creditsCheckout.post('/', async (c) => {
       return c.json({ error: invoice?.message || 'Failed to create invoice' }, 500)
     }
 
+    const invStatusRaw = String(invoice.status ?? 'PENDING').trim().toUpperCase()
+    const allowedTx = new Set(['PENDING', 'PAID', 'SETTLED', 'EXPIRED', 'FAILED'])
+    const storedStatus = allowedTx.has(invStatusRaw) ? invStatusRaw : 'PENDING'
+
     try {
       const id = crypto.randomUUID()
       await db
@@ -100,7 +104,7 @@ creditsCheckout.post('/', async (c) => {
           externalId,
           packageId,
           pkg.price as number,
-          invoice.status || 'PENDING',
+          storedStatus,
           invoice.invoice_url ?? null
         )
         .run()
@@ -108,6 +112,13 @@ creditsCheckout.post('/', async (c) => {
       console.error(
         'Failed to insert transaction to DB:',
         dbErr instanceof Error ? dbErr.message : dbErr
+      )
+      return c.json(
+        {
+          error:
+            'Invoice dibuat di payment gateway tetapi gagal dicatat di database. Hubungi admin (jangan lanjut bayar invoice ini dua kali).',
+        },
+        500
       )
     }
 
