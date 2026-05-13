@@ -305,7 +305,13 @@ export default function AdminRiwayatPage() {
             const st = tx.status.toUpperCase()
             const isPaid = st === 'PAID' || st === 'SETTLED'
             const isPending = st === 'PENDING'
-            const isExpired = st === 'EXPIRED'
+            const isInvoiceTerminalFail =
+              st === 'EXPIRED' ||
+              st === 'VOID' ||
+              st === 'VOIDED' ||
+              st === 'FAILED' ||
+              st === 'CANCELLED' ||
+              st === 'CANCELED'
             return (
             <div
               key={tx.id}
@@ -317,13 +323,13 @@ export default function AdminRiwayatPage() {
                     ? 'border-black bg-emerald-300 shadow-[2px_2px_0_0_#334155] md:shadow-[2px_2px_0_0_#334155]'
                     : isPending
                       ? 'border-black bg-orange-300 shadow-[2px_2px_0_0_#334155] md:shadow-[2px_2px_0_0_#334155]'
-                      : isExpired
+                      : isInvoiceTerminalFail
                         ? 'border-black bg-rose-400 shadow-[2px_2px_0_0_#334155] md:shadow-[2px_2px_0_0_#334155] dark:border-black dark:bg-rose-900 dark:shadow-[2px_2px_0_0_#1e293b] dark:md:shadow-[2px_2px_0_0_#1e293b]'
                       : 'border-black bg-red-400 shadow-[2px_2px_0_0_#334155] md:shadow-[2px_2px_0_0_#334155]'
                     }`}
                 >
                   <CreditCard
-                    className={`w-5 h-5 md:w-6 md:h-6 ${isExpired ? 'text-slate-900 dark:text-rose-100' : 'text-slate-900'}`}
+                    className={`w-5 h-5 md:w-6 md:h-6 ${isInvoiceTerminalFail ? 'text-slate-900 dark:text-rose-100' : 'text-slate-900'}`}
                     strokeWidth={2.5}
                   />
                 </div>
@@ -379,12 +385,12 @@ export default function AdminRiwayatPage() {
                         ? 'border-slate-900 bg-emerald-300 text-slate-900 shadow-[2px_2px_0_0_#94a3b8] sm:shadow-[#64748b]'
                         : isPending
                           ? 'border-slate-900 bg-orange-300 text-slate-900 shadow-[2px_2px_0_0_#94a3b8] sm:shadow-[#64748b]'
-                          : isExpired
+                          : isInvoiceTerminalFail
                             ? 'border-slate-900 bg-rose-400 text-slate-900 shadow-[2px_2px_0_0_#94a3b8] sm:shadow-[#64748b] dark:border-slate-900 dark:bg-rose-900 dark:text-rose-100 dark:shadow-[2px_2px_0_0_#475569] dark:sm:shadow-[#64748b]'
                           : 'border-slate-900 bg-red-400 text-white shadow-[2px_2px_0_0_#94a3b8] sm:shadow-[#64748b]'
                         }`}
                     >
-                      {isPaid ? 'SUCCESS' : isExpired ? 'EXPIRED' : tx.status}
+                      {isPaid ? 'SUCCESS' : isInvoiceTerminalFail ? (st === 'EXPIRED' ? 'EXPIRED' : st) : tx.status}
                     </span>
                   </div>
                 </div>

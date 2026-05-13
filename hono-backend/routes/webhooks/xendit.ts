@@ -5,6 +5,16 @@ import { publishRealtimeEventFromContext } from '../../lib/realtime'
 
 const webhooksXendit = new Hono()
 
+/** Status invoice yang mengunci transaksi sebagai tidak bisa dibayar (expired, void, gagal, dll.) */
+const TERMINAL_NON_PAYMENT_STATUSES = new Set([
+  'EXPIRED',
+  'FAILED',
+  'VOID',
+  'VOIDED',
+  'CANCELLED',
+  'CANCELED',
+])
+
 function extractMemberAccessId(externalId: string): string | null {
   const match = externalId.match(/^member_(.+?)_user_/)
   return match?.[1] ?? null
@@ -31,7 +41,7 @@ webhooksXendit.post('/', async (c) => {
     ? extractMemberAccessId(externalId)
     : null
 
-  if (status === 'EXPIRED') {
+  if (TERMINAL_NON_PAYMENT_STATUSES.has(status)) {
     let tx: { album_id: string | null; access_id: string | null } | null = null
 
     try {
@@ -86,7 +96,21 @@ webhooksXendit.post('/', async (c) => {
       }
     }
 
-    return c.json({ message: 'Transaction expired handled successfully' }, 200)
+    // Top-up credits (pkg_): supaya riwayat refresh lewat listener realtime
+    if (externalId.startsWith('pkg_')) {
+      void publishRealtimeEventFromContext(c, {
+        type: 'api.mutated',
+        channel: 'global',
+        payload: {
+          path: '/api/credits/',
+          externalId,
+          invoiceStatus: status,
+        },
+        ts: new Date().toISOString(),
+      })
+    }
+
+    return c.json({ message: 'Terminal non-payment status handled', status }, 200)
   }
 
   if (status !== 'PAID' && status !== 'SETTLED') {
