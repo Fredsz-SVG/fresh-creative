@@ -22,7 +22,7 @@ interface PortfolioItem {
 type ActiveTab = 'ebook' | 'phygital' | 'portfolio'
 
 const VALID_TABS: ActiveTab[] = ['ebook', 'phygital', 'portfolio']
-const ITEMS_PER_PAGE = 6
+const ITEMS_PER_PAGE = 8
 
 function isSamePortfolio(a: PortfolioItem[], b: PortfolioItem[]): boolean {
   if (a.length !== b.length) return false
