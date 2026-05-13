@@ -313,9 +313,12 @@ export function Portfolio() {
                 <video
                   src={selectedItem.video_url}
                   autoPlay
-                  loop
                   controls
                   playsInline
+                  onEnded={() => {
+                    window.dispatchEvent(new Event('resume-navbar-audio'));
+                    setSelectedItem(null);
+                  }}
                   className="max-w-full max-h-[85vh] rounded-2xl shadow-2xl object-contain"
                   style={{ background: '#000' }}
                 />
