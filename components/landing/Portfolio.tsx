@@ -219,7 +219,13 @@ export function Portfolio() {
                 <button
                   onMouseDown={(e) => e.stopPropagation()}
                   onTouchStart={(e) => e.stopPropagation()}
-                  onClick={(e) => { e.stopPropagation(); setSelectedItem(item); }}
+                  onClick={(e) => { 
+                    e.stopPropagation(); 
+                    setSelectedItem(item); 
+                    if (item.video_url) {
+                      window.dispatchEvent(new Event('pause-navbar-audio'));
+                    }
+                  }}
                   className="flex items-center justify-center gap-2 w-full py-3 bg-white dark:bg-[#0d1148] hover:bg-lime-400 dark:hover:bg-[#5cecff]/20 text-slate-900 dark:text-[#5cecff] dark:hover:text-white font-bold text-xs uppercase tracking-widest border-2 border-slate-900 dark:border-[#5cecff]/25 dark:hover:border-[#5cecff]/60 shadow-[2px_2px_0_0_#0f172a] hover:shadow-[6px_6px_0_0_#0f172a] dark:hover:shadow-[0_0_12px_rgba(92,236,255,0.4)] hover:-translate-y-0.5 active:translate-y-0 transition-all outline-none"
                 >
                   {item.video_url ? (
@@ -279,11 +285,17 @@ export function Portfolio() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            onClick={() => setSelectedItem(null)}
+            onClick={() => {
+              if (selectedItem?.video_url) window.dispatchEvent(new Event('resume-navbar-audio'));
+              setSelectedItem(null);
+            }}
             className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/90 backdrop-blur-sm p-4 sm:p-8"
           >
             <button 
-              onClick={() => setSelectedItem(null)}
+              onClick={() => {
+                if (selectedItem?.video_url) window.dispatchEvent(new Event('resume-navbar-audio'));
+                setSelectedItem(null);
+              }}
               className="absolute top-6 right-6 sm:top-10 sm:right-10 z-[101] w-12 h-12 flex items-center justify-center bg-white text-slate-950 border-2 border-slate-900 shadow-[2px_2px_0_0_#0f172a] hover:bg-lime-400 hover:-translate-y-1 transition-all rounded-full outline-none"
               aria-label="Close modal"
             >
@@ -302,8 +314,8 @@ export function Portfolio() {
                   src={selectedItem.video_url}
                   autoPlay
                   loop
+                  controls
                   playsInline
-                  muted
                   className="max-w-full max-h-[85vh] rounded-2xl shadow-2xl object-contain"
                   style={{ background: '#000' }}
                 />

@@ -25,6 +25,7 @@ function dashboardUrlForRole(role: "admin" | "user"): string {
 export function Navbar() {
   const navContainerRef = useRef<HTMLDivElement>(null);
   const audioElementRef = useRef<HTMLAudioElement>(null);
+  const wasAudioPlayingRef = useRef(false);
   const theme = useContext(ThemeContext);
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
   const [isIndicatorActive, setIsIndicatorActive] = useState(false);
@@ -89,6 +90,29 @@ export function Navbar() {
     if (isAudioPlaying) void audioElementRef.current?.play();
     else audioElementRef.current?.pause();
   }, [isAudioPlaying, audioSrc]);
+
+  useEffect(() => {
+    const handlePauseAudio = () => {
+      if (isAudioPlaying) {
+        wasAudioPlayingRef.current = true;
+        setIsAudioPlaying(false);
+        setIsIndicatorActive(false);
+      }
+    };
+    const handleResumeAudio = () => {
+      if (wasAudioPlayingRef.current) {
+        wasAudioPlayingRef.current = false;
+        setIsAudioPlaying(true);
+        setIsIndicatorActive(true);
+      }
+    };
+    window.addEventListener('pause-navbar-audio', handlePauseAudio);
+    window.addEventListener('resume-navbar-audio', handleResumeAudio);
+    return () => {
+      window.removeEventListener('pause-navbar-audio', handlePauseAudio);
+      window.removeEventListener('resume-navbar-audio', handleResumeAudio);
+    };
+  }, [isAudioPlaying]);
 
   useEffect(() => {
     const audio = audioElementRef.current;

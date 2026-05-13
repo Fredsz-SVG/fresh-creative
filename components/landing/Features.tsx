@@ -235,11 +235,16 @@ export function Features() {
               </button>
             )}
 
-            <img 
-              src={galleryImages[currentIndex]} 
-              alt={`Gallery Image ${currentIndex + 1}`}
-              className="max-w-full max-h-full object-contain rounded-2xl shadow-2xl transition-opacity duration-300"
-            />
+            {galleryImages.map((src, idx) => (
+              <img 
+                key={src}
+                src={src} 
+                alt={`Gallery Image ${idx + 1}`}
+                className={`absolute inset-0 m-auto max-w-full max-h-full object-contain rounded-2xl shadow-2xl transition-opacity duration-300 ${
+                  currentIndex === idx ? 'opacity-100 z-20' : 'opacity-0 z-0 pointer-events-none'
+                }`}
+              />
+            ))}
 
             {galleryImages.length > 1 && (
               <button 
