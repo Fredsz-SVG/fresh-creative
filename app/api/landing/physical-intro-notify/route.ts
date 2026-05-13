@@ -47,7 +47,8 @@ export async function POST(req: Request) {
     // Fetch Fonnte target from Hono D1 endpoint
     let target = "";
     try {
-      const configRes = await fetch(apiUrl("/api/landing/config"));
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") || "http://127.0.0.1:8787";
+      const configRes = await fetch(`${baseUrl}/api/landing/config`);
       if (configRes.ok) {
         const config = (await configRes.json().catch(() => ({}))) as { target?: string };
         target = config.target?.trim() || "";

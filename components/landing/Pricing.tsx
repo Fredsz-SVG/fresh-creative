@@ -137,7 +137,7 @@ export function Pricing() {
       const alreadySent = localStorage.getItem(sentKey) === "1";
       if (!alreadySent) {
         localStorage.setItem(sentKey, "1");
-        void fetch(apiUrl("/api/landing/physical-intro-notify"), {
+        void fetch("/api/landing/physical-intro-notify", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ schoolName, whatsapp: normalizedWhatsapp, contactName }),
@@ -148,7 +148,7 @@ export function Pricing() {
       }
     } catch {
       // If storage is unavailable, continue UX and still try sending once.
-      void fetch(apiUrl("/api/landing/physical-intro-notify"), {
+      void fetch("/api/landing/physical-intro-notify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ schoolName, whatsapp: normalizedWhatsapp, contactName }),
