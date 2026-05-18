@@ -3,7 +3,8 @@ import { getD1 } from '../lib/edge-env'
 import { publishRealtimeEventFromContext } from '../lib/realtime'
 
 const pricing = new Hono()
-const PRICING_CACHE_TTL_MS = 30_000
+// 5 menit — data hanya berubah saat admin update, cache di-bust otomatis saat mutasi
+const PRICING_CACHE_TTL_MS = 5 * 60 * 1000
 
 let pricingCache: Array<Record<string, unknown>> | null = null
 let pricingCacheExpiresAt = 0
@@ -48,7 +49,7 @@ pricing.get('/', async (c) => {
 
   const now = Date.now()
   if (pricingCache && now < pricingCacheExpiresAt) {
-    c.header('Cache-Control', 'public, max-age=30, stale-while-revalidate=120')
+    c.header('Cache-Control', 'public, max-age=300, stale-while-revalidate=60')
     c.header('X-Cache', 'HIT')
     return c.json(pricingCache)
   }
@@ -60,7 +61,7 @@ pricing.get('/', async (c) => {
     const parsed = (results ?? []).map(parsePkg)
     pricingCache = parsed
     pricingCacheExpiresAt = now + PRICING_CACHE_TTL_MS
-    c.header('Cache-Control', 'public, max-age=30, stale-while-revalidate=120')
+    c.header('Cache-Control', 'public, max-age=300, stale-while-revalidate=60')
     c.header('X-Cache', 'MISS')
     return c.json(parsed)
   } catch (err: unknown) {

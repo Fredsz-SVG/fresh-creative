@@ -6,6 +6,16 @@ import { getAuthUserFromContext } from '../../../lib/auth-user'
 const albumsIdJoinStats = new Hono<AppEnv>()
 albumsIdJoinStats.use('*', requireAuthJwt)
 
+// Cache 30 detik per-albumId (data berubah saat ada join baru)
+type JoinStatsPayload = { limit_count: number | null; approved_count: number; pending_count: number; rejected_count: number; available_slots: number }
+type CacheEntry = { value: JoinStatsPayload; expiresAt: number }
+const joinStatsCache = new Map<string, CacheEntry>()
+const JOIN_STATS_TTL_MS = 30_000
+
+export function invalidateJoinStatsCache(albumId: string): void {
+  joinStatsCache.delete(albumId)
+}
+
 albumsIdJoinStats.get('/', async (c) => {
   const albumId = c.req.param('id')
   const db = getD1(c)
@@ -15,13 +25,20 @@ albumsIdJoinStats.get('/', async (c) => {
     const user = getAuthUserFromContext(c)
     if (!user) return c.json({ error: 'Unauthorized' }, 401)
 
+    // Cek cache
+    const now = Date.now()
+    const cached = joinStatsCache.get(albumId)
+    if (cached && cached.expiresAt > now) {
+      c.header('Cache-Control', 'private, max-age=30')
+      c.header('X-Cache', 'HIT')
+      return c.json(cached.value)
+    }
+
     const album = await db
       .prepare(`SELECT id, user_id, students_count FROM albums WHERE id = ?`)
       .bind(albumId)
       .first<{ id: string; user_id: string; students_count: number | null }>()
     if (!album) return c.json({ error: 'Album not found' }, 404)
-
-    // Join-stats is used by the registration flow; allow any authenticated user to read capacity/counts.
 
     const approved = await db
       .prepare(
@@ -42,7 +59,6 @@ albumsIdJoinStats.get('/', async (c) => {
       .bind(albumId)
       .first<{ c: number }>()
 
-    // Owner album dihitung sebagai 1 slot terisi, tapi jangan dobel jika owner sudah punya akses approved ke kelas.
     const ownerHasApprovedAccess = await db
       .prepare(
         `SELECT 1 as ok FROM album_class_access WHERE album_id = ? AND user_id = ? AND status = 'approved' LIMIT 1`
@@ -59,13 +75,11 @@ albumsIdJoinStats.get('/', async (c) => {
         ? Math.max(0, limit_count - approved_count)
         : 999999
 
-    return c.json({
-      limit_count,
-      approved_count,
-      pending_count,
-      rejected_count,
-      available_slots,
-    })
+    const payload: JoinStatsPayload = { limit_count, approved_count, pending_count, rejected_count, available_slots }
+    joinStatsCache.set(albumId, { value: payload, expiresAt: now + JOIN_STATS_TTL_MS })
+    c.header('Cache-Control', 'private, max-age=30')
+    c.header('X-Cache', 'MISS')
+    return c.json(payload)
   } catch (error) {
     console.error('Error fetching join stats:', error)
     return c.json({ error: 'Failed to fetch statistics' }, 500)

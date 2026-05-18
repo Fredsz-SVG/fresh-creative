@@ -10,7 +10,8 @@ import { createNotification } from '../../../lib/notifications'
 
 const userNotifications = new Hono()
 userNotifications.use('*', requireAuthJwt)
-const USER_NOTIFICATIONS_CACHE_TTL_MS = 2000
+// 30 detik: notifikasi baru datang via realtime event, bukan polling
+const USER_NOTIFICATIONS_CACHE_TTL_MS = 30_000
 
 // GET - List all notifications
 userNotifications.get('/', async (c) => {
@@ -20,7 +21,7 @@ userNotifications.get('/', async (c) => {
   if (!userId) return c.json({ error: 'Unauthorized' }, 401)
   const cached = getUserNotificationsCache(userId)
   if (cached) {
-    c.header('Cache-Control', 'private, max-age=2, stale-while-revalidate=10')
+    c.header('Cache-Control', 'private, max-age=30, stale-while-revalidate=60')
     c.header('X-Cache', 'HIT')
     return c.json(cached)
   }
@@ -30,7 +31,7 @@ userNotifications.get('/', async (c) => {
     .all<Record<string, unknown>>()
   const payload = results ?? []
   setUserNotificationsCache(userId, payload, USER_NOTIFICATIONS_CACHE_TTL_MS)
-  c.header('Cache-Control', 'private, max-age=2, stale-while-revalidate=10')
+  c.header('Cache-Control', 'private, max-age=30, stale-while-revalidate=60')
   c.header('X-Cache', 'MISS')
   return c.json(payload)
 })

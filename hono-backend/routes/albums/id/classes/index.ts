@@ -8,6 +8,13 @@ import { getAuthUserFromContext } from '../../../../lib/auth-user'
 const albumClasses = new Hono<AppEnv>()
 albumClasses.use('*', requireAuthJwt)
 
+// Cache 30 detik per-albumId — dipanggil setiap render sidebar/list kelas
+type ClassEntry = Record<string, unknown>[]
+type ClassCache = { value: ClassEntry; expiresAt: number }
+const classesCache = new Map<string, ClassCache>()
+const CLASSES_TTL_MS = 30_000
+export function invalidateClassesCache(albumId: string) { classesCache.delete(albumId) }
+
 // Mounted at `/api/albums/:id/classes` in `hono-backend/index.ts`, so handlers should use `/`.
 albumClasses.get('/', async (c) => {
   const db = getD1(c)
@@ -23,6 +30,15 @@ albumClasses.get('/', async (c) => {
     .bind(albumId)
     .first<{ id: string; user_id: string }>()
   if (!album) return c.json({ error: 'Album not found' }, 404)
+
+  // Cek cache
+  const now = Date.now()
+  const cached = classesCache.get(albumId)
+  if (cached && cached.expiresAt > now) {
+    c.header('Cache-Control', 'private, max-age=30')
+    c.header('X-Cache', 'HIT')
+    return c.json(cached.value)
+  }
 
   const classesRes = await db
     .prepare(
@@ -53,6 +69,9 @@ albumClasses.get('/', async (c) => {
     batch_video_url: cl.batch_video_url,
     student_count: studentCounts[cl.id] ?? 0,
   }))
+  classesCache.set(albumId, { value: withCount as ClassEntry, expiresAt: now + CLASSES_TTL_MS })
+  c.header('Cache-Control', 'private, max-age=30')
+  c.header('X-Cache', 'MISS')
   return c.json(withCount)
 })
 
@@ -113,6 +132,7 @@ albumClasses.post('/', async (c) => {
     .prepare(`SELECT id, name, sort_order, album_id, created_at FROM album_classes WHERE id = ?`)
     .bind(id)
     .first()
+  invalidateClassesCache(albumId)
   return c.json(created)
 })
 

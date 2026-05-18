@@ -11,6 +11,7 @@ import { ensureUserInD1 } from '../../lib/d1-users'
 import { publishRealtimeEventFromContext } from '../../lib/realtime'
 import { AppEnv, requireAuthJwt } from '../../middleware'
 import { getAuthUserFromContext } from '../../lib/auth-user'
+import { invalidateLandingConfigCache } from '../../lib/public-cache'
 
 const adminShowcase = new Hono<AppEnv>()
 adminShowcase.use('*', requireAuthJwt)
@@ -100,6 +101,8 @@ adminShowcase.put('/', async (c) => {
       saveShowcaseToD1(db, showcasePayload),
       saveFonnteConfigToD1(db, fonntPayload),
     ])
+    // Invalidate cache publik agar pengunjung langsung dapat data baru
+    invalidateLandingConfigCache()
     await publishRealtimeEventFromContext(c, {
       type: 'showcase.updated',
       channel: 'showcase',

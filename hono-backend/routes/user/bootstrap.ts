@@ -26,7 +26,8 @@ function getSkipOtp(env: OtpEnv | undefined): boolean {
 
 const userBootstrap = new Hono()
 userBootstrap.use('*', requireAuthJwt)
-const USER_BOOTSTRAP_CACHE_TTL_MS = 2000
+// 30 detik: data bootstrap (credits, role, otp) jarang berubah dalam 1 sesi
+const USER_BOOTSTRAP_CACHE_TTL_MS = 30_000
 
 // GET /api/user/bootstrap
 userBootstrap.get('/', async (c) => {
@@ -38,7 +39,7 @@ userBootstrap.get('/', async (c) => {
 
   const cached = getUserBootstrapCache(userId)
   if (cached) {
-    c.header('Cache-Control', 'private, max-age=2, stale-while-revalidate=10')
+    c.header('Cache-Control', 'private, max-age=30, stale-while-revalidate=60')
     c.header('X-Cache', 'HIT')
     return c.json(cached)
   }
@@ -76,7 +77,7 @@ userBootstrap.get('/', async (c) => {
     },
   }
   setUserBootstrapCache(userId, payload, USER_BOOTSTRAP_CACHE_TTL_MS)
-  c.header('Cache-Control', 'private, max-age=2, stale-while-revalidate=10')
+  c.header('Cache-Control', 'private, max-age=30, stale-while-revalidate=60')
   c.header('X-Cache', 'MISS')
   return c.json(payload)
 })

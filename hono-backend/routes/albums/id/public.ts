@@ -3,6 +3,12 @@ import { getD1 } from '../../../lib/edge-env'
 
 const albumsIdPublic = new Hono()
 
+// ── Cache per-albumId ─────────────────────────────────────────────────────
+type AlbumPublicPayload = { id: string; name: string; description: string | null; students_count: number | null; classes: { id: string; name: string; sort_order: number }[] }
+type CacheEntry = { value: AlbumPublicPayload; expiresAt: number; etag: string }
+const albumPublicCache = new Map<string, CacheEntry>()
+const ALBUM_PUBLIC_TTL_MS = 2 * 60 * 1000 // 2 menit
+
 albumsIdPublic.get('/', async (c) => {
   try {
     const albumId = c.req.param('id')
@@ -10,6 +16,22 @@ albumsIdPublic.get('/', async (c) => {
     if (!db) {
       return c.json({ error: 'Database not configured' }, 503)
     }
+
+    // ── 1. Cek cache ──
+    const now = Date.now()
+    const cached = albumPublicCache.get(albumId)
+    if (cached && cached.expiresAt > now) {
+      const clientEtag = c.req.header('If-None-Match')
+      if (clientEtag && clientEtag === cached.etag) {
+        return new Response(null, { status: 304 })
+      }
+      c.header('Cache-Control', 'public, max-age=120, stale-while-revalidate=30')
+      c.header('ETag', cached.etag)
+      c.header('X-Cache', 'HIT')
+      return c.json(cached.value)
+    }
+
+    // ── 2. Query D1 ──
     const album = await db
       .prepare(`SELECT id, name, description, students_count FROM albums WHERE id = ?`)
       .bind(albumId)
@@ -28,13 +50,30 @@ albumsIdPublic.get('/', async (c) => {
       )
       .bind(albumId)
       .all<{ id: string; name: string; sort_order: number }>()
-    return c.json({ ...album, classes: classes ?? [] }, 200)
+
+    const payload: AlbumPublicPayload = { ...album, classes: classes ?? [] }
+    const etag = `"${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}"`
+    albumPublicCache.set(albumId, { value: payload, expiresAt: now + ALBUM_PUBLIC_TTL_MS, etag })
+
+    c.header('Cache-Control', 'public, max-age=120, stale-while-revalidate=30')
+    c.header('ETag', etag)
+    c.header('X-Cache', 'MISS')
+    return c.json(payload, 200)
   } catch {
     return c.json({ error: 'Failed to fetch album' }, 500)
   }
 })
 
+/**
+ * Invalidate album public cache saat album di-update (cover, nama, kelas).
+ * Dipanggil dari route yang melakukan perubahan pada album/classes.
+ */
+export function invalidateAlbumPublicCache(albumId: string): void {
+  albumPublicCache.delete(albumId)
+}
+
 export default albumsIdPublic
+
 
 
 

@@ -3,6 +3,17 @@ import { getD1 } from '../../lib/edge-env'
 
 const creditsPackages = new Hono()
 
+// ── Cache in-memory ──────────────────────────────────────────────────────────
+type CreditPackage = Record<string, unknown>
+let creditsCache: CreditPackage[] | null = null
+let creditsCacheExpiresAt = 0
+const CREDITS_CACHE_TTL_MS = 5 * 60 * 1000 // 5 menit
+
+function resetCreditsCache() {
+  creditsCache = null
+  creditsCacheExpiresAt = 0
+}
+
 function mapCredit(row: Record<string, unknown>) {
   return {
     id: row.id,
@@ -14,15 +25,28 @@ function mapCredit(row: Record<string, unknown>) {
   }
 }
 
-// GET /api/credits/packages — D1 (edge)
+// GET /api/credits/packages — D1 (edge), cache 5 menit
 creditsPackages.get('/', async (c) => {
   const db = getD1(c)
   if (!db) return c.json({ error: 'D1 tidak terkonfigurasi' }, 503)
+
+  const now = Date.now()
+  if (creditsCache && now < creditsCacheExpiresAt) {
+    c.header('Cache-Control', 'public, max-age=300, stale-while-revalidate=60')
+    c.header('X-Cache', 'HIT')
+    return c.json(creditsCache)
+  }
+
   try {
     const { results } = await db
       .prepare('SELECT * FROM credit_packages ORDER BY price ASC')
       .all<Record<string, unknown>>()
-    return c.json((results ?? []).map(mapCredit))
+    const parsed = (results ?? []).map(mapCredit)
+    creditsCache = parsed
+    creditsCacheExpiresAt = now + CREDITS_CACHE_TTL_MS
+    c.header('Cache-Control', 'public, max-age=300, stale-while-revalidate=60')
+    c.header('X-Cache', 'MISS')
+    return c.json(parsed)
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : 'error'
     return c.json({ error: msg }, 500)
@@ -48,6 +72,7 @@ creditsPackages.post('/', async (c) => {
       )
       .bind(id, name, credits, price, popular)
       .run()
+    resetCreditsCache()
     const row = await db
       .prepare('SELECT * FROM credit_packages WHERE id = ?')
       .bind(id)
@@ -74,6 +99,7 @@ creditsPackages.put('/', async (c) => {
       .bind(credits, price, popular, id)
       .run()
     if (r.meta.changes === 0) return c.json({ error: 'No rows updated' }, 404)
+    resetCreditsCache()
     const row = await db
       .prepare('SELECT * FROM credit_packages WHERE id = ?')
       .bind(id)
@@ -94,6 +120,7 @@ creditsPackages.delete('/', async (c) => {
   try {
     const r = await db.prepare('DELETE FROM credit_packages WHERE id = ?').bind(id).run()
     if (r.meta.changes === 0) return c.json({ error: 'Not found' }, 404)
+    resetCreditsCache()
     return c.json({ success: true })
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : 'error'

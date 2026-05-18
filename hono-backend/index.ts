@@ -2,6 +2,7 @@ import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { logger } from './middleware'
 import { publishRealtimeEventFromContext } from './lib/realtime'
+import { rateLimit } from './lib/rate-limit'
 
 // ── Admin ──
 import adminAiEdit from './routes/admin/ai-edit'
@@ -254,7 +255,10 @@ app.route('/api/albums/:id/teachers', albumsIdTeachers)
 // Albums/:id (catch-all for album by id — MUST be last in album group)
 app.route('/api/albums/:id', albumsId)
 
-// Auth
+// Auth — rate limit ketat untuk cegah brute force OTP
+const AUTH_RATE_LIMIT = rateLimit(20) // 20 req/menit per IP
+app.use('/api/auth/send-login-otp', AUTH_RATE_LIMIT)
+app.use('/api/auth/verify-login-otp', AUTH_RATE_LIMIT)
 app.route('/api/auth/logout', authLogout)
 app.route('/api/auth/otp-status', authOtpStatus)
 app.route('/api/auth/send-login-otp', authSendLoginOtp)
@@ -273,13 +277,17 @@ app.route('/api/discount-vouchers', discountVouchers)
 app.route('/api/landing', landingConfig)
 
 // Misc
+const PUBLIC_RATE_LIMIT = rateLimit(120) // 120 req/menit per IP untuk public endpoints
 app.route('/api/pricing', pricing)
+app.use('/api/proxy-image', rateLimit(60))
 app.route('/api/proxy-image', proxyImage)
 app.route('/api/tryon-proxy', tryonProxy)
 app.route('/api/realtime', realtime)
 app.route('/api/select-area', selectArea)
+app.use('/api/showcase', PUBLIC_RATE_LIMIT)
 app.route('/api/showcase', showcase)
 app.route('/api/files', files)
+app.use('/api/portfolio', PUBLIC_RATE_LIMIT)
 app.route('/api/portfolio', portfolio)
 
 // User

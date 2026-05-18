@@ -7,7 +7,8 @@ import { getCreditsFromD1 } from '../../lib/credits'
 
 const userMe = new Hono()
 userMe.use('*', requireAuthJwt)
-const USER_ME_CACHE_TTL_MS = 2500
+// 30 detik: data credits/status jarang berubah di tengah sesi, aman untuk cache lebih lama
+const USER_ME_CACHE_TTL_MS = 30_000
 
 // GET /api/user/me
 userMe.get('/', async (c) => {
@@ -23,7 +24,7 @@ userMe.get('/', async (c) => {
 
   const cached = getUserMeCache(userId)
   if (cached) {
-    c.header('Cache-Control', 'private, max-age=2, stale-while-revalidate=10')
+    c.header('Cache-Control', 'private, max-age=30, stale-while-revalidate=60')
     c.header('X-Cache', 'HIT')
     return c.json(cached)
   }
@@ -37,7 +38,7 @@ userMe.get('/', async (c) => {
     isSuspended: (row?.is_suspended ?? 0) === 1,
   }
   setUserMeCache(userId, payload, USER_ME_CACHE_TTL_MS)
-  c.header('Cache-Control', 'private, max-age=2, stale-while-revalidate=10')
+  c.header('Cache-Control', 'private, max-age=30, stale-while-revalidate=60')
   c.header('X-Cache', 'MISS')
   return c.json(payload)
 })

@@ -9,6 +9,7 @@ import { getR2KeyFromPublicUrl } from '../../lib/public-file-url'
 import { AppEnv, requireAuthJwt } from '../../middleware'
 import { getAuthUserFromContext } from '../../lib/auth-user'
 import { publishRealtimeEventFromContext } from '../../lib/realtime'
+import { invalidatePortfolioCache } from '../../lib/public-cache'
 
 const adminPortfolio = new Hono<AppEnv>()
 adminPortfolio.use('*', requireAuthJwt)
@@ -92,6 +93,8 @@ adminPortfolio.post('/', async (c) => {
       payload: { path: '/api/admin/portfolio' },
       ts: new Date().toISOString()
     }))
+    // Bust public portfolio cache
+    invalidatePortfolioCache()
 
     return c.json({ success: true, id })
   } catch (e) {
@@ -202,6 +205,8 @@ adminPortfolio.put('/:id', async (c) => {
       payload: { path: '/api/admin/portfolio' },
       ts: new Date().toISOString()
     }))
+    // Bust public portfolio cache
+    invalidatePortfolioCache()
 
     return c.json({ success: true })
   } catch (e) {
@@ -261,6 +266,8 @@ adminPortfolio.delete('/:id', async (c) => {
       payload: { path: '/api/admin/portfolio' },
       ts: new Date().toISOString()
     }))
+    // Bust public portfolio cache
+    invalidatePortfolioCache()
 
     return c.json({ success: true })
   } catch {

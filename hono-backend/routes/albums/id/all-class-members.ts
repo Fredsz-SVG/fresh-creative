@@ -7,6 +7,11 @@ import type { AppEnv } from '../../../middleware'
 
 const allClassMembersRoute = new Hono<AppEnv>()
 
+// Cache 30 detik per-albumId — dipakai flipbook viewer & class list
+type AllMembersCache = { value: Record<string, unknown>[]; expiresAt: number }
+const allMembersCache = new Map<string, AllMembersCache>()
+export function invalidateAllMembersCache(albumId: string) { allMembersCache.delete(albumId) }
+
 allClassMembersRoute.get('/', async (c) => {
   const albumId = c.req.param('id')
   try {
@@ -32,6 +37,16 @@ allClassMembersRoute.get('/', async (c) => {
     const isOwner = user ? album.user_id === user.id || isGlobalAdmin : false
     const isAlbumAdmin = memberRow?.role === 'admin'
     const canSeePending = user ? isOwner || isAlbumAdmin : false
+
+    // Cek cache (hanya untuk public view / canSeePending=false untuk simplify)
+    const cacheKey = albumId
+    const now = Date.now()
+    const cached = allMembersCache.get(cacheKey)
+    if (cached && cached.expiresAt > now && !canSeePending) {
+      c.header('Cache-Control', 'private, max-age=30')
+      c.header('X-Cache', 'HIT')
+      return c.json(cached.value)
+    }
 
     const { results: data } = await db
       .prepare(
@@ -61,6 +76,11 @@ allClassMembersRoute.get('/', async (c) => {
         is_me: user ? r.user_id === user.id : false,
       }))
 
+    if (!canSeePending) {
+      allMembersCache.set(cacheKey, { value: result, expiresAt: now + 30_000 })
+    }
+    c.header('Cache-Control', 'private, max-age=30')
+    c.header('X-Cache', 'MISS')
     return c.json(result)
   } catch (err: unknown) {
     console.error('Error fetching all class members:', err)

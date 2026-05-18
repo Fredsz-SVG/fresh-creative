@@ -9,22 +9,36 @@ import { getAuthUserFromContext } from '../../lib/auth-user'
 const aiEdit = new Hono<AppEnv>()
 aiEdit.use('*', requireAuthJwt)
 
-// GET - list ai_feature_pricing
+// ── Cache in-memory 5 menit ──────────────────────────────────────────────────
+type AiPricingRow = { id: string; feature_slug: string; credits_per_use: number; credits_per_unlock: number; duration_credits_json: string | null }
+let aiPricingCache: AiPricingRow[] | null = null
+let aiPricingCacheExp = 0
+const AI_PRICING_TTL_MS = 5 * 60 * 1000
+function resetAiPricingCache() { aiPricingCache = null; aiPricingCacheExp = 0 }
+
+// GET - list ai_feature_pricing (cache 5 menit)
 aiEdit.get('/', async (c) => {
   const db = getD1(c)
   if (!db) return c.json({ error: 'Database not configured' }, 503)
+
+  const now = Date.now()
+  if (aiPricingCache && now < aiPricingCacheExp) {
+    c.header('Cache-Control', 'public, max-age=300, stale-while-revalidate=60')
+    c.header('X-Cache', 'HIT')
+    return c.json(aiPricingCache)
+  }
+
   const { results } = await db
     .prepare(
       `SELECT id, feature_slug, credits_per_use, credits_per_unlock, duration_credits_json FROM ai_feature_pricing ORDER BY feature_slug ASC`
     )
-    .all<{
-      id: string
-      feature_slug: string
-      credits_per_use: number
-      credits_per_unlock: number
-      duration_credits_json: string | null
-    }>()
-  return c.json(results ?? [])
+    .all<AiPricingRow>()
+  const data = results ?? []
+  aiPricingCache = data
+  aiPricingCacheExp = now + AI_PRICING_TTL_MS
+  c.header('Cache-Control', 'public, max-age=300, stale-while-revalidate=60')
+  c.header('X-Cache', 'MISS')
+  return c.json(data)
 })
 
 // POST — potong credit sekali pakai (Image Editor remove-bg, dll.; Try On utama lewat /api/ai-features/tryon)
@@ -153,6 +167,7 @@ aiEdit.put('/', async (c) => {
           duration_credits_json: string | null
         }>()
   if (!row) return c.json({ error: 'Not found' }, 404)
+  resetAiPricingCache()
   return c.json(row)
 })
 

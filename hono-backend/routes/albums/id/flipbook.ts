@@ -9,7 +9,19 @@ import { AppEnv, requireAuthJwt } from '../../../middleware'
 import { getAuthUserFromContext } from '../../../lib/auth-user'
 
 const albumFlipbookRoute = new Hono<AppEnv>()
+
+// ── Flipbook public cache per-albumId 2 menit + ETag ────────────────────────
+// Flipbook private cache per-albumId 30 detik (editor)
+type FlipbookPublicEntry = { value: Record<string, unknown>; expiresAt: number; etag: string }
+type FlipbookPrivateEntry = { value: Record<string, unknown>[]; expiresAt: number }
+const flipbookPublicCache = new Map<string, FlipbookPublicEntry>()
+const flipbookPrivateCache = new Map<string, FlipbookPrivateEntry>()
+export function invalidateFlipbookCache(albumId: string) {
+  flipbookPublicCache.delete(albumId)
+  flipbookPrivateCache.delete(albumId)
+}
 albumFlipbookRoute.use('*', async (c, next) => {
+
   // Keep public flipbook endpoint accessible without auth.
   if (c.req.path.endsWith('/flipbook/public')) {
     await next()
@@ -314,12 +326,23 @@ albumFlipbookRoute.delete('/hotspots/:hotspotId', async (c) => {
   return c.json({ ok: true })
 })
 
-// GET /api/albums/:id/flipbook/public — no auth, for public showcase
 albumFlipbookRoute.get('/public', async (c) => {
   const albumId = c.req.param('id')
   if (!albumId) return c.json({ error: 'Album ID required' }, 400)
   const db = getD1(c)
   if (!db) return c.json({ error: 'Database not configured' }, 503)
+
+  const now = Date.now()
+  const cached = flipbookPublicCache.get(albumId)
+  if (cached && cached.expiresAt > now) {
+    const clientEtag = c.req.header('If-None-Match')
+    if (clientEtag && clientEtag === cached.etag) return new Response(null, { status: 304 })
+    c.header('Cache-Control', 'public, max-age=120, stale-while-revalidate=30')
+    c.header('ETag', cached.etag)
+    c.header('X-Cache', 'HIT')
+    return c.json(cached.value)
+  }
+
   try {
     const album = await db
       .prepare(`SELECT id, name FROM albums WHERE id = ?`)
@@ -351,13 +374,20 @@ albumFlipbookRoute.get('/public', async (c) => {
       ...p,
       flipbook_video_hotspots: hotspotsByPage.get(p.id as string) ?? [],
     }))
-    return c.json({ pages: out, albumName: album.name || 'Preview Flipbook' })
+    const payload = { pages: out, albumName: album.name || 'Preview Flipbook' }
+    const etag = `"${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}"`
+    flipbookPublicCache.set(albumId, { value: payload as unknown as Record<string, unknown>, expiresAt: now + 2 * 60 * 1000, etag })
+    c.header('Cache-Control', 'public, max-age=120, stale-while-revalidate=30')
+    c.header('ETag', etag)
+    c.header('X-Cache', 'MISS')
+    return c.json(payload)
   } catch {
     return c.json({ error: 'Failed to load flipbook' }, 500)
   }
 })
 
 // POST /api/albums/:id/flipbook — clean flipbook assets (admin/owner only)
+
 albumFlipbookRoute.post('/', async (c) => {
   const db = getD1(c)
   if (!db) return c.json({ error: 'Database not configured' }, 503)
@@ -405,11 +435,20 @@ albumFlipbookRoute.post('/', async (c) => {
   }
 })
 
-// GET /api/albums/:id/flipbook — get flipbook pages
+// GET /api/albums/:id/flipbook — get flipbook pages (cache 30 detik, editor)
 albumFlipbookRoute.get('/', async (c) => {
   const db = getD1(c)
   if (!db) return c.json({ error: 'Database not configured' }, 503)
   const albumId = c.req.param('id')
+
+  const now = Date.now()
+  const cachedPriv = flipbookPrivateCache.get(albumId)
+  if (cachedPriv && cachedPriv.expiresAt > now) {
+    c.header('Cache-Control', 'private, max-age=30')
+    c.header('X-Cache', 'HIT')
+    return c.json(cachedPriv.value)
+  }
+
   const { results: pageRows } = await db
     .prepare(`SELECT * FROM manual_flipbook_pages WHERE album_id = ? ORDER BY page_number ASC`)
     .bind(albumId)
@@ -434,6 +473,9 @@ albumFlipbookRoute.get('/', async (c) => {
     ...p,
     flipbook_video_hotspots: hotspotsByPage.get(p.id as string) ?? [],
   }))
+  flipbookPrivateCache.set(albumId, { value: out, expiresAt: now + 30_000 })
+  c.header('Cache-Control', 'private, max-age=30')
+  c.header('X-Cache', 'MISS')
   return c.json(out)
 })
 

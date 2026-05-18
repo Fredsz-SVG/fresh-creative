@@ -40,37 +40,62 @@ export function Portfolio() {
   }, [items]);
 
   useEffect(() => {
-    // Attempt to load from cache immediately on mount to prevent loading flash if data exists
+    const CACHE_KEY = 'portfolio-data-v2'
+    const CACHE_TTL_MS = 5 * 60 * 1000 // 5 menit
+
+    // Muat dari cache dulu agar tidak flash loading
+    let cachedEtag = ''
     try {
-      const cached = localStorage.getItem('portfolio-data');
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setItems(parsed);
-          setLoading(false);
+      const raw = localStorage.getItem(CACHE_KEY)
+      if (raw) {
+        const parsed = JSON.parse(raw) as { ts: number; data: PortfolioItem[]; etag?: string }
+        if (Array.isArray(parsed?.data) && parsed.data.length > 0) {
+          setItems(parsed.data)
+          setLoading(false)
+          cachedEtag = parsed.etag ?? ''
+          // Jika cache masih segar (<5 menit), skip fetch
+          if (Date.now() - (parsed.ts ?? 0) < CACHE_TTL_MS) return
         }
       }
-    } catch (e) {
-      // Quietly ignore parse errors
+    } catch {
+      // ignore parse errors
     }
 
     const fetchPortfolio = async () => {
       try {
-        const res = await fetch(apiUrl("/api/portfolio"));
+        const headers: Record<string, string> = {}
+        // Kirim ETag → backend balas 304 jika data tidak berubah
+        if (cachedEtag) headers['If-None-Match'] = cachedEtag
+
+        const res = await fetch(apiUrl("/api/portfolio"), { headers })
+
+        // 304 Not Modified — data di cache masih valid, update timestamp saja
+        if (res.status === 304) {
+          try {
+            const raw = localStorage.getItem(CACHE_KEY)
+            if (raw) {
+              const parsed = JSON.parse(raw) as { ts: number; data: PortfolioItem[]; etag?: string }
+              localStorage.setItem(CACHE_KEY, JSON.stringify({ ...parsed, ts: Date.now() }))
+            }
+          } catch { /* ignore */ }
+          return
+        }
+
         if (res.ok) {
-          const data = await res.json();
+          const data = await res.json()
           if (Array.isArray(data) && data.length > 0) {
-            setItems(data);
-            localStorage.setItem('portfolio-data', JSON.stringify(data));
+            const newEtag = res.headers.get('ETag') ?? ''
+            setItems(data)
+            localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), data, etag: newEtag }))
           }
         }
       } catch (e) {
-        console.error("Failed to fetch portfolio:", e);
+        console.error("Failed to fetch portfolio:", e)
       } finally {
-        setLoading(false);
+        setLoading(false)
       }
-    };
-    fetchPortfolio();
+    }
+    fetchPortfolio()
   }, []);
 
   const slideLeft = () => {

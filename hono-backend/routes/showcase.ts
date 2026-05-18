@@ -7,7 +7,8 @@ import {
 } from '../lib/showcase-d1'
 
 const showcase = new Hono()
-const SHOWCASE_CACHE_TTL_MS = 20_000
+// 5 menit — data hanya berubah saat admin update
+const SHOWCASE_CACHE_TTL_MS = 5 * 60 * 1000
 
 type ShowcasePayload = {
   albumPreviews: unknown[]
@@ -25,7 +26,7 @@ showcase.get('/', async (c) => {
 
   const now = Date.now()
   if (showcaseCache && now < showcaseCacheExpiresAt) {
-    c.header('Cache-Control', 'public, max-age=20, stale-while-revalidate=60')
+    c.header('Cache-Control', 'public, max-age=300, stale-while-revalidate=60')
     c.header('X-Cache', 'HIT')
     return c.json(showcaseCache)
   }
@@ -40,7 +41,7 @@ showcase.get('/', async (c) => {
     }
     showcaseCache = payload
     showcaseCacheExpiresAt = now + SHOWCASE_CACHE_TTL_MS
-    c.header('Cache-Control', 'public, max-age=20, stale-while-revalidate=60')
+    c.header('Cache-Control', 'public, max-age=300, stale-while-revalidate=60')
     c.header('X-Cache', 'MISS')
     return c.json(payload)
   } catch {

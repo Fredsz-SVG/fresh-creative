@@ -6,12 +6,25 @@ import { getAuthUserFromContext } from '../../../lib/auth-user'
 const userTransactions = new Hono<AppEnv>()
 userTransactions.use('*', requireAuthJwt)
 
+// ── Cache 10 detik per userId ────────────────────────────────────────────────
+type TxCacheEntry = { value: Record<string, unknown>[]; expiresAt: number }
+const txCache = new Map<string, TxCacheEntry>()
+const TX_TTL_MS = 10_000
+
 // GET - List user transactions
 userTransactions.get('/', async (c) => {
   const db = getD1(c)
   if (!db) return c.json({ error: 'Database not configured' }, 503)
   const user = getAuthUserFromContext(c)
   if (!user) return c.json({ error: 'Unauthorized' }, 401)
+
+  const now = Date.now()
+  const cached = txCache.get(user.id)
+  if (cached && cached.expiresAt > now) {
+    c.header('Cache-Control', 'private, max-age=10')
+    c.header('X-Cache', 'HIT')
+    return c.json(cached.value)
+  }
 
   const { results } = await db
     .prepare(
@@ -30,6 +43,9 @@ userTransactions.get('/', async (c) => {
     const { pkg_credits, album_name, package_snapshot, discount_percent_off, new_students_count, total_students, ...rest } = row
     return { ...rest, credits: pkg_credits ?? null, album_name: album_name ?? null, package_snapshot: package_snapshot ?? null, discount_percent_off: discount_percent_off ?? null, new_students_count: new_students_count ?? null, total_students: total_students ?? null }
   })
+  txCache.set(user.id, { value: list, expiresAt: now + TX_TTL_MS })
+  c.header('Cache-Control', 'private, max-age=10')
+  c.header('X-Cache', 'MISS')
   return c.json(list)
 })
 
