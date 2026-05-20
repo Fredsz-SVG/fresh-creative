@@ -4,6 +4,7 @@ import { getRole } from '../../lib/auth'
 import { getD1 } from '../../lib/edge-env'
 import { ensureUserInD1 } from '../../lib/d1-users'
 import { publishRealtimeEventFromContext } from '../../lib/realtime'
+import { invalidateCachesForUserId } from '../../lib/mutation-cache-invalidation'
 import type { D1Database } from '@cloudflare/workers-types'
 import { AppEnv, requireAuthJwt } from '../../middleware'
 import { getAuthUserFromContext } from '../../lib/auth-user'
@@ -191,6 +192,9 @@ overview.put('/', async (c) => {
     .run()
   if (!r.success) return c.json({ error: 'Update failed' }, 500)
   if (r.meta.changes === 0) return c.json({ error: 'User not found' }, 404)
+
+  invalidateCachesForUserId(id)
+
   const row = await db
     .prepare(`SELECT id, email, full_name, role, credits, created_at FROM users WHERE id = ?`)
     .bind(id)

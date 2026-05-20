@@ -1,5 +1,6 @@
 import type { D1Database } from '@cloudflare/workers-types'
 import { ensureUserStubInD1 } from './d1-users'
+import { invalidateCachesForUserId } from './mutation-cache-invalidation'
 
 export async function getCreditsFromD1(db: D1Database, userId: string): Promise<number> {
   await ensureUserStubInD1(db, userId)
@@ -17,6 +18,7 @@ export async function setCreditsInD1(db: D1Database, userId: string, credits: nu
     .prepare(`UPDATE users SET credits = ?, updated_at = datetime('now') WHERE id = ?`)
     .bind(credits, userId)
     .run()
+  invalidateCachesForUserId(userId)
 }
 
 /** Tambah kredit secara atomik — aman untuk beberapa pembayaran paralel (tanpa lost update). */
@@ -29,6 +31,7 @@ export async function incrementCreditsInD1(db: D1Database, userId: string, delta
     )
     .bind(delta, userId)
     .run()
+  invalidateCachesForUserId(userId)
 }
 
 /**
@@ -64,6 +67,7 @@ export async function deductCreditsFromD1(opts: {
   }
 
   const creditsAfter = await getCreditsFromD1(db, userId)
+  invalidateCachesForUserId(userId)
   return { ok: true, creditsAfter }
 }
 

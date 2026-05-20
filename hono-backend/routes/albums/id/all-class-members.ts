@@ -4,13 +4,9 @@ import { getD1 } from '../../../lib/edge-env'
 import { parseJsonArray } from '../../../lib/d1-json'
 import { tryGetAuthUser } from '../../../lib/auth-user'
 import type { AppEnv } from '../../../middleware'
+import { allMembersCache, ALL_MEMBERS_TTL_MS } from '../../../lib/album-response-cache'
 
 const allClassMembersRoute = new Hono<AppEnv>()
-
-// Cache 30 detik per-albumId — dipakai flipbook viewer & class list
-type AllMembersCache = { value: Record<string, unknown>[]; expiresAt: number }
-const allMembersCache = new Map<string, AllMembersCache>()
-export function invalidateAllMembersCache(albumId: string) { allMembersCache.delete(albumId) }
 
 allClassMembersRoute.get('/', async (c) => {
   const albumId = c.req.param('id')
@@ -77,7 +73,7 @@ allClassMembersRoute.get('/', async (c) => {
       }))
 
     if (!canSeePending) {
-      allMembersCache.set(cacheKey, { value: result, expiresAt: now + 30_000 })
+      allMembersCache.set(cacheKey, { value: result, expiresAt: now + ALL_MEMBERS_TTL_MS })
     }
     c.header('Cache-Control', 'private, max-age=30')
     c.header('X-Cache', 'MISS')

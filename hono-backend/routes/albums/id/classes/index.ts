@@ -4,16 +4,10 @@ import { getD1 } from '../../../../lib/edge-env'
 import { parseJsonArray } from '../../../../lib/d1-json'
 import { AppEnv, requireAuthJwt } from '../../../../middleware'
 import { getAuthUserFromContext } from '../../../../lib/auth-user'
+import { classesCache, CLASSES_TTL_MS } from '../../../../lib/album-response-cache'
 
 const albumClasses = new Hono<AppEnv>()
 albumClasses.use('*', requireAuthJwt)
-
-// Cache 30 detik per-albumId — dipanggil setiap render sidebar/list kelas
-type ClassEntry = Record<string, unknown>[]
-type ClassCache = { value: ClassEntry; expiresAt: number }
-const classesCache = new Map<string, ClassCache>()
-const CLASSES_TTL_MS = 30_000
-export function invalidateClassesCache(albumId: string) { classesCache.delete(albumId) }
 
 // Mounted at `/api/albums/:id/classes` in `hono-backend/index.ts`, so handlers should use `/`.
 albumClasses.get('/', async (c) => {
@@ -69,7 +63,7 @@ albumClasses.get('/', async (c) => {
     batch_video_url: cl.batch_video_url,
     student_count: studentCounts[cl.id] ?? 0,
   }))
-  classesCache.set(albumId, { value: withCount as ClassEntry, expiresAt: now + CLASSES_TTL_MS })
+  classesCache.set(albumId, { value: withCount as Record<string, unknown>[], expiresAt: now + CLASSES_TTL_MS })
   c.header('Cache-Control', 'private, max-age=30')
   c.header('X-Cache', 'MISS')
   return c.json(withCount)
@@ -132,7 +126,6 @@ albumClasses.post('/', async (c) => {
     .prepare(`SELECT id, name, sort_order, album_id, created_at FROM album_classes WHERE id = ?`)
     .bind(id)
     .first()
-  invalidateClassesCache(albumId)
   return c.json(created)
 })
 

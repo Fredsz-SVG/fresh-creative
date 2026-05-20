@@ -1,13 +1,12 @@
 import { Hono } from 'hono'
 import { getD1 } from '../../../lib/edge-env'
+import {
+  albumPublicCache,
+  ALBUM_PUBLIC_TTL_MS,
+  type AlbumPublicPayload,
+} from '../../../lib/album-response-cache'
 
 const albumsIdPublic = new Hono()
-
-// ── Cache per-albumId ─────────────────────────────────────────────────────
-type AlbumPublicPayload = { id: string; name: string; description: string | null; students_count: number | null; classes: { id: string; name: string; sort_order: number }[] }
-type CacheEntry = { value: AlbumPublicPayload; expiresAt: number; etag: string }
-const albumPublicCache = new Map<string, CacheEntry>()
-const ALBUM_PUBLIC_TTL_MS = 2 * 60 * 1000 // 2 menit
 
 albumsIdPublic.get('/', async (c) => {
   try {
@@ -63,14 +62,6 @@ albumsIdPublic.get('/', async (c) => {
     return c.json({ error: 'Failed to fetch album' }, 500)
   }
 })
-
-/**
- * Invalidate album public cache saat album di-update (cover, nama, kelas).
- * Dipanggil dari route yang melakukan perubahan pada album/classes.
- */
-export function invalidateAlbumPublicCache(albumId: string): void {
-  albumPublicCache.delete(albumId)
-}
 
 export default albumsIdPublic
 

@@ -2,7 +2,6 @@ import { Hono } from 'hono'
 import { getD1 } from '../../../../lib/edge-env'
 import { AppEnv, requireAuthJwt } from '../../../../middleware'
 import { getAuthUserFromContext } from '../../../../lib/auth-user'
-import { invalidateAllMembersCache } from '../all-class-members'
 
 const myAccessRoute = new Hono<AppEnv>()
 myAccessRoute.use('*', requireAuthJwt)
@@ -160,7 +159,6 @@ myAccessRoute.patch('/', async (c) => {
     .prepare(`SELECT * FROM album_class_access WHERE id = ?`)
     .bind(access.id)
     .first()
-  invalidateAllMembersCache(albumId)
   return c.json(updated)
 })
 
@@ -191,7 +189,6 @@ myAccessRoute.delete('/', async (c) => {
     .bind(albumId, user.id)
     .run()
 
-  invalidateAllMembersCache(albumId)
   return c.json({ success: true })
 })
 

@@ -9,12 +9,13 @@ import { getAuthUserFromContext } from '../../lib/auth-user'
 const aiEdit = new Hono<AppEnv>()
 aiEdit.use('*', requireAuthJwt)
 
-// ── Cache in-memory 5 menit ──────────────────────────────────────────────────
-type AiPricingRow = { id: string; feature_slug: string; credits_per_use: number; credits_per_unlock: number; duration_credits_json: string | null }
-let aiPricingCache: AiPricingRow[] | null = null
-let aiPricingCacheExp = 0
-const AI_PRICING_TTL_MS = 5 * 60 * 1000
-function resetAiPricingCache() { aiPricingCache = null; aiPricingCacheExp = 0 }
+import {
+  getAiPricingCache,
+  setAiPricingCache,
+  invalidateAiPricingCache,
+  AI_PRICING_CACHE_TTL_MS,
+  type AiPricingRow,
+} from '../../lib/ai-pricing-cache'
 
 // GET - list ai_feature_pricing (cache 5 menit)
 aiEdit.get('/', async (c) => {
@@ -22,10 +23,11 @@ aiEdit.get('/', async (c) => {
   if (!db) return c.json({ error: 'Database not configured' }, 503)
 
   const now = Date.now()
-  if (aiPricingCache && now < aiPricingCacheExp) {
+  const cached = getAiPricingCache(now)
+  if (cached) {
     c.header('Cache-Control', 'public, max-age=300, stale-while-revalidate=60')
     c.header('X-Cache', 'HIT')
-    return c.json(aiPricingCache)
+    return c.json(cached)
   }
 
   const { results } = await db
@@ -34,8 +36,7 @@ aiEdit.get('/', async (c) => {
     )
     .all<AiPricingRow>()
   const data = results ?? []
-  aiPricingCache = data
-  aiPricingCacheExp = now + AI_PRICING_TTL_MS
+  setAiPricingCache(data, AI_PRICING_CACHE_TTL_MS)
   c.header('Cache-Control', 'public, max-age=300, stale-while-revalidate=60')
   c.header('X-Cache', 'MISS')
   return c.json(data)
@@ -167,7 +168,7 @@ aiEdit.put('/', async (c) => {
           duration_credits_json: string | null
         }>()
   if (!row) return c.json({ error: 'Not found' }, 404)
-  resetAiPricingCache()
+  invalidateAiPricingCache()
   return c.json(row)
 })
 

@@ -3,6 +3,10 @@ import { getRole } from '../../lib/auth'
 import { getD1 } from '../../lib/edge-env'
 import { incrementCreditsInD1 } from '../../lib/credits'
 import { publishRealtimeEventFromContext } from '../../lib/realtime'
+import {
+  invalidateCachesForAlbumId,
+  invalidateCachesForUserId,
+} from '../../lib/mutation-cache-invalidation'
 import { AppEnv, requireAuthJwt } from '../../middleware'
 
 const creditsSyncInvoice = new Hono<AppEnv>()
@@ -78,6 +82,7 @@ creditsSyncInvoice.post('/', async (c) => {
                 )
                 .bind(aid)
                 .run()
+              invalidateCachesForAlbumId(aid)
             }
           }
 
@@ -97,6 +102,9 @@ creditsSyncInvoice.post('/', async (c) => {
                 )
                 .bind(accessId)
                 .run()
+            }
+            if (albumId) {
+              invalidateCachesForAlbumId(albumId)
             }
             if (albumId && accessId) {
               void publishRealtimeEventFromContext(c, {
@@ -151,6 +159,7 @@ creditsSyncInvoice.post('/', async (c) => {
           }
 
           await incrementCreditsInD1(db, txMeta.user_id, pkg.credits)
+          invalidateCachesForUserId(txMeta.user_id)
           synced++
         } else if (isAlbum) {
           const match = externalId.match(/^album_(.+?)_user_(.+?)_ts_/)
@@ -192,6 +201,7 @@ creditsSyncInvoice.post('/', async (c) => {
               .run()
           }
 
+          invalidateCachesForAlbumId(albumId)
           synced++
         }
       } catch (e) {

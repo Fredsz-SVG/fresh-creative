@@ -2,26 +2,12 @@ import { Hono } from 'hono'
 import { getD1 } from '../../../lib/edge-env'
 import { AppEnv, requireAuthJwt } from '../../../middleware'
 import { getAuthUserFromContext } from '../../../lib/auth-user'
+import { checkUserCache, CHECK_USER_TTL_MS } from '../../../lib/album-response-cache'
 
 const checkUserRoute = new Hono<AppEnv>()
 checkUserRoute.use('*', requireAuthJwt)
 
-// Cache 30 detik per-user+albumId
 type CheckUserPayload = Record<string, unknown>
-type CacheEntry = { value: CheckUserPayload; expiresAt: number }
-const checkUserCache = new Map<string, CacheEntry>()
-const CHECK_USER_TTL_MS = 30_000
-
-export function invalidateCheckUserCache(albumId: string, userId?: string): void {
-  if (userId) {
-    checkUserCache.delete(`${albumId}:${userId}`)
-  } else {
-    // Invalidate semua entry untuk albumId ini
-    for (const key of checkUserCache.keys()) {
-      if (key.startsWith(`${albumId}:`)) checkUserCache.delete(key)
-    }
-  }
-}
 
 checkUserRoute.get('/', async (c) => {
   try {

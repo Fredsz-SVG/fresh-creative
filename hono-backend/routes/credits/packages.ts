@@ -14,6 +14,10 @@ function resetCreditsCache() {
   creditsCacheExpiresAt = 0
 }
 
+export function invalidateCreditsPackagesCache(): void {
+  resetCreditsCache()
+}
+
 function mapCredit(row: Record<string, unknown>) {
   return {
     id: row.id,

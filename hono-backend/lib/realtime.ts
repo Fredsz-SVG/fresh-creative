@@ -7,6 +7,7 @@ export type RealtimeEventType =
   | 'r2.object.put'
   | 'r2.object.delete'
   | 'api.mutated'
+  | 'album.data.changed'
   | 'user.suspended'
   | 'album.joinRequest.created'
   | 'album.joinRequest.updated'

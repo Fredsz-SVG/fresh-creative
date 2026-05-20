@@ -3,6 +3,7 @@ import { cors } from 'hono/cors'
 import { logger } from './middleware'
 import { publishRealtimeEventFromContext } from './lib/realtime'
 import { rateLimit } from './lib/rate-limit'
+import { handleMutationCacheInvalidation } from './lib/mutation-cache-invalidation'
 
 // ── Admin ──
 import adminAiEdit from './routes/admin/ai-edit'
@@ -150,6 +151,7 @@ app.use(
   })
 )
 
+/** Setelah mutasi sukses: invalidasi cache in-memory + realtime global. */
 app.use('*', async (c, next) => {
   await next()
 
@@ -158,6 +160,13 @@ app.use('*', async (c, next) => {
     method === 'POST' || method === 'PUT' || method === 'PATCH' || method === 'DELETE'
   if (!isMutation) return
   if (c.res.status >= 400) return
+
+  try {
+    handleMutationCacheInvalidation(c)
+  } catch (e) {
+    console.error('handleMutationCacheInvalidation:', e)
+  }
+
   if (c.req.path.startsWith('/api/realtime')) return
 
   try {
@@ -172,7 +181,6 @@ app.use('*', async (c, next) => {
       ts: new Date().toISOString(),
     })
   } catch (e) {
-    // Jangan biarkan kegagalan Durable Object / realtime mengubah response 2xx jadi 500.
     console.error('publishRealtimeEventFromContext (api.mutated):', e)
   }
 })

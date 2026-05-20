@@ -2,6 +2,10 @@ import { Hono } from 'hono'
 import { getD1 } from '../../lib/edge-env'
 import { incrementCreditsInD1 } from '../../lib/credits'
 import { publishRealtimeEventFromContext } from '../../lib/realtime'
+import {
+  invalidateCachesForAlbumId,
+  invalidateCachesForUserId,
+} from '../../lib/mutation-cache-invalidation'
 
 const webhooksXendit = new Hono()
 
@@ -75,6 +79,8 @@ webhooksXendit.post('/', async (c) => {
           .prepare(`UPDATE albums SET payment_url = NULL, updated_at = datetime('now') WHERE id = ? AND payment_url IS NOT NULL`)
           .bind(tx.album_id)
           .run()
+
+        invalidateCachesForAlbumId(tx.album_id)
 
         void publishRealtimeEventFromContext(c, {
           type: 'api.mutated',
@@ -215,6 +221,7 @@ webhooksXendit.post('/', async (c) => {
 
         if (userId?.user_id) {
           await incrementCreditsInD1(db, userId.user_id, pkg.credits)
+          invalidateCachesForUserId(userId.user_id)
         }
       }
 
@@ -251,7 +258,8 @@ webhooksXendit.post('/', async (c) => {
           .run()
       }
 
-      // Realtime: refresh editor/public UI without manual reload.
+      invalidateCachesForAlbumId(txRow.album_id)
+
       void publishRealtimeEventFromContext(c, {
         type: 'api.mutated',
         channel: 'global',
@@ -273,6 +281,8 @@ webhooksXendit.post('/', async (c) => {
         )
         .bind(txRow.access_id)
         .run()
+
+      invalidateCachesForAlbumId(txRow.album_id)
 
       void publishRealtimeEventFromContext(c, {
         type: 'album.classAccess.updated',

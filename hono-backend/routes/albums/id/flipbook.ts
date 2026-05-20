@@ -5,21 +5,18 @@ import { getD1 } from '../../../lib/edge-env'
 import { getAssets } from '../../../lib/edge-env'
 import { putAlbumPhoto } from '../../../lib/r2-assets'
 import { publicAlbumAssetUrl } from '../../../lib/public-file-url'
+import {
+  flipbookPublicCache,
+  FLIPBOOK_PUBLIC_TTL_MS,
+} from '../../../lib/album-response-cache'
+import {
+  deleteR2ObjectFromPublicUrl,
+  deleteR2ObjectsFromPublicUrls,
+} from '../../../lib/r2-public-url-cleanup'
 import { AppEnv, requireAuthJwt } from '../../../middleware'
 import { getAuthUserFromContext } from '../../../lib/auth-user'
 
 const albumFlipbookRoute = new Hono<AppEnv>()
-
-// ── Flipbook public cache per-albumId 2 menit + ETag ────────────────────────
-// Flipbook private cache per-albumId 30 detik (editor)
-type FlipbookPublicEntry = { value: Record<string, unknown>; expiresAt: number; etag: string }
-type FlipbookPrivateEntry = { value: Record<string, unknown>[]; expiresAt: number }
-const flipbookPublicCache = new Map<string, FlipbookPublicEntry>()
-const flipbookPrivateCache = new Map<string, FlipbookPrivateEntry>()
-export function invalidateFlipbookCache(albumId: string) {
-  flipbookPublicCache.delete(albumId)
-  flipbookPrivateCache.delete(albumId)
-}
 albumFlipbookRoute.use('*', async (c, next) => {
 
   // Keep public flipbook endpoint accessible without auth.
@@ -69,6 +66,83 @@ function denyFlipbookManage(c: Context, perm: FlipbookManageDenied) {
   return c.json({ error: perm.error }, { status: perm.status })
 }
 
+type FlipbookPageSlot = 'front_cover' | 'body' | 'back_cover'
+
+function parseFlipbookPageSlot(body: Record<string, unknown>): FlipbookPageSlot {
+  const s = String(body.page_slot ?? 'body').trim()
+  if (s === 'front_cover' || s === 'back_cover' || s === 'body') return s
+  return 'body'
+}
+
+function rowFlipbookSlot(pageSlotRaw: unknown): FlipbookPageSlot {
+  if (pageSlotRaw === 'front_cover' || pageSlotRaw === 'back_cover' || pageSlotRaw === 'body')
+    return pageSlotRaw
+  return 'body'
+}
+
+/**
+ * Canonical order: front_cover (≤1 kept) → all body rows (sorted by temporary page_number) → back_cover (≤1 kept).
+ * Duplicate front/back extras are demoted to body before renumbering 1..n.
+ */
+async function normalizeManualFlipbookPagesOrder(db: D1Database, albumId: string): Promise<void> {
+  type Row = { id: string; page_number: number; page_slot: string | null; created_at: string | null }
+  const res = await db
+    .prepare(
+      `SELECT id, page_number, page_slot, created_at FROM manual_flipbook_pages WHERE album_id = ?`,
+    )
+    .bind(albumId)
+    .all<Row>()
+  const rows = res.results ?? []
+  if (!rows.length) return
+
+  const fronts = rows
+    .filter((r) => rowFlipbookSlot(r.page_slot) === 'front_cover')
+    .sort((a, b) => String(a.created_at ?? '').localeCompare(String(b.created_at ?? '')))
+  const backs = rows
+    .filter((r) => rowFlipbookSlot(r.page_slot) === 'back_cover')
+    .sort((a, b) => String(a.created_at ?? '').localeCompare(String(b.created_at ?? '')))
+  let bodies = rows
+    .filter((r) => rowFlipbookSlot(r.page_slot) === 'body')
+    .sort((a, b) => a.page_number - b.page_number)
+
+  const frontKeep = fronts[0]
+  const backKeep = backs.length ? backs[backs.length - 1] : undefined
+
+  const demoted = [...fronts.slice(1), ...backs.slice(0, backs.length ? backs.length - 1 : 0)]
+  if (demoted.length) {
+    for (const r of demoted) {
+      await db
+        .prepare(`UPDATE manual_flipbook_pages SET page_slot = 'body' WHERE id = ? AND album_id = ?`)
+        .bind(r.id, albumId)
+        .run()
+    }
+    bodies = [...bodies, ...demoted].sort((a, b) => a.page_number - b.page_number)
+  }
+
+  let pn = 1
+  if (frontKeep) {
+    await db
+      .prepare(
+        `UPDATE manual_flipbook_pages SET page_number = ?, page_slot = 'front_cover' WHERE id = ? AND album_id = ?`,
+      )
+      .bind(pn++, frontKeep.id, albumId)
+      .run()
+  }
+  for (const b of bodies) {
+    await db
+      .prepare(`UPDATE manual_flipbook_pages SET page_number = ?, page_slot = 'body' WHERE id = ? AND album_id = ?`)
+      .bind(pn++, b.id, albumId)
+      .run()
+  }
+  if (backKeep) {
+    await db
+      .prepare(
+        `UPDATE manual_flipbook_pages SET page_number = ?, page_slot = 'back_cover' WHERE id = ? AND album_id = ?`,
+      )
+      .bind(pn++, backKeep.id, albumId)
+      .run()
+  }
+}
 // POST /api/albums/:id/flipbook/upload — upload flipbook file to R2 (owner/admin/album-admin)
 albumFlipbookRoute.post('/upload', async (c) => {
   const db = getD1(c)
@@ -144,27 +218,81 @@ albumFlipbookRoute.post('/upload', async (c) => {
   return c.json({ file_url: publicAlbumAssetUrl(c, relPath), rel_path: relPath })
 })
 
-// POST /api/albums/:id/flipbook/pages — insert page
+// POST /api/albums/:id/flipbook/pages — insert page (page_number boleh placeholder; normalize mengatur urutan akhir)
 albumFlipbookRoute.post('/pages', async (c) => {
   const albumId = c.req.param('id')
   if (!albumId) return c.json({ error: 'Album ID required' }, 400)
   const perm = await canManageFlipbook(c, albumId)
   if (!perm.ok) return denyFlipbookManage(c, perm as FlipbookManageDenied)
   const body = await c.req.json<Record<string, unknown>>()
-  const pageNumber = Number(body.page_number ?? 0)
   const imageUrl = String(body.image_url ?? '')
   const width = body.width == null ? null : Number(body.width)
   const height = body.height == null ? null : Number(body.height)
-  if (!pageNumber || !imageUrl) return c.json({ error: 'page_number and image_url required' }, 400)
+  if (!imageUrl) return c.json({ error: 'image_url required' }, 400)
+
+  const pageSlot = parseFlipbookPageSlot(body)
+  const bucket = getAssets(c)
+  /** Placeholder besar agar tidak tabrakan sampai normalize */
+  const tempPageNum = Number.isFinite(Number(body.page_number)) ? Number(body.page_number) : 999_999
+
+  // Cover depan / belakang: satu baris per album; ganti gambar kalau sudah ada
+  if (pageSlot === 'front_cover') {
+    const existing = await perm.db
+      .prepare(`SELECT id, image_url FROM manual_flipbook_pages WHERE album_id = ? AND page_slot = 'front_cover' LIMIT 1`)
+      .bind(albumId)
+      .first<{ id: string; image_url: string }>()
+    if (existing) {
+      if (existing.image_url && existing.image_url !== imageUrl && bucket)
+        await deleteR2ObjectFromPublicUrl(c, bucket, existing.image_url)
+      const upd = await perm.db
+        .prepare(
+          `UPDATE manual_flipbook_pages SET image_url = ?, width = ?, height = ? WHERE id = ? AND album_id = ?`,
+        )
+        .bind(imageUrl, width, height, existing.id, albumId)
+        .run()
+      if (!upd.success) return c.json({ error: 'Update failed' }, 500)
+      await normalizeManualFlipbookPagesOrder(perm.db, albumId)
+      const row = await perm.db
+        .prepare(`SELECT * FROM manual_flipbook_pages WHERE id = ?`)
+        .bind(existing.id)
+        .first<Record<string, unknown>>()
+      return c.json(row)
+    }
+  }
+  if (pageSlot === 'back_cover') {
+    const existing = await perm.db
+      .prepare(`SELECT id, image_url FROM manual_flipbook_pages WHERE album_id = ? AND page_slot = 'back_cover' LIMIT 1`)
+      .bind(albumId)
+      .first<{ id: string; image_url: string }>()
+    if (existing) {
+      if (existing.image_url && existing.image_url !== imageUrl && bucket)
+        await deleteR2ObjectFromPublicUrl(c, bucket, existing.image_url)
+      const upd = await perm.db
+        .prepare(
+          `UPDATE manual_flipbook_pages SET image_url = ?, width = ?, height = ? WHERE id = ? AND album_id = ?`,
+        )
+        .bind(imageUrl, width, height, existing.id, albumId)
+        .run()
+      if (!upd.success) return c.json({ error: 'Update failed' }, 500)
+      await normalizeManualFlipbookPagesOrder(perm.db, albumId)
+      const row = await perm.db
+        .prepare(`SELECT * FROM manual_flipbook_pages WHERE id = ?`)
+        .bind(existing.id)
+        .first<Record<string, unknown>>()
+      return c.json(row)
+    }
+  }
+
   const id = crypto.randomUUID()
   const ins = await perm.db
     .prepare(
-      `INSERT INTO manual_flipbook_pages (id, album_id, page_number, image_url, width, height, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, datetime('now'))`
+      `INSERT INTO manual_flipbook_pages (id, album_id, page_number, image_url, width, height, page_slot, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))`,
     )
-    .bind(id, albumId, pageNumber, imageUrl, width, height)
+    .bind(id, albumId, tempPageNum, imageUrl, width, height, pageSlot)
     .run()
   if (!ins.success) return c.json({ error: 'Insert failed' }, 500)
+  await normalizeManualFlipbookPagesOrder(perm.db, albumId)
   const row = await perm.db
     .prepare(`SELECT * FROM manual_flipbook_pages WHERE id = ?`)
     .bind(id)
@@ -186,6 +314,11 @@ albumFlipbookRoute.patch('/pages/:pageId', async (c) => {
     sets.push('image_url = ?')
     vals.push(String(body.image_url ?? ''))
   }
+  if (body.page_slot !== undefined) {
+    const s = parseFlipbookPageSlot(body)
+    sets.push('page_slot = ?')
+    vals.push(s)
+  }
   if (body.page_number !== undefined) {
     sets.push('page_number = ?')
     vals.push(Number(body.page_number ?? 0))
@@ -199,17 +332,63 @@ albumFlipbookRoute.patch('/pages/:pageId', async (c) => {
     vals.push(body.height == null ? null : Number(body.height))
   }
   if (sets.length === 0) return c.json({ error: 'No fields to update' }, 400)
+
+  if (body.image_url !== undefined) {
+    const prev = await perm.db
+      .prepare(`SELECT image_url FROM manual_flipbook_pages WHERE id = ? AND album_id = ?`)
+      .bind(pageId, albumId)
+      .first<{ image_url: string }>()
+    const bucket = getAssets(c)
+    if (prev?.image_url && String(body.image_url ?? '') !== prev.image_url) {
+      await deleteR2ObjectFromPublicUrl(c, bucket, prev.image_url)
+    }
+  }
+
   vals.push(pageId, albumId)
   const upd = await perm.db
     .prepare(`UPDATE manual_flipbook_pages SET ${sets.join(', ')} WHERE id = ? AND album_id = ?`)
     .bind(...vals)
     .run()
   if (!upd.success) return c.json({ error: 'Update failed' }, 500)
+  await normalizeManualFlipbookPagesOrder(perm.db, albumId)
   const row = await perm.db
     .prepare(`SELECT * FROM manual_flipbook_pages WHERE id = ? AND album_id = ?`)
     .bind(pageId, albumId)
     .first<Record<string, unknown>>()
   return c.json(row)
+})
+
+// DELETE /api/albums/:id/flipbook/pages/:pageId — hapus satu halaman (+ hotspot + R2)
+albumFlipbookRoute.delete('/pages/:pageId', async (c) => {
+  const albumId = c.req.param('id')
+  const pageId = c.req.param('pageId')
+  if (!albumId || !pageId) return c.json({ error: 'Album ID and page ID required' }, 400)
+  const perm = await canManageFlipbook(c, albumId)
+  if (!perm.ok) return denyFlipbookManage(c, perm as FlipbookManageDenied)
+
+  const page = await perm.db
+    .prepare(`SELECT id, image_url FROM manual_flipbook_pages WHERE id = ? AND album_id = ?`)
+    .bind(pageId, albumId)
+    .first<{ id: string; image_url: string }>()
+  if (!page) return c.json({ error: 'Halaman tidak ditemukan' }, 404)
+
+  const bucket = getAssets(c)
+  const { results: hotspotRows } = await perm.db
+    .prepare(`SELECT video_url FROM flipbook_video_hotspots WHERE page_id = ?`)
+    .bind(pageId)
+    .all<{ video_url: string | null }>()
+  await deleteR2ObjectsFromPublicUrls(c, bucket, (hotspotRows ?? []).map((h) => h.video_url))
+  await deleteR2ObjectFromPublicUrl(c, bucket, page.image_url)
+
+  const del = await perm.db
+    .prepare(`DELETE FROM manual_flipbook_pages WHERE id = ? AND album_id = ?`)
+    .bind(pageId, albumId)
+    .run()
+  if (!del.success) return c.json({ error: 'Delete failed' }, 500)
+  if ((del.meta?.changes ?? 0) === 0) return c.json({ error: 'Halaman tidak ditemukan' }, 404)
+
+  await normalizeManualFlipbookPagesOrder(perm.db, albumId)
+  return c.json({ ok: true })
 })
 
 // POST /api/albums/:id/flipbook/pages/reorder — set page order by ids
@@ -223,12 +402,45 @@ albumFlipbookRoute.post('/pages/reorder', async (c) => {
     ? (body.page_ids as unknown[]).map((v) => String(v))
     : []
   if (!pageIds.length) return c.json({ error: 'page_ids required' }, 400)
-  for (let i = 0; i < pageIds.length; i++) {
+
+  const slotsRes = await perm.db
+    .prepare(`SELECT id, page_slot FROM manual_flipbook_pages WHERE album_id = ?`)
+    .bind(albumId)
+    .all<{ id: string; page_slot: string | null }>()
+  const slotById = new Map((slotsRes.results ?? []).map((r) => [r.id, rowFlipbookSlot(r.page_slot)]))
+
+  let frontId = pageIds.find((id) => slotById.get(id) === 'front_cover')
+  let backId = [...pageIds].reverse().find((id) => slotById.get(id) === 'back_cover')
+  if (!frontId) {
+    const r = await perm.db
+      .prepare(`SELECT id FROM manual_flipbook_pages WHERE album_id = ? AND page_slot = 'front_cover' LIMIT 1`)
+      .bind(albumId)
+      .first<{ id: string }>()
+    frontId = r?.id
+  }
+  if (!backId) {
+    const r = await perm.db
+      .prepare(`SELECT id FROM manual_flipbook_pages WHERE album_id = ? AND page_slot = 'back_cover' LIMIT 1`)
+      .bind(albumId)
+      .first<{ id: string }>()
+    backId = r?.id
+  }
+
+  const middle: string[] = []
+  for (const id of pageIds) {
+    if (id === frontId || id === backId) continue
+    middle.push(id)
+  }
+
+  let t = 100_000
+  for (const id of middle) {
     await perm.db
       .prepare(`UPDATE manual_flipbook_pages SET page_number = ? WHERE id = ? AND album_id = ?`)
-      .bind(i + 1, pageIds[i], albumId)
+      .bind(t++, id, albumId)
       .run()
   }
+
+  await normalizeManualFlipbookPagesOrder(perm.db, albumId)
   return c.json({ ok: true })
 })
 
@@ -304,6 +516,18 @@ albumFlipbookRoute.patch('/hotspots/:hotspotId', async (c) => {
     .bind(...vals)
     .run()
   if (!upd.success) return c.json({ error: 'Update failed' }, 500)
+
+  if (body.video_url !== undefined) {
+    const prev = await perm.db
+      .prepare(`SELECT video_url FROM flipbook_video_hotspots WHERE id = ?`)
+      .bind(hotspotId)
+      .first<{ video_url: string | null }>()
+    const bucket = getAssets(c)
+    if (prev?.video_url && String(body.video_url ?? '') !== prev.video_url) {
+      await deleteR2ObjectFromPublicUrl(c, bucket, prev.video_url)
+    }
+  }
+
   const row = await perm.db
     .prepare(`SELECT * FROM flipbook_video_hotspots WHERE id = ?`)
     .bind(hotspotId)
@@ -318,11 +542,19 @@ albumFlipbookRoute.delete('/hotspots/:hotspotId', async (c) => {
   if (!albumId || !hotspotId) return c.json({ error: 'Album ID and hotspot ID required' }, 400)
   const perm = await canManageFlipbook(c, albumId)
   if (!perm.ok) return denyFlipbookManage(c, perm as FlipbookManageDenied)
+  const existing = await perm.db
+    .prepare(`SELECT video_url FROM flipbook_video_hotspots WHERE id = ?`)
+    .bind(hotspotId)
+    .first<{ video_url: string | null }>()
+  if (!existing) return c.json({ error: 'Hotspot not found' }, 404)
+  const bucket = getAssets(c)
+  await deleteR2ObjectFromPublicUrl(c, bucket, existing.video_url)
   const del = await perm.db
     .prepare(`DELETE FROM flipbook_video_hotspots WHERE id = ?`)
     .bind(hotspotId)
     .run()
   if (!del.success) return c.json({ error: 'Delete failed' }, 500)
+  if (del.meta.changes === 0) return c.json({ error: 'Hotspot not found' }, 404)
   return c.json({ ok: true })
 })
 
@@ -376,7 +608,11 @@ albumFlipbookRoute.get('/public', async (c) => {
     }))
     const payload = { pages: out, albumName: album.name || 'Preview Flipbook' }
     const etag = `"${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}"`
-    flipbookPublicCache.set(albumId, { value: payload as unknown as Record<string, unknown>, expiresAt: now + 2 * 60 * 1000, etag })
+    flipbookPublicCache.set(albumId, {
+      value: payload as unknown as Record<string, unknown>,
+      expiresAt: now + FLIPBOOK_PUBLIC_TTL_MS,
+      etag,
+    })
     c.header('Cache-Control', 'public, max-age=120, stale-while-revalidate=30')
     c.header('ETag', etag)
     c.header('X-Cache', 'MISS')
@@ -413,41 +649,43 @@ albumFlipbookRoute.post('/', async (c) => {
     }
   }
   try {
-    const { results: pageIds } = await db
-      .prepare(`SELECT id FROM manual_flipbook_pages WHERE album_id = ?`)
+    const bucket = getAssets(c)
+    const { results: pageRows } = await db
+      .prepare(`SELECT id, image_url FROM manual_flipbook_pages WHERE album_id = ?`)
       .bind(albumId)
-      .all<{ id: string }>()
-    const ids = (pageIds ?? []).map((p) => p.id)
+      .all<{ id: string; image_url: string }>()
+    const pages = pageRows ?? []
+    const ids = pages.map((p) => p.id)
+    const r2Urls: string[] = pages.map((p) => p.image_url).filter(Boolean)
     if (ids.length > 0) {
       const ph = ids.map(() => '?').join(',')
+      const { results: hotspotRows } = await db
+        .prepare(`SELECT video_url FROM flipbook_video_hotspots WHERE page_id IN (${ph})`)
+        .bind(...ids)
+        .all<{ video_url: string | null }>()
+      for (const h of hotspotRows ?? []) {
+        if (h.video_url) r2Urls.push(h.video_url)
+      }
       await db
         .prepare(`DELETE FROM flipbook_video_hotspots WHERE page_id IN (${ph})`)
         .bind(...ids)
         .run()
     }
+    await deleteR2ObjectsFromPublicUrls(c, bucket, r2Urls)
     await db.prepare(`DELETE FROM manual_flipbook_pages WHERE album_id = ?`).bind(albumId).run()
     return c.json({
-      message:
-        'Flipbook assets cleaned successfully (DB only, storage cleanup not implemented in Workers)',
+      message: 'Flipbook berhasil dibersihkan (database dan file storage).',
     })
   } catch (error: unknown) {
     return c.json({ error: error instanceof Error ? error.message : 'Internal server error' }, 500)
   }
 })
 
-// GET /api/albums/:id/flipbook — get flipbook pages (cache 30 detik, editor)
+// GET /api/albums/:id/flipbook — get flipbook pages (editor; no in-memory cache — must stay fresh after edits)
 albumFlipbookRoute.get('/', async (c) => {
   const db = getD1(c)
   if (!db) return c.json({ error: 'Database not configured' }, 503)
   const albumId = c.req.param('id')
-
-  const now = Date.now()
-  const cachedPriv = flipbookPrivateCache.get(albumId)
-  if (cachedPriv && cachedPriv.expiresAt > now) {
-    c.header('Cache-Control', 'private, max-age=30')
-    c.header('X-Cache', 'HIT')
-    return c.json(cachedPriv.value)
-  }
 
   const { results: pageRows } = await db
     .prepare(`SELECT * FROM manual_flipbook_pages WHERE album_id = ? ORDER BY page_number ASC`)
@@ -473,9 +711,7 @@ albumFlipbookRoute.get('/', async (c) => {
     ...p,
     flipbook_video_hotspots: hotspotsByPage.get(p.id as string) ?? [],
   }))
-  flipbookPrivateCache.set(albumId, { value: out, expiresAt: now + 30_000 })
-  c.header('Cache-Control', 'private, max-age=30')
-  c.header('X-Cache', 'MISS')
+  c.header('Cache-Control', 'no-store')
   return c.json(out)
 })
 

@@ -69,6 +69,25 @@ export function invalidateUserResponseCaches(userId: string): void {
   userNotificationsCache.delete(userId)
 }
 
+// Transactions list cache (routes/user/transactions)
+const txCache = new Map<string, CacheEntry<Record<string, unknown>[]>>()
+
+export function getUserTransactionsCache(userId: string): Record<string, unknown>[] | null {
+  return readCache(txCache, userId)
+}
+
+export function setUserTransactionsCache(
+  userId: string,
+  value: Record<string, unknown>[],
+  ttlMs: number
+): void {
+  writeCache(txCache, userId, value, ttlMs)
+}
+
+export function invalidateUserTransactionsCache(userId: string): void {
+  txCache.delete(userId)
+}
+
 
 
 

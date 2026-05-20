@@ -3,7 +3,6 @@ import { getRole } from '../../../../../lib/auth'
 import { getD1 } from '../../../../../lib/edge-env'
 import { AppEnv, requireAuthJwt } from '../../../../../middleware'
 import { getAuthUserFromContext } from '../../../../../lib/auth-user'
-import { invalidateAllMembersCache } from '../../all-class-members'
 
 const classRequestIdRoute = new Hono<AppEnv>()
 classRequestIdRoute.use('*', requireAuthJwt)
@@ -90,7 +89,6 @@ classRequestIdRoute.patch('/', async (c) => {
       .prepare(`SELECT * FROM album_class_access WHERE id = ?`)
       .bind(accessId)
       .first()
-    invalidateAllMembersCache(row.album_id)
     return c.json(created)
   }
 
@@ -103,7 +101,6 @@ classRequestIdRoute.patch('/', async (c) => {
     .prepare(`SELECT * FROM album_join_requests WHERE id = ?`)
     .bind(requestId)
     .first()
-  invalidateAllMembersCache(row.album_id)
   return c.json(updated)
 })
 

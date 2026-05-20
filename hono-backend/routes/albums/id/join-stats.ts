@@ -2,18 +2,17 @@ import { Hono } from 'hono'
 import { getD1 } from '../../../lib/edge-env'
 import { AppEnv, requireAuthJwt } from '../../../middleware'
 import { getAuthUserFromContext } from '../../../lib/auth-user'
+import { joinStatsCache, JOIN_STATS_TTL_MS } from '../../../lib/album-response-cache'
 
 const albumsIdJoinStats = new Hono<AppEnv>()
 albumsIdJoinStats.use('*', requireAuthJwt)
 
-// Cache 30 detik per-albumId (data berubah saat ada join baru)
-type JoinStatsPayload = { limit_count: number | null; approved_count: number; pending_count: number; rejected_count: number; available_slots: number }
-type CacheEntry = { value: JoinStatsPayload; expiresAt: number }
-const joinStatsCache = new Map<string, CacheEntry>()
-const JOIN_STATS_TTL_MS = 30_000
-
-export function invalidateJoinStatsCache(albumId: string): void {
-  joinStatsCache.delete(albumId)
+type JoinStatsPayload = {
+  limit_count: number | null
+  approved_count: number
+  pending_count: number
+  rejected_count: number
+  available_slots: number
 }
 
 albumsIdJoinStats.get('/', async (c) => {

@@ -2,13 +2,14 @@ import { Hono } from 'hono'
 import { getD1 } from '../../../lib/edge-env'
 import { AppEnv, requireAuthJwt } from '../../../middleware'
 import { getAuthUserFromContext } from '../../../lib/auth-user'
+import {
+  getUserTransactionsCache,
+  setUserTransactionsCache,
+} from '../../../lib/user-response-cache'
 
 const userTransactions = new Hono<AppEnv>()
 userTransactions.use('*', requireAuthJwt)
 
-// ── Cache 10 detik per userId ────────────────────────────────────────────────
-type TxCacheEntry = { value: Record<string, unknown>[]; expiresAt: number }
-const txCache = new Map<string, TxCacheEntry>()
 const TX_TTL_MS = 10_000
 
 // GET - List user transactions
@@ -18,12 +19,11 @@ userTransactions.get('/', async (c) => {
   const user = getAuthUserFromContext(c)
   if (!user) return c.json({ error: 'Unauthorized' }, 401)
 
-  const now = Date.now()
-  const cached = txCache.get(user.id)
-  if (cached && cached.expiresAt > now) {
+  const cached = getUserTransactionsCache(user.id)
+  if (cached) {
     c.header('Cache-Control', 'private, max-age=10')
     c.header('X-Cache', 'HIT')
-    return c.json(cached.value)
+    return c.json(cached)
   }
 
   const { results } = await db
@@ -43,7 +43,7 @@ userTransactions.get('/', async (c) => {
     const { pkg_credits, album_name, package_snapshot, discount_percent_off, new_students_count, total_students, ...rest } = row
     return { ...rest, credits: pkg_credits ?? null, album_name: album_name ?? null, package_snapshot: package_snapshot ?? null, discount_percent_off: discount_percent_off ?? null, new_students_count: new_students_count ?? null, total_students: total_students ?? null }
   })
-  txCache.set(user.id, { value: list, expiresAt: now + TX_TTL_MS })
+  setUserTransactionsCache(user.id, list, TX_TTL_MS)
   c.header('Cache-Control', 'private, max-age=10')
   c.header('X-Cache', 'MISS')
   return c.json(list)

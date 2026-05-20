@@ -14,6 +14,10 @@ function resetPricingCache() {
   pricingCacheExpiresAt = 0
 }
 
+export function invalidatePricingCache(): void {
+  resetPricingCache()
+}
+
 function parsePkg(row: Record<string, unknown>) {
   let features: unknown = []
   let aiLabs: unknown = []
