@@ -181,7 +181,7 @@ export default function Enhance({ creditCost }: { creditCost?: number }) {
                   <div className="relative">
                     <img
                       src={result}
-                      alt={\`Enhance result \${index + 1}\`}
+                      alt={`Enhance result ${index + 1}`}
                       className="w-full h-auto max-h-[500px] object-contain rounded-xl"
                     />
                     <button
@@ -191,7 +191,7 @@ export default function Enhance({ creditCost }: { creditCost?: number }) {
                         try {
                           await downloadImageWithWatermark(
                             result,
-                            \`fresh-creative-enhance-\${index + 1}-\${Date.now()}.png\`
+                            `fresh-creative-enhance-${index + 1}-${Date.now()}.png`
                           );
                         } catch (e) {
                           setError(e instanceof Error ? e.message : "Download gagal");
