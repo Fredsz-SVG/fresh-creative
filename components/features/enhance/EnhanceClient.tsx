@@ -5,6 +5,96 @@ import { downloadImageWithWatermark } from '@/lib/download-image';
 import { fetchWithAuth } from '@/lib/api-client'
 import { asObject, asString } from '@/components/yearbook/utils/response-narrowing'
 
+export function BeforeAfterSlider({ beforeImage, afterImage }: { beforeImage: string; afterImage: string }) {
+  const [sliderPosition, setSliderPosition] = useState(50);
+
+  return (
+    <div className="relative w-full h-auto overflow-hidden rounded-xl bg-slate-100 dark:bg-slate-800 select-none">
+      <img src={afterImage} className="w-full h-auto block object-contain" alt="After" draggable={false} />
+      
+      <img 
+        src={beforeImage} 
+        className="absolute inset-0 w-full h-full object-contain pointer-events-none" 
+        style={{ clipPath: `polygon(0 0, ${sliderPosition}% 0, ${sliderPosition}% 100%, 0 100%)` }} 
+        alt="After" 
+        draggable={false}
+      />
+      
+      <div className="absolute inset-0 z-10 w-full h-full group">
+        <input 
+          type="range" 
+          min="0" 
+          max="100" 
+          value={sliderPosition} 
+          onChange={(e) => setSliderPosition(Number(e.target.value))}
+          className="absolute inset-0 w-full h-full opacity-0 cursor-ew-resize z-20 m-0 p-0"
+        />
+        <div 
+          className="absolute top-0 bottom-0 w-0.5 bg-white pointer-events-none z-10 shadow-[0_0_5px_rgba(0,0,0,0.5)] flex items-center justify-center transition-colors group-hover:bg-amber-300"
+          style={{ left: `${sliderPosition}%`, transform: 'translateX(-50%)' }}
+        >
+           <div className="w-8 h-8 rounded-full bg-white shadow-[0_2px_10px_rgba(0,0,0,0.3)] flex items-center justify-center text-slate-800 group-hover:scale-110 transition-transform">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="-ml-0.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="rotate-180 -ml-2"><polyline points="15 18 9 12 15 6"></polyline></svg>
+           </div>
+        </div>
+      </div>
+      
+      <div className="absolute bottom-2 left-2 px-2 py-1 bg-black/50 text-white text-[10px] font-black rounded backdrop-blur-sm tracking-widest pointer-events-none z-10">BEFORE</div>
+      <div className="absolute bottom-2 right-2 px-2 py-1 bg-indigo-500/80 text-white text-[10px] font-black rounded backdrop-blur-sm tracking-widest pointer-events-none z-10">AFTER</div>
+    </div>
+  );
+}
+
+const resizeImageIfNeeded = async (file: File, maxPixels: number = 2000000): Promise<File> => {
+  return new Promise((resolve) => {
+    const img = document.createElement('img');
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const width = img.width;
+      const height = img.height;
+      const pixels = width * height;
+      
+      if (pixels <= maxPixels) {
+        resolve(file);
+        return;
+      }
+      
+      const ratio = Math.sqrt(maxPixels / pixels);
+      const newWidth = Math.floor(width * ratio);
+      const newHeight = Math.floor(height * ratio);
+      
+      const canvas = document.createElement('canvas');
+      canvas.width = newWidth;
+      canvas.height = newHeight;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        resolve(file);
+        return;
+      }
+      
+      ctx.drawImage(img, 0, 0, newWidth, newHeight);
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          resolve(file);
+          return;
+        }
+        const resizedFile = new File([blob], file.name, {
+          type: file.type || 'image/jpeg',
+          lastModified: Date.now(),
+        });
+        resolve(resizedFile);
+      }, file.type || 'image/jpeg', 0.9);
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      resolve(file);
+    };
+    img.src = url;
+  });
+};
+
 export default function Enhance({ creditCost }: { creditCost?: number }) {
   const [image, setImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -39,8 +129,9 @@ export default function Enhance({ creditCost }: { creditCost?: number }) {
     setError(null);
 
     try {
+      const imageToUpload = await resizeImageIfNeeded(image);
       const formData = new FormData();
-      formData.append("image", image);
+      formData.append("image", imageToUpload);
 
       const res = await fetchWithAuth("/api/ai-features/enhance", {
         method: "POST",
@@ -179,11 +270,15 @@ export default function Enhance({ creditCost }: { creditCost?: number }) {
                   className="bg-white dark:bg-slate-900 rounded-2xl border-2 border-slate-200 dark:border-slate-700 shadow-[2px_2px_0_0_#334155] dark:shadow-[2px_2px_0_0_#1e293b] p-3 sm:p-4 w-full"
                 >
                   <div className="relative">
-                    <img
-                      src={result}
-                      alt={`Enhance result ${index + 1}`}
-                      className="w-full h-auto max-h-[500px] object-contain rounded-xl"
-                    />
+                    {imagePreview ? (
+                      <BeforeAfterSlider beforeImage={imagePreview} afterImage={result} />
+                    ) : (
+                      <img
+                        src={result}
+                        alt={`Enhance result ${index + 1}`}
+                        className="w-full h-auto max-h-[500px] object-contain rounded-xl"
+                      />
+                    )}
                     <button
                       type="button"
                       onClick={async () => {
