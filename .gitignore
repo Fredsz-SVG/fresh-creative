@@ -4,7 +4,7 @@ node_modules/
 .env.local
 .env.*.local
 # Cloudflare Workers lokal (Wrangler)
-hono-backend/.wrangler/tmp/
+hono-backend/.wrangler/
 hono-backend/.dev.vars
 .dev.vars
 *.log
@@ -13,3 +13,4 @@ hono-backend/.dev.vars
 .idea/
 filter/
 vendor/
+*.tsbuildinfo

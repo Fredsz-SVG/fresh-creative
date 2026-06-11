@@ -4,8 +4,8 @@
   "type": "module",
   "main": "worker.ts",
   "scripts": {
-    "dev": "wrangler dev worker.ts --remote",
-    "dev:remote": "wrangler dev worker.ts --remote",
+    "dev": "wrangler dev worker.ts",
+    "dev:remote": "wrangler dev worker.ts",
     "dev:local": "wrangler dev worker.ts --local",
     "build": "wrangler build",
     "deploy": "wrangler deploy --keep-vars",
@@ -33,7 +33,7 @@
     "eslint-config-prettier": "^9.1.0",
     "prettier": "^3.2.5",
     "typescript": "^5.9.3",
-    "vitest": "^1.2.2",
+    "vitest": "^3.2.6",
     "wrangler": "^4.81.0"
   }
 }

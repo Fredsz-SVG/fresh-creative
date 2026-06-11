@@ -21,7 +21,7 @@ export function getCurrentUser(): AuthUser | null {
 
 let waitForAuthStateOncePromise: Promise<AuthUser | null> | null = null
 
-function waitForAuthStateOnce(timeoutMs = 1500): Promise<AuthUser | null> {
+export function waitForAuthStateOnce(timeoutMs = 1500): Promise<AuthUser | null> {
   if (typeof window === 'undefined') return Promise.resolve(null)
   if (waitForAuthStateOncePromise) return waitForAuthStateOncePromise
 
@@ -64,7 +64,11 @@ export function onAuthChange(cb: (user: AuthUser | null) => void): () => void {
 
 export async function signInWithPassword(email: string, password: string) {
   const { auth } = getFirebaseClient()
-  return await signInWithEmailAndPassword(auth, email, password)
+  const cred = await signInWithEmailAndPassword(auth, email, password)
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('fresh_logged_in', 'true')
+  }
+  return cred
 }
 
 export async function signUpWithPassword(opts: {
@@ -82,6 +86,9 @@ export async function signUpWithPassword(opts: {
   } catch {
     // ignore: email verification is recommended but not required for all environments
   }
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('fresh_logged_in', 'true')
+  }
   return cred
 }
 
@@ -89,12 +96,20 @@ export async function signInWithGoogle() {
   const { auth } = getFirebaseClient()
   const provider = new GoogleAuthProvider()
   provider.setCustomParameters({ prompt: 'select_account' })
-  return await signInWithPopup(auth, provider)
+  const cred = await signInWithPopup(auth, provider)
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('fresh_logged_in', 'true')
+  }
+  return cred
 }
 
 export async function signOut() {
   const { auth } = getFirebaseClient()
   await firebaseSignOut(auth)
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem('fresh_logged_in')
+    localStorage.removeItem('fresh_role')
+  }
 }
 
 export async function requestPasswordReset(email: string) {

@@ -42,7 +42,7 @@ export default function RootLayout({
   return (
     <html lang="id" suppressHydrationWarning>
       <head>
-        {/* Prevent flash of unstyled content (FOUC) by applying theme early */}
+        {/* Prevent flash of unstyled content (FOUC) by applying theme and auth early */}
         <script
           dangerouslySetInnerHTML={{
             __html: `
@@ -67,6 +67,13 @@ export default function RootLayout({
                   } else {
                     document.documentElement.classList.remove('dark');
                     document.documentElement.setAttribute('data-theme', 'light');
+                  }
+
+                  var isLoggedIn = localStorage.getItem('fresh_logged_in') === 'true';
+                  if (isLoggedIn) {
+                    document.documentElement.classList.add('logged-in');
+                  } else {
+                    document.documentElement.classList.remove('logged-in');
                   }
                 } catch (e) {}
               })();

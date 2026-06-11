@@ -1677,3 +1677,11 @@ html.dark .nav-icon-stroke,
 .animate-neo-swipe {
   animation: neoSwipe 1.5s ease-in-out infinite;
 }
+
+/* Auth buttons visibility based on logged-in state to prevent client-side hydration flash */
+html.logged-in .auth-login-btn {
+  display: none !important;
+}
+html:not(.logged-in) .auth-dashboard-btn {
+  display: none !important;
+}

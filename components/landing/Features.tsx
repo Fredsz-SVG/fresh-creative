@@ -229,9 +229,9 @@ export function Features() {
             {galleryImages.length > 1 && (
               <button 
                 onClick={handlePrev}
-                className="absolute left-2 md:left-8 text-white/70 hover:text-white bg-white/10 hover:bg-white/20 p-4 rounded-full transition-all z-10 hover:scale-110 backdrop-blur-sm"
+                className="absolute left-2 md:left-8 text-white/70 hover:text-white bg-white/10 hover:bg-white/20 p-2.5 md:p-4 rounded-full transition-all z-30 hover:scale-110 backdrop-blur-sm"
               >
-                <ChevronLeft size={32} />
+                <ChevronLeft className="w-5 h-5 md:w-8 md:h-8" />
               </button>
             )}
 
@@ -249,19 +249,13 @@ export function Features() {
             {galleryImages.length > 1 && (
               <button 
                 onClick={handleNext}
-                className="absolute right-2 md:right-8 text-white/70 hover:text-white bg-white/10 hover:bg-white/20 p-4 rounded-full transition-all z-10 hover:scale-110 backdrop-blur-sm"
+                className="absolute right-2 md:right-8 text-white/70 hover:text-white bg-white/10 hover:bg-white/20 p-2.5 md:p-4 rounded-full transition-all z-30 hover:scale-110 backdrop-blur-sm"
               >
-                <ChevronRight size={32} />
+                <ChevronRight className="w-5 h-5 md:w-8 md:h-8" />
               </button>
             )}
             
           </div>
-
-          {galleryImages.length > 1 && (
-            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-black/80 backdrop-blur-md px-5 py-2 rounded-full text-white text-sm font-bold tracking-widest border border-white/10 z-[60]">
-              {currentIndex + 1} / {galleryImages.length}
-            </div>
-          )}
         </div>
       )}
     </section>

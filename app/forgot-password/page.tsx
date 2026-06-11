@@ -31,7 +31,12 @@ export default function ForgotPasswordPage() {
 
   return (
     <div className="min-h-screen grid lg:grid-cols-2 -m-4 lg:m-0">
-      <div className="relative hidden lg:flex flex-col justify-between bg-gradient-to-br from-indigo-600 via-indigo-500 to-indigo-400 p-12 text-white min-h-screen">
+      <div 
+        className="relative hidden lg:flex flex-col justify-between p-12 text-white min-h-screen"
+        style={{
+          background: 'radial-gradient(ellipse 90% 50% at 30% 0%, rgba(92, 236, 255, 0.05) 0%, transparent 65%), radial-gradient(ellipse 70% 40% at 75% 100%, rgba(255, 97, 198, 0.05) 0%, transparent 55%), linear-gradient(175deg, #0a0c37 0%, #070920 60%, #0a0c37 100%)'
+        }}
+      >
         <div className="relative z-20">
           <div className="flex items-center gap-3">
             <img src="/img/logo.webp" alt="FreshCreative.ID" className="w-10 h-10 object-contain" />
@@ -51,8 +56,8 @@ export default function ForgotPasswordPage() {
         </div>
 
         <div className="absolute inset-0 bg-grid-white/[0.05] bg-[size:20px_20px]" />
-        <div className="absolute top-1/4 right-1/4 size-64 bg-white/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-1/4 left-1/4 size-96 bg-white/5 rounded-full blur-3xl" />
+        <div className="absolute top-1/4 right-1/4 size-64 bg-cyan-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '6s' }} />
+        <div className="absolute bottom-1/4 left-1/4 size-96 bg-pink-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '8s' }} />
       </div>
 
       <div className="flex items-center justify-center p-4 sm:p-6 md:p-8 bg-white dark:bg-slate-950">
